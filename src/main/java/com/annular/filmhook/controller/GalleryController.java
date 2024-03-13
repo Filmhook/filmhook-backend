@@ -1,4 +1,4 @@
-package com.annular.filmHook.controller;
+package com.annular.filmhook.controller;
 
 public class GalleryController {
 

@@ -1,5 +1,4 @@
-package com.annular.filmHook.security.jwt;
-
+package com.annular.filmhook.security.jwt;
 
 import java.util.Date;
 
@@ -11,8 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import com.annular.filmHook.model.User;
-import com.annular.filmHook.security.UserDetailsImpl;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.security.UserDetailsImpl;
 
 import ch.qos.logback.classic.Logger;
 import io.jsonwebtoken.Claims;

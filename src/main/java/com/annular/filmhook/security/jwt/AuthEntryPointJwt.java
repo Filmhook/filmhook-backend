@@ -1,5 +1,4 @@
-package com.annular.filmHook.security.jwt;
-
+package com.annular.filmhook.security.jwt;
 
 import java.io.IOException;
 

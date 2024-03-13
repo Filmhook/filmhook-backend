@@ -1,4 +1,4 @@
-package com.annular.filmHook.model;
+package com.annular.filmhook.model;
 
 import java.util.Date;
 
@@ -14,75 +14,80 @@ import org.hibernate.annotations.CreationTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "users")
-@Data
+@Builder
+@Getter
+@Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
 
-	@Column
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
 	private Integer userId;
 
-	@Column
+	@Column(name = "name")
 	private String name;
 	
-	@Column
 	@JsonIgnore
+	@Column(name = "verification_code")
 	private Integer verificationCode;
 
-	@Column
+	@Column(name = "dob")
 	private String dob;
 
-	@Column
+	@Column(name = "gender")
 	private String gender;
 
-	@Column
+	@Column(name = "country")
 	private String country;
 
-	@Column
+	@Column(name = "state")
 	private String state;
 	
-	@Column
+	@Column(name = "email")
 	private String email;
 
-	@Column
+	@Column(name = "district")
 	private String district;
 
-	@Column
 	@JsonIgnore
+	@Column(name = "password")
 	private String password;
 
-	@Column
+	@Column(name = "phone_number")
 	private String phoneNumber;
 
-	@Column
-	private boolean userIsActive;
+	@Column(name = "status")
+	private boolean status;
 
-	@Column
-	@CreationTimestamp
-	private Date userCreatedOn;
-
-	@Column
-	private Integer userUpdatedBy;
-
-	@Column
-	private String userType;
-
-	@Column
-	@CreationTimestamp
-	private Date userUpdateOn;
-
-	@Column
-	private Integer usercreatedBy;
+	@Column(name= "created_by")
+	private Integer createdBy;
 	
-	@Column
+	@CreationTimestamp
+	@Column(name= "created_on")
+	private Date createdOn;
+
+	@Column(name= "updated_by")
+	private Integer updatedBy;
+	
+	@Column(name= "updated_on")
+	@CreationTimestamp
+	private Date updatedOn;
+
+	@Column(name= "user_type")
+	private String userType;
+	
+	@Column(name= "user_password")
 	private String resetPassword;
 
-	
 }

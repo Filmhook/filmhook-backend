@@ -1,5 +1,4 @@
-package com.annular.filmHook.service.impl;
-
+package com.annular.filmhook.service.impl;
 
 import java.util.Optional;
 
@@ -12,24 +11,22 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.annular.filmHook.UserStatusConfig;
-import com.annular.filmHook.model.User;
-import com.annular.filmHook.repository.UserRepository;
-import com.annular.filmHook.security.UserDetailsImpl;
-
-//import com.annular.zooba.LoginConstants;
+import com.annular.filmhook.UserStatusConfig;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.security.UserDetailsImpl;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
 	public static final Logger logger = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
-
 	private static final String CARET = "^";
 
 	@Autowired
 	UserRepository userRepo;
 
 //	JwtUtils jwtUtils;
+
 	@Autowired
 	UserStatusConfig loginConstants;
 
@@ -38,7 +35,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 //		logger.info("I am from loadUserByUsername() !!! ");
 //		logger.info("UserName :- " + username);
 //		logger.info("UserType from LoginConstants :- " + loginConstants.getUserType());
-////		System.out.println("login check --- > admin : "+loginConstants.isAdmin()+"  Driver :"+loginConstants.isDriver());
+//		System.out.println("login check --- > admin : "+loginConstants.isAdmin()+"  Driver :"+loginConstants.isDriver());
 //		String userName, userType;
 //		if (username != null && username.contains(CARET)) {
 //			userName = username.substring(0, username.indexOf(CARET));
@@ -53,20 +50,21 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 //		logger.info("User from DB --> " + user.getUserId() + user.getEmail() + user.getUserType());
 //		return UserDetailsImpl.build(user);
 //	}
+	
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-	    logger.info("I am from loadUserByUsername() !!! ");
-	    logger.info("Email :- " + email);
-	    logger.info("UserType from LoginConstants :- " + loginConstants.getUserType());
+		logger.info("I am from loadUserByUsername() !!! ");
+		logger.info("Email :- " + email);
+		logger.info("UserType from LoginConstants :- " + loginConstants.getUserType());
 
-	    Optional<User> optionalUser = userRepo.findByEmailAndUserType(email);
-	    if (optionalUser.isPresent()) {
-	        User user = optionalUser.get();
-	        logger.info("User from DB --> " + user.getUserId() + user.getEmail() + user.getUserType());
-	        return UserDetailsImpl.build(user);
-	    } else {
-	        throw new UsernameNotFoundException("User Not Found with email: " + email);
-	    }
+		Optional<User> optionalUser = userRepo.findByEmailAndUserType(email);
+		if (optionalUser.isPresent()) {
+			User user = optionalUser.get();
+			logger.info("User from DB --> " + user.getUserId() + user.getEmail() + user.getUserType());
+			return UserDetailsImpl.build(user);
+		} else {
+			throw new UsernameNotFoundException("User Not Found with email: " + email);
+		}
 	}
 
 }

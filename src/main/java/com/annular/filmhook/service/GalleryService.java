@@ -1,4 +1,4 @@
-package com.annular.filmHook.service;
+package com.annular.filmhook.service;
 
 public class GalleryService {
 

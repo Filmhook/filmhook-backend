@@ -1,5 +1,4 @@
-package com.annular.filmHook.security;
-
+package com.annular.filmhook.security;
 
 import java.util.Collection;
 
@@ -8,7 +7,7 @@ import java.util.Set;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.annular.filmHook.model.User;
+import com.annular.filmhook.model.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class UserDetailsImpl implements UserDetails {
@@ -16,13 +15,9 @@ public class UserDetailsImpl implements UserDetails {
 	private static final long serialVersionUID = 1L;
 
 	private Integer id;
-
 	private String userName;
-
 	private String email;
-
 	private String userType;
-
 	@JsonIgnore
 	private String password;
 
@@ -38,10 +33,12 @@ public class UserDetailsImpl implements UserDetails {
 	}
 
 	public static UserDetailsImpl build(User user) {
-
-		return new UserDetailsImpl(user.getUserId(), user.getName(), user.getEmail(), user.getUserType(),
+		return new UserDetailsImpl(
+				user.getUserId(),
+				user.getName(),
+				user.getEmail(),
+				user.getUserType(),
 				user.getPassword()
-
 		);
 	}
 

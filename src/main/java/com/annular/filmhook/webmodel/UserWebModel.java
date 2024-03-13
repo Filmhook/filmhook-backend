@@ -1,57 +1,31 @@
-package com.annular.filmHook.webModel;
+package com.annular.filmhook.webmodel;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class UserWebModel {
 
 	private Integer userId;
-
-	private String name;
-
-	private String dob;
-
-	private String gender;
-
-	private String country;
-
-	private String state;
-
-	@Column
-	private String district;
-
 	private String password;
-
-	private String phoneNumber;
-
-	private String token;
-
-	private boolean userIsActive;
-
-	private Date userCreatedOn;
-
-	private Integer userUpdatedBy;
-
-	private String userType;
-
-	private Date userUpdateOn;
+	private String verificationCode;
 
 	private String email;
+	private String userType;
 
-	private Integer usercreatedBy;
+	private String name;
+	private String dob;
+	private String gender;
+	private String country;
+	private String state;
+	private String district;
+	private String phoneNumber;
+	private String token;
+	private boolean status;
 
-	private String verificationCode;
+	private Integer createdBy;
+	private Date createdOn;
+	private Integer updatedBy;
+	private Date updateOn;
 }

@@ -1,36 +1,26 @@
-package com.annular.filmHook.service.impl;
+package com.annular.filmhook.service.impl;
 
-import java.time.Duration;
-
-import java.time.Instant;
 import java.time.LocalTime;
 
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.mail.internet.MimeMessage;
-import javax.servlet.http.HttpServletRequest;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.annular.filmHook.Response;
-import com.annular.filmHook.Utility;
-import com.annular.filmHook.model.RefreshToken;
-import com.annular.filmHook.model.User;
-import com.annular.filmHook.repository.RefreshTokenRepository;
-import com.annular.filmHook.repository.UserRepository;
-import com.annular.filmHook.service.UserService;
-import com.annular.filmHook.webModel.UserWebModel;
+import com.annular.filmhook.Response;
+import com.annular.filmhook.model.RefreshToken;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.RefreshTokenRepository;
+import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 
 @Service
@@ -41,14 +31,14 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	UserRepository userRepository;
 	
-	@Autowired
-	private JavaMailSender javaMailSender;
-	
+//	@Autowired
+//	private JavaMailSender javaMailSender;
+
 	@Autowired
 	RefreshTokenRepository refreshTokenRepository;
 
-	@Value("${annular.app.url}")
-	private String url;
+//	@Value("${annular.app.url}")
+//	private String url;
 	
 	@Override
 	public ResponseEntity<?> register(UserWebModel userWebModel) {
@@ -57,8 +47,7 @@ public class UserServiceImpl implements UserService {
 			logger.info("Register method start");
 			Optional<User> userData = userRepository.findByEmail(userWebModel.getEmail(),
 					userWebModel.getUserType());
-//			Optional<User> userData = userRepository.findByUserName(userWebModel.getName(),
-//					userWebModel.getUserType());
+//			Optional<User> userData = userRepository.findByUserName(userWebModel.getName(), userWebModel.getUserType());
 			BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 			if (!userData.isPresent()) {
 				User user = new User();
@@ -122,13 +111,12 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean verify(String code) {
 		User user = userRepository.findByVerificationCode(code);
-		if (user == null || user.isUserIsActive()) {
+		if (user == null || user.isStatus()) {
 			return false;
 		} else {
 			user.setVerificationCode(null);
-			user.setUserIsActive(true);
+			user.setStatus(true);
 			userRepository.save(user);
-		
 			return true;
 		}
 	}

@@ -1,4 +1,4 @@
-package com.annular.filmHook.model;
+package com.annular.filmhook.model;
 
 
 import java.util.Date;
@@ -12,56 +12,63 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "MediaFiles")
-@Data
+@Builder
+@Getter
+@Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class MediaFiles {
 
-	@Column
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer fileId;
+	@Column(name = "id")
+	private Integer id;
 
-	@Column
+	@Column(name = "file_name")
 	private String fileName;
 
-	@Column
+	@Column(name = "file_original_name")
 	private String fileOriginalName;
 
-	@Column
+	@Column(name = "file_domain_id")
 	private Integer fileDomainId;
 
-	@Column
+	@Column(name = "file_domain_reference_id")
 	private Integer fileDomainReferenceId;
-
-	@Column
-	private Boolean fileIsActive;
-
-	@Column
-	private Integer fileCreatedBy;
-
-	@Column
-	@CreationTimestamp
-	private Date fileCreatedOn;
-
-	@Column
-	private Integer fileUpdatedBy;
-
-	@Column
-	@CreationTimestamp
-	private Date fileUpdatedOn;
-
-	@Column
+	
+	@Column(name = "file_size")
 	private String fileSize;
 
-	@Column
+	@Column(name = "file_type")
 	private String fileType;
+
+	@Column(name = "status")
+	private Boolean status;
+
+	@Column(name = "created_by")
+	private Integer createdBy;
+
+	@Column(name = "created_on")
+	@CreationTimestamp
+	private Date createdOn;
+
+	@Column(name = "updated_by")
+	private Integer updatedBy;
+
+	@Column(name = "updated_on")
+	@CreationTimestamp
+	private Date updatedOn;
 
 }
 

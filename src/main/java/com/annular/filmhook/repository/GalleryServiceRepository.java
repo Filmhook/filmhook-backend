@@ -1,4 +1,4 @@
-package com.annular.filmHook.repository;
+package com.annular.filmhook.repository;
 
 public interface GalleryServiceRepository {
 

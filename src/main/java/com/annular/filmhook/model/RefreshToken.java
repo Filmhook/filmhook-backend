@@ -1,7 +1,6 @@
-package com.annular.filmHook.model;
+package com.annular.filmhook.model;
 
 import java.time.LocalTime;
-import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -10,28 +9,37 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name="refreshToken")
-@Data
+@Builder
+@Getter
+@Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class RefreshToken {
 	
-	@Column
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "refresh_token_id")
 	private Integer refreshTokenId;
-	@Column
+	
+	@Column(name = "token")
 	private String token;
-	@Column
+	
+	@Column(name = "expiry_token")
 	private LocalTime expiryToken;
-	@Column
+	
+	@Column(name = "user_id")
 	private Integer userId;
 
 }

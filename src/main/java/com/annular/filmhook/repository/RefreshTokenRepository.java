@@ -1,11 +1,11 @@
-package com.annular.filmHook.repository;
+package com.annular.filmhook.repository;
 
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import com.annular.filmHook.model.RefreshToken;
+import com.annular.filmhook.model.RefreshToken;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Integer> {
 
@@ -14,4 +14,3 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Inte
 	@Query("select rt from RefreshToken rt where rt.userId=:userId")
 	Optional<RefreshToken> findByUserId(Integer userId);
 }
-

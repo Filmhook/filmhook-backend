@@ -1,4 +1,4 @@
-package com.annular.filmHook.model;
+package com.annular.filmhook.model;
 
 import java.sql.Date;
 
@@ -12,36 +12,42 @@ import javax.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "Gallery")
-@Data
+@Builder
+@Getter
+@Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class Gallery {
 
-	@Column
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer galleryId;
+	@Column(name = "id")
+	private Integer id;
 
-	@Column
-	private boolean galleryIsActive;
+	@Column(name = "status")
+	private boolean status;
 
-	@Column
-	private Integer galleryCreatedBy;
-
-	@Column
-	private Integer galleryUpdatedBy;
-
-	@Column
+	@Column(name = "created_by")
+	private Integer createdBy;
+	
+	@Column(name = "created_on")
 	@CreationTimestamp
-	private Date galleryCreatedOn;
+	private Date createdOn;
 
-	@Column
+	@Column(name = "updated_by")
+	private Integer updatedBy;
+
+	@Column(name = "updated_on")
 	@CreationTimestamp
-	private Date galleryUpdatedOn;
+	private Date updatedOn;
 
 }

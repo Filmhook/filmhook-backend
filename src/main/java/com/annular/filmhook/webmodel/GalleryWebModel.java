@@ -1,33 +1,17 @@
-package com.annular.filmHook.webModel;
+package com.annular.filmhook.webmodel;
 
 import java.sql.Date;
 
 
-
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class GalleryWebModel {
-	
-	
-	private Integer galleryId;
 
-
-	private boolean galleryIsActive;
-
-
-	private Integer galleryCreatedBy;
-
-	private Integer galleryUpdatedBy;
-
-
-	private Date galleryCreatedOn;
-
-
-	private Date galleryUpdatedOn;
-
+	private Integer id;
+	private boolean status;
+	private Integer createdBy;
+	private Integer updatedBy;
+	private Date createdOn;
+	private Date updatedOn;
 }

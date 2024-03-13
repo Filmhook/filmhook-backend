@@ -1,5 +1,4 @@
-package com.annular.filmHook.security;
-
+package com.annular.filmhook.security;
 
 import java.util.Arrays;
 
@@ -22,8 +21,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.annular.filmHook.security.jwt.AuthEntryPointJwt;
-import com.annular.filmHook.security.jwt.AuthTokenFilter;
+import com.annular.filmhook.security.jwt.AuthEntryPointJwt;
+import com.annular.filmhook.security.jwt.AuthTokenFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -44,10 +43,8 @@ public class WebSecurityConfig {
 	@Bean
 	public DaoAuthenticationProvider authenticationProvider() {
 		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-
 		authProvider.setUserDetailsService(userDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder());
-
 		return authProvider;
 	}
 
@@ -64,16 +61,25 @@ public class WebSecurityConfig {
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-		http.cors().and().csrf().disable().exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-				.authorizeRequests((authorize) -> authorize
-						.antMatchers("/user/register", "/user/login","/user/refreshToken").permitAll()
-						.anyRequest().authenticated());
-
+		http.cors()
+				.and()
+				.csrf().disable().exceptionHandling().authenticationEntryPoint(unauthorizedHandler)
+				.and()
+				.sessionManagement()
+				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+				.and()
+				.authorizeRequests(
+						(authorize) -> authorize
+								.antMatchers("/user/register",
+										"/user/login",
+										"/user/refreshToken",
+										"/api/printName")
+								.permitAll()
+								.anyRequest()
+								.authenticated()
+				);
 		http.authenticationProvider(authenticationProvider());
-
 		http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-
 		return http.build();
 	}
 

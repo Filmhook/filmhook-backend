@@ -1,12 +1,10 @@
-package com.annular.filmHook.service;
-
-import javax.servlet.http.HttpServletRequest;
+package com.annular.filmhook.service;
 
 import org.springframework.http.ResponseEntity;
 
-import com.annular.filmHook.Response;
-import com.annular.filmHook.model.RefreshToken;
-import com.annular.filmHook.webModel.UserWebModel;
+import com.annular.filmhook.Response;
+import com.annular.filmhook.model.RefreshToken;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface UserService {
 
@@ -18,7 +16,6 @@ public interface UserService {
 
 	RefreshToken createRefreshToken(UserWebModel userWebModel);
 
-	//ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
+	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
 
-	
 }
