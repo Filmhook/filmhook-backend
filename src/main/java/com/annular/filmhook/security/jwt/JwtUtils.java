@@ -38,7 +38,7 @@ public class JwtUtils {
 		UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
 		Claims claims = Jwts.claims();
-		claims.put("userName", userPrincipal.getUsername());
+		claims.put("userName", userPrincipal.getEmail());
 		claims.put("userType", userPrincipal.getUserType());
 
 		byte[] keyBytes = new byte[64];

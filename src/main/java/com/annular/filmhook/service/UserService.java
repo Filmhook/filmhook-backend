@@ -1,21 +1,23 @@
 package com.annular.filmhook.service;
 
-import org.springframework.http.ResponseEntity;
-
-import com.annular.filmhook.Response;
-import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.webmodel.UserWebModel;
+
+import java.util.List;
+import java.util.Optional;
 
 public interface UserService {
 
-	ResponseEntity<?> register(UserWebModel userWebModel);
+    List<UserWebModel> getAllUsers();
 
-	boolean verify(String code);
+    Optional<UserWebModel> getUserByUserId(Integer userId);
 
-	Response verifyExpiration(RefreshToken refreshToken);
+    Optional<?> updateBiographyData(UserWebModel userWebModel);
 
-	RefreshToken createRefreshToken(UserWebModel userWebModel);
+    Optional<?> updateBiologicalData(UserWebModel userWebModel);
 
-	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
+    Optional<?> updatePersonalInformation(UserWebModel userWebModel);
 
+    Optional<?> updateEducationInformation(UserWebModel userWebModel);
+
+    Optional<?> updateProfessionInformation(UserWebModel userWebModel);
 }

@@ -1,203 +1,251 @@
 package com.annular.filmhook.service.impl;
 
-import java.time.LocalTime;
-
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.UUID;
-
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.CalenderUtil;
+import com.annular.filmhook.webmodel.UserWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.annular.filmhook.Response;
-import com.annular.filmhook.model.RefreshToken;
-import com.annular.filmhook.model.User;
-import com.annular.filmhook.repository.RefreshTokenRepository;
-import com.annular.filmhook.repository.UserRepository;
-import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.webmodel.UserWebModel;
-
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-	public static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    @Autowired
+    UserRepository userRepository;
 
-	@Autowired
-	UserRepository userRepository;
-	
-//	@Autowired
-//	private JavaMailSender javaMailSender;
+    @Autowired
+    CalenderUtil calenderUtil;
 
-	@Autowired
-	RefreshTokenRepository refreshTokenRepository;
+    @Override
+    public List<UserWebModel> getAllUsers() {
+        return userRepository.findAll().stream().filter(Objects::nonNull).map(this::transformUserObjToUserWebModelObj).collect(Collectors.toList());
+    }
 
-//	@Value("${annular.app.url}")
-//	private String url;
-	
-	@Override
-	public ResponseEntity<?> register(UserWebModel userWebModel) {
-		HashMap<String, Object> response = new HashMap<String, Object>();
-		try {
-			logger.info("Register method start");
-			Optional<User> userData = userRepository.findByEmail(userWebModel.getEmail(),
-					userWebModel.getUserType());
-//			Optional<User> userData = userRepository.findByUserName(userWebModel.getName(), userWebModel.getUserType());
-			BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-			if (!userData.isPresent()) {
-				User user = new User();
-				if (userWebModel.getUserType().equalsIgnoreCase("commonUser")
-						|| userWebModel.getUserType().equalsIgnoreCase("industrialUser"))
-						 {
-					user.setPhoneNumber(userWebModel.getPhoneNumber());
-                    user.setName(userWebModel.getName());
-                    user.setEmail(userWebModel.getEmail());
-					user.setUserType(userWebModel.getUserType());
-					user.setDob(userWebModel.getDob());
-					user.setGender(userWebModel.getGender());
-					user.setCountry(userWebModel.getCountry());
-					user.setState(userWebModel.getState());
-					user.setDistrict(userWebModel.getDistrict());
-					
-					System.out.println("password-------->"+userWebModel.getPassword());
-					String encryptPwd = bcrypt.encode(userWebModel.getPassword());
-					user.setPassword(encryptPwd);
+    @Override
+    public Optional<UserWebModel> getUserByUserId(Integer userId) {
+        UserWebModel user = null;
+        Optional<?> dbUser = userRepository.getUserByUserId(userId);
+        if (dbUser.isPresent()) user = this.transformUserObjToUserWebModelObj((User) dbUser.get());
+        return Optional.ofNullable(user);
+    }
 
-					if (userWebModel.getUserType().equalsIgnoreCase("commonUser")) {
-//						user.setUserFirstName(userWebModel.getUserFirstName());
-//						user.setUserLastName(userWebModel.getUserLastName());
-//						user.setUserAccountName(userWebModel.getUserFirstName() + " " + userWebModel.getUserLastName());
-					} 
-					else if (userWebModel.getUserType().equalsIgnoreCase("industrialUser")) {
-//						user.setUserFirstName(userWebModel.getUserFirstName());
-//						user.setUserLastName(userWebModel.getUserLastName());
-//						user.setUserAccountName(userWebModel.getUserFirstName() + " " + userWebModel.getUserLastName());
-					} else {
-						return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-								.body(new Response(1, "Invalid user type", ""));
-					}
-					
-					int min = 1000;
-					int max = 9999;
-					int otpNumber = (int) (Math.random() * (max - min + 1) + min);
-					user.setVerificationCode(otpNumber);
-					user = userRepository.save(user);
-//					CompletableFuture.runAsync(() -> {
-//						String message = "Your OTP is " + otpNumber + " for verification";
-//						twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
-//					});
-					response.put("user", user);
-				} 
-			} else {
-				return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-						.body(new Response(1, "This Account is already exist", ""));
-			}
-			logger.info("Register method end");
-		} catch (Exception e) {
-			logger.error("Register Method Exception {} " + e);
-			e.printStackTrace();
-			return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Fail", e.getMessage()));
-		}
-		return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.OK)
-				.body(new Response(1, "Profile Created Successful", response));
-	}
+    public UserWebModel transformUserObjToUserWebModelObj(User user) {
+        UserWebModel userWebModel = new UserWebModel();
 
-	@Override
-	public boolean verify(String code) {
-		User user = userRepository.findByVerificationCode(code);
-		if (user == null || user.isStatus()) {
-			return false;
-		} else {
-			user.setVerificationCode(null);
-			user.setStatus(true);
-			userRepository.save(user);
-			return true;
-		}
-	}
+        userWebModel.setUserId(user.getUserId());
 
-	@Override
-	public Response verifyExpiration(RefreshToken token) {
-		LocalTime currentTime = LocalTime.now();
-		if(currentTime.isBefore(token.getExpiryToken())) {
-			return new Response(1,"Success",token.getToken());
-		}else {
-//			refreshTokenRepository.delete(token);
-//			throw new RuntimeException(token.getToken() + " RefreshToken was expired. Please make a new signIn request");
-			return new Response(-1,"RefreshToken expired","");
-		}
-	}
-	
-	@Override
-	public RefreshToken createRefreshToken(UserWebModel userWebModel) {
-		HashMap<String, Object> response = new HashMap<>();
-		RefreshToken refreashToken = new RefreshToken();
-		try {
-			logger.info("createRefreshToken method start");
-			Optional<User> data = userRepository.findByUserName(userWebModel.getEmail(), userWebModel.getUserType());
-			if(data.isPresent()) {
-				Optional<RefreshToken> refreshTokenData = refreshTokenRepository.findByUserId(data.get().getUserId());
-				if(refreshTokenData.isPresent()) {
-					refreshTokenRepository.delete(refreshTokenData.get());
-				}
-				refreashToken.setUserId(data.get().getUserId());
-				refreashToken.setToken(UUID.randomUUID().toString());
-				refreashToken.setExpiryToken(LocalTime.now().plusMinutes(17));
-				refreashToken = refreshTokenRepository.save(refreashToken);
-				response.put("refreashToken", refreashToken);
-				logger.info("createRefreshToken method end");
-			}
-		}catch(Exception e) {
-			e.printStackTrace();
-		}
-		return refreashToken;
-	}
+        userWebModel.setEmail(user.getEmail());
+        userWebModel.setUserType(user.getUserType());
 
-//	@Override
-//	public ResponseEntity<?> forgotPassword(UserWebModel userWebModel,HttpServletRequest request) {
-//		try {
-//			logger.info("forgotPassword method start");
-//			String siteUrl = Utility.getSiteUrl(request);
-//			Optional<User> data = userRepository.findByAllUserEmailId(userWebModel.getEmail(), false,false);
-//			if(data.isPresent()) {
-//				String token = UUID.randomUUID().toString();
-//				int expirationTimeMinutes = 2;
-//				Instant expirationTime = Instant.now().plus(Duration.ofMinutes(expirationTimeMinutes));
-//				User user = data.get();
-//				String subject = "Change Password";
-//				String senderName = "Film-Hook";
-//				String mailContent = "<p>Hello ,</p>";
-//				mailContent += "<p>Please click below link for change password, </p>";
-//				String verifyUrl = url+"/forgetpass?id=" + token;
-////				String verifyUrl = "https://www.annulartechnologies.com";
-//				mailContent += "<h3><a href= \"" + siteUrl + "\">Change Password</a></h3>";
-//				mailContent += "<p>Thank You<br>Film-Hook</p>";
-//				MimeMessage message = javaMailSender.createMimeMessage();
-//				MimeMessageHelper helper = new MimeMessageHelper(message);
-//				helper.setFrom("tech.annular@gmail.com", senderName);
-//				helper.setTo(user.getEmail());
-//				helper.setSubject(subject);
-//				String str = mailContent.replace(siteUrl, verifyUrl);
-////				mailContent=mailContent.replace(request, "/login");
-//				helper.setText(str, true);
-//				user.setResetPassword(token);
-//				userRepository.save(user);
-//				javaMailSender.send(message);
-//				logger.info("forgotPassword method end");
-//			}else {
-//				return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(new Response(-1,"Please enter the Register Email",""));
-//			}
-//		}catch(Exception e) {
-//			e.printStackTrace();
-//			return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1,"Fail",""));
-//		}
-//		return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,"Link for password change has been sent in Email.Please check your inbox.","Email Sent Successfull"));
-//	}
+        userWebModel.setName(user.getName());
+        userWebModel.setDob(CalenderUtil.convertDateFormat(CalenderUtil.MYSQL_DATE_FORMAT, CalenderUtil.UI_DATE_FORMAT, user.getDob()));
+        userWebModel.setAge(calenderUtil.getAgeFromDate(user.getDob()).toString());
+        userWebModel.setGender(user.getGender());
+
+        userWebModel.setCountry(user.getCountry());
+        userWebModel.setState(user.getState());
+        userWebModel.setDistrict(user.getDistrict());
+        userWebModel.setPhoneNumber(user.getPhoneNumber());
+        userWebModel.setCurrentAddress(user.getCurrentAddress());
+        userWebModel.setHomeAddress(user.getHomeAddress());
+
+        userWebModel.setHeight(user.getHeight());
+        userWebModel.setWeight(user.getWeight());
+        userWebModel.setSkinTone(user.getSkinTone());
+        userWebModel.setHairColor(user.getHairColor());
+        userWebModel.setBmi(user.getBmi());
+        userWebModel.setChestSize(user.getChestSize());
+        userWebModel.setWaistSize(user.getWaistSize());
+        userWebModel.setBicepsSize(user.getBiceps());
+
+        userWebModel.setReligion(user.getReligion());
+        userWebModel.setCaste(user.getCaste());
+        userWebModel.setMaritalStatus(user.getMaritalStatus());
+        userWebModel.setSpouseName(user.getSpouseName());
+        if (user.getChildrenNames() != null) {
+            userWebModel.setChildrenNames(new ArrayList<>(Arrays.asList(user.getChildrenNames().split(","))));
+        }
+        userWebModel.setMotherName(user.getMotherName());
+        userWebModel.setFatherName(user.getFatherName());
+        if (user.getChildrenNames() != null) {
+            userWebModel.setBrotherNames(new ArrayList<>(Arrays.asList(user.getBrotherNames().split(","))));
+        }
+        if (user.getChildrenNames() != null) {
+            userWebModel.setSisterNames(new ArrayList<>(Arrays.asList(user.getSisterNames().split(","))));
+        }
+
+        userWebModel.setSchoolName(user.getSchoolName());
+        userWebModel.setCollegeName(user.getCollegeName());
+        userWebModel.setQualification(user.getQualification());
+
+        userWebModel.setWorkCategory(user.getWorkCategory());
+
+        userWebModel.setStatus(user.getStatus());
+
+        userWebModel.setCreatedBy(user.getCreatedBy());
+        userWebModel.setCreatedOn(user.getCreatedOn());
+        userWebModel.setUpdatedBy(user.getUpdatedBy());
+        userWebModel.setUpdateOn(user.getUpdatedOn());
+
+        return userWebModel;
+    }
 
 
+    @Override
+    public Optional<?> updateBiographyData(UserWebModel userWebModel) {
+        Optional<User> user;
+        try {
+            user = userRepository.getUserByUserId(userWebModel.getUserId());
+            if (user.isPresent()) {
+                this.prepareUserBiographyData(userWebModel, user.get());
+                userRepository.save(user.get());
+                return user;
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred at updateBiographyData()...", e);
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    private void prepareUserBiographyData(UserWebModel userInput, User userToUpdate) {
+        userToUpdate.setDob(CalenderUtil.convertDateFormat(CalenderUtil.UI_DATE_FORMAT, CalenderUtil.MYSQL_DATE_FORMAT, userInput.getDob()));
+        userToUpdate.setGender(userInput.getGender());
+        userToUpdate.setCountry(userInput.getCountry());
+        userToUpdate.setState(userInput.getState());
+        userToUpdate.setDistrict(userInput.getDistrict());
+        userToUpdate.setPhoneNumber(userInput.getPhoneNumber());
+        userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
+        userToUpdate.setHomeAddress(userInput.getHomeAddress());
+
+        userToUpdate.setUpdatedBy(userToUpdate.getUserId());
+        userToUpdate.setUpdatedOn(new Date());
+    }
+
+    @Override
+    public Optional<?> updateBiologicalData(UserWebModel userWebModel) {
+        Optional<User> user;
+        try {
+            user = userRepository.getUserByUserId(userWebModel.getUserId());
+            if (user.isPresent()) {
+                this.prepareUserBiologicalData(userWebModel, user.get());
+                userRepository.save(user.get());
+                return user;
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred at updateBiologicalData()...", e);
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    private void prepareUserBiologicalData(UserWebModel userInput, User userToUpdate) {
+        userToUpdate.setHeight(userInput.getHeight() + "Cm");
+        userToUpdate.setWeight(userInput.getWeight() + "Kg");
+        userToUpdate.setSkinTone(userInput.getSkinTone());
+        userToUpdate.setHairColor(userInput.getHairColor());
+        userToUpdate.setBmi(userInput.getBmi());
+        userToUpdate.setChestSize(userInput.getChestSize() + "in");
+        userToUpdate.setWaistSize(userInput.getWaistSize() + "in");
+        userToUpdate.setBiceps(userInput.getBicepsSize() + "in");
+
+        userToUpdate.setUpdatedBy(userToUpdate.getUserId());
+        userToUpdate.setUpdatedOn(new Date());
+    }
+
+    @Override
+    public Optional<?> updatePersonalInformation(UserWebModel userWebModel) {
+        Optional<User> user;
+        try {
+            user = userRepository.getUserByUserId(userWebModel.getUserId());
+            if (user.isPresent()) {
+                this.prepareUserPersonalInfo(userWebModel, user.get());
+                userRepository.save(user.get());
+                return user;
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred at updateBiologicalData()...", e);
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    private void prepareUserPersonalInfo(UserWebModel userInput, User userToUpdate) {
+        userToUpdate.setReligion(userInput.getReligion());
+        userToUpdate.setCaste(userInput.getCaste());
+        userToUpdate.setMaritalStatus(userInput.getMaritalStatus());
+        if (userInput.getChildrenNames() != null) {
+            userToUpdate.setChildrenNames(String.join(",", userInput.getChildrenNames()));
+        }
+        userToUpdate.setMotherName(userInput.getMotherName());
+        userToUpdate.setFatherName(userInput.getFatherName());
+        if (userInput.getBrotherNames() != null) {
+            userToUpdate.setBrotherNames(String.join(",", userInput.getBrotherNames()));
+        }
+        if (userInput.getSisterNames() != null) {
+            userToUpdate.setSisterNames(String.join(",", userInput.getSisterNames()));
+        }
+
+        userToUpdate.setUpdatedBy(userToUpdate.getUserId());
+        userToUpdate.setUpdatedOn(new Date());
+    }
+
+    @Override
+    public Optional<?> updateEducationInformation(UserWebModel userWebModel) {
+        Optional<User> user;
+        try {
+            user = userRepository.getUserByUserId(userWebModel.getUserId());
+            if (user.isPresent()) {
+                this.prepareUserEducationalInfo(userWebModel, user.get());
+                userRepository.save(user.get());
+                return user;
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred at updateBiologicalData()...", e);
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    private void prepareUserEducationalInfo(UserWebModel userInput, User userToUpdate) {
+        userToUpdate.setSchoolName(userInput.getSchoolName());
+        userToUpdate.setCollegeName(userInput.getCollegeName());
+        userToUpdate.setQualification(userInput.getQualification());
+
+        userToUpdate.setUpdatedBy(userToUpdate.getUserId());
+        userToUpdate.setUpdatedOn(new Date());
+    }
+
+    @Override
+    public Optional<?> updateProfessionInformation(UserWebModel userWebModel) {
+        Optional<User> user;
+        try {
+            user = userRepository.getUserByUserId(userWebModel.getUserId());
+            if (user.isPresent()) {
+                this.prepareUserProfessionInfo(userWebModel, user.get());
+                userRepository.save(user.get());
+                return user;
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred at updateBiologicalData()...", e);
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    private void prepareUserProfessionInfo(UserWebModel userInput, User userToUpdate) {
+        userToUpdate.setWorkCategory(userInput.getWorkCategory());
+
+        userToUpdate.setUpdatedBy(userToUpdate.getUserId());
+        userToUpdate.setUpdatedOn(new Date());
+
+        // need to add profession details later.
+    }
 }

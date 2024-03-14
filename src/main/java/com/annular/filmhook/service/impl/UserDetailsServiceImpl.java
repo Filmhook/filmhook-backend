@@ -35,7 +35,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 //		logger.info("I am from loadUserByUsername() !!! ");
 //		logger.info("UserName :- " + username);
 //		logger.info("UserType from LoginConstants :- " + loginConstants.getUserType());
-//		System.out.println("login check --- > admin : "+loginConstants.isAdmin()+"  Driver :"+loginConstants.isDriver());
+//		logger.info("login check --- > admin : "+loginConstants.isAdmin()+"  Driver :"+loginConstants.isDriver());
 //		String userName, userType;
 //		if (username != null && username.contains(CARET)) {
 //			userName = username.substring(0, username.indexOf(CARET));
@@ -56,11 +56,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		logger.info("I am from loadUserByUsername() !!! ");
 		logger.info("Email :- " + email);
 		logger.info("UserType from LoginConstants :- " + loginConstants.getUserType());
-
-		Optional<User> optionalUser = userRepo.findByEmailAndUserType(email);
+		email = email.contains("^") ? email.split("\\^")[0] : email;
+		Optional<User> optionalUser = userRepo.findByEmailAndUserType(email, loginConstants.getUserType());
 		if (optionalUser.isPresent()) {
 			User user = optionalUser.get();
-			logger.info("User from DB --> " + user.getUserId() + user.getEmail() + user.getUserType());
+			logger.info("User from DB --> " + user.getUserId() + " -- " + user.getEmail() + " -- " + user.getUserType());
 			return UserDetailsImpl.build(user);
 		} else {
 			throw new UsernameNotFoundException("User Not Found with email: " + email);
