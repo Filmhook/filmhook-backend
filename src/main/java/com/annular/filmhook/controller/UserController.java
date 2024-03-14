@@ -1,13 +1,22 @@
 package com.annular.filmhook.controller;
 
+//import com.amazonaws.services.s3.AmazonS3;
+//import com.amazonaws.services.s3.model.*;
+
 import com.annular.filmhook.Response;
+import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.UserWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.bind.annotation.*;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +28,12 @@ public class UserController {
 
     @Autowired
     UserService userService;
+
+    @Autowired
+    AwsS3Service awsS3Service;
+
+    @Autowired
+    S3Util s3Util;
 
     @GetMapping("/getAllUsers")
     public Response getAllUsers() {
@@ -125,5 +140,47 @@ public class UserController {
         } else {
             return new Response(-1, "User not found...", null);
         }
+    }
+
+    @GetMapping("/getS3BucketName")
+    public Response getS3BucketName() {
+        String objKeyName = null;
+        List<S3Object> s3Objects = awsS3Service.getAllObjectsByBucket(s3Util.getS3BucketName());
+        if (s3Objects != null && s3Objects.size() > 0) {
+            objKeyName = s3Objects.get(0).key();
+            logger.info("S3 Object Key :- {}", objKeyName);
+            return new Response(1, "S3 objects found...", objKeyName);
+        }
+        return new Response(-1, "S3 objects not found...", null);
+    }
+
+    @GetMapping("/testS3Actions")
+    public Response getS3Objects() throws IOException {
+        String objKeyName = null;
+
+        //Old lib - kept for testing
+        //ObjectListing s3Objects = awsS3Service.getAllObjects(s3Util.getS3BucketName());
+        //if (s3Objects != null) {
+        //    bucketName = s3Objects.getBucketName();
+        //    return new Response(1, "S3 bucket found...", bucketName);
+        //}
+
+        // New lib
+        // Upload file
+        ClassPathResource res = new ClassPathResource("classes/Sample.txt");
+        File file = new File(res.getPath());
+        awsS3Service.putObjectIntoS3(s3Util.getS3BucketName(), "Sample/", file);
+
+        // Read All
+        List<S3Object> s3Objects = awsS3Service.getAllObjectsByBucket(s3Util.getS3BucketName());
+        if (s3Objects != null && s3Objects.size() > 0) {
+            objKeyName = s3Objects.get(0).key();
+            logger.info("S3 Object Key :- {}", objKeyName);
+        }
+
+        // Delete All
+        awsS3Service.deleteAllObjectsFromDestination(s3Util.getS3BucketName(), "Sample/");
+
+        return new Response(1, "S3 objects found...", null);
     }
 }
