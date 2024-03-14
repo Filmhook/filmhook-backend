@@ -72,7 +72,9 @@ public class WebSecurityConfig {
 						(authorize) -> authorize
 								.antMatchers("/user/register",
 										"/user/login",
-										"/user/refreshToken",
+										"/user/refreshToken","/user/forgotPassword",
+										"/user/changeUserPassword",
+										"/user/verify",
 										"/api/printName")
 								.permitAll()
 								.anyRequest()

@@ -65,4 +65,8 @@ public class UserWebModel {
     private Date createdOn;
     private Integer updatedBy;
     private Date updateOn;
+    
+    private String currentPassword;
+    private String newPassword;
+    private Integer otp;
 }

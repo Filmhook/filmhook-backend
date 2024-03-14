@@ -1,5 +1,7 @@
 package com.annular.filmhook.service;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
@@ -15,6 +17,14 @@ public interface AuthenticationService {
 	Response verifyExpiration(RefreshToken refreshToken);
 
 	RefreshToken createRefreshToken(UserWebModel userWebModel);
+
+	ResponseEntity<?> verifyUser(UserWebModel userWebModel);
+
+	ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
+
+	ResponseEntity<?> changingPassword(UserWebModel userWebModel);
+
+	ResponseEntity<?> resendOtp(UserWebModel userWebModel);
 
 	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
 

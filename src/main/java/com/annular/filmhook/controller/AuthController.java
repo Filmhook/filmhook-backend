@@ -4,6 +4,8 @@ import java.time.LocalTime;
 
 import java.util.Optional;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,10 +72,18 @@ public class AuthController {
     @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
 //		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
-        Optional<User> checkUsername = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
+        System.out.println("" + userWebModel.getEmail());
+        Optional<User> checkUsername = userRepository.findByEmail(userWebModel.getEmail(), userWebModel.getUserType());
+        System.out.println("------->" + userWebModel.getEmail());
+        System.out.println("HHHHHHH" + checkUsername);
         if (checkUsername.isPresent()) {
-            logger.info("User type from constants ---> " + loginConstants.getUserType());
+//			 logger.info("Checking Controller----> " + userWebModel.getUserEmailId());
+//			jwtUtils.setAdmin(userWebModel.isUserIsAdmin());
+//			jwtUtils.setDriver(userWebModel.isUserIsDriver());
+//			loginConstants.setAdmin(userWebModel.isUserIsAdmin());
+//			loginConstants.setDriver(userWebModel.isUserIsDriver());
             loginConstants.setUserType(userWebModel.getUserType());
+            System.out.println("User type ---> " + loginConstants.getUserType());
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
@@ -82,8 +92,9 @@ public class AuthController {
             logger.info("Login Controller ---- Finished");
             return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), "Login Successful", 1, ""));
         }
-        return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
+        return (ResponseEntity<?>) ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
+
 
     @GetMapping("verify")
     public Response verifyUser(@Param("code") String code) {
@@ -115,16 +126,53 @@ public class AuthController {
         return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
     }
 
-//	@PostMapping("forgotPassword")
-//	public ResponseEntity<?> forgotPassword(@RequestBody UserWebModel userWebModel, HttpServletRequest request) {
-//		try {
-//			logger.info("getUser controller start");
-//			return userService.forgotPassword(userWebModel, request);
-//		} catch (Exception e) {
-//			logger.info("getUser Method Exception" + e);
-//			e.printStackTrace();
-//		}
-//		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-//	}
+    @PostMapping("verify")
+	public ResponseEntity<?> verify(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("Verify controller start");
+			return userService.verifyUser(userWebModel);
+		} catch (Exception e) {
+			logger.error("verify Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+
+    @PostMapping("forgotPassword")
+	public ResponseEntity<?> forgotPassword(@RequestBody UserWebModel userWebModel, HttpServletRequest request) {
+		try {
+			logger.info("getUser controller start");
+			return userService.forgotPassword(userWebModel, request);
+		} catch (Exception e) {
+			logger.info("getUser Method Exception" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+
+	@PostMapping("changeUserPassword")
+	public ResponseEntity<?> changingPassword(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("getUser controller start");
+			return userService.changingPassword(userWebModel);
+		} catch (Exception e) {
+			logger.info("getUser Method Exception" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+
+	@PostMapping("resendOtp")
+	public ResponseEntity<?> resendOtp(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("resendOtp controller start");
+			return userService.resendOtp(userWebModel);
+		} catch (Exception e) {
+			logger.error("resendOtp Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+
 
 }

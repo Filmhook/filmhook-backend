@@ -1,22 +1,37 @@
 package com.annular.filmhook.service.impl;
 
+
+import java.time.Duration;
+
+
+import java.time.Instant;
 import java.time.LocalTime;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import javax.mail.internet.MimeMessage;
+import javax.servlet.http.HttpServletRequest;
 
 import com.annular.filmhook.util.CalenderUtil;
+import com.annular.filmhook.util.TwilioConfig;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.Utility;
 import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.RefreshTokenRepository;
@@ -33,14 +48,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Autowired
     UserRepository userRepository;
 
-//	@Autowired
-//	private JavaMailSender javaMailSender;
+	@Autowired
+	private JavaMailSender javaMailSender;
 
     @Autowired
     RefreshTokenRepository refreshTokenRepository;
+    
+    @Autowired
+	TwilioConfig twilioConfig;
 
-//	@Value("${annular.app.url}")
-//	private String url;
+	@Value("${annular.app.url}")
+	private String url;
 
     @Override
     public ResponseEntity<?> register(UserWebModel userWebModel) {
@@ -88,10 +106,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     user.setCreatedOn(new Date());
 
                     user = userRepository.save(user);
-//					CompletableFuture.runAsync(() -> {
-//						String message = "Your OTP is " + otpNumber + " for verification";
-//						twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
-//					});
+					CompletableFuture.runAsync(() -> {
+						String message = "Your OTP is " + otpNumber + " for verification";
+						twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
+					});
                     response.put("user", user);
                 }
             } else {
@@ -157,47 +175,135 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         return refreashToken;
     }
+	@Override
+	public ResponseEntity<?> verifyUser(UserWebModel userWebModel) {
+		try {
+			logger.info("verifyUser method start");
+			Optional<User> userData = userRepository.findByOtp(userWebModel.getOtp(), userWebModel.getPhoneNumber());
+			if (userData.isPresent()) {
+				User user = userData.get();
+				user.setUserIsActive(true);
+				user.setOtp(null);
+				userRepository.save(user);
+			} else {
+				return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.BAD_REQUEST)
+						.body(new Response(1, "OTP Invalid", ""));
+			}
+			logger.info("verifyUser method end");
+		} catch (Exception e) {
+			logger.error("verifyUser Method Exception {} " + e);
+			e.printStackTrace();
+			return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Fail", e.getMessage()));
+		}
+		return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Account Verified", ""));
+	}
 
-//	@Override
-//	public ResponseEntity<?> forgotPassword(UserWebModel userWebModel,HttpServletRequest request) {
-//		try {
-//			logger.info("forgotPassword method start");
-//			String siteUrl = Utility.getSiteUrl(request);
-//			Optional<User> data = userRepository.findByAllUserEmailId(userWebModel.getEmail(), false,false);
-//			if(data.isPresent()) {
-//				String token = UUID.randomUUID().toString();
-//				int expirationTimeMinutes = 2;
-//				Instant expirationTime = Instant.now().plus(Duration.ofMinutes(expirationTimeMinutes));
-//				User user = data.get();
-//				String subject = "Change Password";
-//				String senderName = "Film-Hook";
-//				String mailContent = "<p>Hello ,</p>";
-//				mailContent += "<p>Please click below link for change password, </p>";
-//				String verifyUrl = url+"/forgetpass?id=" + token;
-////				String verifyUrl = "https://www.annulartechnologies.com";
-//				mailContent += "<h3><a href= \"" + siteUrl + "\">Change Password</a></h3>";
-//				mailContent += "<p>Thank You<br>Film-Hook</p>";
-//				MimeMessage message = javaMailSender.createMimeMessage();
-//				MimeMessageHelper helper = new MimeMessageHelper(message);
-//				helper.setFrom("tech.annular@gmail.com", senderName);
-//				helper.setTo(user.getEmail());
-//				helper.setSubject(subject);
-//				String str = mailContent.replace(siteUrl, verifyUrl);
-////				mailContent=mailContent.replace(request, "/login");
-//				helper.setText(str, true);
-//				user.setResetPassword(token);
-//				userRepository.save(user);
-//				javaMailSender.send(message);
-//				logger.info("forgotPassword method end");
-//			}else {
-//				return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(new Response(-1,"Please enter the Register Email",""));
-//			}
-//		}catch(Exception e) {
-//			e.printStackTrace();
-//			return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1,"Fail",""));
-//		}
-//		return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,"Link for password change has been sent in Email.Please check your inbox.","Email Sent Successfull"));
-//	}
+
+
+	
+
+
+	@Override
+	public ResponseEntity<?> forgotPassword(UserWebModel userWebModel,HttpServletRequest request) {
+		try {
+			logger.info("forgotPassword method start");
+			String siteUrl = Utility.getSiteUrl(request);
+			Optional<User> data = userRepository.findByAllUserEmailId(userWebModel.getEmail());
+			if(data.isPresent()) {
+				String token = UUID.randomUUID().toString();
+				int expirationTimeMinutes = 2;
+				Instant expirationTime = Instant.now().plus(Duration.ofMinutes(expirationTimeMinutes));
+				User user = data.get();
+				String subject = "Change Password";
+				String senderName = "Film-Hook";
+				String mailContent = "<p>Hello ,</p>";
+				mailContent += "<p>Please click below link for change password, </p>";
+				String verifyUrl = url+"/forgetpass?id=" + token;
+//				String verifyUrl = "https://www.annulartechnologies.com";
+				mailContent += "<h3><a href= \"" + siteUrl + "\">Change Password</a></h3>";
+				mailContent += "<p>Thank You<br>Film-Hook</p>";
+				MimeMessage message = javaMailSender.createMimeMessage();
+				MimeMessageHelper helper = new MimeMessageHelper(message);
+				helper.setFrom("tamil030405@gmail.com", senderName);
+				helper.setTo(user.getEmail());
+				helper.setSubject(subject);
+				String str = mailContent.replace(siteUrl, verifyUrl);
+//				mailContent=mailContent.replace(request, "/login");
+				helper.setText(str, true);
+				user.setResetPassword(token);
+				userRepository.save(user);
+				javaMailSender.send(message);
+				logger.info("forgotPassword method end");
+			}else {
+				return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(new Response(-1,"Please enter the Register Email",""));
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+			return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1,"Fail",""));
+		}
+		return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,"Link for password change has been sent in Email.Please check your inbox.","Email Sent Successfull"));
+	}
+	@Override
+	public ResponseEntity<?> changingPassword(UserWebModel userWebModel) {
+	    try {
+	        logger.info("changePassword method start");
+	        BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
+	        Optional<User> userFromDB = userRepository.findByEmailId(userWebModel.getEmail());
+	        if (userFromDB.isPresent()) {
+	            User user = userFromDB.get();
+	            System.out.println("current"+userWebModel.getCurrentPassword());
+	            if (userWebModel.getCurrentPassword() != null && bcrypt.matches(userWebModel.getCurrentPassword(), user.getPassword())) {
+
+	                String encryptPwd = bcrypt.encode(userWebModel.getNewPassword());
+	                user.setPassword(encryptPwd);
+	                user = userRepository.save(user);
+	                //return ResponseEntity.ok("Password changed successfully.");
+	                return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.OK).body(new Response(1, "password changed successfully", ""));
+	            } else {
+	            	return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(0, "Incorrect current password.", ""));
+	                //return ResponseEntity.badRequest().body("Incorrect current password.");
+	            }
+	        } else {
+	            //return ResponseEntity.badRequest().body("User not found.");
+	            return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "User not found.", ""));
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error occurred while changing password: " + e.getMessage());
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while changing the password.");
+	    }
+	}
+	@Override
+	public ResponseEntity<?> resendOtp(UserWebModel userWebModel) {
+		try {
+			logger.info("resendOtp method start");
+			Optional<User> userData = userRepository.findByUserNameType(userWebModel.getName());
+			if (userData.isPresent()) {
+				User user = userData.get();
+				int min = 1000;
+				int max = 9999;
+				int otpNumber = (int) (Math.random() * (max - min + 1) + min);
+				user.setOtp(otpNumber);
+				user = userRepository.save(user);
+				CompletableFuture.runAsync(() -> {
+					String message = "Your OTP is " + otpNumber + " for verification";
+					twilioConfig.smsNotification(userWebModel.getName(), message);
+				});
+			} else {
+				return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(new Response(-1, "Fail", "User not found, Register your account"));
+			}
+			logger.info("resendOtp method end");
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error("resendOtp Method Exception {} " + e);
+			return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Fail", e.getMessage()));
+		}
+		return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.OK)
+				.body(new Response(1, "Success", "OTP sent successfully"));
+	}
 
 
 }
