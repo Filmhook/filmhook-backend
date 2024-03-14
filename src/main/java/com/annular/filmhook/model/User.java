@@ -159,9 +159,6 @@ public class User {
     @Column(name = "reset_password")
     private String resetPassword;
     
-    @Column(name = "user_is_active")
-    private Boolean userIsActive;
-    
     @Column(name ="otp")
     private Integer otp;
 

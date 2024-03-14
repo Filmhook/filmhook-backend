@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.annular.filmhook.util.CalenderUtil;
 import com.annular.filmhook.util.TwilioConfig;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +52,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Autowired
     RefreshTokenRepository refreshTokenRepository;
-    
+
     @Autowired
 	TwilioConfig twilioConfig;
 
@@ -106,10 +105,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     user.setCreatedOn(new Date());
 
                     user = userRepository.save(user);
-					CompletableFuture.runAsync(() -> {
+					/*CompletableFuture.runAsync(() -> {
 						String message = "Your OTP is " + otpNumber + " for verification";
 						twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
-					});
+					});*/
                     response.put("user", user);
                 }
             } else {
@@ -157,7 +156,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         RefreshToken refreashToken = new RefreshToken();
         try {
             logger.info("createRefreshToken method start");
-            Optional<User> data = userRepository.findByUserName(userWebModel.getEmail(), userWebModel.getUserType());
+            Optional<User> data = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
             if (data.isPresent()) {
                 Optional<RefreshToken> refreshTokenData = refreshTokenRepository.findByUserId(data.get().getUserId());
                 if (refreshTokenData.isPresent()) {
@@ -182,34 +181,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			Optional<User> userData = userRepository.findByOtp(userWebModel.getOtp(), userWebModel.getPhoneNumber());
 			if (userData.isPresent()) {
 				User user = userData.get();
-				user.setUserIsActive(true);
+				user.setStatus(true);
 				user.setOtp(null);
 				userRepository.save(user);
 			} else {
-				return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.BAD_REQUEST)
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 						.body(new Response(1, "OTP Invalid", ""));
 			}
 			logger.info("verifyUser method end");
 		} catch (Exception e) {
-			logger.error("verifyUser Method Exception {} " + e);
+			logger.error("verifyUser Method Exception...", e);
 			e.printStackTrace();
-			return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Fail", e.getMessage()));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", e.getMessage()));
 		}
-		return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Account Verified", ""));
+		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Account Verified", ""));
 	}
-
-
-
-	
-
 
 	@Override
 	public ResponseEntity<?> forgotPassword(UserWebModel userWebModel,HttpServletRequest request) {
 		try {
 			logger.info("forgotPassword method start");
 			String siteUrl = Utility.getSiteUrl(request);
-			Optional<User> data = userRepository.findByAllUserEmailId(userWebModel.getEmail());
+			Optional<User> data = userRepository.findByEmail(userWebModel.getEmail());
 			if(data.isPresent()) {
 				String token = UUID.randomUUID().toString();
 				int expirationTimeMinutes = 2;
@@ -236,20 +229,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				javaMailSender.send(message);
 				logger.info("forgotPassword method end");
 			}else {
-				return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(new Response(-1,"Please enter the Register Email",""));
+				return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(new Response(-1,"Please enter the Register Email",""));
 			}
 		}catch(Exception e) {
 			e.printStackTrace();
-			return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1,"Fail",""));
+			return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1,"Fail",""));
 		}
-		return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,"Link for password change has been sent in Email.Please check your inbox.","Email Sent Successfull"));
+		return ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,"Link for password change has been sent in Email.Please check your inbox.","Email Sent Successfull"));
 	}
 	@Override
 	public ResponseEntity<?> changingPassword(UserWebModel userWebModel) {
 	    try {
 	        logger.info("changePassword method start");
 	        BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-	        Optional<User> userFromDB = userRepository.findByEmailId(userWebModel.getEmail());
+	        Optional<User> userFromDB = userRepository.findByEmail(userWebModel.getEmail());
 	        if (userFromDB.isPresent()) {
 	            User user = userFromDB.get();
 	            System.out.println("current"+userWebModel.getCurrentPassword());
@@ -258,15 +251,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	                String encryptPwd = bcrypt.encode(userWebModel.getNewPassword());
 	                user.setPassword(encryptPwd);
 	                user = userRepository.save(user);
-	                //return ResponseEntity.ok("Password changed successfully.");
-	                return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.OK).body(new Response(1, "password changed successfully", ""));
+	                return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "password changed successfully", ""));
 	            } else {
-	            	return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(0, "Incorrect current password.", ""));
-	                //return ResponseEntity.badRequest().body("Incorrect current password.");
+	            	return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(0, "Incorrect current password.", ""));
 	            }
 	        } else {
-	            //return ResponseEntity.badRequest().body("User not found.");
-	            return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "User not found.", ""));
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "User not found.", ""));
 	        }
 	    } catch (Exception e) {
 	        logger.error("Error occurred while changing password: " + e.getMessage());
@@ -278,7 +268,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	public ResponseEntity<?> resendOtp(UserWebModel userWebModel) {
 		try {
 			logger.info("resendOtp method start");
-			Optional<User> userData = userRepository.findByUserNameType(userWebModel.getName());
+			Optional<User> userData = userRepository.findByNameAndUserType(userWebModel.getName(), userWebModel.getUserType());
 			if (userData.isPresent()) {
 				User user = userData.get();
 				int min = 1000;
@@ -286,22 +276,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				int otpNumber = (int) (Math.random() * (max - min + 1) + min);
 				user.setOtp(otpNumber);
 				user = userRepository.save(user);
-				CompletableFuture.runAsync(() -> {
+				/*CompletableFuture.runAsync(() -> {
 					String message = "Your OTP is " + otpNumber + " for verification";
 					twilioConfig.smsNotification(userWebModel.getName(), message);
-				});
+				});*/
 			} else {
-				return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body(new Response(-1, "Fail", "User not found, Register your account"));
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Fail", "User not found, Register your account"));
 			}
 			logger.info("resendOtp method end");
 		} catch (Exception e) {
 			e.printStackTrace();
 			logger.error("resendOtp Method Exception {} " + e);
-			return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Fail", e.getMessage()));
 		}
-		return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.OK)
+		return ResponseEntity.status(HttpStatus.OK)
 				.body(new Response(1, "Success", "OTP sent successfully"));
 	}
 

@@ -72,18 +72,10 @@ public class AuthController {
     @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
 //		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
-        System.out.println("" + userWebModel.getEmail());
-        Optional<User> checkUsername = userRepository.findByEmail(userWebModel.getEmail(), userWebModel.getUserType());
-        System.out.println("------->" + userWebModel.getEmail());
-        System.out.println("HHHHHHH" + checkUsername);
+        Optional<User> checkUsername = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
         if (checkUsername.isPresent()) {
-//			 logger.info("Checking Controller----> " + userWebModel.getUserEmailId());
-//			jwtUtils.setAdmin(userWebModel.isUserIsAdmin());
-//			jwtUtils.setDriver(userWebModel.isUserIsDriver());
-//			loginConstants.setAdmin(userWebModel.isUserIsAdmin());
-//			loginConstants.setDriver(userWebModel.isUserIsDriver());
             loginConstants.setUserType(userWebModel.getUserType());
-            System.out.println("User type ---> " + loginConstants.getUserType());
+            logger.info("User type from constants -> " + loginConstants.getUserType());
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
@@ -92,7 +84,7 @@ public class AuthController {
             logger.info("Login Controller ---- Finished");
             return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), "Login Successful", 1, ""));
         }
-        return (ResponseEntity<?>) ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
+        return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
 
 
