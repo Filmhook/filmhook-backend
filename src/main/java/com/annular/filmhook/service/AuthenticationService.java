@@ -12,8 +12,6 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> register(UserWebModel userWebModel);
 
-	boolean verify(String code);
-
 	Response verifyExpiration(RefreshToken refreshToken);
 
 	RefreshToken createRefreshToken(UserWebModel userWebModel);
@@ -26,6 +24,9 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> resendOtp(UserWebModel userWebModel);
 
-	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
+	ResponseEntity<?> changePassword(UserWebModel userWebModel);
+
+	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
+	// HttpServletRequest request);
 
 }

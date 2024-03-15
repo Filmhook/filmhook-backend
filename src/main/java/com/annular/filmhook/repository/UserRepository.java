@@ -26,8 +26,16 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.name=:name and u.userType=:userType")
 	Optional<User> findByNameAndUserType(String name, String userType);
 
-	@Query("select u from User u where u.otp=:otp and u.phoneNumber=:phoneNumber")
-	Optional<User> findByOtp(Integer otp, String phoneNumber);
+	@Query("select u from User u where u.verificationCode = :verificationCode and u.phoneNumber = :phoneNumber")
+	Optional<User> findByOtp(Integer verificationCode, String phoneNumber);
+
+	@Query("select u from User u where u.userId=:id")
+	Optional<User> findByResetPassword(Integer id);
+
+	@Query("select u from User u where u.phoneNumber=:phoneNumber and u.userType=:userType")
+	Optional<User> findByPhoneNumberAndUserType(String phoneNumber, String userType);
+
+	
 	
 
 

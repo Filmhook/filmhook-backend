@@ -12,7 +12,7 @@ public class UserWebModel {
     private String email;
     private String password;
     private String userType;
-    private String verificationCode;
+    private Integer verificationCode;
 
     private String name;
 

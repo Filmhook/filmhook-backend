@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
@@ -88,20 +89,7 @@ public class AuthController {
     }
 
 
-    @GetMapping("verify")
-    public Response verifyUser(@Param("code") String code) {
-        try {
-            if (userService.verify(code)) {
-                logger.info("User credentials verified successfully...");
-            } else {
-                logger.info("User verification failed...");
-                return new Response(-1, "Verify Failed", "");
-            }
-        } catch (Exception e) {
-            logger.info("verifyUser method Exception " + e);
-        }
-        return new Response(1, "Verify Success", "");
-    }
+
 
     @PostMapping("refreshToken")
     public ResponseEntity<?> refreshToken(@RequestBody UserWebModel userWebModel) {
@@ -166,5 +154,16 @@ public class AuthController {
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
 
+	@PostMapping("changePassword")
+	public ResponseEntity<?> changePassword(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("getUser controller start");
+			return userService.changePassword(userWebModel);
+		} catch (Exception e) {
+			logger.info("getUser Method Exception" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
 }
