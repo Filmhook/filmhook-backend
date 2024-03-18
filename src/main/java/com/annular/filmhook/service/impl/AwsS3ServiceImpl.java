@@ -1,9 +1,5 @@
 package com.annular.filmhook.service.impl;
 
-//import com.amazonaws.services.s3.AmazonS3;
-//import com.amazonaws.services.s3.model.ObjectListing;
-//import com.amazonaws.services.s3.model.PutObjectResult;
-//import com.amazonaws.services.s3.model.S3Object;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.util.S3Util;
 import org.slf4j.Logger;
@@ -12,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.List;
 
@@ -21,28 +16,8 @@ public class AwsS3ServiceImpl implements AwsS3Service {
 
     private static final Logger logger = LoggerFactory.getLogger(AwsS3ServiceImpl.class);
 
-//    @Autowired
-//    AmazonS3 amazonS3;
-
     @Autowired
     S3Util s3Util;
-
-//    @Override
-//    public ObjectListing getAllObjects(String bucketName) {
-//        logger.info("Region from s3 :- " + amazonS3.getRegionName());
-//        return amazonS3.listObjects(bucketName);
-//    }
-//
-//    @Override
-//    public S3Object getObject(String bucketName, String key) {
-//        return null;
-//    }
-//
-//    @Override
-//    public PutObjectResult putObject() {
-//        return null;
-//    }
-
 
     @Override
     public List<S3Object> getAllObjectsByBucket(String bucketName) {
@@ -55,13 +30,18 @@ public class AwsS3ServiceImpl implements AwsS3Service {
     }
 
     @Override
-    public ByteArrayInputStream getObjectFromS3(String bucketName, String key) {
+    public byte[] getObjectFromS3(String bucketName, String key) {
         return s3Util.getObjectAsBytes(bucketName, key);
     }
 
     @Override
-    public void putObjectIntoS3(String bucketName, String destinationPath, File inputData) {
-        s3Util.putObjectIntoS3(bucketName, destinationPath, inputData);
+    public String putObjectIntoS3(String bucketName, String destinationPath, File inputFile) {
+        return s3Util.putObjectIntoS3(bucketName, destinationPath, inputFile);
+    }
+
+    @Override
+    public void putObjectIntoS3Async(String bucketName, String destinationPath, File inputFile) {
+        s3Util.putObjectIntoS3Async(bucketName, destinationPath, inputFile);
     }
 
     @Override

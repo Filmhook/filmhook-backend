@@ -30,6 +30,10 @@ import lombok.ToString;
 @NoArgsConstructor
 public class User {
 
+    public User(Integer userId) {
+        this.userId = userId;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

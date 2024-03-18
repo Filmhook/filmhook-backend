@@ -9,6 +9,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -35,23 +37,31 @@ public class MediaFiles {
 	@Column(name = "id")
 	private Integer id;
 
+	@ToString.Exclude
+	@ManyToOne
+	@JoinColumn(name = "user_id")
+	private User user;
+
+	@Column(name = "category")
+	private String category;
+
+	@Column(name = "file_id")
+	private String fileId;
+
 	@Column(name = "file_name")
 	private String fileName;
-
-	@Column(name = "file_original_name")
-	private String fileOriginalName;
-
-	@Column(name = "file_domain_id")
-	private Integer fileDomainId;
-
-	@Column(name = "file_domain_reference_id")
-	private Integer fileDomainReferenceId;
 	
 	@Column(name = "file_size")
-	private String fileSize;
+	private Long fileSize;
 
 	@Column(name = "file_type")
 	private String fileType;
+
+	@Column(name = "file_path")
+	private String filePath;
+
+	@Column(name = "expiry_time")
+	private String expiryTime;
 
 	@Column(name = "status")
 	private Boolean status;

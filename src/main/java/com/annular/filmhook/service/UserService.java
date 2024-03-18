@@ -1,5 +1,6 @@
 package com.annular.filmhook.service;
 
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 import java.util.List;
@@ -10,6 +11,7 @@ public interface UserService {
     List<UserWebModel> getAllUsers();
 
     Optional<UserWebModel> getUserByUserId(Integer userId);
+    Optional<User> getUser(Integer userId);
 
     Optional<?> updateBiographyData(UserWebModel userWebModel);
 

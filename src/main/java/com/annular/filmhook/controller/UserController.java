@@ -17,7 +17,9 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -145,10 +147,21 @@ public class UserController {
     @GetMapping("/getS3BucketName")
     public Response getS3BucketName() {
         String objKeyName = null;
-        List<S3Object> s3Objects = awsS3Service.getAllObjectsByBucket(s3Util.getS3BucketName());
+        List<S3Object> s3Objects = awsS3Service.getAllObjectsByBucketAndDestination(s3Util.getS3BucketName(), "Sample/");
         if (s3Objects != null && s3Objects.size() > 0) {
+            s3Objects.stream().filter(Objects::nonNull).forEach(item -> logger.info("S3 Object Key :- {}", item.key()));
             objKeyName = s3Objects.get(0).key();
-            logger.info("S3 Object Key :- {}", objKeyName);
+            return new Response(1, "S3 objects found...", objKeyName);
+        }
+        return new Response(-1, "S3 objects not found...", null);
+    }
+
+    @GetMapping("/getObjectAsBytes")
+    public Response getS3Object() {
+        String objKeyName = null;
+        byte[] val = awsS3Service.getObjectFromS3(s3Util.getS3BucketName(), "Sample/User/Gallery/a31b0981-c616-45b5-b6f5-835ca385ee1e");
+        if (val != null) {
+            objKeyName = Arrays.toString(val);
             return new Response(1, "S3 objects found...", objKeyName);
         }
         return new Response(-1, "S3 objects not found...", null);
@@ -157,30 +170,21 @@ public class UserController {
     @GetMapping("/testS3Actions")
     public Response getS3Objects() throws IOException {
         String objKeyName = null;
-
-        //Old lib - kept for testing
-        //ObjectListing s3Objects = awsS3Service.getAllObjects(s3Util.getS3BucketName());
-        //if (s3Objects != null) {
-        //    bucketName = s3Objects.getBucketName();
-        //    return new Response(1, "S3 bucket found...", bucketName);
-        //}
-
-        // New lib
         // Upload file
         ClassPathResource res = new ClassPathResource("classes/Sample.txt");
         File file = new File(res.getPath());
         awsS3Service.putObjectIntoS3(s3Util.getS3BucketName(), "Sample/", file);
 
         // Read All
-        List<S3Object> s3Objects = awsS3Service.getAllObjectsByBucket(s3Util.getS3BucketName());
+        List<S3Object> s3Objects = awsS3Service.getAllObjectsByBucketAndDestination(s3Util.getS3BucketName(), "Sample/");
         if (s3Objects != null && s3Objects.size() > 0) {
+            s3Objects.stream().filter(Objects::nonNull).forEach(item -> logger.info("S3 Object Key :- {}", item.key()));
             objKeyName = s3Objects.get(0).key();
-            logger.info("S3 Object Key :- {}", objKeyName);
         }
 
         // Delete All
-        awsS3Service.deleteAllObjectsFromDestination(s3Util.getS3BucketName(), "Sample/");
+        //awsS3Service.deleteAllObjectsFromDestination(s3Util.getS3BucketName(), "Sample/");
 
-        return new Response(1, "S3 objects found...", null);
+        return new Response(1, "S3 objects found...", objKeyName);
     }
 }

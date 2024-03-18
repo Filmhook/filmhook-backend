@@ -1,12 +1,5 @@
 package com.annular.filmhook.util;
 
-//import com.amazonaws.auth.AWSCredentials;
-//import com.amazonaws.auth.AWSStaticCredentialsProvider;
-//import com.amazonaws.auth.BasicAWSCredentials;
-//import com.amazonaws.services.s3.AmazonS3;
-//import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-//import com.amazonaws.services.s3.model.ListObjectsRequest;
-
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -15,18 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import software.amazon.awssdk.auth.credentials.*;
-import software.amazon.awssdk.core.ResponseBytes;
-import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -45,43 +33,23 @@ public class S3Util {
     @Value("${s3.bucket.name}")
     private String s3BucketName;
 
-    private static final String S3_PATH_DELIMITER = "/";
-
-    /*@Bean
-    public AmazonS3 s3() {
-        AWSCredentials awsCredentials = new BasicAWSCredentials(awsAccessKey, awsSecretKey);
-        return AmazonS3ClientBuilder
-                .standard()
-                .withRegion(s3RegionName)
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-                .build();
-
-        //S3Client
-        //ListObjectsRequest listObjectsRequest = ListObjectsRequest.builder().bucket(s3BucketName).prefix(destinationPath).build();
-        //ListObjectsResponse response = client.listObjects(request);
-        //objects = response.contents();
-    }*/
+    public static final String S3_PATH_DELIMITER = "/";
 
     public AwsCredentialsProvider getAwsCredentialsProvider() {
-        AwsCredentialsProvider awsCredentialsProvider = AwsCredentialsProviderChain.builder().
-                addCredentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
+        return AwsCredentialsProviderChain.builder()
+                .addCredentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
                 .addCredentialsProvider(DefaultCredentialsProvider.create())
                 .addCredentialsProvider(EnvironmentVariableCredentialsProvider.create())
                 .addCredentialsProvider(SystemPropertyCredentialsProvider.create())
                 .addCredentialsProvider(ProfileCredentialsProvider.create())
                 .addCredentialsProvider(InstanceProfileCredentialsProvider.create())
                 .build();
-        logger.info("AwsCredentialsProvider created successfully...");
-        return awsCredentialsProvider;
     }
 
     public S3AsyncClient buildS3ClientAsync() {
         return S3AsyncClient.builder()
                 .credentialsProvider(getAwsCredentialsProvider())
                 .region(Region.of(s3RegionName))
-                .httpClientBuilder(NettyNioAsyncHttpClient.builder()
-                        .connectionTimeout(Duration.ofMinutes(5))
-                        .connectionMaxIdleTime(Duration.ofSeconds(5)))
                 .build();
     }
 
@@ -89,18 +57,14 @@ public class S3Util {
         return S3Client.builder()
                 .region(Region.of(s3RegionName))
                 .credentialsProvider(getAwsCredentialsProvider())
-                .httpClientBuilder(UrlConnectionHttpClient.builder())
                 .build();
     }
 
     public List<S3Object> getAllObjectsFromS3Bucket(String bucketName) {
-        logger.info("Bucket Name to search :- [{}] ", bucketName);
+        logger.info("In getAllObjectsFromS3Bucket() Bucket Name :- [{}] ", bucketName);
         List<S3Object> objects = null;
-        try {
-            S3Client client = buildS3ClientSync();
-            String destinationPath = "Sample" + S3_PATH_DELIMITER;
-            logger.info("Destination to search :- [{}] ", destinationPath);
-            ListObjectsRequest request = ListObjectsRequest.builder().bucket(bucketName).prefix(destinationPath).build();
+        try(S3Client client = buildS3ClientSync()) {
+            ListObjectsRequest request = ListObjectsRequest.builder().bucket(bucketName).build();
             ListObjectsResponse response = client.listObjects(request);
             objects = response.contents();
             logger.info("S3 Objects count :- [{}] ", objects.size());
@@ -112,10 +76,9 @@ public class S3Util {
     }
 
     public List<S3Object> getAllObjectsFromS3Bucket(String bucketName, String destinationPath) {
-        logger.info("Bucket Name :- [{}], Destination path :- [{}] ", bucketName, destinationPath);
+        logger.info("In getAllObjectsFromS3Bucket() Bucket Name :- [{}], Destination path :- [{}] ", bucketName, destinationPath);
         List<S3Object> objects = null;
-        try {
-            S3Client client = buildS3ClientSync();
+        try (S3Client client = buildS3ClientSync()) {
             ListObjectsRequest request = ListObjectsRequest.builder().bucket(bucketName).prefix(destinationPath).build();
             ListObjectsResponse response = client.listObjects(request);
             objects = response.contents();
@@ -127,35 +90,46 @@ public class S3Util {
         return objects;
     }
 
-    public ByteArrayInputStream getObjectAsBytes(String bucketName, String objectKey) {
-        logger.info("Bucket Name :- [{}], objectKey :- [{}] ", bucketName, objectKey);
-        S3Client s3 = buildS3ClientSync();
-        try {
+    public byte[] getObjectAsBytes(String bucketName, String objectKey) {
+        logger.info("In getObjectAsBytes() Bucket Name :- [{}], objectKey :- [{}] ", bucketName, objectKey);
+        try (S3Client s3Client = buildS3ClientSync()) {
             GetObjectRequest objectRequest = GetObjectRequest
                     .builder()
                     .key(objectKey)
                     .bucket(bucketName)
                     .build();
-            ResponseBytes<GetObjectResponse> objectBytes = s3.getObjectAsBytes(objectRequest);
-            byte[] data = objectBytes.asByteArray();
-            return new ByteArrayInputStream(data);
+            return s3Client.getObjectAsBytes(objectRequest).asByteArray();
         } catch (S3Exception e) {
             logger.error(e.awsErrorDetails().errorMessage());
             throw e;
-        } finally {
-            s3.close();
         }
     }
 
     /**
-     * Put object into the s3 bucket
+     * Put object into the s3 bucket Synchronously
      */
-    public void putObjectIntoS3(String bucketName, String destinationPath, File file) {
-        logger.info("Details to put :: Bucket Name :- [{}], destinationPath :- [{}] ", bucketName, destinationPath);
+    public String putObjectIntoS3(String bucketName, String destinationPath, File file) {
+        logger.info("In putObjectIntoS3() Details to upload into S3 :: Bucket Name :- [{}], destinationPath :- [{}] ", bucketName, destinationPath);
+        try (S3Client s3Client = buildS3ClientSync()) {
+            logger.info("File Path :- " + file.getAbsoluteFile().getAbsolutePath() + ", File Name :- " + file.getName());
+            PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(bucketName).key(destinationPath).build();
+            s3Client.putObject(objectRequest, Paths.get(file.getAbsoluteFile().getAbsolutePath()));
+            return "File uploaded";
+        } catch (Exception e) {
+            logger.error("Error at object upload...", e);
+            return null;
+        }
+    }
+
+    /**
+     * Put object into the s3 bucket Asynchronously
+     */
+    public void putObjectIntoS3Async(String bucketName, String destinationPath, File file) {
+        logger.info("In putObjectIntoS3Async() Details to upload into S3 :: Bucket Name :- [{}], destinationPath :- [{}] ", bucketName, destinationPath);
         String responseFromS3 = null;
         try (S3AsyncClient s3AsyncClient = buildS3ClientAsync()) {
-            CompletableFuture<PutObjectResponse> futureCompletion;
-            futureCompletion = this.putObjectInS3bucketAsync(bucketName, destinationPath, file.getAbsoluteFile().getAbsolutePath(), file.getName(), s3AsyncClient);
+            logger.info("File Path :- " + file.getAbsoluteFile().getAbsolutePath() + ", File Name :- " + file.getName());
+            CompletableFuture<PutObjectResponse> futureCompletion = this.putObjectInS3bucketAsync(bucketName, destinationPath, file.getAbsoluteFile().getAbsolutePath(), file.getName(), s3AsyncClient);
             responseFromS3 = this.executeFutureCompletion(futureCompletion, "Uploaded successfully");
         } catch (Exception e) {
             responseFromS3 = "Error";
@@ -166,7 +140,7 @@ public class S3Util {
     }
 
     /**
-     * Put object into the s3 bucket Async
+     * Put object into the s3 bucket Asynchronously
      */
     private CompletableFuture<PutObjectResponse> putObjectInS3bucketAsync(String s3Bucket, String destinationPath, String absolutePath, String name, S3AsyncClient s3AsyncClient) {
         PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(s3Bucket).key(destinationPath + name).build();
@@ -196,11 +170,10 @@ public class S3Util {
     }
 
     public void deleteAllObjectFromS3Async(String bucketName, String destPath) {
-        logger.info("Destination to delete all objects from S3..." + destPath);
-        S3AsyncClient s3AsyncClient = buildS3ClientAsync();
-        try {
+        logger.info("Inn deleteAllObjectFromS3Async() Destination to delete all objects from S3..." + destPath);
+        try (S3AsyncClient s3AsyncClient = buildS3ClientAsync()) {
             List<S3Object> s3ObjectList = this.getAllObjectsFromS3Bucket(bucketName, destPath);
-            if (!s3ObjectList.isEmpty() && s3ObjectList.size() > 0) {
+            if (s3ObjectList != null && !s3ObjectList.isEmpty()) {
 
                 List<ObjectIdentifier> objectIdentifiers = new ArrayList<>();
                 s3ObjectList.forEach(x -> objectIdentifiers.add(ObjectIdentifier.builder().key(x.key()).build()));
@@ -221,11 +194,10 @@ public class S3Util {
     }
 
     public void deleteObjectFromS3(String bucketName, String destinationPath, String objectKey) {
-        logger.info("Key to delete from S3..." + objectKey);
-        S3AsyncClient s3Client = buildS3ClientAsync();
-        try {
+        logger.info("In deleteObjectFromS3() Key to delete from S3..." + objectKey);
+        try (S3AsyncClient s3Client = buildS3ClientAsync()) {
             List<S3Object> s3Objects = this.getAllObjectsFromS3Bucket(bucketName, destinationPath);
-            if (!s3Objects.isEmpty() && s3Objects.size() > 0) {
+            if (s3Objects != null && !s3Objects.isEmpty()) {
                 List<ObjectIdentifier> objectIdentifiers = new ArrayList<>();
                 s3Objects.stream()
                         .filter(item -> item.key().contains(objectKey))
@@ -242,8 +214,6 @@ public class S3Util {
         } catch (S3Exception e) {
             logger.error(e.awsErrorDetails().errorMessage());
             throw e;
-        } finally {
-            s3Client.close();
         }
     }
 }
