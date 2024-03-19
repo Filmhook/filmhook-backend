@@ -15,4 +15,6 @@ public interface StoriesService {
     void deleteStoryById(Integer id);
     void deleteStoryByUserId(Integer userId);
     Optional<Story> updateStoryView(Integer userId, String storyId);
+    List<Story> getMoreThanOneDayStories();
+    void deleteExpiredStories(List<Story> storyList);
 }

@@ -113,8 +113,8 @@ public class S3Util {
         try (S3Client s3Client = buildS3ClientSync()) {
             logger.info("File Path :- " + file.getAbsoluteFile().getAbsolutePath() + ", File Name :- " + file.getName());
             PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(bucketName).key(destinationPath).build();
-            s3Client.putObject(objectRequest, Paths.get(file.getAbsoluteFile().getAbsolutePath()));
-            return "File uploaded";
+            PutObjectResponse response = s3Client.putObject(objectRequest, Paths.get(file.getAbsoluteFile().getAbsolutePath()));
+            return response != null ? "File uploaded" : "Error";
         } catch (Exception e) {
             logger.error("Error at object upload...", e);
             return null;

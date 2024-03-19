@@ -64,6 +64,7 @@ public class StoriesServiceImpl implements StoriesService {
                     File file = File.createTempFile(fileOutputWebModel.getFileId(), null);
                     FileUtil.convertMultiPartFileToFile(inputData.getFileInputWebModel().getFile(), file);
                     String response = fileUtil.uploadFile(file, fileOutputWebModel.getFilePath());
+                    logger.info("File Upload in S3 response :- " + response);
                     if (response != null && response.equalsIgnoreCase("File Uploaded")) {
                         file.delete(); // deleting temp file
                     }
@@ -174,5 +175,20 @@ public class StoriesServiceImpl implements StoriesService {
             storyRepository.save(story.get());
         }
         return story;
+    }
+
+    @Override
+    public List<Story> getMoreThanOneDayStories() {
+        return storyRepository.getMoreThanOneDayStories();
+    }
+
+    @Override
+    public void deleteExpiredStories(List<Story> activeStories) {
+        logger.info("Active Stories size :- " + activeStories.size());
+        if (!activeStories.isEmpty()) {
+            activeStories.stream()
+                    .filter(Objects::nonNull)
+                    .forEach(item -> this.deleteStoryById(item.getId()));
+        }
     }
 }

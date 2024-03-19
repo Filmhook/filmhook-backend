@@ -10,12 +10,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 
-import com.annular.filmhook.util.CalenderUtil;
+import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.TwilioConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,8 +79,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 					user.setName(userWebModel.getName());
 					user.setEmail(userWebModel.getEmail());
 					user.setUserType(userWebModel.getUserType());
-					user.setDob(CalenderUtil.convertDateFormat(CalenderUtil.UI_DATE_FORMAT,
-							CalenderUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
+					user.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT,
+							CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
 					user.setGender(userWebModel.getGender());
 					user.setCountry(userWebModel.getCountry());
 					user.setState(userWebModel.getState());

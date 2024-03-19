@@ -3,7 +3,7 @@ package com.annular.filmhook.service.impl;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.util.CalenderUtil;
+import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.webmodel.UserWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ public class UserServiceImpl implements UserService {
     UserRepository userRepository;
 
     @Autowired
-    CalenderUtil calenderUtil;
+    CalendarUtil calendarUtil;
 
     @Override
     public List<UserWebModel> getAllUsers() {
@@ -45,8 +45,8 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
-        userWebModel.setDob(CalenderUtil.convertDateFormat(CalenderUtil.MYSQL_DATE_FORMAT, CalenderUtil.UI_DATE_FORMAT, user.getDob()));
-        userWebModel.setAge(calenderUtil.getAgeFromDate(user.getDob()).toString());
+        userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
+        userWebModel.setAge(calendarUtil.getAgeFromDate(user.getDob()).toString());
         userWebModel.setGender(user.getGender());
 
         userWebModel.setCountry(user.getCountry());
@@ -123,7 +123,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserBiographyData(UserWebModel userInput, User userToUpdate) {
-        userToUpdate.setDob(CalenderUtil.convertDateFormat(CalenderUtil.UI_DATE_FORMAT, CalenderUtil.MYSQL_DATE_FORMAT, userInput.getDob()));
+        userToUpdate.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userInput.getDob()));
         userToUpdate.setGender(userInput.getGender());
         userToUpdate.setCountry(userInput.getCountry());
         userToUpdate.setState(userInput.getState());

@@ -8,13 +8,16 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Period;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
 @Configuration
-public class CalenderUtil {
-    private static final Logger logger = LoggerFactory.getLogger(CalenderUtil.class);
+public class CalendarUtil {
+    private static final Logger logger = LoggerFactory.getLogger(CalendarUtil.class);
     public final static String UI_DATE_FORMAT = "dd-MM-yyyy";
     public final static String MYSQL_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    public final static String YYYY_MM_DD = "yyyy-MM-dd";
 
     public static String convertDateFormat(String inputFormat, String outputFormat, String inputDateTime) {
         try {
@@ -34,5 +37,21 @@ public class CalenderUtil {
         LocalDate birthDate = LocalDate.of(year, month, day);
         LocalDate currentDate = LocalDate.now();
         return Period.between(birthDate, currentDate).getYears();
+    }
+
+    public static long getDateDifferenceInDays(String inputDate, String timeZone) {
+        logger.info("Date :- " + inputDate);
+        int year = Integer.parseInt(inputDate.substring(0, 4)); // yyyy
+        int month = Integer.parseInt(inputDate.substring(5, 7)); // MM
+        int day = Integer.parseInt(inputDate.substring(8, 10)); // dd
+
+        LocalDate fromDate = LocalDate.of(year, month, day);
+        LocalDate currentDate = LocalDate.now(ZoneId.of("IST", ZoneId.SHORT_IDS));
+        logger.info("Days Diff :- " + ChronoUnit.DAYS.between(fromDate, currentDate));
+        return ChronoUnit.DAYS.between(fromDate, currentDate);
+    }
+
+    public static String getFormatedDateString(Date date) {
+        return new SimpleDateFormat(YYYY_MM_DD).format(date);
     }
 }

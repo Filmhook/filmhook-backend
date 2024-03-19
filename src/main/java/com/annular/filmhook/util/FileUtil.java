@@ -47,17 +47,18 @@ public class FileUtil {
 
     public static String generateDestinationPath(User user, String category) {
         return new StringBuilder()
-                .append(user.getUserId()).append("^").append(user.getName().toLowerCase().replace(" ", ""))
-                .append("/")
                 .append(category)
+                .append("/")
+                .append(user.getUserId()).append("_").append(user.getName().toLowerCase().replace(" ", ""))
+                .append("/")
                 .toString();
     }
 
     public static String generateFilePath(User user, String category, String fileName) {
         return new StringBuilder()
-                .append(user.getUserId()).append("^").append(user.getName().toLowerCase().replace(" ", ""))
-                .append("/")
                 .append(category)
+                .append("/")
+                .append(user.getUserId()).append("_").append(user.getName().toLowerCase().replace(" ", ""))
                 .append("/")
                 .append(fileName)
                 .toString();
