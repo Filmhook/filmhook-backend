@@ -11,7 +11,6 @@ public class UserWebModel {
 
     private Integer userId;
     private String email;
-    @JsonIgnore
     private String password;
     private String userType;
     private Integer verificationCode;

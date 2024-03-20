@@ -11,7 +11,7 @@ import com.annular.filmhook.model.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
 
-	@Query("select u from User u where u.userId=:userId and u.status=true")
+	@Query("select u from User u where u.userId=:userId")
 	Optional<User> getUserByUserId(Integer userId);
 
 	@Query("select u from User u where u.email=:email and u.userType=:userType")
@@ -20,7 +20,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.verificationCode=:code")
 	User findByVerificationCode(String code);
 
-	@Query("select u from User u where u.email=:email and u.status=true")
+	@Query("select u from User u where u.email=:email")
 	Optional<User> findByEmail(String email);
 
 	@Query("select u from User u where u.name=:name and u.userType=:userType")
@@ -34,9 +34,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	@Query("select u from User u where u.phoneNumber=:phoneNumber and u.userType=:userType")
 	Optional<User> findByPhoneNumberAndUserType(String phoneNumber, String userType);
-
-	
-	
-
 
 }
