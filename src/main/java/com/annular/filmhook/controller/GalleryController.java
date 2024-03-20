@@ -34,6 +34,7 @@ public class GalleryController {
             if (outputFileData != null) return new Response(1, "File(s) saved successfully...", outputFileData);
         } catch (Exception e) {
             logger.error("Error at saveGalleryFiles()...", e);
+            return new Response(-1, "Error occurred while saving gallery files...", e);
         }
         return new Response(-1, "Error occurred while saving gallery files...", null);
     }

@@ -39,19 +39,23 @@ public class GalleryServiceImpl implements GalleryService {
         try {
             Optional<User> userFromDB = userService.getUser(fileInput.getUserId());
             if(userFromDB.isPresent()) {
+                logger.info("User found :- " + userFromDB.get().getName());
                 // 1. Save media files in MySQL
                 fileOutputWebModel = mediaFilesService.saveMediaFiles(fileInput, userFromDB.get());
+                logger.info("Gallery file row saved in mysql :- " + fileOutputWebModel.getFileId());
 
                 // 2. Upload into S3
                 File file = File.createTempFile(fileOutputWebModel.getFileId(), null);
                 FileUtil.convertMultiPartFileToFile(fileInput.getFile(), file);
                 String response = fileUtil.uploadFile(file, fileOutputWebModel.getFilePath());
+                logger.info("Gallery file saved in S3 response :- " + response);
                 if (response != null && response.equalsIgnoreCase("File Uploaded")) {
                     file.delete(); // deleting temp file
                 }
             }
         } catch (Exception e) {
             logger.error("Error at saveGalleryFiles()...", e);
+            e.printStackTrace();
         }
         return fileOutputWebModel;
     }
@@ -66,6 +70,7 @@ public class GalleryServiceImpl implements GalleryService {
             }
         } catch (Exception e) {
             logger.error("Error at getGalleryFile()...", e);
+            e.printStackTrace();
         }
         return null;
     }
@@ -77,6 +82,7 @@ public class GalleryServiceImpl implements GalleryService {
             outputWebModelList = mediaFilesService.getMediaFilesByUserAndCategory(userId, "Gallery");
         } catch (Exception e) {
             logger.error("Error at getGalleryFilesByUser()...", e);
+            e.printStackTrace();
         }
         return outputWebModelList;
     }

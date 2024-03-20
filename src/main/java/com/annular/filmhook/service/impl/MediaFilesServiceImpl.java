@@ -51,6 +51,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             }
         } catch (Exception e) {
             logger.error("Error at saveGalleryFiles()...", e);
+            e.printStackTrace();
         }
         return fileOutputWebModel;
     }
@@ -71,6 +72,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         mediaFiles.setCreatedOn(new Date());
         //mediaFiles.setUpdatedBy(fileInput.getUserId());
         //mediaFiles.setUpdatedOn(new Date());
+        logger.info("MediaFiles details to save in MySQL :- " + mediaFiles);
 
         return mediaFiles;
     }
@@ -85,6 +87,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             }
         } catch (Exception e) {
             logger.error("Error at getGalleryFilesByUser()...", e);
+            e.printStackTrace();
         }
         return outputWebModelList;
     }
@@ -99,6 +102,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             }
         } catch (Exception e) {
             logger.error("Error at getGalleryFilesByUser()...", e);
+            e.printStackTrace();
         }
         return outputWebModelList;
     }
@@ -125,6 +129,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             return fileOutputWebModel;
         } catch (Exception e) {
             logger.error("Error at transformData()...", e);
+            e.printStackTrace();
         }
         return fileOutputWebModel;
     }

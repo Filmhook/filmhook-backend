@@ -3,6 +3,7 @@ package com.annular.filmhook.webmodel;
 import java.util.Date;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
@@ -10,6 +11,7 @@ public class UserWebModel {
 
     private Integer userId;
     private String email;
+    @JsonIgnore
     private String password;
     private String userType;
     private Integer verificationCode;

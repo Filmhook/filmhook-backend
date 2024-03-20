@@ -61,7 +61,7 @@ public class AuthController {
     @PostMapping("register")
     public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
         try {
-            logger.info("Username -> " + userWebModel.getName() + ", Password -> " + userWebModel.getPassword());
+            logger.info("User details to register :- " + userWebModel);
             return userService.register(userWebModel);
         } catch (Exception e) {
             logger.error("userRegister Method Exception...", e);

@@ -84,7 +84,7 @@ public class StoriesServiceImpl implements StoriesService {
         story.setDescription(inputData.getDescription());
         story.setExpiryTime(inputData.getExpiryTime());
         story.setExpiryExpression(inputData.getExpiryExpression());
-        story.setViewCount(inputData.getViewCount());
+        story.setViewCount(inputData.getViewCount() == null ? 0 : inputData.getViewCount());
         story.setStatus(true);
         story.setUser(user);
         story.setCreatedBy(user.getUserId());
