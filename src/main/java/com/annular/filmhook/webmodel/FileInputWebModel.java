@@ -19,9 +19,4 @@ public class FileInputWebModel {
 	private String fileType;
 	private String filePath;
 
-	// For save purpose industry User
-	private List<MultipartFile> images;
-	private List<MultipartFile> videos;
-	private MultipartFile panCard;
-	private MultipartFile aadhaarCard;
 }

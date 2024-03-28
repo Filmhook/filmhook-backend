@@ -63,4 +63,13 @@ public class FileUtil {
                 .append(fileName)
                 .toString();
     }
+
+    public static void convertMultiPartFileToFile(MultipartFile[] images, File file) throws IOException {
+        try (OutputStream outputStream = new FileOutputStream(file)) {
+            for (MultipartFile image : images) {
+                byte[] bytes = image.getBytes();
+                outputStream.write(bytes);
+            }
+        }
+    }
 }

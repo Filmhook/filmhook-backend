@@ -13,8 +13,8 @@ public class UserWebModel {
     private String email;
     private String password;
     private String userType;
-    private Integer verificationCode;
-
+    private String verificationCode;
+    private String filmHookCode;
     private String name;
 
     // Biography Section

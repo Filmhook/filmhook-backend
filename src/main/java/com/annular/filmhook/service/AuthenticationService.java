@@ -6,11 +6,14 @@ import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.RefreshToken;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.webmodel.FileInputWebModel;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface AuthenticationService {
 
-	ResponseEntity<?> register(UserWebModel userWebModel);
+	ResponseEntity<?> register(UserWebModel userWebModel, String request);
 
 	Response verifyExpiration(RefreshToken refreshToken);
 
@@ -25,6 +28,8 @@ public interface AuthenticationService {
 	ResponseEntity<?> resendOtp(UserWebModel userWebModel);
 
 	ResponseEntity<?> changePassword(UserWebModel userWebModel);
+
+	boolean verify(String code);
 
 	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
 	// HttpServletRequest request);

@@ -1,12 +1,12 @@
 package com.annular.filmhook.service.impl;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Map.Entry;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
@@ -29,6 +30,7 @@ import com.annular.filmhook.model.ProfessionPermanentDetail;
 import com.annular.filmhook.model.ProfesssionDetails;
 import com.annular.filmhook.model.SubProfessionDetails;
 import com.annular.filmhook.model.SubProfesssion;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.IndustryDetailRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
@@ -41,8 +43,16 @@ import com.annular.filmhook.repository.ProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.ProfessionRepository;
 import com.annular.filmhook.repository.SubProfessionDetailRepository;
 import com.annular.filmhook.repository.SubProfesssionRepository;
+import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.service.DetailService;
+import com.annular.filmhook.service.MediaFilesService;
+import com.annular.filmhook.service.UserMediaFilesService;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.DetailRequest;
+import com.annular.filmhook.webmodel.FileInputWebModel;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 
@@ -51,6 +61,9 @@ public class DetailServiceImpl implements DetailService {
 
 	@Autowired
 	private IndustryRepository industryRepository;
+
+	@Autowired
+	MediaFilesService mediaFilesService;
 
 	@Autowired
 	private PlatformRepository platformRepository;
@@ -69,6 +82,15 @@ public class DetailServiceImpl implements DetailService {
 
 	@Autowired
 	private SubProfesssionRepository subProfessionRepository;
+
+	@Autowired
+	FileUtil fileUtil;
+
+	@Autowired
+	UserService userService;
+	
+	@Autowired
+	private UserMediaFilesService userMediaFileService;
 
 	@Autowired
 	private PlatformDetailRepository platformDetailsRepository;
@@ -90,6 +112,9 @@ public class DetailServiceImpl implements DetailService {
 
 	@Autowired
 	UserDetails userDetails;
+
+	@Autowired
+	AuthenticationService authenticationService;
 
 	public static final Logger logger = LoggerFactory.getLogger(DetailServiceImpl.class);
 
@@ -162,7 +187,7 @@ public class DetailServiceImpl implements DetailService {
 			List<String> platformName = industryTemporaryWebModel.getPlatformName();
 			List<String> professionName = industryTemporaryWebModel.getProfessionName();
 			List<String> subProfessionName = industryTemporaryWebModel.getSubProfessionName();
-			Integer userId = userDetails.userInfo().getId();
+			Integer userId = industryTemporaryWebModel.getUserId() ;
 
 			// Save details to IndustryTemporaryDetails
 			IndustryTemporaryDetails tempDetails = new IndustryTemporaryDetails();
@@ -223,7 +248,7 @@ public class DetailServiceImpl implements DetailService {
 	public ResponseEntity<?> getTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
 		try {
 			List<IndustryTemporaryDetails> temporaryDetailsList = industryTemporaryDetailsRepository
-					.findByUserId(userDetails.userInfo().getId());
+					.findByUserId(industryTemporaryWebModel.getUserId());
 			Map<String, Object> response = new HashMap<>();
 
 			for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
@@ -277,96 +302,206 @@ public class DetailServiceImpl implements DetailService {
 					.body("Error occurred while fetching temporary details.");
 		}
 	}
+
 	@Override
-	public ResponseEntity<?> addIndustryUserPermanentDetails(List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+	public ResponseEntity<?> addIndustryUserPermanentDetails(
+			List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+		try {
+			for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
+				// Create IndustryPermanentDetails object
+				IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
+				industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName());
+				industryPermanentDetails.setUserId(industryUserPermanentDetailWebModel.getUserId()); // Assuming userId is present in the
+																					// request
+
+				// Save the IndustryPermanentDetails object
+				IndustryUserPermanentDetails savedDetails = industryUserPermanentDetailsRepository
+						.save(industryPermanentDetails);
+
+				// Iterate over platform details
+				for (PlatformPermanentDetail platformDetail : industryUserPermanentDetailWebModel
+						.getPlatformDetails()) {
+					// Create PlatformPermanentDetail object
+					PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
+					platformPermanentDetail.setPlatformName(platformDetail.getPlatformName());
+					platformPermanentDetail.setIndustryUserPermanentDetails(savedDetails);
+
+					// Save the PlatformPermanentDetail object
+					PlatformPermanentDetail savedPlatform = platformPermanentDetailRepository
+							.save(platformPermanentDetail);
+
+					// Iterate over profession details for this platform
+					for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
+						// Create ProfessionPermanentDetail object
+						ProfessionPermanentDetail savedProfession = new ProfessionPermanentDetail();
+						savedProfession.setProfessionName(professionDetail.getProfessionName());
+						savedProfession.setSubProfessionName(professionDetail.getSubProfessionName());
+						savedProfession.setPlatformPermanentDetail(savedPlatform);
+
+						// Save the ProfessionPermanentDetail object
+						professionPermanentDetailRepository.save(savedProfession);
+					}
+				}
+			}
+
+			// Return a success response
+			return ResponseEntity.ok("Industry user permanent details added successfully.");
+		} catch (Exception e) {
+			// Return an error response if an exception occurs
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Failed to add industry user permanent details.");
+		}
+	}
+
+	
+
+	@Override
+	public FileOutputWebModel saveIndustryUserFiles(IndustryFileInputWebModel inputFileData) {
+	    FileOutputWebModel fileOutputWebModel = null;
 	    try {
-	        for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
-	            // Create IndustryPermanentDetails object
-	            IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
-	            industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName());
-	            industryPermanentDetails.setUserId(userDetails.userInfo().getId()); // Assuming userId is present in the request
+	        Optional<User> userFromDB = userService.getUser(inputFileData.getUserId());
+	        System.out.println(userFromDB.get().getUserId());
+	        if (userFromDB.isPresent()) {
+	            logger.info("User found: " + userFromDB.get().getName());
+	            
+	            // 1. Save media files in MySQL
+	            fileOutputWebModel = userMediaFileService.saveMediaFiles(inputFileData, userFromDB.get());
+	            
+	            
+	            // 2. Upload files to S3
+	            uploadToS3(inputFileData.getImages(), fileOutputWebModel);
+	            uploadToS3(inputFileData.getVideos(), fileOutputWebModel);
+	            uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
+	            uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error at saveIndustryUserFiles(): ", e);
+	        e.printStackTrace();
+	    }
+	    return fileOutputWebModel;
+	}
 
-	            // Save the IndustryPermanentDetails object
-	            IndustryUserPermanentDetails savedDetails = industryUserPermanentDetailsRepository.save(industryPermanentDetails);
-
-	            // Iterate over platform details
-	            for (PlatformPermanentDetail platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
-	                // Create PlatformPermanentDetail object
-	                PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
-	                platformPermanentDetail.setPlatformName(platformDetail.getPlatformName());
-	                platformPermanentDetail.setIndustryUserPermanentDetails(savedDetails);
-
-	                // Save the PlatformPermanentDetail object
-	                PlatformPermanentDetail savedPlatform = platformPermanentDetailRepository.save(platformPermanentDetail);
-
-	                // Iterate over profession details for this platform
-	                for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
-	                    // Create ProfessionPermanentDetail object
-	                    ProfessionPermanentDetail savedProfession = new ProfessionPermanentDetail();
-	                    savedProfession.setProfessionName(professionDetail.getProfessionName());
-	                    savedProfession.setSubProfessionName(professionDetail.getSubProfessionName());
-	                    savedProfession.setPlatformPermanentDetail(savedPlatform);
-
-	                    // Save the ProfessionPermanentDetail object
-	                    professionPermanentDetailRepository.save(savedProfession);
+	private void uploadToS3(MultipartFile file, FileOutputWebModel fileOutputWebModel) {
+	    if (file != null && fileOutputWebModel != null) {
+	        try {
+	            // Check if the file is not null before accessing its properties
+	            if (!file.isEmpty() && file.getOriginalFilename() != null) {
+	                File tempFile = File.createTempFile(fileOutputWebModel.getFileId(), null);
+	                FileUtil.convertMultiPartFileToFile(file, tempFile);
+	                String response = fileUtil.uploadFile(tempFile, fileOutputWebModel.getFilePath());
+	                logger.info("File saved in S3 response: " + response);
+	                if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+	                    tempFile.delete(); // deleting temp file
 	                }
+	            } else {
+	                logger.error("Error: Null or empty file provided for upload to S3.");
+	            }
+	        } catch (Exception e) {
+	            logger.error("Error uploading file to S3: ", e);
+	            e.printStackTrace();
+	        }
+	    } else {
+	        logger.error("Error: Null file or fileOutputWebModel provided for upload to S3.");
+	    }
+	}
+
+
+
+	private void uploadToS3(MultipartFile[] files, FileOutputWebModel fileOutputWebModel) {
+	    if (files != null && files.length > 0) {
+	        for (MultipartFile file : files) {
+	            try {
+	                if (fileOutputWebModel == null) {
+	                    logger.error("Error: fileOutputWebModel is null during file upload to S3.");
+	                    return;
+	                }
+	                
+	                File tempFile = File.createTempFile(fileOutputWebModel.getFileId(), null);
+	                FileUtil.convertMultiPartFileToFile(file, tempFile);
+	                String response = fileUtil.uploadFile(tempFile, fileOutputWebModel.getFilePath());
+	                logger.info("File saved in S3 response: " + response);
+	                if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+	                    tempFile.delete(); // deleting temp file
+	                }
+	            } catch (Exception e) {
+	                logger.error("Error uploading file to S3: ", e);
+	                e.printStackTrace();
 	            }
 	        }
+	    }
+	}
 
-	        // Return a success response
-	        return ResponseEntity.ok("Industry user permanent details added successfully.");
+	@Override
+	public ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
+	    try {
+	        // Extract data from the IndustryTemporaryWebModel object
+	        List<String> industriesName = industryTemporaryWebModel.getIndustriesName();
+	        List<String> platformName = industryTemporaryWebModel.getPlatformName();
+	        List<String> professionName = industryTemporaryWebModel.getProfessionName();
+	        List<String> subProfessionName = industryTemporaryWebModel.getSubProfessionName();
+	        Integer userId = industryTemporaryWebModel.getUserId() ;
+	        Integer temporaryId = industryTemporaryWebModel.getItId(); // Assuming you have a method to get temporary ID
+
+	        // Delete existing temporary details
+	        industryTemporaryDetailsRepository.deleteById(temporaryId);
+	        professsionDetailsRepository.deleteByProfessionTemporaryDetailId(temporaryId);
+	        subProfessionDetailsRepository.deleteByIntegerTemporaryDetailId(temporaryId);
+	        industryDetailsRepository.deleteByIntegerTemporaryDetailId(temporaryId);
+	        platformDetailsRepository.deleteByIntegerTemporaryDetailId(temporaryId);
+
+
+	        // Save new details
+	        IndustryTemporaryDetails tempDetails = new IndustryTemporaryDetails();
+	        tempDetails.setIndustriesname(String.join(",", industriesName));
+	        tempDetails.setPlatformname(String.join(",", platformName));
+	        tempDetails.setProfessionname(String.join(",", professionName));
+	        tempDetails.setSubProfessionname(String.join(",", subProfessionName));
+	        tempDetails.setUserId(userId);
+	        IndustryTemporaryDetails savedTempDetails = industryTemporaryDetailsRepository.save(tempDetails);
+
+	        // Save details to PlatformDetails
+	        for (String platform : platformName) {
+	            PlatformDetails platformDetails = new PlatformDetails();
+	            platformDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
+	            platformDetails.setPlatformName(platform);
+	            platformDetailsRepository.save(platformDetails);
+	        }
+
+	        // Save details to ProfesssionDetails
+	        for (String prof : professionName) {
+	            ProfesssionDetails professionDetails = new ProfesssionDetails();
+	            professionDetails.setProfessionTemporaryDetailId(savedTempDetails.getItId());
+	            professionDetails.setProfessionname(prof);
+	            professsionDetailsRepository.save(professionDetails);
+	        }
+
+	        // Save details to IndustryDetails
+	        for (String industry : industriesName) {
+	            IndustryDetails industryDetails = new IndustryDetails();
+	            industryDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
+	            industryDetails.setIndustry_name(industry);
+	            industryDetailsRepository.save(industryDetails);
+	        }
+
+	        // Save details to SubProfessionDetails
+	        for (String subProf : subProfessionName) {
+	            SubProfessionDetails subProfessionDetails = new SubProfessionDetails();
+	            subProfessionDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
+	            subProfessionDetails.setSubProfessionName(subProf);
+	            subProfessionDetailsRepository.save(subProfessionDetails);
+	        }
+
+	        // Log the received data
+	        logger.info(
+	                "Updated temporary details with temporaryId: {}, industries: {}, platforms: {}, professions: {}, subProfessions: {}, userId: {}",
+	                temporaryId, industriesName, platformName, professionName, subProfessionName, userId);
+
+	        return ResponseEntity.ok("Temporary details updated successfully");
 	    } catch (Exception e) {
-	        // Return an error response if an exception occurs
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body("Failed to add industry user permanent details.");
+	        // Handle any exceptions that occur during processing
+	        logger.error("updateTemporaryDetails Service Method Exception: {}", e);
+	        e.printStackTrace();
+	        return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	    }
 	}
 }
-
-//	@Override
-//	public ResponseEntity<?> getTemporaryDetails() {
-//	    try {
-//	        List<IndustryTemporaryDetails> temporaryDetailsList = industryTemporaryDetailsRepository.findAll();
-//	        Map<String, Object> response = new HashMap<>();
-//
-//	        for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
-//	            Map<String, Object> industryMap = new HashMap<>();
-//	            List<String> industriesName = Arrays.asList(tempDetails.getIndustriesname().split(","));
-//	            industryMap.put("industryName", industriesName);
-//
-//	            List<Map<String, Object>> platformList = new ArrayList<>();
-//	            List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
-//	            for (PlatformDetails platformDetails : platformDetailsList) {
-//	                Map<String, Object> platformMap = new HashMap<>();
-//	                platformMap.put("platformName", platformDetails.getPlatformName());
-//
-//	                // Add professions for the platform
-//	                List<ProfesssionDetails> professionDetailsList = professsionDetailsRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
-//	                List<String> professions = new ArrayList<>();
-//	                for (ProfesssionDetails professionDetails : professionDetailsList) {
-//	                    professions.add(professionDetails.getProfessionname());
-//	                }
-//	                platformMap.put("professions", professions);
-//
-//	                // Add sub-professions for the platform
-//	                List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
-//	                List<String> subProfessions = new ArrayList<>();
-//	                for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
-//	                    subProfessions.add(subProfessionDetails.getSubProfessionName());
-//	                }
-//	                platformMap.put("subProfessions", subProfessions);
-//
-//	                platformList.add(platformMap);
-//	            }
-//
-//	            industryMap.put("platforms", platformList);
-//	            response.put("industries", industryMap);
-//	        }
-//
-//	        return ResponseEntity.ok(response);
-//	    } catch (Exception e) {
-//	        // Handle exceptions
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//	                .body("Error occurred while fetching temporary details.");
-//	    }
-//	}

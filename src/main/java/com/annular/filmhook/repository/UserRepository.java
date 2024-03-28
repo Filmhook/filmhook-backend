@@ -14,7 +14,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.userId=:userId")
 	Optional<User> getUserByUserId(Integer userId);
 
-	@Query("select u from User u where u.email=:email and u.userType=:userType")
+	@Query("select u from User u where u.email=:email and u.userType=:userType and u.status=true")
 	Optional<User> findByEmailAndUserType(String email, String userType);
 
 	@Query("select u from User u where u.verificationCode=:code")
@@ -27,12 +27,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	Optional<User> findByNameAndUserType(String name, String userType);
 
 	@Query("select u from User u where u.verificationCode = :verificationCode and u.phoneNumber = :phoneNumber")
-	Optional<User> findByOtp(Integer verificationCode, String phoneNumber);
+	Optional<User> findByOtp(String verificationCode, String phoneNumber);
 
 	@Query("select u from User u where u.userId=:id")
 	Optional<User> findByResetPassword(Integer id);
 
 	@Query("select u from User u where u.phoneNumber=:phoneNumber and u.userType=:userType")
 	Optional<User> findByPhoneNumberAndUserType(String phoneNumber, String userType);
+
 
 }

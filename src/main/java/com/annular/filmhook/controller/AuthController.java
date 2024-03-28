@@ -38,75 +38,95 @@ import com.annular.filmhook.webmodel.UserWebModel;
 @RequestMapping("/user")
 public class AuthController {
 
-    public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+	public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired
-    AuthenticationService userService;
+	@Autowired
+	AuthenticationService userService;
 
-    @Autowired
-    UserRepository userRepository;
+	@Autowired
+	UserRepository userRepository;
 
-    @Autowired
-    UserStatusConfig loginConstants;
+	@Autowired
+	UserStatusConfig loginConstants;
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+	@Autowired
+	AuthenticationManager authenticationManager;
 
-    @Autowired
-    RefreshTokenRepository refreshTokenRepository;
+	@Autowired
+	RefreshTokenRepository refreshTokenRepository;
 
-    @Autowired
-    JwtUtils jwtUtils;
+	@Autowired
+	JwtUtils jwtUtils;
 
-    @PostMapping("register")
-    public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
-        try {
-            logger.info("User details to register :- " + userWebModel);
-            return userService.register(userWebModel);
-        } catch (Exception e) {
-            logger.error("userRegister Method Exception...", e);
-            e.printStackTrace();
-        }
-        return ResponseEntity.ok(new Response(-1, "Fail", ""));
-    }
+	@PostMapping("register")
+	public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel, String request) {
+		try {
+			logger.info("User details to register :- " + userWebModel);
+			return userService.register(userWebModel, request);
+		} catch (Exception e) {
+			logger.error("userRegister Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
-    @PostMapping("login")
-    public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
+	@GetMapping("verifyUser")
+	public Response verifyUser(@RequestParam("code") String code) {
+	    try {
+	        logger.info("verifyUser start");
+	        System.out.println(code);
+	        boolean verificationResult = userService.verify(code);
+	        if (verificationResult) {
+	            logger.info("Verified successfully");
+	            return new Response(1, "Verify Success", "");
+	        } else {
+	            logger.info("Verification failed");
+	            return new Response(-1, "Verify Failed", "");
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error occurred in verifyUser method", e);
+	        return new Response(-1, "An error occurred", "");
+	    }
+	}
+
+	@PostMapping("login")
+	public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
 //		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
-        Optional<User> checkUsername = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
-        if (checkUsername.isPresent()) {
-            loginConstants.setUserType(userWebModel.getUserType());
-            logger.info("User type from constants -> " + loginConstants.getUserType());
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
-            String jwt = jwtUtils.generateJwtToken(authentication);
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            logger.info("Login Controller ---- Finished");
-            return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), "Login Successful", 1, ""));
-        }
-        return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
-    }
+		Optional<User> checkUsername = userRepository.findByEmailAndUserType(userWebModel.getEmail(),
+				userWebModel.getUserType());
+		if (checkUsername.isPresent()) {
+			loginConstants.setUserType(userWebModel.getUserType());
+			logger.info("User type from constants -> " + loginConstants.getUserType());
+			Authentication authentication = authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
+			SecurityContextHolder.getContext().setAuthentication(authentication);
+			RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
+			String jwt = jwtUtils.generateJwtToken(authentication);
+			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+			logger.info("Login Controller ---- Finished");
+			return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(),
+					userDetails.getEmail(), "Login Successful", 1, ""));
+		}
+		return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
+	}
 
+	@PostMapping("refreshToken")
+	public ResponseEntity<?> refreshToken(@RequestBody UserWebModel userWebModel) {
+		Optional<RefreshToken> data = refreshTokenRepository.findByToken(userWebModel.getToken());
+		if (data.isPresent()) {
+			Response token = userService.verifyExpiration(data.get());
+			Optional<User> userData = userRepository.findById(data.get().getUserId());
+			String jwt = jwtUtils.generateJwtTokenForRefreshToken(userData.get());
+			RefreshToken refreshToken = data.get();
+			refreshToken.setExpiryToken(LocalTime.now().plusMinutes(17));
+			refreshTokenRepository.save(refreshToken);
+			return ResponseEntity.ok(new JwtResponse(jwt, userData.get().getUserId(), userData.get().getName(),
+					userData.get().getEmail(), "Success", 1, token.getData().toString()));
+		}
+		return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
+	}
 
-
-
-    @PostMapping("refreshToken")
-    public ResponseEntity<?> refreshToken(@RequestBody UserWebModel userWebModel) {
-        Optional<RefreshToken> data = refreshTokenRepository.findByToken(userWebModel.getToken());
-        if (data.isPresent()) {
-            Response token = userService.verifyExpiration(data.get());
-            Optional<User> userData = userRepository.findById(data.get().getUserId());
-            String jwt = jwtUtils.generateJwtTokenForRefreshToken(userData.get());
-            RefreshToken refreshToken = data.get();
-            refreshToken.setExpiryToken(LocalTime.now().plusMinutes(17));
-            refreshTokenRepository.save(refreshToken);
-            return ResponseEntity.ok(new JwtResponse(jwt, userData.get().getUserId(), userData.get().getName(), userData.get().getEmail(), "Success", 1, token.getData().toString()));
-        }
-        return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
-    }
-
-    @PostMapping("verify")
+	@PostMapping("verify")
 	public ResponseEntity<?> verify(@RequestBody UserWebModel userWebModel) {
 		try {
 			logger.info("Verify controller start");
@@ -118,7 +138,7 @@ public class AuthController {
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
 
-    @PostMapping("forgotPassword")
+	@PostMapping("forgotPassword")
 	public ResponseEntity<?> forgotPassword(@RequestBody UserWebModel userWebModel, HttpServletRequest request) {
 		try {
 			logger.info("getUser controller start");

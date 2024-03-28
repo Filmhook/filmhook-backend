@@ -73,9 +73,11 @@ public class WebSecurityConfig {
 								.antMatchers("/user/register",
 										"/user/login",
 										"/user/refreshToken","/user/forgotPassword",
-										"/user/changeUserPassword",
-										"/user/verify",
-										"/api/printName")
+										"/user/changeUserPassword","/user/verifyUser",
+										"/user/verify","/user/resendOtp","/user/changePassword",
+										"/api/printName","/industryUser/getDetails","/industryUser/addTemporaryDetails",
+										"/industryUser/getTemporaryDetails","/industryUser/addIndustryUserPermanentDetails",
+										"/industryUser/saveIndustryUserFiles","/industryUser/updateTemporaryDetails")
 								.permitAll()
 								.anyRequest()
 								.authenticated()

@@ -123,7 +123,8 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserBiographyData(UserWebModel userInput, User userToUpdate) {
-        userToUpdate.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userInput.getDob()));
+        userToUpdate.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT,
+				CalendarUtil.MYSQL_DATE_FORMAT, userInput.getDob()));
         userToUpdate.setGender(userInput.getGender());
         userToUpdate.setCountry(userInput.getCountry());
         userToUpdate.setState(userInput.getState());

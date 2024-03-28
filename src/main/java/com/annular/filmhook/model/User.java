@@ -30,10 +30,6 @@ import lombok.ToString;
 @NoArgsConstructor
 public class User {
 
-    public User(Integer userId) {
-        this.userId = userId;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -54,7 +50,7 @@ public class User {
 
     @JsonIgnore
     @Column(name = "verification_code")
-    private Integer verificationCode;
+    private String verificationCode;
 
     @Column(name = "dob")
     private String dob;
@@ -165,5 +161,8 @@ public class User {
     
     @Column(name ="otp")
     private Integer otp;
+    
+    @Column(name = "film_hook_code")
+    private String filmHookCode;
 
 }

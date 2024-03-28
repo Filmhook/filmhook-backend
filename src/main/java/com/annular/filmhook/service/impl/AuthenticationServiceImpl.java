@@ -1,21 +1,21 @@
 package com.annular.filmhook.service.impl;
 
-import java.time.Duration;
+import java.text.SimpleDateFormat;
 
+import java.time.Duration;
 
 import java.time.Instant;
 import java.time.LocalTime;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 
-import com.annular.filmhook.util.CalendarUtil;
-import com.annular.filmhook.util.TwilioConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +35,13 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.RefreshTokenRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
+import com.annular.filmhook.util.CalendarUtil;
+import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.Notifications;
+import com.annular.filmhook.util.TwilioConfig;
 import com.annular.filmhook.webmodel.UserWebModel;
 
+import net.bytebuddy.utility.RandomString;
 
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
@@ -50,6 +55,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	private JavaMailSender javaMailSender;
 
 	@Autowired
+	Notifications notifications;
+
+	@Autowired
 	RefreshTokenRepository refreshTokenRepository;
 
 	@Autowired
@@ -57,82 +65,139 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Value("${annular.app.url}")
 	private String url;
-	
+
 	@Autowired
 	UserDetails userDetails;
 
+	@Autowired
+	FileUtil fileUtil;
 
 	@Override
-	public ResponseEntity<?> register(UserWebModel userWebModel) {
-		HashMap<String, Object> response = new HashMap<String, Object>();
+	public ResponseEntity<?> register(UserWebModel userWebModel, String request) {
+		HashMap<String, Object> response = new HashMap<>();
 		try {
 			logger.info("Register method start");
+			System.out.println(userWebModel.getEmail());
 			Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(),
 					userWebModel.getUserType());
-//			Optional<User> userData = userRepository.findByUserName(userWebModel.getName(), userWebModel.getUserType());
+
 			BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 			if (!userData.isPresent()) {
 				User user = new User();
-				if (userWebModel.getUserType().equalsIgnoreCase("commonUser")
-						|| userWebModel.getUserType().equalsIgnoreCase("industrialUser")) {
-					user.setPhoneNumber(userWebModel.getPhoneNumber());
-					user.setName(userWebModel.getName());
-					user.setEmail(userWebModel.getEmail());
-					user.setUserType(userWebModel.getUserType());
-					user.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT,
-							CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
-					user.setGender(userWebModel.getGender());
-					user.setCountry(userWebModel.getCountry());
-					user.setState(userWebModel.getState());
-					user.setDistrict(userWebModel.getDistrict());
+				user.setPhoneNumber(userWebModel.getPhoneNumber());
+				user.setName(userWebModel.getName());
+				user.setEmail(userWebModel.getEmail());
+				user.setUserType(userWebModel.getUserType());
+				user.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT,
+						CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
+				user.setGender(userWebModel.getGender());
+				user.setCountry(userWebModel.getCountry());
+				user.setState(userWebModel.getState());
+				user.setUserType(userWebModel.getUserType());
+				user.setDistrict(userWebModel.getDistrict());
 
-					String encryptPwd = bcrypt.encode(userWebModel.getPassword());
-					user.setPassword(encryptPwd);
+				// Generate and set FilmHook code
+				String filmHookCode = generateFilmHookCode();
+				user.setFilmHookCode(filmHookCode);
 
-					if (userWebModel.getUserType().equalsIgnoreCase("commonUser")) {
-//						user.setUserFirstName(userWebModel.getUserFirstName());
-//						user.setUserLastName(userWebModel.getUserLastName());
-//						user.setUserAccountName(userWebModel.getUserFirstName() + " " + userWebModel.getUserLastName());
-					} else if (userWebModel.getUserType().equalsIgnoreCase("industrialUser")) {
-//						user.setUserFirstName(userWebModel.getUserFirstName());
-//						user.setUserLastName(userWebModel.getUserLastName());
-//						user.setUserAccountName(userWebModel.getUserFirstName() + " " + userWebModel.getUserLastName());
-					} else {
-						return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-								.body(new Response(1, "Invalid user type", ""));
-					}
+				String encryptPwd = bcrypt.encode(userWebModel.getPassword());
+				user.setPassword(encryptPwd);
+				Boolean sendVerificationRes = sendVerificationEmail(user, request);
+				int min = 1000;
+				String randomCode = RandomString.make(64);
+				user.setVerificationCode(randomCode);
 
-					int min = 1000;
-					int max = 9999;
-					int otpNumber = (int) (Math.random() * (max - min + 1) + min);
-					user.setVerificationCode(otpNumber);
-					user.setStatus(false);
-					user.setCreatedBy(user.getUserId());
-					user.setCreatedOn(new Date());
+				user.setStatus(false);
+				user.setCreatedBy(user.getUserId()); // You might want to check how you're setting createdBy
+				user.setCreatedOn(new Date());
+				if (!sendVerificationRes)
+					return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+							.body(new Response(-1, "Mail not sent", "error"));
+				int mins = 1000;
+				int max = 9999;
+				int otpNumber = (int) (Math.random() * (max - mins + 1) + mins);
+				user.setOtp(otpNumber);
 
-					user = userRepository.save(user);
-					/*
-					 * CompletableFuture.runAsync(() -> { String message = "Your OTP is " +
-					 * otpNumber + " for verification";
-					 * twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message); });
-					 */
-					response.put("user", user);
-				}
+				CompletableFuture.runAsync(() -> {
+					String message = "Your OTP is " + otpNumber + " for verification";
+					twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
+				});
+				user = userRepository.save(user);
+
+				response.put("userDetails", user);
+				response.put("verificationCode", user.getVerificationCode());
 			} else {
 				return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-						.body(new Response(1, "This Account is already exist", ""));
+						.body(new Response(1, "This Account already exists", ""));
 			}
 			logger.info("Register method end");
 		} catch (Exception e) {
 			logger.error("Register Method Exception...", e);
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Fail", e.getMessage()));
+					.body(new Response(-1, "Failed to create profile", e.getMessage()));
 		}
-		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Profile Created Successful", response));
+		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Profile Created Successfully", response));
 	}
 
+	private static final AtomicInteger counter = new AtomicInteger(1);
 
+	// Method to generate FilmHook code
+	private String generateFilmHookCode() {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMddHHmmss");
+		String timestamp = dateFormat.format(new Date());
+		// Generate unique ID with automatic incrementing counter
+		String uniqueId = String.format("%02d", counter.getAndIncrement());
+		return "Fh" + timestamp + uniqueId;
+	}
+
+	public boolean sendVerificationEmail(User user, String request) {
+		Boolean response = true;
+		try {
+			String subject = "Verify Your EmailID";
+			String senderName = "FilmHook";
+			String mailContent = "<p>Hello " + user.getName() + ",</p>";
+			mailContent += "<p>Please verify your emailId for register in  FilmHook, </p>";
+			String verifyUrl = url + "/verifyemail?code=" + user.getVerificationCode();
+			mailContent += "<h3><a href= \"" + request + "\">VERIFY EMAIL</a></h3>";
+			mailContent += "<p>Thank You<br>FilmHook</p>";
+			MimeMessage message = javaMailSender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(message);
+			helper.setFrom("tamil030405@gmail.com", senderName);
+			helper.setTo(user.getEmail());
+			helper.setSubject(subject);
+			String str = mailContent;
+			if (request != null) {
+				str = mailContent.replace(request, verifyUrl);
+				mailContent = mailContent.replace(request, "/login");
+			}
+			helper.setText(str, true);
+			javaMailSender.send(message);
+		} catch (Exception e) {
+			e.printStackTrace();
+			response = false;
+		}
+		return response;
+
+	}
+
+	@Override
+	public boolean verify(String code) {
+		User user = userRepository.findByVerificationCode(code);
+		if (user == null || user.getStatus()) {
+			return false;
+		} else {
+			user.setVerificationCode(null);
+			user.setStatus(true);
+			userRepository.save(user);
+			String subject = "FilmHook Registration Confirmation";
+			String mailContent = "<p>Hello " + user.getName() + ",</p>";
+			mailContent += "<p>You have successfully registered with the FilmHook </p>";
+			mailContent += "<p>Thank You<br>FilmHook</p>";
+			notifications.emailNotification(user.getEmail(), subject, mailContent);
+			return true;
+		}
+	}
 
 	@Override
 	public Response verifyExpiration(RefreshToken token) {
@@ -176,7 +241,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	public ResponseEntity<?> verifyUser(UserWebModel userWebModel) {
 		try {
 			logger.info("verifyUser method start");
-			Optional<User> userData = userRepository.findByOtp(userWebModel.getVerificationCode(), userWebModel.getPhoneNumber());
+			Optional<User> userData = userRepository.findByOtp(userWebModel.getVerificationCode(),
+					userWebModel.getPhoneNumber());
 			if (userData.isPresent()) {
 				User user = userData.get();
 				user.setStatus(true);
@@ -202,7 +268,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			String siteUrl = Utility.getSiteUrl(request);
 			System.out.println("------>" + userWebModel.getEmail());
 			Optional<User> data = userRepository.findByEmail(userWebModel.getEmail());
-			System.out.println("response------>" +data.get().getEmail());
+			System.out.println("response------>" + data.get().getEmail());
 			if (data.isPresent()) {
 				String token = UUID.randomUUID().toString();
 				int expirationTimeMinutes = 2;
@@ -211,7 +277,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				String subject = "Change Password";
 				String senderName = "Film-Hook";
 				String mailContent = "<p>Hello ,</p>";
-                mailContent += "<p>Please click below link for change password, </p>";
+				mailContent += "<p>Please click below link for change password, </p>";
 				String verifyUrl = url + "/forgetpass?id=" + token;
 //				String verifyUrl = "https://www.annulartechnologies.com";
 				mailContent += "<h3><a href= \"" + siteUrl + "\">Change Password</a></h3>";
@@ -277,10 +343,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	public ResponseEntity<?> resendOtp(UserWebModel userWebModel) {
 		try {
 			logger.info("resendOtp method start");
-			System.out.println("---------->"+userWebModel.getPhoneNumber());
+			System.out.println("---------->" + userWebModel.getPhoneNumber());
 			Optional<User> userData = userRepository.findByPhoneNumberAndUserType(userWebModel.getPhoneNumber(),
 					userWebModel.getUserType());
-			System.out.println("data---------->"+userWebModel.getPhoneNumber());
+			System.out.println("data---------->" + userWebModel.getPhoneNumber());
 			if (userData.isPresent()) {
 				User user = userData.get();
 				int min = 1000;
