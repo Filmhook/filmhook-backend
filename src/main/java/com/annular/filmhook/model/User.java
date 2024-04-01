@@ -164,5 +164,8 @@ public class User {
     
     @Column(name = "film_hook_code")
     private String filmHookCode;
+    
+    @Column(name = "mobile_Number_status")
+    private Boolean mobileNumberStatus;
 
 }

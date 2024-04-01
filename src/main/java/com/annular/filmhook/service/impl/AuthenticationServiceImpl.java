@@ -78,8 +78,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		try {
 			logger.info("Register method start");
 			System.out.println(userWebModel.getEmail());
-			Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(),
+//			Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(),
+//					userWebModel.getUserType());
+			Optional<User> userData = userRepository.findByEmailAndUserTypeAndMobile(userWebModel.getEmail(),
 					userWebModel.getUserType());
+
 
 			BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 			if (!userData.isPresent()) {
@@ -88,6 +91,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				user.setName(userWebModel.getName());
 				user.setEmail(userWebModel.getEmail());
 				user.setUserType(userWebModel.getUserType());
+				user.setMobileNumberStatus(false);
 				user.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT,
 						CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
 				user.setGender(userWebModel.getGender());
@@ -245,7 +249,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 					userWebModel.getPhoneNumber());
 			if (userData.isPresent()) {
 				User user = userData.get();
-				user.setStatus(true);
+				user.setMobileNumberStatus(true);
 				user.setOtp(null);
 				userRepository.save(user);
 			} else {

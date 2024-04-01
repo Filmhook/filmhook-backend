@@ -71,7 +71,7 @@ public class WebSecurityConfig {
 				.authorizeRequests(
 						(authorize) -> authorize
 								.antMatchers("/user/register",
-										"/user/login",
+										"/user/login","/Film/getProfessionList",
 										"/user/refreshToken","/user/forgotPassword",
 										"/user/changeUserPassword","/user/verifyUser",
 										"/user/verify","/user/resendOtp","/user/changePassword",

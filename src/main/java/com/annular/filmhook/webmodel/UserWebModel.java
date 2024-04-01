@@ -70,4 +70,5 @@ public class UserWebModel {
     private String currentPassword;
     private String newPassword;
     private Integer otp;
+    private Boolean mobileNumberStatus;
 }
