@@ -6,8 +6,11 @@ import java.time.Duration;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -75,6 +78,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	@Override
 	public ResponseEntity<?> register(UserWebModel userWebModel, String request) {
 		HashMap<String, Object> response = new HashMap<>();
+		 List<Map<String, Object>> dataList = new ArrayList<>();
 		try {
 			logger.info("Register method start");
 			System.out.println(userWebModel.getEmail());
@@ -130,6 +134,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 				response.put("userDetails", user);
 				response.put("verificationCode", user.getVerificationCode());
+				 dataList.add(response);
 			} else {
 				return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
 						.body(new Response(1, "This Account already exists", ""));
@@ -167,7 +172,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			mailContent += "<p>Thank You<br>FilmHook</p>";
 			MimeMessage message = javaMailSender.createMimeMessage();
 			MimeMessageHelper helper = new MimeMessageHelper(message);
-			helper.setFrom("tamil030405@gmail.com", senderName);
+			helper.setFrom("yaswanthshankar2705@gmail.com", senderName);
 			helper.setTo(user.getEmail());
 			helper.setSubject(subject);
 			String str = mailContent;
@@ -245,8 +250,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	public ResponseEntity<?> verifyUser(UserWebModel userWebModel) {
 		try {
 			logger.info("verifyUser method start");
-			Optional<User> userData = userRepository.findByOtp(userWebModel.getVerificationCode(),
-					userWebModel.getPhoneNumber());
+//			Optional<User> userData = userRepository.findByOtp(userWebModel.getVerificationCode(),
+//					userWebModel.getPhoneNumber());
+			Optional<User> userData = userRepository.findByOTps(userWebModel.getOtp(),userWebModel.getUserId());
 			if (userData.isPresent()) {
 				User user = userData.get();
 				user.setMobileNumberStatus(true);

@@ -8,4 +8,6 @@ public interface FilmProfessionService {
 
 	ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel);
 
+	ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel);
+
 }

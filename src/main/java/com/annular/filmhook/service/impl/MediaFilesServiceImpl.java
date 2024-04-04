@@ -1,12 +1,15 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.model.MediaFiles;
+import com.annular.filmhook.model.MultiMediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MediaFilesRepository;
+import com.annular.filmhook.repository.MultiMediaFileRepository;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -39,8 +42,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 	@Autowired
 	UserService userService;
 	
-    @Autowired
-    S3Util s3Util;
+	@Autowired
+	MultiMediaFileRepository multiMediaFilesRepository;
+
+	@Autowired
+	S3Util s3Util;
 
 	@Override
 	public FileOutputWebModel saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
@@ -84,7 +90,28 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		// mediaFiles.setUpdatedBy(fileInput.getUserId());
 		// mediaFiles.setUpdatedOn(new Date());
 		logger.info("MediaFiles details to save in MySQL :- " + mediaFiles);
+		mediaFilesRepository.save(mediaFiles);
 
+		// Save multiMediaTable
+		
+		try {
+			MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
+			multiMediaFiles.setFileName(mediaFiles.getFileName());
+			multiMediaFiles.setFileOriginalName(fileInput.getFile().getOriginalFilename());
+			multiMediaFiles.setFileDomainId(FilmHookConstants.GALLERY);
+			System.out.println(mediaFiles.getId());
+			multiMediaFiles.setFileDomainReferenceId(mediaFiles.getId());
+			multiMediaFiles.setFileIsActive(true);
+			multiMediaFiles.setFileCreatedBy(user.getUserId());
+			multiMediaFiles.setFileSize(mediaFiles.getFileSize());
+			multiMediaFiles.setFileType(mediaFiles.getFileType());
+			multiMediaFiles = multiMediaFilesRepository.save(multiMediaFiles);
+			logger.info(
+					"MultiMediaFiles entity saved in the database with ID: " + multiMediaFiles.getMultiMediaFileId());
+		} catch (Exception e) {
+			logger.error("Error saving MultiMediaFiles", e);
+			// Handle the error accordingly
+		}
 		return mediaFiles;
 	}
 
@@ -210,10 +237,6 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 
 		return mediaFiles;
 	}
-
-	
-	
-
 
 	private MediaFiles createMediaFile(MultipartFile file, User user, String category, Integer createdBy) {
 		MediaFiles mediaFiles = new MediaFiles();

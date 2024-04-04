@@ -38,5 +38,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.email=:email and u.userType=:userType and u.status=true and u.mobileNumberStatus=true")
 	Optional<User> findByEmailAndUserTypeAndMobile(String email, String userType);
 
+	@Query("select u from User u where u.otp = :otp and u.userId = :userId")
+	Optional<User> findByOTps(Integer otp, Integer userId);
+
 
 }

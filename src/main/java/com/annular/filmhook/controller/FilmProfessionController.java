@@ -30,4 +30,15 @@ public class FilmProfessionController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+	@PostMapping("/getProfessionMapList")
+	public ResponseEntity<?> getProfessionMapList(@RequestBody FilmWebModel filmWebModel) {
+		try {
+			//logger.info("getProfessionList controller start");
+			return filmProfessionService.getProfessionMapList(filmWebModel);
+		} catch (Exception e) {
+			//logger.error("getProfessionList Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 }
