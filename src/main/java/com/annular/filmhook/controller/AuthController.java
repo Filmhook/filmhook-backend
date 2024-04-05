@@ -92,8 +92,8 @@ public class AuthController {
 	@PostMapping("login")
 	public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
 //		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
-		Optional<User> checkUsername = userRepository.findByEmailAndUserType(userWebModel.getEmail(),
-				userWebModel.getUserType());
+		Optional<User> checkUsername = userRepository.findByEmailAndUserType(userWebModel.getEmail()
+				);
 		if (checkUsername.isPresent()) {
 			loginConstants.setUserType(userWebModel.getUserType());
 			logger.info("User type from constants -> " + loginConstants.getUserType());
@@ -105,7 +105,7 @@ public class AuthController {
 			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 			logger.info("Login Controller ---- Finished");
 			return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(),
-					userDetails.getEmail(), "Login Successful", 1, ""));
+					userDetails.getEmail(), "Login Successful", 1, "",userDetails.getUserType()));
 		}
 		return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
 	}
@@ -121,7 +121,7 @@ public class AuthController {
 			refreshToken.setExpiryToken(LocalTime.now().plusMinutes(17));
 			refreshTokenRepository.save(refreshToken);
 			return ResponseEntity.ok(new JwtResponse(jwt, userData.get().getUserId(), userData.get().getName(),
-					userData.get().getEmail(), "Success", 1, token.getData().toString()));
+					userData.get().getEmail(), "Success", 1, token.getData().toString(), jwt));
 		}
 		return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
 	}
@@ -133,6 +133,28 @@ public class AuthController {
 			return userService.verifyUser(userWebModel);
 		} catch (Exception e) {
 			logger.error("verify Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+	@PostMapping("verifyEmailOtp")
+	public ResponseEntity<?> verifyEmailOtp(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("verifyEmailOtp controller start");
+			return userService.verifyEmailOtp(userWebModel);
+		} catch (Exception e) {
+			logger.error("verifyEmailOtp Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+	@PostMapping("verifyForgotOtp")
+	public ResponseEntity<?> verifyForgotOtp(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("verifyForgotOtp controller start");
+			return userService.verifyForgotOtp(userWebModel);
+		} catch (Exception e) {
+			logger.error("verifyForgotOtp Method Exception {}" + e);
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));

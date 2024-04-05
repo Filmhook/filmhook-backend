@@ -9,6 +9,7 @@ public class JwtResponse {
 	private String message;
 	private Integer status;
 	private String token;
+	private String userType;
 
 	public String getToken() {
 		return token;
@@ -66,8 +67,9 @@ public class JwtResponse {
 		this.email = email;
 	}
 
+
 	public JwtResponse(String jwt, Integer id, String username, String email, String message, Integer status,
-			String token) {
+			String token, String userType) {
 		super();
 		this.jwt = jwt;
 		this.id = id;
@@ -76,6 +78,17 @@ public class JwtResponse {
 		this.message = message;
 		this.status = status;
 		this.token = token;
+		this.userType = userType;
+	}
+
+	
+
+	public String getUserType() {
+		return userType;
+	}
+
+	public void setUserType(String userType) {
+		this.userType = userType;
 	}
 
 }

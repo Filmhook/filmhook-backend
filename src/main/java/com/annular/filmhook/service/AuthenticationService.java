@@ -31,6 +31,10 @@ public interface AuthenticationService {
 
 	boolean verify(String code);
 
+	ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel);
+
+	ResponseEntity<?> verifyForgotOtp(UserWebModel userWebModel);
+
 	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
 	// HttpServletRequest request);
 

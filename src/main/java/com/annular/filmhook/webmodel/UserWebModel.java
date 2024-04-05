@@ -71,4 +71,6 @@ public class UserWebModel {
     private String newPassword;
     private Integer otp;
     private Boolean mobileNumberStatus;
+    private Integer emailOtp;
+    private String forgotOtp;
 }

@@ -1,5 +1,6 @@
 package com.annular.filmhook.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,13 +15,16 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.userId=:userId")
 	Optional<User> getUserByUserId(Integer userId);
 
-	@Query("select u from User u where u.email=:email and u.userType=:userType and u.status=true")
-	Optional<User> findByEmailAndUserType(String email, String userType);
+	@Query("select u from User u where u.email=:email and u.status=true")
+	Optional<User> findByEmailAndUserType(String email);
 
 	@Query("select u from User u where u.verificationCode=:code")
 	User findByVerificationCode(String code);
 
-	@Query("select u from User u where u.email=:email")
+//	@Query("select u from User u where u.email=:email")
+//	Optional<User> findByEmail(String email);
+	
+	@Query("select u from User u where u.email=:email and u.status=true")
 	Optional<User> findByEmail(String email);
 
 	@Query("select u from User u where u.name=:name and u.userType=:userType")
@@ -40,6 +44,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	@Query("select u from User u where u.otp = :otp and u.userId = :userId")
 	Optional<User> findByOTps(Integer otp, Integer userId);
+
+	@Query("select u from User u where u.email=:email and u.userType =:userType and u.status=true")
+	Optional<User> findByEmailIdAndUserType(String email, String userType);
+
+	@Query("select u from User u where u.userType='subAdmin' and u.status=true")
+	List<User> findByUserType(String userType);
 
 
 }

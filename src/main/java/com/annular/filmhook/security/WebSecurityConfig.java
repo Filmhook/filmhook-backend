@@ -70,11 +70,11 @@ public class WebSecurityConfig {
 				.and()
 				.authorizeRequests(
 						(authorize) -> authorize
-								.antMatchers("/user/register",
+								.antMatchers("/user/register","/user/verifyEmailOtp",
 										"/user/login","/Film/getProfessionList","/Film/getProfessionMapList",
-										"/user/refreshToken","/user/forgotPassword",
-										"/user/changeUserPassword","/user/verifyUser",
-										"/user/verify","/user/resendOtp","/user/changePassword",
+										"/user/refreshToken","/user/forgotPassword","/admin/adminRegister","/admin/updateRegister",
+										"/user/changeUserPassword","/user/verifyUser","/admin/deleteRegister","/admin/getRegister",
+										"/user/verify","/user/resendOtp","/user/verifyForgotOtp",
 										"/api/printName","/industryUser/getDetails","/industryUser/addTemporaryDetails",
 										"/industryUser/getTemporaryDetails","/industryUser/addIndustryUserPermanentDetails",
 										"/industryUser/saveIndustryUserFiles","/industryUser/updateTemporaryDetails")

@@ -57,7 +57,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 		logger.info("Email :- " + email);
 		logger.info("UserType from LoginConstants :- " + loginConstants.getUserType());
 		email = email.contains("^") ? email.split("\\^")[0] : email;
-		Optional<User> optionalUser = userRepo.findByEmailAndUserType(email, loginConstants.getUserType());
+		Optional<User> optionalUser = userRepo.findByEmailAndUserType(email);
 		if (optionalUser.isPresent()) {
 			User user = optionalUser.get();
 			logger.info("User from DB --> " + user.getUserId() + " -- " + user.getEmail() + " -- " + user.getUserType());

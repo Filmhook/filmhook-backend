@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,14 +104,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				user.setState(userWebModel.getState());
 				user.setUserType(userWebModel.getUserType());
 				user.setDistrict(userWebModel.getDistrict());
-
+				
 				// Generate and set FilmHook code
 				String filmHookCode = generateFilmHookCode();
 				user.setFilmHookCode(filmHookCode);
 
 				String encryptPwd = bcrypt.encode(userWebModel.getPassword());
 				user.setPassword(encryptPwd);
-				Boolean sendVerificationRes = sendVerificationEmail(user, request);
+				//Boolean sendVerificationRes = sendVerificationEmail(user);
 				int min = 1000;
 				String randomCode = RandomString.make(64);
 				user.setVerificationCode(randomCode);
@@ -118,22 +119,30 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				user.setStatus(false);
 				user.setCreatedBy(user.getUserId()); // You might want to check how you're setting createdBy
 				user.setCreatedOn(new Date());
-				if (!sendVerificationRes)
-					return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-							.body(new Response(-1, "Mail not sent", "error"));
+//				if (!sendVerificationRes)
+//					return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+//							.body(new Response(-1, "Mail not sent", "error"));
 				int mins = 1000;
 				int max = 9999;
 				int otpNumber = (int) (Math.random() * (max - mins + 1) + mins);
 				user.setOtp(otpNumber);
+				int minss = 1000;
+				int maxs = 9999;
+				int otpNumbers = (int) (Math.random() * (maxs - minss + 1) + minss);
+				user.setEmailOtp(otpNumbers);
 
 				CompletableFuture.runAsync(() -> {
 					String message = "Your OTP is " + otpNumber + " for verification";
 					twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
 				});
+				Boolean sendVerificationRes = sendVerificationEmail(user);
+				if (!sendVerificationRes)
+					return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+							.body(new Response(-1, "Mail not sent", "error"));
 				user = userRepository.save(user);
 
 				response.put("userDetails", user);
-				response.put("verificationCode", user.getVerificationCode());
+				//response.put("verificationCode", user.getVerificationCode());
 				 dataList.add(response);
 			} else {
 				return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
@@ -160,34 +169,37 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		return "Fh" + timestamp + uniqueId;
 	}
 
-	public boolean sendVerificationEmail(User user, String request) {
-		Boolean response = true;
-		try {
-			String subject = "Verify Your EmailID";
-			String senderName = "FilmHook";
-			String mailContent = "<p>Hello " + user.getName() + ",</p>";
-			mailContent += "<p>Please verify your emailId for register in  FilmHook, </p>";
-			String verifyUrl = url + "/verifyemail?code=" + user.getVerificationCode();
-			mailContent += "<h3><a href= \"" + request + "\">VERIFY EMAIL</a></h3>";
-			mailContent += "<p>Thank You<br>FilmHook</p>";
-			MimeMessage message = javaMailSender.createMimeMessage();
-			MimeMessageHelper helper = new MimeMessageHelper(message);
-			helper.setFrom("yaswanthshankar2705@gmail.com", senderName);
-			helper.setTo(user.getEmail());
-			helper.setSubject(subject);
-			String str = mailContent;
-			if (request != null) {
-				str = mailContent.replace(request, verifyUrl);
-				mailContent = mailContent.replace(request, "/login");
-			}
-			helper.setText(str, true);
-			javaMailSender.send(message);
-		} catch (Exception e) {
-			e.printStackTrace();
-			response = false;
-		}
-		return response;
+	public boolean sendVerificationEmail(User user) {
+	    Boolean response = true;
+	    try {
+	        if (user.getOtp() == null) {
+	            throw new IllegalArgumentException("OTP is null");
+	        }
 
+	        String subject = "Verify Your EmailID";
+	        String senderName = "FilmHook";
+	        String mailContent = "<p>Hello " + user.getName() + ",</p>";
+	        mailContent += "<p>Please use the following OTP to verify your email on FilmHook:</p>";
+	        mailContent += "<h3>" + user.getEmailOtp() + "</h3>";
+	        mailContent += "<p>Thank You<br>FilmHook</p>";
+
+	        MimeMessage message = javaMailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(message);
+	        helper.setFrom("yaswanthshankar2705@gmail.com", senderName);
+	        helper.setTo(user.getEmail());
+	        helper.setSubject(subject);
+	        helper.setText(mailContent, true);
+
+	        javaMailSender.send(message);
+	    } catch (IllegalArgumentException e) {
+	        // Handle case where OTP is null
+	        e.printStackTrace();
+	        response = false;
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        response = false;
+	    }
+	    return response;
 	}
 
 	@Override
@@ -226,8 +238,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		RefreshToken refreashToken = new RefreshToken();
 		try {
 			logger.info("createRefreshToken method start");
-			Optional<User> data = userRepository.findByEmailAndUserType(userWebModel.getEmail(),
-					userWebModel.getUserType());
+			Optional<User> data = userRepository.findByEmailAndUserType(userWebModel.getEmail()
+				);
 			if (data.isPresent()) {
 				Optional<RefreshToken> refreshTokenData = refreshTokenRepository.findByUserId(data.get().getUserId());
 				if (refreshTokenData.isPresent()) {
@@ -270,51 +282,65 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Account Verified", ""));
 	}
-
 	@Override
 	public ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request) {
-		try {
-			logger.info("forgotPassword method start");
-			String siteUrl = Utility.getSiteUrl(request);
-			System.out.println("------>" + userWebModel.getEmail());
-			Optional<User> data = userRepository.findByEmail(userWebModel.getEmail());
-			System.out.println("response------>" + data.get().getEmail());
-			if (data.isPresent()) {
-				String token = UUID.randomUUID().toString();
-				int expirationTimeMinutes = 2;
-				Instant expirationTime = Instant.now().plus(Duration.ofMinutes(expirationTimeMinutes));
-				User user = data.get();
-				String subject = "Change Password";
-				String senderName = "Film-Hook";
-				String mailContent = "<p>Hello ,</p>";
-				mailContent += "<p>Please click below link for change password, </p>";
-				String verifyUrl = url + "/forgetpass?id=" + token;
-//				String verifyUrl = "https://www.annulartechnologies.com";
-				mailContent += "<h3><a href= \"" + siteUrl + "\">Change Password</a></h3>";
-				mailContent += "<p>Thank You<br>Film-Hook</p>";
-				MimeMessage message = javaMailSender.createMimeMessage();
-				MimeMessageHelper helper = new MimeMessageHelper(message);
-				helper.setFrom("tamil030405@gmail.com", senderName);
-				helper.setTo(user.getEmail());
-				helper.setSubject(subject);
-				String str = mailContent.replace(siteUrl, verifyUrl);
-//				mailContent=mailContent.replace(request, "/login");
-				helper.setText(str, true);
-				user.setResetPassword(token);
-				userRepository.save(user);
-				javaMailSender.send(message);
-				logger.info("forgotPassword method end");
-			} else {
-				return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
-						.body(new Response(-1, "Please enter the Register Email", ""));
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Fail", ""));
-		}
-		return ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,
-				"Link for password change has been sent in Email.Please check your inbox.", "Email Sent Successfull"));
+	    try {
+	        logger.info("forgotPassword method start");
+	        String siteUrl = Utility.getSiteUrl(request);
+	        System.out.println("------>" + userWebModel.getEmail());
+	        Optional<User> data = userRepository.findByEmail(userWebModel.getEmail());
+	        System.out.println("response------>" + data.get().getEmail());
+	        if (data.isPresent()) {
+	            // Generate OTP
+	            String otp = generateOTP(); // You need to implement this method to generate OTP
+
+	            User user = data.get();
+	            user.setForgotOtp(otp); // Save OTP in user's forgotOtp column
+
+	            // Save the updated user object
+	            userRepository.save(user);
+
+	            String subject = "Forgot Password OTP";
+	            String senderName = "Film-Hook";
+	            String mailContent = "<p>Hello,</p>";
+	            mailContent += "<p>Your OTP to reset your password is: <strong>" + otp + "</strong></p>";
+	            mailContent += "<p>Please use this OTP to reset your password.</p>";
+	            mailContent += "<p>If you didn't request this, you can safely ignore this email.</p>";
+	            mailContent += "<p>Thank You,<br>Film-Hook</p>";
+
+	            MimeMessage message = javaMailSender.createMimeMessage();
+	            MimeMessageHelper helper = new MimeMessageHelper(message);
+	            helper.setFrom("yaswanthshankar2705@gmail.com", senderName);
+	            helper.setTo(user.getEmail());
+	            helper.setSubject(subject);
+	            helper.setText(mailContent, true);
+
+	            javaMailSender.send(message);
+	            logger.info("forgotPassword method end");
+	        } else {
+	            return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST)
+	                    .body(new Response(-1, "Please enter the Register Email", ""));
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Fail", ""));
+	    }
+	    return ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,
+	            "OTP for password change has been sent in Email. Please check your inbox.", "Email Sent Successfully"));
+	}
+
+	// Method to generate OTP
+	private String generateOTP() {
+	    int otpLength = 6; // You can adjust the length of OTP as needed
+	    Random random = new Random();
+	    StringBuilder otp = new StringBuilder();
+
+	    for (int i = 0; i < otpLength; i++) {
+	        otp.append(random.nextInt(10));
+	    }
+
+	    return otp.toString();
 	}
 
 	@Override
@@ -408,6 +434,71 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		return (ResponseEntity<?>) ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(new Response(1,
 				"Your password has been changed. Please login with new password.", "Password changed SuccessFully"));
 //		return new Response(1,"Your password has been changed. Please login with new password.","Password changed SuccessFully");
+	}
+
+	@Override
+	public ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel) {
+	    try {
+	        List<User> userList = userRepository.findAll();
+	        boolean emailOtpVerified = false; // Flag to track if email OTP is verified
+
+	        for (User user : userList) {
+	            if (user.getEmailOtp() != null && user.getEmailOtp().equals(userWebModel.getEmailOtp())) {
+	                // Email OTP matches, set the status of this user to true
+	                user.setStatus(true);
+	                userRepository.save(user);
+	                emailOtpVerified = true; // Set flag to true since email OTP is verified
+	                break; // Exit loop once OTP is verified
+	            }
+	        }
+
+	        if (emailOtpVerified) {
+	            // Return a success response if email OTP is verified
+	            return ResponseEntity.ok(new Response(1, "Email OTP verified successfully", ""));
+	        } else {
+	            // Return an error response if email OTP is not verified
+	            return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP", ""));
+	        }
+
+	    } catch (Exception e) {
+	        // Handle any unexpected exceptions and return an error response
+	        logger.error("Error verifying email OTP: {}", e.getMessage());
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Failed to verify email OTP", ""));
+	    }
+	}
+
+	@Override
+	public ResponseEntity<?> verifyForgotOtp(UserWebModel userWebModel) {
+	    try {
+	        // Retrieve all users from repository
+	        List<User> userList = userRepository.findAll();
+	        
+	        // Iterate through the list of users
+	        for (User user : userList) {
+	     
+	                if (user.getForgotOtp() != null && user.getForgotOtp().equals(userWebModel.getForgotOtp())) {
+	                    // forgotOtp matches, set the status of this user to true
+	                   
+	                    userRepository.save(user);
+	                    
+	                    // Return a success response if forgotOtp is verified
+	                    return ResponseEntity.ok(new Response(1, "Forgot OTP verified successfully", ""));
+	                } else {
+	                    // Return an error response if forgotOtp is not verified
+	                    return ResponseEntity.badRequest().body(new Response(-1, "Invalid Forgot OTP", ""));
+	                }
+	            }
+	        
+	        
+	        // Return an error response if user with given email is not found
+	        return ResponseEntity.badRequest().body(new Response(-1, "User not found with provided email", ""));
+	    } catch (Exception e) {
+	        // Handle any unexpected exceptions and return an error response
+	        logger.error("Error verifying forgot OTP: {}", e.getMessage());
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Failed to verify forgot OTP", ""));
+	    }
 	}
 
 }

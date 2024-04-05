@@ -162,10 +162,16 @@ public class User {
     @Column(name ="otp")
     private Integer otp;
     
+    @Column(name ="emailOtp")
+    private Integer emailOtp;
+    
     @Column(name = "film_hook_code")
     private String filmHookCode;
     
     @Column(name = "mobile_Number_status")
     private Boolean mobileNumberStatus;
+    
+    @Column(name = "forgotOtp")
+    private String forgotOtp;
 
 }
