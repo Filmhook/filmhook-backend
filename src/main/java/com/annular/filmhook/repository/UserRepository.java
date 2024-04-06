@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
@@ -42,14 +43,20 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.email=:email and u.userType=:userType and u.status=true and u.mobileNumberStatus=true")
 	Optional<User> findByEmailAndUserTypeAndMobile(String email, String userType);
 
-	@Query("select u from User u where u.otp = :otp and u.userId = :userId")
-	Optional<User> findByOTps(Integer otp, Integer userId);
+//	@Query("select u from User u where u.otp = :otp and u.userId = :userId")
+//	Optional<User> findByOTps(Integer otp, Integer userId);
 
 	@Query("select u from User u where u.email=:email and u.userType =:userType and u.status=true")
 	Optional<User> findByEmailIdAndUserType(String email, String userType);
 
 	@Query("select u from User u where u.userType='subAdmin' and u.status=true")
 	List<User> findByUserType(String userType);
+
+	@Query("select u from User u where u.forgotOtp=:id")
+	Optional<User> findByResetPasswords(UserWebModel userWebModel, String id);
+
+	@Query("select u from User u where u.otp =:otp")
+	List<User> findByOtpss(Integer otp);
 
 
 }

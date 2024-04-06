@@ -264,7 +264,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			logger.info("verifyUser method start");
 //			Optional<User> userData = userRepository.findByOtp(userWebModel.getVerificationCode(),
 //					userWebModel.getPhoneNumber());
-			Optional<User> userData = userRepository.findByOTps(userWebModel.getOtp(),userWebModel.getUserId());
+			//Optional<User> userData = userRepository.findByOTps(userWebModel.getOtp(),userWebModel.getUserId());
+			List<User> userData = userRepository.findByOtpss(userWebModel.getOtp());
 			if (userData.isPresent()) {
 				User user = userData.get();
 				user.setMobileNumberStatus(true);
@@ -410,11 +411,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	}
 
 	@Override
-	public ResponseEntity<?> changePassword(UserWebModel userWebModel) {
+	public ResponseEntity<?> changePassword(UserWebModel userWebModel,String id) {
 		try {
 			logger.info("changePassword method start");
 			BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-			Optional<User> data = userRepository.findByResetPassword(userDetails.userInfo().getId());
+//			Optional<User> data = userRepository.findByResetPassword(userDetails.userInfo().getId());
+			Optional<User> data = userRepository.findByResetPasswords(userWebModel,id);	
 			if (data.isPresent()) {
 				User user = data.get();
 				String encryptPwd = bcrypt.encode(userWebModel.getPassword());
@@ -473,32 +475,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	    try {
 	        // Retrieve all users from repository
 	        List<User> userList = userRepository.findAll();
-	        
+
+	        boolean found = false; // Flag to track if a user with the provided forgotOtp is found
+
 	        // Iterate through the list of users
 	        for (User user : userList) {
-	     
-	                if (user.getForgotOtp() != null && user.getForgotOtp().equals(userWebModel.getForgotOtp())) {
-	                    // forgotOtp matches, set the status of this user to true
-	                   
-	                    userRepository.save(user);
-	                    
-	                    // Return a success response if forgotOtp is verified
-	                    return ResponseEntity.ok(new Response(1, "Forgot OTP verified successfully", ""));
-	                } else {
-	                    // Return an error response if forgotOtp is not verified
-	                    return ResponseEntity.badRequest().body(new Response(-1, "Invalid Forgot OTP", ""));
-	                }
+	            if (user.getForgotOtp() != null && user.getForgotOtp().equals(userWebModel.getForgotOtp())) {
+	                // Update the user if forgotOtp is verified
+	                //user.setForgotOtp(null); // Clear the forgotOtp after verification
+	                userRepository.save(user);
+	                found = true; // Set the flag to true indicating user found
+	                break; // Exit the loop as soon as the user is found
 	            }
-	        
-	        
-	        // Return an error response if user with given email is not found
-	        return ResponseEntity.badRequest().body(new Response(-1, "User not found with provided email", ""));
+	        }
+
+	        if (found) {
+	            // Return a success response if a user with the provided forgotOtp is found
+	            return ResponseEntity.ok(new Response(1, "Forgot OTP verified successfully", ""));
+	        } else {
+	            // Return an error response if no user with the provided forgotOtp is found
+	            return ResponseEntity.badRequest().body(new Response(-1, "Invalid Forgot OTP", ""));
+	        }
 	    } catch (Exception e) {
 	        // Handle any unexpected exceptions and return an error response
 	        logger.error("Error verifying forgot OTP: {}", e.getMessage());
 	        e.printStackTrace();
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Failed to verify forgot OTP", ""));
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Failed to verify forgot OTP", ""));
 	    }
 	}
+
 
 }

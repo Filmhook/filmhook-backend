@@ -27,7 +27,7 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> resendOtp(UserWebModel userWebModel);
 
-	ResponseEntity<?> changePassword(UserWebModel userWebModel);
+	ResponseEntity<?> changePassword(UserWebModel userWebModel, String id);
 
 	boolean verify(String code);
 
