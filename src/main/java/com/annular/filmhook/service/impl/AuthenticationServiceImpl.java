@@ -260,28 +260,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Override
 	public ResponseEntity<?> verifyUser(UserWebModel userWebModel) {
-		try {
-			logger.info("verifyUser method start");
-//			Optional<User> userData = userRepository.findByOtp(userWebModel.getVerificationCode(),
-//					userWebModel.getPhoneNumber());
-			//Optional<User> userData = userRepository.findByOTps(userWebModel.getOtp(),userWebModel.getUserId());
-			List<User> userData = userRepository.findByOtpss(userWebModel.getOtp());
-			if (userData.isPresent()) {
-				User user = userData.get();
-				user.setMobileNumberStatus(true);
-				user.setOtp(null);
-				userRepository.save(user);
-			} else {
-				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(1, "OTP Invalid", ""));
-			}
-			logger.info("verifyUser method end");
-		} catch (Exception e) {
-			logger.error("verifyUser Method Exception...", e);
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Fail", e.getMessage()));
-		}
-		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Account Verified", ""));
+	    try {
+	        logger.info("verifyUser method start");
+	        List<User> userData = userRepository.findByOtpss(userWebModel.getOtp());
+	        if (!userData.isEmpty()) {
+	            User user = userData.get(0); // Assuming only one user should be returned
+	            user.setMobileNumberStatus(true);
+	            //user.setOtp(null);
+	            userRepository.save(user);
+	        } else {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(1, "OTP Invalid", ""));
+	        }
+	        logger.info("verifyUser method end");
+	    } catch (Exception e) {
+	        logger.error("verifyUser Method Exception...", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Fail", e.getMessage()));
+	    }
+	    return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Account Verified", ""));
 	}
 	@Override
 	public ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request) {
@@ -411,12 +408,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	}
 
 	@Override
-	public ResponseEntity<?> changePassword(UserWebModel userWebModel,String id) {
+	public ResponseEntity<?> changePassword(UserWebModel userWebModel) {
 		try {
 			logger.info("changePassword method start");
 			BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 //			Optional<User> data = userRepository.findByResetPassword(userDetails.userInfo().getId());
-			Optional<User> data = userRepository.findByResetPasswords(userWebModel,id);	
+			Optional<User> data = userRepository.findByResetPasswords(userWebModel.getForgotOtp());	
 			if (data.isPresent()) {
 				User user = data.get();
 				String encryptPwd = bcrypt.encode(userWebModel.getPassword());

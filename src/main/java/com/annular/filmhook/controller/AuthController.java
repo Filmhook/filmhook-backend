@@ -197,10 +197,10 @@ public class AuthController {
 	}
 
 	@PostMapping("changePassword")
-	public ResponseEntity<?> changePassword(@RequestBody UserWebModel userWebModel,String id) {
+	public ResponseEntity<?> changePassword(@RequestBody UserWebModel userWebModel) {
 		try {
 			logger.info("getUser controller start");
-			return userService.changePassword(userWebModel,id);
+			return userService.changePassword(userWebModel);
 		} catch (Exception e) {
 			logger.info("getUser Method Exception" + e);
 			e.printStackTrace();
