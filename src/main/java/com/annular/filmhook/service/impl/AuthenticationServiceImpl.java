@@ -135,10 +135,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 					String message = "Your OTP is " + otpNumber + " for verification";
 					twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
 				});
-				Boolean sendVerificationRes = sendVerificationEmail(user);
-				if (!sendVerificationRes)
-					return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-							.body(new Response(-1, "Mail not sent", "error"));
+				//Boolean sendVerificationRes = sendVerificationEmail(user);
+//				if (!sendVerificationRes)
+//					return (ResponseEntity<?>) ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+//							.body(new Response(-1, "Mail not sent", "error"));
 				user = userRepository.save(user);
 
 				response.put("userDetails", user);
@@ -501,6 +501,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	                .body(new Response(-1, "Failed to verify forgot OTP", ""));
 	    }
 	}
+
+	@Override
+	public ResponseEntity<?> emailNotification(UserWebModel userWebModel, String request) {
+	    Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+
+	    if (userOptional.isPresent()) {
+	        User user = userOptional.get();
+	        Boolean sendVerificationRes = sendVerificationEmail(user);
+	        
+	        if (!sendVerificationRes) {
+	            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+	                    .body(new Response(-1, "Mail not sent", "error"));
+	        }
+	        return ResponseEntity.ok().body(new Response(1, "Mail sent successfully", "success"));
+	    } else {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(new Response(-1, "User not found", "error"));
+	    }
+	}
+
 
 
 }

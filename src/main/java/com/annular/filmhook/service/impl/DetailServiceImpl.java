@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.FilmProfession;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryDetails;
 import com.annular.filmhook.model.IndustryTemporaryDetails;
@@ -31,6 +34,7 @@ import com.annular.filmhook.model.ProfesssionDetails;
 import com.annular.filmhook.model.SubProfessionDetails;
 import com.annular.filmhook.model.SubProfesssion;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.IndustryDetailRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
@@ -111,7 +115,10 @@ public class DetailServiceImpl implements DetailService {
 	private SubProfessionDetailRepository subProfessionDetailsRepository;
 
 	@Autowired
-	UserDetails userDetails;
+	private UserDetails userDetails;
+	
+	@Autowired
+	FilmProfessionRepository filmProfessionRepository;
 
 	@Autowired
 	AuthenticationService authenticationService;
@@ -504,4 +511,151 @@ public class DetailServiceImpl implements DetailService {
 	        return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	    }
 	}
+//	@Override
+//	public ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
+//	    try {
+//	        List<IndustryTemporaryDetails> temporaryDetailsList = industryTemporaryDetailsRepository.findByUserId(industryTemporaryWebModel.getUserId());
+//	        Map<String, Object> response = new HashMap<>();
+//
+//	        for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
+//	            // Create a separate industry map for each industry
+//	            Map<String, Object> industryMap = new HashMap<>();
+//	            List<String> industriesName = Arrays.asList(tempDetails.getIndustriesname().split(","));
+//
+//	            for (String industryName : industriesName) {
+//	                // Create a separate platform list for each industry
+//	                List<Map<String, Object>> platformList = new ArrayList<>();
+//	                List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
+//
+//	                for (PlatformDetails platformDetails : platformDetailsList) {
+//	                    Map<String, Object> platformMap = new HashMap<>();
+//	                    platformMap.put("platformName", platformDetails.getPlatformName());
+//
+//	                    // Add professions for the platform
+//	                    List<Map<String, Object>> professionsList = new ArrayList<>();
+//	                    List<ProfesssionDetails> professionDetailsList = professsionDetailsRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
+//	                    for (ProfesssionDetails professionDetails : professionDetailsList) {
+//	                        String professionName = professionDetails.getProfessionname();
+//
+//	                        // Retrieve SubProfessionDetails matching the professionName and integerTemporaryDetailId
+//	                        List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository
+//	                                .findByIntegerTemporaryDetailIdAndProfessionName(tempDetails.getItId());
+//
+//	                        List<String> subProfessions = new ArrayList<>();
+//	                        // Add sub-professions
+//	                        for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
+//	                            subProfessions.add(subProfessionDetails.getSubProfessionName());
+//	                        }
+//
+//	                        // Add profession and its sub-professions to the professions list
+//	                        Map<String, Object> professionMap = new HashMap<>();
+//	                        professionMap.put("professionName", professionName);
+//	                        professionMap.put("subProfessions", subProfessions);
+//	                        professionsList.add(professionMap);
+//	                    }
+//
+//	                    platformMap.put("professions", professionsList); // Add professions list to platformMap
+//	                    platformList.add(platformMap); // Add platformMap to platformList
+//	                }
+//
+//	                // Add the platform list to the industry map
+//	                industryMap.put("platforms", platformList);
+//
+//	                // Add the industry map to the response using the industry name as the key
+//	                response.put(industryName, industryMap);
+//	            }
+//	        }
+//
+//	        return ResponseEntity.ok(response);
+//	    } catch (Exception e) {
+//	        // Handle exceptions
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while fetching temporary details.");
+//	    }
+//	}
+	@Override
+	public ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
+	    try {
+	        List<IndustryTemporaryDetails> temporaryDetailsList = industryTemporaryDetailsRepository.findByUserId(industryTemporaryWebModel.getUserId());
+	        Map<String, Object> response = new HashMap<>();
+
+	        for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
+	            // Create a separate industry map for each industry
+	            Map<String, Object> industryMap = new HashMap<>();
+	            List<String> industriesName = Arrays.asList(tempDetails.getIndustriesname().split(","));
+
+	            for (String industryName : industriesName) {
+	                // Create a separate platform list for each industry
+	                List<Map<String, Object>> platformList = new ArrayList<>();
+	                List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
+
+	                for (PlatformDetails platformDetails : platformDetailsList) {
+	                    Map<String, Object> platformMap = new HashMap<>();
+	                    platformMap.put("platformName", platformDetails.getPlatformName());
+
+	                    // Add professions for the platform
+	                    List<Map<String, Object>> professionsList = new ArrayList<>();
+	                    List<ProfesssionDetails> professionDetailsList = professsionDetailsRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
+	                    
+	                    // Retrieve all distinct profession names for this platform
+	                    Set<String> distinctProfessions = professionDetailsList.stream()
+	                            .map(ProfesssionDetails::getProfessionname)
+	                            .collect(Collectors.toSet());
+
+	                    for (String professionName : distinctProfessions) {
+	                        // Retrieve SubProfessionDetails matching the professionName and integerTemporaryDetailId
+	                        List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository
+	                                .findByIntegerTemporaryDetailIdAndProfessionName(tempDetails.getItId());
+
+	                        List<String> subProfessions = new ArrayList<>();
+	                        // Add sub-professions
+	                        for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
+	                            subProfessions.add(subProfessionDetails.getSubProfessionName());
+	                        }
+
+	                        // Check if professionName exists in FilmProfession table
+	                        FilmProfession filmProfession = filmProfessionRepository.findByProfessionName(professionName);
+	                        if (filmProfession != null) {
+	                            // Get sub-professions associated with the profession from FilmProfession table
+	                            List<String> filmSubProfessions = filmProfession.getSubProfessionName();
+
+	                            // Filter sub-professions based on those associated with the profession
+	                            List<String> filteredSubProfessions = subProfessions.stream()
+	                                    .filter(filmSubProfessions::contains)
+	                                    .collect(Collectors.toList());
+
+	                            // Create professionMap only if there are filtered sub-professions
+	                            if (!filteredSubProfessions.isEmpty()) {
+	                                Map<String, Object> professionMap = new HashMap<>();
+	                                professionMap.put("professionName", professionName);
+	                                professionMap.put("subProfessionName", filteredSubProfessions);
+	                                professionsList.add(professionMap);
+	                            }
+	                        } else {
+	                            // Create professionMap for the profession even if it's not found in FilmProfession table
+	                            Map<String, Object> professionMap = new HashMap<>();
+	                            professionMap.put("professionName", professionName);
+	                            professionMap.put("subProfessionName", subProfessions);
+	                            professionsList.add(professionMap);
+	                        }
+	                    }
+
+	                    platformMap.put("professions", professionsList); // Add professions list to platformMap
+	                    platformList.add(platformMap); // Add platformMap to platformList
+	                }
+
+	                // Add the platform list to the industry map
+	                industryMap.put("platforms", platformList);
+
+	                // Add the industry map to the response using the industry name as the key
+	                response.put(industryName, industryMap);
+	            }
+	        }
+
+	        return ResponseEntity.ok(response);
+	    } catch (Exception e) {
+	        // Handle exceptions
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while fetching temporary details.");
+	    }
+	}
+
 }

@@ -82,6 +82,17 @@ public class DetailsController {
 			return ResponseEntity.ok(new Response(-1, "Fail", ""));
 		}
 	}
+	@PostMapping("/getTemporaryDuplicateDetails")
+	public ResponseEntity<?> getTemporaryDuplicateDetails(@RequestBody IndustryTemporaryWebModel industryTemporaryWebModel) {
+		try {
+			logger.info("getTemporaryDuplicateDetails controller start");
+			return detailService.getTemporaryDuplicateDetails(industryTemporaryWebModel);
+		} catch (Exception e) {
+			logger.error("getTemporaryDuplicateDetails Method Exception: {}", e);
+			e.printStackTrace();
+			return ResponseEntity.ok(new Response(-1, "Fail", ""));
+		}
+	}
 
 	@PostMapping("/addIndustryUserPermanentDetails")
 	public ResponseEntity<?> addIndustryUserPermanentDetails(

@@ -35,6 +35,8 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> verifyForgotOtp(UserWebModel userWebModel);
 
+	ResponseEntity<?> emailNotification(UserWebModel userWebModel, String request);
+
 	
 
 	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,

@@ -69,6 +69,17 @@ public class AuthController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+	@PostMapping("emailNotification")
+	public ResponseEntity<?> emailNotification(@RequestBody UserWebModel userWebModel, String request) {
+		try {
+			logger.info("emailNotification to register :- " + userWebModel);
+			return userService.emailNotification(userWebModel, request);
+		} catch (Exception e) {
+			logger.error("emailNotification Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
 	@GetMapping("verifyUser")
 	public Response verifyUser(@RequestParam("code") String code) {

@@ -20,5 +20,8 @@ public interface SubProfessionDetailRepository extends JpaRepository<SubProfessi
     @Modifying
     @Query("DELETE FROM SubProfessionDetails spd WHERE spd.integerTemporaryDetailId = :temporaryId")
 	void deleteByIntegerTemporaryDetailId(Integer temporaryId);
+	
+	@Query("SELECT spd FROM SubProfessionDetails spd WHERE spd.integerTemporaryDetailId = :itId ")
+	List<SubProfessionDetails> findByIntegerTemporaryDetailIdAndProfessionName(Integer itId);
 
 }

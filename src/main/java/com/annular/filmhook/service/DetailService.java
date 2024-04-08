@@ -27,4 +27,6 @@ public interface DetailService {
 
 	ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
+	ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
+
 }
