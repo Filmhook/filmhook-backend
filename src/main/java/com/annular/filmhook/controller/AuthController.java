@@ -4,12 +4,11 @@ import java.time.LocalTime;
 
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserStatusConfig;
+import com.annular.filmhook.configuration.UserStatusConfig;
 import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.RefreshTokenRepository;

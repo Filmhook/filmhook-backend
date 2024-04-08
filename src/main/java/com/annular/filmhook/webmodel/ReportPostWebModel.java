@@ -2,13 +2,6 @@ package com.annular.filmhook.webmodel;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-
-import org.hibernate.annotations.CreationTimestamp;
-
 import lombok.Data;
 
 @Data
@@ -23,7 +16,5 @@ public class ReportPostWebModel {
     private Date createdOn;
     private Integer updatedBy;
     private Date updatedOn;
-
-
 
 }

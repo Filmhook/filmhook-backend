@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.annular.filmhook.UserStatusConfig;
+import com.annular.filmhook.configuration.UserStatusConfig;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.security.UserDetailsImpl;

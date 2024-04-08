@@ -1,4 +1,4 @@
-package com.annular.filmhook;
+package com.annular.filmhook.configuration;
 
 import lombok.*;
 import org.springframework.stereotype.Component;

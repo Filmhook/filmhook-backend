@@ -20,6 +20,8 @@ public interface StoryRepository extends JpaRepository<Story, Integer> {
     @Query("Select s from Story s where s.status=true")
     List<Story> getActiveStories();
 
-    @Query("Select s from Story s where floor(round((now()-s.createdOn))/1000000) >= 1 and s.status=true")
+    //@Query("Select s from Story s where floor(round((now()-s.createdOn))/1000000) >= 1 and s.status=true")
+    //@Query("Select s from Story s where s.status=true and s.createdOn >= DATE_SUB(NOW(), INTERVAL 1 DAY)")
+    @Query(value = "select * from stories s where s.created_on >= DATE_SUB(NOW(), INTERVAL 1 DAY);", nativeQuery = true)
     List<Story> getMoreThanOneDayStories();
 }

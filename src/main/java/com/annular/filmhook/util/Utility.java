@@ -1,6 +1,6 @@
-package com.annular.filmhook;
+package com.annular.filmhook.util;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class Utility {
 	public static String getSiteUrl(HttpServletRequest httpServletRequest) {

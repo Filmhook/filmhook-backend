@@ -2,7 +2,7 @@ package com.annular.filmhook.model;
 
 import lombok.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import org.hibernate.annotations.CreationTimestamp;
 

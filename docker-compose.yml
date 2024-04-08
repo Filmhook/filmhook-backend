@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  filmhook:
+    hostname: filmhook
+    container_name: filmhook
+    image: annular/filmhook:0.0.1
+    build:
+      context: .
+      dockerfile: src/main/docker/Dockerfile
+      args:
+        spring.profiles.active: dev
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092 # local
+      JAVA_DEBUG: "true"
+    depends_on:
+      kafka:
+        condition: service_healthy
+  kafka:
+    image: 'bitnami/kafka:3.7.0'
+    hostname: kafka
+    container_name: filmhook_kafka
+    ports:
+      - '9092:9092'
+    environment:  
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+      # KRaft settings
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      # Listeners
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    healthcheck:
+      test: [ 'CMD', '/opt/bitnami/kafka/bin/kafka-topics.sh', '--bootstrap-server', 'kafka:9092', '--list' ]
+      start_period: 30s
+      interval: 5s
+      timeout: 10s
+      retries: 10
+  redpanda:
+    image: docker.redpanda.com/redpandadata/console:latest
+    hostname: redpanda
+    container_name: filmhook_redpanda
+    restart: always
+    ports:
+      - '18080:8080'
+    environment:
+      KAFKA_BROKERS: kafka:9092
+    healthcheck:
+      test: ['CMD', 'nc', '-vz', 'localhost', '8080']
+      start_period: 30s
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      kafka:
+        condition: service_healthy

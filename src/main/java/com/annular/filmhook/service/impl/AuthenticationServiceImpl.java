@@ -1,10 +1,6 @@
 package com.annular.filmhook.service.impl;
 
 import java.text.SimpleDateFormat;
-
-import java.time.Duration;
-
-import java.time.Instant;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,9 +12,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.mail.internet.MimeMessage;
-import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,18 +25,21 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
-import com.annular.filmhook.Utility;
+import com.annular.filmhook.configuration.TwilioConfig;
 import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.RefreshTokenRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.security.UserDetails;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.Notifications;
-import com.annular.filmhook.util.TwilioConfig;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.UserWebModel;
+
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
 
 import net.bytebuddy.utility.RandomString;
 

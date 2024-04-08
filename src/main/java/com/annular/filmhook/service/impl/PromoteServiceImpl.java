@@ -1,7 +1,6 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,9 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.security.UserDetails;
 import com.annular.filmhook.model.Promote;
-import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.service.PromoteService;
 import com.annular.filmhook.webmodel.PromoteWebModel;

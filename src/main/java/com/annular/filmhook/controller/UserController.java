@@ -1,8 +1,5 @@
 package com.annular.filmhook.controller;
 
-//import com.amazonaws.services.s3.AmazonS3;
-//import com.amazonaws.services.s3.model.*;
-
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserService;

@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.security.UserDetails;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryDetails;
 import com.annular.filmhook.model.IndustryTemporaryDetails;
@@ -50,7 +50,6 @@ import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.DetailRequest;
-import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;

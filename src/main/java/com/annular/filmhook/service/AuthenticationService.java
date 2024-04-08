@@ -1,14 +1,11 @@
 package com.annular.filmhook.service;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.RefreshToken;
-import com.annular.filmhook.model.User;
-import com.annular.filmhook.webmodel.FileInputWebModel;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface AuthenticationService {
