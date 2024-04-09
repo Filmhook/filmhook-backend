@@ -511,67 +511,7 @@ public class DetailServiceImpl implements DetailService {
 	        return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	    }
 	}
-//	@Override
-//	public ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
-//	    try {
-//	        List<IndustryTemporaryDetails> temporaryDetailsList = industryTemporaryDetailsRepository.findByUserId(industryTemporaryWebModel.getUserId());
-//	        Map<String, Object> response = new HashMap<>();
-//
-//	        for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
-//	            // Create a separate industry map for each industry
-//	            Map<String, Object> industryMap = new HashMap<>();
-//	            List<String> industriesName = Arrays.asList(tempDetails.getIndustriesname().split(","));
-//
-//	            for (String industryName : industriesName) {
-//	                // Create a separate platform list for each industry
-//	                List<Map<String, Object>> platformList = new ArrayList<>();
-//	                List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
-//
-//	                for (PlatformDetails platformDetails : platformDetailsList) {
-//	                    Map<String, Object> platformMap = new HashMap<>();
-//	                    platformMap.put("platformName", platformDetails.getPlatformName());
-//
-//	                    // Add professions for the platform
-//	                    List<Map<String, Object>> professionsList = new ArrayList<>();
-//	                    List<ProfesssionDetails> professionDetailsList = professsionDetailsRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
-//	                    for (ProfesssionDetails professionDetails : professionDetailsList) {
-//	                        String professionName = professionDetails.getProfessionname();
-//
-//	                        // Retrieve SubProfessionDetails matching the professionName and integerTemporaryDetailId
-//	                        List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository
-//	                                .findByIntegerTemporaryDetailIdAndProfessionName(tempDetails.getItId());
-//
-//	                        List<String> subProfessions = new ArrayList<>();
-//	                        // Add sub-professions
-//	                        for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
-//	                            subProfessions.add(subProfessionDetails.getSubProfessionName());
-//	                        }
-//
-//	                        // Add profession and its sub-professions to the professions list
-//	                        Map<String, Object> professionMap = new HashMap<>();
-//	                        professionMap.put("professionName", professionName);
-//	                        professionMap.put("subProfessions", subProfessions);
-//	                        professionsList.add(professionMap);
-//	                    }
-//
-//	                    platformMap.put("professions", professionsList); // Add professions list to platformMap
-//	                    platformList.add(platformMap); // Add platformMap to platformList
-//	                }
-//
-//	                // Add the platform list to the industry map
-//	                industryMap.put("platforms", platformList);
-//
-//	                // Add the industry map to the response using the industry name as the key
-//	                response.put(industryName, industryMap);
-//	            }
-//	        }
-//
-//	        return ResponseEntity.ok(response);
-//	    } catch (Exception e) {
-//	        // Handle exceptions
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while fetching temporary details.");
-//	    }
-//	}
+
 	@Override
 	public ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
 	    try {
@@ -657,5 +597,77 @@ public class DetailServiceImpl implements DetailService {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while fetching temporary details.");
 	    }
 	}
+//	Key value pair (IndustryNmae)
+//	@Override
+//	public ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
+//	    try {
+//	        List<IndustryTemporaryDetails> temporaryDetailsList = industryTemporaryDetailsRepository.findByUserId(industryTemporaryWebModel.getUserId());
+//	        List<Map<String, Object>> responseList = new ArrayList<>();
+//
+//	        for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
+//	            List<String> industriesName = Arrays.asList(tempDetails.getIndustriesname().split(","));
+//
+//	            for (String industryName : industriesName) {
+//	                Map<String, Object> industryMap = new HashMap<>();
+//	                List<Map<String, Object>> platformList = new ArrayList<>();
+//	                List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
+//
+//	                for (PlatformDetails platformDetails : platformDetailsList) {
+//	                    Map<String, Object> platformMap = new HashMap<>();
+//	                    platformMap.put("platformName", platformDetails.getPlatformName());
+//
+//	                    List<Map<String, Object>> professionsList = new ArrayList<>();
+//	                    List<ProfesssionDetails> professionDetailsList = professsionDetailsRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
+//
+//	                    Set<String> distinctProfessions = professionDetailsList.stream()
+//	                            .map(ProfesssionDetails::getProfessionname)
+//	                            .collect(Collectors.toSet());
+//
+//	                    for (String professionName : distinctProfessions) {
+//	                        List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository
+//	                                .findByIntegerTemporaryDetailIdAndProfessionName(tempDetails.getItId());
+//
+//	                        List<String> subProfessions = new ArrayList<>();
+//	                        for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
+//	                            subProfessions.add(subProfessionDetails.getSubProfessionName());
+//	                        }
+//
+//	                        FilmProfession filmProfession = filmProfessionRepository.findByProfessionName(professionName);
+//	                        if (filmProfession != null) {
+//	                            List<String> filmSubProfessions = filmProfession.getSubProfessionName();
+//	                            List<String> filteredSubProfessions = subProfessions.stream()
+//	                                    .filter(filmSubProfessions::contains)
+//	                                    .collect(Collectors.toList());
+//
+//	                            if (!filteredSubProfessions.isEmpty()) {
+//	                                Map<String, Object> professionMap = new HashMap<>();
+//	                                professionMap.put("professionName", professionName);
+//	                                professionMap.put("subProfessionName", filteredSubProfessions);
+//	                                professionsList.add(professionMap);
+//	                            }
+//	                        } else {
+//	                            Map<String, Object> professionMap = new HashMap<>();
+//	                            professionMap.put("professionName", professionName);
+//	                            professionMap.put("subProfessionName", subProfessions);
+//	                            professionsList.add(professionMap);
+//	                        }
+//	                    }
+//
+//	                    platformMap.put("professions", professionsList);
+//	                    platformList.add(platformMap);
+//	                }
+//
+//	                industryMap.put("industryName", industryName);
+//	                industryMap.put("platforms", platformList);
+//	                responseList.add(industryMap);
+//	            }
+//	        }
+//
+//	        return ResponseEntity.ok(responseList);
+//	    } catch (Exception e) {
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while fetching temporary details.");
+//	    }
+//	}
+
 
 }
