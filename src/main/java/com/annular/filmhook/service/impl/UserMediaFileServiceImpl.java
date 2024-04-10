@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +14,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.model.MediaFiles;
+import com.annular.filmhook.model.MultiMediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MediaFilesRepository;
+import com.annular.filmhook.repository.MultiMediaFileRepository;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
@@ -34,6 +38,9 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 
 	@Autowired
 	FileUtil fileUtil;
+	
+	@Autowired
+	MultiMediaFileRepository multiMediaFilesRepository;
 
 	@Autowired
 	AwsS3Service awsS3Service;
@@ -126,8 +133,27 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		mediaFiles.setStatus(true);
 		mediaFiles.setCreatedBy(createdBy);
 		mediaFiles.setCreatedOn(new Date());
+		mediaFilesRepository.save(mediaFiles);
 
 		logger.info("MediaFiles details to save in MySQL: " + mediaFiles);
+		try {
+			MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
+			multiMediaFiles.setFileName(mediaFiles.getFileName());
+			multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
+			multiMediaFiles.setFileDomainId(FilmHookConstants.INDUSTRYFILES);
+			System.out.println(mediaFiles.getId());
+			multiMediaFiles.setFileDomainReferenceId(mediaFiles.getId());
+			multiMediaFiles.setFileIsActive(true);
+			multiMediaFiles.setFileCreatedBy(user.getUserId());
+			multiMediaFiles.setFileSize(mediaFiles.getFileSize());
+			multiMediaFiles.setFileType(mediaFiles.getFileType());
+			multiMediaFiles = multiMediaFilesRepository.save(multiMediaFiles);
+			logger.info(
+					"MultiMediaFiles entity saved in the database with ID: " + multiMediaFiles.getMultiMediaFileId());
+		} catch (Exception e) {
+			logger.error("Error saving MultiMediaFiles", e);
+			// Handle the error accordingly
+		}
 
 		return mediaFiles;
 	}
@@ -157,5 +183,21 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		}
 		return fileOutputWebModel;
 	}
+
+	@Override
+	public List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId) {
+		List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+		try {
+			List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userId);
+			if (mediaFiles != null && !mediaFiles.isEmpty()) {
+				outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
+			}
+		} catch (Exception e) {
+			logger.error("Error at getGalleryFilesByUser()...", e);
+			e.printStackTrace();
+		}
+		return outputWebModelList;
+	}
+
 
 }

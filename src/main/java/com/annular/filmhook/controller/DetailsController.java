@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,7 +59,7 @@ public class DetailsController {
 			return ResponseEntity.ok(new Response(-1, "Fail", ""));
 		}
 	}
-	
+
 	@PostMapping("/updateTemporaryDetails")
 	public ResponseEntity<?> updateTemporaryDetails(@RequestBody IndustryTemporaryWebModel industryTemporaryWebModel) {
 		try {
@@ -82,8 +83,10 @@ public class DetailsController {
 			return ResponseEntity.ok(new Response(-1, "Fail", ""));
 		}
 	}
+
 	@PostMapping("/getTemporaryDuplicateDetails")
-	public ResponseEntity<?> getTemporaryDuplicateDetails(@RequestBody IndustryTemporaryWebModel industryTemporaryWebModel) {
+	public ResponseEntity<?> getTemporaryDuplicateDetails(
+			@RequestBody IndustryTemporaryWebModel industryTemporaryWebModel) {
 		try {
 			logger.info("getTemporaryDuplicateDetails controller start");
 			return detailService.getTemporaryDuplicateDetails(industryTemporaryWebModel);
@@ -95,11 +98,11 @@ public class DetailsController {
 	}
 
 	@PostMapping("/addIndustryUserPermanentDetails")
-	public ResponseEntity<?> addIndustryUserPermanentDetails(
+	public ResponseEntity<?> addIndustryUserPermanentDetails(@RequestParam Integer userId,
 			@RequestBody List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
 		try {
 			logger.info("addIndustryUserPermanentDetails controller start");
-			return detailService.addIndustryUserPermanentDetails(industryUserPermanentDetailWebModels);
+			return detailService.addIndustryUserPermanentDetails(userId, industryUserPermanentDetailWebModels);
 		} catch (Exception e) {
 			logger.error("addIndustryUserPermanentDetails Method Exception: {}", e);
 			e.printStackTrace();
@@ -117,5 +120,21 @@ public class DetailsController {
 			e.printStackTrace();
 		}
 		return new Response(-1, "Error occurred while saving files...", null);
+	}
+
+	@GetMapping("/getIndustryFilesByUserId")
+	public Response getIndustryFiles(@RequestParam("userId") Integer userId) {
+		try {
+			List<FileOutputWebModel> outputList = detailService.getIndustryFiles(userId);
+			if (outputList != null && !outputList.isEmpty()) {
+				logger.info("[" + outputList.size() + "] Industry files found for userId :- " + userId);
+				return new Response(1, "Gallery file(s) found successfully...", outputList);
+			} else {
+				return new Response(-1, "No file(s) available for this user...", null);
+			}
+		} catch (Exception e) {
+			logger.error("Error at getGalleryFiles()...", e);
+		}
+		return new Response(-1, "Files were not found...", null);
 	}
 }

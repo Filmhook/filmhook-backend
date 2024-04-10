@@ -20,7 +20,7 @@ public interface DetailService {
 
 	ResponseEntity<?> getTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
-	ResponseEntity<?> addIndustryUserPermanentDetails(
+	ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId,
 			List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
 
 	FileOutputWebModel saveIndustryUserFiles(IndustryFileInputWebModel inputFileData);
@@ -28,5 +28,7 @@ public interface DetailService {
 	ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
 	ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
+
+	List<FileOutputWebModel> getIndustryFiles(Integer userId);
 
 }

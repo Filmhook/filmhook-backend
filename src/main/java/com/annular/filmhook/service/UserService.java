@@ -1,6 +1,7 @@
 package com.annular.filmhook.service;
 
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 import java.util.List;
@@ -22,4 +23,5 @@ public interface UserService {
     Optional<?> updateEducationInformation(UserWebModel userWebModel);
 
     Optional<?> updateProfessionInformation(UserWebModel userWebModel);
+
 }

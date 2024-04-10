@@ -173,5 +173,8 @@ public class User {
     
     @Column(name = "forgotOtp")
     private String forgotOtp;
+    
+    @Column(name = "admin_Page_Status")
+    private Boolean adminPageStatus;
 
 }

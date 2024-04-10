@@ -73,4 +73,5 @@ public class UserWebModel {
     private Boolean mobileNumberStatus;
     private Integer emailOtp;
     private String forgotOtp;
+    private Boolean adminPageStatus;
 }

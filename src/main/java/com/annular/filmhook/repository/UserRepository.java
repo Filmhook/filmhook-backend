@@ -55,11 +55,14 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 //	@Query("select u from User u where u.forgotOtp=:id")
 //	Optional<User> findByResetPasswords(UserWebModel userWebModel, String id);
 
-	@Query("select u from User u where u.otp =:otp")
+	@Query("select u from User u where u.otp =otp")
 	List<User> findByOtpss(Integer otp);
 
 	@Query("select u from User u where u.forgotOtp=:forgotOtp")
 	Optional<User> findByResetPasswords(String forgotOtp);
+
+	@Query("select u from User u where u.email=:email and u.status=true and u.adminPageStatus=true")
+	Optional<User> findByEmailAndUserTypeAndAdminStatus(String email);
 
 
 }

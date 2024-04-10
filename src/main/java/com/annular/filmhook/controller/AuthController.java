@@ -121,6 +121,26 @@ public class AuthController {
 		return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
 	}
 
+	@PostMapping("logins")
+	public ResponseEntity<?> logins(@RequestBody UserWebModel userWebModel) {
+//		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
+		Optional<User> checkUsername = userRepository.findByEmailAndUserTypeAndAdminStatus(userWebModel.getEmail()
+				);
+		if (checkUsername.isPresent()) {
+			loginConstants.setUserType(userWebModel.getUserType());
+			logger.info("User type from constants -> " + loginConstants.getUserType());
+			Authentication authentication = authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
+			SecurityContextHolder.getContext().setAuthentication(authentication);
+			RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
+			String jwt = jwtUtils.generateJwtToken(authentication);
+			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+			logger.info("Login Controller ---- Finished");
+			return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(),
+					userDetails.getEmail(), "Login Successful", 1, "",userDetails.getUserType()));
+		}
+		return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
+	}
 	@PostMapping("refreshToken")
 	public ResponseEntity<?> refreshToken(@RequestBody UserWebModel userWebModel) {
 		Optional<RefreshToken> data = refreshTokenRepository.findByToken(userWebModel.getToken());

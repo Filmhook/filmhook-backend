@@ -43,6 +43,7 @@ public class AdminServiceImpl implements AdminService {
 				user.setEmail(userWebModel.getEmail());
 				user.setUserType(userWebModel.getUserType());
 				user.setStatus(userWebModel.isStatus());
+				user.setAdminPageStatus(true);
 				String encryptPwd = bcrypt.encode(userWebModel.getPassword());
 				user.setPassword(encryptPwd);
 
@@ -140,6 +141,8 @@ public class AdminServiceImpl implements AdminService {
 					userInfo.put("userId", user.getUserId());
 					userInfo.put("name", user.getName());
 					userInfo.put("email", user.getEmail());
+					userInfo.put("adminPageStaus", user.getAdminPageStatus());
+					userInfo.put("status", user.getStatus());
 
 					responseList.add(userInfo);
 				}
@@ -154,6 +157,29 @@ public class AdminServiceImpl implements AdminService {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Failed to retrieve sub-admin users", e.getMessage()));
+		}
+	}
+
+	@Override
+	public ResponseEntity<?> adminPageStatus(UserWebModel userWebModel) {
+		try {
+			logger.info("adminPageStatus method start");
+			Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+			if (userData.isPresent()) {
+				User user = userData.get();
+				user.setAdminPageStatus(userWebModel.getAdminPageStatus());
+				userRepository.save(user);
+				logger.info("adminPageStatus method end");
+				return ResponseEntity.ok(new Response(1, "success", "adminPageStatus successfully"));
+			} else {
+				logger.info("adminPageStatus method end");
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(new Response(0, "User not found with ID: " + userWebModel.getUserId(), null));
+			}
+		} catch (Exception e) {
+			logger.error("adminPageStatus Method Exception {} " + e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Failed to set adminPageStatus", e.getMessage()));
 		}
 	}
 

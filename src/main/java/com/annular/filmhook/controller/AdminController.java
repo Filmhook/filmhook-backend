@@ -74,4 +74,16 @@ public class AdminController {
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
 
+	@PostMapping("adminPageStatus")
+	public ResponseEntity<?> adminPageStatus(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("User :- " + userWebModel);
+			return adminService.adminPageStatus(userWebModel);
+		} catch (Exception e) {
+			logger.error("adminPageStatus Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+
 }

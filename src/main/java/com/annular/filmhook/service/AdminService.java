@@ -14,4 +14,6 @@ public interface AdminService {
 
 	ResponseEntity<?> getRegister(UserWebModel userWebModel);
 
+	ResponseEntity<?> adminPageStatus(UserWebModel userWebModel);
+
 }
