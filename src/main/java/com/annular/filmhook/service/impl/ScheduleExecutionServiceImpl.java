@@ -40,7 +40,7 @@ public class ScheduleExecutionServiceImpl implements ScheduleExecutionService {
     @Async
     public void expireStories() {
         if(isEnabled) {
-            logger.info("Executing expireStories job at " + new Date());
+            logger.info("Executing expireStories job at {}", new Date());
             List<Story> storyList = storiesService.getMoreThanOneDayStories();
             if (!storyList.isEmpty()) storiesService.deleteExpiredStories(storyList);
         }

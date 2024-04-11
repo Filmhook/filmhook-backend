@@ -45,6 +45,9 @@ public class MediaFiles {
 	@Column(name = "category")
 	private String category;
 
+	@Column(name = "category_ref_id") // for all referred table's[Post,Story] primary key
+	private Integer categoryRefId;
+
 	@Column(name = "file_id")
 	private String fileId;
 
@@ -59,9 +62,6 @@ public class MediaFiles {
 
 	@Column(name = "file_path")
 	private String filePath;
-
-	@Column(name = "expiry_time")
-	private String expiryTime;
 
 	@Column(name = "status")
 	private Boolean status;

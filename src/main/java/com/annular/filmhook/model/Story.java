@@ -44,12 +44,6 @@ public class Story {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "expiry_time")
-    private String expiryTime;
-
-    @Column(name = "expiry_expression")
-    private String expiryExpression;
-
     @Column(name = "view_count")
     private Integer viewCount;
 

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class StoriesController {
     @RequestMapping(path = "/uploadStory", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public Response uploadStory(@ModelAttribute StoriesWebModel inputData) {
         try {
-            logger.info("uploadStory Inputs :- " + inputData);
+            logger.info("uploadStory Inputs :- {}", inputData);
             StoriesWebModel story = storiesService.uploadStory(inputData);
             if (story != null) return new Response(1, "Story uploaded successfully...", story);
         } catch (Exception e) {
@@ -41,9 +42,10 @@ public class StoriesController {
     public Response getAllUserStories(@RequestParam("userId") Integer userId) {
         try {
             List<StoriesWebModel> storyList = storiesService.getStoryByUserId(userId);
-            if (storyList != null) return new Response(1, "Story retrieved successfully...", storyList);
+            if (storyList != null)
+                return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
         } catch (Exception e) {
-            logger.error("Error at getStoryByUser()...", e);
+            logger.error("Error at getAllUserStories()...", e);
         }
         return new Response(-1, "Story not found...", null);
     }
@@ -53,7 +55,7 @@ public class StoriesController {
                                                @RequestParam("category") String category,
                                                @RequestParam("fileId") String fileId) {
         try {
-            logger.info("downloadStoryFile Input Category :- " + category + ", File Id :- " + fileId);
+            logger.info("downloadStoryFile Input Category :- {}, File Id :- {}", category, fileId);
             Resource resource = storiesService.getStoryFile(userId, category, fileId);
             if (resource != null) {
                 String contentType = "application/octet-stream";
@@ -62,20 +64,42 @@ public class StoriesController {
                         .contentType(MediaType.parseMediaType(contentType))
                         .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
                         .body(resource);
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new Response(-1, "Requested file not found", ""));
             }
         } catch (Exception e) {
             logger.error("Error at downloadStoryFile()...", e);
+            return ResponseEntity.internalServerError().build();
         }
-        return ResponseEntity.internalServerError().build();
     }
 
-    @DeleteMapping("/deleteStories")
+    @DeleteMapping("/deleteAllUserStories")
     public Response deleteUserStories(@RequestParam("userId") Integer userId) {
         try {
-            storiesService.deleteStoryByUserId(userId);
-            return new Response(1, "Story deleted successfully...", null);
+            List<Story> storyList = storiesService.deleteStoryByUserId(userId);
+            if (storyList != null && !storyList.isEmpty()) {
+                return new Response(1, "Story deleted successfully...", null);
+            } else {
+                return new Response(-1, "Story not available to delete...", null);
+            }
         } catch (Exception e) {
-            logger.error("Error at getStoryByUser()...", e);
+            logger.error("Error at deleteUserStories()...", e);
+            return new Response(-1, "Story not found...", null);
+        }
+    }
+
+    @DeleteMapping("/deleteStory")
+    public Response deleteUserStoriesById(@RequestParam("id") Integer storyId) {
+        try {
+            Story story = storiesService.deleteStoryById(storyId);
+            if (story != null) {
+                return new Response(1, "Story deleted successfully...", null);
+            } else {
+                return new Response(-1, "Story not available to delete...", null);
+            }
+        } catch (Exception e) {
+            logger.error("Error at deleteUserStoriesById()...", e);
         }
         return new Response(-1, "Story not found...", null);
     }
@@ -85,7 +109,7 @@ public class StoriesController {
                                      @RequestParam("storyId") String storyId) {
         try {
             Optional<Story> story = storiesService.updateStoryView(userId, storyId);
-            if(story.isPresent()) return new Response(1, "Story views updated successfully...", null);
+            if (story.isPresent()) return new Response(1, "Story views updated successfully...", null);
         } catch (Exception e) {
             logger.error("Error at updateStoryViews()...", e);
         }

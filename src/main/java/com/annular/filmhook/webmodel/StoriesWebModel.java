@@ -16,8 +16,6 @@ public class StoriesWebModel {
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details
 
-    private String expiryTime;
-    private String expiryExpression;
     private Integer viewCount;
 
     private Boolean status;

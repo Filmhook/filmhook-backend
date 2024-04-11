@@ -12,6 +12,7 @@ public class FileInputWebModel {
 	// For save purpose
 	private Integer userId;
 	private String category;
+	private Integer categoryRefId;
 	private MultipartFile file;
 
 	// For read purpose

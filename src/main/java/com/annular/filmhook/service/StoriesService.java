@@ -12,8 +12,9 @@ public interface StoriesService {
     StoriesWebModel uploadStory(StoriesWebModel inputData);
     List<StoriesWebModel> getStoryByUserId(Integer userId);
     Resource getStoryFile(Integer userId, String category, String fileId);
-    void deleteStoryById(Integer id);
-    void deleteStoryByUserId(Integer userId);
+    void deleteStory(Story storyToUpdate);
+    Story deleteStoryById(Integer id);
+    List<Story> deleteStoryByUserId(Integer userId);
     Optional<Story> updateStoryView(Integer userId, String storyId);
     List<Story> getMoreThanOneDayStories();
     void deleteExpiredStories(List<Story> storyList);

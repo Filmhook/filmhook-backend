@@ -69,7 +69,7 @@ public class S3Util {
             objects = response.contents();
             logger.info("S3 Objects count :- [{}] ", objects.size());
         } catch (S3Exception e) {
-            logger.error("Error in getListOfFileFromS3Bucket" + e.awsErrorDetails().errorMessage());
+            logger.error("Error in getAllObjectsFromS3Bucket" + e.awsErrorDetails().errorMessage());
             e.printStackTrace();
         }
         return objects;
@@ -84,7 +84,7 @@ public class S3Util {
             objects = response.contents();
             logger.info("S3 Objects count :- [{}] ", objects.size());
         } catch (S3Exception e) {
-            logger.error("Error in getListOfFileFromS3Bucket" + e.awsErrorDetails().errorMessage());
+            logger.error("Error in getListOfFileFromS3Bucket{}", e.awsErrorDetails().errorMessage());
             e.printStackTrace();
         }
         return objects;
@@ -153,15 +153,15 @@ public class S3Util {
             try {
                 if (resp != null) {
                     returnMessage.set(msgToPrint);
-                    logger.info(msgToPrint + ": " + resp);
+                    logger.info("{}: {}", msgToPrint, resp);
                 } else {
                     returnMessage.set("Error");
-                    logger.info("Uploaded failed" + ": " + throwable.getMessage());
+                    logger.error("Uploaded failed..{}", throwable.getMessage());
                     throwable.printStackTrace(); // Handle error
                 }
             } catch (Exception e) {
                 returnMessage.set("Error");
-                logger.info("Uploaded failed" + ": " + throwable.getMessage());
+                logger.error("Uploaded failed: {}", throwable.getMessage());
                 throwable.printStackTrace();
             }
         });
@@ -188,13 +188,13 @@ public class S3Util {
             }
 
         } catch (S3Exception e) {
-            logger.error("Error in deleting object from s3 : " + e.getMessage());
+            logger.error("Error in deleting object from s3 : {}", e.getMessage());
             e.printStackTrace();
         }
     }
 
     public void deleteObjectFromS3(String bucketName, String destinationPath, String objectKey) {
-        logger.info("In deleteObjectFromS3() Key to delete from S3..." + objectKey);
+        logger.info("In deleteObjectFromS3() Key to delete from S3...{}", objectKey);
         try (S3AsyncClient s3Client = buildS3ClientAsync()) {
             List<S3Object> s3Objects = this.getAllObjectsFromS3Bucket(bucketName, destinationPath);
             if (s3Objects != null && !s3Objects.isEmpty()) {
