@@ -13,9 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.MultiMediaFiles;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
 import com.annular.filmhook.service.AwsS3Service;
@@ -40,6 +42,9 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 	FileUtil fileUtil;
 	
 	@Autowired
+	IndustryMediaFileRepository industryMediaFileRepository;
+	
+	@Autowired
 	MultiMediaFileRepository multiMediaFilesRepository;
 
 	@Autowired
@@ -56,14 +61,14 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		FileOutputWebModel fileOutputWebModel = null;
 		try {
 			// 1. Save files in MySQL
-			List<MediaFiles> mediaFilesList = prepareMediaFileData(inputFileData, user);
-			for (MediaFiles mediaFiles : mediaFilesList) {
-				mediaFilesRepository.save(mediaFiles);
+			List<IndustryMediaFiles> mediaFilesList = prepareMediaFileData(inputFileData, user);
+			for (IndustryMediaFiles mediaFiles : mediaFilesList) {
+				industryMediaFileRepository.save(mediaFiles);
 				logger.info("File saved in MySQL. File ID: " + mediaFiles.getFileId());
 			}
 
 			// 2. Upload files to S3
-			for (MediaFiles mediaFiles : mediaFilesList) {
+			for (IndustryMediaFiles mediaFiles : mediaFilesList) {
 				File file = File.createTempFile(mediaFiles.getFileId(), null);
 				FileUtil.convertMultiPartFileToFile(inputFileData.getImages(), file);
 				String response = fileUtil.uploadFile(file, mediaFiles.getFilePath());
@@ -84,14 +89,13 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		// TODO Auto-generated method stub
 		return awsS3Service.putObjectIntoS3(s3Util.getS3BucketName(), filePath, file);
 	}
-
-	private List<MediaFiles> prepareMediaFileData(IndustryFileInputWebModel inputFileData, User user) {
-		List<MediaFiles> mediaFilesList = new ArrayList<>();
+	private List<IndustryMediaFiles> prepareMediaFileData(IndustryFileInputWebModel inputFileData, User user) {
+		List<IndustryMediaFiles> mediaFilesList = new ArrayList<>();
 
 		// Process images
 		if (inputFileData.getImages() != null) {
 			for (MultipartFile image : inputFileData.getImages()) {
-				MediaFiles mediaFiles = createMediaFiles(image, user, "image", inputFileData.getUserId());
+				IndustryMediaFiles mediaFiles = createMediaFiles(image, user, "image", inputFileData.getUserId());
 				mediaFilesList.add(mediaFiles);
 			}
 		}
@@ -99,30 +103,66 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		// Process videos
 		if (inputFileData.getVideos() != null) {
 			for (MultipartFile video : inputFileData.getVideos()) {
-				MediaFiles mediaFiles = createMediaFiles(video, user, "video", inputFileData.getUserId());
+				IndustryMediaFiles mediaFiles = createMediaFiles(video, user, "video", inputFileData.getUserId());
 				mediaFilesList.add(mediaFiles);
 			}
 		}
 
 		// Process PAN card
 		if (inputFileData.getPanCard() != null) {
-			MediaFiles mediaFiles = createMediaFiles(inputFileData.getPanCard(), user, "panCard",
+			IndustryMediaFiles mediaFiles = createMediaFiles(inputFileData.getPanCard(), user, "panCard",
 					inputFileData.getUserId());
 			mediaFilesList.add(mediaFiles);
 		}
 
 		// Process Aadhar card
 		if (inputFileData.getAdharCard() != null) {
-			MediaFiles mediaFiles = createMediaFiles(inputFileData.getAdharCard(), user, "aadharCard",
+			IndustryMediaFiles mediaFiles = createMediaFiles(inputFileData.getAdharCard(), user, "aadharCard",
 					inputFileData.getUserId());
 			mediaFilesList.add(mediaFiles);
 		}
 
 		return mediaFilesList;
 	}
+
+//	private List<MediaFiles> prepareMediaFileData(IndustryFileInputWebModel inputFileData, User user) {
+//		List<MediaFiles> mediaFilesList = new ArrayList<>();
+//
+//		// Process images
+//		if (inputFileData.getImages() != null) {
+//			for (MultipartFile image : inputFileData.getImages()) {
+//				MediaFiles mediaFiles = createMediaFiles(image, user, "image", inputFileData.getUserId());
+//				mediaFilesList.add(mediaFiles);
+//			}
+//		}
+//
+//		// Process videos
+//		if (inputFileData.getVideos() != null) {
+//			for (MultipartFile video : inputFileData.getVideos()) {
+//				MediaFiles mediaFiles = createMediaFiles(video, user, "video", inputFileData.getUserId());
+//				mediaFilesList.add(mediaFiles);
+//			}
+//		}
+//
+//		// Process PAN card
+//		if (inputFileData.getPanCard() != null) {
+//			MediaFiles mediaFiles = createMediaFiles(inputFileData.getPanCard(), user, "panCard",
+//					inputFileData.getUserId());
+//			mediaFilesList.add(mediaFiles);
+//		}
+//
+//		// Process Aadhar card
+//		if (inputFileData.getAdharCard() != null) {
+//			MediaFiles mediaFiles = createMediaFiles(inputFileData.getAdharCard(), user, "aadharCard",
+//					inputFileData.getUserId());
+//			mediaFilesList.add(mediaFiles);
+//		}
+//
+//		return mediaFilesList;
+//	}
 	
-	private MediaFiles createMediaFiles(MultipartFile file, User user, String category, Integer createdBy) {
-		MediaFiles mediaFiles = new MediaFiles();
+	private IndustryMediaFiles createMediaFiles(MultipartFile file, User user, String category, Integer createdBy) {
+		IndustryMediaFiles mediaFiles = new IndustryMediaFiles();
 		mediaFiles.setUser(user);
 		mediaFiles.setCategory(category);
 		mediaFiles.setFileId(UUID.randomUUID().toString());
@@ -132,8 +172,8 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		mediaFiles.setFileSize(file.getSize());
 		mediaFiles.setStatus(true);
 		mediaFiles.setCreatedBy(createdBy);
-		mediaFiles.setCreatedOn(new Date());
-		mediaFilesRepository.save(mediaFiles);
+
+		industryMediaFileRepository.save(mediaFiles);
 
 		logger.info("MediaFiles details to save in MySQL: " + mediaFiles);
 		try {
@@ -141,8 +181,8 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 			multiMediaFiles.setFileName(mediaFiles.getFileName());
 			multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
 			multiMediaFiles.setFileDomainId(FilmHookConstants.INDUSTRYFILES);
-			System.out.println(mediaFiles.getId());
-			multiMediaFiles.setFileDomainReferenceId(mediaFiles.getId());
+			//System.out.println(mediaFiles.getId());
+			multiMediaFiles.setFileDomainReferenceId(mediaFiles.getIndustryMediaid());
 			multiMediaFiles.setFileIsActive(true);
 			multiMediaFiles.setFileCreatedBy(user.getUserId());
 			multiMediaFiles.setFileSize(mediaFiles.getFileSize());
@@ -157,7 +197,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 
 		return mediaFiles;
 	}
-	private FileOutputWebModel transformData(MediaFiles mediaFile) {
+	private FileOutputWebModel transformData(IndustryMediaFiles mediaFile) {
 		FileOutputWebModel fileOutputWebModel = null;
 		try {
 			fileOutputWebModel = new FileOutputWebModel();
@@ -188,7 +228,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 	public List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId) {
 		List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
 		try {
-			List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userId);
+			List<IndustryMediaFiles> mediaFiles = industryMediaFileRepository.getMediaFilesByUserIdAndCategory(userId);
 			if (mediaFiles != null && !mediaFiles.isEmpty()) {
 				outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
 			}
