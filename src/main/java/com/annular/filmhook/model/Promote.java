@@ -1,6 +1,5 @@
 package com.annular.filmhook.model;
 
-import java.time.LocalDate;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -11,8 +10,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,11 +50,11 @@ public class Promote {
     @CreationTimestamp
     private Date updatedOn;
     
-	@Column(name = "start_date")
-	private LocalDate startDate;
-
-	@Column(name = "end_date")
-	private LocalDate endDate;
+	/*
+	 * @Column(name = "start_date") private LocalDate startDate;
+	 * 
+	 * @Column(name = "end_date") private LocalDate endDate;
+	 */
 	
 	@Column(name = "number_of_days")
 	private Integer numberOfDays;
@@ -85,4 +82,7 @@ public class Promote {
 	
 	@Column(name = "user_id")
 	private Integer userId;
+	
+	@Column(name = "multimedia_Id")
+	private Integer multimediaId;
 }

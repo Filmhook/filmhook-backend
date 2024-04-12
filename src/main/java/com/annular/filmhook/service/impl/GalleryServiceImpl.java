@@ -13,14 +13,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.User;
-import com.annular.filmhook.repository.MultiMediaFileRepository;
 import com.annular.filmhook.service.GalleryService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
-import com.annular.filmhook.webmodel.MultiMediaOutputWebModel;
 
 @Service
 public class GalleryServiceImpl implements GalleryService {

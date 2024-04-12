@@ -1,11 +1,10 @@
 package com.annular.filmhook.service;
 
-import com.annular.filmhook.model.User;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
-import com.annular.filmhook.webmodel.UserWebModel;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface UserService {
 
