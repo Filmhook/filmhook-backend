@@ -1,20 +1,24 @@
 package com.annular.filmhook.service.impl;
 
-import com.annular.filmhook.model.MediaFiles;
-import com.annular.filmhook.model.User;
-import com.annular.filmhook.repository.MediaFilesRepository;
-import com.annular.filmhook.repository.UserRepository;
-import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.util.CalendarUtil;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
-import com.annular.filmhook.webmodel.UserWebModel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.MediaFilesRepository;
+import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.CalendarUtil;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -266,6 +270,5 @@ public class UserServiceImpl implements UserService {
 
 		// need to add profession details later.
 	}
-
 	
 }
