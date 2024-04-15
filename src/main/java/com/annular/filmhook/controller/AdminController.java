@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,15 +18,15 @@ import com.annular.filmhook.webmodel.UserWebModel;
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
-	
+
 	public static final Logger logger = LoggerFactory.getLogger(AdminController.class);
-	
+
 	@Autowired
 	UserRepository userRepository;
-	
+
 	@Autowired
 	AdminService adminService;
-	
+
 	@PostMapping("adminRegister")
 	public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
 		try {
@@ -37,7 +38,7 @@ public class AdminController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
-	
+
 	@PostMapping("updateRegister")
 	public ResponseEntity<?> updateRegister(@RequestBody UserWebModel userWebModel) {
 		try {
@@ -85,5 +86,18 @@ public class AdminController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+
+	@GetMapping("getAllUnverifiedIndustrialUsers")
+	public Response getAllUnverifiedIndustrialUsers() {
+		try {
+			logger.info("getAllUnverifiedIndustrialUsers controller start");
+			return adminService.getAllUnverifiedIndustrialUsers();
+		} catch (Exception e) {
+			logger.info("getAllUnverifiedIndustrialUsers Method Exception" + e);
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
+
 
 }

@@ -1,6 +1,5 @@
 package com.annular.filmhook.webmodel;
 
-import java.time.LocalDate;
 import java.util.Date;
 
 import lombok.Data;
@@ -14,8 +13,8 @@ public class PromoteWebModel {
 	private Date createdOn;
 	private Integer updatedBy;
 	private Date updatedOn;
-	private LocalDate startDate;
-	private LocalDate endDate;
+//	private LocalDate startDate;
+//	private LocalDate endDate;
 	private Integer numberOfDays;
 	private Integer amount;
 	private Integer totalCost;
@@ -25,5 +24,6 @@ public class PromoteWebModel {
 	private Integer price;
 	private String country;
 	private Integer userId;
+	private Integer multimediaId;
 
 }
