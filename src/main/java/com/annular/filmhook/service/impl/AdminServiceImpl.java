@@ -3,7 +3,6 @@ package com.annular.filmhook.service.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -181,6 +180,16 @@ public class AdminServiceImpl implements AdminService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Failed to set adminPageStatus", e.getMessage()));
 		}
+	}
+
+	@Override
+	public Response getAllUnverifiedIndustrialUsers() {
+		List<User> unverifiedIndustrialUsers = userRepository.getAllUnverifiedIndustrialUsers();
+		
+		if(!unverifiedIndustrialUsers.isEmpty())
+			return new Response(-1, "Success", unverifiedIndustrialUsers);
+		
+		return new Response(-1,"There is no unverified users found.","");
 	}
 
 }

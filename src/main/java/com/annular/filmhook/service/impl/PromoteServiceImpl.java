@@ -1,7 +1,6 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Promote;
-import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.service.PromoteService;
 import com.annular.filmhook.webmodel.PromoteWebModel;
@@ -39,15 +37,19 @@ public class PromoteServiceImpl implements PromoteService {
 			Promote promote = new Promote();
 			promote.setAmount(promoteWebModel.getAmount());
 			promote.setCgst(promoteWebModel.getCgst());
-			promote.setEndDate(promoteWebModel.getEndDate());
+//			promote.setEndDate(promoteWebModel.getEndDate());
 			promote.setPrice(promoteWebModel.getPrice());
 			promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
+			promote.setTotalCost(promoteWebModel.getTotalCost());
+			promote.setTaxFee(promoteWebModel.getTaxFee());
 			promote.setSgst(promoteWebModel.getSgst());
 			promote.setCreatedBy(userDetails.userInfo().getId());
 			promote.setStatus(true);
-			promote.setStartDate(promoteWebModel.getStartDate());
+//			promote.setStartDate(promoteWebModel.getStartDate());
 			promote.setCountry(promoteWebModel.getCountry());
 			promote.setUserId(userDetails.userInfo().getId());
+			promote.setMultimediaId(promoteWebModel.getMultimediaId());
+			
 			promote = promoteRepository.save(promote);
 			response.put("promoteInfo", promote);
 			logger.info("addMethod method end");
@@ -78,13 +80,17 @@ public class PromoteServiceImpl implements PromoteService {
 				Promote promote = data.get();
 				promote.setAmount(promoteWebModel.getAmount());
 				promote.setCgst(promoteWebModel.getCgst());
-				promote.setEndDate(promoteWebModel.getEndDate());
+//				promote.setEndDate(promoteWebModel.getEndDate());
 				promote.setPrice(promoteWebModel.getPrice());
+				promote.setTotalCost(promoteWebModel.getTotalCost());
+				promote.setTaxFee(promoteWebModel.getTaxFee());
 				promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
 				promote.setSgst(promoteWebModel.getSgst());
 				promote.setCountry(promoteWebModel.getCountry());
 				promote.setUpdatedBy(userDetails.userInfo().getId());
 				promote.setUserId(userDetails.userInfo().getId());
+				promote.setMultimediaId(promoteWebModel.getMultimediaId());
+				
 				promote = promoteRepository.save(promote);
 				response.put("promoteInfo", promote);
 			} else {
