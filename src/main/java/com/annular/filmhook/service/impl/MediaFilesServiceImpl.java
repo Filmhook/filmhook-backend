@@ -61,6 +61,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             File file = File.createTempFile(mediaFiles.getFileId(), null);
             FileUtil.convertMultiPartFileToFile(fileInputWebModel.getFile(), file);
             String response = fileUtil.uploadFile(file, mediaFiles.getFilePath());
+            logger.info("File Upload in S3 response :- {}", response);
             if (response != null && response.equalsIgnoreCase("File Uploaded")) {
                 file.delete(); // deleting temp file
                 fileOutputWebModel = this.transformData(mediaFiles); // Reading the saved file details

@@ -60,15 +60,6 @@ public class StoriesServiceImpl implements StoriesService {
                     List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
                     outputWebModelList.add(fileOutputWebModel);
                     storiesWebModel.setFileOutputWebModel(outputWebModelList);
-
-                    // 3. Upload into S3
-                    File file = File.createTempFile(fileOutputWebModel.getFileId(), null);
-                    FileUtil.convertMultiPartFileToFile(inputData.getFileInputWebModel().getFile(), file);
-                    String response = fileUtil.uploadFile(file, fileOutputWebModel.getFilePath());
-                    logger.info("File Upload in S3 response :- {}", response);
-                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-                        file.delete(); // deleting temp file
-                    }
                 }
             }
         } catch (Exception e) {
