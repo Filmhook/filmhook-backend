@@ -15,10 +15,10 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Configuration
 @Getter
@@ -63,13 +63,13 @@ public class S3Util {
     public List<S3Object> getAllObjectsFromS3Bucket(String bucketName) {
         logger.info("In getAllObjectsFromS3Bucket() Bucket Name :- [{}] ", bucketName);
         List<S3Object> objects = null;
-        try(S3Client client = buildS3ClientSync()) {
+        try (S3Client client = buildS3ClientSync()) {
             ListObjectsRequest request = ListObjectsRequest.builder().bucket(bucketName).build();
             ListObjectsResponse response = client.listObjects(request);
             objects = response.contents();
             logger.info("S3 Objects count :- [{}] ", objects.size());
         } catch (S3Exception e) {
-            logger.error("Error in getAllObjectsFromS3Bucket" + e.awsErrorDetails().errorMessage());
+            logger.error("Error in getAllObjectsFromS3Bucket{}", e.awsErrorDetails().errorMessage());
             e.printStackTrace();
         }
         return objects;
@@ -170,38 +170,18 @@ public class S3Util {
     }
 
     public void deleteAllObjectFromS3Async(String bucketName, String destPath) {
-        logger.info("Inn deleteAllObjectFromS3Async() Destination to delete all objects from S3..." + destPath);
-        try (S3AsyncClient s3AsyncClient = buildS3ClientAsync()) {
-            List<S3Object> s3ObjectList = this.getAllObjectsFromS3Bucket(bucketName, destPath);
-            if (s3ObjectList != null && !s3ObjectList.isEmpty()) {
-
-                List<ObjectIdentifier> objectIdentifiers = new ArrayList<>();
-                s3ObjectList.forEach(x -> objectIdentifiers.add(ObjectIdentifier.builder().key(x.key()).build()));
-
-                DeleteObjectsRequest dor = DeleteObjectsRequest.builder()
-                        .bucket(bucketName)
-                        .delete(Delete.builder().objects(objectIdentifiers).build())
-                        .build();
-
-                CompletableFuture<DeleteObjectsResponse> deleteObjectsFuture = s3AsyncClient.deleteObjects(dor);
-                executeFutureCompletion(deleteObjectsFuture, "Objects Deleted Successfully");
-            }
-
-        } catch (S3Exception e) {
-            logger.error("Error in deleting object from s3 : {}", e.getMessage());
-            e.printStackTrace();
-        }
+        logger.info("In deleteAllObjectFromS3Async() Destination to delete all objects from S3 :- [{}]", destPath);
+        List<S3Object> s3ObjectList = this.getAllObjectsFromS3Bucket(bucketName, destPath);
+        if (!s3ObjectList.isEmpty()) this.deleteObjectsFromS3(bucketName, s3ObjectList);
     }
 
-    public void deleteObjectFromS3(String bucketName, String destinationPath, String objectKey) {
-        logger.info("In deleteObjectFromS3() Key to delete from S3...{}", objectKey);
+    public void deleteObjectsFromS3(String bucketName, List<S3Object> s3ObjectList) {
+        logger.info("S3 objects size to delete :- [{}]", s3ObjectList.size());
         try (S3AsyncClient s3Client = buildS3ClientAsync()) {
-            List<S3Object> s3Objects = this.getAllObjectsFromS3Bucket(bucketName, destinationPath);
-            if (s3Objects != null && !s3Objects.isEmpty()) {
-                List<ObjectIdentifier> objectIdentifiers = new ArrayList<>();
-                s3Objects.stream()
-                        .filter(item -> item.key().contains(objectKey))
-                        .forEach(item -> objectIdentifiers.add(ObjectIdentifier.builder().key(item.key()).build()));
+            if (!s3ObjectList.isEmpty()) {
+                List<ObjectIdentifier> objectIdentifiers = s3ObjectList.stream()
+                        .map(item -> ObjectIdentifier.builder().key(item.key()).build())
+                        .collect(Collectors.toList());
 
                 DeleteObjectsRequest dor = DeleteObjectsRequest.builder()
                         .bucket(bucketName)
@@ -209,8 +189,23 @@ public class S3Util {
                         .build();
 
                 CompletableFuture<DeleteObjectsResponse> deleteObjectsFuture = s3Client.deleteObjects(dor);
-                executeFutureCompletion(deleteObjectsFuture, "Objects Deleted Successfully");
+                this.executeFutureCompletion(deleteObjectsFuture, "Objects Deleted Successfully");
             }
+        } catch (S3Exception e) {
+            logger.error(e.awsErrorDetails().errorMessage());
+            throw e;
+        }
+    }
+
+    public void deleteObjectFromS3(String bucketName, String key) {
+        logger.info("S3 objects key to delete :- [{}]", key);
+        try (S3AsyncClient s3Client = buildS3ClientAsync()) {
+            DeleteObjectRequest dr = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
+            CompletableFuture<DeleteObjectResponse> deleteObjectsFuture = s3Client.deleteObject(dr);
+            this.executeFutureCompletion(deleteObjectsFuture, "Objects Deleted Successfully");
         } catch (S3Exception e) {
             logger.error(e.awsErrorDetails().errorMessage());
             throw e;

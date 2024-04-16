@@ -29,7 +29,7 @@ public class GalleryController {
     @RequestMapping(path = "/saveGalleryFiles", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public Response saveGalleryFiles(@ModelAttribute FileInputWebModel inputFileData) {
         try {
-            logger.info("saveGalleryFiles Inputs :- " + inputFileData);
+            logger.info("saveGalleryFiles Inputs :- {}", inputFileData);
             FileOutputWebModel outputFileData = galleryService.saveGalleryFiles(inputFileData);
             if (outputFileData != null) return new Response(1, "File(s) saved successfully...", outputFileData);
         } catch (Exception e) {
@@ -44,7 +44,7 @@ public class GalleryController {
                                                  @RequestParam("category") String category,
                                                  @RequestParam("fileId") String fileId) {
         try {
-            logger.info("downloadGalleryFile Input Category :- " + category + ", File Id :- " + fileId);
+            logger.info("downloadGalleryFile Input Category :- {}, File Id :- {}", category, fileId);
             Resource resource = galleryService.getGalleryFile(userId, category, fileId);
             if (resource != null) {
                 String contentType = "application/octet-stream";
@@ -65,7 +65,7 @@ public class GalleryController {
         try {
             List<FileOutputWebModel> outputList = galleryService.getGalleryFilesByUser(userId);
             if (outputList != null && !outputList.isEmpty()) {
-                logger.info("[" + outputList.size() + "] Gallery files found for userId :- " + userId);
+                logger.info("[{}] Gallery files found for userId :- {}", outputList.size(), userId);
                 return new Response(1, "Gallery file(s) found successfully...", outputList);
             } else {
                 return new Response(-1, "No file(s) available for this user...", null);

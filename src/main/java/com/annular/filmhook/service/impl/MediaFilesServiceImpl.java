@@ -13,7 +13,6 @@ import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
-import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,33 +193,26 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     public void deleteMediaFilesByUserIdAndCategoryAndRefId(Integer userId, String category, List<Integer> idList) {
         Optional<User> user = userService.getUser(userId);
         if (user.isPresent()) {
-            List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userId, category);
-            this.deleteMediaFiles(category, idList, mediaFiles);
+            List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategoryAndRefId(userId, category, idList);
+            this.deleteMediaFiles(mediaFiles);
         }
     }
 
     @Override
     public void deleteMediaFilesByCategoryAndRefId(String category, List<Integer> idList) {
-        List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategory(category);
-        this.deleteMediaFiles(category, idList, mediaFiles);
+        List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndRefId(category, idList);
+        this.deleteMediaFiles(mediaFiles);
     }
 
-    private void deleteMediaFiles(String category, List<Integer> idList, List<MediaFiles> mediaFiles) {
+    private void deleteMediaFiles(List<MediaFiles> mediaFiles) {
         try {
             if (mediaFiles != null && !mediaFiles.isEmpty()) {
-                // Deactivating the MediaFiles
-                mediaFiles.stream()
-                        .filter(item -> idList.contains(item.getCategoryRefId()))
-                        .forEach(item -> {
-                            item.setStatus(false);
-                            mediaFilesRepository.saveAndFlush(item);
-                        });
+                mediaFiles.forEach(mediaFile -> {
+                    mediaFile.setStatus(false); // 1. Deactivating the MediaFiles
+                    mediaFilesRepository.saveAndFlush(mediaFile);
 
-                // Deleting the S3 Objects
-                mediaFiles.forEach(item -> fileUtil.deleteFile(
-                        FileUtil.generateDestinationPath(item.getUser(), category),
-                        item.getFileId())
-                );
+                    fileUtil.deleteFile(mediaFile.getFilePath()); // 2. Deleting the S3 Objects
+                });
             }
         } catch (Exception e) {
             logger.error("Error at deleteMediaFiles()...", e);

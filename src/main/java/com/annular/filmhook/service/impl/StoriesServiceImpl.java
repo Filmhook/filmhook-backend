@@ -42,12 +42,9 @@ public class StoriesServiceImpl implements StoriesService {
 
     @Override
     public StoriesWebModel uploadStory(StoriesWebModel inputData) {
-        StoriesWebModel storiesWebModel = null;
         try {
             Optional<User> userFromDB = userService.getUser(inputData.getUserId());
             if (userFromDB.isPresent()) {
-                storiesWebModel = new StoriesWebModel();
-
                 Story story = this.prepareStories(inputData, userFromDB.get());
                 // 1. Save first in Stories table MySQL
                 storyRepository.saveAndFlush(story);
@@ -56,16 +53,15 @@ public class StoriesServiceImpl implements StoriesService {
                 // 2. Save in media files table MySQL
                 inputData.getFileInputWebModel().setCategoryRefId(story.getId()); // adding the story table reference in media files table
                 FileOutputWebModel fileOutputWebModel = mediaFilesService.saveMediaFiles(inputData.getFileInputWebModel(), userFromDB.get());
-                if (fileOutputWebModel != null) {
-                    List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
-                    outputWebModelList.add(fileOutputWebModel);
-                    storiesWebModel.setFileOutputWebModel(outputWebModelList);
-                }
+                return fileOutputWebModel != null ? this.transformData(story) : null;
+            } else {
+                return null;
             }
         } catch (Exception e) {
-            logger.error("Error at saveGalleryFiles()...", e);
+            logger.error("Error at uploadStory()...", e);
+            e.printStackTrace();
+            return null;
         }
-        return storiesWebModel;
     }
 
     private Story prepareStories(StoriesWebModel inputData, User user) {
@@ -127,7 +123,7 @@ public class StoriesServiceImpl implements StoriesService {
                 return new ByteArrayResource(fileUtil.downloadFile(filePath));
             }
         } catch (Exception e) {
-            logger.error("Error at getGalleryFile()...", e);
+            logger.error("Error at getStoryFile()...", e);
             return null;
         }
         return null;
