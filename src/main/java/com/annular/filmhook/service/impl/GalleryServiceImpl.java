@@ -1,6 +1,5 @@
 package com.annular.filmhook.service.impl;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,19 +40,10 @@ public class GalleryServiceImpl implements GalleryService {
 		try {
 			Optional<User> userFromDB = userService.getUser(fileInput.getUserId());
 			if (userFromDB.isPresent()) {
-				logger.info("User found :- " + userFromDB.get().getName());
+                logger.info("User found :- {}", userFromDB.get().getName());
 				// 1. Save media files in MySQL
 				fileOutputWebModel = mediaFilesService.saveMediaFiles(fileInput, userFromDB.get());
-				logger.info("Gallery file row saved in mysql :- " + fileOutputWebModel.getFileId());
-
-				// 2. Upload into S3
-				File file = File.createTempFile(fileOutputWebModel.getFileId(), null);
-				FileUtil.convertMultiPartFileToFile(fileInput.getFile(), file);
-				String response = fileUtil.uploadFile(file, fileOutputWebModel.getFilePath());
-				logger.info("Gallery file saved in S3 response :- " + response);
-				if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-					file.delete(); // deleting temp file
-				}
+                logger.info("Gallery file row saved in mysql :- {}", fileOutputWebModel.getFileId());
 			}
 		} catch (Exception e) {
 			logger.error("Error at saveGalleryFiles()...", e);

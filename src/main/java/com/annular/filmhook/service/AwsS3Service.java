@@ -13,6 +13,6 @@ public interface AwsS3Service {
     String putObjectIntoS3(String bucketName, String destinationPath, File inputData);
     void putObjectIntoS3Async(String bucketName, String destinationPath, File inputData);
     void deleteAllObjectsFromDestination(String bucketName, String destinationPath);
-    void deleteObjectByKeyFromS3(String bucketName, String destinationPath, String key);
-
+    void deleteObjectsFromS3(String bucketName, List<S3Object> s3ObjectList);
+    void deleteObjectFromS3(String bucketName, String objectKey);
 }

@@ -50,7 +50,12 @@ public class AwsS3ServiceImpl implements AwsS3Service {
     }
 
     @Override
-    public void deleteObjectByKeyFromS3(String bucketName, String destinationPath, String key) {
-        s3Util.deleteObjectFromS3(bucketName, destinationPath, key);
+    public void deleteObjectsFromS3(String bucketName, List<S3Object> s3ObjectList) {
+        s3Util.deleteObjectsFromS3(bucketName, s3ObjectList);
+    }
+
+    @Override
+    public void deleteObjectFromS3(String bucketName, String objectKey) {
+        s3Util.deleteObjectFromS3(bucketName, objectKey);
     }
 }
