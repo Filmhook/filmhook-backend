@@ -2,8 +2,11 @@ package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -24,6 +29,9 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	UserRepository userRepository;
+	
+	@Autowired
+	IndustryMediaFileRepository industryMediaFileRepository;
 
 	public static final Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
 
@@ -184,12 +192,43 @@ public class AdminServiceImpl implements AdminService {
 
 	@Override
 	public Response getAllUnverifiedIndustrialUsers() {
-		List<User> unverifiedIndustrialUsers = userRepository.getAllUnverifiedIndustrialUsers();
-		
-		if(!unverifiedIndustrialUsers.isEmpty())
-			return new Response(-1, "Success", unverifiedIndustrialUsers);
-		
-		return new Response(-1,"There is no unverified users found.","");
+	    List<IndustryMediaFiles> unverifiedIndustrialUsers = industryMediaFileRepository.getAllUnverifiedIndustrialUsers();
+
+	    Set<Integer> userIds = new HashSet<>();
+	    List<Map<String, Object>> responseList = new ArrayList<>();
+	    
+	    // Collect unique user IDs
+	    for (IndustryMediaFiles user : unverifiedIndustrialUsers) {
+	        User userEntity = user.getUser();
+	        if (userEntity != null) {
+	            userIds.add(userEntity.getUserId());
+	        }
+	    }
+
+	    // Fetch user details for each user ID
+	    for (int userId : userIds) {
+	        User user = userRepository.findById(userId).orElse(null);
+	        if (user != null) {
+	            Map<String, Object> userMap = new HashMap<>();
+	            userMap.put("userId", userId);
+	            userMap.put("name", user.getName()); // Assuming 'name' is a field in the User entity
+	            // Add other fields you want to include in the response
+	            // userMap.put("email", user.getEmail());
+	            // Add other fields as needed
+	            responseList.add(userMap);
+	        }
+	    }
+
+	    if (!responseList.isEmpty()) {
+	        return new Response(-1, "Success", responseList);
+	    } else {
+	        return new Response(-1, "There are no unverified users found.", "");
+	    }
 	}
 
+
+
+
 }
+
+

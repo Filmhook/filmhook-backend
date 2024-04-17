@@ -1,8 +1,13 @@
 package com.annular.filmhook.controller;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,9 +15,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.FilmProfession;
+import com.annular.filmhook.model.Industry;
+import com.annular.filmhook.model.Platform;
+import com.annular.filmhook.model.Profession;
+import com.annular.filmhook.model.SubProfesssion;
 import com.annular.filmhook.service.ActionService;
 import com.annular.filmhook.webmodel.CommentWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.ShareWebModel;
+
 
 @RestController
 @RequestMapping("/action")
@@ -59,6 +71,17 @@ public class ActionController {
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
 	
+	@PostMapping("/getComment")
+	public ResponseEntity<?> getComment(@RequestBody CommentWebModel commentWebModel) {
+		try {
+			logger.info("getComment controller start"); 
+			return actionService.getComment(commentWebModel);
+		} catch (Exception e) {
+			logger.error("getComment Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 	@PostMapping("/deleteComment")
 	public ResponseEntity<?> deleteComment(@RequestBody CommentWebModel commentWebModel) {
 		try {
@@ -70,4 +93,20 @@ public class ActionController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
-}
+
+	@PostMapping("/addShare")
+	public ResponseEntity<?> addShare(@RequestBody ShareWebModel shareWebModel) {
+		try {
+			logger.info("addShare controller start");
+			return actionService.addShare(shareWebModel);
+		} catch (Exception e) {
+			logger.error("addShare Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+
+	}
+	
+
+

@@ -125,41 +125,6 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		return mediaFilesList;
 	}
 
-//	private List<MediaFiles> prepareMediaFileData(IndustryFileInputWebModel inputFileData, User user) {
-//		List<MediaFiles> mediaFilesList = new ArrayList<>();
-//
-//		// Process images
-//		if (inputFileData.getImages() != null) {
-//			for (MultipartFile image : inputFileData.getImages()) {
-//				MediaFiles mediaFiles = createMediaFiles(image, user, "image", inputFileData.getUserId());
-//				mediaFilesList.add(mediaFiles);
-//			}
-//		}
-//
-//		// Process videos
-//		if (inputFileData.getVideos() != null) {
-//			for (MultipartFile video : inputFileData.getVideos()) {
-//				MediaFiles mediaFiles = createMediaFiles(video, user, "video", inputFileData.getUserId());
-//				mediaFilesList.add(mediaFiles);
-//			}
-//		}
-//
-//		// Process PAN card
-//		if (inputFileData.getPanCard() != null) {
-//			MediaFiles mediaFiles = createMediaFiles(inputFileData.getPanCard(), user, "panCard",
-//					inputFileData.getUserId());
-//			mediaFilesList.add(mediaFiles);
-//		}
-//
-//		// Process Aadhar card
-//		if (inputFileData.getAdharCard() != null) {
-//			MediaFiles mediaFiles = createMediaFiles(inputFileData.getAdharCard(), user, "aadharCard",
-//					inputFileData.getUserId());
-//			mediaFilesList.add(mediaFiles);
-//		}
-//
-//		return mediaFilesList;
-//	}
 	
 	private IndustryMediaFiles createMediaFiles(MultipartFile file, User user, String category, Integer createdBy) {
 		IndustryMediaFiles mediaFiles = new IndustryMediaFiles();
@@ -204,7 +169,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 
 			fileOutputWebModel.setUserId(mediaFile.getUser().getUserId());
 			fileOutputWebModel.setCategory(mediaFile.getCategory());
-
+            fileOutputWebModel.setId(mediaFile.getIndustryMediaid());
 			fileOutputWebModel.setFileId(mediaFile.getFileId());
 			fileOutputWebModel.setFileName(mediaFile.getFileName());
 			fileOutputWebModel.setFileType(mediaFile.getFileType());

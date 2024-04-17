@@ -207,6 +207,7 @@ public class UserServiceImpl implements UserService {
 			userToUpdate.setChildrenNames(String.join(",", userInput.getChildrenNames()));
 		}
 		userToUpdate.setMotherName(userInput.getMotherName());
+		userToUpdate.setSpouseName(userInput.getSpouseName());
 		userToUpdate.setFatherName(userInput.getFatherName());
 		if (userInput.getBrotherNames() != null) {
 			userToUpdate.setBrotherNames(String.join(",", userInput.getBrotherNames()));

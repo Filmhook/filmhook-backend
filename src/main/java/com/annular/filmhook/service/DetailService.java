@@ -2,6 +2,7 @@ package com.annular.filmhook.service;
 
 import java.util.List;
 
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,5 +31,7 @@ public interface DetailService {
 	ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
 	List<FileOutputWebModel> getIndustryFiles(Integer userId);
+
+	Resource getIndustryFile(Integer userId, String category, String fileId);
 
 }

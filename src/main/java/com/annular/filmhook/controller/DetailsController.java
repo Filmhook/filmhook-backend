@@ -5,6 +5,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -137,4 +139,25 @@ public class DetailsController {
 		}
 		return new Response(-1, "Files were not found...", null);
 	}
+	
+    @GetMapping("/downloadIndustryFile")
+    public ResponseEntity<?> downloadGalleryFile(@RequestParam("userId") Integer userId,
+                                                 @RequestParam("category") String category,
+                                                 @RequestParam("fileId") String fileId) {
+        try {
+            logger.info("downloadIndustryFile Input Category :- " + category + ", File Id :- " + fileId);
+            Resource resource = detailService.getIndustryFile(userId, category, fileId);
+            if (resource != null) {
+                String contentType = "application/octet-stream";
+                String headerValue = "attachment; filename=\"" + fileId + "\"";
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
+                        .body(resource);
+            }
+        } catch (Exception e) {
+            logger.error("Error at downloadIndustryFile()...", e);
+        }
+        return ResponseEntity.internalServerError().build();
+    }
 }

@@ -137,7 +137,7 @@ public class AuthController {
 			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 			logger.info("Login Controller ---- Finished");
 			return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(),
-					userDetails.getEmail(), "Login Successful", 1, "",userDetails.getUserType()));
+					userDetails.getEmail(), "Login Successful", 1, refreshToken.getToken(),userDetails.getUserType()));
 		}
 		return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
 	}

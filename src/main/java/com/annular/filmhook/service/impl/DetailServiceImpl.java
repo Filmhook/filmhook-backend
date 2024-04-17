@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -377,9 +379,18 @@ public class DetailServiceImpl implements DetailService {
 				// 2. Upload files to S3
 				uploadToS3(inputFileData.getImages(), fileOutputWebModel);
 				uploadToS3(inputFileData.getVideos(), fileOutputWebModel);
-				uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
-				uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
-			}
+			    // Upload either PAN card or Aadhar card if available
+	            if (inputFileData.getPanCard() != null) {
+	                uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
+	            } else if (inputFileData.getAdharCard() != null) {
+	                uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
+	            } else {
+	                logger.error("Neither PAN card nor Aadhar card is provided for upload to S3.");
+	            }
+	        }
+//				uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
+//				uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
+			
 		} catch (Exception e) {
 			logger.error("Error at saveIndustryUserFiles(): ", e);
 			e.printStackTrace();
@@ -680,6 +691,22 @@ public class DetailServiceImpl implements DetailService {
 			e.printStackTrace();
 		}
 		return outputWebModelList;
+	}
+
+	@Override
+	public Resource getIndustryFile(Integer userId, String category, String fileId) {
+		try {
+			Optional<User> userFromDB = userService.getUser(userId);
+			if (userFromDB.isPresent()) {
+				String filePath = FileUtil.generateFilePath(userFromDB.get(), category, fileId);
+				return new ByteArrayResource(fileUtil.downloadFile(filePath));
+			}
+		} catch (Exception e) {
+			logger.error("Error at getIndustryFile()...", e);
+			e.printStackTrace();
+		}
+		return null;
+		
 	}
 
 }

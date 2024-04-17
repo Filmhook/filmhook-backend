@@ -14,4 +14,7 @@ public interface IndustryMediaFileRepository extends JpaRepository<IndustryMedia
 	 @Query("Select m from IndustryMediaFiles m where m.user.userId=:userId and m.status=true")
 	List<IndustryMediaFiles> getMediaFilesByUserIdAndCategory(Integer userId);
 
+	 @Query("SELECT imf FROM IndustryMediaFiles imf WHERE imf.user IS NULL OR imf.status=true")
+	    List<IndustryMediaFiles> getAllUnverifiedIndustrialUsers();
+
 }
