@@ -10,6 +10,7 @@ public interface AwsS3Service {
     List<S3Object> getAllObjectsByBucket(String bucketName);
     List<S3Object> getAllObjectsByBucketAndDestination(String bucketName, String destinationPath);
     byte[] getObjectFromS3(String bucketName, String key);
+    byte[] getObjectFromS3(String bucketName, List<S3Object> s3data);
     String putObjectIntoS3(String bucketName, String destinationPath, File inputData);
     void putObjectIntoS3Async(String bucketName, String destinationPath, File inputData);
     void deleteAllObjectsFromDestination(String bucketName, String destinationPath);

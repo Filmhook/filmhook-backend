@@ -57,8 +57,9 @@ public class UserServiceImpl implements UserService {
 		userWebModel.setUserType(user.getUserType());
 
 		userWebModel.setName(user.getName());
-		userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT,
-				user.getDob()));
+//		userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT,
+//				user.getDob()));
+		userWebModel.setDob(user.getDob());
 		userWebModel.setAge(calendarUtil.getAgeFromDate(user.getDob()).toString());
 		userWebModel.setGender(user.getGender());
 
@@ -137,13 +138,14 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private void prepareUserBiographyData(UserWebModel userInput, User userToUpdate) {
-		userToUpdate.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT,
-				userInput.getDob()));
+//		userToUpdate.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT,
+//				userInput.getDob()));
+		userToUpdate.setDob(userInput.getDob());
 		userToUpdate.setGender(userInput.getGender());
 		userToUpdate.setCountry(userInput.getCountry());
 		userToUpdate.setState(userInput.getState());
 		userToUpdate.setDistrict(userInput.getDistrict());
-		userToUpdate.setPhoneNumber(userInput.getPhoneNumber());
+		//userToUpdate.setPhoneNumber(userInput.getPhoneNumber());
 		userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
 		userToUpdate.setHomeAddress(userInput.getHomeAddress());
 
@@ -169,14 +171,14 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private void prepareUserBiologicalData(UserWebModel userInput, User userToUpdate) {
-		userToUpdate.setHeight(userInput.getHeight() + "Cm");
-		userToUpdate.setWeight(userInput.getWeight() + "Kg");
+		userToUpdate.setHeight(userInput.getHeight()); //+ "Cm");
+		userToUpdate.setWeight(userInput.getWeight()); //+ "Kg");
 		userToUpdate.setSkinTone(userInput.getSkinTone());
 		userToUpdate.setHairColor(userInput.getHairColor());
 		userToUpdate.setBmi(userInput.getBmi());
-		userToUpdate.setChestSize(userInput.getChestSize() + "in");
-		userToUpdate.setWaistSize(userInput.getWaistSize() + "in");
-		userToUpdate.setBiceps(userInput.getBicepsSize() + "in");
+		userToUpdate.setChestSize(userInput.getChestSize()); //+ "in");
+		userToUpdate.setWaistSize(userInput.getWaistSize()); //+ "in");
+		userToUpdate.setBiceps(userInput.getBicepsSize());// + "in");
 
 		userToUpdate.setUpdatedBy(userToUpdate.getUserId());
 		userToUpdate.setUpdatedOn(new Date());

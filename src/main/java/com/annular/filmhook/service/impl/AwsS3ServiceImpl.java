@@ -58,4 +58,10 @@ public class AwsS3ServiceImpl implements AwsS3Service {
     public void deleteObjectFromS3(String bucketName, String objectKey) {
         s3Util.deleteObjectFromS3(bucketName, objectKey);
     }
+
+	@Override
+	public byte[] getObjectFromS3(String bucketName, List<S3Object> s3data) {
+		// TODO Auto-generated method stub
+		return s3Util.getObjectAsBytes(bucketName, s3data);
+	}
 }

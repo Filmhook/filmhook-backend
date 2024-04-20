@@ -168,14 +168,12 @@ public class ActionServiceImpl implements ActionService {
 
 	@Override
 	public ResponseEntity<?> getComment(CommentWebModel commentWebModel) {
-		Optional<Comment> commentData = commentRepository.findByIds(commentWebModel.getPostId());
-		if (commentData.isPresent()) {
-			List<Comment> commentDataList = new ArrayList<>();
-			commentDataList.add(commentData.get());
-			return new ResponseEntity<>(commentDataList, HttpStatus.OK);
-		} else {
-			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-		}
-
+	    List<Comment> commentData = commentRepository.findByIds(commentWebModel.getPostId());
+	    if (!commentData.isEmpty()) {
+	        return new ResponseEntity<>(commentData, HttpStatus.OK);
+	    } else {
+	        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	    }
 	}
+
 }

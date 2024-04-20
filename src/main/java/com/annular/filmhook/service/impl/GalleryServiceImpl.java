@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,8 @@ import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
+import software.amazon.awssdk.services.s3.model.S3Object;
+
 @Service
 public class GalleryServiceImpl implements GalleryService {
 
@@ -32,6 +35,9 @@ public class GalleryServiceImpl implements GalleryService {
 
 	@Autowired
 	UserService userService;
+	
+	@Autowired
+	AwsS3ServiceImpl awsService;
 
 	@Override
 	public FileOutputWebModel saveGalleryFiles(FileInputWebModel fileInput) {
@@ -79,4 +85,20 @@ public class GalleryServiceImpl implements GalleryService {
 		return outputWebModelList;
 	}
 
-}
+	@Override
+	public Resource getAllGalleryFilesInCategory(Integer userId,String category) {
+		try {
+			Optional<User> userFromDB = userService.getUser(userId);
+			if (userFromDB.isPresent()) {
+				String destinationPath = FileUtil.generateDestinationPath(userFromDB.get(),category);
+				List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket",destinationPath);
+				
+				return new ByteArrayResource(fileUtil.downloadFile(s3data));
+			}
+		} catch (Exception e) {
+			logger.error("Error at getGalleryFile()...", e);
+			e.printStackTrace();
+		}
+		return null;
+	}
+	}

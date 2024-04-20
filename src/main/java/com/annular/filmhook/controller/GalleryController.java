@@ -13,6 +13,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -75,4 +76,30 @@ public class GalleryController {
         }
         return new Response(-1, "Files were not found...", null);
     }
-}
+    @GetMapping("/downloadGalleryFiles")
+    public ResponseEntity<?> downloadGalleryFiles(@RequestParam("userId") Integer userId,@RequestParam("category") String category) {
+        try {
+            logger.info("downloadGalleryFiles Input Category :- {}", category);
+            Resource resource = galleryService.getAllGalleryFilesInCategory(userId,category);
+            if (resource != null) {
+                // Determine content type
+                MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+                String contentType = "application/octet-stream";
+                
+                // Build filename from category or use a default filename
+                String filename = category + ".zip"; // Example filename
+                
+                // Set content disposition header
+                String headerValue = "attachment; filename=\"" + filename + "\"";
+                
+                return ResponseEntity.ok()
+                        .contentType(mediaType)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
+                        .body(resource);
+            }
+        } catch (Exception e) {
+            logger.error("Error at downloadGalleryFile()...", e);
+            return ResponseEntity.internalServerError().build(); // Return error response
+        }
+        return ResponseEntity.notFound().build(); // Return not found response if resource is null
+    }}

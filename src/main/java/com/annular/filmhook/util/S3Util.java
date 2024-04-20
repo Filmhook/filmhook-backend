@@ -8,11 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import software.amazon.awssdk.auth.credentials.*;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
@@ -211,4 +213,25 @@ public class S3Util {
             throw e;
         }
     }
-}
+
+    public byte[] getObjectAsBytes(String bucketName, List<S3Object> s3data) {
+        try (S3Client s3Client = buildS3ClientSync()) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            for (S3Object s3Object : s3data) {
+                GetObjectRequest objectRequest = GetObjectRequest.builder()
+                        .key(s3Object.key())
+                        .bucket(bucketName)
+                        .build();
+                try {
+                    s3Client.getObject(objectRequest, ResponseTransformer.toOutputStream(outputStream));
+                } catch (S3Exception e) {
+                    logger.error("Error downloading object: " + s3Object.key(), e);
+                    // Handle the error as needed
+                }
+            }
+            return outputStream.toByteArray();
+        } catch (S3Exception e) {
+            logger.error(e.awsErrorDetails().errorMessage());
+            throw e;
+        }}}
+        

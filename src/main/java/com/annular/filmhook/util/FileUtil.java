@@ -34,10 +34,12 @@ public class FileUtil {
         awsS3Service.putObjectIntoS3Async(s3Util.getS3BucketName(), destinationPath, file);
     }
 
+    public byte[] downloadFile(List<S3Object> s3data) {
+        return awsS3Service.getObjectFromS3(s3Util.getS3BucketName(), s3data);
+    }
     public byte[] downloadFile(String objectKey) {
         return awsS3Service.getObjectFromS3(s3Util.getS3BucketName(), objectKey);
     }
-
     public void deleteFiles(List<S3Object> s3ObjectList) {
         awsS3Service.deleteObjectsFromS3(s3Util.getS3BucketName(), s3ObjectList);
     }
@@ -83,4 +85,15 @@ public class FileUtil {
             }
         }
     }
+
+    public static String generateFilePath(String category) {
+    	 return new StringBuilder()
+                 .append(category)
+                 .append("/")
+                // .append(user.getUserId()).append("_").append(user.getName().toLowerCase().replace(" ", ""))
+                // .append("/")
+                // .append(fileName)
+                 .toString(); 
+    }
+
 }
