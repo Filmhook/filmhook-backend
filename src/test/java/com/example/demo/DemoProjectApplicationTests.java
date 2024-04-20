@@ -8,6 +8,7 @@ class DemoProjectApplicationTests {
 
 	@Test
 	void contextLoads() {
+		System.out.println("I am from DemoProjectApplicationTests contextLoads()...");
 	}
 
 }

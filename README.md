@@ -2,21 +2,26 @@
 
 FilmHook is a social media web & mobile application developed by Spring boot with ReactJS
 
-## Installation
+## Installation & Execution
 
-Use this command to compile filmhook project.
+Command to compile filmhook project.
 ```bash
 mvn clean install
 ```
 
-Use this command to compile filmhook project without test case.
+Command to compile filmhook project without test case.
 ```bash
 mvn clean install -DskipTests
 ```
 
-Use this command to run filmhook project.
+Command to run filmhook project.
 ```bash
 java -jar <War file>
+```
+
+Command to run filmhook project as spring boot app.
+```bash
+mvnw spring-boot:run
 ```
 
 ## AWS S3 integration
@@ -27,4 +32,4 @@ java -jar <War file>
 
 ## License
 
-[Annular Technologies - 2024](https://annulartechonlogies.com)
+[Annular Technologies - 2024](https://www.annulartechnologies.com/)
