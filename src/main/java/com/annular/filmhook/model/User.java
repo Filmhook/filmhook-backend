@@ -45,6 +45,9 @@ public class User {
     @Column(name = "user_type")
     private String userType;
 
+    @Column(name ="tempToken")
+    private String tempToken;
+    
     @Column(name = "name")
     private String name;
 

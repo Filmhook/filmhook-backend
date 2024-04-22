@@ -102,4 +102,33 @@ public class GalleryController {
             return ResponseEntity.internalServerError().build(); // Return error response
         }
         return ResponseEntity.notFound().build(); // Return not found response if resource is null
-    }}
+    }
+    @GetMapping("/downloadAllUserGalleryFiles")
+    public ResponseEntity<?> downloadAllUserGalleryFiles(@RequestParam("category") String category) {
+        try {
+            logger.info("downloadGalleryFiles Input Category :- {}", category);
+            Resource resource = galleryService.getAllGalleryFilesInCategory(category);
+            if (resource != null) {
+                // Determine content type
+                MediaType mediaType = MediaType.APPLICATION_OCTET_STREAM;
+                String contentType = "application/octet-stream";
+                
+                // Build filename from category or use a default filename
+                String filename = category + ".zip"; // Example filename
+                
+                // Set content disposition header
+                String headerValue = "attachment; filename=\"" + filename + "\"";
+                
+                return ResponseEntity.ok()
+                        .contentType(mediaType)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
+                        .body(resource);
+            }
+        } catch (Exception e) {
+            logger.error("Error at downloadGalleryFile()...", e);
+            return ResponseEntity.internalServerError().build(); // Return error response
+        }
+        return ResponseEntity.notFound().build(); // Return not found response if resource is null
+    }
+    
+    }

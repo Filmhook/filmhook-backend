@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,24 +96,39 @@ public class ChatServiceImpl implements ChatService{
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 	    }
 	}
+
 	@Override
-	public ResponseEntity<?> getMessageByUserId(ChatWebModel chatWebModel) {
-        try {
-            logger.info("Get Messages by User ID Method Start");
+	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
+	    Map<String, Object> response = new HashMap<>();
+	    try {
+	        User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
 
-            Integer userId = userDetails.userInfo().getId();
-            List<Chat> messages = chatRepository.findByChatSenderIdOrChatReceiverId(userId,chatWebModel.getChatReceiverId());
+//	        if (user == null) {
+//	            return new Response(-1, "User not found", "");
+//	        }
+	        logger.info("Get Messages by User ID Method Start");
+           Integer senderId = userDetails.userInfo().getId();
+	        List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId,
+	                message.getChatReceiverId());
+	        List<Chat> receiverMessages = chatRepository
+	                .getMessageListBySenderIdAndReceiverId(message.getChatReceiverId(), message.getChatSenderId());
 
-            if (!messages.isEmpty()) {
-                return ResponseEntity.ok(messages);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            logger.error("Error occurred while retrieving messages: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+	        List<Chat> allMessages = new ArrayList<>();
+	        allMessages.addAll(senderMessages);
+	        allMessages.addAll(receiverMessages);
+
+	        response.put("userChat", allMessages);
+	        response.put("numberOfItems", allMessages.size());
+
+	    } catch (Exception e) {
+	        logger.error("Error occurred while retrieving messages: " + e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+	    logger.info("Get Messages by User ID Method End");
+
+	    return ResponseEntity.ok(new Response(0, "Success", response));
+	}
+
     }
 
 	

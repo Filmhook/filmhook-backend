@@ -96,4 +96,12 @@ public class FileUtil {
                  .toString(); 
     }
 
+    public static String generateDestinationPath(String category) {
+        return new StringBuilder()
+                .append(category)
+                .append("/")
+                .toString();
+    }
+
+
 }

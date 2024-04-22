@@ -101,4 +101,21 @@ public class GalleryServiceImpl implements GalleryService {
 		}
 		return null;
 	}
+
+	@Override
+	public Resource getAllGalleryFilesInCategory(String category) {
+		try {
+			///Optional<User> userFromDB = userService.getUser(userId);
+			//if (userFromDB.isPresent()) {
+				String destinationPath = FileUtil.generateDestinationPath(category);
+				List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket",destinationPath);
+				
+				return new ByteArrayResource(fileUtil.downloadFile(s3data));
+			//}
+		} catch (Exception e) {
+			logger.error("Error at getGalleryFile()...", e);
+			e.printStackTrace();
+		}
+		return null;
+	}
 	}
