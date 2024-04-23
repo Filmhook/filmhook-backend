@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +61,9 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
+import com.annular.filmhook.webmodel.IndustryUserResponseDTO;
+import com.annular.filmhook.webmodel.PlatformDetailDTO;
+import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 
 @Service
 public class DetailServiceImpl implements DetailService {
@@ -71,7 +73,7 @@ public class DetailServiceImpl implements DetailService {
 
 	@Autowired
 	MediaFilesService mediaFilesService;
-	
+
 	@Autowired
 	UserMediaFilesService userMediaFilesService;
 
@@ -143,26 +145,26 @@ public class DetailServiceImpl implements DetailService {
 					Map<String, Object> industryMap = new HashMap<>();
 					industryMap.put("industryId", industry.getIndustryId());
 					industryMap.put("industryName", industry.getIndustryName());
-					industryMap.put("industryImage", Base64.getEncoder().encode(industry.getImage()));
+					industryMap.put("industryImage", industry.getImage());
+					//professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
 					industryDetails.add(industryMap);
 				}
 				details.put("industries", industryDetails);
 			}
 
 			if (detailRequest.isPlatforms()) {
-				List<Map<String, Object>> platformDetails = new ArrayList<>();
-				List<Platform> platforms = platformRepository.findAll();
-				for (Platform platform : platforms) {
+				List<Map<String, Object>> industryDetails = new ArrayList<>();
+				List<Platform> industries = platformRepository.findAll();
+				for (Platform industry : industries) {
 					Map<String, Object> industryMap = new HashMap<>();
-					industryMap.put("platformId", platform.getPlatformId());
-					industryMap.put("platformName", platform.getPlatformName());
-					industryMap.put("platformImage", Base64.getEncoder().encode(platform.getImage()));
-					platformDetails.add(industryMap);
+					industryMap.put("patformId", industry.getPlatformId());
+					industryMap.put("platformName", industry.getPlatformName());
+					industryDetails.add(industryMap);
 				}
-				details.put("platform", platformDetails);
+				details.put("platform", industryDetails);
 			}
 
-			if (detailRequest.isProfessions()) {
+			else if (detailRequest.isProfessions()) {
 				List<Map<String, Object>> professionDetails = new ArrayList<>();
 				List<Profession> professions = professionRepository.findAll();
 				for (Profession profession : professions) {
@@ -172,9 +174,7 @@ public class DetailServiceImpl implements DetailService {
 					professionDetails.add(professionMap);
 				}
 				details.put("professions", professionDetails);
-			}
-
-			if (detailRequest.isSubProfessions()) {
+			} else if (detailRequest.isSubProfessions()) {
 				List<Map<String, Object>> subProfessionDetails = new ArrayList<>();
 				List<SubProfesssion> subProfessions = subProfessionRepository.findAll();
 				for (SubProfesssion subProfession : subProfessions) {
@@ -188,8 +188,10 @@ public class DetailServiceImpl implements DetailService {
 
 			return ResponseEntity.ok(details);
 		} catch (Exception e) {
+
 			logger.error("getDetails Service Method Exception: {}", e);
 			e.printStackTrace();
+
 			return ResponseEntity.ok(new Response(-1, "Fail", ""));
 		}
 	}
@@ -382,18 +384,18 @@ public class DetailServiceImpl implements DetailService {
 				// 2. Upload files to S3
 				uploadToS3(inputFileData.getImages(), fileOutputWebModel);
 				uploadToS3(inputFileData.getVideos(), fileOutputWebModel);
-			    // Upload either PAN card or Aadhar card if available
-	            if (inputFileData.getPanCard() != null) {
-	                uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
-	            } else if (inputFileData.getAdharCard() != null) {
-	                uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
-	            } else {
-	                logger.error("Neither PAN card nor Aadhar card is provided for upload to S3.");
-	            }
-	        }
+				// Upload either PAN card or Aadhar card if available
+				if (inputFileData.getPanCard() != null) {
+					uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
+				} else if (inputFileData.getAdharCard() != null) {
+					uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
+				} else {
+					logger.error("Neither PAN card nor Aadhar card is provided for upload to S3.");
+				}
+			}
 //				uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
 //				uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
-			
+
 		} catch (Exception e) {
 			logger.error("Error at saveIndustryUserFiles(): ", e);
 			e.printStackTrace();
@@ -709,7 +711,49 @@ public class DetailServiceImpl implements DetailService {
 			e.printStackTrace();
 		}
 		return null;
-		
+
 	}
+
+	@Override
+	public ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId) {
+	    try {
+	        List<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository.findByUserId(userId);
+	        if (userPermanentDetails.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body("User permanent details not found for user id: " + userId);
+	        } else {
+	            List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
+	            for (IndustryUserPermanentDetails details : userPermanentDetails) {
+	                IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
+	                responseDTO.setIndustriesName(details.getIndustriesName());
+
+	                List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
+	                List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();
+	                for (PlatformPermanentDetail platformDetail : platformDetails) {
+	                    PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
+	                    platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
+
+	                    List<ProfessionPermanentDetail> professionDetails = platformDetail.getProfessionDetails();
+	                    List<ProfessionDetailDTO> professionDetailDTOList = new ArrayList<>();
+	                    for (ProfessionPermanentDetail professionDetail : professionDetails) {
+	                        ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
+	                        professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
+	                        professionDetailDTO.setSubProfessionName(professionDetail.getSubProfessionName());
+	                        professionDetailDTOList.add(professionDetailDTO);
+	                    }
+	                    platformDetailDTO.setProfessionDetails(professionDetailDTOList);
+	                    platformDetailDTOList.add(platformDetailDTO);
+	                }
+	                responseDTO.setPlatformDetails(platformDetailDTOList);
+	                responseDTOList.add(responseDTO);
+	            }
+	            return ResponseEntity.ok(responseDTOList);
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Failed to retrieve industry user permanent details.");
+	    }
+	}
+
 
 }

@@ -25,5 +25,8 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
     @Query("Select m from MediaFiles m where m.category=:category and m.categoryRefId IN (:refIds) and m.status=true")
     List<MediaFiles> getMediaFilesByCategoryAndRefId(String category, List<Integer> refIds);
 
+    @Query("Select m from MediaFiles m where  m.category=:category and m.status=true")
+	List<MediaFiles> getMediaFilesByUserIdAndCategory(String category);
+
 
 }

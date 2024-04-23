@@ -291,4 +291,20 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         return mediaFiles;
     }
 
+	@Override
+	public List<FileOutputWebModel> getMediaFilesByUserAndCategory(String category) {
+	       List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+	        try {
+	            List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(category);
+	            if (mediaFiles != null && !mediaFiles.isEmpty()) {
+	                outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
+	            }
+	        } catch (Exception e) {
+	            logger.error("Error at getMediaFilesByUserAndCategory()...", e);
+	            e.printStackTrace();
+	        }
+	        return outputWebModelList;
+	}
+	 
+
 }

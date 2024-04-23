@@ -34,4 +34,6 @@ public interface DetailService {
 
 	Resource getIndustryFile(Integer userId, String category, String fileId);
 
+	ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId);
+
 }

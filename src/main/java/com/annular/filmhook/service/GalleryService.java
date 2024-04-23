@@ -14,4 +14,5 @@ public interface GalleryService {
     Resource getGalleryFile(Integer userId, String category, String fileId);
 	Resource getAllGalleryFilesInCategory(Integer  userId,String category);
 	Resource getAllGalleryFilesInCategory(String category);
+	List<FileOutputWebModel> getGalleryFilesByAllUser();
 }

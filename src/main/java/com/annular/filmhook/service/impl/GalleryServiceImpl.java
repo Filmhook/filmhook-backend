@@ -118,4 +118,16 @@ public class GalleryServiceImpl implements GalleryService {
 		}
 		return null;
 	}
+
+	@Override
+	public List<FileOutputWebModel> getGalleryFilesByAllUser() {
+		List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+		try {
+			outputWebModelList = mediaFilesService.getMediaFilesByUserAndCategory("Gallery");
+		} catch (Exception e) {
+			logger.error("Error at getGalleryFilesByUser()...", e);
+			e.printStackTrace();
+		}
+		return outputWebModelList;
+	}
 	}

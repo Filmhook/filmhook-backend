@@ -130,5 +130,19 @@ public class GalleryController {
         }
         return ResponseEntity.notFound().build(); // Return not found response if resource is null
     }
-    
+    @GetMapping("/getGalleryFilesByAllUser")
+    public Response getGalleryFilesByAllUser() {
+        try {
+            List<FileOutputWebModel> outputList = galleryService.getGalleryFilesByAllUser();
+            if (outputList != null && !outputList.isEmpty()) {
+                logger.info("[{}] Gallery files found for userId :- {}", outputList.size());
+                return new Response(1, "Gallery file(s) found successfully...", outputList);
+            } else {
+                return new Response(-1, "No file(s) available for this user...", null);
+            }
+        } catch (Exception e) {
+            logger.error("Error at getGalleryFiles()...", e);
+        }
+        return new Response(-1, "Files were not found...", null);
+    }
     }

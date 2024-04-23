@@ -46,7 +46,7 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 				Map<String, Object> professionMap = new HashMap<>();
 				professionMap.put("filmProfessionId", profession.getFilmProfesssionId());
 				professionMap.put("professionName", profession.getProfessionName());
-				professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
+				//professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
 				professionList.add(professionMap);
 			}
 

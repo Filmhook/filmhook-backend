@@ -112,6 +112,17 @@ public class DetailsController {
 		}
 	}
 
+	@PostMapping("/getIndustryUserPermanentDetails")
+	public ResponseEntity<?> getIndustryUserPermanentDetails(@RequestParam Integer userId) {
+		try {
+			logger.info("getIndustryUserPermanentDetails controller start");
+			return detailService.getIndustryUserPermanentDetails(userId);
+		} catch (Exception e) {
+			logger.error("getIndustryUserPermanentDetails Method Exception: {}", e);
+			e.printStackTrace();
+			return ResponseEntity.ok(new Response(-1, "Fail", ""));
+		}
+	}
 	@RequestMapping(path = "/saveIndustryUserFiles", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public Response saveIndustryUserFiles(@ModelAttribute IndustryFileInputWebModel inputFileData) {
 		try {
