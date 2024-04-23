@@ -5,9 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,19 +23,13 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 	@Autowired
 	FilmProfessionRepository filmProfessionRepository;
 
-	@Autowired
-	private EntityManager entityManager;
-
 	@Override
 	public ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel) {
 
 		Optional<FilmProfession> optionalFilm = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId());
-
 		if (optionalFilm.isPresent()) {
-
 			FilmProfession filmProfession = optionalFilm.get();
 			// Load associated sub-professions here if needed
-
 			return ResponseEntity.ok(filmProfession);
 		} else {
 			// FilmProfession entity not found for the given filmProfessionId
@@ -48,16 +40,13 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 	public ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel) {
 		try {
 
-			TypedQuery<FilmProfession> query = entityManager.createQuery("SELECT fp FROM FilmProfession fp",
-					FilmProfession.class);
-			List<FilmProfession> professions = query.getResultList();
-
+			List<FilmProfession> professions = filmProfessionRepository.findAll();
 			List<Map<String, Object>> professionList = new ArrayList<>();
-
 			for (FilmProfession profession : professions) {
 				Map<String, Object> professionMap = new HashMap<>();
 				professionMap.put("filmProfessionId", profession.getFilmProfesssionId());
 				professionMap.put("professionName", profession.getProfessionName());
+				professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
 				professionList.add(professionMap);
 			}
 

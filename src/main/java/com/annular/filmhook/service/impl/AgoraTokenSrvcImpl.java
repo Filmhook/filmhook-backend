@@ -1,6 +1,8 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.configuration.AgoraConfig;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.webmodel.AgoraWebModel;
 import com.annular.filmhook.service.AgoraTokenService;
 import com.annular.filmhook.util.Utility;
@@ -22,6 +24,9 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
 
     @Autowired
     AgoraConfig agoraConfig;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public String getAgoraRTCToken(AgoraWebModel agoraWebModel) {
@@ -82,14 +87,31 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
         try {
             if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
             ChatTokenBuilder2 builder = new ChatTokenBuilder2();
-            return builder.buildUserToken(
+            String token = builder.buildUserToken(
                     agoraConfig.getChatAppId(),
                     agoraConfig.getChatAppCertificate(),
                     String.valueOf(agoraWebModel.getUserId()),
                     agoraWebModel.getExpirationTimeInSeconds());
+            // Save the token to the user table
+            this.saveTokenToUserTable(agoraWebModel.getUserId(), token);
+            return token;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    /**
+     * Save the token to the user table.
+     *
+     * @param userId The ID of the user
+     * @param token The Agora app token
+     */
+    private void saveTokenToUserTable(Integer userId, String token) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            user.setTempToken(token);
+            userRepository.save(user);
         }
     }
 }

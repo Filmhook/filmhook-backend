@@ -47,4 +47,8 @@ public class FilmProfession {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
+
+    @Lob
+    @Column
+    private byte[] image;
 }
