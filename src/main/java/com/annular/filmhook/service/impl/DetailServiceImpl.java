@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Base64;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,24 +143,26 @@ public class DetailServiceImpl implements DetailService {
 					Map<String, Object> industryMap = new HashMap<>();
 					industryMap.put("industryId", industry.getIndustryId());
 					industryMap.put("industryName", industry.getIndustryName());
+					industryMap.put("industryImage", Base64.getEncoder().encode(industry.getImage()));
 					industryDetails.add(industryMap);
 				}
 				details.put("industries", industryDetails);
 			}
 
 			if (detailRequest.isPlatforms()) {
-				List<Map<String, Object>> industryDetails = new ArrayList<>();
-				List<Platform> industries = platformRepository.findAll();
-				for (Platform industry : industries) {
+				List<Map<String, Object>> platformDetails = new ArrayList<>();
+				List<Platform> platforms = platformRepository.findAll();
+				for (Platform platform : platforms) {
 					Map<String, Object> industryMap = new HashMap<>();
-					industryMap.put("patformId", industry.getPlatformId());
-					industryMap.put("platformName", industry.getPlatformName());
-					industryDetails.add(industryMap);
+					industryMap.put("platformId", platform.getPlatformId());
+					industryMap.put("platformName", platform.getPlatformName());
+					industryMap.put("platformImage", Base64.getEncoder().encode(platform.getImage()));
+					platformDetails.add(industryMap);
 				}
-				details.put("platform", industryDetails);
+				details.put("platform", platformDetails);
 			}
 
-			else if (detailRequest.isProfessions()) {
+			if (detailRequest.isProfessions()) {
 				List<Map<String, Object>> professionDetails = new ArrayList<>();
 				List<Profession> professions = professionRepository.findAll();
 				for (Profession profession : professions) {
@@ -169,7 +172,9 @@ public class DetailServiceImpl implements DetailService {
 					professionDetails.add(professionMap);
 				}
 				details.put("professions", professionDetails);
-			} else if (detailRequest.isSubProfessions()) {
+			}
+
+			if (detailRequest.isSubProfessions()) {
 				List<Map<String, Object>> subProfessionDetails = new ArrayList<>();
 				List<SubProfesssion> subProfessions = subProfessionRepository.findAll();
 				for (SubProfesssion subProfession : subProfessions) {
@@ -183,10 +188,8 @@ public class DetailServiceImpl implements DetailService {
 
 			return ResponseEntity.ok(details);
 		} catch (Exception e) {
-
 			logger.error("getDetails Service Method Exception: {}", e);
 			e.printStackTrace();
-
 			return ResponseEntity.ok(new Response(-1, "Fail", ""));
 		}
 	}

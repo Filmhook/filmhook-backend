@@ -2,7 +2,7 @@ package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
 
-import com.annular.filmhook.model.AgoraWebModel;
+import com.annular.filmhook.webmodel.AgoraWebModel;
 import com.annular.filmhook.service.AgoraTokenService;
 
 import com.annular.filmhook.util.Utility;
@@ -21,9 +21,9 @@ public class AgoraTokenController {
     @Autowired
     AgoraTokenService agoraTokenService;
 
-    // For RTC - RealTime Transcription : Voice and Video Call
-    @PostMapping("/getVideoToken")
-    public Response getVideoToken(@RequestBody AgoraWebModel agoraWebModel) {
+    // For RTC - Real-time Communication : Voice and Video Call
+    @PostMapping("/getRTCToken")
+    public Response getRTCToken(@RequestBody AgoraWebModel agoraWebModel) {
         String token = agoraTokenService.getAgoraRTCToken(agoraWebModel);
         if (Utility.isNullOrBlankWithTrim(token) || token.contains("blank"))
             return new Response(-1, "Error", null);
@@ -31,13 +31,24 @@ public class AgoraTokenController {
             return new Response(1, "Success", token);
     }
 
-    // For RTM - RealTime Messaging : Chat
-    @PostMapping("/getChatToken")
-    public Response getChatToken(@RequestBody AgoraWebModel agoraWebModel) {
+    // For RTM - Real-time Messaging
+    @PostMapping("/getRTMToken")
+    public Response getRTMToken(@RequestBody AgoraWebModel agoraWebModel) {
         String token = agoraTokenService.getAgoraRTMToken(agoraWebModel);
         if (Utility.isNullOrBlankWithTrim(token) || token.contains("blank"))
             return new Response(-1, "Error", null);
         else
             return new Response(1, "Success", token);
     }
+
+    // For Chat
+    @PostMapping("/getChatToken")
+    public Response getChatToken(@RequestBody AgoraWebModel agoraWebModel) {
+        String token = agoraTokenService.getAgoraChatToken(agoraWebModel);
+        if (Utility.isNullOrBlankWithTrim(token) || token.contains("blank"))
+            return new Response(-1, "Error", null);
+        else
+            return new Response(1, "Success", token);
+    }
+
 }

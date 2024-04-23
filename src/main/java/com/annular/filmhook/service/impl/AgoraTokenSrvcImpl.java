@@ -1,10 +1,11 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.configuration.AgoraConfig;
-import com.annular.filmhook.model.AgoraWebModel;
+import com.annular.filmhook.webmodel.AgoraWebModel;
 import com.annular.filmhook.service.AgoraTokenService;
 import com.annular.filmhook.util.Utility;
 
+import io.agora.chat.ChatTokenBuilder2;
 import io.agora.media.RtcTokenBuilder;
 import io.agora.rtm.RtmTokenBuilder;
 
@@ -70,6 +71,22 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
                     String.valueOf(agoraWebModel.getUserId()),
                     RtmTokenBuilder.Role.Rtm_User,
                     agoraConfig.getExpirationTimeInSeconds());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public String getAgoraChatToken(AgoraWebModel agoraWebModel) {
+        try {
+            if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
+            ChatTokenBuilder2 builder = new ChatTokenBuilder2();
+            return builder.buildUserToken(
+                    agoraConfig.getChatAppId(),
+                    agoraConfig.getChatAppCertificate(),
+                    String.valueOf(agoraWebModel.getUserId()),
+                    agoraWebModel.getExpirationTimeInSeconds());
         } catch (Exception e) {
             e.printStackTrace();
             return null;

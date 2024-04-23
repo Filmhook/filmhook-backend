@@ -8,6 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Lob;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -52,5 +53,9 @@ public class Industry {
 	@Column(name = "updated_on")
 	@CreationTimestamp
 	private Date updatedOn;
+
+	@Lob
+	@Column
+	private byte[] image;
 
 }
