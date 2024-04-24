@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.GalleryService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -41,22 +43,50 @@ public class GalleryServiceImpl implements GalleryService {
 
 	@Override
 	public FileOutputWebModel saveGalleryFiles(FileInputWebModel fileInput) {
-		FileOutputWebModel fileOutputWebModel = null;
+		 FileOutputWebModel fileOutputWebModel = null;
+	        try {
+	        	Optional<User> userFromDB = userService.getUser(fileInput.getUserId());
+				System.out.println(userFromDB.get().getUserId());
+				if (userFromDB.isPresent()) {
+					logger.info("User found: " + userFromDB.get().getName());
+					// 1. Save media files in MySQL
+					fileOutputWebModel = mediaFilesService.saveMediaFiles(fileInput, userFromDB.get());
 
-		try {
-			Optional<User> userFromDB = userService.getUser(fileInput.getUserId());
-			if (userFromDB.isPresent()) {
-                logger.info("User found :- {}", userFromDB.get().getName());
-				// 1. Save media files in MySQL
-				fileOutputWebModel = mediaFilesService.saveMediaFiles(fileInput, userFromDB.get());
-                logger.info("Gallery file row saved in mysql :- {}", fileOutputWebModel.getFileId());
-			}
-		} catch (Exception e) {
-			logger.error("Error at saveGalleryFiles()...", e);
-			e.printStackTrace();
-		}
-		return fileOutputWebModel;
-	}
+	            // 2. Upload images into S3
+	            uploadToS3(fileInput.getGalleryImage(), fileOutputWebModel);
+	            
+	            // 3. Upload videos into S3
+	            uploadToS3(fileInput.getGalleryVideos(), fileOutputWebModel);
+	        } }catch (Exception e) {
+	            logger.error("Error at saveGalleryFiles()...", e);
+	            e.printStackTrace();
+	        }
+	        return fileOutputWebModel;
+	    }
+
+	    private void uploadToS3(MultipartFile[] files, FileOutputWebModel fileOutputWebModel) {
+	        if (files != null && files.length > 0) {
+	            for (MultipartFile file : files) {
+	                try {
+	                    if (fileOutputWebModel == null) {
+	                        logger.error("Error: fileOutputWebModel is null during file upload to S3.");
+	                        return;
+	                    }
+
+	                    File tempFile = File.createTempFile(fileOutputWebModel.getFileId(), null);
+	                    FileUtil.convertMultiPartFileToFile(file, tempFile);
+	                    String response = fileUtil.uploadFile(tempFile, fileOutputWebModel.getFilePath());
+	                    logger.info("File saved in S3 response: " + response);
+	                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+	                        tempFile.delete(); // deleting temp file
+	                    }
+	                } catch (Exception e) {
+	                    logger.error("Error uploading file to S3: ", e);
+	                    e.printStackTrace();
+	                }
+	            }
+	        }
+	    }
 
 	@Override
 	public Resource getGalleryFile(Integer userId, String category, String fileId) {
@@ -77,7 +107,8 @@ public class GalleryServiceImpl implements GalleryService {
 	public List<FileOutputWebModel> getGalleryFilesByUser(Integer userId) {
 		List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
 		try {
-			outputWebModelList = mediaFilesService.getMediaFilesByUserAndCategory(userId, "Gallery");
+			outputWebModelList = mediaFilesService.getMediaFilesByUserAndCategory(userId);
+			
 		} catch (Exception e) {
 			logger.error("Error at getGalleryFilesByUser()...", e);
 			e.printStackTrace();

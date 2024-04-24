@@ -12,7 +12,7 @@ public interface MediaFilesService {
 
     FileOutputWebModel saveMediaFiles(FileInputWebModel fileInputWebModel, User user);
     List<FileOutputWebModel> getMediaFilesByUser(Integer userId);
-    List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId, String category);
+    List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId);
     List<FileOutputWebModel> getMediaFilesByCategoryAndRefId(String category, Integer refId);
     void deleteMediaFilesByUserIdAndCategoryAndRefId(Integer userId, String category, List<Integer> idList);
     void deleteMediaFilesByCategoryAndRefId(String category, List<Integer> idList);

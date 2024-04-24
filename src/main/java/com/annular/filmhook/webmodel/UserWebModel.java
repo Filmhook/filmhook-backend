@@ -18,6 +18,8 @@ public class UserWebModel {
     private String name;
     private String firstName;
     private String lastName;
+    private String middleName;
+    
 
     // Biography Section
     private String dob;

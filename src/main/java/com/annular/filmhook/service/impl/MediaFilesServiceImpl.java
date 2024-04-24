@@ -130,10 +130,10 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId, String category) {
+    public List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
-            List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userId, category);
+            List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userId);
             if (mediaFiles != null && !mediaFiles.isEmpty()) {
                 outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
             }
@@ -143,6 +143,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         }
         return outputWebModelList;
     }
+    
 
     @Override
     public List<FileOutputWebModel> getMediaFilesByCategoryAndRefId(String category, Integer refId) {

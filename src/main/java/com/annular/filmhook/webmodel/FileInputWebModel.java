@@ -14,6 +14,8 @@ public class FileInputWebModel {
 	private String category;
 	private Integer categoryRefId;
 	private MultipartFile file;
+	private MultipartFile[] galleryImage;
+	private MultipartFile[] galleryVideos;
 	
 
 	// For read purpose
