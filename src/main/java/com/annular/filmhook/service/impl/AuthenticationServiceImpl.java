@@ -90,7 +90,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (!userData.isPresent()) {
 				User user = new User();
 				user.setPhoneNumber(userWebModel.getPhoneNumber());
-				user.setName(userWebModel.getName());
+				//user.setName(userWebModel.getName());
+				user.setName(userWebModel.getFirstName() + " " + userWebModel.getLastName());
 				user.setEmail(userWebModel.getEmail());
 				user.setUserType(userWebModel.getUserType());
 				user.setMobileNumberStatus(false);

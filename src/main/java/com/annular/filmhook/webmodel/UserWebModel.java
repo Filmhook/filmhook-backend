@@ -16,6 +16,8 @@ public class UserWebModel {
     private String verificationCode;
     private String filmHookCode;
     private String name;
+    private String firstName;
+    private String lastName;
 
     // Biography Section
     private String dob;

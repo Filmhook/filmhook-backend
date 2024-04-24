@@ -8,5 +8,7 @@ import lombok.Data;
 public class IndustryUserResponseDTO {
 
 	private String industriesName;
+	private byte[] image;
     private List<PlatformDetailDTO> platformDetails;
+
 }

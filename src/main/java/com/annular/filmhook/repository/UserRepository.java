@@ -40,7 +40,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.phoneNumber=:phoneNumber and u.userType=:userType")
 	Optional<User> findByPhoneNumberAndUserType(String phoneNumber, String userType);
 
-	@Query("select u from User u where u.email=:email and u.userType=:userType and u.status=true and u.mobileNumberStatus=true")
+	@Query("select u from User u where u.email=:email and u.userType=:userType and u.status=true" )//and u.mobileNumberStatus=true")
 	Optional<User> findByEmailAndUserTypeAndMobile(String email, String userType);
 
 //	@Query("select u from User u where u.otp = :otp and u.userId = :userId")

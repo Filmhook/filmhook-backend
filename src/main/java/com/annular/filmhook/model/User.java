@@ -50,7 +50,13 @@ public class User {
     
     @Column(name = "name")
     private String name;
-
+    
+    @Column(name = "first_name")
+    private String firstName;
+    
+    @Column(name = "last_Name")
+    private String lastName;
+    
     @JsonIgnore
     @Column(name = "verification_code")
     private String verificationCode;

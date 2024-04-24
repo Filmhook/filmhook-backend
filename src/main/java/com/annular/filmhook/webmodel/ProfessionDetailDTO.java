@@ -8,6 +8,7 @@ import lombok.Data;
 public class ProfessionDetailDTO {
 	
 	private String professionName;
+	private byte[] image;
 	private List<String> subProfessionName;
 
 }
