@@ -15,6 +15,7 @@ public class FileOutputWebModel {
 	private long fileSize;
 	private String fileType;
 	private String filePath;
+	private String description;
 
 	private Integer userId;
 	private String category;

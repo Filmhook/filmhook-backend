@@ -16,6 +16,7 @@ public class FileInputWebModel {
 	private MultipartFile file;
 	private MultipartFile[] galleryImage;
 	private MultipartFile[] galleryVideos;
+	private String description;
 	
 
 	// For read purpose

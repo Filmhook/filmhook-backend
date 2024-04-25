@@ -32,4 +32,5 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 	List<MediaFiles> getMediaFilesByUserIdAndCategory(Integer userId);
 
 
+
 }

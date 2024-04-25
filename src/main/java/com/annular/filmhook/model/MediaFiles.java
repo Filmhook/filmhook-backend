@@ -79,6 +79,9 @@ public class MediaFiles {
 	@Column(name = "updated_on")
 	@CreationTimestamp
 	private Date updatedOn;
+	
+	@Column(name = "description")
+	private String description;
 
 }
 

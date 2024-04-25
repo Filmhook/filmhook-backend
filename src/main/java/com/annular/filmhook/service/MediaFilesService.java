@@ -17,7 +17,8 @@ public interface MediaFilesService {
     void deleteMediaFilesByUserIdAndCategoryAndRefId(Integer userId, String category, List<Integer> idList);
     void deleteMediaFilesByCategoryAndRefId(String category, List<Integer> idList);
 	FileOutputWebModel saveMediaFiles(MultipartFile file);
-	List<FileOutputWebModel> getMediaFilesByUserAndCategory(String category);
+	//List<FileOutputWebModel> getMediaFilesByUserAndCategory(String category);
+	List<FileOutputWebModel> getMediaFilesByUserAndCategory();
 	
 
 }

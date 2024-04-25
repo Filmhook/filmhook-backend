@@ -730,13 +730,13 @@ public class DetailServiceImpl implements DetailService {
 					IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
 					responseDTO.setIndustriesName(details.getIndustriesName());
 					System.out.println("<<<<<<<<<<<<<<<<" + details.getIndustriesName());
-//					Optional<Industry> industryOptional = industryRepository
-//							.findByIndustryName(details.getIndustriesName());
-//					
-//					if (industryOptional.isPresent()) {
-//						Industry industry = industryOptional.get();
-//                         responseDTO.setImage(Base64.getEncoder().encode(industry.getImage()));
-//					}
+					Optional<Industry> industryOptional = industryRepository
+							.findByIndustryName(details.getIndustriesName());
+					
+					if (industryOptional.isPresent()) {
+						Industry industry = industryOptional.get();
+                         responseDTO.setImage(Base64.getEncoder().encode(industry.getImage()));
+					}
 
 					List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
 					List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();

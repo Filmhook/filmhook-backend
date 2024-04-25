@@ -79,6 +79,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         mediaFiles.setUser(user);
         mediaFiles.setCategory(fileInput.getCategory());
         mediaFiles.setCategoryRefId(fileInput.getCategoryRefId());
+        mediaFiles.setDescription(fileInput.getDescription());
         mediaFiles.setFileId(UUID.randomUUID().toString());
         mediaFiles.setFileName(file.getOriginalFilename());
         mediaFiles.setFilePath(FileUtil.generateFilePath(mediaFiles.getUser(), fileInput.getCategory(), mediaFiles.getFileId()));
@@ -176,6 +177,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             fileOutputWebModel.setFileType(mediaFile.getFileType());
             fileOutputWebModel.setFileSize(mediaFile.getFileSize());
             fileOutputWebModel.setFilePath(mediaFile.getFilePath());
+            fileOutputWebModel.setDescription(mediaFile.getDescription());
 
             fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());
             fileOutputWebModel.setCreatedOn(mediaFile.getCreatedOn());
@@ -293,10 +295,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
 	@Override
-	public List<FileOutputWebModel> getMediaFilesByUserAndCategory(String category) {
+	public List<FileOutputWebModel> getMediaFilesByUserAndCategory() {
 	       List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
 	        try {
-	            List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(category);
+	            //List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory();
+	        	List<MediaFiles> mediaFiles = mediaFilesRepository.findAll();
 	            if (mediaFiles != null && !mediaFiles.isEmpty()) {
 	                outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
 	            }
