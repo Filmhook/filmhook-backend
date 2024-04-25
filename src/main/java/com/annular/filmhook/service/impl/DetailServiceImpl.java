@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.FilmProfession;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryDetails;
@@ -57,7 +56,6 @@ import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.DetailRequest;
-import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
@@ -114,8 +112,8 @@ public class DetailServiceImpl implements DetailService {
 	@Autowired
 	private ProfessionPermanentDetailRepository professionPermanentDetailRepository;
 
-	@Autowired
-	private IndustryUserPermanentDetailsRepository industryPermanentDetailsRepository;
+//	@Autowired
+//	private IndustryUserPermanentDetailsRepository industryPermanentDetailsRepository;
 
 	@Autowired
 	private IndustryDetailRepository industryDetailsRepository;
@@ -123,8 +121,8 @@ public class DetailServiceImpl implements DetailService {
 	@Autowired
 	private SubProfessionDetailRepository subProfessionDetailsRepository;
 
-	@Autowired
-	private UserDetails userDetails;
+//	@Autowired
+//	private UserDetails userDetails;
 
 	@Autowired
 	FilmProfessionRepository filmProfessionRepository;
@@ -729,6 +727,8 @@ public class DetailServiceImpl implements DetailService {
 				for (IndustryUserPermanentDetails details : userPermanentDetails) {
 					IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
 					responseDTO.setIndustriesName(details.getIndustriesName());
+					responseDTO.setIupdId(details.getIupdId());
+					
 					System.out.println("<<<<<<<<<<<<<<<<" + details.getIndustriesName());
 					Optional<Industry> industryOptional = industryRepository
 							.findByIndustryName(details.getIndustriesName());
@@ -743,6 +743,9 @@ public class DetailServiceImpl implements DetailService {
 					for (PlatformPermanentDetail platformDetail : platformDetails) {
 						PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
 						platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
+						platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
+						platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
+						
 						Optional<Platform> platformOptional = platformPermanentDetailRepository
 								.findByPlatformName(platformDetail.getPlatformName());
 						if (platformOptional.isPresent()) {
@@ -756,6 +759,9 @@ public class DetailServiceImpl implements DetailService {
 							ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
 							professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
 							professionDetailDTO.setSubProfessionName(professionDetail.getSubProfessionName());
+							professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
+							professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
+							
 							Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository
 									.findByProfesssionName(professionDetail.getProfessionName());
 							if (filmProfessionOptional.isPresent()) {
@@ -777,6 +783,84 @@ public class DetailServiceImpl implements DetailService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body("Failed to retrieve industry user permanent details.");
 		}
+	}
+	
+	@Override
+	public ResponseEntity<?> updateIndustryUserPermanentDetails(List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModel) {
+	try {
+		
+		for(IndustryUserPermanentDetailWebModel iupDetail : industryUserPermanentDetailWebModel) {
+			
+			IndustryUserPermanentDetails permanentDetails = new IndustryUserPermanentDetails();
+			
+			permanentDetails = industryUserPermanentDetailsRepository.findById(iupDetail.getIupdId()).get();
+		
+			
+			List<Integer> platformList =  platformPermanentDetailRepository.findByiupdId(iupDetail.getIupdId());
+			for (PlatformPermanentDetail platformDetail : iupDetail.getPlatformDetails() ) {
+//				PlatformPermanentDetail ppDetail = new PlatformPermanentDetail();
+				//Check if the platform is already present, if it is not present new platform will be added
+//				System.out.println("\n\n list va;lu : "+platformList.size()+"\n\n id value  : "+platformList.get(0)+","+platformList.get(1)+"\n\n lamba value : "+platformList.stream().anyMatch(id -> id==platformDetail.getPpdPlatformId()));
+//				System.out.println("\n\n platformDetail.getPpdPlatformId() : "+platformDetail.getPpdPlatformId());
+				PlatformPermanentDetail ppDetail = new PlatformPermanentDetail();
+				if(!(platformList.stream().anyMatch(id -> id==platformDetail.getPpdPlatformId()))) {
+//					System.out.println("\n\n if block of save platform");
+					
+					ppDetail.setPpdPlatformId(platformDetail.getPpdPlatformId());
+					ppDetail.setPlatformName(platformDetail.getPlatformName());
+					ppDetail.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
+					ppDetail.setIndustryUserPermanentDetails(permanentDetails);
+					ppDetail = platformPermanentDetailRepository.save(ppDetail);
+					
+				}
+				else {
+					ppDetail = platformPermanentDetailRepository.findById(platformDetail.getPlatformPermanentId()).get();
+				}
+				
+				
+				List<Integer> ppdIds =  professionPermanentDetailRepository.findByPlatformPermanentDetailId(platformDetail.getPlatformPermanentId());
+				System.out.println("\n\n professionlist size : "+ppdIds.size()+ "\n value : "+ppdIds.get(0));
+				for(ProfessionPermanentDetail proPermanentDetail : platformDetail.getProfessionDetails()) {
+//					ProfessionPermanentDetail professionDetail = new ProfessionPermanentDetail();
+					System.out.println("\nproPermanentDetail.getProfessionPermanentId() : "+proPermanentDetail.getProfessionPermanentId());
+					if(!ppdIds.stream().anyMatch(t -> t.equals(proPermanentDetail.getProfessionPermanentId()))){
+						System.out.println("\n profession if block");
+						
+						ProfessionPermanentDetail professionDetail = new ProfessionPermanentDetail();
+						professionDetail.setProfessionName(proPermanentDetail.getProfessionName());
+						professionDetail.setPpdProfessionId(proPermanentDetail.getPpdProfessionId());
+						professionDetail.setSubProfessionName(proPermanentDetail.getSubProfessionName());
+						professionDetail.setPlatformPermanentDetail(platformDetail);
+						
+						professionDetail = professionPermanentDetailRepository.save(professionDetail);
+					}
+					else {
+						System.out.println("\n profession else block");
+						//need to check and change .only updtae subprofession
+//						professionDetail = professionPermanentDetailRepository.findById(proPermanentDetail.getProfessionPermanentId());
+//						ProfessionPermanentDetail professionDetail = new ProfessionPermanentDetail();
+//						professionDetail.setProfessionPermanentId(proPermanentDetail.getProfessionPermanentId());
+//						professionDetail.setProfessionName(proPermanentDetail.getProfessionName());
+//						professionDetail.setPpdProfessionId(proPermanentDetail.getPpdProfessionId());
+//						professionDetail.setSubProfessionName(proPermanentDetail.getSubProfessionName());
+//						
+//						professionDetail = professionPermanentDetailRepository.save(proPermanentDetail);	
+					}
+				}
+				
+			}
+			
+			
+		}
+		
+		return ResponseEntity.ok("Industry user permanent details updated successfully.");
+	} catch (Exception e) {
+		logger.error("Error in updating industry user permanent details", e);
+		e.printStackTrace();
+		// Return an error response if an exception occurs
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body("Failed to update industry user permanent details.");
+	}
 	}
 
 }

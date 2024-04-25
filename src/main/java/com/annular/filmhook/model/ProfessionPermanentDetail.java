@@ -36,6 +36,9 @@ public class ProfessionPermanentDetail {
 
 	@Column(name = "profession_name")
 	private String professionName;
+	
+	@Column(name = "ppd_profession_id")
+	private Integer ppdProfessionId;
 
 	@ElementCollection
 	@Column(name = "sub_profession_name")

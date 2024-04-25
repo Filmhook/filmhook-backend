@@ -10,5 +10,7 @@ public class IndustryUserResponseDTO {
 	private String industriesName;
 	private byte[] image;
     private List<PlatformDetailDTO> platformDetails;
+    private Integer iupdId;
+	private Integer iuIndustryId;
 
 }

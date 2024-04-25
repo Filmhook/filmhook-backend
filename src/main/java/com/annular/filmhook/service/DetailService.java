@@ -4,10 +4,8 @@ import java.util.List;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.webmodel.DetailRequest;
-import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
@@ -35,5 +33,7 @@ public interface DetailService {
 	Resource getIndustryFile(Integer userId, String category, String fileId);
 
 	ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId);
+
+	ResponseEntity<?> updateIndustryUserPermanentDetails(List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
 
 }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,12 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.DetailService;
 import com.annular.filmhook.webmodel.DetailRequest;
-import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
@@ -171,4 +168,16 @@ public class DetailsController {
         }
         return ResponseEntity.internalServerError().build();
     }
+    
+    @PostMapping("/updateIndustryUserPermanentDetails")
+	public ResponseEntity<?> updateIndustryUserPermanentDetails(@RequestBody List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+		try {
+			logger.info("updateIndustryUserPermanentDetails controller start");
+			return detailService.updateIndustryUserPermanentDetails(industryUserPermanentDetailWebModels);
+		} catch (Exception e) {
+			logger.error("updateIndustryUserPermanentDetails Method Exception: {}", e);
+			e.printStackTrace();
+			return ResponseEntity.ok(new Response(-1, "Fail", ""));
+		}
+	}
 }

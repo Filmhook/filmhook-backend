@@ -3,10 +3,6 @@ package com.annular.filmhook.webmodel;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.Column;
-
-import org.hibernate.annotations.CreationTimestamp;
-
 import com.annular.filmhook.model.PlatformPermanentDetail;
 import com.annular.filmhook.model.ProfessionPermanentDetail;
 
@@ -17,6 +13,7 @@ public class IndustryUserPermanentDetailWebModel {
 	
 	private Integer iupdId;
 	private String industriesName;
+	private Integer iupdIndustryId;
 	 private List<PlatformPermanentDetail> platformDetails;
 	 private List<ProfessionPermanentDetail> professionDetails;
 	 private List<String> subProfessionName;

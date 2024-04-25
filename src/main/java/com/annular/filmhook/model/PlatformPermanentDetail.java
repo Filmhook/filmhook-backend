@@ -39,6 +39,9 @@ public class PlatformPermanentDetail {
     @Column(name = "platform_name")
     private String platformName;
     
+    @Column(name = "ppd_platform_id")
+    private Integer ppdPlatformId;
+    
     @OneToMany(mappedBy = "platformPermanentDetail", cascade = CascadeType.ALL)
     private List<ProfessionPermanentDetail> professionDetails;
     

@@ -10,5 +10,7 @@ public class ProfessionDetailDTO {
 	private String professionName;
 	private byte[] image;
 	private List<String> subProfessionName;
+	private Integer professionPermanentId;
+	private Integer ppdProfessionId;
 
 }
