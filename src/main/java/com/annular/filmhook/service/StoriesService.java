@@ -1,6 +1,7 @@
 package com.annular.filmhook.service;
 
 import com.annular.filmhook.model.Story;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import org.springframework.core.io.Resource;
 
@@ -9,7 +10,7 @@ import java.util.Optional;
 
 public interface StoriesService {
 
-    StoriesWebModel uploadStory(StoriesWebModel inputData);
+    FileOutputWebModel uploadStory(StoriesWebModel inputData);
     List<StoriesWebModel> getStoryByUserId(Integer userId);
     Resource getStoryFile(Integer userId, String category, String fileId);
     void deleteStory(Story storyToUpdate);

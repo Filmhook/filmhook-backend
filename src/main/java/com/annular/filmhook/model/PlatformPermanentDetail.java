@@ -42,6 +42,15 @@ public class PlatformPermanentDetail {
     @Column(name = "ppd_platform_id")
     private Integer ppdPlatformId;
     
+    @Column(name = "film_count")
+    private Integer filmCount;
+    
+    @Column(name = "netWorth")
+    private Integer netWorth;
+    
+    @Column(name = "dailySalary")
+    private Integer dailySalary;
+    
     @OneToMany(mappedBy = "platformPermanentDetail", cascade = CascadeType.ALL)
     private List<ProfessionPermanentDetail> professionDetails;
     

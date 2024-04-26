@@ -16,7 +16,11 @@ public class FileInputWebModel {
 	private MultipartFile file;
 	private MultipartFile[] galleryImage;
 	private MultipartFile[] galleryVideos;
+	private MultipartFile[] storiesImage;
+	private MultipartFile[] storiesVideos;
+	private MultipartFile[] projectImage;
 	private String description;
+	private Integer permanentPlatformId;
 	
 
 	// For read purpose

@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.*;
@@ -41,29 +42,52 @@ public class StoriesServiceImpl implements StoriesService {
     UserService userService;
 
     @Override
-    public StoriesWebModel uploadStory(StoriesWebModel inputData) {
+    public FileOutputWebModel uploadStory(StoriesWebModel fileInput) {
+        FileOutputWebModel fileOutputWebModel = null;
         try {
-            Optional<User> userFromDB = userService.getUser(inputData.getUserId());
+            Optional<User> userFromDB = userService.getUser(fileInput.getUserId());
             if (userFromDB.isPresent()) {
-                Story story = this.prepareStories(inputData, userFromDB.get());
-                // 1. Save first in Stories table MySQL
-                storyRepository.saveAndFlush(story);
-                logger.info("Story unique id saved in mysql :- {}", story.getStoryId());
+                logger.info("User found: " + userFromDB.get().getName());
+                // 1. Save media files in MySQL
+                fileOutputWebModel = mediaFilesService.saveMediaFiles(fileInput.getFileInputWebModel(), userFromDB.get());
 
-                // 2. Save in media files table MySQL
-                inputData.getFileInputWebModel().setCategoryRefId(story.getId()); // adding the story table reference in media files table
-                FileOutputWebModel fileOutputWebModel = mediaFilesService.saveMediaFiles(inputData.getFileInputWebModel(), userFromDB.get());
-                return fileOutputWebModel != null ? this.transformData(story) : null;
-            } else {
-                return null;
+                // 2. Upload images into S3
+                uploadToS3(fileInput.getFileInputWebModel().getGalleryImage(), fileOutputWebModel);
+
+                // 3. Upload videos into S3
+                uploadToS3(fileInput.getFileInputWebModel().getGalleryVideos(), fileOutputWebModel);
             }
         } catch (Exception e) {
             logger.error("Error at uploadStory()...", e);
             e.printStackTrace();
-            return null;
         }
+        return fileOutputWebModel;
     }
 
+
+	    private void uploadToS3(MultipartFile[] files, FileOutputWebModel fileOutputWebModel) {
+	        if (files != null && files.length > 0) {
+	            for (MultipartFile file : files) {
+	                try {
+	                    if (fileOutputWebModel == null) {
+	                        logger.error("Error: fileOutputWebModel is null during file upload to S3.");
+	                        return;
+	                    }
+
+	                    File tempFile = File.createTempFile(fileOutputWebModel.getFileId(), null);
+	                    FileUtil.convertMultiPartFileToFile(file, tempFile);
+	                    String response = fileUtil.uploadFile(tempFile, fileOutputWebModel.getFilePath());
+	                    logger.info("File saved in S3 response: " + response);
+	                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+	                        tempFile.delete(); // deleting temp file
+	                    }
+	                } catch (Exception e) {
+	                    logger.error("Error uploading file to S3: ", e);
+	                    e.printStackTrace();
+	                }
+	            }
+	        }
+	    }
     private Story prepareStories(StoriesWebModel inputData, User user) {
 
         Story story = new Story();

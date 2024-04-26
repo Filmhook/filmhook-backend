@@ -3,6 +3,7 @@ package com.annular.filmhook.service;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.StoriesWebModel;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ public interface MediaFilesService {
 	FileOutputWebModel saveMediaFiles(MultipartFile file);
 	//List<FileOutputWebModel> getMediaFilesByUserAndCategory(String category);
 	List<FileOutputWebModel> getMediaFilesByUserAndCategory();
+	FileOutputWebModel saveMediaFiles(StoriesWebModel fileInput, User user);
 	
 
 }

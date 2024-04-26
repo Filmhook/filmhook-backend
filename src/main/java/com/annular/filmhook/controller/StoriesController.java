@@ -3,6 +3,7 @@ package com.annular.filmhook.controller;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.service.StoriesService;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ public class StoriesController {
     public Response uploadStory(@ModelAttribute StoriesWebModel inputData) {
         try {
             logger.info("uploadStory Inputs :- {}", inputData);
-            StoriesWebModel story = storiesService.uploadStory(inputData);
+            FileOutputWebModel story = storiesService.uploadStory(inputData);
             if (story != null) return new Response(1, "Story uploaded successfully...", story);
         } catch (Exception e) {
             logger.error("Error at uploadStory()...", e);

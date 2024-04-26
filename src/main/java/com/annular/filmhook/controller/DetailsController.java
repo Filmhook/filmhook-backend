@@ -25,6 +25,7 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
+import com.annular.filmhook.webmodel.PlatformDetailDTO;
 
 @RestController
 @RequestMapping("/industryUser")
@@ -169,11 +170,22 @@ public class DetailsController {
         return ResponseEntity.internalServerError().build();
     }
     
+//    @PostMapping("/updateIndustryUserPermanentDetails")
+//	public ResponseEntity<?> updateIndustryUserPermanentDetails(@RequestBody List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+//		try {
+//			logger.info("updateIndustryUserPermanentDetails controller start");
+//			return detailService.updateIndustryUserPermanentDetails(industryUserPermanentDetailWebModels);
+//		} catch (Exception e) {
+//			logger.error("updateIndustryUserPermanentDetails Method Exception: {}", e);
+//			e.printStackTrace();
+//			return ResponseEntity.ok(new Response(-1, "Fail", ""));
+//		}
+//	}
     @PostMapping("/updateIndustryUserPermanentDetails")
-	public ResponseEntity<?> updateIndustryUserPermanentDetails(@RequestBody List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+	public ResponseEntity<?> updateIndustryUserPermanentDetails(@RequestBody PlatformDetailDTO platformDetailDTO) {
 		try {
 			logger.info("updateIndustryUserPermanentDetails controller start");
-			return detailService.updateIndustryUserPermanentDetails(industryUserPermanentDetailWebModels);
+			return detailService.updateIndustryUserPermanentDetails(platformDetailDTO);
 		} catch (Exception e) {
 			logger.error("updateIndustryUserPermanentDetails Method Exception: {}", e);
 			e.printStackTrace();

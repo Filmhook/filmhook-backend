@@ -46,8 +46,8 @@ public class AuditionServiceImpl implements AuditionService {
 	@Autowired
 	AuditionRolesRepository auditionRolesRepository;
 
-	@Autowired
-	KafkaProducer kafkaProducer;
+//	@Autowired
+//	KafkaProducer kafkaProducer;
 
 	@Override
 	public ResponseEntity<?> saveAudition(AuditionWebModel auditionWebModel) {
