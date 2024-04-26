@@ -1,12 +1,14 @@
 package com.annular.filmhook.model;
 
 import java.sql.Date;
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -42,11 +44,20 @@ public class Audition {
 	@Column(name = "audition_category")
 	private Integer auditionCategory;
 	
+	@Column(name = "audition_address")
+	private String auditionAddress;
+	
+	@Column(name = "audition_message")
+	private String auditionMessage;
+	
 	@Column(name = "audition_expireOn")
 	private Date auditionExpireOn; 
 	
 	@Column(name = "audition_posted_by")
 	private Integer auditionPostedBy;
+	
+	@OneToMany(mappedBy = "audition")
+    private List<AuditionRoles> auditionRoles;
 	
 	@Column(name = "audition_isactive")
 	private boolean auditionIsactive;

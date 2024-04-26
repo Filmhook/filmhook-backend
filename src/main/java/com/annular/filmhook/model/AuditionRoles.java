@@ -7,6 +7,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -36,8 +38,12 @@ public class AuditionRoles {
 	@Column(name = "audition_role_desc")
 	private String auditionRoleDesc;
 	
-	@Column (name = "audition_reference_Id")
-	private Integer auditionReferenceId;
+//	@Column (name = "audition_reference_Id")
+//	private Integer auditionReferenceId;
+	
+	@ManyToOne
+    @JoinColumn(name = "audition_id", nullable = false)
+    private Audition audition;
 	
 	@Column(name = "audition_role_isactive")
 	private boolean auditionRoleIsactive;

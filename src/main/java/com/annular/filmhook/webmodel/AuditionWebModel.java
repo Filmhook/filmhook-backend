@@ -15,6 +15,10 @@ public class AuditionWebModel {
 	private String auditionExperience;
 
 	private Integer auditionCategory;
+	
+	private String auditionAddress;
+	
+	private String auditionMessage;
 
 	private Date auditionExpireOn; 
 
@@ -24,6 +28,8 @@ public class AuditionWebModel {
 	
 	private String auditionRoles[];
 
+	private List<AuditionRolesWebModel> auditionRolesWebModels;
+	
 	private FileInputWebModel fileInputWebModel; // for file input details
 	private List<FileOutputWebModel> fileOutputWebModel; // for file output details
 
