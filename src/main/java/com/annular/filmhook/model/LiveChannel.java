@@ -19,29 +19,29 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "likes")
+@Table(name = "liveDetails")
 @Builder
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Likes {
-	
+public class LiveChannel {
+
 	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "like_id")
-    private Integer likeId;;
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "live_channel_id")
+	private Integer liveChannelId;
 
-    @Column(name = "user_Id")
-    private Integer userId;//foreign key for user table 
-
-    @Column(name = "post_Id")
-    private Integer postId;//foreign key for userTable 
-
-    @Column(name = "status")
-    private Boolean status;
-
+	@Column(name = "user_Id")
+	private Integer userId;// foreign key for user table
+	
+	@Column(name = "channel_name")
+	private String channelName;
+	
+	@Column(name = "live_is_active")
+	private Boolean liveIsActive;
+	
     @Column(name = "created_by")
     private Integer createdBy;
 
@@ -56,10 +56,17 @@ public class Likes {
     @CreationTimestamp
     private Date updatedOn;
     
-    @Column(name = "liveDate")
+    @Column(name = "token")
+    private String token;
+    
+    @Column(name = "live_date")
     private String liveDate;
     
-    
+    @Column(name = "start_time")
+    private String startTime;
 
+    @Column(name = "end_time")
+    private String endTime;
+    
 
 }
