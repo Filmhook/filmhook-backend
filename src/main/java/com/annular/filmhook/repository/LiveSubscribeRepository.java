@@ -11,7 +11,7 @@ import com.annular.filmhook.model.LiveSubscribe;
 @Repository
 public interface LiveSubscribeRepository extends JpaRepository<LiveSubscribe, Integer> {
 
-	@Query("select l from LiveSubscribe l where l.liveChannelId =liveChannelId")
+	@Query("select l from LiveSubscribe l where l.liveChannelId = :liveChannelId")
     List<LiveSubscribe> findByChannelId(Integer liveChannelId);
 
 }
