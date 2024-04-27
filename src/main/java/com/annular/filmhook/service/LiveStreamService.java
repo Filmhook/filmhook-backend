@@ -8,6 +8,6 @@ public interface LiveStreamService {
 
 	ResponseEntity<?> saveLiveDetails(LiveDetailsWebModel liveDetailsWebModel);
 
-	ResponseEntity<?> getLiveDetails(LiveDetailsWebModel liveDetailsWebModel);
+	ResponseEntity<?> getLiveDetails();
 
 }

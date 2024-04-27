@@ -36,10 +36,10 @@ public class LiveStreamController {
 	}
 
 	@PostMapping("/getLiveDetails")
-	public ResponseEntity<?> getLiveDetails(@RequestBody LiveDetailsWebModel liveDetailsWebModel) {
+	public ResponseEntity<?> getLiveDetails() {
 		try {
 			logger.info("getLiveDetails controller start");
-			return liveStreamService.getLiveDetails(liveDetailsWebModel);
+			return liveStreamService.getLiveDetails();
 		} catch (Exception e) {
 			logger.error("getLiveDetails Method Exception {}" + e);
 			e.printStackTrace();

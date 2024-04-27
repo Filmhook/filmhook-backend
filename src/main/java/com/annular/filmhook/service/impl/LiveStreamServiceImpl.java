@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,18 +46,13 @@ public class LiveStreamServiceImpl implements LiveStreamService {
 	}
 
 	@Override
-	public ResponseEntity<?> getLiveDetails(LiveDetailsWebModel liveDetailsWebModel) {
+	public ResponseEntity<?> getLiveDetails() {
 		try {
-			Optional<LiveChannel> liveDetailsDB = liveDetailsRepository
-					.findById(liveDetailsWebModel.getLiveChannelId());
-			if (liveDetailsDB.isPresent()) {
-				LiveChannel data = liveDetailsDB.get();
-				return new ResponseEntity<>(data, HttpStatus.OK);
-			} else {
-				return new ResponseEntity<>(
-						"Live Detail with ID " + liveDetailsWebModel.getLiveChannelId() + " not found",
-						HttpStatus.NOT_FOUND);
-			}
+			List<LiveChannel> liveDetailsDB = liveDetailsRepository
+					.findAll();
+			
+				return new ResponseEntity<>(liveDetailsDB, HttpStatus.OK);
+			
 		} catch (Exception e) {
 			return new ResponseEntity<>("Error fetching live Detaisl: " + e.getMessage(),
 					HttpStatus.INTERNAL_SERVER_ERROR);
