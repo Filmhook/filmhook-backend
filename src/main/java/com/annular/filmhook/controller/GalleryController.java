@@ -13,8 +13,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.ResponseEntity.BodyBuilder;
-import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -31,7 +36,7 @@ public class GalleryController {
     public Response saveGalleryFiles(@ModelAttribute FileInputWebModel inputFileData) {
         try {
             logger.info("saveGalleryFiles Inputs :- {}", inputFileData);
-            FileOutputWebModel outputFileData = galleryService.saveGalleryFiles(inputFileData);
+            List<FileOutputWebModel> outputFileData = galleryService.saveGalleryFiles(inputFileData);
             if (outputFileData != null) return new Response(1, "File(s) saved successfully...", outputFileData);
         } catch (Exception e) {
             logger.error("Error at saveGalleryFiles()...", e);
@@ -76,6 +81,7 @@ public class GalleryController {
         }
         return new Response(-1, "Files were not found...", null);
     }
+
     @GetMapping("/downloadGalleryFiles")
     public ResponseEntity<?> downloadGalleryFiles(@RequestParam("userId") Integer userId,@RequestParam("category") String category) {
         try {
@@ -103,10 +109,11 @@ public class GalleryController {
         }
         return ResponseEntity.notFound().build(); // Return not found response if resource is null
     }
+
     @GetMapping("/downloadAllUserGalleryFiles")
     public ResponseEntity<?> downloadAllUserGalleryFiles(@RequestParam("category") String category) {
         try {
-            logger.info("downloadGalleryFiles Input Category :- {}", category);
+            logger.info("downloadAllUserGalleryFiles Input Category :- {}", category);
             Resource resource = galleryService.getAllGalleryFilesInCategory(category);
             if (resource != null) {
                 // Determine content type
@@ -130,19 +137,20 @@ public class GalleryController {
         }
         return ResponseEntity.notFound().build(); // Return not found response if resource is null
     }
+
     @GetMapping("/getGalleryFilesByAllUser")
-    public Response getGalleryFilesByAllUser() {
+    public Response getAllUsersGalleryFiles() {
         try {
-            List<FileOutputWebModel> outputList = galleryService.getGalleryFilesByAllUser();
+            List<FileOutputWebModel> outputList = galleryService.getAllUsersGalleryFiles();
             if (outputList != null && !outputList.isEmpty()) {
-                logger.info("[{}] Gallery files found for userId :- {}", outputList.size());
+                logger.info("[{}] gallery files found...", outputList.size());
                 return new Response(1, "Gallery file(s) found successfully...", outputList);
             } else {
                 return new Response(-1, "No file(s) available for this user...", null);
             }
         } catch (Exception e) {
-            logger.error("Error at getGalleryFiles()...", e);
+            logger.error("Error at getAllUsersGalleryFiles()...", e);
         }
         return new Response(-1, "Files were not found...", null);
     }
-    }
+}

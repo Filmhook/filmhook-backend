@@ -11,6 +11,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
+import javax.persistence.Enumerated;
+import javax.persistence.EnumType;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -43,7 +45,8 @@ public class MediaFiles {
 	private User user;
 
 	@Column(name = "category")
-	private String category;
+	@Enumerated(value = EnumType.STRING)
+	private MediaFileCategory category;
 
 	@Column(name = "category_ref_id") // for all referred table's[Post,Story] primary key
 	private Integer categoryRefId;

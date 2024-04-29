@@ -31,7 +31,7 @@ public class StoriesController {
     public Response uploadStory(@ModelAttribute StoriesWebModel inputData) {
         try {
             logger.info("uploadStory Inputs :- {}", inputData);
-            FileOutputWebModel story = storiesService.uploadStory(inputData);
+            StoriesWebModel story = storiesService.uploadStory(inputData);
             if (story != null) return new Response(1, "Story uploaded successfully...", story);
         } catch (Exception e) {
             logger.error("Error at uploadStory()...", e);

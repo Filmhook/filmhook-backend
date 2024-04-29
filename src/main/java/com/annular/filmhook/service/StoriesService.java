@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface StoriesService {
 
-    FileOutputWebModel uploadStory(StoriesWebModel inputData);
+    StoriesWebModel uploadStory(StoriesWebModel inputData);
     List<StoriesWebModel> getStoryByUserId(Integer userId);
     Resource getStoryFile(Integer userId, String category, String fileId);
     void deleteStory(Story storyToUpdate);

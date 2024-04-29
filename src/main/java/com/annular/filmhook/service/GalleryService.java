@@ -9,10 +9,10 @@ import java.util.List;
 
 public interface GalleryService {
 
-    FileOutputWebModel saveGalleryFiles(FileInputWebModel fileInputWebModel);
+    List<FileOutputWebModel> saveGalleryFiles(FileInputWebModel fileInputWebModel);
     List<FileOutputWebModel> getGalleryFilesByUser(Integer userId) throws IOException;
     Resource getGalleryFile(Integer userId, String category, String fileId);
 	Resource getAllGalleryFilesInCategory(Integer  userId,String category);
 	Resource getAllGalleryFilesInCategory(String category);
-	List<FileOutputWebModel> getGalleryFilesByAllUser();
+	List<FileOutputWebModel> getAllUsersGalleryFiles();
 }

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
+import com.annular.filmhook.model.MediaFileCategory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,12 +89,13 @@ public class AuditionServiceImpl implements AuditionService {
 				}
 			}
 
+			auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
 			auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story table reference in media files table
-			FileOutputWebModel fileOutputWebModel = mediaFilesService.saveMediaFiles(auditionWebModel.getFileInputWebModel(), userFromDB.get());
+			List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(auditionWebModel.getFileInputWebModel(), userFromDB.get());
 
 			response.put("Audition details", savedAudition);
 			response.put("Audition roles", auditionRolesList);
-			response.put("Media files", fileOutputWebModel);
+			response.put("Media files", fileOutputWebModelList);
 
 		} catch (Exception e) {
 			logger.error("Save audition Method Exception...", e);

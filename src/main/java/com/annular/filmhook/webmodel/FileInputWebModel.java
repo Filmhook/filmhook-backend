@@ -1,5 +1,6 @@
 package com.annular.filmhook.webmodel;
 
+import com.annular.filmhook.model.MediaFileCategory;
 import lombok.Data;
 
 import java.util.List;
@@ -11,17 +12,10 @@ public class FileInputWebModel {
 
 	// For save purpose
 	private Integer userId;
-	private String category;
+	private MediaFileCategory category;
 	private Integer categoryRefId;
-	private MultipartFile file;
-	private MultipartFile[] galleryImage;
-	private MultipartFile[] galleryVideos;
-	private MultipartFile[] storiesImage;
-	private MultipartFile[] storiesVideos;
-	private MultipartFile[] projectImage;
+	private List<MultipartFile> files;
 	private String description;
-	private Integer permanentPlatformId;
-	
 
 	// For read purpose
 	private String fileId;

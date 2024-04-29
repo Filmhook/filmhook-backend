@@ -17,6 +17,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class AgoraTokenSrvcImpl implements AgoraTokenService {
 
@@ -34,15 +36,15 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
             RtcTokenBuilder rtcTokenBuilder = new RtcTokenBuilder();
 
             String channelName = Utility.isNullOrBlankWithTrim(agoraWebModel.getChannelName()) ? agoraConfig.getChannelName() : agoraWebModel.getChannelName();
-            int expireTime = agoraWebModel.getExpirationTimeInSeconds() == 0  ? agoraConfig.getExpirationTimeInSeconds() : agoraWebModel.getExpirationTimeInSeconds();
+            int expireTime = agoraWebModel.getExpirationTimeInSeconds() == 0 ? agoraConfig.getExpirationTimeInSeconds() : agoraWebModel.getExpirationTimeInSeconds();
             RtcTokenBuilder.Role role = this.getRtcTokenBuilderRole(agoraWebModel.getRole());
             int uid = agoraWebModel.getUserId() == 0 ? agoraConfig.getUid() : agoraWebModel.getUserId();
             if (channelName == null) return "Channel ID cannot be blank"; // check for null channelName
             int timestamp = (int) (System.currentTimeMillis() / 1000 + expireTime);
 
             return rtcTokenBuilder.buildTokenWithUid(
-                    agoraConfig.getCallAppId(),
-                    agoraConfig.getCallAppCertificate(),
+                    agoraConfig.getAppId(),
+                    agoraConfig.getAppCertificate(),
                     channelName,
                     uid,
                     role,
@@ -71,8 +73,8 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
             if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
             RtmTokenBuilder token = new RtmTokenBuilder();
             return token.buildToken(
-                    agoraConfig.getChatAppId(),
-                    agoraConfig.getChatAppCertificate(),
+                    agoraConfig.getAppId(),
+                    agoraConfig.getAppCertificate(),
                     String.valueOf(agoraWebModel.getUserId()),
                     RtmTokenBuilder.Role.Rtm_User,
                     agoraConfig.getExpirationTimeInSeconds());
@@ -86,32 +88,29 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
     public String getAgoraChatToken(AgoraWebModel agoraWebModel) {
         try {
             if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
-            ChatTokenBuilder2 builder = new ChatTokenBuilder2();
-            String token = builder.buildUserToken(
-                    agoraConfig.getChatAppId(),
-                    agoraConfig.getChatAppCertificate(),
-                    String.valueOf(agoraWebModel.getUserId()),
-                    agoraWebModel.getExpirationTimeInSeconds());
-            // Save the token to the user table
-            this.saveTokenToUserTable(agoraWebModel.getUserId(), token);
-            return token;
+            Optional<User> user = userRepository.findById(agoraWebModel.getUserId());
+            User dbUser = null;
+            if (user.isPresent()) {
+                dbUser = user.get();
+                if (dbUser.getTempToken() != null && dbUser.getTempToken().isEmpty()) {
+                    ChatTokenBuilder2 builder = new ChatTokenBuilder2();
+                    String token = builder.buildUserToken(
+                            agoraConfig.getAppId(),
+                            agoraConfig.getAppCertificate(),
+                            String.valueOf(agoraWebModel.getUserId()),
+                            agoraWebModel.getExpirationTimeInSeconds());
+                    // Save the token to the user table
+                    dbUser.setTempToken(token);
+                    userRepository.saveAndFlush(dbUser);
+                    return token;
+                } else {
+                    return dbUser.getTempToken();
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-    }
-
-    /**
-     * Save the token to the user table.
-     *
-     * @param userId The ID of the user
-     * @param token The Agora app token
-     */
-    private void saveTokenToUserTable(Integer userId, String token) {
-        User user = userRepository.findById(userId).orElse(null);
-        if (user != null) {
-            user.setTempToken(token);
-            userRepository.save(user);
-        }
+        return null;
     }
 }
