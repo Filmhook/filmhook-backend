@@ -79,24 +79,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		 List<Map<String, Object>> dataList = new ArrayList<>();
 		try {
 			logger.info("Register method start");
-			System.out.println(userWebModel.getEmail());
-//			Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(),
-//					userWebModel.getUserType());
-			Optional<User> userData = userRepository.findByEmailAndUserTypeAndMobile(userWebModel.getEmail(),
-					userWebModel.getUserType());
-
-
+			//Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
+			Optional<User> userData = userRepository.findByEmailAndUserTypeAndMobile(userWebModel.getEmail(), userWebModel.getUserType());
 			BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
 			if (!userData.isPresent()) {
 				User user = new User();
 				user.setPhoneNumber(userWebModel.getPhoneNumber());
+
 				//user.setName(userWebModel.getName());
-				user.setName(userWebModel.getFirstName() + " " + userWebModel.getMiddleName()+" " + userWebModel.getLastName());
+				StringBuilder name = new StringBuilder();
+				if(!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName()))
+					name.append(userWebModel.getFirstName()).append(" ");
+				if(!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName()))
+					name.append(userWebModel.getMiddleName()).append(" ");
+				if(!Utility.isNullOrBlankWithTrim(userWebModel.getLastName()))
+					name.append(userWebModel.getLastName());
+				user.setName(name.toString());
+
 				user.setEmail(userWebModel.getEmail());
 				user.setUserType(userWebModel.getUserType());
 				user.setMobileNumberStatus(false);
-//				user.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT,
-//						CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
+				//user.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
 				user.setDob(userWebModel.getDob());
 				user.setGender(userWebModel.getGender());
 				user.setCountry(userWebModel.getCountry());

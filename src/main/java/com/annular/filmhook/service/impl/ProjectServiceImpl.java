@@ -8,8 +8,10 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.ProjectService;
 import com.annular.filmhook.webmodel.ProjectWebModel;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -38,9 +40,6 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Autowired
     MediaFilesService mediaFilesService;
-
-    @Autowired
-    ProjectService projectService;
 
     @Override
     public List<FileOutputWebModel> saveProjectFiles(ProjectWebModel projectWebModel) {
