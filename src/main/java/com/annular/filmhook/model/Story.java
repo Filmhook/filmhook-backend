@@ -54,27 +54,6 @@ public class Story {
     @JoinColumn(name="user_id")
     @ToString.Exclude
     private User user;
-    
-	@Column(name = "file_id")
-	private String fileId;
-	
-	@Column(name = "category")
-	private String category;
-
-	@Column(name = "category_ref_id") // for all referred table's[Post,Story] primary key
-	private Integer categoryRefId;
-	
-	@Column(name = "file_name")
-	private String fileName;
-	
-	@Column(name = "file_size")
-	private Long fileSize;
-
-	@Column(name = "file_type")
-	private String fileType;
-
-	@Column(name = "file_path")
-	private String filePath;
 
     @Column(name = "created_by")
     private Integer createdBy;
