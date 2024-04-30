@@ -65,7 +65,7 @@ public class ProjectServiceImpl implements ProjectService {
     public List<FileOutputWebModel> getProjectFiles(Integer userId, Integer platformPermanentId) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
-            outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project.toString(), platformPermanentId);
+            outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project, platformPermanentId);
         } catch (Exception e) {
             logger.error("Error at getProjectFiles()...", e);
             e.printStackTrace();

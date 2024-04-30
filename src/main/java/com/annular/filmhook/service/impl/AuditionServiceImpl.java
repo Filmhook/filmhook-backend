@@ -146,7 +146,7 @@ public class AuditionServiceImpl implements AuditionService {
 						auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
 					}
 
-					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId("Audition", audition.getAuditionId());
+					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
 					if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
 						auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
 					}

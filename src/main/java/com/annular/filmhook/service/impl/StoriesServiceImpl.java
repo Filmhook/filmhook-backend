@@ -107,7 +107,7 @@ public class StoriesServiceImpl implements StoriesService {
         storiesWebModel.setCreatedOn(story.getCreatedOn());
         storiesWebModel.setCreatedBy(story.getCreatedBy());
 
-        List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId("Stories", story.getId());
+        List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
         if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
             storiesWebModel.setFileOutputWebModel(fileOutputWebModelList);
         }
@@ -148,7 +148,7 @@ public class StoriesServiceImpl implements StoriesService {
             Story storyToUpdate = story.get();
             this.deleteStory(storyToUpdate); // Deactivating the Story table Records
             List<Integer> storyIdsList = Collections.singletonList(storyToUpdate.getId());
-            mediaFilesService.deleteMediaFilesByCategoryAndRefId("Stories", storyIdsList); // Deactivating the MediaFiles table Records and S3 as well
+            mediaFilesService.deleteMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, storyIdsList); // Deactivating the MediaFiles table Records and S3 as well
             return storyToUpdate;
         } else {
             return null;
@@ -163,7 +163,7 @@ public class StoriesServiceImpl implements StoriesService {
             if (storyList != null && !storyList.isEmpty()) {
                 storyList.forEach(this::deleteStory); // Deactivating the Story table Records
                 List<Integer> storyIdsList = storyList.stream().map(Story::getId).collect(Collectors.toList());
-                mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefId(userId, "Stories", storyIdsList); // Deactivating the MediaFiles table Records and S3 as well
+                mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Stories, storyIdsList); // Deactivating the MediaFiles table Records and S3 as well
             }
         } catch (Exception e) {
             logger.error("Error at deleteStoryByUserId()...", e);
@@ -192,7 +192,7 @@ public class StoriesServiceImpl implements StoriesService {
         if (!activeStories.isEmpty()) {
             activeStories.forEach(this::deleteStory); // Deactivating the Story table Records
             List<Integer> storyIdList = activeStories.stream().filter(Objects::nonNull).map(Story::getId).collect(Collectors.toList());
-            mediaFilesService.deleteMediaFilesByCategoryAndRefId("Stories", storyIdList); // Deactivating the MediaFiles table Records and S3 as well
+            mediaFilesService.deleteMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, storyIdList); // Deactivating the MediaFiles table Records and S3 as well
         }
     }
 }

@@ -75,7 +75,7 @@ public class GalleryServiceImpl implements GalleryService {
     public List<FileOutputWebModel> getGalleryFilesByUser(Integer userId) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
-            outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.Gallery.toString(), userId);
+            outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.Gallery, userId);
         } catch (Exception e) {
             logger.error("Error at getGalleryFilesByUser()...", e);
             e.printStackTrace();
@@ -119,7 +119,7 @@ public class GalleryServiceImpl implements GalleryService {
     public List<FileOutputWebModel> getAllUsersGalleryFiles() {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
-            outputWebModelList = mediaFilesService.getMediaFilesByCategory(MediaFileCategory.Gallery.toString());
+            outputWebModelList = mediaFilesService.getMediaFilesByCategory(MediaFileCategory.Gallery);
         } catch (Exception e) {
             logger.error("Error at getGalleryFilesByUser()...", e);
             e.printStackTrace();

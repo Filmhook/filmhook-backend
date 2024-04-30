@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.MultiMediaFiles;
 import com.annular.filmhook.model.User;
@@ -145,7 +146,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public List<FileOutputWebModel> getMediaFilesByCategory(String category) {
+    public List<FileOutputWebModel> getMediaFilesByCategory(MediaFileCategory category) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategory(category);
@@ -160,7 +161,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public List<FileOutputWebModel> getMediaFilesByCategoryAndUserId(String category, Integer userId) {
+    public List<FileOutputWebModel> getMediaFilesByCategoryAndUserId(MediaFileCategory category, Integer userId) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userId, category);
@@ -175,7 +176,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public List<FileOutputWebModel> getMediaFilesByCategoryAndRefId(String category, Integer refId) {
+    public List<FileOutputWebModel> getMediaFilesByCategoryAndRefId(MediaFileCategory category, Integer refId) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndRefId(category, refId);
@@ -190,7 +191,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, String category, Integer refId) {
+    public List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category, Integer refId) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategoryAndRefId(userId, category, refId);
@@ -237,7 +238,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public void deleteMediaFilesByUserIdAndCategoryAndRefId(Integer userId, String category, List<Integer> idList) {
+    public void deleteMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category, List<Integer> idList) {
         Optional<User> user = userService.getUser(userId);
         if (user.isPresent()) {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategoryAndRefIds(userId, category, idList);
@@ -246,7 +247,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public void deleteMediaFilesByCategoryAndRefId(String category, List<Integer> idList) {
+    public void deleteMediaFilesByCategoryAndRefId(MediaFileCategory category, List<Integer> idList) {
         List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndRefIds(category, idList);
         this.deleteMediaFiles(mediaFiles);
     }

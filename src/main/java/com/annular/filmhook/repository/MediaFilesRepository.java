@@ -1,5 +1,6 @@
 package com.annular.filmhook.repository;
 
+import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,20 +15,20 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
     List<MediaFiles> getMediaFilesByUserId(Integer userId);
 
     @Query("Select m from MediaFiles m where m.user.userId=:userId and m.category=:category and m.status=true")
-    List<MediaFiles> getMediaFilesByUserIdAndCategory(Integer userId, String category);
+    List<MediaFiles> getMediaFilesByUserIdAndCategory(Integer userId, MediaFileCategory category);
 
     @Query("Select m from MediaFiles m where m.user.userId=:userId and m.category=:category and m.categoryRefId IN (:refIds) and m.status=true")
-    List<MediaFiles> getMediaFilesByUserIdAndCategoryAndRefIds(Integer userId, String category, List<Integer> refIds);
+    List<MediaFiles> getMediaFilesByUserIdAndCategoryAndRefIds(Integer userId, MediaFileCategory category, List<Integer> refIds);
 
     @Query("Select m from MediaFiles m where m.user.userId=:userId and m.category=:category and m.categoryRefId = :refId and m.status=true")
-    List<MediaFiles> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, String category, Integer refId);
+    List<MediaFiles> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category, Integer refId);
 
     @Query("Select m from MediaFiles m where m.category=:category and m.categoryRefId=:refId and m.status=true")
-    List<MediaFiles> getMediaFilesByCategoryAndRefId(String category, Integer refId);
+    List<MediaFiles> getMediaFilesByCategoryAndRefId(MediaFileCategory category, Integer refId);
 
     @Query("Select m from MediaFiles m where m.category=:category and m.categoryRefId IN (:refIds) and m.status=true")
-    List<MediaFiles> getMediaFilesByCategoryAndRefIds(String category, List<Integer> refIds);
+    List<MediaFiles> getMediaFilesByCategoryAndRefIds(MediaFileCategory category, List<Integer> refIds);
 
     @Query("Select m from MediaFiles m where m.category = :category and m.status=true")
-    List<MediaFiles> getMediaFilesByCategory(String category);
+    List<MediaFiles> getMediaFilesByCategory(MediaFileCategory category);
 }
