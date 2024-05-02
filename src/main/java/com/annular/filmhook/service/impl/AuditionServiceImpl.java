@@ -107,12 +107,13 @@ public class AuditionServiceImpl implements AuditionService {
 	}
 
 	@Override
-	public ResponseEntity<?> getAuditionByCategory(Integer categoryId) {
+	public ResponseEntity<?> getAuditionByCategory(String auditionTitle) {
 		HashMap<String, Object> response = new HashMap<String, Object>();
 		try {
 			logger.info("get audition by category method start");
 
-			List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId);
+//			List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId);
+			List<Audition> auditions = auditionRepository.findByAuditionTitle(auditionTitle);
 
 			if(auditions.size()>0) {
 				List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();

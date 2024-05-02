@@ -27,6 +27,7 @@ import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryDetails;
 import com.annular.filmhook.model.IndustryTemporaryDetails;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
+import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.model.PlatformDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
@@ -744,6 +745,13 @@ public class DetailServiceImpl implements DetailService {
 						PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
 						platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
 						platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
+						List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+
+						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId,
+								MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+						platformDetailDTO.setOutputWebModelList(outputWebModelList); // Set outputWebModelList in DTO
+
+
 						platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
 						platformDetailDTO.setDailySalary(platformDetail.getDailySalary());
 						platformDetailDTO.setFilmCount(platformDetail.getFilmCount());
@@ -856,9 +864,9 @@ public class DetailServiceImpl implements DetailService {
 				PlatformPermanentDetail permanentDb = optionalPermanentDetails.get();
 				permanentDb.setDailySalary(platformDetailDTO.getDailySalary());
 				permanentDb.setFilmCount(platformDetailDTO.getFilmCount());
-				
+
 				permanentDb.setNetWorth(platformDetailDTO.getNetWorth());
-				
+
 				platformPermanentDetailRepository.save(permanentDb);
 			}
 

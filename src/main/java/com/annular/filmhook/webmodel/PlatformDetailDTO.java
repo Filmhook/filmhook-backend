@@ -14,6 +14,7 @@ public class PlatformDetailDTO {
 	private List<ProfessionDetailDTO> professionDetails;
 	private Integer platformPermanentId;
 	private Integer pdPlatformId;
+	private List<FileOutputWebModel> outputWebModelList;
 
 	private Integer filmCount;
 

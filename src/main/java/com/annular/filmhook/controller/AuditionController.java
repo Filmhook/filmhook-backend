@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
@@ -43,10 +44,10 @@ public class AuditionController {
 	}
     
     @GetMapping("/getAuditionByCategory")
-    public ResponseEntity<?> getAuditionByCategory(@RequestBody AuditionWebModel auditionWebModel) {
+    public ResponseEntity<?> getAuditionByCategory(@RequestParam("auditionTitle") String auditionTitle) {
         try {
-        	logger.info("Audition category to be fetched :- " + auditionWebModel.getAuditionCategory());
-			return auditionService.getAuditionByCategory(auditionWebModel.getAuditionCategory());
+        	//logger.info("Audition category to be fetched :- " + auditionWebModel.getAuditionCategory());
+			return auditionService.getAuditionByCategory(auditionTitle);
 		} catch (Exception e) {
 			logger.error("Save audition Method Exception...", e);
 			e.printStackTrace();

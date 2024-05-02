@@ -27,7 +27,7 @@ public class Notifications {
 	            String senderName = "FilmHook";
 	            MimeMessage message = javaMailSender.createMimeMessage();
 	            MimeMessageHelper helper = new MimeMessageHelper(message);
-	            helper.setFrom("yaswanthshankar2705@gmail.com", senderName);
+	            helper.setFrom("filmhookapps@gmail.com", senderName);
 	            helper.setTo(mailId);
 	            helper.setSubject(subject);
 	            helper.setText(mailContent, true);

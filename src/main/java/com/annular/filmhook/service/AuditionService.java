@@ -8,6 +8,6 @@ public interface AuditionService {
 
 	ResponseEntity<?> saveAudition(AuditionWebModel auditionWebModel);
 
-	ResponseEntity<?> getAuditionByCategory(Integer categoryId);
+	ResponseEntity<?> getAuditionByCategory(String auditionTitle);
 
 }

@@ -71,7 +71,8 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 			for (IndustryMediaFiles mediaFiles : mediaFilesList) {
 				File file = File.createTempFile(mediaFiles.getFileId(), null);
 				FileUtil.convertMultiPartFileToFile(inputFileData.getImages(), file);
-				String response = fileUtil.uploadFile(file, mediaFiles.getFilePath());
+				//String response = fileUtil.uploadFile(file, mediaFiles.getFilePath());
+				String response = fileUtil.uploadFile(file, mediaFiles.getFilePath() + mediaFiles.getFileType());
 				if (response != null && response.equalsIgnoreCase("File Uploaded")) {
 					file.delete(); // deleting temp file
 					fileOutputWebModel = this.transformData(mediaFiles); // Reading the saved file details
@@ -174,7 +175,8 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 			fileOutputWebModel.setFileName(mediaFile.getFileName());
 			fileOutputWebModel.setFileType(mediaFile.getFileType());
 			fileOutputWebModel.setFileSize(mediaFile.getFileSize());
-			fileOutputWebModel.setFilePath(mediaFile.getFilePath());
+			//fileOutputWebModel.setFilePath(mediaFile.getFilePath());
+			fileOutputWebModel.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
 
 			fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());
 			fileOutputWebModel.setCreatedOn(mediaFile.getCreatedOn());
