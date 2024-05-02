@@ -69,7 +69,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         try {
                             File file = File.createTempFile(mediaFile.getFileId(), null);
                             FileUtil.convertMultiPartFileToFile(inputFile, file);
-                            String response = fileUtil.uploadFile(file, mediaFile.getFilePath());
+                            String response = fileUtil.uploadFile(file, mediaFile.getFilePath() + mediaFile.getFileType());
                             if (response != null && response.equalsIgnoreCase("File Uploaded")) {
                                 file.delete(); // deleting temp file
                                 fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
@@ -221,7 +221,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             fileOutputWebModel.setFileName(mediaFile.getFileName());
             fileOutputWebModel.setFileType(mediaFile.getFileType());
             fileOutputWebModel.setFileSize(mediaFile.getFileSize());
-            fileOutputWebModel.setFilePath(mediaFile.getFilePath());
+            fileOutputWebModel.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
             fileOutputWebModel.setDescription(mediaFile.getDescription());
 
             fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());

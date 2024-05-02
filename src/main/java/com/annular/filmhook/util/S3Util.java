@@ -35,6 +35,9 @@ public class S3Util {
     @Value("${s3.bucket.name}")
     private String s3BucketName;
 
+    @Value("${s3.baseURL}")
+    private String s3BaseURL;
+
     public static final String S3_PATH_DELIMITER = "/";
 
     public AwsCredentialsProvider getAwsCredentialsProvider() {
@@ -233,5 +236,7 @@ public class S3Util {
         } catch (S3Exception e) {
             logger.error(e.awsErrorDetails().errorMessage());
             throw e;
-        }}}
+        }
+    }
+}
         
