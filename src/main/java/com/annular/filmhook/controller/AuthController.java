@@ -115,6 +115,7 @@ public class AuthController {
 			String jwt = jwtUtils.generateJwtToken(authentication);
 			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 			logger.info("Login Controller ---- Finished");
+			System.out.println(refreshToken.getToken());
 			return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(),
 					userDetails.getEmail(), "Login Successful", 1, refreshToken.getToken(),userDetails.getUserType()));
 		}

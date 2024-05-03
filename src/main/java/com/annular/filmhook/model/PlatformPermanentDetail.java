@@ -57,4 +57,7 @@ public class PlatformPermanentDetail {
     @ManyToOne
     @JoinColumn(name = "iupd_id", nullable = false)
     private IndustryUserPermanentDetails industryUserPermanentDetails;
+    
+    @Column(name = "userId")
+    private Integer userId;
 }

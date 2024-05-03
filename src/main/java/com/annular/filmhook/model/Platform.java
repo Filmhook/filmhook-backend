@@ -58,5 +58,10 @@ public class Platform {
 	@Column
 	private byte[] image;
 
+	public IndustryUserPermanentDetails getIndustry() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }

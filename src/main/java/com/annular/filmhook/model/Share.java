@@ -47,6 +47,9 @@ public class Share {
     @CreationTimestamp
     @Column(name = "created_on")
     private Date createdOn;
+    
+    @Column(name ="post_Url")
+    private String postUrl;
 
     @Column(name = "updated_by")
     private Integer updatedBy;

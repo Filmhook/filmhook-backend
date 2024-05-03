@@ -21,7 +21,7 @@ import com.annular.filmhook.webmodel.AuditionWebModel;
 
 @RestController
 @RequestMapping("/audition")
-public class AuditionController {
+public class AuditionController { 
 
 	public static final Logger logger = LoggerFactory.getLogger(AuditionController.class);
 	

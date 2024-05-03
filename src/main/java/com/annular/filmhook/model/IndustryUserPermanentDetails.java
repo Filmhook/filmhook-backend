@@ -62,4 +62,9 @@ public class IndustryUserPermanentDetails {
     @CreationTimestamp
     private Date updatedOn;
 
+	public byte[] getImage() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

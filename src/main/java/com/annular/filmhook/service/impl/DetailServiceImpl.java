@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -651,83 +653,146 @@ public class DetailServiceImpl implements DetailService {
 
 	@Override
 	public ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId) {
-		try {
-			List<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository
-					.findByUserId(userId);
-			if (userPermanentDetails.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body("User permanent details not found for user id: " + userId);
-			} else {
-				List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
-				for (IndustryUserPermanentDetails details : userPermanentDetails) {
-					IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
-					responseDTO.setIndustriesName(details.getIndustriesName());
-					responseDTO.setIupdId(details.getIupdId());
+	    try {
+	        List<PlatformPermanentDetail> platformDetails = platformPermanentDetailRepository.findByUserId(userId);
 
-					System.out.println("<<<<<<<<<<<<<<<<" + details.getIndustriesName());
-					Optional<Industry> industryOptional = industryRepository
-							.findByIndustryName(details.getIndustriesName());
+	        Map<String, Map<String, List<String>>> platformProfessionsMap = new LinkedHashMap<>();
+	        for (PlatformPermanentDetail detail : platformDetails) {
+	            String platformName = detail.getPlatformName();
+	            if (!platformProfessionsMap.containsKey(platformName)) {
+	                platformProfessionsMap.put(platformName, new HashMap<>());
+	            }
 
-					if (industryOptional.isPresent()) {
-						Industry industry = industryOptional.get();
-						responseDTO.setImage(Base64.getEncoder().encode(industry.getImage()));
-					}
+	            Map<String, List<String>> professionsMap = platformProfessionsMap.get(platformName);
+	            for (ProfessionPermanentDetail professionDetail : detail.getProfessionDetails()) {
+	                String professionName = professionDetail.getProfessionName();
+	                if (!professionsMap.containsKey(professionName)) {
+	                    professionsMap.put(professionName, new ArrayList<>());
+	                }
+	                Set<String> subProfessionsSet = new HashSet<>(professionsMap.get(professionName)); // Using a Set to store unique subProfessions
+	                subProfessionsSet.addAll(professionDetail.getSubProfessionName());
+	                professionsMap.put(professionName, new ArrayList<>(subProfessionsSet)); // Convert back to List before storing in the map
+	            }
+	        }
 
-					List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
-					List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();
-					for (PlatformPermanentDetail platformDetail : platformDetails) {
-						PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
-						platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
-						platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
-						List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+	        List<Map<String, Object>> responseList = new ArrayList<>();
+	        for (Map.Entry<String, Map<String, List<String>>> entry : platformProfessionsMap.entrySet()) {
+	            String platformName = entry.getKey();
+	            Map<String, Object> platformMap = new HashMap<>();
+	            platformMap.put("platformName", platformName);
 
-						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId,
-								MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
-						platformDetailDTO.setOutputWebModelList(outputWebModelList); // Set outputWebModelList in DTO
+	            // Fetch industry names associated with the platform
+	            Set<String> industryNames = new HashSet<>();
+	            for (PlatformPermanentDetail detail : platformDetails) {
+	                if (detail.getPlatformName().equals(platformName)) {
+	                    industryNames.add(detail.getIndustryUserPermanentDetails().getIndustriesName());
+	                }
+	            }
+	            platformMap.put("industryNames", industryNames);
 
+	            List<Map<String, Object>> professionsList = new ArrayList<>();
+	            for (Map.Entry<String, List<String>> professionEntry : entry.getValue().entrySet()) {
+	                String professionName = professionEntry.getKey();
+	                List<String> subProfessions = professionEntry.getValue();
+	                
+	                Map<String, Object> professionMap = new HashMap<>();
+	                professionMap.put("professionName", professionName);
+	                professionMap.put("subProfessionNames", subProfessions);
+	                professionsList.add(professionMap);
+	            }
 
-						platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
-						platformDetailDTO.setDailySalary(platformDetail.getDailySalary());
-						platformDetailDTO.setFilmCount(platformDetail.getFilmCount());
-						platformDetailDTO.setNetWorth(platformDetail.getNetWorth());
-						Optional<Platform> platformOptional = platformPermanentDetailRepository
-								.findByPlatformName(platformDetail.getPlatformName());
-						if (platformOptional.isPresent()) {
-							Platform platform = platformOptional.get();
-							platformDetailDTO.setImage(Base64.getEncoder().encode(platform.getImage()));
-						}
+	            platformMap.put("professions", professionsList);
+	            responseList.add(platformMap);
+	        }
 
-						List<ProfessionPermanentDetail> professionDetails = platformDetail.getProfessionDetails();
-						List<ProfessionDetailDTO> professionDetailDTOList = new ArrayList<>();
-						for (ProfessionPermanentDetail professionDetail : professionDetails) {
-							ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
-							professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
-							professionDetailDTO.setSubProfessionName(professionDetail.getSubProfessionName());
-							professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
-							professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
-
-							Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository
-									.findByProfesssionName(professionDetail.getProfessionName());
-							if (filmProfessionOptional.isPresent()) {
-								FilmProfession filmProfession = filmProfessionOptional.get();
-								professionDetailDTO.setImage(Base64.getEncoder().encode(filmProfession.getImage()));
-
-							}
-							professionDetailDTOList.add(professionDetailDTO);
-						}
-						platformDetailDTO.setProfessionDetails(professionDetailDTOList);
-						platformDetailDTOList.add(platformDetailDTO);
-					}
-					responseDTO.setPlatformDetails(platformDetailDTOList);
-					responseDTOList.add(responseDTO);
-				}
-				return ResponseEntity.ok(responseDTOList);
-			}
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Failed to retrieve industry user permanent details.");
-		}
+	        return ResponseEntity.ok(responseList);
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Failed to retrieve platform details.");
+	    }
 	}
+
+
+	
+//	@Override
+//	public ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId) {
+//		try {
+//			List<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository
+//					.findByUserId(userId);
+//			if (userPermanentDetails.isEmpty()) {
+//				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//						.body("User permanent details not found for user id: " + userId);
+//			} else {
+//				List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
+//				for (IndustryUserPermanentDetails details : userPermanentDetails) {
+//					IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
+//					responseDTO.setIndustriesName(details.getIndustriesName());
+//					responseDTO.setIupdId(details.getIupdId());
+//
+//					System.out.println("<<<<<<<<<<<<<<<<" + details.getIndustriesName());
+//					Optional<Industry> industryOptional = industryRepository
+//							.findByIndustryName(details.getIndustriesName());
+//
+//					if (industryOptional.isPresent()) {
+//						Industry industry = industryOptional.get();
+//						responseDTO.setImage(Base64.getEncoder().encode(industry.getImage()));
+//					}
+//
+//					List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
+//					List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();
+//					for (PlatformPermanentDetail platformDetail : platformDetails) {
+//						PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
+//						platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
+//						platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
+//						List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+//
+//						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId,
+//								MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+//						platformDetailDTO.setOutputWebModelList(outputWebModelList); // Set outputWebModelList in DTO
+//
+//
+//						platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
+//						platformDetailDTO.setDailySalary(platformDetail.getDailySalary());
+//						platformDetailDTO.setFilmCount(platformDetail.getFilmCount());
+//						platformDetailDTO.setNetWorth(platformDetail.getNetWorth());
+//						Optional<Platform> platformOptional = platformPermanentDetailRepository
+//								.findByPlatformName(platformDetail.getPlatformName());
+//						if (platformOptional.isPresent()) {
+//							Platform platform = platformOptional.get();
+//							platformDetailDTO.setImage(Base64.getEncoder().encode(platform.getImage()));
+//						}
+//
+//						List<ProfessionPermanentDetail> professionDetails = platformDetail.getProfessionDetails();
+//						List<ProfessionDetailDTO> professionDetailDTOList = new ArrayList<>();
+//						for (ProfessionPermanentDetail professionDetail : professionDetails) {
+//							ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
+//							professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
+//							professionDetailDTO.setSubProfessionName(professionDetail.getSubProfessionName());
+//							professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
+//							professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
+//
+//							Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository
+//									.findByProfesssionName(professionDetail.getProfessionName());
+//							if (filmProfessionOptional.isPresent()) {
+//								FilmProfession filmProfession = filmProfessionOptional.get();
+//								professionDetailDTO.setImage(Base64.getEncoder().encode(filmProfession.getImage()));
+//
+//							}
+//							professionDetailDTOList.add(professionDetailDTO);
+//						}
+//						platformDetailDTO.setProfessionDetails(professionDetailDTOList);
+//						platformDetailDTOList.add(platformDetailDTO);
+//					}
+//					responseDTO.setPlatformDetails(platformDetailDTOList);
+//					responseDTOList.add(responseDTO);
+//				}
+//				return ResponseEntity.ok(responseDTOList);
+//			}
+//		} catch (Exception e) {
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body("Failed to retrieve industry user permanent details.");
+//		}
+//	}
 
 //	@Override
 //	public ResponseEntity<?> updateIndustryUserPermanentDetails(List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModel) {

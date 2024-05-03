@@ -22,6 +22,9 @@ public interface PlatformPermanentDetailRepository extends JpaRepository<Platfor
 	@Modifying
 	@Transactional
 	@Query("select ppd.ppdPlatformId from PlatformPermanentDetail ppd where ppd.industryUserPermanentDetails.iupdId =:iupdId")
-	List<Integer> findByiupdId(Integer iupdId); 
+	List<Integer> findByiupdId(Integer iupdId);
+
+	@Query("select p from PlatformPermanentDetail p where p.userId = :userId")
+	List<PlatformPermanentDetail> findByUserId(Integer userId); 
 	
 }

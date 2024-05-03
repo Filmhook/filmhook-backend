@@ -22,6 +22,7 @@ public class ShareWebModel {
     private Date createdOn;
     private Integer updatedBy;
     private Date updatedOn;
+    private String postUrl;  
 
 
 }

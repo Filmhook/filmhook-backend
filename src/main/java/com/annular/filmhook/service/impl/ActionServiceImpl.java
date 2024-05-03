@@ -157,7 +157,9 @@ public class ActionServiceImpl implements ActionService {
 			Share share = new Share();
 			share.setStatus(true);
 			share.setUserId(userDetails.userInfo().getId());
-			share.setPostId(shareWebModel.getPostId());
+			//share.setPostId(shareWebModel.getPostId());
+			share.setPostUrl(shareWebModel.getPostUrl());
+			
 			Share shareData = shareRepository.save(share);
 			return ResponseEntity.ok(new Response(1, "shared successfully", shareData));
 		} catch (Exception e) {
