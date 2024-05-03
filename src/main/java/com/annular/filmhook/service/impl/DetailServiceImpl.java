@@ -371,85 +371,19 @@ public class DetailServiceImpl implements DetailService {
 	}
 
 	@Override
-	public FileOutputWebModel saveIndustryUserFiles(IndustryFileInputWebModel inputFileData) {
-		FileOutputWebModel fileOutputWebModel = null;
+	public List<FileOutputWebModel> saveIndustryUserFiles(IndustryFileInputWebModel inputFileData) {
+		List<FileOutputWebModel> fileOutputWebModelList = null;
 		try {
 			Optional<User> userFromDB = userService.getUser(inputFileData.getUserId());
-			System.out.println(userFromDB.get().getUserId());
 			if (userFromDB.isPresent()) {
-				logger.info("User found: " + userFromDB.get().getName());
-
-				// 1. Save media files in MySQL
-				fileOutputWebModel = userMediaFileService.saveMediaFiles(inputFileData, userFromDB.get());
-
-				// 2. Upload files to S3
-				uploadToS3(inputFileData.getImages(), fileOutputWebModel);
-				uploadToS3(inputFileData.getVideos(), fileOutputWebModel);
-				// Upload either PAN card or Aadhar card if available
-				if (inputFileData.getPanCard() != null) {
-					uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
-				} else if (inputFileData.getAdharCard() != null) {
-					uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
-				} else {
-					logger.error("Neither PAN card nor Aadhar card is provided for upload to S3.");
-				}
+                logger.info("User found: {}", userFromDB.get().getName());
+				fileOutputWebModelList = userMediaFileService.saveMediaFiles(inputFileData, userFromDB.get()); // Save media files in MySQL
 			}
-//				uploadToS3(inputFileData.getPanCard(), fileOutputWebModel);
-//				uploadToS3(inputFileData.getAdharCard(), fileOutputWebModel);
-
 		} catch (Exception e) {
 			logger.error("Error at saveIndustryUserFiles(): ", e);
 			e.printStackTrace();
 		}
-		return fileOutputWebModel;
-	}
-
-	private void uploadToS3(MultipartFile file, FileOutputWebModel fileOutputWebModel) {
-		if (file != null && fileOutputWebModel != null) {
-			try {
-				// Check if the file is not null before accessing its properties
-				if (!file.isEmpty() && file.getOriginalFilename() != null) {
-					File tempFile = File.createTempFile(fileOutputWebModel.getFileId(), null);
-					FileUtil.convertMultiPartFileToFile(file, tempFile);
-					String response = fileUtil.uploadFile(tempFile, fileOutputWebModel.getFilePath());
-					logger.info("File saved in S3 response: " + response);
-					if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-						tempFile.delete(); // deleting temp file
-					}
-				} else {
-					logger.error("Error: Null or empty file provided for upload to S3.");
-				}
-			} catch (Exception e) {
-				logger.error("Error uploading file to S3: ", e);
-				e.printStackTrace();
-			}
-		} else {
-			logger.error("Error: Null file or fileOutputWebModel provided for upload to S3.");
-		}
-	}
-
-	private void uploadToS3(MultipartFile[] files, FileOutputWebModel fileOutputWebModel) {
-		if (files != null && files.length > 0) {
-			for (MultipartFile file : files) {
-				try {
-					if (fileOutputWebModel == null) {
-						logger.error("Error: fileOutputWebModel is null during file upload to S3.");
-						return;
-					}
-
-					File tempFile = File.createTempFile(fileOutputWebModel.getFileId(), null);
-					FileUtil.convertMultiPartFileToFile(file, tempFile);
-					String response = fileUtil.uploadFile(tempFile, fileOutputWebModel.getFilePath());
-					logger.info("File saved in S3 response: " + response);
-					if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-						tempFile.delete(); // deleting temp file
-					}
-				} catch (Exception e) {
-					logger.error("Error uploading file to S3: ", e);
-					e.printStackTrace();
-				}
-			}
-		}
+		return fileOutputWebModelList;
 	}
 
 	@Override

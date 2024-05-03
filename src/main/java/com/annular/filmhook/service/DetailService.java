@@ -23,7 +23,7 @@ public interface DetailService {
 	ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId,
 			List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
 
-	FileOutputWebModel saveIndustryUserFiles(IndustryFileInputWebModel inputFileData);
+	List<FileOutputWebModel> saveIndustryUserFiles(IndustryFileInputWebModel inputFileData);
 
 	ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 

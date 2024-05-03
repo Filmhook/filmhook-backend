@@ -4,13 +4,15 @@ import org.springframework.web.multipart.MultipartFile;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class IndustryFileInputWebModel {
 	
 	private Integer userId;
 	private String category;
-	private MultipartFile[] images;
-	private MultipartFile[] videos;
+	private List<MultipartFile> images;
+	private List<MultipartFile> videos;
 	private MultipartFile panCard;
 	private MultipartFile adharCard;
 

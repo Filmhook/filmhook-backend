@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,27 +58,24 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
         try {
             // 1. Save first in MySQL
-            List<MediaFiles> mediaFilesList = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
-            logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesList.size());
-            mediaFilesRepository.saveAllAndFlush(mediaFilesList);
+            Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
+            logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
 
             // 2. Upload into S3
-            logger.info("User Input files list size :- [{}]", fileInputWebModel.getFiles().size());
-            fileInputWebModel.getFiles().forEach(inputFile -> mediaFilesList.stream()
-                    .filter(mediaFile -> mediaFile.getFileName().equals(inputFile.getOriginalFilename()))
-                    .forEach(mediaFile -> {
-                        try {
-                            File file = File.createTempFile(mediaFile.getFileId(), null);
-                            FileUtil.convertMultiPartFileToFile(inputFile, file);
-                            String response = fileUtil.uploadFile(file, mediaFile.getFilePath() + mediaFile.getFileType());
-                            if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-                                file.delete(); // deleting temp file
-                                fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
-                            }
-                        } catch (IOException e) {
-                            logger.error("Error at saveMediaFiles()...", e);
-                        }
-                    }));
+            mediaFilesMap.forEach((mediaFile, inputFile) -> {
+                mediaFilesRepository.saveAndFlush(mediaFile);
+                try {
+                    File file = File.createTempFile(mediaFile.getFileId(), null);
+                    FileUtil.convertMultiPartFileToFile(inputFile, file);
+                    String response = fileUtil.uploadFile(file, mediaFile.getFilePath() + mediaFile.getFileType());
+                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+                        file.delete(); // deleting temp file
+                        fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
+                    }
+                } catch (IOException e) {
+                    logger.error("Error at saveMediaFiles()...", e);
+                }
+            });
         } catch (Exception e) {
             logger.error("Error at saveMediaFiles()...", e);
             e.printStackTrace();
@@ -85,8 +83,8 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         return fileOutputWebModelList;
     }
 
-    private List<MediaFiles> prepareMultipleMediaFilesData(FileInputWebModel fileInput, User user) {
-        List<MediaFiles> mediaFilesList = new ArrayList<>();
+    private Map<MediaFiles, MultipartFile> prepareMultipleMediaFilesData(FileInputWebModel fileInput, User user) {
+        Map<MediaFiles, MultipartFile> mediaFilesMap = new HashMap<>();
         try {
             fileInput.getFiles().stream()
                     .filter(Objects::nonNull)
@@ -122,12 +120,12 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         } catch (Exception e) {
                             logger.error("Error saving MultiMediaFiles", e);
                         }
-                        mediaFilesList.add(mediaFiles);
+                        mediaFilesMap.put(mediaFiles, file);
                     });
         } catch (Exception e) {
             logger.error("Error occurred at prepareMultipleMediaFilesData()...");
         }
-        return mediaFilesList;
+        return mediaFilesMap;
     }
 
     @Override

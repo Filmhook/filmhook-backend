@@ -6,6 +6,10 @@ public enum MediaFileCategory {
     Stories,
     Post,
     Audition,
-    Project
+    Project,
+    Image,
+    Video,
+    PanCard,
+    AadhaarCard
 
 }
