@@ -1,13 +1,13 @@
 package com.annular.filmhook.controller;
 
 import org.slf4j.Logger;
-
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.AuditionService;
+import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
 //import com.annular.filmhook.service.impl.KafkaProducer;
 import com.annular.filmhook.webmodel.AuditionWebModel;
 
@@ -54,6 +55,19 @@ public class AuditionController {
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
     }
+    
+    @PostMapping("/auditionAcceptance")
+    public ResponseEntity<?> auditionAcceptance(@RequestBody AuditionAcceptanceWebModel acceptanceWebModel) {
+        try {
+        	logger.info("Audition Acceptance to be saved :- " + acceptanceWebModel.isAuditionAccepted());
+			return auditionService.auditionAcceptance(acceptanceWebModel);
+		} catch (Exception e) {
+			logger.error("Save Audition Acceptance Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(200, "Success", ""));
+    }
+    
     
     @RequestMapping(path = "/saveAuditions", method = RequestMethod.POST)
 	public ResponseEntity<?> saveAsdudition() {

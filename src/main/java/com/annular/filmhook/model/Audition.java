@@ -54,7 +54,7 @@ public class Audition {
 	private Date auditionExpireOn; 
 	
 	@Column(name = "audition_posted_by")
-	private Integer auditionPostedBy;
+	private String auditionPostedBy;
 	
 	@OneToMany(mappedBy = "audition")
     private List<AuditionRoles> auditionRoles;

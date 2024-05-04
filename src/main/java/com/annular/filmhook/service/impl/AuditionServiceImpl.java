@@ -15,14 +15,17 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Audition;
+import com.annular.filmhook.model.AuditionAcceptanceDetails;
 import com.annular.filmhook.model.AuditionRoles;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.AuditionAcceptanceRepository;
 import com.annular.filmhook.repository.AuditionRepository;
 import com.annular.filmhook.repository.AuditionRolesRepository;
 import com.annular.filmhook.service.AuditionService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
 import com.annular.filmhook.webmodel.AuditionRolesWebModel;
 import com.annular.filmhook.webmodel.AuditionWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -46,9 +49,12 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Autowired
 	AuditionRolesRepository auditionRolesRepository;
+	
+	@Autowired
+	AuditionAcceptanceRepository acceptanceRepository;
 
-//	@Autowired
-//	KafkaProducer kafkaProducer;
+	//	@Autowired
+	//	KafkaProducer kafkaProducer;
 
 	@Override
 	public ResponseEntity<?> saveAudition(AuditionWebModel auditionWebModel) {
@@ -56,7 +62,7 @@ public class AuditionServiceImpl implements AuditionService {
 		try {
 			logger.info("Save audition method start");
 
-			Optional<User> userFromDB = userService.getUser(auditionWebModel.getAuditionPostedBy());
+			Optional<User> userFromDB = userService.getUser(auditionWebModel.getAuditionCreatedBy());
 			Audition audition = new Audition();
 
 			AuditionRoles auditionRoles = new AuditionRoles();
@@ -65,8 +71,8 @@ public class AuditionServiceImpl implements AuditionService {
 			audition.setAuditionExperience(auditionWebModel.getAuditionExperience());
 			audition.setAuditionCategory(auditionWebModel.getAuditionCategory());
 			audition.setAuditionExpireOn(auditionWebModel.getAuditionExpireOn());
-			audition.setAuditionPostedBy(auditionWebModel.getAuditionPostedBy());
-			audition.setAuditionCreatedBy(auditionWebModel.getAuditionPostedBy());
+			audition.setAuditionPostedBy(userFromDB.get().getFilmHookCode());
+			audition.setAuditionCreatedBy(auditionWebModel.getAuditionCreatedBy());
 			audition.setAuditionAddress(auditionWebModel.getAuditionAddress());
 			audition.setAuditionMessage(auditionWebModel.getAuditionMessage());
 			audition.setAuditionIsactive(true);
@@ -112,7 +118,7 @@ public class AuditionServiceImpl implements AuditionService {
 		try {
 			logger.info("get audition by category method start");
 
-//			List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId);
+			//			List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId);
 			List<Audition> auditions = auditionRepository.findByAuditionTitle(auditionTitle);
 
 			if(auditions.size()>0) {
@@ -130,6 +136,8 @@ public class AuditionServiceImpl implements AuditionService {
 					auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
 					auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
 					auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
+					auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
+					auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
 
 					if(audition.getAuditionRoles().size()>0) {
 						List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
@@ -169,6 +177,36 @@ public class AuditionServiceImpl implements AuditionService {
 					.body(new Response(-1, "Fail", e.getMessage()));
 		}
 		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details fetched successfully", response));
+	}
+
+	@Override
+	public ResponseEntity<?> auditionAcceptance(AuditionAcceptanceWebModel acceptanceWebModel) {
+		HashMap<String, Object> response = new HashMap<String, Object>();
+		try {
+			logger.info("Save audition acceptance method start");
+			
+			Optional<Audition> audition = auditionRepository.findById(acceptanceWebModel.getAuditionRefId());
+			
+			if(audition.isPresent()) {
+				AuditionAcceptanceDetails acceptanceDetails = new AuditionAcceptanceDetails();
+
+				acceptanceDetails.setAuditionAccepted(acceptanceWebModel.isAuditionAccepted());
+				acceptanceDetails.setAuditionAcceptanceUser(acceptanceWebModel.getAuditionAcceptanceUser());
+				acceptanceDetails.setAuditionRefId(acceptanceWebModel.getAuditionRefId());
+				acceptanceDetails.setAuditionAcceptanceCreatedBy(acceptanceWebModel.getAuditionAcceptanceUser());
+				
+				acceptanceDetails = acceptanceRepository.save(acceptanceDetails);
+				response.put("Audition acceptance", acceptanceDetails);
+			}
+			
+			
+		} catch (Exception e) {
+			logger.error("Save audition acceptance Method Exception...", e);
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Fail", e.getMessage()));
+		}
+		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition acceptance details saved successfully", response));	
 	}
 
 

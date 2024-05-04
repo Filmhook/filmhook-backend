@@ -22,7 +22,13 @@ public class AuditionWebModel {
 
 	private Date auditionExpireOn; 
 
-	private Integer auditionPostedBy;
+	private String auditionPostedBy;
+	
+	private Integer auditionAttendedCount;
+	
+	private Integer auditionIgnoredCount;
+	
+	private Integer auditionCreatedBy;
 
 //	private List<AuditionRolesWebModel> auditionRoles;
 	
