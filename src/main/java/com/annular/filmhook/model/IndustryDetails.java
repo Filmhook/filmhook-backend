@@ -36,5 +36,8 @@ public class IndustryDetails {
 	
 	@Column(name = "industry_name")
 	private String industry_name;
+	
+	@Column(name = "userId")
+	private Integer userId;
 
 }

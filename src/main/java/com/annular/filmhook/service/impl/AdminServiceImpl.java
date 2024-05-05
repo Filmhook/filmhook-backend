@@ -17,11 +17,36 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.FilmProfession;
+import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryMediaFiles;
+import com.annular.filmhook.model.IndustryUserPermanentDetails;
+import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.Platform;
+import com.annular.filmhook.model.PlatformPermanentDetail;
+import com.annular.filmhook.model.ProfessionPermanentDetail;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
+import com.annular.filmhook.repository.IndustryRepository;
+import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
+import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
+import com.annular.filmhook.repository.PlatformDetailRepository;
+import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
+import com.annular.filmhook.repository.PlatformRepository;
+import com.annular.filmhook.repository.ProfessionDetailRepository;
+import com.annular.filmhook.repository.ProfessionRepository;
+import com.annular.filmhook.repository.SubProfesssionRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.service.MediaFilesService;
+import com.annular.filmhook.service.UserMediaFilesService;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.IndustryUserResponseDTO;
+import com.annular.filmhook.webmodel.PlatformDetailDTO;
+import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 @Service
@@ -29,16 +54,50 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	UserRepository userRepository;
-	
+
 	@Autowired
 	IndustryMediaFileRepository industryMediaFileRepository;
+	
+	@Autowired
+	private IndustryRepository industryRepository;
 
+	@Autowired
+	MediaFilesService mediaFilesService;
+
+	@Autowired
+	UserMediaFilesService userMediaFilesService;
+
+	@Autowired
+	private PlatformRepository platformRepository;
+
+	@Autowired
+	private PlatformPermanentDetailRepository platformPermanentDetailRepository;
+
+	@Autowired
+	private IndustryUserPermanentDetailsRepository industryUserPermanentDetailsRepository;
+
+	@Autowired
+	private ProfessionRepository professionRepository;
+
+	@Autowired
+	private IndustryTemporaryDetailRepository industryTemporaryDetailsRepository;
+
+	@Autowired
+	private SubProfesssionRepository subProfessionRepository;
+
+	@Autowired
+	FileUtil fileUtil;
+
+	@Autowired
+	UserService userService;
+
+	@Autowired
+	FilmProfessionRepository filmProfessionRepository;
 	public static final Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
 
 	@Override
 	public ResponseEntity<?> userRegister(UserWebModel userWebModel) {
-		
-		
+
 		try {
 			logger.info("Admin Register method start");
 			Optional<User> userData = userRepository.findByEmailIdAndUserType(userWebModel.getEmail(),
@@ -56,10 +115,8 @@ public class AdminServiceImpl implements AdminService {
 
 				// Save the user entity in the database
 				userRepository.save(user);
-				 return ResponseEntity.status(HttpStatus.OK)
-		                    .body(new Response(1, "Profile Created Successfully", user));
+				return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Profile Created Successfully", user));
 
-				
 			} else {
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
 						new Response(-1, "User already exists", "User with this email and userType already exists"));
@@ -70,7 +127,7 @@ public class AdminServiceImpl implements AdminService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Failed to create profile", e.getMessage()));
 		}
-		
+
 	}
 
 	@Override
@@ -192,43 +249,118 @@ public class AdminServiceImpl implements AdminService {
 
 	@Override
 	public Response getAllUnverifiedIndustrialUsers() {
-	    List<IndustryMediaFiles> unverifiedIndustrialUsers = industryMediaFileRepository.getAllUnverifiedIndustrialUsers();
+		List<IndustryMediaFiles> unverifiedIndustrialUsers = industryMediaFileRepository
+				.getAllUnverifiedIndustrialUsers();
 
-	    Set<Integer> userIds = new HashSet<>();
-	    List<Map<String, Object>> responseList = new ArrayList<>();
-	    
-	    // Collect unique user IDs
-	    for (IndustryMediaFiles user : unverifiedIndustrialUsers) {
-	        User userEntity = user.getUser();
-	        if (userEntity != null) {
-	            userIds.add(userEntity.getUserId());
-	        }
-	    }
+		Set<Integer> userIds = new HashSet<>();
+		List<Map<String, Object>> responseList = new ArrayList<>();
 
-	    // Fetch user details for each user ID
-	    for (int userId : userIds) {
-	        User user = userRepository.findById(userId).orElse(null);
-	        if (user != null) {
-	            Map<String, Object> userMap = new HashMap<>();
-	            userMap.put("userId", userId);
-	            userMap.put("name", user.getName()); // Assuming 'name' is a field in the User entity
-	            // Add other fields you want to include in the response
-	            // userMap.put("email", user.getEmail());
-	            // Add other fields as needed
-	            responseList.add(userMap);
-	        }
-	    }
+		// Collect unique user IDs
+		for (IndustryMediaFiles user : unverifiedIndustrialUsers) {
+			User userEntity = user.getUser();
+			if (userEntity != null) {
+				userIds.add(userEntity.getUserId());
+			}
+		}
 
-	    if (!responseList.isEmpty()) {
-	        return new Response(-1, "Success", responseList);
-	    } else {
-	        return new Response(-1, "There are no unverified users found.", "");
-	    }
+		// Fetch user details for each user ID
+		for (int userId : userIds) {
+			User user = userRepository.findById(userId).orElse(null);
+			if (user != null) {
+				Map<String, Object> userMap = new HashMap<>();
+				userMap.put("userId", userId);
+				userMap.put("name", user.getName()); // Assuming 'name' is a field in the User entity
+				// Add other fields you want to include in the response
+				// userMap.put("email", user.getEmail());
+				// Add other fields as needed
+				responseList.add(userMap);
+			}
+		}
+
+		if (!responseList.isEmpty()) {
+			return new Response(-1, "Success", responseList);
+		} else {
+			return new Response(-1, "There are no unverified users found.", "");
+		}
 	}
 
+	@Override
+	public ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId) {
+		try {
+			List<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository
+					.findByUserId(userId);
+			if (userPermanentDetails.isEmpty()) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body("User permanent details not found for user id: " + userId);
+			} else {
+				List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
+				for (IndustryUserPermanentDetails details : userPermanentDetails) {
+					IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
+					responseDTO.setIndustriesName(details.getIndustriesName());
+					responseDTO.setIupdId(details.getIupdId());
 
+					System.out.println("<<<<<<<<<<<<<<<<" + details.getIndustriesName());
+//					Optional<Industry> industryOptional = industryRepository
+//							.findByIndustryName(details.getIndustriesName());
+//
+//					if (industryOptional.isPresent()) {
+//						Industry industry = industryOptional.get();
+//						responseDTO.setImage(Base64.getEncoder().encode(industry.getImage()));
+//					}
 
+					List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
+					List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();
+					for (PlatformPermanentDetail platformDetail : platformDetails) {
+						PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
+						platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
+						platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
+						List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+
+						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId,
+								MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+						platformDetailDTO.setOutputWebModelList(outputWebModelList); // Set outputWebModelList in DTO
+
+						platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
+						platformDetailDTO.setDailySalary(platformDetail.getDailySalary());
+						platformDetailDTO.setFilmCount(platformDetail.getFilmCount());
+						platformDetailDTO.setNetWorth(platformDetail.getNetWorth());
+//						Optional<Platform> platformOptional = platformPermanentDetailRepository
+//								.findByPlatformName(platformDetail.getPlatformName());
+//						if (platformOptional.isPresent()) {
+//							Platform platform = platformOptional.get();
+//							platformDetailDTO.setImage(Base64.getEncoder().encode(platform.getImage()));
+//						}
+
+						List<ProfessionPermanentDetail> professionDetails = platformDetail.getProfessionDetails();
+						List<ProfessionDetailDTO> professionDetailDTOList = new ArrayList<>();
+						for (ProfessionPermanentDetail professionDetail : professionDetails) {
+							ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
+							professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
+							professionDetailDTO.setSubProfessionName(professionDetail.getSubProfessionName());
+							professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
+							professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
+
+							Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository
+									.findByProfesssionName(professionDetail.getProfessionName());
+							if (filmProfessionOptional.isPresent()) {
+								FilmProfession filmProfession = filmProfessionOptional.get();
+								//professionDetailDTO.setImage(Base64.getEncoder().encode(filmProfession.getImage()));
+
+							}
+							professionDetailDTOList.add(professionDetailDTO);
+						}
+						platformDetailDTO.setProfessionDetails(professionDetailDTOList);
+						platformDetailDTOList.add(platformDetailDTO);
+					}
+					responseDTO.setPlatformDetails(platformDetailDTOList);
+					responseDTOList.add(responseDTO);
+				}
+				return ResponseEntity.ok(responseDTOList);
+			}
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Failed to retrieve industry user permanent details.");
+		}
+	}
 
 }
-
-

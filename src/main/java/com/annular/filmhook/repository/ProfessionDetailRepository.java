@@ -22,4 +22,9 @@ public interface ProfessionDetailRepository extends JpaRepository<ProfesssionDet
     @Query("DELETE FROM ProfesssionDetails pd WHERE pd.professionTemporaryDetailId = :temporaryId")
 	void deleteByProfessionTemporaryDetailId(Integer temporaryId);
 
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM ProfesssionDetails i WHERE i.userId = :userId")
+	void deleteByUserId(Integer userId);
+
 }

@@ -74,7 +74,7 @@ public class WebSecurityConfig {
 										"/user/login","/user/logins","/Film/getProfessionList","/Film/getProfessionMapList","/industryUser/getTemporaryDuplicateDetails",
 										"/user/refreshToken","/user/forgotPassword","/admin/adminRegister","/admin/updateRegister",
 										"/user/changeUserPassword","/user/verifyUser","/admin/deleteRegister","/admin/getRegister",
-										"/user/verify","/user/resendOtp","/user/verifyForgotOtp",
+										"/user/verify","/user/resendOtp","/user/verifyForgotOtp","/industryUser/addIndustryUserPermanentDetails",
 										"/api/printName","/industryUser/getDetails","/industryUser/addTemporaryDetails",
 										"/industryUser/getTemporaryDetails","/industryUser/addIndustryUserPermanentDetails",
 										"/industryUser/saveIndustryUserFiles","/industryUser/updateTemporaryDetails")

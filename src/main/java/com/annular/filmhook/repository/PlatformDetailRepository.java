@@ -20,4 +20,9 @@ public interface PlatformDetailRepository extends JpaRepository<PlatformDetails,
     @Query("DELETE FROM PlatformDetails pd WHERE pd.integerTemporaryDetailId = :temporaryId")
 	void deleteByIntegerTemporaryDetailId(Integer temporaryId);
 
+	@Transactional
+	@Modifying
+	@Query("DELETE FROM PlatformDetails i WHERE i.userId = :userId")
+	void deleteByUserId(Integer userId);
+
 }

@@ -1,6 +1,7 @@
 package com.annular.filmhook.webmodel;
 
 import java.util.Date;
+import java.util.List;
 
 import lombok.Data;
 
@@ -22,8 +23,8 @@ public class PromoteWebModel {
 	private Integer cgst;
 	private Integer sgst;
 	private Integer price;
-	private String country;
-	private Integer userId;
+    private Integer userId;
 	private Integer multimediaId;
+	private List<String> country;
 
 }

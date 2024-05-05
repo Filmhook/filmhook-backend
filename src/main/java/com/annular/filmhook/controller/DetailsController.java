@@ -110,6 +110,20 @@ public class DetailsController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    
+
+    @PostMapping("/updatePermanentDetails")
+    public ResponseEntity<?> updateIndustryUserPermanentDetails(@RequestParam Integer userId,
+                                                             @RequestBody List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+        try {
+            logger.info("updateIndustryUserPermanentDetails controller start");
+            return detailService.updateIndustryUserPermanentDetails(userId, industryUserPermanentDetailWebModels);
+        } catch (Exception e) {
+            logger.error("updateIndustryUserPermanentDetails Method Exception -> ", e);
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
 
     @PostMapping("/getIndustryUserPermanentDetails")
     public ResponseEntity<?> getIndustryUserPermanentDetails(@RequestParam Integer userId) {

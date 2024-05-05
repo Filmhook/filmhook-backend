@@ -34,4 +34,6 @@ public class ProfesssionDetails {
 	@Column(name = "profession_name")
 	private String professionname;
 
+	@Column(name ="userId")
+	private Integer userId;
 }

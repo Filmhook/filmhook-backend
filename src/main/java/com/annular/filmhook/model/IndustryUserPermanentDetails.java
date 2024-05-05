@@ -67,4 +67,9 @@ public class IndustryUserPermanentDetails {
 		return null;
 	}
 
+	public Industry getIndustry() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

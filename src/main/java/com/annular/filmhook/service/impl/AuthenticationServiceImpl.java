@@ -187,7 +187,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	        MimeMessage message = javaMailSender.createMimeMessage();
 	        MimeMessageHelper helper = new MimeMessageHelper(message);
-	        helper.setFrom("yaswanthshankar2705@gmail.com", senderName);
+	        helper.setFrom("filmhookapps@gmail", senderName);
 	        helper.setTo(user.getEmail());
 	        helper.setSubject(subject);
 	        helper.setText(mailContent, true);
@@ -310,7 +310,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	            MimeMessage message = javaMailSender.createMimeMessage();
 	            MimeMessageHelper helper = new MimeMessageHelper(message);
-	            helper.setFrom("yaswanthshankar2705@gmail.com", senderName);
+	            helper.setFrom("filmhookapps@gmail", senderName);
 	            helper.setTo(user.getEmail());
 	            helper.setSubject(subject);
 	            helper.setText(mailContent, true);

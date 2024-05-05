@@ -39,4 +39,7 @@ public interface DetailService {
 
 	ResponseEntity<?> updateIndustryUserPermanentDetails(PlatformDetailDTO platformDetailDTO);
 
+	ResponseEntity<?> updateIndustryUserPermanentDetails(Integer userId,
+			List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
+
 }

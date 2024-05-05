@@ -19,4 +19,6 @@ public interface AdminService {
 
 	Response getAllUnverifiedIndustrialUsers();
 
+	ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId);
+
 }

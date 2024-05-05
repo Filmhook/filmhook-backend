@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
@@ -98,6 +99,19 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+	
+
+    @PostMapping("/getAdminIndustryUserPermanentDetails")
+    public ResponseEntity<?> getIndustryUserPermanentDetails(@RequestParam Integer userId) {
+        try {
+            logger.info("getAdminIndustryUserPermanentDetails controller start");
+            return adminService.getIndustryUserPermanentDetails(userId);
+        } catch (Exception e) {
+            logger.error("getIndustryUserPermanentDetails Method Exception -> ", e);
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
 
 
 }

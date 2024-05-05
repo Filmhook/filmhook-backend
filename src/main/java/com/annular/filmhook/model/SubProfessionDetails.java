@@ -33,5 +33,8 @@ public class SubProfessionDetails {
 	
 	@Column(name = "sub_Profession_name")
 	private String subProfessionName;
+	
+	@Column(name = "userId")
+	private Integer userId;
 
 }

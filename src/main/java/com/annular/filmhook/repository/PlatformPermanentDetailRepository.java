@@ -25,6 +25,10 @@ public interface PlatformPermanentDetailRepository extends JpaRepository<Platfor
 	List<Integer> findByiupdId(Integer iupdId);
 
 	@Query("select p from PlatformPermanentDetail p where p.userId = :userId")
-	List<PlatformPermanentDetail> findByUserId(Integer userId); 
+	List<PlatformPermanentDetail> findByUserId(Integer userId);
+
+	@Transactional
+    @Query("DELETE FROM PlatformPermanentDetail p WHERE p.industryUserPermanentDetails.id = :iupdId")
+	void deleteByIndustryUserPermanentDetailsId(Integer iupdId); 
 	
 }

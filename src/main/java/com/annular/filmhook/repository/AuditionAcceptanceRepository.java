@@ -9,10 +9,10 @@ import com.annular.filmhook.model.AuditionAcceptanceDetails;
 @Repository
 public interface AuditionAcceptanceRepository extends JpaRepository<AuditionAcceptanceDetails, Integer>{
 
-	@Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = 'true'")
+	@Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = true")
 	Integer getAttendedCount(Integer auditionId);
 
-	@Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = 'false'")
+	@Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = false")
 	Integer getIgnoredCount(Integer auditionId);
 
 }

@@ -1,5 +1,7 @@
 package com.annular.filmhook.service.impl;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +48,10 @@ public class PromoteServiceImpl implements PromoteService {
 			promote.setCreatedBy(userDetails.userInfo().getId());
 			promote.setStatus(true);
 //			promote.setStartDate(promoteWebModel.getStartDate());
-			promote.setCountry(promoteWebModel.getCountry());
+			//promote.setCountry(promoteWebModel.getCountry());
+			 if (promoteWebModel.getCountry() != null) {
+	                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+	            }
 			promote.setUserId(userDetails.userInfo().getId());
 			promote.setMultimediaId(promoteWebModel.getMultimediaId());
 			
@@ -86,7 +91,10 @@ public class PromoteServiceImpl implements PromoteService {
 				promote.setTaxFee(promoteWebModel.getTaxFee());
 				promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
 				promote.setSgst(promoteWebModel.getSgst());
-				promote.setCountry(promoteWebModel.getCountry());
+				//promote.setCountry(promoteWebModel.getCountry());
+				 if (promoteWebModel.getCountry() != null) {
+		                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+		            }
 				promote.setUpdatedBy(userDetails.userInfo().getId());
 				promote.setUserId(userDetails.userInfo().getId());
 				promote.setMultimediaId(promoteWebModel.getMultimediaId());

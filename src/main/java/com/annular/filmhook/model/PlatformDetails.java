@@ -33,5 +33,8 @@ public class PlatformDetails {
 	
 	@Column(name = "platform_name")
 	private String platformName;
+	
+	@Column(name = "userId")
+	private Integer userId;
 
 }
