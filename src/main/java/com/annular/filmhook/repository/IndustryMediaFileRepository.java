@@ -1,6 +1,7 @@
 package com.annular.filmhook.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,5 +17,8 @@ public interface IndustryMediaFileRepository extends JpaRepository<IndustryMedia
 
 	 @Query("SELECT imf FROM IndustryMediaFiles imf WHERE imf.user IS NULL OR imf.status=true")
 	    List<IndustryMediaFiles> getAllUnverifiedIndustrialUsers();
+
+	 @Query("Select m from IndustryMediaFiles m where m.user.userId=:userId ")
+		List<IndustryMediaFiles> findByUserId(Integer userId);
 
 }

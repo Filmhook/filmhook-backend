@@ -5,6 +5,8 @@ import com.annular.filmhook.model.Story;
 import com.annular.filmhook.service.StoriesService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
+import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,4 +118,20 @@ public class StoriesController {
         }
         return new Response(-1, "Story not found...", null);
     }
+    
+    @GetMapping("/getUserIdAndName")
+    public Response getUserIdAndName() {
+        try {
+            List<UserIdAndNameWebModel> storyList = storiesService.getUserIdAndName();
+            if (storyList != null)
+                return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
+        } catch (Exception e) {
+            logger.error("Error at getAllUserStories()...", e);
+        }
+        return new Response(-1, "Story not found...", null);
+    }
+    
+
+    
+
 }

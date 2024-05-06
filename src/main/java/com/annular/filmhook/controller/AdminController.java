@@ -112,6 +112,18 @@ public class AdminController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    
+    @GetMapping("changeStatusUnverifiedIndustrialUsers")
+	public Response changeStatusUnverifiedIndustrialUsers(@RequestParam("userId") Integer userId) {
+		try {
+			logger.info("changeStatusUnverifiedIndustrialUsers controller start");
+			return adminService.changeStatusUnverifiedIndustrialUsers(userId);
+		} catch (Exception e) {
+			logger.info("changeStatusUnverifiedIndustrialUsers Method Exception" + e);
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
 
 
 }

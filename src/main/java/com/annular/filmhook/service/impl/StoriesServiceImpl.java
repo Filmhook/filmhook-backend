@@ -11,6 +11,7 @@ import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
+import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,4 +196,18 @@ public class StoriesServiceImpl implements StoriesService {
             mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.Stories, storyIdList); // Deactivating the MediaFiles table Records and S3 as well
         }
     }
+
+    @Override
+    public List<UserIdAndNameWebModel> getUserIdAndName() {
+        List<Story> storyList = storyRepository.findAll(); // Fetch all stories
+        Map<Integer, String> userIdToNameMap = storyList.stream()
+                .collect(Collectors.toMap(story -> story.getUser().getUserId(), 
+                                          story -> story.getUser().getName(),
+                                          (existing, replacement) -> existing)); // Keep existing name in case of duplicates
+
+        return userIdToNameMap.entrySet().stream()
+                .map(entry -> new UserIdAndNameWebModel(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
 }

@@ -57,7 +57,7 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	IndustryMediaFileRepository industryMediaFileRepository;
-	
+
 	@Autowired
 	private IndustryRepository industryRepository;
 
@@ -344,7 +344,7 @@ public class AdminServiceImpl implements AdminService {
 									.findByProfesssionName(professionDetail.getProfessionName());
 							if (filmProfessionOptional.isPresent()) {
 								FilmProfession filmProfession = filmProfessionOptional.get();
-								//professionDetailDTO.setImage(Base64.getEncoder().encode(filmProfession.getImage()));
+								// professionDetailDTO.setImage(Base64.getEncoder().encode(filmProfession.getImage()));
 
 							}
 							professionDetailDTOList.add(professionDetailDTO);
@@ -362,5 +362,34 @@ public class AdminServiceImpl implements AdminService {
 					.body("Failed to retrieve industry user permanent details.");
 		}
 	}
+
+	@Override
+	public Response changeStatusUnverifiedIndustrialUsers(Integer userId) {
+	    List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userId);
+
+	    // Iterate over the list and set status to false
+	    for (IndustryMediaFiles industryMediaFile : industryDbData) {
+	        industryMediaFile.setStatus(false);
+	        // You may perform additional operations if needed
+	    }
+
+	    // Save the updated records back to the database
+	    industryMediaFileRepository.saveAll(industryDbData);
+
+	    // Update the userType in the User table
+	    Optional<User> userOptional = userRepository.findById(userId);
+	    if (userOptional.isPresent()) {
+	        User user = userOptional.get();
+	        user.setUserType("IndustryUser");
+	        userRepository.save(user);
+	    } else {
+	        return new Response(-1, "User not found", null); // Return an error response if user is not found
+	    }
+
+	    // Return a success response
+	    return new Response(1, "Status updated successfully", industryDbData);
+	}
+
+
 
 }

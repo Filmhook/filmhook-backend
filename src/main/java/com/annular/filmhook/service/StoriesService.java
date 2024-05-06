@@ -3,6 +3,8 @@ package com.annular.filmhook.service;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
+import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
+
 import org.springframework.core.io.Resource;
 
 import java.util.List;
@@ -19,4 +21,5 @@ public interface StoriesService {
     Optional<Story> updateStoryView(Integer userId, String storyId);
     List<Story> getMoreThanOneDayStories();
     void deleteExpiredStories(List<Story> storyList);
+	List<UserIdAndNameWebModel> getUserIdAndName();
 }

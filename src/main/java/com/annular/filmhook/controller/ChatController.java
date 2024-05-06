@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 import org.slf4j.Logger;
+
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.ChatService;
 import com.annular.filmhook.service.FcmService;
+//import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.BlockWebModel;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
@@ -65,14 +67,7 @@ public class ChatController {
 	@PostMapping("/send-fcm-message")
     public ResponseEntity<?> sendFCMMessage(@RequestBody FCMRequestWebModel request) {
         try {
-            fcmService.sendFCMMessage(
-                request.getFCMToken(),
-                request.getUserName(),
-                request.getCallType(),
-                request.getUserId(),
-                request.getChannelName(),
-                request.getChannelToken()
-            );
+            fcmService.sendFCMMessage(request);
             return ResponseEntity.ok("FCM message sent successfully.");
         } catch (Exception e) {
         	return ResponseEntity.ok(new Response(-1, "Fail", ""));

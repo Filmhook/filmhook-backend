@@ -1075,6 +1075,11 @@ public class DetailServiceImpl implements DetailService {
 	                    existingIndustry.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName());
 	                    industryUserPermanentDetailsRepository.save(existingIndustry);
 	                }
+					industryTemporaryDetailsRepository.deleteByUserId(userId);
+					industryDetailsRepository.deleteByUserId(userId);
+					platformDetailsRepository.deleteByUserId(userId);
+					professsionDetailsRepository.deleteByUserId(userId);
+					subProfessionDetailsRepository.deleteByuserId(userId);
 	            } else {
 	                // Create new industry user permanent details if it doesn't exist
 	                IndustryUserPermanentDetails newIndustryPermanentDetails = new IndustryUserPermanentDetails();
@@ -1095,6 +1100,11 @@ public class DetailServiceImpl implements DetailService {
 	                        professionPermanentDetailRepository.save(savedProfession);
 	                    }
 	                }
+					industryTemporaryDetailsRepository.deleteByUserId(userId);
+					industryDetailsRepository.deleteByUserId(userId);
+					platformDetailsRepository.deleteByUserId(userId);
+					professsionDetailsRepository.deleteByUserId(userId);
+					subProfessionDetailsRepository.deleteByuserId(userId);
 	            }
 	        }
 

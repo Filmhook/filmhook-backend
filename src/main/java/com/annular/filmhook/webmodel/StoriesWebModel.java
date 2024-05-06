@@ -9,7 +9,7 @@ import java.util.List;
 public class StoriesWebModel {
 
     private Integer userId;
-
+    private String userName;
     private String storyId;
     private String type;
     private String description;
