@@ -285,19 +285,20 @@ public class UserServiceImpl implements UserService {
             if (user.isPresent()) {
                 // Find and delete old profile pic
                 FileOutputWebModel fileOutputWebModel = this.getProfilePic(userWebModel);
+                logger.info("Existing profile pic data [{}]", fileOutputWebModel);
                 if (fileOutputWebModel != null) {
-                    List<Integer> profilePicIdsList = Collections.singletonList(userWebModel.getProfilePhoto().getCategoryRefId());
+                    List<Integer> profilePicIdsList = Collections.singletonList(fileOutputWebModel.getCategoryRefId());
                     mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.ProfilePic, profilePicIdsList);
                 }
 
                 // Save/Update profile pic
                 userWebModel.getProfilePhoto().setCategory(MediaFileCategory.ProfilePic);
                 userWebModel.getProfilePhoto().setCategoryRefId(user.get().getUserId());
-                List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(userWebModel.getProfilePhoto(), user.get());
-                return fileOutputWebModelList.get(0);
+                List<FileOutputWebModel> savedFileList = mediaFilesService.saveMediaFiles(userWebModel.getProfilePhoto(), user.get());
+                return (savedFileList != null && !savedFileList.isEmpty()) ? savedFileList.get(0) : null;
             }
         } catch (Exception e) {
-            logger.error("Error occurred at saveProfilePhoto()...", e);
+            logger.error("Error occurred at saveProfilePhoto() -> [{}]", e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -316,11 +317,12 @@ public class UserServiceImpl implements UserService {
         try {
             FileOutputWebModel fileOutputWebModel = this.getProfilePic(userWebModel);
             if (fileOutputWebModel != null) {
-                List<Integer> coverPicIdsList = Collections.singletonList(userWebModel.getUserId());
-                mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.ProfilePic, coverPicIdsList);
+                List<Integer> profilePicIdsList = Collections.singletonList(fileOutputWebModel.getCategoryRefId());
+                mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.ProfilePic, profilePicIdsList);
             }
         } catch (Exception e) {
-            logger.error("Error at deleteUserProfilePic() -> ", e);
+            logger.error("Error at deleteUserProfilePic() -> [{}]", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -332,8 +334,9 @@ public class UserServiceImpl implements UserService {
             if (user.isPresent()) {
                 // Find and delete old cover pic
                 List<FileOutputWebModel> outputWebModelList = this.getCoverPic(userWebModel);
-                if (outputWebModelList != null && !outputWebModelList.isEmpty()) {
-                    List<Integer> coverPicIdsList = Collections.singletonList(userWebModel.getCoverPhoto().getCategoryRefId());
+                logger.info("Existing cover pic size [{}]", outputWebModelList.size());
+                if (!outputWebModelList.isEmpty()) {
+                    List<Integer> coverPicIdsList = outputWebModelList.stream().map(FileOutputWebModel::getCategoryRefId).collect(Collectors.toList());
                     mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.CoverPic, coverPicIdsList);
                 }
 
@@ -343,7 +346,7 @@ public class UserServiceImpl implements UserService {
                 return mediaFilesService.saveMediaFiles(userWebModel.getCoverPhoto(), user.get());
             }
         } catch (Exception e) {
-            logger.error("Error occurred at saveCoverPhoto()...", e);
+            logger.error("Error occurred at saveCoverPhoto() -> [{}]", e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -362,11 +365,12 @@ public class UserServiceImpl implements UserService {
         try {
             List<FileOutputWebModel> outputWebModelList = this.getCoverPic(userWebModel);
             if (outputWebModelList != null && !outputWebModelList.isEmpty()) {
-                List<Integer> coverPicIdsList = Collections.singletonList(userWebModel.getUserId());
+                List<Integer> coverPicIdsList = outputWebModelList.stream().map(FileOutputWebModel::getCategoryRefId).collect(Collectors.toList());
                 mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.CoverPic, coverPicIdsList);
             }
         } catch (Exception e) {
-            logger.error("Error at deleteUserCoverPic() -> ", e);
+            logger.error("Error at deleteUserCoverPic() -> [{}]", e.getMessage());
+            e.printStackTrace();
         }
     }
 }

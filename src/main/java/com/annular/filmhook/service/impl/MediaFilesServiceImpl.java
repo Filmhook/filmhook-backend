@@ -124,7 +124,8 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         mediaFilesMap.put(mediaFiles, file);
                     });
         } catch (Exception e) {
-            logger.error("Error occurred at prepareMultipleMediaFilesData()...");
+            logger.error("Error occurred at prepareMultipleMediaFilesData() -> ", e);
+            e.printStackTrace();
         }
         return mediaFilesMap;
     }
@@ -261,7 +262,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                 });
             }
         } catch (Exception e) {
-            logger.error("Error at deleteMediaFiles()...", e);
+            logger.error("Error at deleteMediaFiles() -> [{}]", e.getMessage());
             e.printStackTrace();
         }
     }
