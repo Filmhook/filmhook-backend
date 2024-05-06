@@ -15,7 +15,7 @@ public interface MediaFilesService {
     List<FileOutputWebModel> getMediaFilesByCategoryAndUserId(MediaFileCategory category, Integer userId);
     List<FileOutputWebModel> getMediaFilesByCategoryAndRefId(MediaFileCategory category, Integer refId);
     List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category, Integer refId);
-    void deleteMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category, List<Integer> idList);
-    void deleteMediaFilesByCategoryAndRefId(MediaFileCategory category, List<Integer> idList);
+    void deleteMediaFilesByUserIdAndCategoryAndRefIds(Integer userId, MediaFileCategory category, List<Integer> idList);
+    void deleteMediaFilesByCategoryAndRefIds(MediaFileCategory category, List<Integer> idList);
 
 }

@@ -76,6 +76,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                     logger.error("Error at saveMediaFiles()...", e);
                 }
             });
+            fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
         } catch (Exception e) {
             logger.error("Error at saveMediaFiles()...", e);
             e.printStackTrace();
@@ -236,7 +237,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public void deleteMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category, List<Integer> idList) {
+    public void deleteMediaFilesByUserIdAndCategoryAndRefIds(Integer userId, MediaFileCategory category, List<Integer> idList) {
         Optional<User> user = userService.getUser(userId);
         if (user.isPresent()) {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategoryAndRefIds(userId, category, idList);
@@ -245,7 +246,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     }
 
     @Override
-    public void deleteMediaFilesByCategoryAndRefId(MediaFileCategory category, List<Integer> idList) {
+    public void deleteMediaFilesByCategoryAndRefIds(MediaFileCategory category, List<Integer> idList) {
         List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndRefIds(category, idList);
         this.deleteMediaFiles(mediaFiles);
     }
@@ -256,7 +257,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                 mediaFiles.forEach(mediaFile -> {
                     mediaFile.setStatus(false); // 1. Deactivating the MediaFiles
                     mediaFilesRepository.saveAndFlush(mediaFile);
-                    fileUtil.deleteFile(mediaFile.getFilePath()); // 2. Deleting the S3 Objects
+                    fileUtil.deleteFile(mediaFile.getFilePath() + mediaFile.getFileType()); // 2. Deleting the S3 Objects
                 });
             }
         } catch (Exception e) {

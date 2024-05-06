@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -389,12 +390,9 @@ public class DetailServiceImpl implements DetailService {
 		try {
 			Optional<User> userFromDB = userService.getUser(inputFileData.getUserId());
 			if (userFromDB.isPresent()) {
-				logger.info("User found: {}", userFromDB.get().getName());
-				fileOutputWebModelList = userMediaFileService.saveMediaFiles(inputFileData, userFromDB.get()); // Save
-																												// media
-																												// files
-																												// in
-																												// MySQL
+                logger.info("User found: {}", userFromDB.get().getName());
+				fileOutputWebModelList = userMediaFileService.saveMediaFiles(inputFileData, userFromDB.get()); // Save media files in MySQL
+                fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
 			}
 		} catch (Exception e) {
 			logger.error("Error at saveIndustryUserFiles(): ", e);
@@ -778,11 +776,11 @@ public class DetailServiceImpl implements DetailService {
 //				String platformName = entry.getKey();
 //				Map<String, Object> platformMap = new HashMap<>();
 //				platformMap.put("platformName", platformName);
-//               
+//
 //				// Fetch platform image data
 //	            Platform platform = platformRepository.findByPlatformName(platformName);
 //	            platformMap.put("platformImage",platform.getImage());
-//				
+//
 //				// Fetch industry names associated with the platform
 //				Set<String> industryNames = new HashSet<>();
 //				for (PlatformPermanentDetail platformDetail : platformDetails) {
@@ -790,7 +788,7 @@ public class DetailServiceImpl implements DetailService {
 //						industryNames.add(platformDetail.getIndustryUserPermanentDetails().getIndustriesName());
 //					}
 //				}
-//				
+//
 //				platformMap.put("industryNames", industryNames);
 //
 //				// Add filmCount, netWorth, and dailySalary fields
@@ -861,7 +859,7 @@ public class DetailServiceImpl implements DetailService {
 
 	            // Fetch platform image data
 //	            Platform platform = platformRepository.findByPlatformName(platformName);
-	            
+
 //	            platformMap.put("platformImage", platform.getImage());
 
 	            Optional<Platform> platformOptional = platformRepository.findByPlatformName(platformName);
@@ -871,18 +869,18 @@ public class DetailServiceImpl implements DetailService {
 	                if (platform.getImage() != null) {
 	                    String base64Image = Base64.getEncoder().encodeToString(platform.getImage());
 	                    platformMap.put("image", base64Image);
-	                    
+
 	                } else {
 	                    // Handle case when platform image is not found
 	                    // You might want to provide a default image or handle it differently based on your requirements
 	                	platformMap.put("image", "default_image_url");
-	                    
+
 	                }
 	            } else {
 	                // Handle case when platform is not found
 	                // You might want to return an appropriate response or handle it differently based on your requirements
 	            }
-	            
+
 	            // Fetch industry names associated with the platform along with their images
 	            Set<Map<String, String>> industries = new HashSet<>();
 	            for (PlatformPermanentDetail platformDetail : platformDetails) {

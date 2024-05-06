@@ -3,7 +3,6 @@ package com.annular.filmhook.webmodel;
 import java.util.Date;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 @Data
@@ -19,7 +18,7 @@ public class UserWebModel {
     private String firstName;
     private String lastName;
     private String middleName;
-    
+
 
     // Biography Section
     private String dob;
@@ -70,7 +69,7 @@ public class UserWebModel {
     private Date createdOn;
     private Integer updatedBy;
     private Date updateOn;
-    
+
     private String currentPassword;
     private String newPassword;
     private Integer otp;
@@ -78,4 +77,8 @@ public class UserWebModel {
     private Integer emailOtp;
     private String forgotOtp;
     private Boolean adminPageStatus;
+
+    // Profile & Cover Photo
+    private FileInputWebModel profilePhoto;
+    private FileInputWebModel coverPhoto;
 }

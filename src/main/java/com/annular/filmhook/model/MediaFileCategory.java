@@ -10,6 +10,8 @@ public enum MediaFileCategory {
     Image,
     Video,
     PanCard,
-    AadhaarCard
+    AadhaarCard,
+    ProfilePic,
+    CoverPic
 
 }
