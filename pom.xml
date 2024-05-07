@@ -89,11 +89,7 @@
 			<version>8.8.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<version>3.2.3</version>
-		</dependency>
+
 
 		<dependency>
 			<groupId>io.agora</groupId>
@@ -104,8 +100,9 @@
 		<dependency>
 			<groupId>com.google.firebase</groupId>
 			<artifactId>firebase-admin</artifactId>
-			<version>8.0.0</version> <!-- Replace with the latest version -->
+			<version>9.2.0</version>
 		</dependency>
+		
 		<!--S3 Dependencies -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
