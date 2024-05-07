@@ -285,8 +285,8 @@ public class UserServiceImpl implements UserService {
             if (user.isPresent()) {
                 // Find and delete old profile pic
                 FileOutputWebModel fileOutputWebModel = this.getProfilePic(userWebModel);
-                logger.info("Existing profile pic data [{}]", fileOutputWebModel);
                 if (fileOutputWebModel != null) {
+                    logger.info("Existing profile pic data [{}]", fileOutputWebModel);
                     List<Integer> profilePicIdsList = Collections.singletonList(fileOutputWebModel.getCategoryRefId());
                     mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.ProfilePic, profilePicIdsList);
                 }
@@ -334,8 +334,8 @@ public class UserServiceImpl implements UserService {
             if (user.isPresent()) {
                 // Find and delete old cover pic
                 List<FileOutputWebModel> outputWebModelList = this.getCoverPic(userWebModel);
-                logger.info("Existing cover pic size [{}]", outputWebModelList.size());
-                if (!outputWebModelList.isEmpty()) {
+                if (outputWebModelList != null && !outputWebModelList.isEmpty()) {
+                    logger.info("Existing cover pic size [{}]", outputWebModelList.size());
                     List<Integer> coverPicIdsList = outputWebModelList.stream().map(FileOutputWebModel::getCategoryRefId).collect(Collectors.toList());
                     mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.CoverPic, coverPicIdsList);
                 }
