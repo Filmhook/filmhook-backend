@@ -22,7 +22,6 @@ public class FcmServiceImpl implements FcmService {
 	 public void sendFCMMessage(FCMRequestWebModel request) {
         try {
             // Create a Map for the data payload
-        	System.out.println("kkkkkkkkkkkkkk");
             Map<String, String> dataPayload = new HashMap<>();
             dataPayload.put("fromUser", request.getUserName());
             dataPayload.put("callType", request.getCallType());

@@ -69,9 +69,7 @@ public class ChatController {
 	@PostMapping("/send-fcm-message")
     public ResponseEntity<?> sendFCMMessage(@RequestBody FCMRequestWebModel request) {
         try {
-        	System.out.println("kk");
             fcmService.sendFCMMessage(request);
-            System.out.println("kkkk");
             return ResponseEntity.ok("FCM message sent successfully.");
         } catch (Exception e) {
         	return ResponseEntity.ok(new Response(-1, "Fail", ""));
