@@ -7,9 +7,9 @@ import com.annular.filmhook.repository.CountryRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.PlatformRepository;
 import com.annular.filmhook.service.MasterDataService;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.CountryWebModel;
 import com.annular.filmhook.webmodel.IndustryWebModel;
-import com.annular.filmhook.webmodel.MasterDataWebModel;
 
 import com.annular.filmhook.webmodel.PlatformWebModel;
 import org.slf4j.Logger;
@@ -37,13 +37,16 @@ public class MasterDataServiceImpl implements MasterDataService {
     @Autowired
     PlatformRepository platformRepository;
 
+    @Autowired
+    S3Util s3Util;
+
     @Override
-    public List<MasterDataWebModel> getAllCountries() {
+    public List<CountryWebModel> getAllCountries() {
         return this.transformCountryData(countryRepository.findAll());
     }
 
-    private List<MasterDataWebModel> transformCountryData(List<Country> countryList) {
-        List<MasterDataWebModel> outputList = new ArrayList<>();
+    private List<CountryWebModel> transformCountryData(List<Country> countryList) {
+        List<CountryWebModel> outputList = new ArrayList<>();
         try {
             countryList.stream().filter(Objects::nonNull).forEach(country -> {
                 CountryWebModel countryWebModel = CountryWebModel.builder()
@@ -52,11 +55,9 @@ public class MasterDataServiceImpl implements MasterDataService {
                         .name(country.getName())
                         .description(country.getDescription())
                         .logo(country.getLogo() != null ? Base64.getEncoder().encode(country.getLogo()) : null)
+                        .filePath(country.getFilePath() != null ? s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + country.getFilePath() : "")
                         .build();
-                MasterDataWebModel masterDataWebModel = MasterDataWebModel.builder()
-                        .country(countryWebModel)
-                        .build();
-                outputList.add(masterDataWebModel);
+                outputList.add(countryWebModel);
             });
         } catch (Exception e) {
             logger.error("Error at transformCountryData() -> [{}]", e.getMessage());
@@ -66,12 +67,12 @@ public class MasterDataServiceImpl implements MasterDataService {
     }
 
     @Override
-    public List<MasterDataWebModel> getAllIndustries() {
+    public List<IndustryWebModel> getAllIndustries() {
         return this.transformIndustryData(industryRepository.findAll());
     }
 
-    public List<MasterDataWebModel> transformIndustryData(List<Industry> industryList) {
-        List<MasterDataWebModel> outputList = new ArrayList<>();
+    public List<IndustryWebModel> transformIndustryData(List<Industry> industryList) {
+        List<IndustryWebModel> outputList = new ArrayList<>();
         try {
             industryList.stream().filter(Objects::nonNull).forEach(industry -> {
                 IndustryWebModel industryWebModel = IndustryWebModel.builder()
@@ -82,10 +83,7 @@ public class MasterDataServiceImpl implements MasterDataService {
                         .countryId(industry.getCountry() != null ? industry.getCountry().getId() : null)
                         .image(industry.getImage() != null ? Base64.getEncoder().encode(industry.getImage()) : null)
                         .build();
-                MasterDataWebModel masterDataWebModel = MasterDataWebModel.builder()
-                        .industry(industryWebModel)
-                        .build();
-                outputList.add(masterDataWebModel);
+                outputList.add(industryWebModel);
             });
         } catch (Exception e) {
             logger.error("Error at transformIndustryData() -> [{}]", e.getMessage());
@@ -95,12 +93,12 @@ public class MasterDataServiceImpl implements MasterDataService {
     }
 
     @Override
-    public List<MasterDataWebModel> getAllPlatforms() {
+    public List<PlatformWebModel> getAllPlatforms() {
         return this.transformPlatformData(platformRepository.findAll());
     }
 
-    public List<MasterDataWebModel> transformPlatformData(List<Platform> platformList) {
-        List<MasterDataWebModel> outputList = new ArrayList<>();
+    public List<PlatformWebModel> transformPlatformData(List<Platform> platformList) {
+        List<PlatformWebModel> outputList = new ArrayList<>();
         try {
             platformList.stream().filter(Objects::nonNull).forEach(platform -> {
                 PlatformWebModel platformWebModel = PlatformWebModel.builder()
@@ -109,10 +107,7 @@ public class MasterDataServiceImpl implements MasterDataService {
                         .status(platform.getStatus())
                         .image(platform.getImage() != null ? Base64.getEncoder().encode(platform.getImage()) : null)
                         .build();
-                MasterDataWebModel masterDataWebModel = MasterDataWebModel.builder()
-                        .platform(platformWebModel)
-                        .build();
-                outputList.add(masterDataWebModel);
+                outputList.add(platformWebModel);
             });
         } catch (Exception e) {
             logger.error("Error at transformPlatformData() -> [{}]", e.getMessage());

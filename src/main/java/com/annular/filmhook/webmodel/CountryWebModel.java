@@ -12,5 +12,6 @@ public class CountryWebModel {
     private String name;
     private String description;
     private byte[] logo;
+    private String filePath;
 
 }

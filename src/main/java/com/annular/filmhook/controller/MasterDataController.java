@@ -2,7 +2,9 @@ package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.MasterDataService;
-import com.annular.filmhook.webmodel.MasterDataWebModel;
+import com.annular.filmhook.webmodel.CountryWebModel;
+import com.annular.filmhook.webmodel.IndustryWebModel;
+import com.annular.filmhook.webmodel.PlatformWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +28,7 @@ public class MasterDataController {
     @GetMapping("/getAllCountry")
     public Response getAllCountries() {
         try {
-            List<MasterDataWebModel> countryList = masterDataService.getAllCountries();
+            List<CountryWebModel> countryList = masterDataService.getAllCountries();
             return new Response(1, "Success", countryList);
         } catch (Exception e) {
             logger.error("Error at getAllCountries() -> [{}]", e.getMessage());
@@ -38,7 +40,7 @@ public class MasterDataController {
     @GetMapping("/getAllIndustry")
     public Response getAllIndustries() {
         try {
-            List<MasterDataWebModel> industryList = masterDataService.getAllIndustries();
+            List<IndustryWebModel> industryList = masterDataService.getAllIndustries();
             return new Response(1, "Success", industryList);
         } catch (Exception e) {
             logger.error("Error at getAllIndustries() -> [{}]", e.getMessage());
@@ -50,7 +52,7 @@ public class MasterDataController {
     @GetMapping("/getAllPlatform")
     public Response getAllPlatform() {
         try {
-            List<MasterDataWebModel> platform = masterDataService.getAllPlatforms();
+            List<PlatformWebModel> platform = masterDataService.getAllPlatforms();
             return new Response(1, "Success", platform);
         } catch (Exception e) {
             logger.error("Error at getAllPlatform() -> [{}]", e.getMessage());

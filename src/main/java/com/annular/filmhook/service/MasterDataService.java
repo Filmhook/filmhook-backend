@@ -1,14 +1,16 @@
 package com.annular.filmhook.service;
 
-import com.annular.filmhook.webmodel.MasterDataWebModel;
+import com.annular.filmhook.webmodel.CountryWebModel;
+import com.annular.filmhook.webmodel.IndustryWebModel;
+import com.annular.filmhook.webmodel.PlatformWebModel;
 
 import java.util.List;
 
 public interface MasterDataService {
 
-    List<MasterDataWebModel> getAllCountries();
+    List<CountryWebModel> getAllCountries();
 
-    List<MasterDataWebModel> getAllIndustries();
+    List<IndustryWebModel> getAllIndustries();
 
-    List<MasterDataWebModel> getAllPlatforms();
+    List<PlatformWebModel> getAllPlatforms();
 }

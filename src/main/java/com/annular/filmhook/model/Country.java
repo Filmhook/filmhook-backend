@@ -43,4 +43,7 @@ public class Country {
     @Lob
     private byte[] logo;
 
+    @Column(name = "file_path")
+    private String filePath;
+
 }
