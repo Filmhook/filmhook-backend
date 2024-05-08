@@ -9,6 +9,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -37,6 +39,9 @@ public class Industry {
 	@Column(name = "industry_name")
 	private String industryName;
 
+	@Column(name = "state_code")
+	private String stateCode;
+
 	@Column(name = "status")
 	private Boolean status;
 
@@ -57,5 +62,10 @@ public class Industry {
 	@Lob
 	@Column
 	private byte[] image;
+
+	@ToString.Exclude
+	@ManyToOne
+	@JoinColumn(name = "country_id")
+	private Country country;
 
 }

@@ -78,6 +78,7 @@ public class MasterDataServiceImpl implements MasterDataService {
                         .id(industry.getIndustryId())
                         .industryName(industry.getIndustryName())
                         .status(industry.getStatus())
+                        .stateCode(industry.getStateCode())
                         .countryId(industry.getCountry() != null ? industry.getCountry().getId() : null)
                         .image(industry.getImage() != null ? Base64.getEncoder().encode(industry.getImage()) : null)
                         .build();
