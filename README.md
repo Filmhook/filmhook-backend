@@ -4,22 +4,22 @@ FilmHook is a social media web & mobile application developed by Spring boot wit
 
 ## Installation & Execution
 
-Command to compile filmhook project.
+Command to compile the project.
 ```bash
 mvn clean install
 ```
 
-Command to compile filmhook project without test case.
+Command to compile the project without test case.
 ```bash
 mvn clean install -DskipTests
 ```
 
-Command to run filmhook project.
+Command to run the project.
 ```bash
 java -jar <War file>
 ```
 
-Command to run filmhook project as spring boot app.
+Command to run the project as spring boot app.
 ```bash
 mvnw spring-boot:run
 ```
