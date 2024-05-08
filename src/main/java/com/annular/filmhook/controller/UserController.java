@@ -162,7 +162,7 @@ public class UserController {
      * @param userWebModel
      * @return Response
      */
-    @GetMapping("/getProfilePic")
+    @PostMapping("/getProfilePic")
     public Response getProfilePic(@RequestBody UserWebModel userWebModel) {
         FileOutputWebModel profilePic = userService.getProfilePic(userWebModel);
         if (profilePic != null) return new Response(1, "Profile pic found successfully...", profilePic);
@@ -208,7 +208,7 @@ public class UserController {
      * @param userWebModel
      * @return Response
      */
-    @GetMapping("/getCoverPic")
+    @PostMapping("/getCoverPic")
     public Response getCoverPic(@RequestBody UserWebModel userWebModel) {
         List<FileOutputWebModel> coverPic = userService.getCoverPic(userWebModel);
         if (coverPic != null) return new Response(1, "User Cover pic(s) found successfully...", coverPic);

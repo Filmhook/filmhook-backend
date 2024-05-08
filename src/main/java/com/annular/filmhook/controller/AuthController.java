@@ -112,6 +112,13 @@ public class AuthController {
 					new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 			RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
+			User user = checkUsername.get();
+
+			// Update device token if provided
+			if (userWebModel.getFirebaseDeviceToken() != null && !userWebModel.getFirebaseDeviceToken().isEmpty()) {
+				user.setFirebaseDeviceToken(userWebModel.getFirebaseDeviceToken());
+				userRepository.save(user);
+			}
 			String jwt = jwtUtils.generateJwtToken(authentication);
 			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 			logger.info("Login Controller ---- Finished");

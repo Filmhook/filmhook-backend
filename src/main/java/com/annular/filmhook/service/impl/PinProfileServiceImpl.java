@@ -1,8 +1,10 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -14,13 +16,17 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserMediaPin;
 import com.annular.filmhook.model.UserProfilePin;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PinProfileService;
+import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.UserProfilePinWebModel;
 
 @Service
@@ -37,6 +43,15 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Autowired
 	UserRepository userRepository;
+	
+    @Autowired
+    FileUtil fileUtil;
+    
+    @Autowired
+    S3Util s3Util;
+	
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
 
 	private static final Logger logger = LoggerFactory.getLogger(PinProfileServiceImpl.class);
 
@@ -116,17 +131,34 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Override
 	public ResponseEntity<?> getAllMediaPin() {
-		try {
-			logger.info("getAllMediaPin service start");
+	    try {
+	        logger.info("getAllMediaPin service start");
 
-			List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userDetails.userInfo().getId());
+	        List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userDetails.userInfo().getId());
 
-			return ResponseEntity.ok(userMediaPins);
-		} catch (Exception e) {
-			logger.error("userMediaPins service Method Exception {} ", e);
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
-		}
+	        for (UserMediaPin userMediaPin : userMediaPins) {
+	            Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findByIds(userMediaPin.getPinMediaId());
+	            List<String> filePaths = new ArrayList<>();
+	            mediaFileOptional.ifPresent(mediaFile -> {
+	                String filePath = mediaFile.getFilePath();
+	                String fileType = mediaFile.getFileType();
+	                String fullUrl = s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + filePath + fileType;
+	                filePaths.add(fullUrl);
+	            });
+	            userMediaPin.setMediaFiles(filePaths);
+	        }
+
+	        // Create the response map
+	        Map<String, Object> responseMap = new HashMap<>();
+	        responseMap.put("userMediaPins", userMediaPins);
+
+	        return ResponseEntity.ok(responseMap);
+	    } catch (Exception e) {
+	        logger.error("userMediaPins service Method Exception {} ", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+	    }
+
 	}
 
 	@Override

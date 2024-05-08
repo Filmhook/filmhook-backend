@@ -5,9 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
@@ -67,10 +69,24 @@ public class ChatController {
 	@PostMapping("/send-fcm-message")
     public ResponseEntity<?> sendFCMMessage(@RequestBody FCMRequestWebModel request) {
         try {
+        	System.out.println("kk");
             fcmService.sendFCMMessage(request);
+            System.out.println("kkkk");
             return ResponseEntity.ok("FCM message sent successfully.");
         } catch (Exception e) {
         	return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+	
+	@GetMapping("/getFirebaseTokenByuserId")
+	public ResponseEntity<?> getFirebaseTokenByuserId(@RequestParam("userId") Integer userId) {
+		try {
+			logger.info("getFirebaseTokenByuserId controller start");
+			return chatService.getFirebaseTokenByuserId(userId);
+		} catch (Exception e) {
+			logger.error("getAllUser Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 }

@@ -67,30 +67,43 @@ public class ActionServiceImpl implements ActionService {
 
 	@Override
 	public ResponseEntity<?> addLike(LikeWebModel likeWebModel) {
-		HashMap<String, Object> response = new HashMap<>();
-		try {
-			Integer userId = userDetails.userInfo().getId();
-			Integer postId = likeWebModel.getPostId();
-			Optional<Likes> existingLike = likeRepository.findByUserIdAndPostId(userId, postId);
-			if (existingLike.isPresent()) {
-				logger.info("Like already exists for user {} and post {}", userId, postId);
-				return ResponseEntity.ok(new Response(0, "Like already exists", null));
-			}
-			Likes like = new Likes();
-			like.setUserId(userId);
-			like.setStatus(true);
-			like.setPostId(postId);
-			like.setCreatedBy(userId);
-			likeRepository.save(like);
-			response.put("likeInfo", like);
-			logger.info("addLike method end");
-			return ResponseEntity.ok(new Response(1, "Add like successfully", response));
-		} catch (Exception e) {
-			logger.error("Error setting like {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error setting like", e.getMessage()));
-		}
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        // Get the user ID from userDetails or wherever it's available
+	        Integer userId = userDetails.userInfo().getId();
+	        Integer postId = likeWebModel.getPostId();
+	        
+	        // Check if the user has already liked the post
+	        Optional<Likes> existingLike = likeRepository.findByUserIdAndPostId(userId, postId);
+	        if (existingLike.isPresent()) {
+	            // If the like exists, update its status
+	            Likes like = existingLike.get();
+	            like.setStatus(likeWebModel.getStatus()); // Update status based on the request
+	            likeRepository.save(like); // Save the updated like
+	            response.put("likeInfo", like);
+	            return ResponseEntity.ok(new Response(0, "Like status updated", response));
+	        }
+	        
+	        // If the like doesn't exist, create a new one
+	        Likes newLike = new Likes();
+	        newLike.setUserId(userId);
+	        newLike.setStatus(likeWebModel.getStatus());
+	        newLike.setPostId(postId);
+	        newLike.setCreatedBy(userId);
+	        likeRepository.save(newLike); // Save the new like
+	        
+	        response.put("likeInfo", newLike);
+	        return ResponseEntity.ok(new Response(1, "Like added successfully", response));
+	    } catch (Exception e) {
+	        // Handle exceptions
+	        logger.error("Error adding like: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Error adding like", e.getMessage()));
+	    }
 	}
+
+	
+
 
 	@Override
 	public ResponseEntity<?> updateLike(LikeWebModel likeWebModel) {

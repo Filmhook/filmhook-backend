@@ -12,6 +12,7 @@ public enum MediaFileCategory {
     PanCard,
     AadhaarCard,
     ProfilePic,
-    CoverPic
+    CoverPic,
+    MarketPlace
 
 }

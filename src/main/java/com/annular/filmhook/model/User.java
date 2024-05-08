@@ -188,5 +188,8 @@ public class User {
     
     @Column(name = "admin_Page_Status")
     private Boolean adminPageStatus;
+    
+    @Column(name = "firebase_device_token")
+    private String firebaseDeviceToken;
 
 }

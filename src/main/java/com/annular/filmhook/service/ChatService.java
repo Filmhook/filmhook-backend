@@ -12,4 +12,6 @@ public interface ChatService {
 
 	ResponseEntity<?> getMessageByUserId(ChatWebModel chatWebModel);
 
+	ResponseEntity<?> getFirebaseTokenByuserId(Integer userId);
+
 }

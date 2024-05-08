@@ -19,5 +19,6 @@ public class ChatWebModel {
 	private String userType;
 	private Date timeStamp;
 	private String userAccountName;
+	private Integer userId;
 
 }

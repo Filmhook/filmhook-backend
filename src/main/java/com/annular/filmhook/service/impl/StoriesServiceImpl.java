@@ -2,13 +2,16 @@ package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.controller.StoriesController;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.StoryRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.StoriesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
@@ -37,9 +40,15 @@ public class StoriesServiceImpl implements StoriesService {
 
     @Autowired
     MediaFilesService mediaFilesService;
+    
+    @Autowired
+    MediaFilesRepository mediaFilesRepository;
 
     @Autowired
     UserService userService;
+    
+    @Autowired
+    S3Util s3Util;
 
     @Override
     public StoriesWebModel uploadStory(StoriesWebModel inputData) {
@@ -205,9 +214,36 @@ public class StoriesServiceImpl implements StoriesService {
                                           story -> story.getUser().getName(),
                                           (existing, replacement) -> existing)); // Keep existing name in case of duplicates
 
-        return userIdToNameMap.entrySet().stream()
-                .map(entry -> new UserIdAndNameWebModel(entry.getKey(), entry.getValue()))
+        List<UserIdAndNameWebModel> userIdAndNames = userIdToNameMap.entrySet().stream()
+                .map(entry -> {
+                    Integer userId = entry.getKey();
+                    String userName = entry.getValue();
+                    String profilePicUrl = getProfilePicUrl(userId); // Get profile picture URL
+                    return new UserIdAndNameWebModel(userId, userName, profilePicUrl);
+                })
                 .collect(Collectors.toList());
+
+        return userIdAndNames;
     }
 
-}
+    private String getProfilePicUrl(Integer userId) {
+        MediaFiles profilePic = mediaFilesRepository.findByUserUserIdAndCategory(userId, MediaFileCategory.ProfilePic);
+        if (profilePic != null) {
+            // Assuming file path contains the URL relative to S3 path
+            String filePath = profilePic.getFilePath();
+            String fileType = profilePic.getFileType();
+            
+            // Construct full URL by appending base URL retrieved from S3 utility
+            String fullUrl = s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + filePath + fileType;
+            
+            return fullUrl;
+        }
+        // Or return a default profile picture URL
+        return null;
+    }
+
+	
+
+	}
+
+

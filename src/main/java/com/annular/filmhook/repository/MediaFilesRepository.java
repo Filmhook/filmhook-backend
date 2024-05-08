@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer> {
@@ -31,4 +32,13 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 
     @Query("Select m from MediaFiles m where m.category = :category and m.status=true")
     List<MediaFiles> getMediaFilesByCategory(MediaFileCategory category);
+
+    @Query("SELECT m FROM MediaFiles m WHERE m.user.userId = :userId AND m.category = :profilepic AND m.status = true")
+    MediaFiles findByUserUserIdAndCategory(Integer userId, MediaFileCategory profilepic);
+
+    @Query("select m from MediaFiles m where m.user.userId = :userId and m.category = :profilepic ")
+	MediaFiles getProfilePicByUserId(Integer userId);
+
+    @Query("select m from MediaFiles m where m.id = :pinMediaId")
+	Optional<MediaFiles> findByIds(Integer pinMediaId);
 }

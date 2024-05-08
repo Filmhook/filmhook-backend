@@ -128,10 +128,28 @@ public class ChatServiceImpl implements ChatService{
 
 	    return ResponseEntity.ok(new Response(0, "Success", response));
 	}
-
+	@Override
+	public ResponseEntity<?> getFirebaseTokenByuserId(Integer userId) {
+		try {
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (userOptional.isPresent()) {
+                
+                String firebaseToken = userOptional.get().getFirebaseDeviceToken();
+                if (firebaseToken != null) {
+                	return ResponseEntity.ok(new Response(1, "Success", firebaseToken));
+                } else {
+                    
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Firebase token not found for the user.");
+                }
+            } else {
+               
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + userId);
+            }
+        } catch (Exception e) {
+           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while retrieving Firebase token: " + e.getMessage());
+        }
     }
 
-	
+	}
 
-
-
+    

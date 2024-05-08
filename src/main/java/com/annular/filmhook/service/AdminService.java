@@ -21,6 +21,6 @@ public interface AdminService {
 
 	ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId);
 
-	Response changeStatusUnverifiedIndustrialUsers(Integer userId);
+	Response changeStatusUnverifiedIndustrialUsers(Integer userId, Boolean status);
 
 }

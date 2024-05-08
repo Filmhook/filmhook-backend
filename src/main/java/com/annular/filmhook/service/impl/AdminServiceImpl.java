@@ -8,11 +8,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.mail.internet.MimeMessage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -63,6 +67,9 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	MediaFilesService mediaFilesService;
+	
+	@Autowired
+	private JavaMailSender javaMailSender;
 
 	@Autowired
 	UserMediaFilesService userMediaFilesService;
@@ -280,7 +287,7 @@ public class AdminServiceImpl implements AdminService {
 		if (!responseList.isEmpty()) {
 			return new Response(-1, "Success", responseList);
 		} else {
-			return new Response(-1, "There are no unverified users found.", "");
+			return new Response(-1, "There are no unverified users found.", responseList);
 		}
 	}
 
@@ -364,12 +371,12 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public Response changeStatusUnverifiedIndustrialUsers(Integer userId) {
+	public Response changeStatusUnverifiedIndustrialUsers(Integer userId, Boolean status) {
 	    List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userId);
 
 	    // Iterate over the list and set status to false
 	    for (IndustryMediaFiles industryMediaFile : industryDbData) {
-	        industryMediaFile.setStatus(false);
+	        industryMediaFile.setStatus(status);
 	        // You may perform additional operations if needed
 	    }
 
@@ -377,19 +384,80 @@ public class AdminServiceImpl implements AdminService {
 	    industryMediaFileRepository.saveAll(industryDbData);
 
 	    // Update the userType in the User table
-	    Optional<User> userOptional = userRepository.findById(userId);
-	    if (userOptional.isPresent()) {
-	        User user = userOptional.get();
-	        user.setUserType("IndustryUser");
-	        userRepository.save(user);
+	    if (!status) {
+	        Optional<User> userOptional = userRepository.findById(userId);
+	        if (userOptional.isPresent()) {
+	            User user = userOptional.get();
+	            user.setUserType("IndustryUser");
+	            userRepository.save(user);
+	            
+	            // Send verification email
+	            boolean emailSent = sendVerificationEmail(user, status);
+	            if (!emailSent) {
+	                // Handle case where email sending fails
+	                return new Response(-1, "Failed to send verification email", null);
+	            }
+	        } else {
+	            return new Response(-1, "User not found", null); // Return an error response if user is not found
+	        }
 	    } else {
-	        return new Response(-1, "User not found", null); // Return an error response if user is not found
+	        // status true means userType change to Industry user and send mail notification
+	        Optional<User> userOptional = userRepository.findById(userId);
+	        if (userOptional.isPresent()) {
+	            User user = userOptional.get();
+	            user.setUserType("IndustryUser");
+	            userRepository.save(user);
+	            
+	            // Send notification email
+	            boolean emailSent = sendVerificationEmail(user,status);
+	            if (!emailSent) {
+	                // Handle case where email sending fails
+	                return new Response(-1, "Failed to send notification email", null);
+	            }
+	        } else {
+	            return new Response(-1, "User not found", null); // Return an error response if user is not found
+	        }
 	    }
 
 	    // Return a success response
-	    return new Response(1, "Status updated successfully", industryDbData);
+	    return new Response(1, "Success", "Status updated successfully");
 	}
 
+
+
+	public boolean sendVerificationEmail(User user, Boolean status) {
+	    Boolean response = true;
+	    try {
+	        String subject;
+	        String mailContent;
+
+	        if (!status) { // If status is false, indicating verification
+	            subject = "Your Profile Has Been Verified";
+	            mailContent = "<p>Hello " + user.getName() + ",</p>";
+	            mailContent += "<p>Your profile on FilmHook has been successfully verified.</p>";
+	            mailContent += "<p>Thank You<br>FilmHook</p>";
+	        } else { // If status is true, indicating rejection
+	            subject = "Profile Rejected";
+	            mailContent = "<p>Hello " + user.getName() + ",</p>";
+	            mailContent += "<p>Your profile on FilmHook has been rejected.</p>";
+	            mailContent += "<p>Please contact support for further details.</p>";
+	            mailContent += "<p>Thank You<br>FilmHook</p>";
+	        }
+
+	        MimeMessage message = javaMailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(message);
+	        helper.setFrom("filmhookapps@gmail", "FilmHook");
+	        helper.setTo(user.getEmail());
+	        helper.setSubject(subject);
+	        helper.setText(mailContent, true);
+
+	        javaMailSender.send(message);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        response = false;
+	    }
+	    return response;
+	}
 
 
 }

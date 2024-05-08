@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Collections;
 
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -38,7 +39,7 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     MediaFilesService mediaFilesService;
-
+    
     @Override
     public List<UserWebModel> getAllUsers() {
         return userRepository.findAll().stream().filter(Objects::nonNull).map(this::transformUserObjToUserWebModelObj).collect(Collectors.toList());
@@ -355,7 +356,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<FileOutputWebModel> getCoverPic(UserWebModel userWebModel) {
-        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.CoverPic, userWebModel.getUserId());
+        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.CoverPic,userWebModel.getUserId());
         if (outputWebModelList != null && !outputWebModelList.isEmpty()) return outputWebModelList;
         return null;
     }
