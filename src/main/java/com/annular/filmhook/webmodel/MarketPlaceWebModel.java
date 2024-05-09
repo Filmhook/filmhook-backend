@@ -12,7 +12,7 @@ public class MarketPlaceWebModel {
 	private String companyName;
 	private String productName;
 	private String productDescription;
-	private Boolean newProduct;
+	private String newProduct;
 	private Boolean rentalOrsale;
 	private Integer count;
 	private Integer cost;

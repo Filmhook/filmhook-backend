@@ -8,5 +8,6 @@ public class FilmHookConstants {
 	public static final int Audition = 4;
 	public static final int PROJECTS = 5;
 	public static final int MARKETPLACE = 6;
+	public static final int SHOOTINGLOCATION = 7;
 
 }
