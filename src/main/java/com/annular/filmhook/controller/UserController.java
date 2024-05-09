@@ -234,7 +234,7 @@ public class UserController {
     }
 
     // User search based on multiple criteria [Country > Industry > Platform > Profession > SubProfession]
-    @GetMapping("/getIndustryByCountry")
+    @PostMapping("/getIndustryByCountry")
     public Response getIndustryByCountry(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllIndustryByCountryIds(searchWebModel.getCountryIds());
@@ -246,7 +246,7 @@ public class UserController {
         return new Response(1, "Industry(s) not found for country id.", searchWebModel.getCountryIds());
     }
 
-    @GetMapping("/getProfessionByPlatform")
+    @PostMapping("/getProfessionByPlatform")
     public Response getProfessionByPlatform(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllProfessionByPlatformId(searchWebModel.getPlatformId());
@@ -258,7 +258,7 @@ public class UserController {
         return new Response(-1, "Profession(s) not found for platform id -> [{}]", searchWebModel.getPlatformId());
     }
 
-    @GetMapping("/getSubProfessionByProfession")
+    @PostMapping("/getSubProfessionByProfession")
     public Response getSubProfessionByProfession(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllSubProfessionByProfessionId(searchWebModel.getProfessionIds());
@@ -270,7 +270,7 @@ public class UserController {
         return new Response(-1, "Sub Profession(s) not found for profession ids -> [{}]", searchWebModel.getProfessionIds());
     }
 
-    @GetMapping("/getFinalUserList")
+    @PostMapping("/getFinalUserList")
     public Response getUserByAllCriteria(@RequestBody UserSearchWebModel searchWebModel){
         try {
             Map<String, List<Map<String, Object>>> outputMap = userService.getUserByAllSearchCriteria(searchWebModel);
