@@ -20,7 +20,7 @@ public class ShootingLocationWebModel {
 	private Integer shootingLocationId;
 	private String shootingLocationName;
 	private String shootingLocationDescription;
-	private String termsAndCondition;
+	private String shootingtermsAndCondition;
 	private Boolean indoorOrOutdoorLocation;
 	private String locationUrl;
 	private float cost;

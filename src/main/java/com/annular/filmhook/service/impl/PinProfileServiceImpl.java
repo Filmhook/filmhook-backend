@@ -20,9 +20,12 @@ import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserMediaPin;
 import com.annular.filmhook.model.UserProfilePin;
+import com.annular.filmhook.repository.CommentRepository;
+import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
+import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PinProfileService;
 import com.annular.filmhook.util.FileUtil;
@@ -43,13 +46,22 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Autowired
 	UserRepository userRepository;
-	
-    @Autowired
-    FileUtil fileUtil;
-    
-    @Autowired
-    S3Util s3Util;
-	
+
+	@Autowired
+	ShareRepository shareRepository;
+
+	@Autowired
+	CommentRepository commentRepository;
+
+	@Autowired
+	FileUtil fileUtil;
+
+	@Autowired
+	LikeRepository likeRepository;
+
+	@Autowired
+	S3Util s3Util;
+
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
 
@@ -131,34 +143,63 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Override
 	public ResponseEntity<?> getAllMediaPin() {
-	    try {
-	        logger.info("getAllMediaPin service start");
+		try {
+			logger.info("getAllMediaPin service start");
 
-	        List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userDetails.userInfo().getId());
+			List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userDetails.userInfo().getId());
 
-	        for (UserMediaPin userMediaPin : userMediaPins) {
-	            Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findByIds(userMediaPin.getPinMediaId());
-	            List<String> filePaths = new ArrayList<>();
-	            mediaFileOptional.ifPresent(mediaFile -> {
-	                String filePath = mediaFile.getFilePath();
-	                String fileType = mediaFile.getFileType();
-	                String fullUrl = s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + filePath + fileType;
-	                filePaths.add(fullUrl);
-	            });
-	            userMediaPin.setMediaFiles(filePaths);
-	        }
+			List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
 
-	        // Create the response map
-	        Map<String, Object> responseMap = new HashMap<>();
-	        responseMap.put("userMediaPins", userMediaPins);
+			for (UserMediaPin userMediaPin : userMediaPins) {
 
-	        return ResponseEntity.ok(responseMap);
-	    } catch (Exception e) {
-	        logger.error("userMediaPins service Method Exception {} ", e);
-	        e.printStackTrace();
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
-	    }
+//				Optional<MediaFiles> profilePicOptional = mediaFilesRepository
+//						.findByUserIdAndCategory(userMediaPin.getUserId(), "profilepic");
 
+				Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(userMediaPin.getPinMediaId());
+
+				if (mediaFileOptional.isPresent()) {
+					MediaFiles mediaFiles = mediaFileOptional.get();
+
+					Optional<User> userOptional = userRepository.findById(userMediaPin.getUserId());
+
+					if (userOptional.isPresent()) {
+						User user = userOptional.get();
+						int likeCount = likeRepository.countByMediaFileId(mediaFiles.getId());
+
+						int commentCount = commentRepository.countByMediaFileId(mediaFiles.getId());
+
+						int shareCount = shareRepository.countByMediaFileId(mediaFiles.getId());
+
+						Map<String, Object> combinedDetails = new HashMap<>();
+						combinedDetails.put("userMediaPin", userMediaPin);
+						combinedDetails.put("filename", mediaFiles.getFileName());
+						combinedDetails.put("fileType", mediaFiles.getFileType());
+						combinedDetails.put("filepath", mediaFiles.getFilePath());
+						combinedDetails.put("fileDescription", mediaFiles.getDescription());
+						combinedDetails.put("fileUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+								+ mediaFiles.getFilePath() + mediaFiles.getFileType());
+						combinedDetails.put("likeCount", likeCount);
+						combinedDetails.put("commentCount", commentCount);
+						combinedDetails.put("shareCount", shareCount);
+						combinedDetails.put("userName", user.getName());
+//						combinedDetails.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+//								+ profilePic.getFilePath() + profilePic.getFileType());
+
+						combinedDetailsList.add(combinedDetails);
+					}
+				}
+			}
+
+			// Create the response map
+			Map<String, Object> responseMap = new HashMap<>();
+			responseMap.put("combinedDetailsList", combinedDetailsList);
+
+			return ResponseEntity.ok(responseMap);
+		} catch (Exception e) {
+			logger.error("userMediaPins service Method Exception {} ", e);
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+		}
 	}
 
 	@Override

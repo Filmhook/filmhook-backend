@@ -41,4 +41,7 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 
     @Query("select m from MediaFiles m where m.id = :pinMediaId")
 	Optional<MediaFiles> findByIds(Integer pinMediaId);
+
+//    @Query("select m from MediaFiles m where m.userId = :userId and m.category =:profilepic ")
+//	Optional<MediaFiles> findByUserIdAndCategory(Integer userId, String profilepic);
 }

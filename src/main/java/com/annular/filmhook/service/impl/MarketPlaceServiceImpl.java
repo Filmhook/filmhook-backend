@@ -129,7 +129,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 			ShootingLocation shootingLocation = ShootingLocation.builder()
 					.shootingLocationName(shootingLocationWebModel.getShootingLocationName())
 					.shootingLocationDescription(shootingLocationWebModel.getShootingLocationDescription())
-					.termsAndCondition(shootingLocationWebModel.getTermsAndCondition())
+					 .shootingtermsAndCondition(shootingLocationWebModel.getShootingtermsAndCondition())
 					.locationUrl(shootingLocationWebModel.getLocationUrl())
 					.indoorOrOutdoorLocation(shootingLocationWebModel.getIndoorOrOutdoorLocation())
 					.cost(shootingLocationWebModel.getCost()).hourMonthDay(shootingLocationWebModel.getHourMonthDay())

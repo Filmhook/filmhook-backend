@@ -141,13 +141,13 @@ public class GalleryController {
     @GetMapping("/getGalleryFilesByAllUser")
     public Response getAllUsersGalleryFiles() {
         try {
-            List<FileOutputWebModel> outputList = galleryService.getAllUsersGalleryFiles();
-            if (outputList != null && !outputList.isEmpty()) {
-                logger.info("[{}] gallery files found...", outputList.size());
-                return new Response(1, "Gallery file(s) found successfully...", outputList);
-            } else {
-                return new Response(-1, "No file(s) available for this user...", null);
-            }
+        	return new Response(1, "Gallery file(s) found successfully...", galleryService.getAllUsersGalleryFiles());
+//            if (outputList != null && !outputList.isEmpty()) {
+//                logger.info("[{}] gallery files found...", outputList.size());
+//                return new Response(1, "Gallery file(s) found successfully...", outputList);
+//            } else {
+//                return new Response(-1, "No file(s) available for this user...", null);
+//            }
         } catch (Exception e) {
             logger.error("Error at getAllUsersGalleryFiles()...", e);
         }

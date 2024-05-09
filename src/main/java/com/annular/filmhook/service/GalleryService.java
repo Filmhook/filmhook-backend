@@ -1,5 +1,6 @@
 package com.annular.filmhook.service;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import org.springframework.core.io.Resource;
@@ -14,5 +15,5 @@ public interface GalleryService {
     Resource getGalleryFile(Integer userId, String category, String fileId);
 	Resource getAllGalleryFilesInCategory(Integer  userId,String category);
 	Resource getAllGalleryFilesInCategory(String category);
-	List<FileOutputWebModel> getAllUsersGalleryFiles();
+	Response getAllUsersGalleryFiles();
 }

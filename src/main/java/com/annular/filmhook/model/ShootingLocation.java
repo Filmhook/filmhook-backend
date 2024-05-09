@@ -39,8 +39,8 @@ public class ShootingLocation {
 	@Column(name = "shootint_location_description")
 	private String shootingLocationDescription;
 	
-	@Column(name = "terms_condition")
-	private String termsAndCondition;
+	@Column(name = "shooting_termsAnd_Condition")
+	private String shootingtermsAndCondition;
 	
 	@Column(name = "Indoor_or_outdoor")
 	private Boolean indoorOrOutdoorLocation;
