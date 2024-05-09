@@ -44,7 +44,7 @@ public class MarketPlace {
 	private String productDescription;
 	
 	@Column(name = "new_product")
-	private Boolean newProduct;
+	private String newProduct;
 	
 	@Column(name = "rental_sale")
 	private Boolean rentalOrsale;

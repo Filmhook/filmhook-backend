@@ -13,6 +13,7 @@ public enum MediaFileCategory {
     AadhaarCard,
     ProfilePic,
     CoverPic,
-    MarketPlace
+    MarketPlace,
+    ShootingLocation
 
 }
