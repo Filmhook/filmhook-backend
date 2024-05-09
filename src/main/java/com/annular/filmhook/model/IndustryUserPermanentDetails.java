@@ -10,7 +10,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
@@ -62,14 +65,10 @@ public class IndustryUserPermanentDetails {
     @CreationTimestamp
     private Date updatedOn;
 
-	public byte[] getImage() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Industry getIndustry() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @ManyToOne
+    @JoinColumn(name = "industry_id", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore
+    private Industry industry;
 
 }

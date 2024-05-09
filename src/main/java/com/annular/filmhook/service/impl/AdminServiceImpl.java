@@ -22,11 +22,9 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.FilmProfession;
-import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
 import com.annular.filmhook.model.MediaFileCategory;
-import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.model.PlatformPermanentDetail;
 import com.annular.filmhook.model.ProfessionPermanentDetail;
 import com.annular.filmhook.model.User;
@@ -35,12 +33,10 @@ import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
 import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
-import com.annular.filmhook.repository.PlatformDetailRepository;
 import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
 import com.annular.filmhook.repository.PlatformRepository;
-import com.annular.filmhook.repository.ProfessionDetailRepository;
 import com.annular.filmhook.repository.ProfessionRepository;
-import com.annular.filmhook.repository.SubProfesssionRepository;
+import com.annular.filmhook.repository.SubProfessionRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -90,7 +86,7 @@ public class AdminServiceImpl implements AdminService {
 	private IndustryTemporaryDetailRepository industryTemporaryDetailsRepository;
 
 	@Autowired
-	private SubProfesssionRepository subProfessionRepository;
+	private SubProfessionRepository subProfessionRepository;
 
 	@Autowired
 	FileUtil fileUtil;

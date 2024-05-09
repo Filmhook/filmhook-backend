@@ -13,5 +13,6 @@ public class UserIdAndNameWebModel {
 
     private Integer userId;
     private String userName;
+    private String profilePicUrl;
 
 }

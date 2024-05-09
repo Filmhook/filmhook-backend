@@ -1,13 +1,9 @@
 package com.annular.filmhook.controller;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,11 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.model.FilmProfession;
-import com.annular.filmhook.model.Industry;
-import com.annular.filmhook.model.Platform;
-import com.annular.filmhook.model.Profession;
-import com.annular.filmhook.model.SubProfesssion;
 import com.annular.filmhook.service.ActionService;
 import com.annular.filmhook.webmodel.CommentWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;

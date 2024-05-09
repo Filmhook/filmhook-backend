@@ -12,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -45,6 +46,24 @@ public class ProfessionPermanentDetail {
 	private List<String> subProfessionName;
 
 	@ManyToOne
-	@JoinColumn(name = "platform_id", nullable = false)
+	@JoinColumn(name = "industry_permanent_id", nullable = false)
+	@ToString.Exclude
+	@JsonIgnore
+	private IndustryUserPermanentDetails industryUserPermanentDetails;
+
+	@ManyToOne
+	@JoinColumn(name = "platform_permanent_id", nullable = false)
+	@ToString.Exclude
+	@JsonIgnore
 	private PlatformPermanentDetail platformPermanentDetail;
+
+	@ManyToOne
+	@JoinColumn(name = "profession_id", nullable = false)
+	@ToString.Exclude
+	@JsonIgnore
+	private Profession profession;
+
+	@Column(name = "userId")
+	private Integer userId;
+
 }

@@ -1,6 +1,5 @@
 package com.annular.filmhook.service.impl;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -15,21 +14,14 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Comment;
-import com.annular.filmhook.model.FilmProfession;
-import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.Likes;
-import com.annular.filmhook.model.Platform;
-import com.annular.filmhook.model.Profession;
 import com.annular.filmhook.model.Share;
-import com.annular.filmhook.model.SubProfesssion;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.FilmProfessionRepository;
-import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.PlatformRepository;
-import com.annular.filmhook.repository.ProfessionRepository;
 import com.annular.filmhook.repository.ShareRepository;
-import com.annular.filmhook.repository.SubProfesssionRepository;
+import com.annular.filmhook.repository.SubProfessionRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.ActionService;
 import com.annular.filmhook.webmodel.CommentWebModel;
@@ -43,7 +35,7 @@ public class ActionServiceImpl implements ActionService {
 	UserRepository userRepository;
 
 	@Autowired
-	SubProfesssionRepository subProfessionRepository;
+    SubProfessionRepository subProfessionRepository;
 
 	@Autowired
 	PlatformRepository industryRepository;

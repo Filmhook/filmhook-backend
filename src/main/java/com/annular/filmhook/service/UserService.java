@@ -1,10 +1,12 @@
 package com.annular.filmhook.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface UserService {
@@ -36,4 +38,12 @@ public interface UserService {
     List<FileOutputWebModel> getCoverPic(UserWebModel userWebModel);
 
     void deleteUserCoverPic(UserWebModel userWebModel);
+
+    List<UserSearchWebModel> getAllIndustryByCountryIds(List<Integer> countryId);
+
+    List<UserSearchWebModel> getAllProfessionByPlatformId(Integer platformId);
+
+    List<UserSearchWebModel> getAllSubProfessionByProfessionId(List<Integer> professionIds);
+
+    Map<String, List<Map<String, Object>>> getUserByAllSearchCriteria(UserSearchWebModel searchWebModel);
 }

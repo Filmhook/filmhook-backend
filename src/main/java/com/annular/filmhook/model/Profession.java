@@ -8,6 +8,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -27,8 +29,8 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Profession {
-	
-	
+
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "profession_id")
@@ -54,6 +56,10 @@ public class Profession {
 	@CreationTimestamp
 	private Date updatedOn;
 
+	@ManyToOne
+	@JoinColumn(name = "platform_id", nullable = false)
+	@ToString.Exclude
+	private Platform platform;
 
 
 }

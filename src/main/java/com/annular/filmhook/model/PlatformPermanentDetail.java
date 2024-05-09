@@ -13,6 +13,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,10 +39,10 @@ public class PlatformPermanentDetail {
     
     @Column(name = "platform_name")
     private String platformName;
-    
+
     @Column(name = "ppd_platform_id")
     private Integer ppdPlatformId;
-    
+
     @Column(name = "film_count")
     private Integer filmCount;
     
@@ -50,14 +51,22 @@ public class PlatformPermanentDetail {
     
     @Column(name = "dailySalary")
     private Integer dailySalary;
-    
+
     @OneToMany(mappedBy = "platformPermanentDetail", cascade = CascadeType.ALL)
     private List<ProfessionPermanentDetail> professionDetails;
-    
+
     @ManyToOne
     @JoinColumn(name = "iupd_id", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore
     private IndustryUserPermanentDetails industryUserPermanentDetails;
-    
+
+    @ManyToOne
+    @JoinColumn(name = "platform_id", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore
+    private Platform platform;
+
     @Column(name = "userId")
     private Integer userId;
 }

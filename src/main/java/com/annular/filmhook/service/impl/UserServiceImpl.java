@@ -1,7 +1,6 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
-
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -9,22 +8,33 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Base64;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import com.annular.filmhook.UserDetails;
-import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.*;
+import com.annular.filmhook.repository.*;
+
 import com.annular.filmhook.service.MediaFilesService;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
+
+import com.annular.filmhook.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.annular.filmhook.model.User;
-import com.annular.filmhook.repository.MediaFilesRepository;
-import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.webmodel.UserWebModel;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.UserSearchWebModel;
+import com.annular.filmhook.webmodel.IndustryWebModel;
+import com.annular.filmhook.webmodel.ProfessionWebModel;
+import com.annular.filmhook.webmodel.SubProfessionWebModel;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -39,11 +49,35 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     MediaFilesService mediaFilesService;
-    
+
     @Override
     public List<UserWebModel> getAllUsers() {
         return userRepository.findAll().stream().filter(Objects::nonNull).map(this::transformUserObjToUserWebModelObj).collect(Collectors.toList());
     }
+
+    @Autowired
+    IndustryRepository industryRepository;
+
+    @Autowired
+    IndustryUserPermanentDetailsRepository industryPermanentDetailsRepository;
+
+    @Autowired
+    PlatformRepository platformRepository;
+
+    @Autowired
+    PlatformPermanentDetailRepository platformPermanentDetailRepository;
+
+    @Autowired
+    ProfessionRepository professionRepository;
+
+    @Autowired
+    ProfessionPermanentDetailRepository professionPermanentDetailRepository;
+
+    @Autowired
+    SubProfessionRepository subProfessionRepository;
+
+    @Autowired
+    SubProfessionDetailRepository subProfessionDetailRepository;
 
     @Override
     public Optional<UserWebModel> getUserByUserId(Integer userId) {
@@ -63,10 +97,9 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
-//		userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT,
-//				user.getDob()));
-        userWebModel.setDob(user.getDob());
-        userWebModel.setAge(calendarUtil.getAgeFromDate(user.getDob()).toString());
+		//userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
+        //userWebModel.setDob(user.getDob());
+        //userWebModel.setAge(calendarUtil.getAgeFromDate(user.getDob()).toString());
         userWebModel.setGender(user.getGender());
 
         userWebModel.setCountry(user.getCountry());
@@ -356,7 +389,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<FileOutputWebModel> getCoverPic(UserWebModel userWebModel) {
-        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.CoverPic,userWebModel.getUserId());
+        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.CoverPic, userWebModel.getUserId());
         if (outputWebModelList != null && !outputWebModelList.isEmpty()) return outputWebModelList;
         return null;
     }
@@ -373,5 +406,218 @@ public class UserServiceImpl implements UserService {
             logger.error("Error at deleteUserCoverPic() -> [{}]", e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public List<UserSearchWebModel> getAllIndustryByCountryIds(List<Integer> countryIds) {
+        List<UserSearchWebModel> outputList = new ArrayList<>();
+        try {
+            List<Country> countryList = countryIds.stream()
+                    .filter(Objects::nonNull)
+                    .map(countryId -> Country.builder().id(countryId).build())
+                    .collect(Collectors.toList());
+
+            List<Industry> industryList = industryRepository.getIndustryByCountryIds(countryList);
+            UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
+                    .industryList(this.transformIndustryData(industryList))
+                    .build();
+            outputList.add(userSearchWebModel);
+        } catch (Exception e) {
+            logger.error("Error at getIndustryByCountryId() -> [{}]", e.getMessage());
+            e.printStackTrace();
+        }
+        return outputList;
+    }
+
+    private List<IndustryWebModel> transformIndustryData(List<Industry> industryList) {
+        List<IndustryWebModel> industryWebModels = new ArrayList<>();
+        industryList.stream().filter(Objects::nonNull).forEach(industry -> {
+            IndustryWebModel industryWebModel = IndustryWebModel.builder()
+                    .id(industry.getIndustryId())
+                    .industryName(industry.getIndustryName())
+                    .stateCode(industry.getStateCode())
+                    .status(industry.getStatus())
+                    .countryId(industry.getCountry() != null ? industry.getCountry().getId() : null)
+                    .image(industry.getImage() != null ? Base64.getEncoder().encode(industry.getImage()) : null)
+                    .build();
+            industryWebModels.add(industryWebModel);
+        });
+        return industryWebModels;
+    }
+
+    @Override
+    public List<UserSearchWebModel> getAllProfessionByPlatformId(Integer platformId) {
+        List<UserSearchWebModel> outputList = new ArrayList<>();
+        try {
+            List<Profession> professionList = professionRepository.findByPlatform(Platform.builder().platformId(platformId).build());
+            UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
+                    .professionList(this.transformProfessionData(professionList))
+                    .build();
+            outputList.add(userSearchWebModel);
+        } catch (Exception e) {
+            logger.error("Error at getAllProfessionByPlatformId() -> [{}]", e.getMessage());
+            e.printStackTrace();
+        }
+        return outputList;
+    }
+
+    private List<ProfessionWebModel> transformProfessionData(List<Profession> professionList) {
+        List<ProfessionWebModel> professionWebModelList = new ArrayList<>();
+        professionList.stream().filter(Objects::nonNull).forEach(profession -> {
+            ProfessionWebModel professionWebModel = ProfessionWebModel.builder()
+                    .id(profession.getProfessionId())
+                    .professionName(profession.getProfessionName())
+                    .status(profession.getStatus())
+                    .build();
+            professionWebModelList.add(professionWebModel);
+        });
+        return professionWebModelList;
+    }
+
+    @Override
+    public List<UserSearchWebModel> getAllSubProfessionByProfessionId(List<Integer> professionIds) {
+        List<UserSearchWebModel> outputList = new ArrayList<>();
+        try {
+            List<Profession> professionList = professionIds.stream()
+                    .filter(Objects::nonNull)
+                    .map(professionId -> Profession.builder().professionId(professionId).build())
+                    .collect(Collectors.toList());
+            List<SubProfession> subProfessionList = subProfessionRepository.getSubProfessionByProfessionIds(professionList);
+            UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
+                    .subProfessionList(this.transformSubProfessionData(subProfessionList))
+                    .build();
+            outputList.add(userSearchWebModel);
+        } catch (Exception e) {
+            logger.error("Error at getAllAubProfessionByProfessionId() -> [{}]", e.getMessage());
+            e.printStackTrace();
+        }
+        return outputList;
+    }
+
+    private List<SubProfessionWebModel> transformSubProfessionData(List<SubProfession> subProfessionList) {
+        List<SubProfessionWebModel> subProfessionWebModelList = new ArrayList<>();
+        subProfessionList.stream().filter(Objects::nonNull).forEach(subProfession -> {
+            SubProfessionWebModel professionWebModel = SubProfessionWebModel.builder()
+                    .id(subProfession.getSubProfessionId())
+                    .subProfessionName(subProfession.getSubProfessionName())
+                    .status(subProfession.getStatus())
+                    .build();
+            subProfessionWebModelList.add(professionWebModel);
+        });
+        return subProfessionWebModelList;
+    }
+
+    @Override
+    public Map<String, List<Map<String, Object>>> getUserByAllSearchCriteria(UserSearchWebModel searchWebModel) {
+
+        /*
+        * {
+        *   "PRODUCER" : [
+        *       {
+        *           "userData" : UserWebModel,
+        *           "professionData" : {
+        *
+        *           }
+        *       },
+        *   ]
+        * }
+         */
+        Map<String, List<Map<String, Object>>> professionUserMap = new HashMap<>();
+        List<Map<String, Object>> userDataList = new ArrayList<>();
+
+        List<IndustryUserPermanentDetails> userIndustryDetails;
+        List<PlatformPermanentDetail> userPlatformDetails;
+        List<ProfessionPermanentDetail> userProfessionDetails;
+        List<SubProfessionDetails> userSubProfessionDetails;
+        Set<Integer> uniqueUsersSet = new HashSet<>();
+        List<User> userList = new ArrayList<>();
+
+        try {
+            // Example search
+            // Industry :- [KOLLYWOOD-1, MOLLYWOOD-2]
+            // Platform :- [MOVIES-1]
+            // Profession :- [ACTOR-1]
+            // SubProfession :- [HERO-1]
+
+            if (!Utility.isNullOrEmptyList(searchWebModel.getIndustryIds())) {
+                logger.info("Input industry search criteria -> {}", searchWebModel.getIndustryIds());
+
+                List<Industry> industryList = searchWebModel.getIndustryIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(industryId -> Industry.builder().industryId(industryId).build())
+                        .collect(Collectors.toList());
+
+                userIndustryDetails = industryPermanentDetailsRepository.getDataByIndustryIds(industryList);
+                if (!Utility.isNullOrEmptyList(userIndustryDetails))
+                    userIndustryDetails.stream().map(IndustryUserPermanentDetails::getUserId).forEach(uniqueUsersSet::add);
+            }
+
+            if (!Utility.isNullOrBlankWithTrim(String.valueOf(searchWebModel.getPlatformId()))) {
+                logger.info("Input Platform search criteria -> {}", searchWebModel.getPlatformId());
+                userPlatformDetails = platformPermanentDetailRepository.getDataByPlatformId(Platform.builder().platformId(searchWebModel.getPlatformId()).build());
+                if (!Utility.isNullOrEmptyList(userPlatformDetails))
+                    userPlatformDetails.stream().map(PlatformPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
+            }
+
+            if (!Utility.isNullOrEmptyList(searchWebModel.getProfessionIds())) {
+                logger.info("Input profession search criteria -> {}", searchWebModel.getProfessionIds());
+
+                List<Profession> professionList = searchWebModel.getProfessionIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(professionId -> Profession.builder().professionId(professionId).build())
+                        .collect(Collectors.toList());
+
+                userProfessionDetails = professionPermanentDetailRepository.getDataByProfessionIds(professionList);
+                if (!Utility.isNullOrEmptyList(userProfessionDetails))
+                    userProfessionDetails.stream().map(ProfessionPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
+            }
+
+            if (!Utility.isNullOrEmptyList(searchWebModel.getSubProfessionIds())) {
+                logger.info("Input sub profession search criteria -> {}", searchWebModel.getSubProfessionIds());
+
+                List<SubProfession> subProfessionList = searchWebModel.getSubProfessionIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(subProfessionId -> SubProfession.builder().subProfessionId(subProfessionId).build())
+                        .collect(Collectors.toList());
+
+                userSubProfessionDetails = subProfessionDetailRepository.getDataBySubProfessionIds(subProfessionList);
+                if (!Utility.isNullOrEmptyList(userSubProfessionDetails))
+                    userSubProfessionDetails.stream().map(SubProfessionDetails::getUserId).forEach(uniqueUsersSet::add);
+            }
+
+            // Iterating the UserIds and preparing the output
+            if (!Utility.isNullOrEmptySet(uniqueUsersSet)) {
+                AtomicInteger count = new AtomicInteger();
+                uniqueUsersSet.stream().filter(Objects::nonNull).forEach(userId -> {
+                    Optional<User> user = this.getUser(userId);
+                    logger.info("User no: [{}] -> Details {}", count, user);
+                    user.ifPresent(userList::add);
+                    count.getAndIncrement();
+                });
+
+                if(!Utility.isNullOrEmptyList(userList)) {
+                    userList.stream().filter(Objects::nonNull).forEach(user -> {
+
+                        UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
+                        List<ProfessionPermanentDetail> userProfessionDataList = professionPermanentDetailRepository.findByUserId(user.getUserId());
+
+                        if(!Utility.isNullOrEmptyList(userProfessionDataList)) {
+                            userProfessionDataList.stream().filter(Objects::nonNull).forEach(professionData -> {
+                                Map<String, Object> map = new HashMap<>();
+                                map.put("userData", userWebModel);
+                                map.put("professionData", professionData);
+                                userDataList.add(map);
+                                professionUserMap.putIfAbsent(professionData.getProfessionName(), userDataList);
+                            });
+                        }
+
+                    });
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error at getUserByAllSearchCriteria() -> [{}]", e.getMessage());
+            e.printStackTrace();
+        }
+        return professionUserMap;
     }
 }

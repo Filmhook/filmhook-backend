@@ -54,7 +54,7 @@ public class MasterDataServiceImpl implements MasterDataService {
                         .code(country.getCode())
                         .name(country.getName())
                         .description(country.getDescription())
-                        .logo(country.getLogo() != null ? Base64.getEncoder().encode(country.getLogo()) : null)
+                        //.logo(country.getLogo() != null ? Base64.getEncoder().encode(country.getLogo()) : null)
                         .filePath(country.getFilePath() != null ? s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + country.getFilePath() : "")
                         .build();
                 outputList.add(countryWebModel);

@@ -6,6 +6,7 @@ import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -123,7 +125,6 @@ public class UserController {
 
 
     // Work category and profession information
-
     /**
      * Method to update Work category and profession information
      *
@@ -230,6 +231,55 @@ public class UserController {
             logger.error("Error at deleteCoverPic -> {}", e.getMessage());
             return new Response(-1, "Error at deleting cover pic...", null);
         }
+    }
+
+    // User search based on multiple criteria [Country > Industry > Platform > Profession > SubProfession]
+    @GetMapping("/getIndustryByCountry")
+    public Response getIndustryByCountry(@RequestBody UserSearchWebModel searchWebModel) {
+        try {
+            List<UserSearchWebModel> userSearchWebModelList = userService.getAllIndustryByCountryIds(searchWebModel.getCountryIds());
+            if(userSearchWebModelList != null && !userSearchWebModelList.isEmpty()) return new Response(1, "Industry(s) found successfully...", userSearchWebModelList);
+        } catch (Exception e) {
+            logger.error("Error at getIndustryByCountry -> {}", e.getMessage());
+            return new Response(-1, "Error at industry search by country...", null);
+        }
+        return new Response(1, "Industry(s) not found for country id.", searchWebModel.getCountryIds());
+    }
+
+    @GetMapping("/getProfessionByPlatform")
+    public Response getProfessionByPlatform(@RequestBody UserSearchWebModel searchWebModel) {
+        try {
+            List<UserSearchWebModel> userSearchWebModelList = userService.getAllProfessionByPlatformId(searchWebModel.getPlatformId());
+            if(userSearchWebModelList != null && !userSearchWebModelList.isEmpty()) return new Response(1, "Profession(s) found successfully...", userSearchWebModelList);
+        } catch (Exception e) {
+            logger.error("Error at getProfessionByPlatform -> {}", e.getMessage());
+            return new Response(-1, "Error at profession search by platform...", null);
+        }
+        return new Response(-1, "Profession(s) not found for platform id -> [{}]", searchWebModel.getPlatformId());
+    }
+
+    @GetMapping("/getSubProfessionByProfession")
+    public Response getSubProfessionByProfession(@RequestBody UserSearchWebModel searchWebModel) {
+        try {
+            List<UserSearchWebModel> userSearchWebModelList = userService.getAllSubProfessionByProfessionId(searchWebModel.getProfessionIds());
+            if(userSearchWebModelList != null && !userSearchWebModelList.isEmpty()) return new Response(1, "Sub Profession(s) found successfully...", userSearchWebModelList);
+        } catch (Exception e) {
+            logger.error("Error at getSubProfessionByProfession -> {}", e.getMessage());
+            return new Response(-1, "Error at sub profession search by platform...", null);
+        }
+        return new Response(-1, "Sub Profession(s) not found for profession ids -> [{}]", searchWebModel.getProfessionIds());
+    }
+
+    @GetMapping("/getFinalUserList")
+    public Response getUserByAllCriteria(@RequestBody UserSearchWebModel searchWebModel){
+        try {
+            Map<String, List<Map<String, Object>>> outputMap = userService.getUserByAllSearchCriteria(searchWebModel);
+            if(outputMap != null && !outputMap.isEmpty()) return new Response(1, "User(s) found successfully...", outputMap);
+        } catch (Exception e) {
+            logger.error("Error at getUserByAllCriteria -> {}", e.getMessage());
+            return new Response(-1, "Error at final user search...", null);
+        }
+        return new Response(-1, "User(s) not found for all criteria...", null);
     }
 
 }

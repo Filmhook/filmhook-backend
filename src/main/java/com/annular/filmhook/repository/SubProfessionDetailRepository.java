@@ -3,6 +3,7 @@ package com.annular.filmhook.repository;
 import java.util.Collection;
 import java.util.List;
 
+import com.annular.filmhook.model.SubProfession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,4 +30,6 @@ public interface SubProfessionDetailRepository extends JpaRepository<SubProfessi
 	@Query("DELETE FROM SubProfessionDetails i WHERE i.userId = :userId")
 	void deleteByuserId(Integer userId);
 
+	@Query("Select s From SubProfessionDetails s Where s.subProfession in (:subProfessionIds) ")
+    List<SubProfessionDetails> getDataBySubProfessionIds(List<SubProfession> subProfessionIds);
 }
