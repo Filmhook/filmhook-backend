@@ -320,10 +320,10 @@ public class DetailServiceImpl implements DetailService {
     public ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
         try {
             for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
-                Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName()).orElse(null);
+                Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
                 // Create IndustryPermanentDetails object
                 IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
-                industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName());
+                industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                 industryPermanentDetails.setUserId(userId); // Set userId from method parameter
                 industryPermanentDetails.setIndustry(industry);
 
@@ -332,10 +332,10 @@ public class DetailServiceImpl implements DetailService {
 
                 // Iterate over platform details
                 for (PlatformPermanentDetail platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
-                    Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName()).orElse(null);
+                    Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
                     // Create PlatformPermanentDetail object
                     PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
-                    platformPermanentDetail.setPlatformName(platformDetail.getPlatformName());
+                    platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
                     platformPermanentDetail.setUserId(userId);
                     platformPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
                     platformPermanentDetail.setPlatform(platform);
@@ -345,10 +345,10 @@ public class DetailServiceImpl implements DetailService {
 
                     // Iterate over profession details for this platform
                     for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
-                        Profession profession = professionRepository.findByProfessionName(professionDetail.getProfessionName()).orElse(null);
+                        Profession profession = professionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
                         // Create ProfessionPermanentDetail object
                         ProfessionPermanentDetail professionPermanentDetail = new ProfessionPermanentDetail();
-                        professionPermanentDetail.setProfessionName(professionDetail.getProfessionName());
+                        professionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
                         professionPermanentDetail.setSubProfessionName(professionDetail.getSubProfessionName());
                         professionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
                         professionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
@@ -360,10 +360,10 @@ public class DetailServiceImpl implements DetailService {
 
                         // Iterate over sub profession details for this profession
                         for (String subProfessionInput : professionDetail.getSubProfessionName()) {
-                            SubProfession subProfession = subProfessionRepository.findBySubProfessionName(subProfessionInput);
+                            SubProfession subProfession = subProfessionRepository.findBySubProfessionName(subProfessionInput.toUpperCase());
                             SubProfessionDetails subProfessionDetails = SubProfessionDetails.builder()
                                     .integerTemporaryDetailId(null)
-                                    .subProfessionName(subProfessionInput)
+                                    .subProfessionName(subProfessionInput.toUpperCase())
                                     .userId(userId)
                                     .industryUserPermanentDetails(savedIndustryUserPermanentDetails)
                                     .platformPermanentDetail(savedPlatformPermanentDetail)
@@ -1049,20 +1049,20 @@ public class DetailServiceImpl implements DetailService {
                         existingIndustry.getPlatformDetails().clear(); // Clear existing platform details
                         for (PlatformPermanentDetail platformDetail : newPlatformDetails) {
                             PlatformPermanentDetail savedPlatform = new PlatformPermanentDetail();
-                            savedPlatform.setPlatformName(platformDetail.getPlatformName());
+                            savedPlatform.setPlatformName(platformDetail.getPlatformName().toUpperCase());
                             savedPlatform.setIndustryUserPermanentDetails(existingIndustry);
                             savedPlatform.setUserId(userId);
                             PlatformPermanentDetail savedPlatformDetail = platformPermanentDetailRepository.save(savedPlatform);
                             for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
                                 ProfessionPermanentDetail savedProfession = new ProfessionPermanentDetail();
-                                savedProfession.setProfessionName(professionDetail.getProfessionName());
+                                savedProfession.setProfessionName(professionDetail.getProfessionName().toUpperCase());
                                 savedProfession.setSubProfessionName(professionDetail.getSubProfessionName());
                                 savedProfession.setPlatformPermanentDetail(savedPlatformDetail);
                                 professionPermanentDetailRepository.save(savedProfession);
                             }
                         }
                         // Update existing industry user permanent details
-                        existingIndustry.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName());
+                        existingIndustry.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                         industryUserPermanentDetailsRepository.save(existingIndustry);
                     }
                     industryTemporaryDetailsRepository.deleteByUserId(userId);
@@ -1073,18 +1073,18 @@ public class DetailServiceImpl implements DetailService {
                 } else {
                     // Create new industry user permanent details if it doesn't exist
                     IndustryUserPermanentDetails newIndustryPermanentDetails = new IndustryUserPermanentDetails();
-                    newIndustryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName());
+                    newIndustryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                     newIndustryPermanentDetails.setUserId(userId);
                     IndustryUserPermanentDetails savedIndustry = industryUserPermanentDetailsRepository.save(newIndustryPermanentDetails);
                     for (PlatformPermanentDetail platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
                         PlatformPermanentDetail savedPlatform = new PlatformPermanentDetail();
-                        savedPlatform.setPlatformName(platformDetail.getPlatformName());
+                        savedPlatform.setPlatformName(platformDetail.getPlatformName().toUpperCase());
                         savedPlatform.setIndustryUserPermanentDetails(savedIndustry);
                         savedPlatform.setUserId(userId);
                         PlatformPermanentDetail savedPlatformDetail = platformPermanentDetailRepository.save(savedPlatform);
                         for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
                             ProfessionPermanentDetail savedProfession = new ProfessionPermanentDetail();
-                            savedProfession.setProfessionName(professionDetail.getProfessionName());
+                            savedProfession.setProfessionName(professionDetail.getProfessionName().toUpperCase());
                             savedProfession.setSubProfessionName(professionDetail.getSubProfessionName());
                             savedProfession.setPlatformPermanentDetail(savedPlatformDetail);
                             professionPermanentDetailRepository.save(savedProfession);
