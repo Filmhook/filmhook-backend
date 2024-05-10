@@ -7,9 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.mail.internet.MimeMessage;
 
+import com.annular.filmhook.model.*;
+import com.annular.filmhook.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +29,7 @@ import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.PlatformPermanentDetail;
-import com.annular.filmhook.model.ProfessionPermanentDetail;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
@@ -35,8 +38,6 @@ import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
 import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
 import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
 import com.annular.filmhook.repository.PlatformRepository;
-import com.annular.filmhook.repository.ProfessionRepository;
-import com.annular.filmhook.repository.SubProfessionRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -80,13 +81,7 @@ public class AdminServiceImpl implements AdminService {
 	private IndustryUserPermanentDetailsRepository industryUserPermanentDetailsRepository;
 
 	@Autowired
-	private ProfessionRepository professionRepository;
-
-	@Autowired
 	private IndustryTemporaryDetailRepository industryTemporaryDetailsRepository;
-
-	@Autowired
-	private SubProfessionRepository subProfessionRepository;
 
 	@Autowired
 	FileUtil fileUtil;
@@ -96,6 +91,10 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	FilmProfessionRepository filmProfessionRepository;
+
+	@Autowired
+	FilmSubProfessionRepository filmSubProfessionRepository;
+
 	public static final Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
 
 	@Override
@@ -290,11 +289,9 @@ public class AdminServiceImpl implements AdminService {
 	@Override
 	public ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId) {
 		try {
-			List<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository
-					.findByUserId(userId);
+			List<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository.findByUserId(userId);
 			if (userPermanentDetails.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body("User permanent details not found for user id: " + userId);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User permanent details not found for user id: " + userId);
 			} else {
 				List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
 				for (IndustryUserPermanentDetails details : userPermanentDetails) {
@@ -303,9 +300,7 @@ public class AdminServiceImpl implements AdminService {
 					responseDTO.setIupdId(details.getIupdId());
 
 					System.out.println("<<<<<<<<<<<<<<<<" + details.getIndustriesName());
-//					Optional<Industry> industryOptional = industryRepository
-//							.findByIndustryName(details.getIndustriesName());
-//
+//					Optional<Industry> industryOptional = industryRepository.findByIndustryName(details.getIndustriesName());
 //					if (industryOptional.isPresent()) {
 //						Industry industry = industryOptional.get();
 //						responseDTO.setImage(Base64.getEncoder().encode(industry.getImage()));
@@ -319,8 +314,7 @@ public class AdminServiceImpl implements AdminService {
 						platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
 						List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
 
-						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId,
-								MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
 						platformDetailDTO.setOutputWebModelList(outputWebModelList); // Set outputWebModelList in DTO
 
 						platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
@@ -334,21 +328,25 @@ public class AdminServiceImpl implements AdminService {
 //							platformDetailDTO.setImage(Base64.getEncoder().encode(platform.getImage()));
 //						}
 
-						List<ProfessionPermanentDetail> professionDetails = platformDetail.getProfessionDetails();
+						List<FilmProfessionPermanentDetail> professionDetails = platformDetail.getProfessionDetails();
 						List<ProfessionDetailDTO> professionDetailDTOList = new ArrayList<>();
-						for (ProfessionPermanentDetail professionDetail : professionDetails) {
+						for (FilmProfessionPermanentDetail professionDetail : professionDetails) {
 							ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
 							professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
-							professionDetailDTO.setSubProfessionName(professionDetail.getSubProfessionName());
+
+							List<String> filmSubProfessionNames = filmSubProfessionRepository.findBySubProfessionName(professionDetail.getProfessionName().toUpperCase())
+									.stream()
+									.map(FilmSubProfession::getSubProfessionName)
+									.collect(Collectors.toList());
+							professionDetailDTO.setSubProfessionName(filmSubProfessionNames);
+
 							professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
 							professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
 
-							Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository
-									.findByProfesssionName(professionDetail.getProfessionName());
+							Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName());
 							if (filmProfessionOptional.isPresent()) {
 								FilmProfession filmProfession = filmProfessionOptional.get();
 								// professionDetailDTO.setImage(Base64.getEncoder().encode(filmProfession.getImage()));
-
 							}
 							professionDetailDTOList.add(professionDetailDTO);
 						}
@@ -361,8 +359,7 @@ public class AdminServiceImpl implements AdminService {
 				return ResponseEntity.ok(responseDTOList);
 			}
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Failed to retrieve industry user permanent details.");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve industry user permanent details.");
 		}
 	}
 

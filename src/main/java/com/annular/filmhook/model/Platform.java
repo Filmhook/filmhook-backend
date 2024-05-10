@@ -58,10 +58,7 @@ public class Platform {
 	@Column
 	private byte[] image;
 
-	public IndustryUserPermanentDetails getIndustry() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	@Column(name = "icon_file_path")
+	private String filePath;
 
 }

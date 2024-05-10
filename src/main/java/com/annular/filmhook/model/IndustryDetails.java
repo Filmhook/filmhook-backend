@@ -1,7 +1,5 @@
 package com.annular.filmhook.model;
 
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -32,7 +30,7 @@ public class IndustryDetails {
 	private Integer industryDetailId;
 	
 	@Column(name = "industry_temporary_detail_id")
-	private Integer integerTemporaryDetailId;
+	private Integer industryTemporaryDetailId;
 	
 	@Column(name = "industry_name")
 	private String industry_name;

@@ -13,12 +13,12 @@ import com.annular.filmhook.model.PlatformDetails;
 @Repository
 public interface PlatformDetailRepository extends JpaRepository<PlatformDetails, Integer>{
 
-	List<PlatformDetails> findByIntegerTemporaryDetailId(Integer itId);
+	List<PlatformDetails> findByIndustryTemporaryDetailId(Integer itId);
 
 	@Transactional
     @Modifying
-    @Query("DELETE FROM PlatformDetails pd WHERE pd.integerTemporaryDetailId = :temporaryId")
-	void deleteByIntegerTemporaryDetailId(Integer temporaryId);
+    @Query("DELETE FROM PlatformDetails pd WHERE pd.industryTemporaryDetailId = :temporaryId")
+	void deleteByIndustryTemporaryDetailId(Integer temporaryId);
 
 	@Transactional
 	@Modifying

@@ -13,8 +13,8 @@ public interface IndustryDetailRepository extends JpaRepository<IndustryDetails,
 
 	@Transactional
 	@Modifying
-	@Query("DELETE FROM IndustryDetails id WHERE id.integerTemporaryDetailId = :temporaryId")
-	void deleteByIntegerTemporaryDetailId(Integer temporaryId);
+	@Query("DELETE FROM IndustryDetails id WHERE id.industryTemporaryDetailId = :temporaryId")
+	void deleteByIndustryTemporaryDetailId(Integer temporaryId);
 
 	@Transactional
 	@Modifying

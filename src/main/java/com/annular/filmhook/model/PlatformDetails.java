@@ -29,7 +29,7 @@ public class PlatformDetails {
 	private Integer platformDetailId;
 	
 	@Column(name = "industry_temporary_detail_id")
-	private Integer integerTemporaryDetailId;
+	private Integer industryTemporaryDetailId;
 	
 	@Column(name = "platform_name")
 	private String platformName;

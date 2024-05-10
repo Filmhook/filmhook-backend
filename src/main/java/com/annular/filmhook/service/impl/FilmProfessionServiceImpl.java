@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -44,7 +43,7 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 			List<Map<String, Object>> professionList = new ArrayList<>();
 			for (FilmProfession profession : professions) {
 				Map<String, Object> professionMap = new HashMap<>();
-				professionMap.put("filmProfessionId", profession.getFilmProfesssionId());
+				professionMap.put("filmProfessionId", profession.getFilmProfessionId());
 				professionMap.put("professionName", profession.getProfessionName());
 				//professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
 				professionList.add(professionMap);

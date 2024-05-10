@@ -21,7 +21,6 @@ import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.PlatformRepository;
 import com.annular.filmhook.repository.ShareRepository;
-import com.annular.filmhook.repository.SubProfessionRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.ActionService;
 import com.annular.filmhook.webmodel.CommentWebModel;
@@ -33,9 +32,6 @@ public class ActionServiceImpl implements ActionService {
 
 	@Autowired
 	UserRepository userRepository;
-
-	@Autowired
-    SubProfessionRepository subProfessionRepository;
 
 	@Autowired
 	PlatformRepository industryRepository;

@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -24,7 +25,6 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
-import com.annular.filmhook.model.FilmProfession;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryDetails;
 import com.annular.filmhook.model.IndustryTemporaryDetails;
@@ -33,12 +33,14 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.model.PlatformDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
-import com.annular.filmhook.model.Profession;
-import com.annular.filmhook.model.ProfessionPermanentDetail;
-import com.annular.filmhook.model.ProfesssionDetails;
-import com.annular.filmhook.model.SubProfessionDetails;
-import com.annular.filmhook.model.SubProfession;
+import com.annular.filmhook.model.FilmProfession;
+import com.annular.filmhook.model.FilmProfessionDetails;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+import com.annular.filmhook.model.FilmSubProfession;
+import com.annular.filmhook.model.FilmSubProfessionDetails;
+import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
 import com.annular.filmhook.model.User;
+
 import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.IndustryDetailRepository;
 import com.annular.filmhook.repository.IndustryRepository;
@@ -47,16 +49,18 @@ import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
 import com.annular.filmhook.repository.PlatformDetailRepository;
 import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
 import com.annular.filmhook.repository.PlatformRepository;
-import com.annular.filmhook.repository.ProfessionDetailRepository;
-import com.annular.filmhook.repository.ProfessionPermanentDetailRepository;
-import com.annular.filmhook.repository.ProfessionRepository;
-import com.annular.filmhook.repository.SubProfessionDetailRepository;
-import com.annular.filmhook.repository.SubProfessionRepository;
+import com.annular.filmhook.repository.FilmProfessionDetailRepository;
+import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
+import com.annular.filmhook.repository.FilmSubProfessionDetailRepository;
+import com.annular.filmhook.repository.FilmSubProfessionRepository;
+import com.annular.filmhook.repository.FilmSubProfessionPermanentDetailsRepository;
+
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.service.DetailService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.service.UserService;
+
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -64,6 +68,8 @@ import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
+import com.annular.filmhook.webmodel.ProfessionDetailDTO;
+import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 
 @Service
 public class DetailServiceImpl implements DetailService {
@@ -87,13 +93,7 @@ public class DetailServiceImpl implements DetailService {
     private IndustryUserPermanentDetailsRepository industryUserPermanentDetailsRepository;
 
     @Autowired
-    private ProfessionRepository professionRepository;
-
-    @Autowired
     private IndustryTemporaryDetailRepository industryTemporaryDetailsRepository;
-
-    @Autowired
-    private SubProfessionRepository subProfessionRepository;
 
     @Autowired
     FileUtil fileUtil;
@@ -108,10 +108,10 @@ public class DetailServiceImpl implements DetailService {
     private PlatformDetailRepository platformDetailsRepository;
 
     @Autowired
-    private ProfessionDetailRepository professsionDetailsRepository;
+    private FilmProfessionDetailRepository filmProfessionDetailRepository;
 
     @Autowired
-    private ProfessionPermanentDetailRepository professionPermanentDetailRepository;
+    private FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
 
 //	@Autowired
 //	private IndustryUserPermanentDetailsRepository industryPermanentDetailsRepository;
@@ -120,13 +120,19 @@ public class DetailServiceImpl implements DetailService {
     private IndustryDetailRepository industryDetailsRepository;
 
     @Autowired
-    private SubProfessionDetailRepository subProfessionDetailsRepository;
+    private FilmSubProfessionDetailRepository filmSubProfessionDetailRepository;
 
     @Autowired
     private UserDetails userDetails;
 
     @Autowired
     FilmProfessionRepository filmProfessionRepository;
+
+    @Autowired
+    FilmSubProfessionRepository filmSubProfessionRepository;
+
+    @Autowired
+    FilmSubProfessionPermanentDetailsRepository filmSubProfessionPermanentDetailsRepository;
 
     @Autowired
     AuthenticationService authenticationService;
@@ -145,7 +151,8 @@ public class DetailServiceImpl implements DetailService {
                     Map<String, Object> industryMap = new HashMap<>();
                     industryMap.put("industryId", industry.getIndustryId());
                     industryMap.put("industryName", industry.getIndustryName());
-                    industryMap.put("industryImage", industry.getImage());
+                    //industryMap.put("industryImage", industry.getImage());
+                    industryMap.put("logo_file_path", industry.getFilePath());
                     industryDetails.add(industryMap);
                 }
                 details.put("industries", industryDetails);
@@ -155,21 +162,23 @@ public class DetailServiceImpl implements DetailService {
                 List<Map<String, Object>> platformDetails = new ArrayList<>();
                 List<Platform> platforms = platformRepository.findAll();
                 for (Platform platform : platforms) {
-                    Map<String, Object> industryMap = new HashMap<>();
-                    industryMap.put("platformId", platform.getPlatformId());
-                    industryMap.put("platformName", platform.getPlatformName());
-                    platformDetails.add(industryMap);
+                    Map<String, Object> platformMap = new HashMap<>();
+                    platformMap.put("platformId", platform.getPlatformId());
+                    platformMap.put("platformName", platform.getPlatformName());
+                    platformMap.put("logo_file_path", platform.getFilePath());
+                    platformDetails.add(platformMap);
                 }
                 details.put("platform", platformDetails);
             }
 
             if (detailRequest.isProfessions()) {
                 List<Map<String, Object>> professionDetails = new ArrayList<>();
-                List<Profession> professions = professionRepository.findAll();
-                for (Profession profession : professions) {
+                List<FilmProfession> professions = filmProfessionRepository.findAll();
+                for (FilmProfession profession : professions) {
                     Map<String, Object> professionMap = new HashMap<>();
-                    professionMap.put("professionId", profession.getProfessionId());
+                    professionMap.put("professionId", profession.getFilmProfessionId());
                     professionMap.put("professionName", profession.getProfessionName());
+                    professionMap.put("logo_file_path", profession.getFilePath());
                     professionDetails.add(professionMap);
                 }
                 details.put("professions", professionDetails);
@@ -177,8 +186,8 @@ public class DetailServiceImpl implements DetailService {
 
             if (detailRequest.isSubProfessions()) {
                 List<Map<String, Object>> subProfessionDetails = new ArrayList<>();
-                List<SubProfession> subProfessions = subProfessionRepository.findAll();
-                for (SubProfession subProfession : subProfessions) {
+                List<FilmSubProfession> subProfessions = filmSubProfessionRepository.findAll();
+                for (FilmSubProfession subProfession : subProfessions) {
                     Map<String, Object> subProfessionMap = new HashMap<>();
                     subProfessionMap.put("subProfessionId", subProfession.getSubProfessionId());
                     subProfessionMap.put("subProfessionName", subProfession.getSubProfessionName());
@@ -217,7 +226,7 @@ public class DetailServiceImpl implements DetailService {
             // Save details to PlatformDetails
             for (String platform : platformName) {
                 PlatformDetails platformDetails = new PlatformDetails();
-                platformDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
+                platformDetails.setIndustryTemporaryDetailId(savedTempDetails.getItId());
                 platformDetails.setPlatformName(platform);
                 platformDetails.setUserId(userId);
                 platformDetailsRepository.save(platformDetails);
@@ -225,17 +234,17 @@ public class DetailServiceImpl implements DetailService {
 
             // Save details to ProfesssionDetails
             for (String prof : professionName) {
-                ProfesssionDetails professionDetails = new ProfesssionDetails();
-                professionDetails.setProfessionTemporaryDetailId(savedTempDetails.getItId());
-                professionDetails.setProfessionname(prof);
-                professionDetails.setUserId(userId);
-                professsionDetailsRepository.save(professionDetails);
+                FilmProfessionDetails filmProfessionDetails = new FilmProfessionDetails();
+                filmProfessionDetails.setProfessionTemporaryDetailId(savedTempDetails.getItId());
+                filmProfessionDetails.setProfessionName(prof);
+                filmProfessionDetails.setUserId(userId);
+                filmProfessionDetailRepository.save(filmProfessionDetails);
             }
 
             // Save details to IndustryDetails
             for (String industry : industriesName) {
                 IndustryDetails industryDetails = new IndustryDetails();
-                industryDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
+                industryDetails.setIndustryTemporaryDetailId(savedTempDetails.getItId());
                 industryDetails.setIndustry_name(industry);
                 industryDetails.setUserId(userId);
                 industryDetailsRepository.save(industryDetails);
@@ -243,11 +252,11 @@ public class DetailServiceImpl implements DetailService {
 
             // Save details to SubProfessionDetails
             for (String subProf : subProfessionName) {
-                SubProfessionDetails subProfessionDetails = new SubProfessionDetails();
-                subProfessionDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
-                subProfessionDetails.setSubProfessionName(subProf);
-                subProfessionDetails.setUserId(userId);
-                subProfessionDetailsRepository.save(subProfessionDetails);
+                FilmSubProfessionDetails filmSubProfessionDetails = new FilmSubProfessionDetails();
+                filmSubProfessionDetails.setIndustryTemporaryDetailId(savedTempDetails.getItId());
+                filmSubProfessionDetails.setSubProfessionName(subProf);
+                filmSubProfessionDetails.setUserId(userId);
+                filmSubProfessionDetailRepository.save(filmSubProfessionDetails);
             }
 
             // Log the received data
@@ -276,25 +285,25 @@ public class DetailServiceImpl implements DetailService {
                 for (String industryName : industriesName) {
                     // Create a separate platform list for each industry
                     List<Map<String, Object>> platformList = new ArrayList<>();
-                    List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
+                    List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIndustryTemporaryDetailId(tempDetails.getItId());
 
                     for (PlatformDetails platformDetails : platformDetailsList) {
                         Map<String, Object> platformMap = new HashMap<>();
                         platformMap.put("platformName", platformDetails.getPlatformName());
 
                         // Add professions for the platform
-                        List<ProfesssionDetails> professionDetailsList = professsionDetailsRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
+                        List<FilmProfessionDetails> filmProfessionDetailsList = filmProfessionDetailRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
                         List<String> professions = new ArrayList<>();
-                        for (ProfesssionDetails professionDetails : professionDetailsList) {
-                            professions.add(professionDetails.getProfessionname());
+                        for (FilmProfessionDetails filmProfessionDetails : filmProfessionDetailsList) {
+                            professions.add(filmProfessionDetails.getProfessionName());
                         }
                         platformMap.put("professions", professions);
 
                         // Add sub-professions for the platform
-                        List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
+                        List<FilmSubProfessionDetails> filmSubProfessionDetailsList = filmSubProfessionDetailRepository.findByIndustryTemporaryDetailId(tempDetails.getItId());
                         List<String> subProfessions = new ArrayList<>();
-                        for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
-                            subProfessions.add(subProfessionDetails.getSubProfessionName());
+                        for (FilmSubProfessionDetails filmSubProfessionDetails : filmSubProfessionDetailsList) {
+                            subProfessions.add(filmSubProfessionDetails.getSubProfessionName());
                         }
                         platformMap.put("subProfessions", subProfessions);
 
@@ -320,57 +329,62 @@ public class DetailServiceImpl implements DetailService {
     public ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
         try {
             for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
+
                 Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
+
                 // Create IndustryPermanentDetails object
                 IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
                 industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                 industryPermanentDetails.setUserId(userId); // Set userId from method parameter
                 industryPermanentDetails.setIndustry(industry);
-
                 // Save the IndustryPermanentDetails object
                 IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.save(industryPermanentDetails);
 
                 // Iterate over platform details
-                for (PlatformPermanentDetail platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
+                for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
+
                     Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
+
                     // Create PlatformPermanentDetail object
                     PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
                     platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
                     platformPermanentDetail.setUserId(userId);
                     platformPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
                     platformPermanentDetail.setPlatform(platform);
-
                     // Save the PlatformPermanentDetail object
                     PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.save(platformPermanentDetail);
 
                     // Iterate over profession details for this platform
-                    for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
-                        Profession profession = professionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
-                        // Create ProfessionPermanentDetail object
-                        ProfessionPermanentDetail professionPermanentDetail = new ProfessionPermanentDetail();
-                        professionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
-                        professionPermanentDetail.setSubProfessionName(professionDetail.getSubProfessionName());
-                        professionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
-                        professionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
-                        professionPermanentDetail.setProfession(profession);
-                        professionPermanentDetail.setUserId(userId);
+                    for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
 
+                        FilmProfession profession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
+
+                        // Create ProfessionPermanentDetail object
+                        FilmProfessionPermanentDetail filmProfessionPermanentDetail = new FilmProfessionPermanentDetail();
+                        filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
+                        filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName());
+                        filmProfessionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
+                        filmProfessionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
+                        filmProfessionPermanentDetail.setFilmProfession(profession);
+                        filmProfessionPermanentDetail.setUserId(userId);
                         // Save the ProfessionPermanentDetail object
-                        ProfessionPermanentDetail savedProfessionPermanentDetail = professionPermanentDetailRepository.save(professionPermanentDetail);
+                        FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.save(filmProfessionPermanentDetail);
 
                         // Iterate over sub profession details for this profession
                         for (String subProfessionInput : professionDetail.getSubProfessionName()) {
-                            SubProfession subProfession = subProfessionRepository.findBySubProfessionName(subProfessionInput.toUpperCase());
-                            SubProfessionDetails subProfessionDetails = SubProfessionDetails.builder()
-                                    .integerTemporaryDetailId(null)
-                                    .subProfessionName(subProfessionInput.toUpperCase())
+
+                            FilmSubProfession subProfession = filmSubProfessionRepository.findBySubProfessionName(subProfessionInput.toUpperCase()).orElse(null);
+
+                            FilmSubProfessionPermanentDetail subProfessionPermanentDetails = FilmSubProfessionPermanentDetail.builder()
+                                    .professionName(subProfessionInput.toUpperCase())
                                     .userId(userId)
                                     .industryUserPermanentDetails(savedIndustryUserPermanentDetails)
                                     .platformPermanentDetail(savedPlatformPermanentDetail)
-                                    .professionPermanentDetail(savedProfessionPermanentDetail)
-                                    .subProfession(subProfession)
+                                    .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
+                                    .ppdProfessionId(0)
+                                    .filmSubProfession(subProfession)
                                     .build();
-                            subProfessionDetailsRepository.saveAndFlush(subProfessionDetails);
+                            filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
                         }
                     }
                 }
@@ -378,8 +392,8 @@ public class DetailServiceImpl implements DetailService {
             industryTemporaryDetailsRepository.deleteByUserId(userId);
             industryDetailsRepository.deleteByUserId(userId);
             platformDetailsRepository.deleteByUserId(userId);
-            professsionDetailsRepository.deleteByUserId(userId);
-            subProfessionDetailsRepository.deleteByuserId(userId);
+            filmProfessionDetailRepository.deleteByUserId(userId);
+            filmSubProfessionDetailRepository.deleteByuserId(userId);
 
             // Return a success response
             return ResponseEntity.ok("Industry user permanent details added successfully.");
@@ -420,10 +434,10 @@ public class DetailServiceImpl implements DetailService {
 
             // Delete existing temporary details
             industryTemporaryDetailsRepository.deleteById(temporaryId);
-            professsionDetailsRepository.deleteByProfessionTemporaryDetailId(temporaryId);
-            subProfessionDetailsRepository.deleteByIntegerTemporaryDetailId(temporaryId);
-            industryDetailsRepository.deleteByIntegerTemporaryDetailId(temporaryId);
-            platformDetailsRepository.deleteByIntegerTemporaryDetailId(temporaryId);
+            filmProfessionDetailRepository.deleteByProfessionTemporaryDetailId(temporaryId);
+            filmSubProfessionDetailRepository.deleteByIndustryTemporaryDetailId(temporaryId);
+            industryDetailsRepository.deleteByIndustryTemporaryDetailId(temporaryId);
+            platformDetailsRepository.deleteByIndustryTemporaryDetailId(temporaryId);
 
             // Save new details
             IndustryTemporaryDetails tempDetails = new IndustryTemporaryDetails();
@@ -437,33 +451,33 @@ public class DetailServiceImpl implements DetailService {
             // Save details to PlatformDetails
             for (String platform : platformName) {
                 PlatformDetails platformDetails = new PlatformDetails();
-                platformDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
+                platformDetails.setIndustryTemporaryDetailId(savedTempDetails.getItId());
                 platformDetails.setPlatformName(platform);
                 platformDetailsRepository.save(platformDetails);
             }
 
             // Save details to ProfesssionDetails
             for (String prof : professionName) {
-                ProfesssionDetails professionDetails = new ProfesssionDetails();
-                professionDetails.setProfessionTemporaryDetailId(savedTempDetails.getItId());
-                professionDetails.setProfessionname(prof);
-                professsionDetailsRepository.save(professionDetails);
+                FilmProfessionDetails filmProfessionDetails = new FilmProfessionDetails();
+                filmProfessionDetails.setProfessionTemporaryDetailId(savedTempDetails.getItId());
+                filmProfessionDetails.setProfessionName(prof);
+                filmProfessionDetailRepository.save(filmProfessionDetails);
             }
 
             // Save details to IndustryDetails
             for (String industry : industriesName) {
                 IndustryDetails industryDetails = new IndustryDetails();
-                industryDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
+                industryDetails.setIndustryTemporaryDetailId(savedTempDetails.getItId());
                 industryDetails.setIndustry_name(industry);
                 industryDetailsRepository.save(industryDetails);
             }
 
             // Save details to SubProfessionDetails
             for (String subProf : subProfessionName) {
-                SubProfessionDetails subProfessionDetails = new SubProfessionDetails();
-                subProfessionDetails.setIntegerTemporaryDetailId(savedTempDetails.getItId());
-                subProfessionDetails.setSubProfessionName(subProf);
-                subProfessionDetailsRepository.save(subProfessionDetails);
+                FilmSubProfessionDetails filmSubProfessionDetails = new FilmSubProfessionDetails();
+                filmSubProfessionDetails.setIndustryTemporaryDetailId(savedTempDetails.getItId());
+                filmSubProfessionDetails.setSubProfessionName(subProf);
+                filmSubProfessionDetailRepository.save(filmSubProfessionDetails);
             }
 
             // Log the received data
@@ -491,7 +505,7 @@ public class DetailServiceImpl implements DetailService {
                 for (String industryName : industriesName) {
                     // Create a separate platform list for each industry
                     List<Map<String, Object>> platformList = new ArrayList<>();
-                    List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
+                    List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIndustryTemporaryDetailId(tempDetails.getItId());
 
                     for (PlatformDetails platformDetails : platformDetailsList) {
                         Map<String, Object> platformMap = new HashMap<>();
@@ -499,31 +513,30 @@ public class DetailServiceImpl implements DetailService {
 
                         // Add professions for the platform
                         List<Map<String, Object>> professionsList = new ArrayList<>();
-                        List<ProfesssionDetails> professionDetailsList = professsionDetailsRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
+                        List<FilmProfessionDetails> filmProfessionDetailsList = filmProfessionDetailRepository.findByProfessionTemporaryDetailId(tempDetails.getItId());
 
                         // Retrieve all distinct profession names for this platform
-                        Set<String> distinctProfessions = professionDetailsList.stream()
-                                .map(ProfesssionDetails::getProfessionname).collect(Collectors.toSet());
+                        Set<String> distinctProfessions = filmProfessionDetailsList.stream().map(FilmProfessionDetails::getProfessionName).collect(Collectors.toSet());
 
                         for (String professionName : distinctProfessions) {
                             // Retrieve SubProfessionDetails matching the professionName and
-                            // integerTemporaryDetailId
-                            List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository.findByIntegerTemporaryDetailIdAndProfessionName(tempDetails.getItId());
+                            // industryTemporaryDetailId
+                            List<FilmSubProfessionDetails> filmSubProfessionDetailsList = filmSubProfessionDetailRepository.findByIndustryTemporaryDetailIdAndProfessionName(tempDetails.getItId());
 
                             List<String> subProfessions = new ArrayList<>();
                             // Add sub-professions
-                            for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
-                                subProfessions.add(subProfessionDetails.getSubProfessionName());
+                            for (FilmSubProfessionDetails filmSubProfessionDetails : filmSubProfessionDetailsList) {
+                                subProfessions.add(filmSubProfessionDetails.getSubProfessionName());
                             }
 
                             // Check if professionName exists in FilmProfession table
-                            FilmProfession filmProfession = filmProfessionRepository.findByProfessionName(professionName);
+                            FilmProfession filmProfession = filmProfessionRepository.findByProfessionName(professionName).orElse(null);
                             if (filmProfession != null) {
                                 // Get sub-professions associated with the profession from FilmProfession table
-                                List<String> filmSubProfessions = filmProfession.getSubProfessionName();
+                                List<FilmSubProfession> filmSubProfessions = filmSubProfessionRepository.findByProfession(filmProfession);
 
                                 // Filter sub-professions based on those associated with the profession
-                                List<String> filteredSubProfessions = subProfessions.stream().filter(filmSubProfessions::contains).collect(Collectors.toList());
+                                List<String> filteredSubProfessions = filmSubProfessions.stream().map(FilmSubProfession::getSubProfessionName).collect(Collectors.toList());
 
                                 // Create professionMap only if there are filtered sub-professions
                                 if (!filteredSubProfessions.isEmpty()) {
@@ -575,7 +588,7 @@ public class DetailServiceImpl implements DetailService {
 //	            for (String industryName : industriesName) {
 //	                Map<String, Object> industryMap = new HashMap<>();
 //	                List<Map<String, Object>> platformList = new ArrayList<>();
-//	                List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIntegerTemporaryDetailId(tempDetails.getItId());
+//	                List<PlatformDetails> platformDetailsList = platformDetailsRepository.findByIndustryTemporaryDetailId(tempDetails.getItId());
 //
 //	                for (PlatformDetails platformDetails : platformDetailsList) {
 //	                    Map<String, Object> platformMap = new HashMap<>();
@@ -590,7 +603,7 @@ public class DetailServiceImpl implements DetailService {
 //
 //	                    for (String professionName : distinctProfessions) {
 //	                        List<SubProfessionDetails> subProfessionDetailsList = subProfessionDetailsRepository
-//	                                .findByIntegerTemporaryDetailIdAndProfessionName(tempDetails.getItId());
+//	                                .findByIndustryTemporaryDetailIdAndProfessionName(tempDetails.getItId());
 //
 //	                        List<String> subProfessions = new ArrayList<>();
 //	                        for (SubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
@@ -838,13 +851,14 @@ public class DetailServiceImpl implements DetailService {
                 }
 
                 Map<String, List<String>> professionsMap = platformProfessionsMap.get(platformName);
-                for (ProfessionPermanentDetail professionDetail : detail.getProfessionDetails()) {
+                for (FilmProfessionPermanentDetail professionDetail : detail.getProfessionDetails()) {
                     String professionName = professionDetail.getProfessionName();
                     if (!professionsMap.containsKey(professionName)) {
                         professionsMap.put(professionName, new ArrayList<>());
                     }
                     Set<String> subProfessionsSet = new HashSet<>(professionsMap.get(professionName));
-                    subProfessionsSet.addAll(professionDetail.getSubProfessionName());
+                    List<FilmSubProfession> filmSubProfessionList = filmSubProfessionRepository.findByProfession(professionDetail.getFilmProfession());
+                    subProfessionsSet = filmSubProfessionList.stream().filter(Objects::nonNull).map(FilmSubProfession::getSubProfessionName).collect(Collectors.toSet());
                     professionsMap.put(professionName, new ArrayList<>(subProfessionsSet));
                 }
             }
@@ -929,7 +943,7 @@ public class DetailServiceImpl implements DetailService {
 
                     Map<String, Object> professionMap = new HashMap<>();
                     professionMap.put("professionName", professionName);
-                    Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository.findByProfesssionName(professionName);
+                    Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository.findByProfessionName(professionName);
                     if (filmProfessionOptional.isPresent()) {
                         FilmProfession filmProfession = filmProfessionOptional.get();
                         byte[] imageData = Base64.getEncoder().encode(filmProfession.getImage());
@@ -1041,24 +1055,24 @@ public class DetailServiceImpl implements DetailService {
                     IndustryUserPermanentDetails existingIndustry = existingIndustryOptional.get();
                     // Check if platform details are different
                     List<PlatformPermanentDetail> existingPlatformDetails = existingIndustry.getPlatformDetails();
-                    List<PlatformPermanentDetail> newPlatformDetails = industryUserPermanentDetailWebModel.getPlatformDetails();
+                    List<PlatformDetailsWebModel> newPlatformDetails = industryUserPermanentDetailWebModel.getPlatformDetails();
                     if (!arePlatformDetailsEqual(existingPlatformDetails, newPlatformDetails)) {
                         // Delete existing platform and profession details associated with the existing industry
                         platformPermanentDetailRepository.deleteByIndustryUserPermanentDetailsId(existingIndustry.getIupdId());
                         // Update industry user permanent details with the new platform and profession details
                         existingIndustry.getPlatformDetails().clear(); // Clear existing platform details
-                        for (PlatformPermanentDetail platformDetail : newPlatformDetails) {
-                            PlatformPermanentDetail savedPlatform = new PlatformPermanentDetail();
-                            savedPlatform.setPlatformName(platformDetail.getPlatformName().toUpperCase());
-                            savedPlatform.setIndustryUserPermanentDetails(existingIndustry);
-                            savedPlatform.setUserId(userId);
-                            PlatformPermanentDetail savedPlatformDetail = platformPermanentDetailRepository.save(savedPlatform);
-                            for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
-                                ProfessionPermanentDetail savedProfession = new ProfessionPermanentDetail();
+                        for (PlatformDetailsWebModel platformDetail : newPlatformDetails) {
+                            PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
+                            platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
+                            platformPermanentDetail.setIndustryUserPermanentDetails(existingIndustry);
+                            platformPermanentDetail.setUserId(userId);
+                            PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.save(platformPermanentDetail);
+                            for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
+                                FilmProfessionPermanentDetail savedProfession = new FilmProfessionPermanentDetail();
                                 savedProfession.setProfessionName(professionDetail.getProfessionName().toUpperCase());
-                                savedProfession.setSubProfessionName(professionDetail.getSubProfessionName());
-                                savedProfession.setPlatformPermanentDetail(savedPlatformDetail);
-                                professionPermanentDetailRepository.save(savedProfession);
+                                savedProfession.setIndustryUserPermanentDetails(existingIndustry);
+                                savedProfession.setPlatformPermanentDetail(savedPlatformPermanentDetail);
+                                filmProfessionPermanentDetailRepository.save(savedProfession);
                             }
                         }
                         // Update existing industry user permanent details
@@ -1068,33 +1082,56 @@ public class DetailServiceImpl implements DetailService {
                     industryTemporaryDetailsRepository.deleteByUserId(userId);
                     industryDetailsRepository.deleteByUserId(userId);
                     platformDetailsRepository.deleteByUserId(userId);
-                    professsionDetailsRepository.deleteByUserId(userId);
-                    subProfessionDetailsRepository.deleteByuserId(userId);
+                    filmProfessionDetailRepository.deleteByUserId(userId);
+                    filmSubProfessionDetailRepository.deleteByuserId(userId);
                 } else {
+
+                    Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
+
                     // Create new industry user permanent details if it doesn't exist
                     IndustryUserPermanentDetails newIndustryPermanentDetails = new IndustryUserPermanentDetails();
                     newIndustryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                     newIndustryPermanentDetails.setUserId(userId);
-                    IndustryUserPermanentDetails savedIndustry = industryUserPermanentDetailsRepository.save(newIndustryPermanentDetails);
-                    for (PlatformPermanentDetail platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
-                        PlatformPermanentDetail savedPlatform = new PlatformPermanentDetail();
-                        savedPlatform.setPlatformName(platformDetail.getPlatformName().toUpperCase());
-                        savedPlatform.setIndustryUserPermanentDetails(savedIndustry);
-                        savedPlatform.setUserId(userId);
-                        PlatformPermanentDetail savedPlatformDetail = platformPermanentDetailRepository.save(savedPlatform);
-                        for (ProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
-                            ProfessionPermanentDetail savedProfession = new ProfessionPermanentDetail();
-                            savedProfession.setProfessionName(professionDetail.getProfessionName().toUpperCase());
-                            savedProfession.setSubProfessionName(professionDetail.getSubProfessionName());
-                            savedProfession.setPlatformPermanentDetail(savedPlatformDetail);
-                            professionPermanentDetailRepository.save(savedProfession);
+                    newIndustryPermanentDetails.setIndustry(industry);
+                    IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.save(newIndustryPermanentDetails);
+
+                    for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
+                        Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
+                        PlatformPermanentDetail platformPermanentDetails = new PlatformPermanentDetail();
+                        platformPermanentDetails.setPlatformName(platformDetail.getPlatformName().toUpperCase());
+                        platformPermanentDetails.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
+                        platformPermanentDetails.setUserId(userId);
+                        platformPermanentDetails.setPlatform(platform);
+                        PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.save(platformPermanentDetails);
+
+                        for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
+                            FilmProfession filmProfession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
+                            FilmProfessionPermanentDetail filmProfessionPermanentDetail = new FilmProfessionPermanentDetail();
+                            filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
+                            filmProfessionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
+                            filmProfessionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
+                            filmProfessionPermanentDetail.setFilmProfession(filmProfession);
+                            FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.save(filmProfessionPermanentDetail);
+
+                            professionDetail.getSubProfessionName().stream()
+                                    .filter(Objects::nonNull)
+                                    .forEach(subProfessionName -> {
+                                        FilmSubProfession filmSubProfession = filmSubProfessionRepository.findBySubProfessionName(subProfessionName).orElse(null);
+                                        FilmSubProfessionPermanentDetail subProfessionPermanentDetails = FilmSubProfessionPermanentDetail.builder()
+                                                .industryUserPermanentDetails(savedIndustryUserPermanentDetails)
+                                                .platformPermanentDetail(savedPlatformPermanentDetail)
+                                                .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
+                                                .filmSubProfession(filmSubProfession)
+                                                .build();
+                                        filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
+                                    });
                         }
                     }
                     industryTemporaryDetailsRepository.deleteByUserId(userId);
                     industryDetailsRepository.deleteByUserId(userId);
                     platformDetailsRepository.deleteByUserId(userId);
-                    professsionDetailsRepository.deleteByUserId(userId);
-                    subProfessionDetailsRepository.deleteByuserId(userId);
+                    filmProfessionDetailRepository.deleteByUserId(userId);
+                    filmSubProfessionDetailRepository.deleteByuserId(userId);
                 }
             }
 
@@ -1109,16 +1146,16 @@ public class DetailServiceImpl implements DetailService {
     }
 
     // Helper method to check if platform details are equal
-    private boolean arePlatformDetailsEqual(List<PlatformPermanentDetail> existingPlatformDetails, List<PlatformPermanentDetail> newPlatformDetails) {
+    private boolean arePlatformDetailsEqual(List<PlatformPermanentDetail> existingPlatformDetails, List<PlatformDetailsWebModel> newPlatformDetails) {
         // Compare sizes
         if (existingPlatformDetails.size() != newPlatformDetails.size()) {
             return false;
         }
         // Compare each platform detail
         for (PlatformPermanentDetail existingPlatform : existingPlatformDetails) {
-            if (!newPlatformDetails.contains(existingPlatform)) {
-                return false;
-            }
+            return newPlatformDetails.stream()
+                    .filter(Objects::nonNull)
+                    .anyMatch(data -> !data.getPlatformName().equalsIgnoreCase(existingPlatform.getPlatformName()));
         }
         return true;
     }

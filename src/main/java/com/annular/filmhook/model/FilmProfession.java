@@ -6,8 +6,13 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
+/**
+ * Master data table for Film's Profession
+ */
 
 @Entity
 @Table(name = "FilmProfession")
@@ -16,20 +21,21 @@ import java.util.List;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class FilmProfession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "film_profession_id")
-    private Integer filmProfesssionId;
+    private Integer filmProfessionId;
 
     @Column(name = "profession_name")
     private String professionName;
 
-    @ElementCollection
+    /*@ElementCollection
     @CollectionTable(name = "Film_sub_professions", joinColumns = @JoinColumn(name = "film_profession_id"))
     @Column(name = "sub_profession_name")
-    private List<String> subProfessionName;
+    private List<String> subProfessionName;*/
 
     @Column(name = "status")
     private Boolean status;
@@ -51,4 +57,17 @@ public class FilmProfession {
     @Lob
     @Column
     private byte[] image;
+
+    @ManyToOne
+    @JoinColumn(name = "platform_id", nullable = false)
+    @ToString.Exclude
+    private Platform platform;
+
+    @Column(name = "icon_file_path")
+    private String filePath;
+
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "profession")
+    @ToString.Exclude
+    private Collection<FilmSubProfession> filmSubProfessionCollection;
+
 }

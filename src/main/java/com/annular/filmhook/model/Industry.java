@@ -68,4 +68,7 @@ public class Industry {
 	@JoinColumn(name = "country_id")
 	private Country country;
 
+	@Column(name = "icon_file_path")
+	private String filePath;
+
 }

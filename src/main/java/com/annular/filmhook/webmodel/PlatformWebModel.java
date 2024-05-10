@@ -11,5 +11,6 @@ public class PlatformWebModel {
     private String platformName;
     private Boolean status;
     private byte[] image;
+    private String iconFilePath;
 
 }

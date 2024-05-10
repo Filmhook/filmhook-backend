@@ -20,6 +20,7 @@ import com.annular.filmhook.repository.*;
 
 import com.annular.filmhook.service.MediaFilesService;
 
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,9 @@ public class UserServiceImpl implements UserService {
     CalendarUtil calendarUtil;
 
     @Autowired
+    S3Util s3Util;
+
+    @Autowired
     MediaFilesService mediaFilesService;
 
     @Override
@@ -68,16 +72,16 @@ public class UserServiceImpl implements UserService {
     PlatformPermanentDetailRepository platformPermanentDetailRepository;
 
     @Autowired
-    ProfessionRepository professionRepository;
+    FilmProfessionRepository filmProfessionRepository;
 
     @Autowired
-    ProfessionPermanentDetailRepository professionPermanentDetailRepository;
+    FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
 
     @Autowired
-    SubProfessionRepository subProfessionRepository;
+    FilmSubProfessionRepository filmSubProfessionRepository;
 
     @Autowired
-    SubProfessionDetailRepository subProfessionDetailRepository;
+    FilmSubProfessionPermanentDetailsRepository filmSubProfessionPermanentDetailsRepository;
 
     @Override
     public Optional<UserWebModel> getUserByUserId(Integer userId) {
@@ -438,7 +442,8 @@ public class UserServiceImpl implements UserService {
                     .stateCode(industry.getStateCode())
                     .status(industry.getStatus())
                     .countryId(industry.getCountry() != null ? industry.getCountry().getId() : null)
-                    .image(industry.getImage() != null ? Base64.getEncoder().encode(industry.getImage()) : null)
+                    //.image(industry.getImage() != null ? Base64.getEncoder().encode(industry.getImage()) : null)
+                    .iconFilePath(!Utility.isNullOrBlankWithTrim(industry.getFilePath()) ? s3Util.generateS3FilePath(industry.getFilePath()) : "")
                     .build();
             industryWebModels.add(industryWebModel);
         });
@@ -449,7 +454,7 @@ public class UserServiceImpl implements UserService {
     public List<UserSearchWebModel> getAllProfessionByPlatformId(Integer platformId) {
         List<UserSearchWebModel> outputList = new ArrayList<>();
         try {
-            List<Profession> professionList = professionRepository.findByPlatform(Platform.builder().platformId(platformId).build());
+            List<FilmProfession> professionList = filmProfessionRepository.findByPlatform(Platform.builder().platformId(platformId).build());
             UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
                     .professionList(this.transformProfessionData(professionList))
                     .build();
@@ -461,13 +466,15 @@ public class UserServiceImpl implements UserService {
         return outputList;
     }
 
-    private List<ProfessionWebModel> transformProfessionData(List<Profession> professionList) {
+    private List<ProfessionWebModel> transformProfessionData(List<FilmProfession> professionList) {
         List<ProfessionWebModel> professionWebModelList = new ArrayList<>();
         professionList.stream().filter(Objects::nonNull).forEach(profession -> {
             ProfessionWebModel professionWebModel = ProfessionWebModel.builder()
-                    .id(profession.getProfessionId())
+                    .id(profession.getFilmProfessionId())
                     .professionName(profession.getProfessionName())
                     .status(profession.getStatus())
+                    //.image(profession.getImage() != null ? Base64.getEncoder().encode(profession.getImage()) : null)
+                    .iconFilePath(!Utility.isNullOrBlankWithTrim(profession.getFilePath()) ? s3Util.generateS3FilePath(profession.getFilePath()) : "")
                     .build();
             professionWebModelList.add(professionWebModel);
         });
@@ -478,11 +485,11 @@ public class UserServiceImpl implements UserService {
     public List<UserSearchWebModel> getAllSubProfessionByProfessionId(List<Integer> professionIds) {
         List<UserSearchWebModel> outputList = new ArrayList<>();
         try {
-            List<Profession> professionList = professionIds.stream()
+            List<FilmProfession> professionList = professionIds.stream()
                     .filter(Objects::nonNull)
-                    .map(professionId -> Profession.builder().professionId(professionId).build())
+                    .map(professionId -> FilmProfession.builder().filmProfessionId(professionId).build())
                     .collect(Collectors.toList());
-            List<SubProfession> subProfessionList = subProfessionRepository.getSubProfessionByProfessionIds(professionList);
+            List<FilmSubProfession> subProfessionList = filmSubProfessionRepository.getSubProfessionByProfessionIds(professionList);
             UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
                     .subProfessionList(this.transformSubProfessionData(subProfessionList))
                     .build();
@@ -494,7 +501,7 @@ public class UserServiceImpl implements UserService {
         return outputList;
     }
 
-    private List<SubProfessionWebModel> transformSubProfessionData(List<SubProfession> subProfessionList) {
+    private List<SubProfessionWebModel> transformSubProfessionData(List<FilmSubProfession> subProfessionList) {
         List<SubProfessionWebModel> subProfessionWebModelList = new ArrayList<>();
         subProfessionList.stream().filter(Objects::nonNull).forEach(subProfession -> {
             SubProfessionWebModel professionWebModel = SubProfessionWebModel.builder()
@@ -527,8 +534,8 @@ public class UserServiceImpl implements UserService {
 
         List<IndustryUserPermanentDetails> userIndustryDetails;
         List<PlatformPermanentDetail> userPlatformDetails;
-        List<ProfessionPermanentDetail> userProfessionDetails;
-        List<SubProfessionDetails> userSubProfessionDetails;
+        List<FilmProfessionPermanentDetail> userProfessionDetails;
+        List<FilmSubProfessionPermanentDetail> userFilmSubProfessionDetails;
         Set<Integer> uniqueUsersSet = new HashSet<>();
         List<User> userList = new ArrayList<>();
 
@@ -562,27 +569,27 @@ public class UserServiceImpl implements UserService {
             if (!Utility.isNullOrEmptyList(searchWebModel.getProfessionIds())) {
                 logger.info("Input profession search criteria -> {}", searchWebModel.getProfessionIds());
 
-                List<Profession> professionList = searchWebModel.getProfessionIds().stream()
+                List<FilmProfession> professionList = searchWebModel.getProfessionIds().stream()
                         .filter(Objects::nonNull)
-                        .map(professionId -> Profession.builder().professionId(professionId).build())
+                        .map(professionId -> FilmProfession.builder().filmProfessionId(professionId).build())
                         .collect(Collectors.toList());
 
-                userProfessionDetails = professionPermanentDetailRepository.getDataByProfessionIds(professionList);
+                userProfessionDetails = filmProfessionPermanentDetailRepository.getDataByProfessionIds(professionList);
                 if (!Utility.isNullOrEmptyList(userProfessionDetails))
-                    userProfessionDetails.stream().map(ProfessionPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
+                    userProfessionDetails.stream().map(FilmProfessionPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
             }
 
             if (!Utility.isNullOrEmptyList(searchWebModel.getSubProfessionIds())) {
                 logger.info("Input sub profession search criteria -> {}", searchWebModel.getSubProfessionIds());
 
-                List<SubProfession> subProfessionList = searchWebModel.getSubProfessionIds().stream()
+                List<FilmSubProfession> subProfessionList = searchWebModel.getSubProfessionIds().stream()
                         .filter(Objects::nonNull)
-                        .map(subProfessionId -> SubProfession.builder().subProfessionId(subProfessionId).build())
+                        .map(subProfessionId -> FilmSubProfession.builder().subProfessionId(subProfessionId).build())
                         .collect(Collectors.toList());
 
-                userSubProfessionDetails = subProfessionDetailRepository.getDataBySubProfessionIds(subProfessionList);
-                if (!Utility.isNullOrEmptyList(userSubProfessionDetails))
-                    userSubProfessionDetails.stream().map(SubProfessionDetails::getUserId).forEach(uniqueUsersSet::add);
+                userFilmSubProfessionDetails = filmSubProfessionPermanentDetailsRepository.getDataBySubProfessionIds(subProfessionList);
+                if (!Utility.isNullOrEmptyList(userFilmSubProfessionDetails))
+                    userFilmSubProfessionDetails.stream().map(FilmSubProfessionPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
             }
 
             // Iterating the UserIds and preparing the output
@@ -599,7 +606,7 @@ public class UserServiceImpl implements UserService {
                     userList.stream().filter(Objects::nonNull).forEach(user -> {
 
                         UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
-                        List<ProfessionPermanentDetail> userProfessionDataList = professionPermanentDetailRepository.findByUserId(user.getUserId());
+                        List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.findByUserId(user.getUserId());
 
                         if(!Utility.isNullOrEmptyList(userProfessionDataList)) {
                             userProfessionDataList.stream().filter(Objects::nonNull).forEach(professionData -> {

@@ -13,5 +13,6 @@ public class IndustryWebModel {
     private Boolean status;
     private Integer countryId;
     private byte[] image;
+    private String iconFilePath;
 
 }

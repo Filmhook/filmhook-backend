@@ -228,7 +228,7 @@ public class S3Util {
                 try {
                     s3Client.getObject(objectRequest, ResponseTransformer.toOutputStream(outputStream));
                 } catch (S3Exception e) {
-                    logger.error("Error downloading object: " + s3Object.key(), e);
+                    logger.error("Error downloading object: {}", s3Object.key(), e);
                     // Handle the error as needed
                 }
             }
@@ -237,6 +237,10 @@ public class S3Util {
             logger.error(e.awsErrorDetails().errorMessage());
             throw e;
         }
+    }
+
+    public String generateS3FilePath(String filePath) {
+        return s3BaseURL + S3Util.S3_PATH_DELIMITER + filePath;
     }
 }
         

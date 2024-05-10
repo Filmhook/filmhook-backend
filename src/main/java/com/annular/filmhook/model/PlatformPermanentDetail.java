@@ -53,7 +53,7 @@ public class PlatformPermanentDetail {
     private Integer dailySalary;
 
     @OneToMany(mappedBy = "platformPermanentDetail", cascade = CascadeType.ALL)
-    private List<ProfessionPermanentDetail> professionDetails;
+    private List<FilmProfessionPermanentDetail> professionDetails;
 
     @ManyToOne
     @JoinColumn(name = "iupd_id", nullable = false)

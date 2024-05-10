@@ -11,5 +11,6 @@ public class ProfessionWebModel {
     private String professionName;
     private Boolean status;
     private byte[] image;
+    private String iconFilePath;
 
 }
