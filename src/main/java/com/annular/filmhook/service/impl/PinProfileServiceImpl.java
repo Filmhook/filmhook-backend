@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserMediaPin;
@@ -143,64 +144,70 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Override
 	public ResponseEntity<?> getAllMediaPin() {
-		try {
-			logger.info("getAllMediaPin service start");
+	    try {
+	        logger.info("getAllMediaPin service start");
 
-			List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userDetails.userInfo().getId());
+	        List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userDetails.userInfo().getId());
 
-			List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
+	        List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
 
-			for (UserMediaPin userMediaPin : userMediaPins) {
+	        for (UserMediaPin userMediaPin : userMediaPins) {
+	            MediaFileCategory profilePicCategory = MediaFileCategory.ProfilePic;
 
-//				Optional<MediaFiles> profilePicOptional = mediaFilesRepository
-//						.findByUserIdAndCategory(userMediaPin.getUserId(), "profilepic");
+	            Optional<MediaFiles> profilePicOptional = mediaFilesRepository
+	                    .findByUserId(userMediaPin.getUserId(), profilePicCategory);
 
-				Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(userMediaPin.getPinMediaId());
+	            Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(userMediaPin.getPinMediaId());
 
-				if (mediaFileOptional.isPresent()) {
-					MediaFiles mediaFiles = mediaFileOptional.get();
+	            if (mediaFileOptional.isPresent()) {
+	                MediaFiles mediaFiles = mediaFileOptional.get();
 
-					Optional<User> userOptional = userRepository.findById(userMediaPin.getUserId());
+	                Optional<User> userOptional = userRepository.findById(userMediaPin.getUserId());
 
-					if (userOptional.isPresent()) {
-						User user = userOptional.get();
-						int likeCount = likeRepository.countByMediaFileId(mediaFiles.getId());
+	                // Check if either user or profilePic is present
+	                if (userOptional.isPresent() || profilePicOptional.isPresent()) {
+	                    User user = userOptional.orElse(null); // Using orElse(null) to handle null case
+	                    MediaFiles profilePic = profilePicOptional.orElse(null); // Using orElse(null) to handle null case
+	                    int likeCount = likeRepository.countByMediaFileId(mediaFiles.getId());
+	                    int commentCount = commentRepository.countByMediaFileId(mediaFiles.getId());
+	                    int shareCount = shareRepository.countByMediaFileId(mediaFiles.getId());
 
-						int commentCount = commentRepository.countByMediaFileId(mediaFiles.getId());
+	                    Map<String, Object> combinedDetails = new HashMap<>();
+	                    combinedDetails.put("userMediaPin", userMediaPin);
+	                    combinedDetails.put("filename", mediaFiles.getFileName());
+	                    combinedDetails.put("fileType", mediaFiles.getFileType());
+	                    combinedDetails.put("filepath", mediaFiles.getFilePath());
+	                    combinedDetails.put("fileDescription", mediaFiles.getDescription());
+	                    combinedDetails.put("fileUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+	                            + mediaFiles.getFilePath() + mediaFiles.getFileType());
+	                    combinedDetails.put("likeCount", likeCount);
+	                    combinedDetails.put("commentCount", commentCount);
+	                    combinedDetails.put("shareCount", shareCount);
+	                    combinedDetails.put("userName", user != null ? user.getName() : null);
+	                    // Add profilePicUrl if profilePic is present
+	                    if (profilePic != null) {
+	                        combinedDetails.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+	                                + profilePic.getFilePath() + profilePic.getFileType());
+	                    }
 
-						int shareCount = shareRepository.countByMediaFileId(mediaFiles.getId());
+	                    combinedDetailsList.add(combinedDetails);
+	                }
+	            }
+	        }
 
-						Map<String, Object> combinedDetails = new HashMap<>();
-						combinedDetails.put("userMediaPin", userMediaPin);
-						combinedDetails.put("filename", mediaFiles.getFileName());
-						combinedDetails.put("fileType", mediaFiles.getFileType());
-						combinedDetails.put("filepath", mediaFiles.getFilePath());
-						combinedDetails.put("fileDescription", mediaFiles.getDescription());
-						combinedDetails.put("fileUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
-								+ mediaFiles.getFilePath() + mediaFiles.getFileType());
-						combinedDetails.put("likeCount", likeCount);
-						combinedDetails.put("commentCount", commentCount);
-						combinedDetails.put("shareCount", shareCount);
-						combinedDetails.put("userName", user.getName());
-//						combinedDetails.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
-//								+ profilePic.getFilePath() + profilePic.getFileType());
+	        // Create the response map
+	        Map<String, Object> responseMap = new HashMap<>();
+	        responseMap.put("combinedDetailsList", combinedDetailsList);
 
-						combinedDetailsList.add(combinedDetails);
-					}
-				}
-			}
-
-			// Create the response map
-			Map<String, Object> responseMap = new HashMap<>();
-			responseMap.put("combinedDetailsList", combinedDetailsList);
-
-			return ResponseEntity.ok(responseMap);
-		} catch (Exception e) {
-			logger.error("userMediaPins service Method Exception {} ", e);
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
-		}
+	        return ResponseEntity.ok(responseMap);
+	    } catch (Exception e) {
+	        logger.error("userMediaPins service Method Exception {} ", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+	    }
 	}
+
+	
 
 	@Override
 	public ResponseEntity<?> getByProfileId(UserProfilePinWebModel userProfilePinWebModel) {

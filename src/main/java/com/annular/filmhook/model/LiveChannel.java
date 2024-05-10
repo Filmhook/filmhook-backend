@@ -39,6 +39,9 @@ public class LiveChannel {
 	@Column(name = "channel_name")
 	private String channelName;
 	
+	@Column(name = "liveId")
+	private String liveId;//frontend liveId get and save db
+	
 	@Column(name = "live_is_active")
 	private Boolean liveIsActive;
 	

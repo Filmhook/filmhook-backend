@@ -74,4 +74,17 @@ public class LiveStreamController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+	
+	@GetMapping("/getAllLiveChannelId")
+	public ResponseEntity<?> getAllLiveChannelId() {
+		try {
+			logger.info("getAllLiveChannelId controller start");
+			return liveStreamService.getAllLiveChannelId();
+		} catch (Exception e) {
+			logger.error("getAllLiveChannelId Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+	
 }

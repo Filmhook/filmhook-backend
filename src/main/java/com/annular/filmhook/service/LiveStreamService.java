@@ -15,4 +15,6 @@ public interface LiveStreamService {
 
 	ResponseEntity<?> getLiveCommentDetails(Integer liveChannelId);
 
+	ResponseEntity<?> getAllLiveChannelId();
+
 }

@@ -1,7 +1,9 @@
 package com.annular.filmhook.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -13,10 +15,16 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.ReportPost;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.UserMediaPin;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.ReportRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.ReportService;
+import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.ReportPostWebModel;
 
 @Service
@@ -24,12 +32,21 @@ public class ReportServiceImpl implements ReportService {
 
 	@Autowired
 	UserDetails userDetails;
+	
+	@Autowired
+	S3Util s3Util;
+	
+	@Autowired
+	FileUtil fileUtil;
 
 	@Autowired
 	UserRepository userRepository;
 
 	@Autowired
 	ReportRepository reportRepository;
+	
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
 
 	private static final Logger logger = LoggerFactory.getLogger(ReportServiceImpl.class);
 
@@ -57,13 +74,42 @@ public class ReportServiceImpl implements ReportService {
 	
 	@Override
 	public ResponseEntity<?> getAllPostReport() {
-        try {
-            List<ReportPost> reportPosts = reportRepository.findAll();
-            return new ResponseEntity<>(reportPosts, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>("Error fetching post reports: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+	    try {
+	        List<ReportPost> reportPosts = reportRepository.findAll();
+	        List<Map<String, Object>> combinedDetailsList = new ArrayList<>(); // List to hold combined details
+
+	        for (ReportPost reportPost : reportPosts) {
+	            Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(reportPost.getPostId());
+	            
+	            if (mediaFileOptional.isPresent()) {
+	                MediaFiles mediaFiles = mediaFileOptional.get();
+	               
+	                Optional<User> userOptional = userRepository.findById(reportPost.getUserId());
+	                
+	                if (userOptional.isPresent()) {
+	                    User user = userOptional.get();
+	                    
+	                    Map<String, Object> combinedDetails = new HashMap<>();
+	                    combinedDetails.put("reportDetails", reportPost);
+	                    combinedDetails.put("filename", mediaFiles.getFileName());
+	                    combinedDetails.put("fileType", mediaFiles.getFileType());
+	                    combinedDetails.put("filepath", mediaFiles.getFilePath());
+	                    combinedDetails.put("userName", user != null ? user.getName() : null);
+	                    combinedDetails.put("fileDescription", mediaFiles.getDescription());
+	                    combinedDetails.put("fileUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+	                            + mediaFiles.getFilePath() + mediaFiles.getFileType());
+	                    
+	                    combinedDetailsList.add(combinedDetails); // Add combined details to the list
+	                }
+	            }
+	        }
+	        
+	        return new ResponseEntity<>(combinedDetailsList, HttpStatus.OK);
+	    } catch (Exception e) {
+	        return new ResponseEntity<>("Error fetching post reports: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+	    }
+	}
+
 
 	@Override
 	public ResponseEntity<?> getByPostReportId(ReportPostWebModel reportPostWebModel) {

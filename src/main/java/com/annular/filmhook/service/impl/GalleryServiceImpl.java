@@ -8,6 +8,8 @@ import java.util.Optional;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MediaFiles;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +20,14 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.LikeRepository;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.ShareRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.GalleryService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
@@ -38,6 +43,9 @@ public class GalleryServiceImpl implements GalleryService {
 
     @Autowired
     FileUtil fileUtil;
+    
+	@Autowired
+	S3Util s3Util;
 
     @Autowired
     UserService userService;
@@ -48,11 +56,17 @@ public class GalleryServiceImpl implements GalleryService {
 	@Autowired
 	LikeRepository likeRepository;
     
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
+	
     @Autowired
 	ShareRepository shareRepository;
 
 	@Autowired
 	CommentRepository commentRepository;
+	
+	@Autowired
+	UserRepository userRepository;
 
 
     @Override
@@ -133,27 +147,45 @@ public class GalleryServiceImpl implements GalleryService {
 
     @Override
     public Response getAllUsersGalleryFiles() {
-        List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         List<HashMap<String, Object>> response = new ArrayList<>();
         try {
-            outputWebModelList = mediaFilesService.getMediaFilesByCategory(MediaFileCategory.Gallery);
-            if (outputWebModelList != null && !outputWebModelList.isEmpty()) {
+            List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategory(MediaFileCategory.Gallery);
+            if (!outputWebModelList.isEmpty()) {
                 logger.info("[{}] gallery files found...", outputWebModelList.size());
-                for(FileOutputWebModel outputWebModel : outputWebModelList) {
-                	int likeCount = likeRepository.getLikeCount(outputWebModel.getId());
-                	int commentCount = commentRepository.getCommentCount(outputWebModel.getId());
-                	int shareCount =  shareRepository.getShareCount(outputWebModel.getId());
-            		
-                	HashMap<String, Object> withCounts = new HashMap<String, Object>();
- 
-            		withCounts.put("FileInfo", outputWebModel);
-            		withCounts.put("LikeCount", likeCount);
-            		withCounts.put("CommentCount", commentCount);
-            		withCounts.put("ShareCount", shareCount);
-            		
-            		response.add(withCounts);
+                for (FileOutputWebModel outputWebModel : outputWebModelList) {
+                    int likeCount = likeRepository.getLikeCount(outputWebModel.getId());
+                    int commentCount = commentRepository.getCommentCount(outputWebModel.getId());
+                    int shareCount = shareRepository.getShareCount(outputWebModel.getId());
+                    int userId = outputWebModel.getUserId();
+                    MediaFileCategory profilePicCategory = MediaFileCategory.ProfilePic;
+                    List<MediaFiles> mediaDataList = mediaFilesRepository.findByuserIdAndCategory(userId, profilePicCategory);
+                    Optional<User> user = userRepository.findById(userId);
+                    HashMap<String, Object> withCounts = new HashMap<>();
+                    withCounts.put("FileInfo", outputWebModel);
+                    withCounts.put("LikeCount", likeCount);
+                    withCounts.put("CommentCount", commentCount);
+                    withCounts.put("ShareCount", shareCount);
+                    
+                    if (!mediaDataList.isEmpty()) {
+                        // Assuming you want to handle only the first result in the list
+                        MediaFiles mediaFiles = mediaDataList.get(0);
+                        withCounts.put("filePathProfile", mediaFiles.getFilePath());
+                        withCounts.put("fileNameProfile", mediaFiles.getFileName());
+                        withCounts.put("fileNameSize", mediaFiles.getFileSize());
+                        withCounts.put("fileNameTypeProfile", mediaFiles.getFileType());
+                        withCounts.put("profileUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+                                + mediaFiles.getFilePath() + mediaFiles.getFileType());
+                    } else {
+                        // Handle the case where no profile picture is available
+                        withCounts.put("filePathProfile", "No profile picture available");
+                        withCounts.put("fileNameProfile", "");
+                        withCounts.put("fileNameSize", "");
+                        withCounts.put("fileNameTypeProfile", "");
+                        withCounts.put("profileUrl", "");
+                    }
+                    withCounts.put("username", user != null ? user.get().getName() : "Unknown"); // Assuming getUsername() returns the username
+                    response.add(withCounts);
                 }
-                
             } else {
                 return new Response(-1, "No file(s) available for this user...", null);
             }
@@ -161,7 +193,8 @@ public class GalleryServiceImpl implements GalleryService {
             logger.error("Error at getGalleryFilesByUser()...", e);
             e.printStackTrace();
         }
-//        return outputWebModelList;
         return new Response(1, "Gallery file(s) found successfully...", response);
     }
+
+
 }

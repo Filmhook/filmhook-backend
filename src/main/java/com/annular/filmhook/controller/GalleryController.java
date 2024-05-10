@@ -141,7 +141,7 @@ public class GalleryController {
     @GetMapping("/getGalleryFilesByAllUser")
     public Response getAllUsersGalleryFiles() {
         try {
-        	return new Response(1, "Gallery file(s) found successfully...", galleryService.getAllUsersGalleryFiles());
+        	return galleryService.getAllUsersGalleryFiles();
 //            if (outputList != null && !outputList.isEmpty()) {
 //                logger.info("[{}] gallery files found...", outputList.size());
 //                return new Response(1, "Gallery file(s) found successfully...", outputList);

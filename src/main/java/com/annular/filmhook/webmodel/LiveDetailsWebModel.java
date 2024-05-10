@@ -20,5 +20,6 @@ public class LiveDetailsWebModel {
     private String startTime;
     private String endTime;
     private String liveDate;
+    private String liveId;
 
 }

@@ -5,27 +5,19 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.annular.filmhook.model.FriendRequest;
+import com.annular.filmhook.model.FollowersRequest;
 
 @Repository
-public interface FriendRequestRepository extends JpaRepository<FriendRequest, Integer> {
+public interface FriendRequestRepository extends JpaRepository<FollowersRequest, Integer> {
 
-	@Query("SELECT f FROM FriendRequest f WHERE (f.frientRequestSenderId = :senderId AND f.friendRequestReceiverId = :receiverId) OR (f.frientRequestSenderId = :receiverId AND f.friendRequestReceiverId = :senderId)")
-	Optional<FriendRequest> findByFrientRequestSenderIdAndFriendRequestReceiverId(Integer senderId, Integer receiverId);
+	@Query("SELECT f FROM FollowersRequest f WHERE f.follwersRequestSenderId = :senderId AND f.follwersRequestReceiverId = :receiverId")
+	Optional<FollowersRequest> findByFrientRequestSenderIdAndFriendRequestReceiverId(Integer senderId,
+			Integer receiverId);
 
-	@Query("SELECT  f FROM FriendRequest f where f.frientRequestSenderId = :senderId AND f.friendRequestSenderStatus = :friendRequestStatus ")
-    List<FriendRequest> findByFrientRequestSenderIdAndFriendRequestSenderStatus(
-            Integer senderId, 
-            String friendRequestStatus
-    );
-
-
-	
-
-
+//	@Query("SELECT  f FROM FollowersRequest f where f.frientRequestSenderId = :senderId AND f.friendRequestSenderStatus = :friendRequestStatus ")
+//	List<FollowersRequest> findByFrientRequestSenderIdAndFriendRequestSenderStatus(Integer senderId,
+//			String friendRequestStatus);
 
 }
-
