@@ -101,9 +101,10 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
-		//userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
-        //userWebModel.setDob(user.getDob());
-        //userWebModel.setAge(calendarUtil.getAgeFromDate(user.getDob()).toString());
+        if (!Utility.isNullOrBlankWithTrim(user.getDob())) {
+            userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
+            userWebModel.setAge(calendarUtil.getAgeFromDate(userWebModel.getDob(), CalendarUtil.UI_DATE_FORMAT));
+        }
         userWebModel.setGender(user.getGender());
 
         userWebModel.setCountry(user.getCountry());
@@ -150,6 +151,12 @@ public class UserServiceImpl implements UserService {
         userWebModel.setCreatedOn(user.getCreatedOn());
         userWebModel.setUpdatedBy(user.getUpdatedBy());
         userWebModel.setUpdateOn(user.getUpdatedOn());
+
+        List<FileOutputWebModel> profilePicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.ProfilePic, user.getUserId());
+        if(!Utility.isNullOrEmptyList(profilePicList)) userWebModel.setProfilePicOutput(profilePicList.get(0));
+
+        List<FileOutputWebModel> coverPicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.CoverPic, user.getUserId());
+        if(!Utility.isNullOrEmptyList(coverPicList)) userWebModel.setCoverPhotoOutput(coverPicList.get(0));
 
         return userWebModel;
     }
@@ -594,7 +601,7 @@ public class UserServiceImpl implements UserService {
 
             // Iterating the UserIds and preparing the output
             if (!Utility.isNullOrEmptySet(uniqueUsersSet)) {
-                AtomicInteger count = new AtomicInteger();
+                AtomicInteger count = new AtomicInteger(1);
                 uniqueUsersSet.stream().filter(Objects::nonNull).forEach(userId -> {
                     Optional<User> user = this.getUser(userId);
                     logger.info("User no: [{}] -> Details {}", count, user);
@@ -608,14 +615,24 @@ public class UserServiceImpl implements UserService {
                         UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
                         List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.findByUserId(user.getUserId());
 
-                        if(!Utility.isNullOrEmptyList(userProfessionDataList)) {
-                            userProfessionDataList.stream().filter(Objects::nonNull).forEach(professionData -> {
-                                Map<String, Object> map = new HashMap<>();
-                                map.put("userData", userWebModel);
-                                map.put("professionData", professionData);
-                                userDataList.add(map);
-                                professionUserMap.putIfAbsent(professionData.getProfessionName(), userDataList);
-                            });
+                        if (!Utility.isNullOrEmptyList(userProfessionDataList)) {
+                            userProfessionDataList.stream()
+                                    .filter(Objects::nonNull)
+                                    .forEach(professionData -> {
+
+                                        Map<String, Object> map = new HashMap<>();
+                                        map.put("userId", userWebModel.getUserId());
+                                        map.put("name", userWebModel.getName());
+                                        map.put("dob", userWebModel.getDob());
+                                        map.put("userProfilePic", userWebModel.getProfilePicOutput() != null ? userWebModel.getProfilePicOutput().getFilePath() : "");
+                                        map.put("userRating", "");
+                                        map.put("experience", "");
+                                        map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
+                                        map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
+                                        userDataList.add(map);
+
+                                        professionUserMap.putIfAbsent(professionData.getProfessionName(), userDataList);
+                                    });
                         }
 
                     });

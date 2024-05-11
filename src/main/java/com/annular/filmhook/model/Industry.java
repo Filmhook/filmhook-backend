@@ -12,6 +12,7 @@ import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
@@ -61,6 +62,8 @@ public class Industry {
 
 	@Lob
 	@Column
+	@JsonIgnore
+	@ToString.Exclude
 	private byte[] image;
 
 	@ToString.Exclude

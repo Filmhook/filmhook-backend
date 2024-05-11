@@ -99,8 +99,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				user.setEmail(userWebModel.getEmail());
 				user.setUserType(userWebModel.getUserType());
 				user.setMobileNumberStatus(false);
-				//user.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
-				user.setDob(userWebModel.getDob());
+				user.setDob(Utility.isNullOrBlankWithTrim(userWebModel.getDob()) ? "" : CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
 				user.setGender(userWebModel.getGender());
 				user.setCountry(userWebModel.getCountry());
 				user.setState(userWebModel.getState());

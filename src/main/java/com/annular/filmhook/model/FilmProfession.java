@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import javax.persistence.*;
@@ -56,6 +57,8 @@ public class FilmProfession {
 
     @Lob
     @Column
+    @JsonIgnore
+    @ToString.Exclude
     private byte[] image;
 
     @ManyToOne

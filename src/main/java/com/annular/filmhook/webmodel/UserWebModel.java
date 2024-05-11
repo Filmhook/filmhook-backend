@@ -22,8 +22,8 @@ public class UserWebModel {
 
 
     // Biography Section
-    private String dob;
-    private String age;
+    private String dob; // UI Format dd-MM-yyyy
+    private Integer age;
     private String gender;
     private String country;
     private String state;
@@ -82,4 +82,6 @@ public class UserWebModel {
     // Profile & Cover Photo
     private FileInputWebModel profilePhoto;
     private FileInputWebModel coverPhoto;
+    private FileOutputWebModel profilePicOutput;
+    private FileOutputWebModel coverPhotoOutput;
 }

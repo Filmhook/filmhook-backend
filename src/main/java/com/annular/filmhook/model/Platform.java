@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Lob;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
@@ -56,6 +57,8 @@ public class Platform {
 
 	@Lob
 	@Column
+	@JsonIgnore
+	@ToString.Exclude
 	private byte[] image;
 
 	@Column(name = "icon_file_path")

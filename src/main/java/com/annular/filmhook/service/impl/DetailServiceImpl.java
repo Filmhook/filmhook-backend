@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Comparator;
 import java.util.Objects;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -328,17 +329,25 @@ public class DetailServiceImpl implements DetailService {
     @Override
     public ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
         try {
+            Map<String, String> responseMap = new HashMap<>();
+            StringBuilder unknownIndustries = new StringBuilder();
             for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
-
                 Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
-
+                if(industry == null) {
+                    unknownIndustries.append(industryUserPermanentDetailWebModel.getIndustriesName()).append(" ");
+                    responseMap.put("error", "Unknown industry(s) found -> [ " + unknownIndustries + " ].\nThese industry and it's details are not available in master data. Please add valid industry...");
+                    continue;
+                }
                 // Create IndustryPermanentDetails object
                 IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
                 industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                 industryPermanentDetails.setUserId(userId); // Set userId from method parameter
                 industryPermanentDetails.setIndustry(industry);
+                industryPermanentDetails.setCreatedBy(userId);
+                industryPermanentDetails.setCreatedOn(new Date());
+                industryPermanentDetails.setStatus(true);
                 // Save the IndustryPermanentDetails object
-                IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.save(industryPermanentDetails);
+                IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.saveAndFlush(industryPermanentDetails);
 
                 // Iterate over platform details
                 for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
@@ -352,7 +361,7 @@ public class DetailServiceImpl implements DetailService {
                     platformPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
                     platformPermanentDetail.setPlatform(platform);
                     // Save the PlatformPermanentDetail object
-                    PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.save(platformPermanentDetail);
+                    PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.saveAndFlush(platformPermanentDetail);
 
                     // Iterate over profession details for this platform
                     for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
@@ -368,7 +377,7 @@ public class DetailServiceImpl implements DetailService {
                         filmProfessionPermanentDetail.setFilmProfession(profession);
                         filmProfessionPermanentDetail.setUserId(userId);
                         // Save the ProfessionPermanentDetail object
-                        FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.save(filmProfessionPermanentDetail);
+                        FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.saveAndFlush(filmProfessionPermanentDetail);
 
                         // Iterate over sub profession details for this profession
                         for (String subProfessionInput : professionDetail.getSubProfessionName()) {
@@ -395,8 +404,12 @@ public class DetailServiceImpl implements DetailService {
             filmProfessionDetailRepository.deleteByUserId(userId);
             filmSubProfessionDetailRepository.deleteByuserId(userId);
 
-            // Return a success response
-            return ResponseEntity.ok("Industry user permanent details added successfully.");
+            if(responseMap.isEmpty()) {
+                // Return a success response
+                return ResponseEntity.ok("Industry user permanent details added successfully.");
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMap.get("error"));
+            }
         } catch (Exception e) {
             // Return an error response if an exception occurs
             e.printStackTrace();
