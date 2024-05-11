@@ -16,8 +16,14 @@ public interface FriendRequestRepository extends JpaRepository<FollowersRequest,
 	Optional<FollowersRequest> findByFrientRequestSenderIdAndFriendRequestReceiverId(Integer senderId,
 			Integer receiverId);
 
-//	@Query("SELECT  f FROM FollowersRequest f where f.frientRequestSenderId = :senderId AND f.friendRequestSenderStatus = :friendRequestStatus ")
-//	List<FollowersRequest> findByFrientRequestSenderIdAndFriendRequestSenderStatus(Integer senderId,
-//			String friendRequestStatus);
+	@Query("SELECT f FROM FollowersRequest f WHERE f.follwersRequestReceiverId = :senderId AND f.follwersRequestSenderId = :receiverId")
+	Optional<FollowersRequest> findByfriendRequestSenderAndFriendRequestReceiverId(Integer receiverId,
+			Integer senderId);
+
+	@Query("SELECT f FROM FollowersRequest f WHERE f.follwersRequestSenderId = :userId and f.follwersRequestIsActive = true")
+	List<FollowersRequest> findByFrientRequestSenderIdAndFriendRequestSenderStatus(Integer userId
+			);
+
+
 
 }

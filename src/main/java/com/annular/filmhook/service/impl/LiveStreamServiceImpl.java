@@ -111,6 +111,7 @@ public class LiveStreamServiceImpl implements LiveStreamService {
 			liveDetails.setLiveStreamCommencreatedBy(liveStreamCommentWebModel.getLiveStreamCommencreatedBy());
 			liveDetails.setUserId(liveStreamCommentWebModel.getUserId());
 			liveDetails.setLiveChannelId(liveStreamCommentWebModel.getLiveChannelId());
+			liveDetails.setLiveId(liveStreamCommentWebModel.getLiveId());
 
 			liveStreamCommentRepository.save(liveDetails);
 

@@ -18,6 +18,7 @@ public class LiveStreamCommentWebModel {
 	    private Date liveStreamCommenCreatedOn;
 	    private Integer liveStreamCommenUpdatedBy;
 	    private Date liveStreamCommenUpdatedOn;
+	    private String liveId;
 		
 
 	}

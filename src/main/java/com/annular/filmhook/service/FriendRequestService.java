@@ -7,8 +7,12 @@ import com.annular.filmhook.webmodel.FollowersRequestWebModel;
 
 public interface FriendRequestService {
 
-	//ResponseEntity<?> getFriendRequest(Integer userId,String friendRequestSenderStatus);
+	ResponseEntity<?> getFriendRequest(Integer userId);
 
 	ResponseEntity<?> saveFollowersRequest(FollowersRequestWebModel followersRequestWebModel);
+
+	ResponseEntity<?> updateFriendRequest(FollowersRequestWebModel followersRequestWebModel);
+
+
 
 }

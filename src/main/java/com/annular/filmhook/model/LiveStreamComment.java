@@ -58,6 +58,9 @@ public class LiveStreamComment {
     @Column(name = "live_stream_updated_on")
     @CreationTimestamp
     private Date liveStreamCommenUpdatedOn;
+    
+    @Column(name = "liveId")
+    private String liveId;
 	
 
 }
