@@ -89,13 +89,13 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 
 	            FollowersRequest savedFriendRequest = friendRequestRepository.save(friendRequest);
 
-	            /*FollowersRequest friendRequests = new FollowersRequest();
+	            FollowersRequest friendRequests = new FollowersRequest();
 	            friendRequests.setFollowersRequestSenderId(receiverId);
 	            friendRequests.setFollowersRequestReceiverId(senderId);
 	            friendRequests.setFollowersRequestSenderStatus("confirm/Reject");
 	            friendRequests.setFollowersRequestCreatedBy(senderId);
 	            friendRequests.setFollowersRequestIsActive(true);
-	            FollowersRequest savedFriendRequests = friendRequestRepository.save(friendRequests);*/
+	            FollowersRequest savedFriendRequests = friendRequestRepository.save(friendRequests);
 
 	            // Log or print the savedFriendRequest object to verify its data after saving
 	            System.out.println("Saved Friend Request: " + savedFriendRequest);
