@@ -33,19 +33,19 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 
 	@Autowired
 	FriendRequestRepository friendRequestRepository;
-
+	
 	@Autowired
 	UserRepository userRepository;
-
+	
 	@Autowired
 	S3Util s3Util;
-
+	
 	@Autowired
 	FileUtil fileUtil;
-
+	
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
-
+	
 	@Override
 	public ResponseEntity<?> saveFollowersRequest(FollowersRequestWebModel followersRequestWebModel) {
 
@@ -69,7 +69,8 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	        }
 
 	        // Check if the sender already sent a request to the receiver
-	        Optional<FollowersRequest> existingFriendRequest = friendRequestRepository.findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
+	        Optional<FollowersRequest> existingFriendRequest = friendRequestRepository
+	                .findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
 
 	        if (existingFriendRequest.isPresent()) {
 	            // If a friend request already exists, return a bad request response
@@ -88,13 +89,15 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	            System.out.println("Friend Request to Save: " + friendRequest);
 
 	            FollowersRequest savedFriendRequest = friendRequestRepository.save(friendRequest);
-
+	            
+	            
 	            FollowersRequest friendRequests = new FollowersRequest();
 	            friendRequests.setFollowersRequestSenderId(receiverId);
 	            friendRequests.setFollowersRequestReceiverId(senderId);
 	            friendRequests.setFollowersRequestSenderStatus("confirm/Reject");
 	            friendRequests.setFollowersRequestCreatedBy(senderId);
 	            friendRequests.setFollowersRequestIsActive(true);
+
 	            FollowersRequest savedFriendRequests = friendRequestRepository.save(friendRequests);
 
 	            // Log or print the savedFriendRequest object to verify its data after saving
@@ -117,26 +120,43 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	        Integer receiverId = followersRequestWebModel.getFollowersRequestReceiverId();
 	        String newStatus = followersRequestWebModel.getFollowersRequestSenderStatus();
 
+	        System.out.println("senderId"+senderId);
+	        System.out.println("receiverId"+receiverId);
+	        
 	        if (senderId == null || receiverId == null) {
 	            return ResponseEntity.badRequest().body("Sender ID or Receiver ID is null");
 	        }
+	        
 
-	        Optional<FollowersRequest> existingFriendRequestOpt = friendRequestRepository.findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
-	        Optional<FollowersRequest> existingFriendRequestOpt2 = friendRequestRepository.findByFriendRequestSenderAndFriendRequestReceiverId(receiverId,senderId);
+	        Optional<FollowersRequest> existingFriendRequestOpt = friendRequestRepository
+	                .findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
+	        Optional<FollowersRequest> existingFriendRequestOpt2 = friendRequestRepository
+	        		.findByFriendRequestSenderAndFriendRequestReceiverId(receiverId,senderId);
 
 	        if (existingFriendRequestOpt.isPresent()) {
 	            FollowersRequest existingFriendRequest = existingFriendRequestOpt.get();
 
-	            existingFriendRequest.setFollowersRequestSenderStatus(newStatus);//once confirm means or Reject
-
+	            existingFriendRequest.setFollowersRequestSenderStatus(newStatus);//confirm
 	            friendRequestRepository.save(existingFriendRequest);
 	           if(existingFriendRequestOpt2.isPresent())
 	           {
 	        	   FollowersRequest existingFriendRequests = existingFriendRequestOpt.get();
-	        	   existingFriendRequests.setFollowersRequestSenderStatus(newStatus);//change to follow or unfollow
+	        	   existingFriendRequest.getFollowersRequestSenderStatus();
+	        	   if("confirm".equalsIgnoreCase(existingFriendRequest.getFollowersRequestSenderStatus()))
+	        	   {
+	        		   existingFriendRequests.setFollowersRequestSenderStatus("unfollow");//confirm--->unfollow
+	        		   existingFriendRequest.setFollowersRequestSenderStatus("unfollow");
+	        		   
+	        	   }
+	        	   else if("Reject".equalsIgnoreCase(existingFriendRequest.getFollowersRequestSenderStatus()))
+	        	   {
+	        		   existingFriendRequests.setFollowersRequestSenderStatus("follow");
+	        		   existingFriendRequest.setFollowersRequestSenderStatus("follow");
+	        	   }
+	        	    
 	        	   friendRequestRepository.save(existingFriendRequest);
 	           }
-
+	            
 
 	           // return ResponseEntity.ok().body("Friend request updated successfully");
 	        } else {
@@ -162,9 +182,10 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	        for (FollowersRequest friendRequest : friendRequests) {
 	        	 MediaFileCategory profilePicCategory = MediaFileCategory.ProfilePic;
 
-		            Optional<MediaFiles> profilePicOptional = mediaFilesRepository.findByUserId(friendRequest.getFollowersRequestReceiverId(), profilePicCategory);
+		            Optional<MediaFiles> profilePicOptional = mediaFilesRepository
+		                    .findByUserId(friendRequest.getFollowersRequestReceiverId(), profilePicCategory);
 
-
+	        	
 	            Map<String, Object> requestDetails = new LinkedHashMap<>();
 
 	            Integer receiverId = friendRequest.getFollowersRequestReceiverId();
@@ -174,13 +195,13 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 
 	            if (userOptional.isPresent()) {
 	                User receiverUser = userOptional.get();
-	                MediaFiles profilePic = profilePicOptional.orElse(null);
+	                MediaFiles profilePic = profilePicOptional.orElse(null); 
 
 	                requestDetails.put("receiverId", receiverId);
 	                requestDetails.put("userId", friendRequest.getFollowersRequestSenderId());
 	                requestDetails.put("status", friendRequest.getFollowersRequestSenderStatus());
 	                requestDetails.put("userName", receiverUser.getName()); // Assuming name is the user's name field
-
+	            
 	         // Add profilePicUrl if profilePic is present
                 if (profilePic != null) {
                 	requestDetails.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER

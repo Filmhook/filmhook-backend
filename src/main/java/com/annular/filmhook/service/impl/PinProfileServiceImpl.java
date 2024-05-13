@@ -79,7 +79,7 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 			pinProfileRepository.save(userProfilePin);
 
-			return ResponseEntity.ok("Profile pinned successfully");
+			return ResponseEntity.ok("Pin added su  ccessfully");
 		} catch (Exception e) {
 			logger.error("Error setting addPin: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -100,7 +100,7 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 			return ResponseEntity.ok("Pin added successfully");
 		} catch (Exception e) {
-			logger.error("Error setting addMedia: {}", e.getMessage());
+			logger.error("Error setting addPin: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Error setting addPin", e.getMessage()));
 
@@ -109,38 +109,58 @@ public class PinProfileServiceImpl implements PinProfileService {
 	}
 
 	public ResponseEntity<?> getAllProfilePin() {
-		try {
-			logger.info("getAllProfilePin service start");
+	    try {
+	        logger.info("getAllProfilePin service start");
 
-			List<UserProfilePin> userProfilePins = pinProfileRepository.findByUserId(userDetails.userInfo().getId());
-			List<LinkedHashMap<String, Object>> responseList = new ArrayList<>();
-			for (UserProfilePin userProfilePin : userProfilePins) {
-				Integer pinProfileId = userProfilePin.getPinProfileId();
-				if (pinProfileId != null) {
-					Optional<User> userOptional = userRepository.findById(pinProfileId);
+	        List<UserProfilePin> userProfilePins = pinProfileRepository.findByUserId(userDetails.userInfo().getId());
+	        List<LinkedHashMap<String, Object>> responseList = new ArrayList<>();
+	        for (UserProfilePin userProfilePin : userProfilePins) {
+	            Integer pinProfileId = userProfilePin.getPinProfileId();
+	            if (pinProfileId != null) {
+	                Optional<User> userOptional = userRepository.findById(pinProfileId);
 
-					if (userOptional.isPresent()) {
-						User user = userOptional.get();
-						LinkedHashMap<String, Object> pinData = new LinkedHashMap<>();
-						pinData.put("pinProfileId", userProfilePin.getPinProfileId());
-						pinData.put("userId", userProfilePin.getUserId());
-						pinData.put("userName", user.getName());
-						pinData.put("userGender", user.getGender());
-						responseList.add(pinData);
-					} else {
-						logger.warn("User not found for pinProfileId: " + pinProfileId);
-					}
-				} else {
-					logger.warn("pinProfileId is null for userProfilePin: " + userProfilePin);
-				}
-			}
-			return ResponseEntity.ok(responseList);
-		} catch (Exception e) {
-			logger.error("getAllProfilePin service Method Exception {} ", e);
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
-		}
+	                if (userOptional.isPresent()) {
+	                    User user = userOptional.get();
+	                    
+	                    // Retrieve profile picture from mediaFiles table based on user ID
+	                    Optional<MediaFiles> profilePicOptional = mediaFilesRepository.findByUserIdAndCategory(
+	                            userProfilePin.getUserId(), MediaFileCategory.ProfilePic);
+	                    
+	                    LinkedHashMap<String, Object> pinData = new LinkedHashMap<>();
+	                    pinData.put("pinProfileId", userProfilePin.getPinProfileId());
+	                    pinData.put("userId", userProfilePin.getUserId());
+	                    pinData.put("userName", user.getName());
+	                    pinData.put("userGender", user.getGender());
+	                    
+	                    if (profilePicOptional.isPresent()) {
+	                        MediaFiles mediaFiles = profilePicOptional.get();
+	                        pinData.put("filePathProfile", mediaFiles.getFilePath());
+	                        pinData.put("fileNameProfile", mediaFiles.getFileName());
+	                        pinData.put("fileNameSize", mediaFiles.getFileSize());
+	                        pinData.put("fileNameTypeProfile", mediaFiles.getFileType());
+	                        pinData.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+	                            + mediaFiles.getFilePath() + mediaFiles.getFileType());
+	                    } else {
+	                        // Handle case where profile picture is not found
+	                        pinData.put("profilePicUrl", null);
+	                    }
+	                    
+	                    responseList.add(pinData);
+	                } else {
+	                    logger.warn("User not found for pinProfileId: " + pinProfileId);
+	                }
+	            } else {
+	                logger.warn("pinProfileId is null for userProfilePin: " + userProfilePin);
+	            }
+	        }
+	        return ResponseEntity.ok(responseList);
+	    } catch (Exception e) {
+	        logger.error("getAllProfilePin service Method Exception {} ", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+	    }
 	}
+
 
 	@Override
 	public ResponseEntity<?> getAllMediaPin() {

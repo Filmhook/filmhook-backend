@@ -16,10 +16,15 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Block;
+import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BlockRepository;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.BlockService;
+import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.BlockWebModel;
 
 @Service
@@ -33,6 +38,15 @@ public class BlockServiceImpl implements BlockService {
 
 	@Autowired
 	BlockRepository blockRepository;
+	
+	@Autowired
+	S3Util s3Util;
+	
+	@Autowired
+	FileUtil fileUtil;
+	
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
 
 	private static final Logger logger = LoggerFactory.getLogger(BlockServiceImpl.class);
 
@@ -48,6 +62,7 @@ public class BlockServiceImpl implements BlockService {
 			block.setCreatedBy(userDetails.userInfo().getId());
 			blockRepository.save(block);
 			response.put("blockInfo", block);
+			
 			logger.info("addBlock method end");
 			return ResponseEntity.ok(new Response(1, "Add block successfully", response));
 		} catch (Exception e) {
@@ -55,11 +70,14 @@ public class BlockServiceImpl implements BlockService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Error setting block", e.getMessage()));
 		}
+
 	}
 
 	@Override
 	public ResponseEntity<?> getAllBlock() {
 		try {
+			logger.info("getAllBlockservice start");
+
 			List<Block> blockData = blockRepository.findByBlockedBy(userDetails.userInfo().getId());
 			List<LinkedHashMap<String, Object>> responseList = new ArrayList<>();
 			for (Block block : blockData) {
@@ -69,11 +87,26 @@ public class BlockServiceImpl implements BlockService {
 
 					if (userOptional.isPresent()) {
 						User user = userOptional.get();
+						Optional<MediaFiles> profilePicOptional = mediaFilesRepository
+								.findByUserIdAndCategory(user.getUserId(), MediaFileCategory.ProfilePic);
+
 						LinkedHashMap<String, Object> pinData = new LinkedHashMap<>();
 						pinData.put("blockUserId", block.getBlockedUser());
-						pinData.put("userId", block.getBlockedBy());
+						pinData.put("userId", block.getBlockedBy());;
 						pinData.put("userName", user.getName());
 						pinData.put("userGender", user.getGender());
+						 if (profilePicOptional.isPresent()) {
+		                        MediaFiles mediaFiles = profilePicOptional.get();
+		                        pinData.put("filePathProfile", mediaFiles.getFilePath());
+		                        pinData.put("fileNameProfile", mediaFiles.getFileName());
+		                        pinData.put("fileNameSize", mediaFiles.getFileSize());
+		                        pinData.put("fileNameTypeProfile", mediaFiles.getFileType());
+		                        pinData.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+		                            + mediaFiles.getFilePath() + mediaFiles.getFileType());
+		                    } else {
+		                        // Handle case where profile picture is not found
+		                        pinData.put("profilePicUrl", null);
+		                    }
 						responseList.add(pinData);
 					} else {
 						logger.warn("User not found for blockUserId: " + blockUserId);
@@ -89,7 +122,6 @@ public class BlockServiceImpl implements BlockService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
 		}
 	}
-
 	@Override
 	public String unBlockProfile(BlockWebModel blockWebModel) {
 		try {
