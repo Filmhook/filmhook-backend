@@ -10,6 +10,5 @@ public interface BlockService {
 
 	ResponseEntity<?> getAllBlock();
 
-
-
+	String unBlockProfile(BlockWebModel blockWebModel);
 }

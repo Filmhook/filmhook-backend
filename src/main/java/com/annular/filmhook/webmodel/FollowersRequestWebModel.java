@@ -11,15 +11,15 @@ import lombok.Data;
 public class FollowersRequestWebModel {
 
 	
-	private Integer follwersRequestId;
-	private Integer follwersRequestSenderId; // user table userId
-	private Integer follwersRequestReceiverId; // user table userId
-	private String follwersRequestSenderStatus;
-	private Boolean follwersRequestIsActive;
-	private Integer follwersRequestCreatedBy;
-	private Integer follwersRequestUpdatedBy;
-	private Date follwersRequestCreatedOn;
-	private Date follwersRequestUpdatedOn;
+	private Integer followersRequestId;
+	private Integer followersRequestSenderId; // user table userId
+	private Integer followersRequestReceiverId; // user table userId
+	private String followersRequestSenderStatus;
+	private Boolean followersRequestIsActive;
+	private Integer followersRequestCreatedBy;
+	private Integer followersRequestUpdatedBy;
+	private Date followersRequestCreatedOn;
+	private Date followersRequestUpdatedOn;
 	private String userType;
 }
 

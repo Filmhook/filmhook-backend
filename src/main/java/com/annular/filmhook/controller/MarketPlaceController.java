@@ -50,7 +50,18 @@ public class MarketPlaceController {
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
-	
+
+	@GetMapping("/getUserMarketPlaces")
+	public ResponseEntity<?> getUserMarketPlaces(@RequestParam("userId") Integer userId) {
+		try {
+			return ResponseEntity.ok().body(marketPlaceService.getUserMarketPlaces(userId));
+		} catch (Exception e) {
+			logger.error("getMarketPlaceByRentalOrSale Method Exception...", e);
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body("Error at finding user market places...");
+		}
+	}
+
 	@RequestMapping(path = "/saveShootingLocation", method = RequestMethod.POST, consumes = {
 			MediaType.MULTIPART_FORM_DATA_VALUE })
 	public ResponseEntity<?> saveShootingLocation(@ModelAttribute ShootingLocationWebModel shootingLocationWebModel) {

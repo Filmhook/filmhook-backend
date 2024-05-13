@@ -1,7 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.model.Story;
-import com.annular.filmhook.service.ScheduleExecutionService;
+import com.annular.filmhook.service.JobExecutionService;
 import com.annular.filmhook.service.StoriesService;
 
 import org.slf4j.Logger;
@@ -19,9 +19,9 @@ import java.util.List;
 
 @Configuration
 @EnableAsync
-public class ScheduleExecutionServiceImpl implements ScheduleExecutionService {
+public class JobExecutionServiceImpl implements JobExecutionService {
 
-    public static final Logger logger = LoggerFactory.getLogger(ScheduleExecutionServiceImpl.class);
+    public static final Logger logger = LoggerFactory.getLogger(JobExecutionServiceImpl.class);
 
     @Value("${jobs.enabled}")
     private boolean isEnabled;

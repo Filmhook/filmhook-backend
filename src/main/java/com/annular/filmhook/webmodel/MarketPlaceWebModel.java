@@ -3,9 +3,11 @@ package com.annular.filmhook.webmodel;
 import java.sql.Date;
 import java.util.List;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class MarketPlaceWebModel {
 
 	private Integer marketPlaceId;

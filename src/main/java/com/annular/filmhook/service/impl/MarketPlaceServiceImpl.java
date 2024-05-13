@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
+
+import com.annular.filmhook.util.Utility;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,6 +35,8 @@ import com.annular.filmhook.webmodel.ShootingLocationWebModel;
 
 @Service
 public class MarketPlaceServiceImpl implements MarketPlaceService {
+
+	private static final Logger logger = LoggerFactory.getLogger(MarketPlaceServiceImpl.class);
 
 	@Autowired
 	MarketPlaceRepository marketPlaceRepository;
@@ -82,41 +90,16 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 
 	@Override
 	public ResponseEntity<?> getMarketPlaceByRentalOrSale(Boolean rentalOrsale) {
+		List<MarketPlaceWebModel> marketPlaceWebModelList = new ArrayList<>();
 		try {
 			List<MarketPlace> marketPlaces = marketPlaceRepository.findByRentalOrSale(rentalOrsale);
 			if (!marketPlaces.isEmpty()) {
-				List<MarketPlaceWebModel> marketPlaceWebModels = new ArrayList<>();
-
-				for (MarketPlace marketPlace : marketPlaces) {
-					MarketPlaceWebModel marketPlaceWebModel = new MarketPlaceWebModel();
-					marketPlaceWebModel.setCompanyName(marketPlace.getCompanyName());
-					marketPlaceWebModel.setCost(marketPlace.getCost());
-					marketPlaceWebModel.setCount(marketPlace.getCount());
-					marketPlaceWebModel.setMarketPlaceId(marketPlace.getMarketPlaceId());
-					marketPlaceWebModel.setProductDescription(marketPlace.getProductDescription());
-					marketPlaceWebModel.setNewProduct(marketPlace.getNewProduct());
-					marketPlaceWebModel.setProductName(marketPlace.getProductName());
-					marketPlaceWebModel.setUserId(marketPlace.getUserId());
-					marketPlaceWebModel.setRentalOrsale(marketPlace.getRentalOrsale());
-
-					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(
-							MediaFileCategory.MarketPlace, marketPlace.getMarketPlaceId());
-					if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
-						marketPlaceWebModel.setFileOutputWebModel(fileOutputWebModelList);
-					}
-
-					marketPlaceWebModels.add(marketPlaceWebModel);
-				}
-				return ResponseEntity.status(HttpStatus.OK)
-						.body(ResponseEntity.ok(new Response(1, "Success", marketPlaceWebModels)));
-
-			} else {
-				return ResponseEntity.notFound().build();
+				marketPlaceWebModelList = this.transformMarketPlaceData(marketPlaces);
 			}
+			return ResponseEntity.ok().body(ResponseEntity.ok(new Response(1, "Success", marketPlaceWebModelList)));
 		} catch (Exception e) {
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
 		}
 	}
 
@@ -198,5 +181,49 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
 		}
+	}
+
+	@Override
+	public List<MarketPlaceWebModel> getUserMarketPlaces(Integer userId) {
+		List<MarketPlaceWebModel> outputList = new ArrayList<>();
+		try {
+			List<MarketPlace> marketPlaces = marketPlaceRepository.findByUserId(userId);
+			return this.transformMarketPlaceData(marketPlaces);
+		} catch (Exception e) {
+			logger.error("Error at getUserMarketPlaces -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return outputList;
+	}
+
+	private List<MarketPlaceWebModel> transformMarketPlaceData(List<MarketPlace> marketPlaces) {
+		List<MarketPlaceWebModel> outputList = new ArrayList<>();
+		try {
+			if (!Utility.isNullOrEmptyList(marketPlaces)) {
+				marketPlaces.stream().filter(Objects::nonNull).forEach(marketPlace -> {
+					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.MarketPlace, marketPlace.getMarketPlaceId());
+					MarketPlaceWebModel marketPlaceWebModel = MarketPlaceWebModel.builder()
+							.marketPlaceId(marketPlace.getMarketPlaceId())
+							.companyName(marketPlace.getCompanyName())
+							.cost(marketPlace.getCost())
+							.count(marketPlace.getCount())
+							.newProduct(marketPlace.getNewProduct())
+							.productName(marketPlace.getProductName())
+							.productDescription(marketPlace.getProductDescription())
+							.rentalOrsale(marketPlace.getRentalOrsale())
+							.userId(marketPlace.getUserId())
+							.marketPlaceCreatedOn(marketPlace.getMarketPlaceCreatedOn())
+							.marketPlaceCreatedBy(marketPlace.getMarketPlaceCreatedBy())
+							.marketPlaceIsactive(marketPlace.isMarketPlaceIsactive())
+							.fileOutputWebModel(fileOutputWebModelList)
+							.build();
+					outputList.add(marketPlaceWebModel);
+				});
+			}
+		} catch (Exception e) {
+			logger.error("Error at transformMarketPlaceData() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return outputList;
 	}
 }

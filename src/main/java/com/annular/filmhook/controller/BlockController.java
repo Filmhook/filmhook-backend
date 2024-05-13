@@ -1,5 +1,6 @@
 package com.annular.filmhook.controller;
 
+import com.annular.filmhook.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,20 @@ public class BlockController {
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+
+	@PostMapping("/unBlock")
+	public ResponseEntity<?> unBlockProfile(@RequestBody BlockWebModel blockWebModel) {
+		try {
+			String response = blockService.unBlockProfile(blockWebModel);
+			if (!Utility.isNullOrBlankWithTrim(response) && response.contains("successfully"))
+				return ResponseEntity.ok(new Response(1, response, ""));
+			else return ResponseEntity.badRequest().body("Blocked profile not found...");
+		} catch (Exception e) {
+			logger.error("Error at unBlockProfile method... {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return ResponseEntity.internalServerError().body("Error at unblocking the profile...");
 	}
 
 	@PostMapping("/getAllBlock")

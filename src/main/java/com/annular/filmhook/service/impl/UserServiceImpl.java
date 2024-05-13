@@ -10,11 +10,10 @@ import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Base64;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.*;
 
@@ -36,11 +35,15 @@ import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.IndustryWebModel;
 import com.annular.filmhook.webmodel.ProfessionWebModel;
 import com.annular.filmhook.webmodel.SubProfessionWebModel;
+import com.annular.filmhook.webmodel.ScheduleWebModel;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
+    @Autowired
+    UserDetails loggedInUser;
 
     @Autowired
     UserRepository userRepository;
@@ -82,6 +85,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     FilmSubProfessionPermanentDetailsRepository filmSubProfessionPermanentDetailsRepository;
+
+    @Autowired
+    BookingsRepository bookingsRepository;
 
     @Override
     public Optional<UserWebModel> getUserByUserId(Integer userId) {
@@ -429,10 +435,12 @@ public class UserServiceImpl implements UserService {
                     .collect(Collectors.toList());
 
             List<Industry> industryList = industryRepository.getIndustryByCountryIds(countryList);
-            UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
-                    .industryList(this.transformIndustryData(industryList))
-                    .build();
-            outputList.add(userSearchWebModel);
+            if (!Utility.isNullOrEmptyList(industryList)) {
+                UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
+                        .industryList(this.transformIndustryData(industryList))
+                        .build();
+                outputList.add(userSearchWebModel);
+            }
         } catch (Exception e) {
             logger.error("Error at getIndustryByCountryId() -> [{}]", e.getMessage());
             e.printStackTrace();
@@ -462,10 +470,12 @@ public class UserServiceImpl implements UserService {
         List<UserSearchWebModel> outputList = new ArrayList<>();
         try {
             List<FilmProfession> professionList = filmProfessionRepository.findByPlatform(Platform.builder().platformId(platformId).build());
-            UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
-                    .professionList(this.transformProfessionData(professionList))
-                    .build();
-            outputList.add(userSearchWebModel);
+            if (!Utility.isNullOrEmptyList(professionList)) {
+                UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
+                        .professionList(this.transformProfessionData(professionList))
+                        .build();
+                outputList.add(userSearchWebModel);
+            }
         } catch (Exception e) {
             logger.error("Error at getAllProfessionByPlatformId() -> [{}]", e.getMessage());
             e.printStackTrace();
@@ -497,10 +507,12 @@ public class UserServiceImpl implements UserService {
                     .map(professionId -> FilmProfession.builder().filmProfessionId(professionId).build())
                     .collect(Collectors.toList());
             List<FilmSubProfession> subProfessionList = filmSubProfessionRepository.getSubProfessionByProfessionIds(professionList);
-            UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
-                    .subProfessionList(this.transformSubProfessionData(subProfessionList))
-                    .build();
-            outputList.add(userSearchWebModel);
+            if (!Utility.isNullOrEmptyList(subProfessionList)) {
+                UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
+                        .subProfessionList(this.transformSubProfessionData(subProfessionList))
+                        .build();
+                outputList.add(userSearchWebModel);
+            }
         } catch (Exception e) {
             logger.error("Error at getAllAubProfessionByProfessionId() -> [{}]", e.getMessage());
             e.printStackTrace();
@@ -601,41 +613,34 @@ public class UserServiceImpl implements UserService {
 
             // Iterating the UserIds and preparing the output
             if (!Utility.isNullOrEmptySet(uniqueUsersSet)) {
-                AtomicInteger count = new AtomicInteger(1);
-                uniqueUsersSet.stream().filter(Objects::nonNull).forEach(userId -> {
-                    Optional<User> user = this.getUser(userId);
-                    logger.info("User no: [{}] -> Details {}", count, user);
-                    user.ifPresent(userList::add);
-                    count.getAndIncrement();
-                });
+                uniqueUsersSet.stream().filter(Objects::nonNull).map(this::getUser).forEach(user -> user.ifPresent(userList::add));
 
                 if(!Utility.isNullOrEmptyList(userList)) {
-                    userList.stream().filter(Objects::nonNull).forEach(user -> {
+                    userList.stream()
+                            .filter(Objects::nonNull)
+                            .forEach(user -> {
+                                UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
+                                List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.findByUserId(user.getUserId());
+                                if (!Utility.isNullOrEmptyList(userProfessionDataList)) {
+                                    userProfessionDataList.stream()
+                                            .filter(Objects::nonNull)
+                                            .forEach(professionData -> {
 
-                        UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
-                        List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.findByUserId(user.getUserId());
+                                                Map<String, Object> map = new HashMap<>();
+                                                map.put("userId", userWebModel.getUserId());
+                                                map.put("name", userWebModel.getName());
+                                                map.put("dob", userWebModel.getDob());
+                                                map.put("userProfilePic", userWebModel.getProfilePicOutput() != null ? userWebModel.getProfilePicOutput().getFilePath() : "");
+                                                map.put("userRating", "");
+                                                map.put("experience", "");
+                                                map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
+                                                map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
+                                                userDataList.add(map);
 
-                        if (!Utility.isNullOrEmptyList(userProfessionDataList)) {
-                            userProfessionDataList.stream()
-                                    .filter(Objects::nonNull)
-                                    .forEach(professionData -> {
-
-                                        Map<String, Object> map = new HashMap<>();
-                                        map.put("userId", userWebModel.getUserId());
-                                        map.put("name", userWebModel.getName());
-                                        map.put("dob", userWebModel.getDob());
-                                        map.put("userProfilePic", userWebModel.getProfilePicOutput() != null ? userWebModel.getProfilePicOutput().getFilePath() : "");
-                                        map.put("userRating", "");
-                                        map.put("experience", "");
-                                        map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
-                                        map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
-                                        userDataList.add(map);
-
-                                        professionUserMap.putIfAbsent(professionData.getProfessionName(), userDataList);
-                                    });
-                        }
-
-                    });
+                                                professionUserMap.putIfAbsent(professionData.getProfessionName(), userDataList);
+                                            });
+                                }
+                            });
                 }
             }
         } catch (Exception e) {
@@ -643,5 +648,67 @@ public class UserServiceImpl implements UserService {
             e.printStackTrace();
         }
         return professionUserMap;
+    }
+
+    @Override
+    public ScheduleWebModel saveSchedule(ScheduleWebModel scheduleWebModel) {
+        try {
+            Bookings bookings = Bookings.builder()
+                    .project(scheduleWebModel.getProjectName())
+                    .scheduledBy(scheduleWebModel.getScheduledBy())
+                    .scheduledFor(scheduleWebModel.getScheduledTo())
+                    .fromDate(scheduleWebModel.getFromDate())
+                    .toDate(scheduleWebModel.getToDate())
+                    .status(true)
+                    .createdBy((loggedInUser != null && loggedInUser.userInfo() != null) ? loggedInUser.userInfo().getId() : null)
+                    .createdOn(new Date())
+                    .updatedBy((loggedInUser != null && loggedInUser.userInfo() != null) ? loggedInUser.userInfo().getId() : null)
+                    .updatedOn(new Date())
+                    .build();
+            bookingsRepository.saveAndFlush(bookings);
+            return this.transformBookingData(List.of(bookings)).get(0);
+        } catch (Exception e) {
+            logger.error("Error at saveSchedule() -> {}", e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    @Override
+    public List<ScheduleWebModel> getAllUserSchedules(Integer userId) {
+        try {
+            Integer userIdToSearch = userId != null ? userId : loggedInUser.userInfo().getId();
+            return this.transformBookingData(bookingsRepository.findByScheduledFor(userIdToSearch));
+        } catch (Exception e) {
+            logger.error("Error at getAllUserSchedules() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private List<ScheduleWebModel> transformBookingData(List<Bookings> userBookings) {
+        List<ScheduleWebModel> scheduleWebModels = new ArrayList<>();
+        try {
+            if (!Utility.isNullOrEmptyList(userBookings)) {
+                userBookings.stream().filter(Objects::nonNull).forEach(booking -> {
+                    ScheduleWebModel scheduleWebModel = ScheduleWebModel.builder()
+                            .scheduleId(booking.getId())
+                            .projectName(booking.getProject())
+                            .scheduledBy(booking.getScheduledBy())
+                            .scheduledTo(booking.getScheduledFor())
+                            .fromDate(booking.getFromDate())
+                            .toDate(booking.getToDate())
+                            .active(booking.getStatus())
+                            .createdBy(booking.getCreatedBy())
+                            .createdOn(booking.getCreatedOn())
+                            .build();
+                    scheduleWebModels.add(scheduleWebModel);
+                });
+            }
+        } catch (Exception e) {
+            logger.error("Error at transformBookingData() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return scheduleWebModels;
     }
 }

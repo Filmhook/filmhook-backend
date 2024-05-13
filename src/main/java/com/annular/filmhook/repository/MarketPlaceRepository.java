@@ -14,4 +14,5 @@ public interface MarketPlaceRepository extends JpaRepository<MarketPlace, Intege
 	@Query("SELECT m FROM MarketPlace m WHERE m.rentalOrsale = :rentalOrsale and m.marketPlaceIsactive=true")
 	List<MarketPlace> findByRentalOrSale(Boolean rentalOrsale);
 
+    List<MarketPlace> findByUserId(Integer userId);
 }

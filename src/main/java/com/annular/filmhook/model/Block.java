@@ -31,13 +31,16 @@ public class Block {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "block_id")
-    private Integer blockId;;
+    private Integer blockId;
 
-    @Column(name = "user_Id")
-    private Integer userId;//foreign key for user table 
+    @Column(name = "blocked_by")
+    private Integer blockedBy; //foreign key for user table
 
-    @Column(name = "block_user_Id")
-    private Integer blockUserId;//foreign key for userTable 
+    @Column(name = "blocked_user")
+    private Integer blockedUser; //foreign key for userTable
+
+    @Column(name = "block_status")
+    private String blockStatus;
     
     @Column(name = "status")
     private Boolean status;

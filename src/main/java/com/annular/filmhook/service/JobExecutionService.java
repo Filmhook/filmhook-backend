@@ -1,6 +1,6 @@
 package com.annular.filmhook.service;
 
-public interface ScheduleExecutionService {
+public interface JobExecutionService {
 
     void expireStories();
 }

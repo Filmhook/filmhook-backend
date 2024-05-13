@@ -1,7 +1,6 @@
 package com.annular.filmhook.model;
 
 import java.sql.Date;
-import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -20,7 +19,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "follwersRequest")
+@Table(name = "followersRequest")
 @Builder
 @Getter
 @Setter
@@ -31,34 +30,34 @@ public class FollowersRequest {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "follwers_request_id")
-	private Integer follwersRequestId;
+	@Column(name = "followers_request_id")
+	private Integer followersRequestId;
 
-	@Column(name = "follwers_request_senderId")
-	private Integer follwersRequestSenderId; // user table userId
+	@Column(name = "followers_request_senderId")
+	private Integer followersRequestSenderId; // user table userId
 
-	@Column(name = "follwers_request_receiver_id")
-	private Integer follwersRequestReceiverId; // user table userId
+	@Column(name = "followers_request_receiver_id")
+	private Integer followersRequestReceiverId; // user table userId
 
-	@Column(name = "follwers_request_status")
-	private String follwersRequestSenderStatus;
+	@Column(name = "followers_request_status")
+	private String followersRequestSenderStatus;
 
-	@Column(name = "follwers_request_is_active")
-	private Boolean follwersRequestIsActive;
+	@Column(name = "followers_request_is_active")
+	private Boolean followersRequestIsActive;
 
-	@Column(name = "follwers_request_created_by")
-	private Integer follwersRequestCreatedBy;
+	@Column(name = "followers_request_created_by")
+	private Integer followersRequestCreatedBy;
 
-	@Column(name = "follwers_request_updated_by")
-	private Integer follwersRequestUpdatedBy;
-
-	@CreationTimestamp
-	@Column(name = "follwers_request_created_on")
-	private Date follwersRequestCreatedOn;
+	@Column(name = "followers_request_updated_by")
+	private Integer followersRequestUpdatedBy;
 
 	@CreationTimestamp
-	@Column(name = "follwers_request_updated_on")
-	private Date follwersRequestUpdatedOn;
+	@Column(name = "followers_request_created_on")
+	private Date followersRequestCreatedOn;
+
+	@CreationTimestamp
+	@Column(name = "followers_request_updated_on")
+	private Date followersRequestUpdatedOn;
 
 	@Column(name = "user_type")
 	private String userType;

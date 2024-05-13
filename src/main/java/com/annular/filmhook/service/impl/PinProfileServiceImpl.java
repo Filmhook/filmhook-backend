@@ -79,7 +79,7 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 			pinProfileRepository.save(userProfilePin);
 
-			return ResponseEntity.ok("Pin added su  ccessfully");
+			return ResponseEntity.ok("Profile pinned successfully");
 		} catch (Exception e) {
 			logger.error("Error setting addPin: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -100,7 +100,7 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 			return ResponseEntity.ok("Pin added successfully");
 		} catch (Exception e) {
-			logger.error("Error setting addPin: {}", e.getMessage());
+			logger.error("Error setting addMedia: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Error setting addPin", e.getMessage()));
 

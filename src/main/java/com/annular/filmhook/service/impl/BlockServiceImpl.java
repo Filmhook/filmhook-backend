@@ -41,9 +41,10 @@ public class BlockServiceImpl implements BlockService {
 		HashMap<String, Object> response = new HashMap<>();
 		try {
 			Block block = new Block();
-			block.setUserId(userDetails.userInfo().getId());
+			block.setBlockedBy(userDetails.userInfo().getId());
 			block.setStatus(true);
-			block.setBlockUserId(blockWebModel.getBlockUserId());
+			block.setBlockedUser(blockWebModel.getBlockedUser());
+			block.setBlockStatus("Blocked");
 			block.setCreatedBy(userDetails.userInfo().getId());
 			blockRepository.save(block);
 			response.put("blockInfo", block);
@@ -54,26 +55,23 @@ public class BlockServiceImpl implements BlockService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Error setting block", e.getMessage()));
 		}
-
 	}
 
 	@Override
 	public ResponseEntity<?> getAllBlock() {
 		try {
-			logger.info("getAllBlockservice start");
-
-			List<Block> blockData = blockRepository.findByUserId(userDetails.userInfo().getId());
+			List<Block> blockData = blockRepository.findByBlockedBy(userDetails.userInfo().getId());
 			List<LinkedHashMap<String, Object>> responseList = new ArrayList<>();
 			for (Block block : blockData) {
-				Integer blockUserId = block.getBlockUserId();
+				Integer blockUserId = block.getBlockedUser();
 				if (blockUserId != null) {
 					Optional<User> userOptional = userRepository.findById(blockUserId);
 
 					if (userOptional.isPresent()) {
 						User user = userOptional.get();
 						LinkedHashMap<String, Object> pinData = new LinkedHashMap<>();
-						pinData.put("blockUserId", block.getBlockUserId());
-						pinData.put("userId", block.getUserId());
+						pinData.put("blockUserId", block.getBlockedUser());
+						pinData.put("userId", block.getBlockedBy());
 						pinData.put("userName", user.getName());
 						pinData.put("userGender", user.getGender());
 						responseList.add(pinData);
@@ -90,5 +88,25 @@ public class BlockServiceImpl implements BlockService {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
 		}
+	}
+
+	@Override
+	public String unBlockProfile(BlockWebModel blockWebModel) {
+		try {
+			Integer currentUser = (userDetails != null && userDetails.userInfo() != null) ? userDetails.userInfo().getId() : null;
+			Block blockedUser = blockRepository.findByBlockedByAndBlockedUser(currentUser, blockWebModel.getBlockedUser());
+			if (blockedUser != null) {
+				blockedUser.setBlockStatus("UnBlocked");
+				blockRepository.saveAndFlush(blockedUser);
+				return "Profile unblocked successfully...";
+			} else {
+				return "Blocked profile not found...";
+			}
+
+		} catch (Exception e) {
+			logger.error("Error at unBlockProfile -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
