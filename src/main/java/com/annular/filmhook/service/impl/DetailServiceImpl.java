@@ -402,7 +402,7 @@ public class DetailServiceImpl implements DetailService {
             industryDetailsRepository.deleteByUserId(userId);
             platformDetailsRepository.deleteByUserId(userId);
             filmProfessionDetailRepository.deleteByUserId(userId);
-            filmSubProfessionDetailRepository.deleteByuserId(userId);
+            filmSubProfessionDetailRepository.deleteByUserId(userId);
 
             if(responseMap.isEmpty()) {
                 // Return a success response
@@ -1096,7 +1096,7 @@ public class DetailServiceImpl implements DetailService {
                     industryDetailsRepository.deleteByUserId(userId);
                     platformDetailsRepository.deleteByUserId(userId);
                     filmProfessionDetailRepository.deleteByUserId(userId);
-                    filmSubProfessionDetailRepository.deleteByuserId(userId);
+                    filmSubProfessionDetailRepository.deleteByUserId(userId);
                 } else {
 
                     Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
@@ -1144,7 +1144,7 @@ public class DetailServiceImpl implements DetailService {
                     industryDetailsRepository.deleteByUserId(userId);
                     platformDetailsRepository.deleteByUserId(userId);
                     filmProfessionDetailRepository.deleteByUserId(userId);
-                    filmSubProfessionDetailRepository.deleteByuserId(userId);
+                    filmSubProfessionDetailRepository.deleteByUserId(userId);
                 }
             }
 

@@ -46,15 +46,80 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
 	
+//	@Override
+//	public ResponseEntity<?> saveFollowersRequest(FollowersRequestWebModel followersRequestWebModel) {
+//
+//	    try {
+//	        Integer senderId = userDetails.userInfo().getId();
+//	        Integer receiverId = followersRequestWebModel.getFollowersRequestReceiverId();
+//	        String status = followersRequestWebModel.getFollowersRequestSenderStatus();
+//
+//	        // Log or print the senderId and receiverId to ensure they are set correctly
+//	        System.out.println("Sender ID: " + senderId);
+//	        System.out.println("Receiver ID: " + receiverId);
+//
+//	        // Check if senderId and receiverId are not null
+//	        if (senderId == null || receiverId == null) {
+//	            return ResponseEntity.badRequest().body("Sender ID or Receiver ID is null");
+//	        }
+//
+//	        // Check if the senderId and receiverId are different
+//	        if (senderId.equals(receiverId)) {
+//	            return ResponseEntity.badRequest().body("Sender ID and Receiver ID cannot be the same");
+//	        }
+//
+//	        // Check if the sender already sent a request to the receiver
+//	        Optional<FollowersRequest> existingFriendRequest = friendRequestRepository
+//	                .findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
+//
+//	        if (existingFriendRequest.isPresent()) {
+//	            // If a friend request already exists, return a bad request response
+//	            return ResponseEntity.badRequest()
+//	                    .body(new Response(0, "Friend request already exists", HttpStatus.BAD_REQUEST));
+//	        } else {
+//	            // If no existing request, proceed to save the new friend request
+//	            FollowersRequest friendRequest = new FollowersRequest();
+//	            friendRequest.setFollowersRequestSenderId(senderId);
+//	            friendRequest.setFollowersRequestReceiverId(receiverId);
+//	            friendRequest.setFollowersRequestSenderStatus("pending");
+//	            friendRequest.setFollowersRequestCreatedBy(senderId);
+//	            friendRequest.setFollowersRequestIsActive(true);
+//
+//	            // Log or print the friendRequest object to verify its data before saving
+//	            System.out.println("Friend Request to Save: " + friendRequest);
+//
+//	            FollowersRequest savedFriendRequest = friendRequestRepository.save(friendRequest);
+//	            
+//	            
+//	            FollowersRequest friendRequests = new FollowersRequest();
+//	            friendRequests.setFollowersRequestSenderId(receiverId);
+//	            friendRequests.setFollowersRequestReceiverId(senderId);
+//	            friendRequests.setFollowersRequestSenderStatus("confirm/Reject");
+//	            friendRequests.setFollowersRequestCreatedBy(senderId);
+//	            friendRequests.setFollowersRequestIsActive(true);
+//
+//	            FollowersRequest savedFriendRequests = friendRequestRepository.save(friendRequests);
+//
+//	            // Log or print the savedFriendRequest object to verify its data after saving
+//	            System.out.println("Saved Friend Request: " + savedFriendRequest);
+//
+//	            // Return a success response
+//	            return ResponseEntity.ok().body("Friend request saved successfully");
+//	        }
+//
+//	    } catch (Exception e) {
+//	        // Log the exception or handle it appropriately
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//	                .body("An error occurred while saving the friend request: " + e.getMessage());
+//	    }
+//	}
 	@Override
 	public ResponseEntity<?> saveFollowersRequest(FollowersRequestWebModel followersRequestWebModel) {
-
 	    try {
 	        Integer senderId = userDetails.userInfo().getId();
 	        Integer receiverId = followersRequestWebModel.getFollowersRequestReceiverId();
-	        String status = followersRequestWebModel.getFollowersRequestSenderStatus();
 
-	        // Log or print the senderId and receiverId to ensure they are set correctly
+	        // Log or print senderId and receiverId to ensure they are set correctly
 	        System.out.println("Sender ID: " + senderId);
 	        System.out.println("Receiver ID: " + receiverId);
 
@@ -63,104 +128,130 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	            return ResponseEntity.badRequest().body("Sender ID or Receiver ID is null");
 	        }
 
-	        // Check if the senderId and receiverId are different
+	        // Check if senderId and receiverId are different
 	        if (senderId.equals(receiverId)) {
 	            return ResponseEntity.badRequest().body("Sender ID and Receiver ID cannot be the same");
 	        }
 
-	        // Check if the sender already sent a request to the receiver
-	        Optional<FollowersRequest> existingFriendRequest = friendRequestRepository
+	        // Check if the friend request already exists in either direction
+	        Optional<FollowersRequest> existingFriendRequest1 = friendRequestRepository
 	                .findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
+	        Optional<FollowersRequest> existingFriendRequest2 = friendRequestRepository
+	                .findByFriendRequestSenderIdAndFriendRequestReceiverId(receiverId, senderId);
 
-	        if (existingFriendRequest.isPresent()) {
-	            // If a friend request already exists, return a bad request response
-	            return ResponseEntity.badRequest()
-	                    .body(new Response(0, "Friend request already exists", HttpStatus.BAD_REQUEST));
+	        if (existingFriendRequest1.isPresent() || existingFriendRequest2.isPresent()) {
+	            // If a friend request already exists in either direction, return a bad request response
+	            return ResponseEntity.badRequest().body(new Response(0, "Friend request already exists", HttpStatus.BAD_REQUEST));
 	        } else {
 	            // If no existing request, proceed to save the new friend request
 	            FollowersRequest friendRequest = new FollowersRequest();
 	            friendRequest.setFollowersRequestSenderId(senderId);
 	            friendRequest.setFollowersRequestReceiverId(receiverId);
-	            friendRequest.setFollowersRequestSenderStatus("pending");
+	            friendRequest.setFollowersRequestSenderStatus("follow");
 	            friendRequest.setFollowersRequestCreatedBy(senderId);
 	            friendRequest.setFollowersRequestIsActive(true);
 
-	            // Log or print the friendRequest object to verify its data before saving
+	            // Log the friend request object to verify its data before saving
 	            System.out.println("Friend Request to Save: " + friendRequest);
 
 	            FollowersRequest savedFriendRequest = friendRequestRepository.save(friendRequest);
-	            
-	            
-	            FollowersRequest friendRequests = new FollowersRequest();
-	            friendRequests.setFollowersRequestSenderId(receiverId);
-	            friendRequests.setFollowersRequestReceiverId(senderId);
-	            friendRequests.setFollowersRequestSenderStatus("confirm/Reject");
-	            friendRequests.setFollowersRequestCreatedBy(senderId);
-	            friendRequests.setFollowersRequestIsActive(true);
 
-	            FollowersRequest savedFriendRequests = friendRequestRepository.save(friendRequests);
-
-	            // Log or print the savedFriendRequest object to verify its data after saving
-	            System.out.println("Saved Friend Request: " + savedFriendRequest);
-
-	            // Return a success response
-	            return ResponseEntity.ok().body("Friend request saved successfully");
+	            // Optionally, return a structured response object for success
+	            return ResponseEntity.ok().body(new Response(1, "Friend request saved successfully", HttpStatus.OK));
 	        }
-
 	    } catch (Exception e) {
 	        // Log the exception or handle it appropriately
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 	                .body("An error occurred while saving the friend request: " + e.getMessage());
 	    }
 	}
+//	@Override
+//	public ResponseEntity<?> updateFriendRequest(FollowersRequestWebModel followersRequestWebModel) {
+//	    try {
+//	        Integer senderId = userDetails.userInfo().getId();
+//	        Integer receiverId = followersRequestWebModel.getFollowersRequestReceiverId();
+//	        String newStatus = followersRequestWebModel.getFollowersRequestSenderStatus();
+//
+//	        System.out.println("senderId"+senderId);
+//	        System.out.println("receiverId"+receiverId);
+//	        
+//	        if (senderId == null || receiverId == null) {
+//	            return ResponseEntity.badRequest().body("Sender ID or Receiver ID is null");
+//	        }
+//	        
+//
+//	        Optional<FollowersRequest> existingFriendRequestOpt = friendRequestRepository
+//	                .findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
+//	        Optional<FollowersRequest> existingFriendRequestOpt2 = friendRequestRepository
+//	        		.findByFriendRequestSenderAndFriendRequestReceiverId(receiverId,senderId);
+//
+//	        if (existingFriendRequestOpt.isPresent()) {
+//	            FollowersRequest existingFriendRequest = existingFriendRequestOpt.get();
+//
+//	            existingFriendRequest.setFollowersRequestSenderStatus(newStatus);//confirm
+//	            friendRequestRepository.save(existingFriendRequest);
+//	           if(existingFriendRequestOpt2.isPresent())
+//	           {
+//	        	   FollowersRequest existingFriendRequests = existingFriendRequestOpt.get();
+//	        	   existingFriendRequest.getFollowersRequestSenderStatus();
+//	        	   if("confirm".equalsIgnoreCase(existingFriendRequest.getFollowersRequestSenderStatus()))
+//	        	   {
+//	        		   existingFriendRequests.setFollowersRequestSenderStatus("unfollow");//confirm--->unfollow
+//	        		   existingFriendRequest.setFollowersRequestSenderStatus("unfollow");
+//	        		   
+//	        	   }
+//	        	   else if("Reject".equalsIgnoreCase(existingFriendRequest.getFollowersRequestSenderStatus()))
+//	        	   {
+//	        		   existingFriendRequests.setFollowersRequestSenderStatus("follow");
+//	        		   existingFriendRequest.setFollowersRequestSenderStatus("follow");
+//	        	   }
+//	        	    
+//	        	   friendRequestRepository.save(existingFriendRequest);
+//	           }
+//	            
+//
+//	           // return ResponseEntity.ok().body("Friend request updated successfully");
+//	        } else {
+//
+//	            return ResponseEntity.notFound().build();
+//	        }
+//	    } catch (Exception e) {
+//	        // Log the exception or handle it appropriately
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//	                .body("An error occurred while updating the friend request: " + e.getMessage());
+//	    }
+//	    return ResponseEntity.ok().body("Friend request updated successfully");
+//	}
+	
 	@Override
 	public ResponseEntity<?> updateFriendRequest(FollowersRequestWebModel followersRequestWebModel) {
 	    try {
-	        Integer senderId = userDetails.userInfo().getId();
-	        Integer receiverId = followersRequestWebModel.getFollowersRequestReceiverId();
-	        String newStatus = followersRequestWebModel.getFollowersRequestSenderStatus();
+	        Integer requestId = followersRequestWebModel.getFollowersRequestId(); // Assuming you have a field for request ID in the model
+	        //String newStatus = followersRequestWebModel.getFollowersRequestSenderStatus();
 
-	        System.out.println("senderId"+senderId);
-	        System.out.println("receiverId"+receiverId);
-	        
-	        if (senderId == null || receiverId == null) {
-	            return ResponseEntity.badRequest().body("Sender ID or Receiver ID is null");
+	        // Check if request ID is provided
+	        if (requestId == null) {
+	            return ResponseEntity.badRequest().body("Request ID is required");
 	        }
-	        
 
-	        Optional<FollowersRequest> existingFriendRequestOpt = friendRequestRepository
-	                .findByFriendRequestSenderIdAndFriendRequestReceiverId(senderId, receiverId);
-	        Optional<FollowersRequest> existingFriendRequestOpt2 = friendRequestRepository
-	        		.findByFriendRequestSenderAndFriendRequestReceiverId(receiverId,senderId);
+	        // Retrieve the existing friend request by ID
+	        Optional<FollowersRequest> existingRequestOpt = friendRequestRepository.findById(requestId);
 
-	        if (existingFriendRequestOpt.isPresent()) {
-	            FollowersRequest existingFriendRequest = existingFriendRequestOpt.get();
+	        if (existingRequestOpt.isPresent()) {
+	            FollowersRequest existingRequest = existingRequestOpt.get();
 
-	            existingFriendRequest.setFollowersRequestSenderStatus(newStatus);//confirm
-	            friendRequestRepository.save(existingFriendRequest);
-	           if(existingFriendRequestOpt2.isPresent())
-	           {
-	        	   FollowersRequest existingFriendRequests = existingFriendRequestOpt.get();
-	        	   existingFriendRequest.getFollowersRequestSenderStatus();
-	        	   if("confirm".equalsIgnoreCase(existingFriendRequest.getFollowersRequestSenderStatus()))
-	        	   {
-	        		   existingFriendRequests.setFollowersRequestSenderStatus("unfollow");//confirm--->unfollow
-	        		   existingFriendRequest.setFollowersRequestSenderStatus("unfollow");
-	        		   
-	        	   }
-	        	   else if("Reject".equalsIgnoreCase(existingFriendRequest.getFollowersRequestSenderStatus()))
-	        	   {
-	        		   existingFriendRequests.setFollowersRequestSenderStatus("follow");
-	        		   existingFriendRequest.setFollowersRequestSenderStatus("follow");
-	        	   }
-	        	    
-	        	   friendRequestRepository.save(existingFriendRequest);
-	           }
+	            // Update the status if provided
+	            
+	                existingRequest.setFollowersRequestSenderStatus("unfollow");
+	                existingRequest.setFollowersRequestIsActive(false);
+	                
 	            
 
-	           // return ResponseEntity.ok().body("Friend request updated successfully");
-	        } else {
+	            // Save the updated request
+	            friendRequestRepository.save(existingRequest);
 
+	            return ResponseEntity.ok().body(new Response(1, "Friend request updated successfully", HttpStatus.OK));
+	        } else {
 	            return ResponseEntity.notFound().build();
 	        }
 	    } catch (Exception e) {
@@ -168,56 +259,59 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 	                .body("An error occurred while updating the friend request: " + e.getMessage());
 	    }
-	    return ResponseEntity.ok().body("Friend request updated successfully");
 	}
-
 
 	@Override
 	public ResponseEntity<?> getFriendRequest(Integer userId) {
 	    try {
+	        // Fetch friend requests for the given user id from the FollowersRequest table
 	        List<FollowersRequest> friendRequests = friendRequestRepository.findByFriendRequestSenderIdAndFriendRequestSenderStatus(userId);
 
+	        // List to store the processed friend requests
 	        List<Map<String, Object>> updatedFriendRequests = new ArrayList<>();
 
+	        // Process each friend request
 	        for (FollowersRequest friendRequest : friendRequests) {
-	        	 MediaFileCategory profilePicCategory = MediaFileCategory.ProfilePic;
-
-		            Optional<MediaFiles> profilePicOptional = mediaFilesRepository
-		                    .findByUserId(friendRequest.getFollowersRequestReceiverId(), profilePicCategory);
-
-	        	
+	            // Create a map to store the details of the friend request
 	            Map<String, Object> requestDetails = new LinkedHashMap<>();
 
 	            Integer receiverId = friendRequest.getFollowersRequestReceiverId();
 
-
+	            // Fetch the user details for the receiver of the friend request
 	            Optional<User> userOptional = userRepository.findById(receiverId);
+	            //Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(friendRequest.getFollowersRequestReceiverId());
 
 	            if (userOptional.isPresent()) {
 	                User receiverUser = userOptional.get();
-	                MediaFiles profilePic = profilePicOptional.orElse(null); 
 
+	                // Populate the request details map
 	                requestDetails.put("receiverId", receiverId);
 	                requestDetails.put("userId", friendRequest.getFollowersRequestSenderId());
 	                requestDetails.put("status", friendRequest.getFollowersRequestSenderStatus());
 	                requestDetails.put("userName", receiverUser.getName()); // Assuming name is the user's name field
-	            
-	         // Add profilePicUrl if profilePic is present
-                if (profilePic != null) {
-                	requestDetails.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
-                            + profilePic.getFilePath() + profilePic.getFileType());
-                }
+	                Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(receiverId);
+	                if (mediaFileOptional.isPresent()) {
+	                    MediaFiles mediaFiles = mediaFileOptional.get();
+	                    requestDetails.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFiles.getFilePath() + mediaFiles.getFileType());
+	                } else {
+	                    // Handle case where media data is not found
+	                    requestDetails.put("profilePicUrl", null);
+	                }
 	            }
 
+	            // Add the processed friend request details to the list
 	            updatedFriendRequests.add(requestDetails);
 	        }
 
+	        // Return the processed friend requests
 	        return ResponseEntity.ok().body(updatedFriendRequests);
 	    } catch (Exception e) {
-
+	        // Log the exception or handle it appropriately
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body("An error occurred while fetching friend requests");
+	                .body("An error occurred while fetching friend requests: " + e.getMessage());
 	    }
 	}
+
+
 
 }

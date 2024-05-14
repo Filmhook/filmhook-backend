@@ -1,5 +1,9 @@
 package com.annular.filmhook.model;
 
+import java.util.List;
+
+import javax.persistence.CascadeType;
+
 //import java.util.List;
 
 import javax.persistence.Column;
@@ -10,6 +14,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -70,4 +75,6 @@ public class FilmProfessionPermanentDetail {
 	@Column(name = "userId")
 	private Integer userId;
 
+	@OneToMany(mappedBy = "filmProfessionPermanentDetail", cascade = CascadeType.ALL)
+	private List<FilmSubProfessionPermanentDetail> filmSubProfessionPermanentDetails;
 }

@@ -26,5 +26,7 @@ public interface FilmSubProfessionDetailRepository extends JpaRepository<FilmSub
 	@Transactional
 	@Modifying
 	@Query("DELETE FROM FilmSubProfessionDetails i WHERE i.userId = :userId")
-	void deleteByuserId(Integer userId);
+	void deleteByUserId(Integer userId);
+
+	
 }

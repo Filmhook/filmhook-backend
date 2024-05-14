@@ -15,4 +15,6 @@ public interface FilmProfessionRepository  extends JpaRepository<FilmProfession,
 	Optional<FilmProfession> findByProfessionName(String professionName);
 
 	List<FilmProfession> findByPlatform(Platform platform);
+
+	List<FilmProfession> findByProfessionNameAndPlatform(String upperCase, Platform platform);
 }
