@@ -55,7 +55,7 @@ public class BookingRequestController {
         return new Response(-1, "Error at getting user bookings...", null);
     }
 
-    @PostMapping("/acceptBookingRequest")
+    @PostMapping("/updateBookingRequest")
     public Response acceptBookingRequest(@RequestBody BookingWebModel bookingWebModel) {
         try {
             BookingWebModel updatedBookingRequest = bookingService.saveOrUpdateBookingRequest(bookingWebModel, true);

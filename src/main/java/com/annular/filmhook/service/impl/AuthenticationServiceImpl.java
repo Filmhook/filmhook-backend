@@ -38,7 +38,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.FileUtil;
-import com.annular.filmhook.util.Notifications;
+import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.configuration.TwilioConfig;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -56,7 +56,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	private JavaMailSender javaMailSender;
 
 	@Autowired
-	Notifications notifications;
+	MailNotification notifications;
 
 	@Autowired
 	RefreshTokenRepository refreshTokenRepository;

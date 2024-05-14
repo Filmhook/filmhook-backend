@@ -5,6 +5,7 @@ import com.annular.filmhook.model.Bookings;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BookingsRepository;
 import com.annular.filmhook.service.BookingService;
+import com.annular.filmhook.service.NotificationService;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.BookingWebModel;
 
@@ -27,6 +28,9 @@ public class BookingServiceImpl implements BookingService {
     @Autowired
     BookingsRepository bookingsRepository;
 
+    @Autowired
+    NotificationService notificationService;
+
     @Override
     public BookingWebModel saveOrUpdateBookingRequest(BookingWebModel bookingWebModel, boolean isUpdate) {
         try {
@@ -40,21 +44,22 @@ public class BookingServiceImpl implements BookingService {
             if (isUpdate && bookingWebModel.getBookingId() != null) {
                 Bookings existingBooking = bookingsRepository.findById(bookingWebModel.getBookingId()).orElse(null);
                 if (existingBooking != null) {
-                    String nextStatus= "";
-                    if (existingBooking.getBookingStatus().equalsIgnoreCase("Pending")) nextStatus = "Confirm";
-                    if (existingBooking.getBookingStatus().equalsIgnoreCase("Confirm")) nextStatus = "Reject";
-                    existingBooking.setBookingStatus(nextStatus); // Updating the existing row with new status
+                    existingBooking.setBookingStatus(bookingWebModel.getBookingStatus()); // Updating the existing row with new status
                     bookings = existingBooking;
                     logger.info("Existing bookings object updated for bookings...");
                 }
             } else {
+                // Checking User dates to prevent date clash
+                List<Bookings> userBookings = bookingsRepository.getUserBookingByFromAndToDates(bookingUser, bookingWebModel.getFromDate(), bookingWebModel.getToDate());
+                if(!Utility.isNullOrEmptyList(userBookings)) return BookingWebModel.builder().errorMsg("From and to dates are not available for this user...").build();
+
                 bookings = Bookings.builder()
                         .project(bookingWebModel.getProjectName())
                         .bookedBy(currentUser)
                         .bookedUser(bookingUser)
                         .fromDate(bookingWebModel.getFromDate())
                         .toDate(bookingWebModel.getToDate())
-                        .bookingStatus("Pending")
+                        .bookingStatus(bookingWebModel.getBookingStatus())
                         .status(true)
                         .createdBy((loggedInUser != null && loggedInUser.userInfo() != null) ? loggedInUser.userInfo().getId() : null)
                         .createdOn(new Date())
@@ -63,9 +68,11 @@ public class BookingServiceImpl implements BookingService {
                         .build();
                 logger.info("New object created for bookings...");
             }
+
             if (bookings != null) {
-                bookingsRepository.saveAndFlush(bookings);
-                return this.transformBookingData(List.of(bookings)).get(0);
+                Bookings savedBookingRequest = bookingsRepository.saveAndFlush(bookings); // Save or Update
+                if (!isUpdate) notificationService.sendBookingRequestNotifications(bookingWebModel, savedBookingRequest); // Sending Notifications
+                return this.transformBookingData(List.of(savedBookingRequest)).get(0);
             }
         } catch (Exception e) {
             logger.error("Error at saveOrUpdateBookingRequest() -> {}", e.getMessage());
