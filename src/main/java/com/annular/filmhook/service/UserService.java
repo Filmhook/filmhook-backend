@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
-import com.annular.filmhook.webmodel.ScheduleWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -48,7 +47,4 @@ public interface UserService {
 
     Map<String, List<Map<String, Object>>> getUserByAllSearchCriteria(UserSearchWebModel searchWebModel);
 
-    ScheduleWebModel saveSchedule(ScheduleWebModel scheduleWebModel);
-
-    List<ScheduleWebModel> getAllUserSchedules(Integer userId);
 }

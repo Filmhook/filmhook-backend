@@ -15,6 +15,8 @@ import javax.persistence.Id;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Column;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
 import java.util.Date;
 
@@ -36,17 +38,24 @@ public class Bookings {
     @Column(name = "project")
     private String project;
 
-    @Column(name = "booked_by")
-    private Integer scheduledBy;
+    @ManyToOne
+    @JoinColumn(name = "booked_by")
+    @ToString.Exclude
+    private User bookedBy;
 
-    @Column(name = "booked_for")
-    private Integer scheduledFor;
+    @ManyToOne
+    @JoinColumn(name = "booked_user")
+    @ToString.Exclude
+    private User bookedUser;
 
     @Column(name = "from_date")
     private String fromDate;
 
     @Column(name = "to_date")
     private String toDate;
+
+    @Column(name = "booking_status")
+    private String bookingStatus;
 
     @Column(name = "status")
     private Boolean status;
