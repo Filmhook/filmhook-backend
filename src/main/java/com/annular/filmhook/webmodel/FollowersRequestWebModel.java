@@ -1,16 +1,15 @@
 package com.annular.filmhook.webmodel;
 
-import java.sql.Date;
+import java.util.Date;
 
-
-
-
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class FollowersRequestWebModel {
 
-	
+
 	private Integer followersRequestId;
 	private Integer followersRequestSenderId; // user table userId
 	private Integer followersRequestReceiverId; // user table userId
@@ -21,5 +20,6 @@ public class FollowersRequestWebModel {
 	private Date followersRequestCreatedOn;
 	private Date followersRequestUpdatedOn;
 	private String userType;
+	private String receiverProfilePicUrl;
 }
 

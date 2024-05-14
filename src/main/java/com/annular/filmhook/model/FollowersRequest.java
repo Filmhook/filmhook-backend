@@ -1,6 +1,6 @@
 package com.annular.filmhook.model;
 
-import java.sql.Date;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -40,7 +40,7 @@ public class FollowersRequest {
 	private Integer followersRequestReceiverId; // user table userId
 
 	@Column(name = "followers_request_status")
-	private String followersRequestSenderStatus;
+	private String followersRequestStatus;
 
 	@Column(name = "followers_request_is_active")
 	private Boolean followersRequestIsActive;
