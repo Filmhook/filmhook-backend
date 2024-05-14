@@ -8,6 +8,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -33,11 +35,15 @@ public class Block {
 	@Column(name = "block_id")
     private Integer blockId;
 
-    @Column(name = "blocked_by")
-    private Integer blockedBy; //foreign key for user table
+    @ManyToOne
+    @JoinColumn(name = "blocked_by")
+    @ToString.Exclude
+    private User blockedBy; //foreign key for user table
 
-    @Column(name = "blocked_user")
-    private Integer blockedUser; //foreign key for userTable
+    @ManyToOne
+    @JoinColumn(name = "blocked_user")
+    @ToString.Exclude
+    private User blockedUser; //foreign key for userTable
 
     @Column(name = "block_status")
     private String blockStatus;

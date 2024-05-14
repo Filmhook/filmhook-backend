@@ -30,7 +30,7 @@ public class BlockController {
 			logger.info("addBlock controller start");
 			return blockService.addBlock(blockWebModel);
 		} catch (Exception e) {
-			logger.error("addBlock Method Exception {}" + e);
+			logger.error("addBlock Method Exception {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -51,12 +51,12 @@ public class BlockController {
 	}
 
 	@PostMapping("/getAllBlock")
-	public ResponseEntity<?> getAllBlock() {
+	public ResponseEntity<?> getAllBlock(@RequestBody BlockWebModel blockWebModel) {
 		try {
 			logger.info("getAllBlock controller start");
-			return blockService.getAllBlock();
+			return blockService.getAllBlock(blockWebModel.getBlockedBy());
 		} catch (Exception e) {
-			logger.error("getAllBlock Method Exception {}" + e);
+			logger.error("getAllBlock Method Exception {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));

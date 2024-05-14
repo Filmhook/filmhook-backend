@@ -5,9 +5,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.S3Util;
-import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
-import com.annular.filmhook.webmodel.ScheduleWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -282,34 +280,6 @@ public class UserController {
             return new Response(-1, "Error at final user search...", null);
         }
         return new Response(-1, "User(s) not found for all criteria...", null);
-    }
-
-    @PostMapping("/saveSchedule")
-    public Response saveSchedule(@RequestBody ScheduleWebModel scheduleWebModel) {
-        try {
-            ScheduleWebModel scheduleWebModelOutput = userService.saveSchedule(scheduleWebModel);
-            if (scheduleWebModelOutput != null)
-                return new Response(1, "Schedule saved successfully...", scheduleWebModelOutput);
-        } catch (Exception e) {
-            logger.error("Error at saveSchedule -> {}", e.getMessage());
-            e.printStackTrace();
-            return new Response(-1, "Error at saving the schedule...", null);
-        }
-        return new Response(-1, "Error at saving the schedules...", null);
-    }
-
-    @GetMapping("/getAllSchedulesByUser")
-    public Response getAllUserSchedule(@RequestParam("userId") Integer userId) {
-        try {
-            List<ScheduleWebModel> userSchedules = userService.getAllUserSchedules(userId);
-            if (!Utility.isNullOrEmptyList(userSchedules))
-                return new Response(1, "User schedules retrieved successfully...", userSchedules);
-        } catch (Exception e) {
-            logger.error("Error at getAllUserSchedule -> {}", e.getMessage());
-            e.printStackTrace();
-            return new Response(-1, "Error at getting user schedules...", null);
-        }
-        return new Response(-1, "Error at getting user schedules...", null);
     }
 
 }

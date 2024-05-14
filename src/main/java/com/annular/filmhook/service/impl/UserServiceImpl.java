@@ -35,15 +35,11 @@ import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.IndustryWebModel;
 import com.annular.filmhook.webmodel.ProfessionWebModel;
 import com.annular.filmhook.webmodel.SubProfessionWebModel;
-import com.annular.filmhook.webmodel.ScheduleWebModel;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
-
-    @Autowired
-    UserDetails loggedInUser;
 
     @Autowired
     UserRepository userRepository;
@@ -85,9 +81,6 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     FilmSubProfessionPermanentDetailsRepository filmSubProfessionPermanentDetailsRepository;
-
-    @Autowired
-    BookingsRepository bookingsRepository;
 
     @Override
     public Optional<UserWebModel> getUserByUserId(Integer userId) {
@@ -650,65 +643,5 @@ public class UserServiceImpl implements UserService {
         return professionUserMap;
     }
 
-    @Override
-    public ScheduleWebModel saveSchedule(ScheduleWebModel scheduleWebModel) {
-        try {
-            Bookings bookings = Bookings.builder()
-                    .project(scheduleWebModel.getProjectName())
-                    .scheduledBy(scheduleWebModel.getScheduledBy())
-                    .scheduledFor(scheduleWebModel.getScheduledTo())
-                    .fromDate(scheduleWebModel.getFromDate())
-                    .toDate(scheduleWebModel.getToDate())
-                    .status(true)
-                    .createdBy((loggedInUser != null && loggedInUser.userInfo() != null) ? loggedInUser.userInfo().getId() : null)
-                    .createdOn(new Date())
-                    .updatedBy((loggedInUser != null && loggedInUser.userInfo() != null) ? loggedInUser.userInfo().getId() : null)
-                    .updatedOn(new Date())
-                    .build();
-            bookingsRepository.saveAndFlush(bookings);
-            return this.transformBookingData(List.of(bookings)).get(0);
-        } catch (Exception e) {
-            logger.error("Error at saveSchedule() -> {}", e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
 
-    @Override
-    public List<ScheduleWebModel> getAllUserSchedules(Integer userId) {
-        try {
-            Integer userIdToSearch = userId != null ? userId : loggedInUser.userInfo().getId();
-            return this.transformBookingData(bookingsRepository.findByScheduledFor(userIdToSearch));
-        } catch (Exception e) {
-            logger.error("Error at getAllUserSchedules() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private List<ScheduleWebModel> transformBookingData(List<Bookings> userBookings) {
-        List<ScheduleWebModel> scheduleWebModels = new ArrayList<>();
-        try {
-            if (!Utility.isNullOrEmptyList(userBookings)) {
-                userBookings.stream().filter(Objects::nonNull).forEach(booking -> {
-                    ScheduleWebModel scheduleWebModel = ScheduleWebModel.builder()
-                            .scheduleId(booking.getId())
-                            .projectName(booking.getProject())
-                            .scheduledBy(booking.getScheduledBy())
-                            .scheduledTo(booking.getScheduledFor())
-                            .fromDate(booking.getFromDate())
-                            .toDate(booking.getToDate())
-                            .active(booking.getStatus())
-                            .createdBy(booking.getCreatedBy())
-                            .createdOn(booking.getCreatedOn())
-                            .build();
-                    scheduleWebModels.add(scheduleWebModel);
-                });
-            }
-        } catch (Exception e) {
-            logger.error("Error at transformBookingData() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return scheduleWebModels;
-    }
 }

@@ -8,7 +8,7 @@ public interface BlockService {
 
 	ResponseEntity<?> addBlock(BlockWebModel blockWebModel);
 
-	ResponseEntity<?> getAllBlock();
+	ResponseEntity<?> getAllBlock(Integer userId);
 
 	String unBlockProfile(BlockWebModel blockWebModel);
 }

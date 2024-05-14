@@ -21,6 +21,7 @@ public interface FriendRequestRepository extends JpaRepository<FollowersRequest,
 	@Query("SELECT f FROM FollowersRequest f WHERE f.followersRequestSenderId = :userId and f.followersRequestIsActive = true")
 	List<FollowersRequest> findByFriendRequestSenderIdAndFriendRequestSenderStatus(Integer userId );
 
+	
 
 
 }

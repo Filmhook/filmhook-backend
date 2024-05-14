@@ -147,7 +147,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	            FollowersRequest friendRequest = new FollowersRequest();
 	            friendRequest.setFollowersRequestSenderId(senderId);
 	            friendRequest.setFollowersRequestReceiverId(receiverId);
-	            friendRequest.setFollowersRequestSenderStatus("follow");
+	            friendRequest.setFollowersRequestStatus("follow");
 	            friendRequest.setFollowersRequestCreatedBy(senderId);
 	            friendRequest.setFollowersRequestIsActive(true);
 
@@ -242,7 +242,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 
 	            // Update the status if provided
 	            
-	                existingRequest.setFollowersRequestSenderStatus("unfollow");
+	                existingRequest.setFollowersRequestStatus("unfollow");
 	                existingRequest.setFollowersRequestIsActive(false);
 	                
 	            
@@ -287,7 +287,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	                // Populate the request details map
 	                requestDetails.put("receiverId", receiverId);
 	                requestDetails.put("userId", friendRequest.getFollowersRequestSenderId());
-	                requestDetails.put("status", friendRequest.getFollowersRequestSenderStatus());
+	                requestDetails.put("status", friendRequest.getFollowersRequestStatus());
 	                requestDetails.put("userName", receiverUser.getName()); // Assuming name is the user's name field
 	                Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(receiverId);
 	                if (mediaFileOptional.isPresent()) {
