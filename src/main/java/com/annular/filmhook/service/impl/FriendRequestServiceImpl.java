@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -270,6 +271,10 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	        // List to store the processed friend requests
 	        List<Map<String, Object>> updatedFriendRequests = new ArrayList<>();
 
+	        // Variable to store the count of friend requests
+	        int friendRequestCount = 0;
+
+	        
 	        // Process each friend request
 	        for (FollowersRequest friendRequest : friendRequests) {
 	            // Create a map to store the details of the friend request
@@ -277,6 +282,8 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 
 	            Integer receiverId = friendRequest.getFollowersRequestReceiverId();
 
+	            
+	            
 	            // Fetch the user details for the receiver of the friend request
 	            Optional<User> userOptional = userRepository.findById(receiverId);
 	            //Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(friendRequest.getFollowersRequestReceiverId());
@@ -297,14 +304,21 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 	                    // Handle case where media data is not found
 	                    requestDetails.put("profilePicUrl", null);
 	                }
+	             // Increment the count of friend requests
+	                friendRequestCount++;
 	            }
 
 	            // Add the processed friend request details to the list
 	            updatedFriendRequests.add(requestDetails);
 	        }
 
-	        // Return the processed friend requests
-	        return ResponseEntity.ok().body(updatedFriendRequests);
+	     // Create a response map containing both the friend requests and the count
+	        Map<String, Object> responseMap = new HashMap<>();
+	        responseMap.put("friendRequests", updatedFriendRequests);
+	        responseMap.put("friendRequestCount", friendRequestCount);
+
+	        // Return the response map
+	        return ResponseEntity.ok().body(responseMap);
 	    } catch (Exception e) {
 	        // Log the exception or handle it appropriately
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
