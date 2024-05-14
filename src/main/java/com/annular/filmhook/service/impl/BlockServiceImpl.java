@@ -20,10 +20,8 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Block;
 import com.annular.filmhook.model.MediaFileCategory;
-import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BlockRepository;
-import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.BlockService;
 import com.annular.filmhook.util.FileUtil;
@@ -55,18 +53,26 @@ public class BlockServiceImpl implements BlockService {
 
 	@Override
 	public ResponseEntity<?> addBlock(BlockWebModel blockWebModel) {
-		List<BlockWebModel> blockWebModels = new ArrayList<>();
+		List<BlockWebModel> blockWebModels;
 		try {
-			Block block = new Block();
-			block.setBlockedBy(User.builder().userId(blockWebModel.getBlockedBy()).build());
+			User currentUser = User.builder().userId(blockWebModel.getBlockedBy()).build();
+			User blockedUser = User.builder().userId(blockWebModel.getBlockedUser()).build();
+
+			if(currentUser.getUserId().equals(blockedUser.getUserId()))
+				return ResponseEntity.badRequest().body("Blocked By User and Blocked User cannot be the same...");
+
+			Block existingBlockRow = blockRepository.findByBlockedByAndBlockedUserAndBlockStatus(currentUser, blockedUser, "UnBlocked");
+
+			Block block = Objects.requireNonNullElseGet(existingBlockRow, Block::new);
+			block.setBlockedBy(currentUser);
 			block.setStatus(true);
-			block.setBlockedUser(User.builder().userId(blockWebModel.getBlockedUser()).build());
+			block.setBlockedUser(blockedUser);
 			block.setBlockStatus("Blocked");
 			block.setCreatedBy(userDetails.userInfo().getId());
+
 			blockRepository.save(block);
 
 			blockWebModels = this.transformBlockToBlockWebModel(List.of(block));
-			logger.info("addBlock method end");
 			return ResponseEntity.ok(new Response(1, "Add block successfully", blockWebModels));
 		} catch (Exception e) {
 			logger.error("Error setting block {}", e.getMessage());
@@ -89,8 +95,8 @@ public class BlockServiceImpl implements BlockService {
 									.blockedBy(block.getBlockedBy().getUserId())
 									.blockedUser(block.getBlockedUser().getUserId())
 									.blockStatus(block.getBlockStatus())
-									.userName(block.getBlockedUser().getName())
-									.gender(block.getBlockedUser().getGender())
+									.blockedUserName(block.getBlockedUser().getName())
+									.blockedUserGender(block.getBlockedUser().getGender())
 									.createdBy(block.getCreatedBy())
 									.createdOn(block.getCreatedOn())
 									.updatedBy(block.getUpdatedBy())
@@ -100,7 +106,7 @@ public class BlockServiceImpl implements BlockService {
 							String profilePicUrl = null;
 							if (!Utility.isNullOrEmptyList(profilePic)) {
 								profilePicUrl = s3Util.generateS3FilePath(profilePic.get(0).getFilePath() + profilePic.get(0).getFileType());
-								blockWebModel.profilePicUrl(profilePicUrl);
+								blockWebModel.blockedUserProfilePicUrl(profilePicUrl);
 							}
 
 							blockWebModels.add(blockWebModel.build());
@@ -117,7 +123,7 @@ public class BlockServiceImpl implements BlockService {
 		List<BlockWebModel> blockWebModels = new ArrayList<>();
 		try {
 			User userToSearch = User.builder().userId(userId != null ? userId : userDetails.userInfo().getId()).build();
-			List<Block> blockData = blockRepository.findByBlockedBy(userToSearch);
+			List<Block> blockData = blockRepository.findByBlockedByAndBlockStatus(userToSearch, "Blocked");
 			return ResponseEntity.ok(this.transformBlockToBlockWebModel(blockData));
 		} catch (Exception e) {
 			logger.error("getAllBlock service Method Exception {} ", e.getMessage());

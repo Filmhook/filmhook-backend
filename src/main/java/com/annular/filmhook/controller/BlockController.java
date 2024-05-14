@@ -30,7 +30,7 @@ public class BlockController {
 			logger.info("addBlock controller start");
 			return blockService.addBlock(blockWebModel);
 		} catch (Exception e) {
-			logger.error("addBlock Method Exception {}" + e);
+			logger.error("addBlock Method Exception {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));

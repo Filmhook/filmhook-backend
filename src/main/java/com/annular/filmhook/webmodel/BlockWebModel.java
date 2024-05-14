@@ -15,9 +15,9 @@ public class BlockWebModel {
     private Integer blockedUser; //foreign key for userTable
     private String blockStatus; // 'Blocked' or 'UnBlocked'
 
-    private String userName;
-    private String gender;
-    private String profilePicUrl;
+    private String blockedUserName;
+    private String blockedUserGender;
+    private String blockedUserProfilePicUrl;
 
     private Boolean status;
 
