@@ -68,17 +68,12 @@ public class NotificationServiceImpl implements NotificationService {
             User bookedBy = userService.getUser(savedBookingRequest.getBookedBy().getUserId()).orElse(null);
             User bookedUser = userService.getUser(savedBookingRequest.getBookedUser().getUserId()).orElse(null);
             if (bookedBy != null && bookedUser != null) {
-
-                logger.info("To User name -> {}", bookedUser.getName());
-                logger.info("To User Email -> {}", bookedUser.getEmail());
-                logger.info("From User name -> {}", bookedBy.getName());
-
                 // Sending Mail Notification
                 String subject = "FilmHook - Booking Request";
                 String mailContent = "<p>Hi <b>" + bookedUser.getName() +"</b>, "
                         + "<br><br><b>" + bookedBy.getName() + "</b> requested your dates from <b>" + savedBookingRequest.getFromDate() + "</b> to <b>" + savedBookingRequest.getToDate() + "</b>."
-                        + "<br>Please confirm or reject the request by checking the filmhook application notifications."
-                        + "<br><br>Thank You,<br>FilmHook IT Support Team.</p>";
+                        + "<br>Please confirm or reject the request by checking the FilmHook application notifications."
+                        + "<br><br>Thank You,<br>FilmHook IT-Support Team.</p>";
                 mailNotification.emailNotification(bookedUser.getEmail(), subject, mailContent);
 
                 // Saving App Notifications

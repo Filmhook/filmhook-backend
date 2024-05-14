@@ -27,6 +27,7 @@ public class NotificationController {
         try {
             List<Notifications> notificationList = notificationService.getNotificationsByUserId(userId);
             if(!Utility.isNullOrEmptyList(notificationList)) return new Response(1, "Notifications found successfully...", notificationList);
+            else return new Response(1, "Notifications not found for this user id " + userId, null);
         } catch (Exception e) {
             logger.error("Error at getUserNotifications() -> {}", e.getMessage());
             e.printStackTrace();
