@@ -293,6 +293,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
 
 	                // Populate the request details map
 	                requestDetails.put("receiverId", receiverId);
+	                requestDetails.put("followersRequestId", friendRequest.getFollowersRequestId());
 	                requestDetails.put("userId", friendRequest.getFollowersRequestSenderId());
 	                requestDetails.put("status", friendRequest.getFollowersRequestStatus());
 	                requestDetails.put("userName", receiverUser.getName()); // Assuming name is the user's name field
