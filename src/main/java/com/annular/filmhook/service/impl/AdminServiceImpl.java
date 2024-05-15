@@ -11,11 +11,12 @@ import java.util.stream.Collectors;
 
 import javax.mail.internet.MimeMessage;
 
-import com.annular.filmhook.model.*;
-import com.annular.filmhook.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -25,19 +26,17 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.FilmProfession;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.PlatformPermanentDetail;
-import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmProfessionRepository;
+import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
-import com.annular.filmhook.repository.IndustryRepository;
-import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
 import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
-import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
-import com.annular.filmhook.repository.PlatformRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -60,9 +59,6 @@ public class AdminServiceImpl implements AdminService {
 	IndustryMediaFileRepository industryMediaFileRepository;
 
 	@Autowired
-	private IndustryRepository industryRepository;
-
-	@Autowired
 	MediaFilesService mediaFilesService;
 	
 	@Autowired
@@ -72,16 +68,7 @@ public class AdminServiceImpl implements AdminService {
 	UserMediaFilesService userMediaFilesService;
 
 	@Autowired
-	private PlatformRepository platformRepository;
-
-	@Autowired
-	private PlatformPermanentDetailRepository platformPermanentDetailRepository;
-
-	@Autowired
 	private IndustryUserPermanentDetailsRepository industryUserPermanentDetailsRepository;
-
-	@Autowired
-	private IndustryTemporaryDetailRepository industryTemporaryDetailsRepository;
 
 	@Autowired
 	FileUtil fileUtil;
@@ -250,15 +237,19 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 	@Override
-	public Response getAllUnverifiedIndustrialUsers() {
-		List<IndustryMediaFiles> unverifiedIndustrialUsers = industryMediaFileRepository
-				.getAllUnverifiedIndustrialUsers();
+	public Response getAllUnverifiedIndustrialUsers(UserWebModel userWebModel) {
+		HashMap<String, Object> response = new HashMap<>();
 
+		Pageable paging = PageRequest.of(userWebModel.getPageNo()-1,userWebModel.getPageSize());		
+		Page<IndustryMediaFiles> unverifiedIndustrialUsers =  industryMediaFileRepository.getAllUnverifiedIndustrialUsers(paging);
+		
+		Map<String, Object> pageDetails = new HashMap<>();
+		
 		Set<Integer> userIds = new HashSet<>();
 		List<Map<String, Object>> responseList = new ArrayList<>();
-
+		
 		// Collect unique user IDs
-		for (IndustryMediaFiles user : unverifiedIndustrialUsers) {
+		for (IndustryMediaFiles user : unverifiedIndustrialUsers.getContent()) {
 			User userEntity = user.getUser();
 			if (userEntity != null) {
 				userIds.add(userEntity.getUserId());
@@ -280,26 +271,43 @@ public class AdminServiceImpl implements AdminService {
 		}
 
 		if (!responseList.isEmpty()) {
-			return new Response(-1, "Success", responseList);
+			pageDetails.put("totalPages", unverifiedIndustrialUsers.getTotalPages());
+//			pageDetails.put("totalRecords", unverifiedIndustrialUsers.getTotalElements());
+			/*
+			 * To get total number of records the above line is actual procedure, since we
+			 * have 3 documents for single user count may differ, so I used count of unique
+			 * userId for total no. of records
+			 */
+			pageDetails.put("totalRecords", userIds.size());
+			response.put("UserDetails", responseList);
+			response.put("PageInfo", pageDetails);
+			return new Response(-1, "Success", response);
 		} else {
 			return new Response(-1, "There are no unverified users found.", responseList);
 		}
 	}
 
 	@Override
-	public ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId) {
+	public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
 		try {
-			List<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository.findByUserId(userId);
+			HashMap<String, Object> response = new HashMap<>();
+
+			Pageable paging = PageRequest.of(userWebModel.getPageNo()-1,userWebModel.getPageSize());
+			Page<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository.findByUserId(userWebModel.getUserId(),paging);
+			
 			if (userPermanentDetails.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User permanent details not found for user id: " + userId);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User permanent details not found for user id: " + userWebModel.getUserId());
 			} else {
+				Map<String, Object> pageDetails = new HashMap<>();
+				pageDetails.put("totalPages", userPermanentDetails.getTotalPages());
+				pageDetails.put("totalRecords", userPermanentDetails.getTotalElements());
+				
 				List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
 				for (IndustryUserPermanentDetails details : userPermanentDetails) {
 					IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
 					responseDTO.setIndustriesName(details.getIndustriesName());
 					responseDTO.setIupdId(details.getIupdId());
 
-					System.out.println("<<<<<<<<<<<<<<<<" + details.getIndustriesName());
 //					Optional<Industry> industryOptional = industryRepository.findByIndustryName(details.getIndustriesName());
 //					if (industryOptional.isPresent()) {
 //						Industry industry = industryOptional.get();
@@ -314,7 +322,7 @@ public class AdminServiceImpl implements AdminService {
 						platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
 						List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
 
-						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+						outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userWebModel.getUserId(), MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
 						platformDetailDTO.setOutputWebModelList(outputWebModelList); // Set outputWebModelList in DTO
 
 						platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
@@ -345,7 +353,7 @@ public class AdminServiceImpl implements AdminService {
 
 							Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName());
 							if (filmProfessionOptional.isPresent()) {
-								FilmProfession filmProfession = filmProfessionOptional.get();
+//								FilmProfession filmProfession = filmProfessionOptional.get();
 								// professionDetailDTO.setImage(Base64.getEncoder().encode(filmProfession.getImage()));
 							}
 							professionDetailDTOList.add(professionDetailDTO);
@@ -356,9 +364,14 @@ public class AdminServiceImpl implements AdminService {
 					responseDTO.setPlatformDetails(platformDetailDTOList);
 					responseDTOList.add(responseDTO);
 				}
-				return ResponseEntity.ok(responseDTOList);
+				response.put("PageInfo", pageDetails);
+				response.put("Data", responseDTOList);
+				
+				return ResponseEntity.ok(response);
 			}
 		} catch (Exception e) {
+			logger.error("Industry user permenant details Method Exception {} " + e);
+			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve industry user permanent details.");
 		}
 	}

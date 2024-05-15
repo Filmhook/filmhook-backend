@@ -8,7 +8,7 @@ public interface ReportService {
 
 	ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel);
 
-	ResponseEntity<?> getAllPostReport();
+	ResponseEntity<?> getAllPostReport(ReportPostWebModel postWebModel);
 
 	ResponseEntity<?> getByPostReportId(ReportPostWebModel reportPostWebModel);
 

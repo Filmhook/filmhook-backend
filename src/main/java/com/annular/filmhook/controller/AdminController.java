@@ -89,10 +89,10 @@ public class AdminController {
 	}
 
 	@GetMapping("getAllUnverifiedIndustrialUsers")
-	public Response getAllUnverifiedIndustrialUsers() {
+	public Response getAllUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel) {
 		try {
 			logger.info("getAllUnverifiedIndustrialUsers controller start");
-			return adminService.getAllUnverifiedIndustrialUsers();
+			return adminService.getAllUnverifiedIndustrialUsers(userWebModel);
 		} catch (Exception e) {
 			logger.info("getAllUnverifiedIndustrialUsers Method Exception" + e);
 			e.printStackTrace();
@@ -102,10 +102,10 @@ public class AdminController {
 	
 
     @PostMapping("/getAdminIndustryUserPermanentDetails")
-    public ResponseEntity<?> getIndustryUserPermanentDetails(@RequestParam Integer userId) {
+    public ResponseEntity<?> getIndustryUserPermanentDetails(@RequestBody UserWebModel userWebModel) {
         try {
             logger.info("getAdminIndustryUserPermanentDetails controller start");
-            return adminService.getIndustryUserPermanentDetails(userId);
+            return adminService.getIndustryUserPermanentDetails(userWebModel);
         } catch (Exception e) {
             logger.error("getIndustryUserPermanentDetails Method Exception -> ", e);
             e.printStackTrace();

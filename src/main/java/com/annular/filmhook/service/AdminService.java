@@ -17,9 +17,9 @@ public interface AdminService {
 
 	ResponseEntity<?> adminPageStatus(UserWebModel userWebModel);
 
-	Response getAllUnverifiedIndustrialUsers();
+	Response getAllUnverifiedIndustrialUsers(UserWebModel userWebModel);
 
-	ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId);
+	ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel);
 
 	Response changeStatusUnverifiedIndustrialUsers(Integer userId, Boolean status);
 

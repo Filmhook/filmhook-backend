@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.ReportService;
 import com.annular.filmhook.webmodel.ReportPostWebModel;
-import com.annular.filmhook.webmodel.UserProfilePinWebModel;
 
 @RestController
 @RequestMapping("/report")
@@ -36,10 +35,10 @@ public class ReportController {
 	}
 	
 	@PostMapping("/getAllPostReport")
-	public ResponseEntity<?> getAllPostReport() {
+	public ResponseEntity<?> getAllPostReport(@RequestBody ReportPostWebModel postWebModel) {
 		try {
 			logger.info("getAllPostReport controller start");
-			return reportService.getAllPostReport();
+			return reportService.getAllPostReport(postWebModel);
 		} catch (Exception e) {
 			logger.error("getAllPostReport Method Exception {}" + e);
 			e.printStackTrace();

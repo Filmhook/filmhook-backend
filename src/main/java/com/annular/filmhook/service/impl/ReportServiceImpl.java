@@ -9,6 +9,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,7 +21,6 @@ import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
-import com.annular.filmhook.model.UserMediaPin;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.ReportRepository;
 import com.annular.filmhook.repository.UserRepository;
@@ -73,11 +75,18 @@ public class ReportServiceImpl implements ReportService {
 	}
 	
 	@Override
-	public ResponseEntity<?> getAllPostReport() {
+	public ResponseEntity<?> getAllPostReport(ReportPostWebModel reportPostWebModel) {
 	    try {
-	        List<ReportPost> reportPosts = reportRepository.findAll();
+	    	HashMap<String, Object> response = new HashMap<>();
+
+			Pageable paging = PageRequest.of(reportPostWebModel.getPageNo()-1,reportPostWebModel.getPageSize());
+	    	Page<ReportPost> reportPosts = reportRepository.findAll(paging);
 	        List<Map<String, Object>> combinedDetailsList = new ArrayList<>(); // List to hold combined details
 
+	        Map<String, Object> pageDetails = new HashMap<>();
+			pageDetails.put("totalPages", reportPosts.getTotalPages());
+			pageDetails.put("totalRecords", reportPosts.getTotalElements());
+	        
 	        for (ReportPost reportPost : reportPosts) {
 	            Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(reportPost.getPostId());
 	            
@@ -104,7 +113,10 @@ public class ReportServiceImpl implements ReportService {
 	            }
 	        }
 	        
-	        return new ResponseEntity<>(combinedDetailsList, HttpStatus.OK);
+	        response.put("PageInfo", pageDetails);
+	        response.put("Data", combinedDetailsList);
+	        
+	        return new ResponseEntity<>(response, HttpStatus.OK);
 	    } catch (Exception e) {
 	        return new ResponseEntity<>("Error fetching post reports: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 	    }
