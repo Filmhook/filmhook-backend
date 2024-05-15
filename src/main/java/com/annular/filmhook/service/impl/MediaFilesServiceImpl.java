@@ -221,7 +221,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             fileOutputWebModel.setFileName(mediaFile.getFileName());
             fileOutputWebModel.setFileType(mediaFile.getFileType());
             fileOutputWebModel.setFileSize(mediaFile.getFileSize());
-            fileOutputWebModel.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
+            fileOutputWebModel.setFilePath(s3Util.generateS3FilePath(mediaFile.getFilePath() + mediaFile.getFileType()));
             fileOutputWebModel.setDescription(mediaFile.getDescription());
 
             fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());

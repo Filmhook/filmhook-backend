@@ -21,36 +21,37 @@ import com.annular.filmhook.webmodel.FollowersRequestWebModel;
 @RequestMapping("/friendRequest")
 public class FriendRequestController {
 
-	@Autowired
-	FriendRequestService friendRequestService;
+    @Autowired
+    FriendRequestService friendRequestService;
 
-	@PostMapping("/saveFriendRequest")
-	public ResponseEntity<?> saveFollowersRequest(@RequestBody FollowersRequestWebModel followersRequestWebModel) {
-		try {
-			return friendRequestService.saveFollowersRequest(followersRequestWebModel);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
-	@GetMapping("/getFriendRequest")
-	public ResponseEntity<?> getFriendRequest(@RequestParam("userId")Integer userId) {
-		try {
-			return friendRequestService.getFriendRequest(userId);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
+    @PostMapping("/saveFriendRequest")
+    public ResponseEntity<?> saveFollowersRequest(@RequestBody FollowersRequestWebModel followersRequestWebModel) {
+        try {
+            return friendRequestService.saveFollowersRequest(followersRequestWebModel);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
-	@PutMapping("/updateFriendRequest")
-	public ResponseEntity<?> updateFriendRequest(@RequestBody FollowersRequestWebModel followersRequestWebModel) {
-		try {
-			return friendRequestService.updateFriendRequest(followersRequestWebModel);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
+    @GetMapping("/getFriendRequest")
+    public ResponseEntity<?> getFriendRequest(@RequestParam("userId") Integer userId) {
+        try {
+            return friendRequestService.getFriendRequest(userId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+    @PutMapping("/updateFriendRequest")
+    public ResponseEntity<?> updateFriendRequest(@RequestBody FollowersRequestWebModel followersRequestWebModel) {
+        try {
+            return friendRequestService.updateFriendRequest(followersRequestWebModel);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
 }
