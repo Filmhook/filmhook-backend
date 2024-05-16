@@ -22,4 +22,6 @@ public interface IndustryRepository extends JpaRepository<Industry, Integer> {
 	@Query("Select i From Industry i Where i.country in (:countryIds) and i.status = true")
 	List<Industry> getIndustryByCountryIds(List<Country> countryIds);
 
+	List<Industry> findAllByIndustryName(String upperCase);
+
 }

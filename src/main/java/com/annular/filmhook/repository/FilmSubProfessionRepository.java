@@ -20,4 +20,6 @@ public interface FilmSubProfessionRepository extends JpaRepository<FilmSubProfes
     @Query("Select p From FilmSubProfession p Where p.profession in (:professionList) and p.status = true")
     List<FilmSubProfession> getSubProfessionByProfessionIds(List<FilmProfession> professionList);
 
+	List<FilmSubProfession> findAllBySubProfessionName(String upperCase);
+
 }

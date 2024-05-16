@@ -332,12 +332,14 @@ public class DetailServiceImpl implements DetailService {
             Map<String, String> responseMap = new HashMap<>();
             StringBuilder unknownIndustries = new StringBuilder();
             for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
-                Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
-                if(industry == null) {
+                // Find the industry by name
+                List<Industry> industries = industryRepository.findAllByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
+                if (industries.isEmpty()) {
                     unknownIndustries.append(industryUserPermanentDetailWebModel.getIndustriesName()).append(" ");
-                    responseMap.put("error", "Unknown industry(s) found -> [ " + unknownIndustries + " ].\nThese industry and it's details are not available in master data. Please add valid industry...");
+                    responseMap.put("error", "Unknown industry(s) found -> [ " + unknownIndustries + " ].\nThese industry and its details are not available in the master data. Please add a valid industry...");
                     continue;
                 }
+                Industry industry = industries.get(0); // Assuming you choose the first industry
                 // Create IndustryPermanentDetails object
                 IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
                 industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
@@ -351,9 +353,14 @@ public class DetailServiceImpl implements DetailService {
 
                 // Iterate over platform details
                 for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
-
-                    Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
-
+                    // Find the platform by name
+                    List<Platform> platforms = platformRepository.findAllByPlatformName(platformDetail.getPlatformName().toUpperCase());
+                    if (platforms.isEmpty()) {
+                        // Handle case when platform is not found
+                        // You might want to return an appropriate response or handle it differently based on your requirements
+                        continue;
+                    }
+                    Platform platform = platforms.get(0); // Assuming you choose the first platform
                     // Create PlatformPermanentDetail object
                     PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
                     platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
@@ -365,9 +372,14 @@ public class DetailServiceImpl implements DetailService {
 
                     // Iterate over profession details for this platform
                     for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
-
-                        FilmProfession profession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
-
+                        // Find the profession by name
+                        List<FilmProfession> professions = filmProfessionRepository.findAllByProfessionName(professionDetail.getProfessionName().toUpperCase());
+                        if (professions.isEmpty()) {
+                            // Handle case when profession is not found
+                            // You might want to return an appropriate response or handle it differently based on your requirements
+                            continue;
+                        }
+                        FilmProfession profession = professions.get(0); // Assuming you choose the first profession
                         // Create ProfessionPermanentDetail object
                         FilmProfessionPermanentDetail filmProfessionPermanentDetail = new FilmProfessionPermanentDetail();
                         filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
@@ -381,9 +393,14 @@ public class DetailServiceImpl implements DetailService {
 
                         // Iterate over sub profession details for this profession
                         for (String subProfessionInput : professionDetail.getSubProfessionName()) {
-
-                            FilmSubProfession subProfession = filmSubProfessionRepository.findBySubProfessionName(subProfessionInput.toUpperCase()).orElse(null);
-
+                            // Find the sub-profession by name
+                            List<FilmSubProfession> subProfessions = filmSubProfessionRepository.findAllBySubProfessionName(subProfessionInput.toUpperCase());
+                            if (subProfessions.isEmpty()) {
+                                // Handle case when sub-profession is not found
+                                // You might want to return an appropriate response or handle it differently based on your requirements
+                                continue;
+                            }
+                            FilmSubProfession subProfession = subProfessions.get(0); // Assuming you choose the first sub-profession
                             FilmSubProfessionPermanentDetail subProfessionPermanentDetails = FilmSubProfessionPermanentDetail.builder()
                                     .professionName(subProfessionInput.toUpperCase())
                                     .userId(userId)
@@ -398,13 +415,14 @@ public class DetailServiceImpl implements DetailService {
                     }
                 }
             }
+
             industryTemporaryDetailsRepository.deleteByUserId(userId);
             industryDetailsRepository.deleteByUserId(userId);
             platformDetailsRepository.deleteByUserId(userId);
             filmProfessionDetailRepository.deleteByUserId(userId);
             filmSubProfessionDetailRepository.deleteByUserId(userId);
 
-            if(responseMap.isEmpty()) {
+            if (responseMap.isEmpty()) {
                 // Return a success response
                 return ResponseEntity.ok("Industry user permanent details added successfully.");
             } else {
@@ -416,6 +434,9 @@ public class DetailServiceImpl implements DetailService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add industry user permanent details.");
         }
     }
+
+    
+
 
     @Override
     public List<FileOutputWebModel> saveIndustryUserFiles(IndustryFileInputWebModel inputFileData) {
@@ -855,126 +876,104 @@ public class DetailServiceImpl implements DetailService {
     @Override
     public ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId) {
         try {
+            // Fetch platform details
             List<PlatformPermanentDetail> platformDetails = platformPermanentDetailRepository.findByUserId(userId);
-            Map<String, Map<String, List<String>>> platformProfessionsMap = new LinkedHashMap<>();
+            
+            List<Map<String, Object>> responseList = new ArrayList<>();
+            Set<String> processedPlatforms = new HashSet<>(); // To store processed platform names
+            
             for (PlatformPermanentDetail detail : platformDetails) {
                 String platformName = detail.getPlatformName();
-                if (!platformProfessionsMap.containsKey(platformName)) {
-                    platformProfessionsMap.put(platformName, new HashMap<>());
+                
+                // Skip processing if the platform has already been processed
+                if (processedPlatforms.contains(platformName)) {
+                    continue;
                 }
-
-                Map<String, List<String>> professionsMap = platformProfessionsMap.get(platformName);
-                for (FilmProfessionPermanentDetail professionDetail : detail.getProfessionDetails()) {
-                    String professionName = professionDetail.getProfessionName();
-                    if (!professionsMap.containsKey(professionName)) {
-                        professionsMap.put(professionName, new ArrayList<>());
-                    }
-                    Set<String> subProfessionsSet = new HashSet<>(professionsMap.get(professionName));
-                    List<FilmSubProfession> filmSubProfessionList = filmSubProfessionRepository.findByProfession(professionDetail.getFilmProfession());
-                    subProfessionsSet = filmSubProfessionList.stream().filter(Objects::nonNull).map(FilmSubProfession::getSubProfessionName).collect(Collectors.toSet());
-                    professionsMap.put(professionName, new ArrayList<>(subProfessionsSet));
-                }
-            }
-
-            List<Map<String, Object>> responseList = new ArrayList<>();
-            for (Map.Entry<String, Map<String, List<String>>> entry : platformProfessionsMap.entrySet()) {
-                String platformName = entry.getKey();
-                Map<String, Object> platformMap = new HashMap<>();
-                platformMap.put("platformName", platformName);
-
-                // Fetch platform image data
-//	            Platform platform = platformRepository.findByPlatformName(platformName);
-
-//	            platformMap.put("platformImage", platform.getImage());
-
+                
+                // Mark the platform as processed
+                processedPlatforms.add(platformName);
+                
+                // Fetch platform image
                 Optional<Platform> platformOptional = platformRepository.findByPlatformName(platformName);
                 if (platformOptional.isPresent()) {
                     Platform platform = platformOptional.get();
-                    // Check if the platform has an associated image
+                    Map<String, Object> platformMap = new HashMap<>();
+                    platformMap.put("platformName", platformName);
                     if (platform.getImage() != null) {
                         String base64Image = Base64.getEncoder().encodeToString(platform.getImage());
-                        platformMap.put("image", base64Image);
-
+                        platformMap.put("platformImage", base64Image);
                     } else {
                         // Handle case when platform image is not found
-                        // You might want to provide a default image or handle it differently based on your requirements
                         platformMap.put("image", "default_image_url");
-
                     }
+                    
+                    // Fetch industries for the platform
+                    Set<Map<String, String>> industries = new HashSet<>();
+                    for (PlatformPermanentDetail platformDetail : platformDetails) {
+                        if (platformDetail.getPlatformName().equals(platformName)) {
+                            Map<String, String> industryMap = new HashMap<>();
+                            String industryName = platformDetail.getIndustryUserPermanentDetails().getIndustriesName();
+                            
+                            // Fetch industry image
+                            Optional<Industry> industryOptional = industryRepository.findByIndustryName(industryName);
+                            if (industryOptional.isPresent()) {
+                                Industry industry = industryOptional.get();
+                                String base64Image = Base64.getEncoder().encodeToString(industry.getImage());
+                                industryMap.put("industryimage", base64Image);
+                            } else {
+                                // Handle case when industry is not found
+                                industryMap.put("image", "default_image_url");
+                            }
+                            industryMap.put("industryName", industryName);
+                            industries.add(industryMap);
+                        }
+                    }
+                    platformMap.put("industries", industries);
+                    
+                    // Add other platform details
+                    platformMap.put("platformPermanentId", detail.getPlatformPermanentId());
+                    platformMap.put("filmCount", detail.getFilmCount());
+                    platformMap.put("netWorth", detail.getNetWorth());
+                    platformMap.put("dailySalary", detail.getDailySalary());
+                    
+                    // Fetch media files
+                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project, detail.getPlatformPermanentId());
+                    platformMap.put("outputWebModelList", outputWebModelList);
+                    
+                    // Fetch professions
+                    List<Map<String, Object>> professionsList = new ArrayList<>();
+                    for (FilmProfessionPermanentDetail professionDetail : detail.getProfessionDetails()) {
+                        Map<String, Object> professionMap = new HashMap<>();
+                        String professionName = professionDetail.getProfessionName();
+                        
+                        List<String> subProfessions = new ArrayList<>();
+                        for (FilmSubProfessionPermanentDetail subProfession : professionDetail.getFilmSubProfessionPermanentDetails()) {
+                            subProfessions.add(subProfession.getFilmSubProfession().getSubProfessionName());
+                        }
+                        
+                        professionMap.put("professionName", professionName);
+                        professionMap.put("subProfessionNames", subProfessions);
+                        professionsList.add(professionMap);
+                    }
+                    
+                    platformMap.put("professions", professionsList);
+                    responseList.add(platformMap);
                 } else {
                     // Handle case when platform is not found
                     // You might want to return an appropriate response or handle it differently based on your requirements
                 }
-
-                // Fetch industry names associated with the platform along with their images
-                Set<Map<String, String>> industries = new HashSet<>();
-                for (PlatformPermanentDetail platformDetail : platformDetails) {
-                    if (platformDetail.getPlatformName().equals(platformName)) {
-                        Map<String, String> industryMap = new HashMap<>();
-                        industryMap.put("industryName", platformDetail.getIndustryUserPermanentDetails().getIndustriesName());
-                        // Fetching industry image data
-                        // Replace this line with appropriate code to fetch industry image based on industry name
-                        // Fetching industry image data
-                        // Replace this line with appropriate code to fetch industry image based on industry name
-                        Optional<Industry> industryOptional = industryRepository.findByIndustryName(platformDetail.getIndustryUserPermanentDetails().getIndustriesName());
-                        if (industryOptional.isPresent()) {
-                            Industry industry = industryOptional.get();
-                            String base64Image = Base64.getEncoder().encodeToString(industry.getImage());
-                            industryMap.put("image", base64Image);
-                            industries.add(industryMap);
-                        } else {
-                            // Handle case when industry is not found
-                            // You might want to provide a default image or handle it differently based on your requirements
-                            industryMap.put("image", "default_image_url");
-                            industries.add(industryMap);
-                        }
-
-                    }
-                }
-
-                platformMap.put("industries", industries);
-
-                // Add filmCount, netWorth, and dailySalary fields
-                for (PlatformPermanentDetail platformDetail : platformDetails) {
-                    if (platformDetail.getPlatformName().equals(platformName)) {
-                        platformMap.put("platformPermanentId", platformDetail.getPlatformPermanentId());
-                        platformMap.put("filmCount", platformDetail.getFilmCount());
-                        platformMap.put("netWorth", platformDetail.getNetWorth());
-                        platformMap.put("dailySalary", platformDetail.getDailySalary());
-                        // Fetching media files by user id, category, and platform permanent id
-                        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
-                        platformMap.put("outputWebModelList", outputWebModelList);
-
-                        break;
-                    }
-                }
-
-                List<Map<String, Object>> professionsList = new ArrayList<>();
-                for (Map.Entry<String, List<String>> professionEntry : entry.getValue().entrySet()) {
-                    String professionName = professionEntry.getKey();
-                    List<String> subProfessions = professionEntry.getValue();
-
-                    Map<String, Object> professionMap = new HashMap<>();
-                    professionMap.put("professionName", professionName);
-                    Optional<FilmProfession> filmProfessionOptional = filmProfessionRepository.findByProfessionName(professionName);
-                    if (filmProfessionOptional.isPresent()) {
-                        FilmProfession filmProfession = filmProfessionOptional.get();
-                        byte[] imageData = Base64.getEncoder().encode(filmProfession.getImage());
-                        professionMap.put("image", new String(imageData)); // Convert byte array to String
-                    }
-                    professionMap.put("subProfessionNames", subProfessions);
-                    professionsList.add(professionMap);
-                }
-
-                platformMap.put("professions", professionsList);
-                responseList.add(platformMap);
             }
-
+            
             return ResponseEntity.ok(responseList);
         } catch (Exception e) {
+            // Log the exception for further investigation
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve platform details.");
         }
     }
+
+
+
 
 //	@Override
 //	public ResponseEntity<?> updateIndustryUserPermanentDetails(List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModel) {
