@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Date;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -131,20 +132,25 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             userList.stream()
                     .filter(Objects::nonNull)
                     .forEach(request -> {
-                        FollowersRequestWebModel followersRequestWebModel = FollowersRequestWebModel.builder()
-                                .followersRequestId(request.getFollowersRequestId())
-                                .followersRequestSenderId(request.getFollowersRequestSenderId())
-                                .followersRequestReceiverId(request.getFollowersRequestReceiverId())
-                                .followersRequestStatus(request.getFollowersRequestStatus())
-                                .followersRequestIsActive(request.getFollowersRequestIsActive())
-                                .userProfilePicUrl(this.getProfilePicUrl(type.equalsIgnoreCase(FOLLOWERS) ? request.getFollowersRequestReceiverId() : request.getFollowersRequestSenderId()))
-                                .userType(request.getUserType())
-                                .followersRequestCreatedBy(request.getFollowersRequestCreatedBy())
-                                .followersRequestCreatedOn(request.getFollowersRequestCreatedOn())
-                                .followersRequestUpdatedBy(request.getFollowersRequestUpdatedBy())
-                                .followersRequestUpdatedOn(request.getFollowersRequestUpdatedOn())
-                                .build();
-                        outputList.add(followersRequestWebModel);
+                        User user = userService.getUser(type.equalsIgnoreCase(FOLLOWERS) ? request.getFollowersRequestReceiverId() : request.getFollowersRequestSenderId()).orElse(null);
+                        if(user != null) {
+                            FollowersRequestWebModel followersRequestWebModel = FollowersRequestWebModel.builder()
+                                    .followersRequestId(request.getFollowersRequestId())
+                                    .followersRequestSenderId(request.getFollowersRequestSenderId())
+                                    .followersRequestReceiverId(request.getFollowersRequestReceiverId())
+                                    .followersRequestStatus(request.getFollowersRequestStatus())
+                                    .followersRequestIsActive(request.getFollowersRequestIsActive())
+                                    .userName(user.getName())
+                                    .userGender(user.getGender())
+                                    .userType(request.getUserType())
+                                    .userProfilePicUrl(this.getProfilePicUrl(user.getUserId()))
+                                    .followersRequestCreatedBy(request.getFollowersRequestCreatedBy())
+                                    .followersRequestCreatedOn(request.getFollowersRequestCreatedOn())
+                                    .followersRequestUpdatedBy(request.getFollowersRequestUpdatedBy())
+                                    .followersRequestUpdatedOn(request.getFollowersRequestUpdatedOn())
+                                    .build();
+                            outputList.add(followersRequestWebModel);
+                        }
                     });
         } catch (Exception e) {
             logger.error("Error at transformUserData -> {}", e.getMessage());

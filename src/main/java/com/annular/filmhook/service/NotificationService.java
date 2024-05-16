@@ -13,5 +13,5 @@ public interface NotificationService {
 
     List<Notifications> getNotificationsByUserId(Integer userId);
 
-    void sendBookingRequestNotifications(BookingWebModel bookingWebModel, Bookings savedBookingRequest);
+    void sendBookingRequestNotifications(Bookings savedBookingRequest);
 }

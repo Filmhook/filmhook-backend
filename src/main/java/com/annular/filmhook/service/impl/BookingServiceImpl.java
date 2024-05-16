@@ -50,7 +50,7 @@ public class BookingServiceImpl implements BookingService {
                 }
             } else {
                 // Checking User dates to prevent date clash
-                List<Bookings> userBookings = bookingsRepository.getUserBookingByFromAndToDates(bookingUser, bookingWebModel.getFromDate(), bookingWebModel.getToDate());
+                List<Bookings> userBookings = bookingsRepository.getPendingBookingsByUserFromAndToDates(bookingUser, bookingWebModel.getFromDate(), bookingWebModel.getToDate());
                 if(!Utility.isNullOrEmptyList(userBookings)) return BookingWebModel.builder().errorMsg("From and to dates are not available for this user...").build();
 
                 bookings = Bookings.builder()
@@ -71,7 +71,7 @@ public class BookingServiceImpl implements BookingService {
 
             if (bookings != null) {
                 Bookings savedBookingRequest = bookingsRepository.saveAndFlush(bookings); // Save or Update
-                if (!isUpdate) notificationService.sendBookingRequestNotifications(bookingWebModel, savedBookingRequest); // Sending Notifications
+                if (!isUpdate) notificationService.sendBookingRequestNotifications(savedBookingRequest); // Sending Notifications
                 return this.transformBookingData(List.of(savedBookingRequest)).get(0);
             }
         } catch (Exception e) {

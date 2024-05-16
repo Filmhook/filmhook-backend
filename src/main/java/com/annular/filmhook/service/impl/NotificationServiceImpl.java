@@ -63,7 +63,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendBookingRequestNotifications(BookingWebModel bookingWebModel, Bookings savedBookingRequest) {
+    public void sendBookingRequestNotifications(Bookings savedBookingRequest) {
         try {
             User bookedBy = userService.getUser(savedBookingRequest.getBookedBy().getUserId()).orElse(null);
             User bookedUser = userService.getUser(savedBookingRequest.getBookedUser().getUserId()).orElse(null);
@@ -72,7 +72,7 @@ public class NotificationServiceImpl implements NotificationService {
                 String subject = "FilmHook - Booking Request";
                 String mailContent = "<p>Hi <b>" + bookedUser.getName() +"</b>, "
                         + "<br><br><b>" + bookedBy.getName() + "</b> requested your dates from <b>" + savedBookingRequest.getFromDate() + "</b> to <b>" + savedBookingRequest.getToDate() + "</b>."
-                        + "<br>Please confirm or reject the request by checking the FilmHook application notifications."
+                        + "<br>Please check the FilmHook app notifications to confirm or reject the request"
                         + "<br><br>Thank You,<br>FilmHook IT-Support Team.</p>";
                 mailNotification.emailNotification(bookedUser.getEmail(), subject, mailContent);
 
