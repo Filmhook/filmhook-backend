@@ -11,6 +11,7 @@ import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface DetailService {
 
@@ -41,5 +42,9 @@ public interface DetailService {
 
 	ResponseEntity<?> updateIndustryUserPermanentDetails(Integer userId,
 			List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
+
+	ResponseEntity<?> verifyFilmHookCode(UserWebModel userWebModel);
+
+	ResponseEntity<?> verifyFilmHook(UserWebModel userWebModel);
 
 }

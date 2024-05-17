@@ -100,10 +100,11 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
-        if (!Utility.isNullOrBlankWithTrim(user.getDob())) {
-            userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
-            userWebModel.setAge(calendarUtil.getAgeFromDate(userWebModel.getDob(), CalendarUtil.UI_DATE_FORMAT));
-        }
+//        if (!Utility.isNullOrBlankWithTrim(user.getDob())) {
+//            userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
+//            userWebModel.setAge(calendarUtil.getAgeFromDate(userWebModel.getDob(), CalendarUtil.UI_DATE_FORMAT));
+//        }
+        userWebModel.setDob(user.getDob());
         userWebModel.setGender(user.getGender());
 
         userWebModel.setCountry(user.getCountry());

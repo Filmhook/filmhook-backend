@@ -288,19 +288,19 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 
         long seconds = duration.getSeconds();
         if (seconds < 60) {
-            return seconds + " seconds ago";
+            return seconds + " sec ";
         } else if (seconds < 3600) {
             long minutes = seconds / 60;
-            return minutes + (minutes == 1 ? " minute ago" : " minutes ago");
+            return minutes + (minutes == 1 ? " mts" : " mts ");
         } else if (seconds < 86400) {
             long hours = seconds / 3600;
-            return hours + (hours == 1 ? " hour ago" : " hours ago");
+            return hours + (hours == 1 ? " hr " : " hr ");
         } else if (seconds < 604800) {
             long days = seconds / 86400;
-            return days + (days == 1 ? " day ago" : " days ago");
+            return days + (days == 1 ? " day " : " day ");
         } else {
             long weeks = seconds / 604800;
-            return weeks + (weeks == 1 ? " week ago" : " weeks ago");
+            return weeks + (weeks == 1 ? " week " : " week ");
         }
     }
 }

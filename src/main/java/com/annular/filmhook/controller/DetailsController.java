@@ -27,6 +27,7 @@ import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 @RestController
 @RequestMapping("/industryUser")
@@ -210,4 +211,29 @@ public class DetailsController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    
+    @PostMapping("/emailSendFilmHookCode")
+    public ResponseEntity<?> verifyFilmHookCode(@RequestBody UserWebModel userWebModel) {
+        try {
+            logger.info("emailSendFilmHookCode controller start");
+            return detailService.verifyFilmHookCode(userWebModel);
+        } catch (Exception e) {
+            logger.error("emailSendFilmHookCode Method Exception -> ", e);
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
+        
+        @PostMapping("/verifyFilmHookCode")
+        public ResponseEntity<?>verifyFilmHook(@RequestBody UserWebModel userWebModel) {
+            try {
+                logger.info("verifyFilmHookCode controller start");
+                return detailService.verifyFilmHook(userWebModel);
+            } catch (Exception e) {
+                logger.error("verifyFilmHookCode Method Exception -> ", e);
+                e.printStackTrace();
+                return ResponseEntity.ok(new Response(-1, "Fail", ""));
+            }
+    
+        }
 }

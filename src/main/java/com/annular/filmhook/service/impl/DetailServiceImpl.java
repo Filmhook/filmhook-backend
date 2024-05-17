@@ -15,6 +15,8 @@ import java.util.Objects;
 import java.util.Date;
 import java.util.stream.Collectors;
 
+import javax.mail.internet.MimeMessage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,8 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
@@ -50,6 +54,7 @@ import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
 import com.annular.filmhook.repository.PlatformDetailRepository;
 import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
 import com.annular.filmhook.repository.PlatformRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.FilmProfessionDetailRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.FilmSubProfessionDetailRepository;
@@ -70,6 +75,7 @@ import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
+import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 
 @Service
@@ -80,9 +86,15 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     MediaFilesService mediaFilesService;
+    
+	@Autowired
+	private JavaMailSender javaMailSender;
 
     @Autowired
     UserMediaFilesService userMediaFilesService;
+    
+    @Autowired
+    UserRepository userRepository;
 
     @Autowired
     private PlatformRepository platformRepository;
@@ -1171,6 +1183,96 @@ public class DetailServiceImpl implements DetailService {
         }
         return true;
     }
+
+    @Override
+    public ResponseEntity<?> verifyFilmHookCode(UserWebModel userWebModel) {
+        Optional<User> filmHookData = userRepository.findByFilmHookCode(userWebModel.getFilmHookCode());
+        if (filmHookData.isPresent()) {
+            User user = filmHookData.get();
+            int minRange = 1000;
+            int maxRange = 9999;
+            int otpNumber = (int) (Math.random() * (maxRange - minRange + 1) + minRange);
+            user.setFilmHookOtp(otpNumber);
+            userRepository.save(user);
+
+            Boolean sendVerificationRes = sendVerificationEmail(user);
+            if (sendVerificationRes) {
+                // If email sent successfully, return success response
+                return ResponseEntity.ok("Verification email sent successfully.");
+            } else {
+                // If email sending failed, return error response
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send verification email.");
+            }
+        } else {
+            // Handle case where filmHookData is not present
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    public boolean sendVerificationEmail(User user) {
+        boolean response = true;
+        try {
+            if (user.getFilmHookOtp() == null) {
+                throw new IllegalArgumentException("OTP is null");
+            }
+
+            String subject = "Verify Your EmailID";
+            String senderName = "FilmHook";
+            String senderEmail = "filmhookapps@gmail.com"; // Replace with your valid email address
+            String mailContent = "<p>Hello " + user.getName() + ",</p>";
+            mailContent += "<p>Please use the following OTP to verify your fimHookCode on FilmHook:</p>";
+            mailContent += "<h3>" + user.getFilmHookOtp() + "</h3>";
+            mailContent += "<p>Thank You<br>FilmHook</p>";
+
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message);
+            helper.setFrom(senderEmail, senderName);
+            helper.setTo(user.getEmail());
+            helper.setSubject(subject);
+            helper.setText(mailContent, true);
+
+            javaMailSender.send(message);
+        } catch (IllegalArgumentException e) {
+            // Handle case where OTP is null
+           // log.error("OTP is null for user: {}", user.getId());
+            response = false;
+        } catch (Exception e) {
+            // Handle other exceptions
+           // log.error("Failed to send verification email for user: {}", user.getId(), e);
+            response = false;
+        }
+        return response;
+    }
+
+	@Override
+	public ResponseEntity<?> verifyFilmHook(UserWebModel userWebModel) {
+		  try {
+		        List<User> userList = userRepository.findAll();
+		        boolean emailOtpVerified = false; 
+
+		        for (User user : userList) {
+		            if (user.getFilmHookOtp() != null && user.getFilmHookOtp().equals(userWebModel.getFilmHookOtp())) {
+		              
+		                user.setStatus(true);
+		                userRepository.save(user);
+		                emailOtpVerified = true;
+		                break; 
+		            }
+		        }
+
+		        if (emailOtpVerified) {
+		            return ResponseEntity.ok(new Response(1, "Email OTP verified successfully", ""));
+		        } else {
+		            return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP", ""));
+		        }
+
+		    } catch (Exception e) {
+		        logger.error("Error verifying email OTP: {}", e.getMessage());
+		        e.printStackTrace();
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Failed to verify email OTP", ""));
+		    }
+	}
+
 
 
 }

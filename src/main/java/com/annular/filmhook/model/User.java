@@ -75,6 +75,9 @@ public class User {
 
     @Column(name = "state")
     private String state;
+    
+    @Column(name = "filmHookOtp")
+    private Integer filmHookOtp;
 
     @Column(name = "district")
     private String district;

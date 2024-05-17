@@ -64,6 +64,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("select u from User u where u.email=:email and u.status=true and u.adminPageStatus=true")
 	Optional<User> findByEmailAndUserTypeAndAdminStatus(String email);
 
+	@Query("select u from User u where u.filmHookCode =:filmHookCode")
+	Optional<User> findByFilmHookCode(String filmHookCode);
+
 //	@Query("select u from User u where u.userType='industrialUser' and u.status = false")
 //	List<User> getAllUnverifiedIndustrialUsers();
 

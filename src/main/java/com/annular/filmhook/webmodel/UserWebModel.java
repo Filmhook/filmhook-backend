@@ -22,6 +22,7 @@ public class UserWebModel {
 	private String filmHookCode;
 	private String name;
 	private String firstName;
+	private Integer filmHookOtp;
 	private String lastName;
 	private String middleName;
 	private String firebaseDeviceToken;
