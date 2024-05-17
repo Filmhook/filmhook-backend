@@ -24,6 +24,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -229,6 +233,15 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
             fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
 
+            // Convert Date to LocalDateTime
+            Date createdDate = mediaFile.getCreatedOn();
+            LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
+
+            // Calculate elapsed time
+            String elapsedTime = calculateElapsedTime(createdOn);
+            fileOutputWebModel.setElapsedTime(elapsedTime);
+            
+            
             return fileOutputWebModel;
         } catch (Exception e) {
             logger.error("Error at transformData()...", e);
@@ -267,4 +280,27 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         }
     }
 
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+
+    private String calculateElapsedTime(LocalDateTime createdOn) {
+        LocalDateTime now = LocalDateTime.now();
+        Duration duration = Duration.between(createdOn, now);
+
+        long seconds = duration.getSeconds();
+        if (seconds < 60) {
+            return seconds + " seconds ago";
+        } else if (seconds < 3600) {
+            long minutes = seconds / 60;
+            return minutes + (minutes == 1 ? " minute ago" : " minutes ago");
+        } else if (seconds < 86400) {
+            long hours = seconds / 3600;
+            return hours + (hours == 1 ? " hour ago" : " hours ago");
+        } else if (seconds < 604800) {
+            long days = seconds / 86400;
+            return days + (days == 1 ? " day ago" : " days ago");
+        } else {
+            long weeks = seconds / 604800;
+            return weeks + (weeks == 1 ? " week ago" : " weeks ago");
+        }
+    }
 }

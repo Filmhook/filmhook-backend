@@ -248,7 +248,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				}
 				refreashToken.setUserId(data.get().getUserId());
 				refreashToken.setToken(UUID.randomUUID().toString());
-				refreashToken.setExpiryToken(LocalTime.now().plusMinutes(17));
+				refreashToken.setExpiryToken(LocalTime.now().plusMinutes(45));
 				refreashToken = refreshTokenRepository.save(refreashToken);
 				response.put("refreashToken", refreashToken);
 				logger.info("createRefreshToken method end");

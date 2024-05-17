@@ -2,6 +2,8 @@ package com.annular.filmhook.repository;
 
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
+import com.annular.filmhook.model.User;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -52,4 +54,7 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 
 	 @Query("SELECT m FROM MediaFiles m where m.user.userId = :userId AND m.category = :profilepic")
 	Optional<MediaFiles> findByUserIdAndCategory(Integer userId, MediaFileCategory profilepic);
+
+	 @Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory")
+	List<MediaFiles> findAllByUserId(Integer userId, MediaFileCategory profilePicCategory);
 }

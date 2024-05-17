@@ -2,13 +2,16 @@ package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
+import com.annular.filmhook.model.PlatformPermanentDetail;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +24,7 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
+import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.GalleryService;
@@ -55,6 +59,9 @@ public class GalleryServiceImpl implements GalleryService {
     
 	@Autowired
 	LikeRepository likeRepository;
+	
+	@Autowired
+	PlatformPermanentDetailRepository platformPermanentDetailRepository;
     
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
@@ -184,6 +191,20 @@ public class GalleryServiceImpl implements GalleryService {
                         withCounts.put("profileUrl", "");
                     }
                     withCounts.put("username", user != null ? user.get().getName() : "Unknown"); // Assuming getUsername() returns the username
+                   
+                    List<PlatformPermanentDetail> platformDetailList = platformPermanentDetailRepository.findByUserId(userId);
+                    if (!platformDetailList.isEmpty()) {
+                        Set<String> platformNames = new HashSet<>();
+                        for (PlatformPermanentDetail platformDetail : platformDetailList) {
+                            platformNames.add(platformDetail.getPlatformName());
+                        }
+                        withCounts.put("platformNames", platformNames);
+                    } else {
+                        withCounts.put("platformNames", "Unknown");
+                    }
+
+
+                    
                     response.add(withCounts);
                 }
             } else {
