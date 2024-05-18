@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.FilmProfession;
+import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.service.FilmProfessionService;
 import com.annular.filmhook.webmodel.FilmWebModel;
@@ -24,17 +26,20 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 
 	@Override
 	public ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel) {
-
-		Optional<FilmProfession> optionalFilm = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId());
-		if (optionalFilm.isPresent()) {
-			FilmProfession filmProfession = optionalFilm.get();
-			// Load associated sub-professions here if needed
-			return ResponseEntity.ok(filmProfession);
-		} else {
-			// FilmProfession entity not found for the given filmProfessionId
-			return ResponseEntity.notFound().build();
-		}
+	    Optional<FilmProfession> optionalFilm = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId());
+	    if (optionalFilm.isPresent()) {
+	        FilmProfession filmProfession = optionalFilm.get();
+	        List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
+	                .map(FilmSubProfession::getSubProfessionName)
+	                .collect(Collectors.toList());
+	        return ResponseEntity.ok(subProfessionNames);
+	    } else {
+	        // FilmProfession entity not found for the given filmProfessionId
+	        return ResponseEntity.notFound().build();
+	    }
 	}
+
+
 
 	public ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel) {
 		try {
