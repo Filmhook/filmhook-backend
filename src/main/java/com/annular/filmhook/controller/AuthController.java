@@ -1,7 +1,6 @@
 package com.annular.filmhook.controller;
 
 import java.time.LocalTime;
-
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -9,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -160,7 +158,7 @@ public class AuthController {
 			refreshToken.setExpiryToken(LocalTime.now().plusMinutes(17));
 			refreshTokenRepository.save(refreshToken);
 			return ResponseEntity.ok(new JwtResponse(jwt, userData.get().getUserId(), userData.get().getName(),
-					userData.get().getEmail(), "Success", 1, token.getData().toString(), jwt));
+					userData.get().getEmail(), "Success", 1, token.getData().toString(), userData.get().getUserType()));
 		}
 		return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
 	}

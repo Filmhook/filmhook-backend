@@ -3,12 +3,13 @@ package com.annular.filmhook.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.User;
-import com.annular.filmhook.webmodel.UserWebModel;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
@@ -50,8 +51,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	Optional<User> findByEmailIdAndUserType(String email, String userType);
 
 	@Query("select u from User u where u.userType='subAdmin' and u.status=true")
-	List<User> findByUserType(String userType);
-
+	Page<User> findByUserType(String userType, Pageable paging );
+	
 //	@Query("select u from User u where u.forgotOtp=:id")
 //	Optional<User> findByResetPasswords(UserWebModel userWebModel, String id);
 

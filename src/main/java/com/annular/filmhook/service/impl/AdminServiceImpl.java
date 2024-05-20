@@ -25,7 +25,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.model.FilmProfession;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
@@ -186,9 +185,14 @@ public class AdminServiceImpl implements AdminService {
 	public ResponseEntity<?> getRegister(UserWebModel userWebModel) {
 		try {
 			logger.info("Admin Get Register method start");
-			List<User> subAdminUsers = userRepository.findByUserType(userWebModel.getUserType());
+			
+			HashMap<String, Object> response = new HashMap<>();
+			Pageable paging = PageRequest.of(userWebModel.getPageNo()-1,userWebModel.getPageSize());		
+			Map<String, Object> pageDetails = new HashMap<>();
+			Page<User> subAdminUsers = userRepository.findByUserType(userWebModel.getUserType(),paging);
+			List<HashMap<String, Object>> responseList = new ArrayList<>();
 			if (!subAdminUsers.isEmpty()) {
-				List<HashMap<String, Object>> responseList = new ArrayList<>();
+				
 				for (User user : subAdminUsers) {
 					HashMap<String, Object> userInfo = new HashMap<>();
 					userInfo.put("userId", user.getUserId());
@@ -199,11 +203,15 @@ public class AdminServiceImpl implements AdminService {
 
 					responseList.add(userInfo);
 				}
+				pageDetails.put("totalPages", subAdminUsers.getTotalPages());
+				pageDetails.put("totalRecords", subAdminUsers.getTotalElements());
+				response.put("Data", responseList);
+				response.put("PageInfo", pageDetails);
 				return ResponseEntity.status(HttpStatus.OK)
-						.body(new Response(1, "Sub-admin users retrieved successfully", responseList));
+						.body(new Response(1, "Sub-admin users retrieved successfully", response));
 			} else {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body(new Response(-1, "No sub-admin users found", "No sub-admin users exist in the system."));
+						.body(new Response(-1, "No sub-admin users found", response));
 			}
 		} catch (Exception e) {
 			logger.error("Get Register Method Exception...", e);

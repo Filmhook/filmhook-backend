@@ -88,7 +88,7 @@ public class AdminController {
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
 
-	@GetMapping("getAllUnverifiedIndustrialUsers")
+	@PostMapping("getAllUnverifiedIndustrialUsers")
 	public Response getAllUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel) {
 		try {
 			logger.info("getAllUnverifiedIndustrialUsers controller start");
