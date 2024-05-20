@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.PlatformPermanentDetail;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.CommentRepository;
+import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
@@ -56,6 +58,9 @@ public class GalleryServiceImpl implements GalleryService {
 
     @Autowired
     AwsS3ServiceImpl awsService;
+    
+    @Autowired
+    FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
     
 	@Autowired
 	LikeRepository likeRepository;
@@ -192,15 +197,15 @@ public class GalleryServiceImpl implements GalleryService {
                     }
                     withCounts.put("username", user != null ? user.get().getName() : "Unknown"); // Assuming getUsername() returns the username
                    
-                    List<PlatformPermanentDetail> platformDetailList = platformPermanentDetailRepository.findByUserId(userId);
+                    List<FilmProfessionPermanentDetail> platformDetailList = filmProfessionPermanentDetailRepository.findByUserId(userId);
                     if (!platformDetailList.isEmpty()) {
                         Set<String> platformNames = new HashSet<>();
-                        for (PlatformPermanentDetail platformDetail : platformDetailList) {
-                            platformNames.add(platformDetail.getPlatformName());
+                        for (FilmProfessionPermanentDetail platformDetail : platformDetailList) {
+                            platformNames.add(platformDetail.getProfessionName());
                         }
-                        withCounts.put("platformNames", platformNames);
+                        withCounts.put("professionNames", platformNames);
                     } else {
-                        withCounts.put("platformNames", "Unknown");
+                        withCounts.put("professionNames", "Unknown");
                     }
 
 
