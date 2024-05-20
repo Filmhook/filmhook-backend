@@ -26,18 +26,24 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 
 	@Override
 	public ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel) {
-	    Optional<FilmProfession> optionalFilm = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId());
-	    if (optionalFilm.isPresent()) {
-	        FilmProfession filmProfession = optionalFilm.get();
-	        List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
-	                .map(FilmSubProfession::getSubProfessionName)
-	                .collect(Collectors.toList());
-	        return ResponseEntity.ok(subProfessionNames);
-	    } else {
-	        // FilmProfession entity not found for the given filmProfessionId
-	        return ResponseEntity.notFound().build();
-	    }
-	}
+        Optional<FilmProfession> optionalFilm = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId());
+        if (optionalFilm.isPresent()) {
+            FilmProfession filmProfession = optionalFilm.get();
+            List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
+                    .map(FilmSubProfession::getSubProfessionName)
+                    .collect(Collectors.toList());
+            
+            // Create a map with the desired structure
+            Map<String, List<String>> responseMap = new HashMap<>();
+            responseMap.put("subProfessionName", subProfessionNames);
+
+            return ResponseEntity.ok(responseMap);
+        } else {
+            // FilmProfession entity not found for the given filmProfessionId
+            return ResponseEntity.notFound().build();
+        }
+    }
+	
 
 
 
