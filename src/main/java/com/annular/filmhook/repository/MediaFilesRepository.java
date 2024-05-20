@@ -46,7 +46,7 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 	@Query("select m from MediaFiles m where m.id = :pinMediaId")
 	Optional<MediaFiles> findByIds(Integer pinMediaId);
 
-	@Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory")
+	@Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory AND m.status = true")
 	Optional<MediaFiles> findByUserId(Integer userId, MediaFileCategory profilePicCategory);
 
 	@Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory")
@@ -55,6 +55,6 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 	 @Query("SELECT m FROM MediaFiles m where m.user.userId = :userId AND m.category = :profilepic")
 	Optional<MediaFiles> findByUserIdAndCategory(Integer userId, MediaFileCategory profilepic);
 
-	 @Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory")
+	 @Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory AND m.status=true")
 	List<MediaFiles> findAllByUserId(Integer userId, MediaFileCategory profilePicCategory);
 }
