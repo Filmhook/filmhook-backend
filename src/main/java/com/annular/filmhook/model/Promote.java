@@ -83,6 +83,9 @@ public class Promote {
 	@Column(name = "user_id")
 	private Integer userId;
 	
+	@Column(name = "post_id")
+	private Integer postId;
+	
 	@Column(name = "multimedia_Id")
 	private Integer multimediaId;
 }

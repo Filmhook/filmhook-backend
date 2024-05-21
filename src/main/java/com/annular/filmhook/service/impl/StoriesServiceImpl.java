@@ -109,6 +109,7 @@ public class StoriesServiceImpl implements StoriesService {
         StoriesWebModel storiesWebModel = new StoriesWebModel();
 
         storiesWebModel.setStoryId(story.getStoryId());
+        storiesWebModel.setStoryId(story.getStoryId());
         storiesWebModel.setType(story.getType());
         storiesWebModel.setDescription(story.getDescription());
         storiesWebModel.setViewCount(story.getViewCount());

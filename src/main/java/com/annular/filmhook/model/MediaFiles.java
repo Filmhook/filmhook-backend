@@ -87,5 +87,8 @@ public class MediaFiles {
 
     @Column(name = "description")
     private String description;
+    
+    @Column(name = "promotedStatus")
+    private Boolean promotedStatus;
 
 }

@@ -14,6 +14,7 @@ public class PromoteWebModel {
 	private Date createdOn;
 	private Integer updatedBy;
 	private Date updatedOn;
+	private Integer postId;
 //	private LocalDate startDate;
 //	private LocalDate endDate;
 	private Integer numberOfDays;

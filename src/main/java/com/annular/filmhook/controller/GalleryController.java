@@ -69,13 +69,14 @@ public class GalleryController {
     @GetMapping("/getGalleryFilesByUserId")
     public Response getGalleryFiles(@RequestParam("userId") Integer userId) {
         try {
-            List<FileOutputWebModel> outputList = galleryService.getGalleryFilesByUser(userId);
-            if (outputList != null && !outputList.isEmpty()) {
-                logger.info("[{}] Gallery files found for userId :- {}", outputList.size(), userId);
-                return new Response(1, "Gallery file(s) found successfully...", outputList);
-            } else {
-                return new Response(-1, "No file(s) available for this user...", null);
-            }
+        	return galleryService.getGalleryFilesByUser(userId);
+//            List<FileOutputWebModel> outputList = galleryService.getGalleryFilesByUser(userId);
+//            if (outputList != null && !outputList.isEmpty()) {
+//                logger.info("[{}] Gallery files found for userId :- {}", outputList.size(), userId);
+//                return new Response(1, "Gallery file(s) found successfully...", outputList);
+//            } else {
+//                return new Response(-1, "No file(s) available for this user...", null);
+//            }
         } catch (Exception e) {
             logger.error("Error at getGalleryFiles()...", e);
         }

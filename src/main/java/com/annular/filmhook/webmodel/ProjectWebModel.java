@@ -8,4 +8,5 @@ public class ProjectWebModel {
     private Integer userId;
     private Integer platformPermanentId;
     private FileInputWebModel fileInputWebModel;
-}
+    private String description;
+    }

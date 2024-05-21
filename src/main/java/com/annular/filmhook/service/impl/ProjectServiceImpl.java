@@ -51,6 +51,7 @@ public class ProjectServiceImpl implements ProjectService {
                 // Saving project media files in MySQL
                 projectWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Project);
                 projectWebModel.getFileInputWebModel().setCategoryRefId(platformFromDB.get().getPlatformPermanentId());
+                //projectWebModel.getFileInputWebModel().setDescription(null);
                 return mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
             }
         } catch (Exception e) {

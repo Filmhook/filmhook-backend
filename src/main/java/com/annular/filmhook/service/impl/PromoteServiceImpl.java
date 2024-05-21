@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Promote;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.service.PromoteService;
 import com.annular.filmhook.webmodel.PromoteWebModel;
@@ -27,6 +29,9 @@ public class PromoteServiceImpl implements PromoteService {
 
 	@Autowired
 	PromoteRepository promoteRepository;
+	
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
 
 	@Autowired
 	UserDetails userDetails;
@@ -41,6 +46,7 @@ public class PromoteServiceImpl implements PromoteService {
 			promote.setCgst(promoteWebModel.getCgst());
 //			promote.setEndDate(promoteWebModel.getEndDate());
 			promote.setPrice(promoteWebModel.getPrice());
+			promote.setPostId(promoteWebModel.getPostId());
 			promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
 			promote.setTotalCost(promoteWebModel.getTotalCost());
 			promote.setTaxFee(promoteWebModel.getTaxFee());
@@ -54,6 +60,15 @@ public class PromoteServiceImpl implements PromoteService {
 	            }
 			promote.setUserId(userDetails.userInfo().getId());
 			promote.setMultimediaId(promoteWebModel.getMultimediaId());
+			
+			  Optional<MediaFiles> mediaFilesOptional = mediaFilesRepository.findById(promoteWebModel.getPostId());
+		        if (mediaFilesOptional.isPresent()) {
+		            MediaFiles mediaFile = mediaFilesOptional.get();
+		            mediaFile.setPromotedStatus(true); // Set promotedStatus to true
+		            mediaFilesRepository.save(mediaFile);
+		        } else {
+		            logger.error("MediaFile with ID {} not found", promoteWebModel.getPostId());
+		        }
 			
 			promote = promoteRepository.save(promote);
 			response.put("promoteInfo", promote);

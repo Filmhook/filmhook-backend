@@ -242,18 +242,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			logger.info("createRefreshToken method start");
 			Optional<User> data = userRepository.findByEmailAndUserType(userWebModel.getEmail()
 				);
-			if (data.isPresent()) {
-				Optional<RefreshToken> refreshTokenData = refreshTokenRepository.findByUserId(data.get().getUserId());
-				if (refreshTokenData.isPresent()) {
-					refreshTokenRepository.delete(refreshTokenData.get());
-				}
+//			if (data.isPresent()) {
+//				Optional<RefreshToken> refreshTokenData = refreshTokenRepository.findByUserId(data.get().getUserId());
+//				if (refreshTokenData.isPresent()) {
+//					refreshTokenRepository.delete(refreshTokenData.get());
+//				}
 				refreashToken.setUserId(data.get().getUserId());
 				refreashToken.setToken(UUID.randomUUID().toString());
 				refreashToken.setExpiryToken(LocalTime.now().plusMinutes(45));
 				refreashToken = refreshTokenRepository.save(refreashToken);
 				response.put("refreashToken", refreashToken);
 				logger.info("createRefreshToken method end");
-			}
+			//}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

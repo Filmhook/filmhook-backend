@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -114,17 +115,88 @@ public class GalleryServiceImpl implements GalleryService {
     }
 
     @Override
-    public List<FileOutputWebModel> getGalleryFilesByUser(Integer userId) {
+    public Response getGalleryFilesByUser(Integer userId) {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+        List<HashMap<String, Object>> response = new ArrayList<>(); // Initialize response list
         try {
             outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.Gallery, userId);
+            if (!outputWebModelList.isEmpty()) {
+                logger.info("[{}] gallery files found...", outputWebModelList.size());
+                for (FileOutputWebModel outputWebModel : outputWebModelList) {
+                    int likeCount = likeRepository.getLikeCount(outputWebModel.getId());
+                    int commentCount = commentRepository.getCommentCount(outputWebModel.getId());
+                    int shareCount = shareRepository.getShareCount(outputWebModel.getId());
+                   
+                    MediaFileCategory profilePicCategory = MediaFileCategory.ProfilePic;
+                    List<MediaFiles> mediaDataList = mediaFilesRepository.findByuserIdAndCategory(userId, profilePicCategory);
+                    Optional<User> user = userRepository.findById(userId);
+                    HashMap<String, Object> withCounts = new HashMap<>();
+                    withCounts.put("FileInfo", outputWebModel);
+                    withCounts.put("LikeCount", likeCount);
+                    withCounts.put("CommentCount", commentCount);
+                    withCounts.put("ShareCount", shareCount);
+                    
+                    if (!mediaDataList.isEmpty()) {
+                        // Assuming you want to handle only the first result in the list
+                        MediaFiles mediaFiles = mediaDataList.get(0);
+                        withCounts.put("filePathProfile", mediaFiles.getFilePath());
+                        withCounts.put("fileNameProfile", mediaFiles.getFileName());
+                        withCounts.put("fileNameSize", mediaFiles.getFileSize());
+                        withCounts.put("fileNameTypeProfile", mediaFiles.getFileType());
+                        withCounts.put("profileUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
+                                + mediaFiles.getFilePath() + mediaFiles.getFileType());
+                    } else {
+                        // Handle the case where no profile picture is available
+                        withCounts.put("filePathProfile", "No profile picture available");
+                        withCounts.put("fileNameProfile", "");
+                        withCounts.put("fileNameSize", "");
+                        withCounts.put("fileNameTypeProfile", "");
+                        withCounts.put("profileUrl", "");
+                    }
+                    withCounts.put("username", user != null ? user.get().getName() : "Unknown"); // Assuming getUsername() returns the username
+                   
+                    List<FilmProfessionPermanentDetail> platformDetailList = filmProfessionPermanentDetailRepository.findByUserId(userId);
+                    if (!platformDetailList.isEmpty()) {
+                        Set<String> platformNames = new HashSet<>();
+                        for (FilmProfessionPermanentDetail platformDetail : platformDetailList) {
+                            platformNames.add(platformDetail.getProfessionName());
+                        }
+                        withCounts.put("professionNames", platformNames);
+                    } else {
+                        withCounts.put("professionNames", "Unknown");
+                    }
+
+                    response.add(withCounts);
+                }
+            } else {
+                return new Response(-1, "No file(s) available for this user...", null);
+            }
+            
+            // Sort the response list based on promotedStatus first, then maintain original order
+            Collections.sort(response, (a, b) -> {
+                Boolean promotedStatusA = (Boolean) a.get("promotedStatus");
+                Boolean promotedStatusB = (Boolean) b.get("promotedStatus");
+                
+                // Handle null values
+                if (promotedStatusA == null && promotedStatusB == null) {
+                    return 0; // Both values are null, maintain original order
+                } else if (promotedStatusA == null) {
+                    return 1; // Null comes after non-null value
+                } else if (promotedStatusB == null) {
+                    return -1; // Null comes before non-null value
+                } else {
+                    // Sort by promotedStatus in descending order
+                    return promotedStatusB.compareTo(promotedStatusA);
+                }
+            });
+            return new Response(1, "Gallery file(s) found successfully...", response);
         } catch (Exception e) {
             logger.error("Error at getGalleryFilesByUser()...", e);
             e.printStackTrace();
         }
-        return outputWebModelList;
+        return new Response(-1, "Error occurred while fetching gallery files...", null);
     }
-
+    
     @Override
     public Resource getAllGalleryFilesInCategory(Integer userId, String category) {
         try {
@@ -219,6 +291,26 @@ public class GalleryServiceImpl implements GalleryService {
             logger.error("Error at getGalleryFilesByUser()...", e);
             e.printStackTrace();
         }
+     // Sort the response list based on promotedStatus first, then maintain original order
+        Collections.sort(response, (a, b) -> {
+            Boolean promotedStatusA = (Boolean) a.get("promotedStatus");
+            Boolean promotedStatusB = (Boolean) b.get("promotedStatus");
+            
+            // Handle null values
+            if (promotedStatusA == null && promotedStatusB == null) {
+                return 0; // Both values are null, maintain original order
+            } else if (promotedStatusA == null) {
+                return 1; // Null comes after non-null value
+            } else if (promotedStatusB == null) {
+                return -1; // Null comes before non-null value
+            } else {
+                // Sort by promotedStatus in descending order
+                return promotedStatusB.compareTo(promotedStatusA);
+            }
+        });
+
+        
+
         return new Response(1, "Gallery file(s) found successfully...", response);
     }
 

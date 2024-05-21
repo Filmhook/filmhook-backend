@@ -11,7 +11,7 @@ import java.util.List;
 public interface GalleryService {
 
     List<FileOutputWebModel> saveGalleryFiles(FileInputWebModel fileInputWebModel);
-    List<FileOutputWebModel> getGalleryFilesByUser(Integer userId) throws IOException;
+    Response getGalleryFilesByUser(Integer userId) throws IOException;
     Resource getGalleryFile(Integer userId, String category, String fileId);
 	Resource getAllGalleryFilesInCategory(Integer  userId,String category);
 	Resource getAllGalleryFilesInCategory(String category);
