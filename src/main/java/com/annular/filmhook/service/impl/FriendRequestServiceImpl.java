@@ -61,11 +61,12 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             }
 
             // Check if the sender already sent a request to the receiver
-            Optional<FollowersRequest> existingFriendRequest = friendRequestRepository.findByFollowersRequestSenderIdAndFollowersRequestReceiverId(senderId, receiverId);
-
-            if (existingFriendRequest.isPresent() && existingFriendRequest.get().getFollowersRequestStatus().equalsIgnoreCase(UNFOLLOWED)) {
-                existingFriendRequest.get().setFollowersRequestStatus(FOLLOWED);
-                friendRequestRepository.save(existingFriendRequest.get());
+            FollowersRequest existingFriendRequest = friendRequestRepository.findByFollowersRequestSenderIdAndFollowersRequestReceiverId(senderId, receiverId).orElse(null);
+            if (existingFriendRequest != null) {
+                if (existingFriendRequest.getFollowersRequestStatus().equalsIgnoreCase(UNFOLLOWED)) {
+                    existingFriendRequest.setFollowersRequestStatus(FOLLOWED);
+                    friendRequestRepository.save(existingFriendRequest);
+                }
             } else {
                 // If no existing request, proceed to save the new friend request
                 FollowersRequest request = new FollowersRequest();
@@ -132,7 +133,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             userList.stream()
                     .filter(Objects::nonNull)
                     .forEach(request -> {
-                        User user = userService.getUser(type.equalsIgnoreCase(FOLLOWERS) ? request.getFollowersRequestReceiverId() : request.getFollowersRequestSenderId()).orElse(null);
+                        User user = userService.getUser(type.equalsIgnoreCase(FOLLOWERS) ? request.getFollowersRequestSenderId() : request.getFollowersRequestReceiverId()).orElse(null);
                         if(user != null) {
                             FollowersRequestWebModel followersRequestWebModel = FollowersRequestWebModel.builder()
                                     .followersRequestId(request.getFollowersRequestId())
