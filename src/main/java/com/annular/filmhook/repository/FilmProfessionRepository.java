@@ -13,6 +13,7 @@ import com.annular.filmhook.model.FilmProfession;
 @Repository
 public interface FilmProfessionRepository  extends JpaRepository<FilmProfession,Integer>{
 
+	
 	Optional<FilmProfession> findByProfessionName(String professionName);
 	
 	Optional<FilmProfession> findByPlatformAndProfessionName(Platform platform, String professionName);

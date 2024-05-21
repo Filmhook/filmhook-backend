@@ -21,5 +21,5 @@ public interface StoriesService {
     Optional<Story> updateStoryView(Integer userId, String storyId);
     List<Story> getMoreThanOneDayStories();
     void deleteExpiredStories(List<Story> storyList);
-	List<UserIdAndNameWebModel> getUserIdAndName();
+	List<UserIdAndNameWebModel> getUserIdAndName(Integer userId);
 }

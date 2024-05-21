@@ -13,8 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.FilmProfession;
+import com.annular.filmhook.model.FilmProfessions;
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.repository.FilmProfessionRepository;
+import com.annular.filmhook.repository.FilmProfessionsRepository;
 import com.annular.filmhook.service.FilmProfessionService;
 import com.annular.filmhook.webmodel.FilmWebModel;
 
@@ -23,16 +25,19 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 
 	@Autowired
 	FilmProfessionRepository filmProfessionRepository;
+	
+	@Autowired
+	FilmProfessionsRepository filmProfessionsRepository;
 
 	@Override
 	public ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel) {
-        Optional<FilmProfession> optionalFilm = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId());
+        Optional<FilmProfessions> optionalFilm = filmProfessionsRepository.findById(filmWebModel.getFilmProfesssionId());
         if (optionalFilm.isPresent()) {
-            FilmProfession filmProfession = optionalFilm.get();
-            List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
-                    .map(FilmSubProfession::getSubProfessionName)
-                    .collect(Collectors.toList());
-            
+            FilmProfessions filmProfession = optionalFilm.get();
+//            List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
+//                    .map(FilmSubProfession::getSubProfessionName)
+//                    .collect(Collectors.toList());
+            List<String> subProfessionNames = filmProfession.getSubProfessionsName();
             // Create a map with the desired structure
             Map<String, List<String>> responseMap = new HashMap<>();
             responseMap.put("subProfessionName", subProfessionNames);
@@ -50,11 +55,11 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 	public ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel) {
 		try {
 
-			List<FilmProfession> professions = filmProfessionRepository.findAll();
+			List<FilmProfessions> professions = filmProfessionsRepository.findAll();
 			List<Map<String, Object>> professionList = new ArrayList<>();
-			for (FilmProfession profession : professions) {
+			for (FilmProfessions profession : professions) {
 				Map<String, Object> professionMap = new HashMap<>();
-				professionMap.put("filmProfessionId", profession.getFilmProfessionId());
+				//professionMap.put("filmProfessionId", profession.getFilmProfessionId());
 				professionMap.put("professionName", profession.getProfessionName());
 				//professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
 				professionList.add(professionMap);

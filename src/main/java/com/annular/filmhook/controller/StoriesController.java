@@ -120,9 +120,9 @@ public class StoriesController {
     }
     
     @GetMapping("/getUserIdAndName")
-    public Response getUserIdAndName() {
+    public Response getUserIdAndName(@RequestParam("userId")Integer userId) {
         try {
-            List<UserIdAndNameWebModel> storyList = storiesService.getUserIdAndName();
+            List<UserIdAndNameWebModel> storyList = storiesService.getUserIdAndName(userId);
             if (storyList != null)
                 return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
         } catch (Exception e) {

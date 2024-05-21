@@ -207,9 +207,12 @@ public class StoriesServiceImpl implements StoriesService {
     }
 
     @Override
-    public List<UserIdAndNameWebModel> getUserIdAndName() {
+    public List<UserIdAndNameWebModel> getUserIdAndName(Integer loginUserId) {
         List<Story> storyList = storyRepository.findAll(); // Fetch all stories
+        
+        // Filter out the login user's details
         Map<Integer, String> userIdToNameMap = storyList.stream()
+                .filter(story -> !story.getUser().getUserId().equals(loginUserId))
                 .collect(Collectors.toMap(story -> story.getUser().getUserId(), 
                                           story -> story.getUser().getName(),
                                           (existing, replacement) -> existing)); // Keep existing name in case of duplicates
@@ -225,6 +228,8 @@ public class StoriesServiceImpl implements StoriesService {
 
         return userIdAndNames;
     }
+
+
 
     private String getProfilePicUrl(Integer userId) {
         MediaFiles profilePic = mediaFilesRepository.findByUserUserIdAndCategory(userId, MediaFileCategory.ProfilePic);

@@ -41,12 +41,14 @@ import com.annular.filmhook.model.PlatformPermanentDetail;
 import com.annular.filmhook.model.FilmProfession;
 import com.annular.filmhook.model.FilmProfessionDetails;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+import com.annular.filmhook.model.FilmProfessions;
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.FilmSubProfessionDetails;
 import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
 import com.annular.filmhook.model.User;
 
 import com.annular.filmhook.repository.FilmProfessionRepository;
+import com.annular.filmhook.repository.FilmProfessionsRepository;
 import com.annular.filmhook.repository.IndustryDetailRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
@@ -93,6 +95,9 @@ public class DetailServiceImpl implements DetailService {
 	@Autowired
 	UserMediaFilesService userMediaFilesService;
 
+	@Autowired
+	FilmProfessionsRepository filmProfessionsRepository;
+	
 	@Autowired
 	UserRepository userRepository;
 
@@ -561,7 +566,6 @@ public class DetailServiceImpl implements DetailService {
 			return ResponseEntity.ok(new Response(-1, "Fail", ""));
 		}
 	}
-
 	@Override
 	public ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
 		try {
@@ -571,7 +575,6 @@ public class DetailServiceImpl implements DetailService {
 
 			for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
 				// Create a separate industry map for each industry
-
 				Map<String, Object> industryMap = new HashMap<>();
 				List<String> industriesName = Arrays.asList(tempDetails.getIndustriesname().split(","));
 
@@ -584,57 +587,45 @@ public class DetailServiceImpl implements DetailService {
 					for (PlatformDetails platformDetails : platformDetailsList) {
 						Map<String, Object> platformMap = new HashMap<>();
 						platformMap.put("platformName", platformDetails.getPlatformName());
-						Platform platform = platformRepository
-								.findByPlatformName(platformDetails.getPlatformName().toUpperCase()).orElse(null);
+
 						// Add professions for the platform
 						List<Map<String, Object>> professionsList = new ArrayList<>();
-						List<FilmProfessionDetails> filmProfessionDetailsList = filmProfessionDetailRepository
+						List<FilmProfessionDetails> professionDetailsList = filmProfessionDetailRepository
 								.findByProfessionTemporaryDetailId(tempDetails.getItId());
 
 						// Retrieve all distinct profession names for this platform
-						Set<String> distinctProfessions = filmProfessionDetailsList.stream()
-								.map(FilmProfessionDetails::getProfessionName).collect(Collectors.toSet());
-						System.out.print("distinctProfessions" + distinctProfessions);
+//						Set<String> distinctProfessions = professionDetailsList.stream()
+//								.map(FilmProfessionDetails::getProfessionname).collect(Collectors.toSet());
+						Set<String> distinctProfessions = professionDetailsList.stream()
+							.map(FilmProfessionDetails::getProfessionName).collect(Collectors.toSet());
 						for (String professionName : distinctProfessions) {
 							// Retrieve SubProfessionDetails matching the professionName and
-							// industryTemporaryDetailId
-							List<FilmSubProfessionDetails> filmSubProfessionDetailsList = filmSubProfessionDetailRepository
+							// integerTemporaryDetailId
+							List<FilmSubProfessionDetails> subProfessionDetailsList = filmSubProfessionDetailRepository
 									.findByIndustryTemporaryDetailIdAndProfessionName(tempDetails.getItId());
 
 							List<String> subProfessions = new ArrayList<>();
 							// Add sub-professions
-
-							for (FilmSubProfessionDetails filmSubProfessionDetails : filmSubProfessionDetailsList) {
-
-								subProfessions.add(filmSubProfessionDetails.getSubProfessionName());
+							for (FilmSubProfessionDetails subProfessionDetails : subProfessionDetailsList) {
+								subProfessions.add(subProfessionDetails.getSubProfessionName());
 							}
 
-							System.out.println("professionName" + professionName);
 							// Check if professionName exists in FilmProfession table
-							FilmProfession filmProfession = filmProfessionRepository
-									.findByPlatformAndProfessionName(platform, professionName.trim()).orElse(null);
-
+							FilmProfessions filmProfession = filmProfessionsRepository
+									.findByProfessionName(professionName);
 							if (filmProfession != null) {
 								// Get sub-professions associated with the profession from FilmProfession table
-								List<FilmSubProfession> filmSubProfessions = filmSubProfessionRepository
-										.findByProfession(filmProfession);
-								System.out.print("9st");
+								List<String> filmSubProfessions = filmProfession.getSubProfessionsName();
+
 								// Filter sub-professions based on those associated with the profession
-//								List<String> filteredSubProfessions = filmSubProfessions.stream()
-//										.map(FilmSubProfession::getSubProfessionName).collect(Collectors.toList());
-//								
-								List<String> filteredSubProfessions = new ArrayList<>();
-								filmSubProfessions.stream().map(FilmSubProfession::getSubProfessionName)
-										.forEach(val -> subProfessions.stream()
-												.filter(item -> item.equalsIgnoreCase(val))
-												.forEach(filteredSubProfessions::add));
+								List<String> filteredSubProfessions = subProfessions.stream()
+										.filter(filmSubProfessions::contains).collect(Collectors.toList());
 
 								// Create professionMap only if there are filtered sub-professions
 								if (!filteredSubProfessions.isEmpty()) {
 									Map<String, Object> professionMap = new HashMap<>();
 									professionMap.put("professionName", professionName);
 									professionMap.put("subProfessionName", filteredSubProfessions);
-
 									professionsList.add(professionMap);
 								}
 							} else {
@@ -661,11 +652,115 @@ public class DetailServiceImpl implements DetailService {
 
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
-			e.printStackTrace();
+			// Handle exceptions
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body("Error occurred while fetching temporary details.");
 		}
 	}
+//	@Override
+//	public ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
+//		try {
+//			List<IndustryTemporaryDetails> temporaryDetailsList = industryTemporaryDetailsRepository
+//					.findByUserId(industryTemporaryWebModel.getUserId());
+//			Map<String, Object> response = new HashMap<>();
+//
+//			for (IndustryTemporaryDetails tempDetails : temporaryDetailsList) {
+//				// Create a separate industry map for each industry
+//
+//				Map<String, Object> industryMap = new HashMap<>();
+//				List<String> industriesName = Arrays.asList(tempDetails.getIndustriesname().split(","));
+//
+//				for (String industryName : industriesName) {
+//					// Create a separate platform list for each industry
+//					List<Map<String, Object>> platformList = new ArrayList<>();
+//					List<PlatformDetails> platformDetailsList = platformDetailsRepository
+//							.findByIndustryTemporaryDetailId(tempDetails.getItId());
+//
+//					for (PlatformDetails platformDetails : platformDetailsList) {
+//						Map<String, Object> platformMap = new HashMap<>();
+//						platformMap.put("platformName", platformDetails.getPlatformName());
+//						Platform platform = platformRepository
+//								.findByPlatformName(platformDetails.getPlatformName().toUpperCase()).orElse(null);
+//						// Add professions for the platform
+//						List<Map<String, Object>> professionsList = new ArrayList<>();
+//						List<FilmProfessionDetails> filmProfessionDetailsList = filmProfessionDetailRepository
+//								.findByProfessionTemporaryDetailId(tempDetails.getItId());
+//
+//						// Retrieve all distinct profession names for this platform
+//						Set<String> distinctProfessions = filmProfessionDetailsList.stream()
+//								.map(FilmProfessionDetails::getProfessionName).collect(Collectors.toSet());
+//						System.out.print("distinctProfessions" + distinctProfessions);
+//						for (String professionName : distinctProfessions) {
+//							// Retrieve SubProfessionDetails matching the professionName and
+//							// industryTemporaryDetailId
+//							List<FilmSubProfessionDetails> filmSubProfessionDetailsList = filmSubProfessionDetailRepository
+//									.findByIndustryTemporaryDetailIdAndProfessionName(tempDetails.getItId());
+//
+//							List<String> subProfessions = new ArrayList<>();
+//							// Add sub-professions
+//
+//							for (FilmSubProfessionDetails filmSubProfessionDetails : filmSubProfessionDetailsList) {
+//
+//								subProfessions.add(filmSubProfessionDetails.getSubProfessionName());
+//							}
+//
+//							System.out.println("professionName" + professionName);
+//							// Check if professionName exists in FilmProfession table
+//							FilmProfession filmProfession = filmProfessionRepository
+//									.findByPlatformAndProfessionName(platform, professionName.trim()).orElse(null);
+//
+//							if (filmProfession != null) {
+//								// Get sub-professions associated with the profession from FilmProfession table
+//								List<FilmSubProfession> filmSubProfessions = filmSubProfessionRepository
+//										.findByProfession(filmProfession);
+//								System.out.print("9st");
+//								// Filter sub-professions based on those associated with the profession
+////								List<String> filteredSubProfessions = filmSubProfessions.stream()
+////										.map(FilmSubProfession::getSubProfessionName).collect(Collectors.toList());
+////								
+//								List<String> filteredSubProfessions = new ArrayList<>();
+//								filmSubProfessions.stream().map(FilmSubProfession::getSubProfessionName)
+//										.forEach(val -> subProfessions.stream()
+//												.filter(item -> item.equalsIgnoreCase(val))
+//												.forEach(filteredSubProfessions::add));
+//
+//								// Create professionMap only if there are filtered sub-professions
+//								if (!filteredSubProfessions.isEmpty()) {
+//									Map<String, Object> professionMap = new HashMap<>();
+//									professionMap.put("professionName", professionName);
+//									professionMap.put("subProfessionName", filteredSubProfessions);
+//
+//									professionsList.add(professionMap);
+//								}
+//							} else {
+//								// Create professionMap for the profession even if it's not found in
+//								// FilmProfession table
+//								Map<String, Object> professionMap = new HashMap<>();
+//								professionMap.put("professionName", professionName);
+//								professionMap.put("subProfessionName", subProfessions);
+//								professionsList.add(professionMap);
+//							}
+//						}
+//
+//						platformMap.put("professions", professionsList); // Add professions list to platformMap
+//						platformList.add(platformMap); // Add platformMap to platformList
+//					}
+//
+//					// Add the platform list to the industry map
+//					industryMap.put("platforms", platformList);
+//
+//					// Add the industry map to the response using the industry name as the key
+//					response.put(industryName, industryMap);
+//				}
+//			}
+//
+//			return ResponseEntity.ok(response);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body("Error occurred while fetching temporary details.");
+//		}
+//	}
 
 //	Key value pair (IndustryNmae)
 //	@Override
