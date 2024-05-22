@@ -6,9 +6,10 @@ import lombok.Data;
 
 @Data
 public class CommentWebModel {
-	private Integer commentId;;
-	private Integer userId;// foreign key for user table
-	private Integer postId;// foreign key for userTable
+
+	private Integer commentId;
+	private Integer userId; // primary key of user table
+	private Integer postId; // primary key of posts table
 	private String content;
 	private Boolean status;
 	private Integer createdBy;

@@ -31,13 +31,13 @@ public class Comment {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "comment_id")
-    private Integer commentId;;
+    private Integer commentId;
 
     @Column(name = "user_Id")
-    private Integer userId;//foreign key for user table 
+    private Integer userId; // primary key of user table
 
     @Column(name = "post_Id")
-    private Integer postId;//foreign key for userTable 
+    private Integer postId; // primary key of posts,userMediaPin,userProfilePin
     
     @Column(name = "content")
     private String content;

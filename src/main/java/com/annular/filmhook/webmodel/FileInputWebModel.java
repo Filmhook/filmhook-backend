@@ -1,6 +1,7 @@
 package com.annular.filmhook.webmodel;
 
 import com.annular.filmhook.model.MediaFileCategory;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
+@Builder
 public class FileInputWebModel {
 
 	// For save purpose

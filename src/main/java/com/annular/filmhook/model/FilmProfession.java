@@ -33,11 +33,6 @@ public class FilmProfession {
     @Column(name = "profession_name")
     private String professionName;
 
-    /*@ElementCollection
-    @CollectionTable(name = "Film_sub_professions", joinColumns = @JoinColumn(name = "film_profession_id"))
-    @Column(name = "sub_profession_name")
-    private List<String> subProfessionName;*/
-
     @Column(name = "status")
     private Boolean status;
 

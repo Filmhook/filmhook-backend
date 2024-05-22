@@ -22,17 +22,16 @@ public class TwilioConfig {
     public static final Logger logger = LoggerFactory.getLogger(TwilioConfig.class);
 
     @Async
-    public boolean smsNotification(String number, String message) {
+    public void smsNotification(String number, String message) {
         try {
             logger.info("smsNotification method start");
             Twilio.init(accountSid, authToken);
             Message.creator(new PhoneNumber("+91" + number), new PhoneNumber("+17602974960"), message).create();
             logger.info("smsNotification method end");
         } catch (Exception e) {
+            logger.error("smsNotification method error -> {}", e.getMessage());
             e.printStackTrace();
-            return false;
         }
-        return true;
     }
 
 }

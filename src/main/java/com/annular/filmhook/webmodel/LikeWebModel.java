@@ -7,9 +7,9 @@ import lombok.Data;
 @Data
 public class LikeWebModel {
 	
-    private Integer likeId;;
-    private Integer userId;//foreign key for user table 
-    private Integer postId;//foreign key for userTable 
+    private Integer likeId;
+    private Integer userId; // primary key of user table
+    private Integer postId; // primary key of posts table
     private Boolean status;
     private Integer createdBy;
     private Date createdOn;

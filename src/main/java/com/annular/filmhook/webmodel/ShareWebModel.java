@@ -14,9 +14,9 @@ import lombok.Data;
 @Data
 public class ShareWebModel {
 
-    private Integer shareId;;
-    private Integer userId;//foreign key for user table 
-    private Integer postId;//foreign key for userTable 
+    private Integer shareId;
+    private Integer userId; // primary key of user table
+    private Integer postId; // primary key of posts table
     private Boolean status;
     private Integer createdBy;
     private Date createdOn;
