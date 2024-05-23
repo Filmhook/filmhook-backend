@@ -1,6 +1,9 @@
 package com.annular.filmhook.service;
 
+import com.annular.filmhook.webmodel.CommentWebModel;
+import com.annular.filmhook.webmodel.LikeWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
+import com.annular.filmhook.webmodel.ShareWebModel;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -12,12 +15,24 @@ public interface PostService {
 
     List<PostWebModel> getPostsByUserId(Integer userId) throws IOException;
 
-    Resource getPostFile(Integer userId, String category, String fileId);
+    PostWebModel getPostByPostId(String postId);
+
+    Resource getPostFile(Integer userId, String category, String fileId, String fileType);
 
     Resource getAllPostByUserIdAndCategory(Integer userId, String category);
 
     Resource getAllPostFilesByCategory(String category);
 
     List<PostWebModel> getAllUsersPosts();
+
+    LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel);
+
+    CommentWebModel addComment(CommentWebModel commentWebModel);
+
+    List<CommentWebModel> getComment(CommentWebModel commentWebModel);
+
+    CommentWebModel deleteComment(CommentWebModel commentWebModel);
+
+    ShareWebModel addShare(ShareWebModel shareWebModel);
 
 }

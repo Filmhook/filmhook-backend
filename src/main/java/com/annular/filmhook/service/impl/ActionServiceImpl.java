@@ -17,11 +17,8 @@ import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Share;
 import com.annular.filmhook.repository.CommentRepository;
-import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.LikeRepository;
-import com.annular.filmhook.repository.PlatformRepository;
 import com.annular.filmhook.repository.ShareRepository;
-import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.ActionService;
 import com.annular.filmhook.webmodel.CommentWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
@@ -30,199 +27,155 @@ import com.annular.filmhook.webmodel.ShareWebModel;
 @Service
 public class ActionServiceImpl implements ActionService {
 
-	@Autowired
-	UserRepository userRepository;
+    @Autowired
+    UserDetails userDetails;
 
-	@Autowired
-	PlatformRepository industryRepository;
+    @Autowired
+    CommentRepository commentRepository;
 
-	@Autowired
-	UserDetails userDetails;
+    @Autowired
+    ShareRepository shareRepository;
 
-	@Autowired
-	FilmProfessionRepository filmProfessionRepository;
+    @Autowired
+    LikeRepository likeRepository;
 
-	@Autowired
-	CommentRepository commentRepository;
+    private static final Logger logger = LoggerFactory.getLogger(ActionServiceImpl.class);
 
-	@Autowired
-	ShareRepository shareRepository;
+    @Override
+    public ResponseEntity<?> addLike(LikeWebModel likeWebModel) {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            // Get the user ID from userDetails or wherever it's available
+            Integer userId = userDetails.userInfo().getId();
+            Integer postId = likeWebModel.getPostId();
 
-	@Autowired
-	LikeRepository likeRepository;
+            // Check if the user has already liked the post
+            Optional<Likes> existingLike = likeRepository.getLikesByUserIdAndPostId(userId, postId);
+            if (existingLike.isPresent()) {
+                // If the like exists, update its status
+                Likes like = existingLike.get();
+                like.setStatus(likeWebModel.getStatus()); // Update status based on the request
+                likeRepository.save(like); // Save the updated like
+                // Get the updated like count
+                Integer likeCount = likeRepository.countLikesByPostId(postId);
+                response.put("likeInfo", like);
+                response.put("likeCount", likeCount);
+                return ResponseEntity.ok(new Response(0, "Like status updated", response));
+            }
 
-	private static final Logger logger = LoggerFactory.getLogger(ActionServiceImpl.class);
+            // If the like doesn't exist, create a new one
+            Likes newLike = new Likes();
+            newLike.setLikedBy(userId);
+            newLike.setStatus(likeWebModel.getStatus());
+            newLike.setPostId(postId);
+            newLike.setCreatedBy(userId);
+            likeRepository.save(newLike); // Save the new like
 
-
-	@Override
-	public ResponseEntity<?> addLike(LikeWebModel likeWebModel) {
-	    HashMap<String, Object> response = new HashMap<>();
-	    try {
-	        // Get the user ID from userDetails or wherever it's available
-	        Integer userId = userDetails.userInfo().getId();
-	        Integer postId = likeWebModel.getPostId();
-	        
-	        // Check if the user has already liked the post
-	        Optional<Likes> existingLike = likeRepository.findByUserIdAndPostId(userId, postId);
-	        if (existingLike.isPresent()) {
-	            // If the like exists, update its status
-	            Likes like = existingLike.get();
-	            like.setStatus(likeWebModel.getStatus()); // Update status based on the request
-	            likeRepository.save(like); // Save the updated like
-	            
-	            // Get the updated like count
-	            Integer likeCount = likeRepository.countLikesByPostId(postId);
-	            response.put("likeInfo", like);
-	            response.put("likeCount", likeCount);
-	            return ResponseEntity.ok(new Response(0, "Like status updated", response));
-	        }
-	        
-	        // If the like doesn't exist, create a new one
-	        Likes newLike = new Likes();
-	        newLike.setUserId(userId);
-	        newLike.setStatus(likeWebModel.getStatus());
-	        newLike.setPostId(postId);
-	        newLike.setCreatedBy(userId);
-	        likeRepository.save(newLike); // Save the new like
-	        
-	        // Get the updated like count
-	        Integer likeCount = likeRepository.countLikesByPostId(postId);
-	        response.put("likeInfo", newLike);
-	        response.put("likeCount", likeCount);
-	        return ResponseEntity.ok(new Response(1, "Like added successfully", response));
-	    } catch (Exception e) {
-	        // Handle exceptions
-	        logger.error("Error adding like: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1, "Error adding like", e.getMessage()));
-	    }
-	}
+            // Get the updated like count
+            Integer likeCount = likeRepository.countLikesByPostId(postId);
+            response.put("likeInfo", newLike);
+            response.put("likeCount", likeCount);
+            return ResponseEntity.ok(new Response(1, "Like added successfully", response));
+        } catch (Exception e) {
+            // Handle exceptions
+            logger.error("Error adding like: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Error adding like", e.getMessage()));
+        }
+    }
 
 
+    @Override
+    public ResponseEntity<?> updateLike(LikeWebModel likeWebModel) {
+        try {
+            Optional<Likes> existingLikeOptional = likeRepository.findById(likeWebModel.getLikeId());
+            if (existingLikeOptional.isPresent()) {
+                Likes existingLike = existingLikeOptional.get();
+                existingLike.setStatus(likeWebModel.getStatus());
+                existingLike.setUpdatedBy(userDetails.userInfo().getId());
+                Likes updatedLike = likeRepository.save(existingLike);
+                return ResponseEntity.ok(new Response(1, "Update like successfully", updatedLike));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Like not found", null));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Error updating like", e.getMessage()));
+        }
+    }
 
-	@Override
-	public ResponseEntity<?> updateLike(LikeWebModel likeWebModel) {
-		try {
-			Optional<Likes> existingLikeOptional = likeRepository.findById(likeWebModel.getLikeId());
-			if (existingLikeOptional.isPresent()) {
-				Likes existingLike = existingLikeOptional.get();
-				existingLike.setStatus(likeWebModel.getStatus());
-				existingLike.setUpdatedBy(userDetails.userInfo().getId());
-				Likes updatedLike = likeRepository.save(existingLike);
-				return ResponseEntity.ok(new Response(1, "Update like successfully", updatedLike));
-			} else {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Like not found", null));
-			}
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error updating like", e.getMessage()));
-		}
-	}
+    @Override
+    public ResponseEntity<?> addComment(CommentWebModel commentWebModel) {
+        try {
+            Comment comment = new Comment();
+            comment.setContent(commentWebModel.getContent());
+            comment.setCommentedBy(userDetails.userInfo().getId());
+            comment.setPostId(commentWebModel.getPostId());
+            comment.setStatus(true);
 
+            Comment savedComment = commentRepository.save(comment);
 
-	@Override
-	public ResponseEntity<?> addComment(CommentWebModel commentWebModel) {
-	    try {
-	        Comment comment = new Comment();
-	        comment.setContent(commentWebModel.getContent());
-	        comment.setUserId(userDetails.userInfo().getId());
-	        comment.setPostId(commentWebModel.getPostId());
-	        comment.setStatus(true);
+            return ResponseEntity.ok(new Response(1, "Comment added successfully", savedComment));
+        } catch (Exception e) {
 
-	        Comment savedComment = commentRepository.save(comment);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Error adding comment", e.getMessage()));
+        }
+    }
 
-	        // Get the updated comment count
-	        Integer commentCount = commentRepository.countCommentsByPostId(commentWebModel.getPostId());
+    @Override
+    public ResponseEntity<?> deleteComment(CommentWebModel commentWebModel) {
+        try {
 
-	        // Create a response object to include both the saved comment and the comment count
-	        HashMap<String, Object> response = new HashMap<>();
-	        response.put("commentInfo", savedComment);
-	        response.put("commentCount", commentCount);
+            Optional<Comment> commentOptional = commentRepository.findById(commentWebModel.getCommentId());
+            if (commentOptional.isPresent()) {
 
-	        return ResponseEntity.ok(new Response(1, "Comment added successfully", response));
-	    } catch (Exception e) {
-	        // Handle exceptions
-	        logger.error("Error adding comment: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1, "Error adding comment", e.getMessage()));
-	    }
-	}
+                commentRepository.deleteById(commentWebModel.getCommentId());
 
+                return ResponseEntity.ok(new Response(1, "Comment deleted successfully", null));
+            } else {
 
-	@Override
-	public ResponseEntity<?> deleteComment(CommentWebModel commentWebModel) {
-		try {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Comment not found", null));
+            }
+        } catch (Exception e) {
 
-			Optional<Comment> commentOptional = commentRepository.findById(commentWebModel.getCommentId());
-			if (commentOptional.isPresent()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Error deleting comment", e.getMessage()));
+        }
+    }
 
-				commentRepository.deleteById(commentWebModel.getCommentId());
+    @Override
+    public ResponseEntity<?> addShare(ShareWebModel shareWebModel) {
+        try {
+            Share share = new Share();
+            share.setStatus(true);
+            share.setSharedBy(userDetails.userInfo().getId());
+            share.setPostId(shareWebModel.getPostId());
 
-				return ResponseEntity.ok(new Response(1, "Comment deleted successfully", null));
-			} else {
+            Share shareData = shareRepository.save(share);
+            // Get the updated share count
+            Integer shareCount = shareRepository.countSharesByPostId(shareWebModel.getPostId());
 
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Comment not found", null));
-			}
-		} catch (Exception e) {
+            // Create a response object to include both the saved share and the share count
+            HashMap<String, Object> response = new HashMap<>();
+            response.put("shareInfo", shareData);
+            response.put("shareCount", shareCount);
 
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error deleting comment", e.getMessage()));
-		}
-	}
-//
-//	@Override
-//	public ResponseEntity<?> addShare(ShareWebModel shareWebModel) {
-//		try {
-//			Share share = new Share();
-//			share.setStatus(true);
-//			share.setUserId(userDetails.userInfo().getId());
-//			share.setPostId(shareWebModel.getPostId());
-//			share.setPostUrl(shareWebModel.getPostUrl());
-//			
-//			Share shareData = shareRepository.save(share);
-//			return ResponseEntity.ok(new Response(1, "shared successfully", shareData));
-//		} catch (Exception e) {
-//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//					.body(new Response(-1, "Error adding share", e.getMessage()));
-//		}
-//	}
-	@Override
-	public ResponseEntity<?> addShare(ShareWebModel shareWebModel) {
-	    try {
-	        Share share = new Share();
-	        share.setStatus(true);
-	        share.setUserId(userDetails.userInfo().getId());
-	        share.setPostId(shareWebModel.getPostId());
-	        share.setPostUrl(shareWebModel.getPostUrl());
+            return ResponseEntity.ok(new Response(1, "shared successfully", shareData));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Error adding share", e.getMessage()));
+        }
+    }
 
-	        Share shareData = shareRepository.save(share);
-
-	        // Get the updated share count
-	        Integer shareCount = shareRepository.countSharesByPostId(shareWebModel.getPostId());
-
-	        // Create a response object to include both the saved share and the share count
-	        HashMap<String, Object> response = new HashMap<>();
-	        response.put("shareInfo", shareData);
-	        response.put("shareCount", shareCount);
-
-	        return ResponseEntity.ok(new Response(1, "Shared successfully", response));
-	    } catch (Exception e) {
-	        // Handle exceptions
-	        logger.error("Error adding share: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1, "Error adding share", e.getMessage()));
-	    }
-	}
-
-
-	@Override
-	public ResponseEntity<?> getComment(CommentWebModel commentWebModel) {
-	    List<Comment> commentData = commentRepository.findByIds(commentWebModel.getPostId());
-	    if (!commentData.isEmpty()) {
-	        return new ResponseEntity<>(commentData, HttpStatus.OK);
-	    } else {
-	        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-	    }
-	}
+    @Override
+    public ResponseEntity<?> getComment(CommentWebModel commentWebModel) {
+        List<Comment> commentData = commentRepository.getCommentsForPostId(commentWebModel.getPostId());
+        if (!commentData.isEmpty()) {
+            return new ResponseEntity<>(commentData, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 
 }

@@ -15,4 +15,6 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     List<Posts> findByUser(User userId);
 
     Optional<Posts> findByPromoteFlag(Boolean promoteFlag);
+
+    Posts findByPostId(String postId);
 }

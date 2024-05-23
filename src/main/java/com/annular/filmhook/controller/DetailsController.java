@@ -111,11 +111,11 @@ public class DetailsController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
-    
+
 
     @PostMapping("/updatePermanentDetails")
     public ResponseEntity<?> updateIndustryUserPermanentDetails(@RequestParam Integer userId,
-                                                             @RequestBody List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+                                                                @RequestBody List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
         try {
             logger.info("updateIndustryUserPermanentDetails controller start");
             return detailService.updateIndustryUserPermanentDetails(userId, industryUserPermanentDetailWebModels);
@@ -211,7 +211,7 @@ public class DetailsController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
-    
+
     @PostMapping("/emailSendFilmHookCode")
     public ResponseEntity<?> verifyFilmHookCode(@RequestBody UserWebModel userWebModel) {
         try {
@@ -223,17 +223,17 @@ public class DetailsController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
-        
-        @PostMapping("/verifyFilmHookCode")
-        public ResponseEntity<?>verifyFilmHook(@RequestBody UserWebModel userWebModel) {
-            try {
-                logger.info("verifyFilmHookCode controller start");
-                return detailService.verifyFilmHook(userWebModel);
-            } catch (Exception e) {
-                logger.error("verifyFilmHookCode Method Exception -> ", e);
-                e.printStackTrace();
-                return ResponseEntity.ok(new Response(-1, "Fail", ""));
-            }
-    
+
+    @PostMapping("/verifyFilmHookCode")
+    public ResponseEntity<?> verifyFilmHook(@RequestBody UserWebModel userWebModel) {
+        try {
+            logger.info("verifyFilmHookCode controller start");
+            return detailService.verifyFilmHook(userWebModel);
+        } catch (Exception e) {
+            logger.error("verifyFilmHookCode Method Exception -> ", e);
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
+
+    }
 }

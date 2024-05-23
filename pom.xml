@@ -13,7 +13,7 @@
 
     <groupId>com.annular</groupId>
     <artifactId>filmhook</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <packaging>war</packaging>
     <name>Film-Hook</name>
     <description>Film-Hook project</description>

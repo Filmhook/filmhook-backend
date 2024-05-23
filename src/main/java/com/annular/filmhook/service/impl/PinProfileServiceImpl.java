@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.UserWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,9 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Autowired
 	PinMediaRepository pinMediaRepository;
+
+	@Autowired
+	UserService userService;
 
 	@Autowired
 	UserRepository userRepository;
@@ -123,8 +129,7 @@ public class PinProfileServiceImpl implements PinProfileService {
 	                    User user = userOptional.get();
 	                    
 	                    // Retrieve profile picture from mediaFiles table based on user ID
-	                    Optional<MediaFiles> profilePicOptional = mediaFilesRepository.findByUserIdAndCategory(
-	                            userProfilePin.getUserId(), MediaFileCategory.ProfilePic);
+	                    List<MediaFiles> profilePicOptional = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userProfilePin.getUserId(), MediaFileCategory.ProfilePic);
 	                    
 	                    LinkedHashMap<String, Object> pinData = new LinkedHashMap<>();
 	                    pinData.put("pinProfileId", userProfilePin.getPinProfileId());
@@ -132,14 +137,13 @@ public class PinProfileServiceImpl implements PinProfileService {
 	                    pinData.put("userName", user.getName());
 	                    pinData.put("userGender", user.getGender());
 	                    
-	                    if (profilePicOptional.isPresent()) {
-	                        MediaFiles mediaFiles = profilePicOptional.get();
+	                    if (!profilePicOptional.isEmpty()) {
+	                        MediaFiles mediaFiles = profilePicOptional.get(0);
 	                        pinData.put("filePathProfile", mediaFiles.getFilePath());
 	                        pinData.put("fileNameProfile", mediaFiles.getFileName());
 	                        pinData.put("fileNameSize", mediaFiles.getFileSize());
 	                        pinData.put("fileNameTypeProfile", mediaFiles.getFileType());
-	                        pinData.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
-	                            + mediaFiles.getFilePath() + mediaFiles.getFileType());
+	                        pinData.put("profilePicUrl", s3Util.generateS3FilePath(mediaFiles.getFilePath() + mediaFiles.getFileType()));
 	                    } else {
 	                        // Handle case where profile picture is not found
 	                        pinData.put("profilePicUrl", null);
@@ -172,23 +176,12 @@ public class PinProfileServiceImpl implements PinProfileService {
 	        List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
 
 	        for (UserMediaPin userMediaPin : userMediaPins) {
-	            MediaFileCategory profilePicCategory = MediaFileCategory.ProfilePic;
-
-	            Optional<MediaFiles> profilePicOptional = mediaFilesRepository
-	                    .findByUserId(userMediaPin.getUserId(), profilePicCategory);
 
 	            Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(userMediaPin.getPinMediaId());
 
 	            if (mediaFileOptional.isPresent()) {
 	                MediaFiles mediaFiles = mediaFileOptional.get();
-
-	                Optional<User> userOptional = userRepository.findById(userMediaPin.getUserId());
-
-	                // Check if either user or profilePic is present
-	                if (userOptional.isPresent() || profilePicOptional.isPresent()) {
-	                    User user = userOptional.orElse(null); // Using orElse(null) to handle null case
-	                    MediaFiles profilePic = profilePicOptional.orElse(null); // Using orElse(null) to handle null case
-	                    int likeCount = likeRepository.countByMediaFileId(mediaFiles.getId());
+						int likeCount = likeRepository.countByMediaFileId(mediaFiles.getId());
 	                    int commentCount = commentRepository.countByMediaFileId(mediaFiles.getId());
 	                    int shareCount = shareRepository.countByMediaFileId(mediaFiles.getId());
 
@@ -198,21 +191,19 @@ public class PinProfileServiceImpl implements PinProfileService {
 	                    combinedDetails.put("fileType", mediaFiles.getFileType());
 	                    combinedDetails.put("filepath", mediaFiles.getFilePath());
 	                    combinedDetails.put("fileDescription", mediaFiles.getDescription());
-	                    combinedDetails.put("fileUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
-	                            + mediaFiles.getFilePath() + mediaFiles.getFileType());
+	                    combinedDetails.put("fileUrl", s3Util.generateS3FilePath(mediaFiles.getFilePath() + mediaFiles.getFileType()));
 	                    combinedDetails.put("likeCount", likeCount);
 	                    combinedDetails.put("commentCount", commentCount);
 	                    combinedDetails.put("shareCount", shareCount);
-	                    combinedDetails.put("userName", user != null ? user.getName() : null);
-	                    // Add profilePicUrl if profilePic is present
-	                    if (profilePic != null) {
-	                        combinedDetails.put("profilePicUrl", s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
-	                                + profilePic.getFilePath() + profilePic.getFileType());
-	                    }
+	                    combinedDetails.put("userName", mediaFiles.getUser().getName());
 
-	                    combinedDetailsList.add(combinedDetails);
+						FileOutputWebModel profilePic = userService.getProfilePic(UserWebModel.builder().userId(mediaFiles.getUser().getUserId()).build());
+						// Add profilePicUrl if profilePic is present
+	                    if (profilePic != null) combinedDetails.put("profilePicUrl", s3Util.generateS3FilePath(profilePic.getFilePath() + profilePic.getFileType()));
+						else combinedDetails.put("profilePicUrl", null);
+
+						combinedDetailsList.add(combinedDetails);
 	                }
-	            }
 	        }
 
 	        // Create the response map

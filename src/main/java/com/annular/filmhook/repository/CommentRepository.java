@@ -11,7 +11,7 @@ import com.annular.filmhook.model.Comment;
 public interface CommentRepository extends JpaRepository<Comment,Integer> {
 
 	@Query("select c from Comment c where c.postId=:postId and c.status=true")
-	List<Comment> findByIds(Integer postId);
+	List<Comment> getCommentsForPostId(Integer postId);
 
 	@Query("SELECT COUNT(l) FROM Comment l WHERE l.postId = :id and l.status=true")
 	int countByMediaFileId(Integer id);
@@ -21,7 +21,5 @@ public interface CommentRepository extends JpaRepository<Comment,Integer> {
 
     @Query("SELECT COUNT(c) FROM Comment c WHERE c.postId = :postId AND c.status=true")
 	Integer countCommentsByPostId(Integer postId);
-
-    
 
 }

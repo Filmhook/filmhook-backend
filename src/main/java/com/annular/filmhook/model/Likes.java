@@ -31,13 +31,13 @@ public class Likes {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "like_id")
-    private Integer likeId;;
+    private Integer likeId;
 
-    @Column(name = "user_Id")
-    private Integer userId;//foreign key for user table 
+    @Column(name = "liked_by")
+    private Integer likedBy; // primary key for user table
 
     @Column(name = "post_Id")
-    private Integer postId;//foreign key for userTable 
+    private Integer postId; // primary key for post table
 
     @Column(name = "status")
     private Boolean status;

@@ -1,23 +1,49 @@
 package com.annular.filmhook.service.impl;
 
-import com.annular.filmhook.model.*;
-import com.annular.filmhook.webmodel.*;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.Posts;
+import com.annular.filmhook.model.Likes;
+import com.annular.filmhook.model.Comment;
+import com.annular.filmhook.model.Share;
+import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+
+import com.annular.filmhook.webmodel.PostWebModel;
+import com.annular.filmhook.webmodel.FileInputWebModel;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.CommentWebModel;
+import com.annular.filmhook.webmodel.ShareWebModel;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.UUID;
+import java.util.Date;
+import java.util.Optional;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.stream.Collectors;
-
-import com.annular.filmhook.repository.*;
 
 import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
+
+import com.annular.filmhook.repository.PostsRepository;
+import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
+import com.annular.filmhook.repository.LikeRepository;
+import com.annular.filmhook.repository.CommentRepository;
+import com.annular.filmhook.repository.ShareRepository;
 
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.util.FileUtil;
@@ -56,9 +82,9 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     ShareRepository shareRepository;
-    
-	@Autowired
-	S3Util s3Util;
+
+    @Value("${annular.app.url}")
+    private String appUrl;
 
     @Override
     public PostWebModel savePostsWithFiles(PostWebModel postWebModel) {
@@ -74,6 +100,7 @@ public class PostServiceImpl implements PostService {
                         .user(userFromDB)
                         .status(true)
                         .privateOrPublic(postWebModel.getPrivateOrPublic())
+                        .promoteFlag(false)
                         .createdBy(postWebModel.getUserId())
                         .locationName(postWebModel.getLocationName())
                         .createdOn(new Date())
@@ -99,11 +126,11 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Resource getPostFile(Integer userId, String category, String fileId) {
+    public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
         try {
             Optional<User> userFromDB = userService.getUser(userId);
             if (userFromDB.isPresent()) {
-                String filePath = FileUtil.generateFilePath(userFromDB.get(), category, fileId);
+                String filePath = FileUtil.generateFilePath(userFromDB.get(), category, fileId + fileType);
                 return new ByteArrayResource(fileUtil.downloadFile(filePath));
             }
         } catch (Exception e) {
@@ -125,6 +152,12 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    @Override
+    public PostWebModel getPostByPostId(String postId) {
+        Posts post = postsRepository.findByPostId(postId);
+        return transformPostsDataToPostWebModel(List.of(post)).get(0);
+    }
+
     private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
         List<PostWebModel> responseList = new ArrayList<>();
         try {
@@ -142,10 +175,6 @@ public class PostServiceImpl implements PostService {
                                 professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
                             }
 
-                            int likeCount = likeRepository.countByMediaFileId(post.getId());
-                            int commentCount = commentRepository.countByMediaFileId(post.getId());
-                            int shareCount = shareRepository.countByMediaFileId(post.getId());
-                            
                             List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, post.getUser().getUserId());
                             String profilePicturePath = null;
                             if (!userProfilePic.isEmpty()) {
@@ -153,19 +182,18 @@ public class PostServiceImpl implements PostService {
                                 profilePicturePath = profilePic.getFilePath();
                             }
 
-
-
                             // Preparing outputList
                             PostWebModel postWebModel = PostWebModel.builder()
+                                    .id(post.getId())
                                     .userId(post.getUser().getUserId())
                                     .userName(post.getUser().getName())
-                                    .postId(post.getId())
-                                    //.profileUrl(userProfilePic)
-                                    .userProfilePic(profilePicturePath )
+                                    .postId(post.getPostId())
+                                    .postUrl(this.generatePostUrl(post.getPostId()))
+                                    .userProfilePic(profilePicturePath)
                                     .description(post.getDescription())
-                                    .likeCount(likeCount)
-                                    .shareCount(shareCount)
-                                    .commentCount(commentCount)
+                                    .likeCount(post.getLikesCollection() != null ? post.getLikesCollection().size() : 0)
+                                    .shareCount(post.getShareCollection() != null ? post.getShareCollection().size() : 0)
+                                    .commentCount(post.getCommentCollection() != null ? post.getCommentCollection().size() : 0)
                                     .promoteFlag(post.getPromoteFlag())
                                     .postFiles(postFiles)
                                     .privateOrPublic(post.getPrivateOrPublic())
@@ -174,31 +202,17 @@ public class PostServiceImpl implements PostService {
                                     .build();
                             responseList.add(postWebModel);
                         });
-
-                /*// Sort the response list based on promotedStatus first, then maintain original order
-                Collections.sort(responseList, (a, b) -> {
-                    Boolean promotedStatusA = (Boolean) a.get("promotedStatus");
-                    Boolean promotedStatusB = (Boolean) b.get("promotedStatus");
-
-                    // Handle null values
-                    if (promotedStatusA == null && promotedStatusB == null) {
-                        return 0; // Both values are null, maintain original order
-                    } else if (promotedStatusA == null) {
-                        return 1; // Null comes after non-null value
-                    } else if (promotedStatusB == null) {
-                        return -1; // Null comes before non-null value
-                    } else {
-                        // Sort by promotedStatus in descending order
-                        return promotedStatusB.compareTo(promotedStatusA);
-                    }
-                });*/
-                Collections.sort(responseList, Comparator.comparing(PostWebModel::getPromoteFlag).reversed());
+                Collections.sort(responseList, Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag)).reversed());
             }
         } catch (Exception e) {
             logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return responseList;
+    }
+
+    private String generatePostUrl(String postId) {
+        return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";
     }
 
     @Override
@@ -242,4 +256,177 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    @Override
+    public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
+        try {
+            Posts existingPost = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
+            if (existingPost != null) {
+                Likes likeRowToSaveOrUpdate = null;
+
+                Likes existingLike = existingPost.getLikesCollection()
+                        .stream()
+                        .filter(obj -> Objects.nonNull(obj) && obj.getLikedBy().equals(likeWebModel.getUserId()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (existingLike != null) {
+                    likeRowToSaveOrUpdate = existingLike;
+                    likeRowToSaveOrUpdate.setStatus(!existingLike.getStatus());
+                    likeRowToSaveOrUpdate.setUpdatedBy(likeWebModel.getUserId());
+                    likeRowToSaveOrUpdate.setUpdatedOn(new Date());
+                } else {
+                    likeRowToSaveOrUpdate = Likes.builder()
+                            .likedBy(likeWebModel.getUserId())
+                            .postId(likeWebModel.getPostId())
+                            .liveDate(null)
+                            .status(true)
+                            .createdBy(likeWebModel.getUserId())
+                            .createdOn(new Date())
+                            .build();
+                }
+                likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
+                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(Likes::getStatus).count() : 0;
+                return this.transformLikeData(likeRowToSaveOrUpdate, currentPostTotalLikes);
+            }
+        } catch (Exception e) {
+            logger.error("Error at addOrUpdateLike() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private LikeWebModel transformLikeData(Likes likes, Integer totalCount) {
+        return LikeWebModel.builder()
+                .userId(likes.getLikeId())
+                .postId(likes.getPostId())
+                .likeId(likes.getLikeId())
+                .totalLikesCount(totalCount)
+                .status(likes.getStatus())
+                .createdBy(likes.getCreatedBy())
+                .createdOn(likes.getCreatedOn())
+                .updatedBy(likes.getUpdatedBy())
+                .updatedOn(likes.getUpdatedOn())
+                .build();
+    }
+
+    @Override
+    public CommentWebModel addComment(CommentWebModel commentWebModel) {
+        try {
+            Posts post = postsRepository.findById(commentWebModel.getPostId()).orElse(null);
+            if (post != null) {
+                Comment comment = Comment.builder()
+                        .content(commentWebModel.getContent())
+                        .commentedBy(commentWebModel.getUserId())
+                        .postId(post.getId())
+                        .status(true)
+                        .build();
+                Comment savedComment = commentRepository.save(comment);
+                Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(Comment::getStatus).count() : 0;
+                return this.transformCommentData(List.of(savedComment), currentTotalCommentCount).get(0);
+            }
+        } catch (Exception e) {
+            logger.error("Error at addComment() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private List<CommentWebModel> transformCommentData(List<Comment> commentData, Long totalCommentCount) {
+        List<CommentWebModel> commentWebModelList = new ArrayList<>();
+        if (!Utility.isNullOrEmptyList(commentData)) {
+            commentData.stream()
+                    .filter(Objects::nonNull)
+                    .forEach(comment -> {
+                        CommentWebModel commentWebModel = CommentWebModel.builder()
+                                .commentId(comment.getCommentId())
+                                .postId(comment.getPostId())
+                                .userId(comment.getCommentedBy())
+                                .content(comment.getContent())
+                                .totalCommentCount(totalCommentCount)
+                                .status(comment.getStatus())
+                                .createdBy(comment.getCreatedBy())
+                                .createdOn(comment.getCreatedOn())
+                                .updatedBy(comment.getUpdatedBy())
+                                .updatedOn(comment.getUpdatedOn())
+                                .build();
+                        commentWebModelList.add(commentWebModel);
+                    });
+        }
+        return commentWebModelList;
+    }
+
+    @Override
+    public List<CommentWebModel> getComment(CommentWebModel commentWebModel) {
+        try {
+            Posts post = postsRepository.findById(commentWebModel.getPostId()).orElse(null);
+            if (post != null) {
+                List<Comment> commentData = post.getCommentCollection() != null ? (List<Comment>) post.getCommentCollection() : new ArrayList<>();
+                Long currentTotalCommentCount = !commentData.isEmpty() ? commentData.stream().filter(Comment::getStatus).count() : 0;
+                return this.transformCommentData(commentData, currentTotalCommentCount);
+            }
+        } catch (Exception e) {
+            logger.error("Error at getComment() -> {}", e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+        return null;
+    }
+
+    @Override
+    public CommentWebModel deleteComment(CommentWebModel commentWebModel) {
+        try {
+            Posts post = postsRepository.findById(commentWebModel.getPostId()).orElse(null);
+            if (post != null) {
+                Comment comment = commentRepository.findById(commentWebModel.getCommentId()).orElse(null);
+                if (comment != null) {
+                    comment.setStatus(false);
+                    Comment deletedComment = commentRepository.saveAndFlush(comment);
+                    Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(Comment::getStatus).count() : 0;
+                    return this.transformCommentData(List.of(deletedComment), currentTotalCommentCount).get(0);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error at deleteComment() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public ShareWebModel addShare(ShareWebModel shareWebModel) {
+        try {
+            Posts existingPost = postsRepository.findById(shareWebModel.getPostId()).orElse(null);
+            if (existingPost != null) {
+                Share share = Share.builder()
+                        .sharedBy(shareWebModel.getUserId())
+                        .postId(shareWebModel.getPostId())
+                        .status(true)
+                        .createdBy(shareWebModel.getUserId())
+                        .createdOn(new Date())
+                        .build();
+                shareRepository.saveAndFlush(share); // Save the updated like
+
+                Integer currentTotalShareCount = existingPost.getShareCollection() != null ? (int) existingPost.getShareCollection().stream().filter(Share::getStatus).count() : 0;
+                return this.transformShareData(share, currentTotalShareCount);
+            }
+        } catch (Exception e) {
+            logger.error("Error at addShare() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private ShareWebModel transformShareData(Share share, Integer currentTotalShareCount) {
+        return ShareWebModel.builder()
+                .shareId(share.getShareId())
+                .userId(share.getSharedBy())
+                .postId(share.getPostId())
+                .totalSharesCount(currentTotalShareCount)
+                .status(share.getStatus())
+                .createdBy(share.getCreatedBy())
+                .createdOn(share.getCreatedOn())
+                .updatedBy(share.getUpdatedBy())
+                .updatedOn(share.getUpdatedOn())
+                .build();
+    }
 }

@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -17,7 +20,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.CascadeType;
 
+import java.util.Collection;
 import java.util.Date;
 
 @Entity
@@ -41,9 +47,6 @@ public class Posts {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "post_url")
-    private String postUrl;
-
     @Column(name = "promote_flag")
     private Boolean promoteFlag;
 
@@ -51,6 +54,24 @@ public class Posts {
     @JoinColumn(name = "user_id")
     @ToString.Exclude
     private User user;
+
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "postId")
+    @ToString.Exclude
+    @JsonIgnore
+    private Collection<Likes> likesCollection;
+
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "postId")
+    @ToString.Exclude
+    @JsonIgnore
+    private Collection<Comment> commentCollection;
+
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "postId")
+    @ToString.Exclude
+    @JsonIgnore
+    private Collection<Share> shareCollection;
 
     @Column(name = "status")
     private Boolean status;
@@ -64,10 +85,10 @@ public class Posts {
 
     @Column(name = "updated_by")
     private Integer updatedBy;
-    
+
     @Column(name = "privateOrPublic")
     private Boolean privateOrPublic;
-    
+
     @Column(name = "locationName")
     private String locationName;
 

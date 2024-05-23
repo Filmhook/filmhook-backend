@@ -2,14 +2,12 @@ package com.annular.filmhook.repository;
 
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
-import com.annular.filmhook.model.User;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer> {
@@ -35,24 +33,4 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 	@Query("Select m from MediaFiles m where m.category = :category and m.status=true")
 	List<MediaFiles> getMediaFilesByCategory(MediaFileCategory category);
 
-	@Query("SELECT m FROM MediaFiles m WHERE m.user.userId = :userId AND m.category = :profilepic AND m.status = true")
-	MediaFiles findByUserUserIdAndCategory(Integer userId, MediaFileCategory profilepic);
-
-	@Query("select m from MediaFiles m where m.user.userId = :userId and m.category = :profilepic ")
-	MediaFiles getProfilePicByUserId(Integer userId);
-
-	@Query("select m from MediaFiles m where m.id = :pinMediaId")
-	Optional<MediaFiles> findByIds(Integer pinMediaId);
-
-	@Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory AND m.status = true")
-	Optional<MediaFiles> findByUserId(Integer userId, MediaFileCategory profilePicCategory);
-
-	@Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory AND m.status = true")
-	List<MediaFiles> findByuserIdAndCategory(int userId, MediaFileCategory profilePicCategory);
-
-	@Query("SELECT m FROM MediaFiles m where m.user.userId = :userId AND m.category = :profilepic")
-	Optional<MediaFiles> findByUserIdAndCategory(Integer userId, MediaFileCategory profilepic);
-
-	@Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :profilePicCategory AND m.status=true")
-	List<MediaFiles> findAllByUserId(Integer userId, MediaFileCategory profilePicCategory);
 }

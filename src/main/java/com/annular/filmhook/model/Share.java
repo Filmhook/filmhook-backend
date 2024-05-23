@@ -30,13 +30,13 @@ public class Share {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "share_id")
-    private Integer shareId;;
+    private Integer shareId;
 
-    @Column(name = "user_Id")
-    private Integer userId;//foreign key for user table 
+    @Column(name = "shared_by")
+    private Integer sharedBy; // primary key for user table
 
     @Column(name = "post_Id")
-    private Integer postId;//foreign key for userTable 
+    private Integer postId; // primary key for post table
 
     @Column(name = "status")
     private Boolean status;
@@ -47,9 +47,6 @@ public class Share {
     @CreationTimestamp
     @Column(name = "created_on")
     private Date createdOn;
-    
-    @Column(name ="post_Url")
-    private String postUrl;
 
     @Column(name = "updated_by")
     private Integer updatedBy;

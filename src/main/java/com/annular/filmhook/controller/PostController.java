@@ -5,6 +5,9 @@ import com.annular.filmhook.service.PostService;
 
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.PostWebModel;
+import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.CommentWebModel;
+import com.annular.filmhook.webmodel.ShareWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +24,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -49,10 +55,11 @@ public class PostController {
     @GetMapping("/downloadPostFile")
     public ResponseEntity<?> downloadPostFile(@RequestParam("userId") Integer userId,
                                               @RequestParam("category") String category,
-                                              @RequestParam("fileId") String fileId) {
+                                              @RequestParam("fileId") String fileId,
+                                              @RequestParam("fileType") String fileType) {
         try {
             logger.info("downloadPostFile Input Category :- {}, File Id :- {}", category, fileId);
-            Resource resource = postService.getPostFile(userId, category, fileId);
+            Resource resource = postService.getPostFile(userId, category, fileId, fileType);
             if (resource != null) {
                 String contentType = "application/octet-stream";
                 String headerValue = "attachment; filename=\"" + fileId + "\"";
@@ -78,6 +85,21 @@ public class PostController {
             }
         } catch (Exception e) {
             logger.error("Error at getPostsByUserId()...", e);
+        }
+        return new Response(-1, "Post files were not found...", null);
+    }
+
+    @GetMapping("/view/{postId}")
+    public Response getPostsByPostId(@PathVariable String postId) {
+        try {
+            PostWebModel output = postService.getPostByPostId(postId);
+            if (output != null) {
+                return new Response(1, "Post(s) found successfully...", output);
+            } else {
+                return new Response(-1, "No Post(s) available...", null);
+            }
+        } catch (Exception e) {
+            logger.error("Error at getPostsByPostId()...", e);
         }
         return new Response(-1, "Post files were not found...", null);
     }
@@ -147,6 +169,72 @@ public class PostController {
             logger.error("Error at getAllUsersPosts()...", e);
         }
         return new Response(-1, "Files were not found...", null);
+    }
+
+    @PostMapping("/addLike")
+    public ResponseEntity<?> addOrUpdateLike(@RequestBody LikeWebModel likeWebModel) {
+        try {
+            LikeWebModel likeWebModelOutput = postService.addOrUpdateLike(likeWebModel);
+            if(likeWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Likes added for the post...", likeWebModelOutput));
+        } catch (Exception e) {
+            logger.error("addOrUpdateLike Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+        return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("/addComment")
+    public ResponseEntity<?> addComment(@RequestBody CommentWebModel commentWebModel) {
+        try {
+            CommentWebModel commentWebModelOutput = postService.addComment(commentWebModel);
+            if(commentWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Comment added for the post...", ""));
+        } catch (Exception e) {
+            logger.error("addComment Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+        return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("/getComment")
+    public ResponseEntity<?> getComment(@RequestBody CommentWebModel commentWebModel) {
+        try {
+            List<CommentWebModel> commentList = postService.getComment(commentWebModel);
+            if (!Utility.isNullOrEmptyList(commentList))
+                return ResponseEntity.ok(new Response(1, "Comment retrieved for the post...", commentList));
+            else return ResponseEntity.ok(new Response(-1, "No Comments available for this post...", null));
+        } catch (Exception e) {
+            logger.error("getComment Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/deleteComment")
+    public ResponseEntity<?> deleteComment(@RequestBody CommentWebModel commentWebModel) {
+        try {
+            CommentWebModel commentWebModelOutput = postService.deleteComment(commentWebModel);
+            if(commentWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Comment deleted for the post...", ""));
+        } catch (Exception e) {
+            logger.error("deleteComment Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+        return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("/addShare")
+    public ResponseEntity<?> addShare(@RequestBody ShareWebModel shareWebModel) {
+        try {
+            ShareWebModel shareWebModelOutput = postService.addShare(shareWebModel);
+            if(shareWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Post shared successfully...", shareWebModelOutput));
+        } catch (Exception e) {
+            logger.error("addShare Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+        return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
     }
 
 }

@@ -17,11 +17,9 @@ public class PostWebModel {
 
 	private Integer userId;
 	private String userName;
-	//List<FileOutputWebModel> profileUrl;
 
-	private String userProfilePic; // Add
-
-	private Integer postId;
+	private Integer id; // Primary key of post-table
+	private String postId; // unique string for each post
 	private MediaFileCategory category;
 	private String description;
 	List<MultipartFile> files;
@@ -31,8 +29,10 @@ public class PostWebModel {
 	private Integer shareCount;
 	private Boolean promoteFlag;
 
-	List<FileOutputWebModel> postFiles;
-	Set<String> professionNames;
+	private List<FileOutputWebModel> postFiles;
+	private Set<String> professionNames;
+	private String userProfilePic;
 	private String locationName;
 	private Boolean privateOrPublic;
+	private String postUrl;
 }

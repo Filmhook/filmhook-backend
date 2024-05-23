@@ -16,6 +16,7 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
 
+import com.annular.filmhook.webmodel.UserWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,7 +141,6 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
     private StoriesWebModel transformData(Story story) {
         StoriesWebModel storiesWebModel = new StoriesWebModel();
 
-        storiesWebModel.setStoryId(story.getStoryId());
         storiesWebModel.setStoryId(story.getStoryId());
         storiesWebModel.setType(story.getType());
         storiesWebModel.setDescription(story.getDescription());
@@ -283,7 +283,7 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
                 .map(entry -> {
                     Integer userId = entry.getKey();
                     String userName = entry.getValue();
-                    String profilePicUrl = getProfilePicUrl(userId); // Get profile picture URL
+                    String profilePicUrl = this.getProfilePicUrl(userId); // Get profile picture URL
                     return new UserIdAndNameWebModel(userId, userName, profilePicUrl);
                 })
                 .collect(Collectors.toList());
@@ -293,23 +293,13 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
 
 
     private String getProfilePicUrl(Integer userId) {
-        MediaFiles profilePic = mediaFilesRepository.findByUserUserIdAndCategory(userId, MediaFileCategory.ProfilePic);
-        if (profilePic != null) {
-            // Assuming file path contains the URL relative to S3 path
-            String filePath = profilePic.getFilePath();
-            String fileType = profilePic.getFileType();
-            
-            // Construct full URL by appending base URL retrieved from S3 utility
-            String fullUrl = s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + filePath + fileType;
-            
-            return fullUrl;
+        FileOutputWebModel userProfilePic = userService.getProfilePic(UserWebModel.builder().userId(userId).build());
+        if (userProfilePic != null) {
+            return s3Util.generateS3FilePath(userProfilePic.getFilePath() + userProfilePic.getFileType());
         }
-        // Or return a default profile picture URL
         return null;
     }
 
-	
-
-	}
+}
 
 

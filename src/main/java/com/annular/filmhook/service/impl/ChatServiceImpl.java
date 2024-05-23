@@ -32,154 +32,138 @@ import com.annular.filmhook.webmodel.ChatWebModel;
 @Service
 public class ChatServiceImpl implements ChatService {
 
-	@Autowired
-	UserRepository userRepository;
+    @Autowired
+    UserRepository userRepository;
 
-	@Autowired
-	ChatRepository chatRepository;
+    @Autowired
+    ChatRepository chatRepository;
 
-	@Autowired
-	FileUtil fileUtil;
+    @Autowired
+    FileUtil fileUtil;
 
-	@Autowired
-	S3Util s3Util;
+    @Autowired
+    S3Util s3Util;
 
-	@Autowired
-	MediaFilesRepository mediaFilesRepository;
+    @Autowired
+    MediaFilesRepository mediaFilesRepository;
 
-	@Autowired
-	UserDetails userDetails;
+    @Autowired
+    UserDetails userDetails;
 
-	public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
+    public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
-	@Override
-	public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
-		try {
-			logger.info("Save Message Method Start");
+    @Override
+    public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
+        try {
+            logger.info("Save Message Method Start");
 
-			Integer userId = userDetails.userInfo().getId();
-			Optional<User> userOptional = userRepository.findById(userId);
+            Integer userId = userDetails.userInfo().getId();
+            Optional<User> userOptional = userRepository.findById(userId);
 
-			if (userOptional.isPresent()) {
-				User user = userOptional.get();
-				Chat chat = Chat.builder().message(chatWebModel.getMessage())
-						.chatReceiverId(chatWebModel.getChatReceiverId()).userAccountName(user.getName()) // Assuming
-																											// 'getName()'
-																											// returns
-																											// the
-																											// user's
-																											// name
-						.chatSenderId(userId).userType(user.getUserType()).chatIsActive(true) // Assuming chat is active
-																								// by default
-						.build();
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                Chat chat = Chat.builder()
+                        .message(chatWebModel.getMessage())
+                        .chatReceiverId(chatWebModel.getChatReceiverId())
+                        .userAccountName(user.getName()) // Assuming 'getName()' returns the user's name
+                        .chatSenderId(userId)
+                        .userType(user.getUserType())
+                        .chatIsActive(true) // Assuming chat is active by default
+                        .build();
 
-				chatRepository.save(chat);
-				return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
-			} else {
-				return ResponseEntity.notFound().build();
-			}
-		} catch (Exception e) {
-			logger.error("Error occurred while saving message: " + e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
-	}
+                chatRepository.save(chat);
+                return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred while saving message: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
-	@Override
-	public ResponseEntity<?> getAllUser(ChatWebModel chatWebModel) {
-	    try {
-	        logger.info("Get All Users Method Start");
+    @Override
+    public ResponseEntity<?> getAllUser(ChatWebModel chatWebModel) {
+        try {
+            logger.info("Get All Users Method Start");
 
-	        // Assuming you have a method in your repository to fetch all users
-	        List<User> users = userRepository.findAll();
+            // Assuming you have a method in your repository to fetch all users
+            List<User> users = userRepository.findAll();
 
-	        // If users exist, map them to a list of simplified user models containing ID, name, and profile picture URLs
-	        if (!users.isEmpty()) {
-	            List<Map<String, Object>> userResponseList = users.stream()
-	                    .map(user -> {
-	                        Map<String, Object> userData = new HashMap<>();
-	                        userData.put("userId", user.getUserId());
-	                        userData.put("userName", user.getName());
+            // If users exist, map them to a list of simplified user models containing ID, name, and profile picture URLs
+            if (!users.isEmpty()) {
+                List<Map<String, Object>> userResponseList = users.stream()
+                        .map(user -> {
+                            Map<String, Object> userData = new HashMap<>();
+                            userData.put("userId", user.getUserId());
+                            userData.put("userName", user.getName());
+                            // Fetch profile pictures URLs for the user if available
+                            List<MediaFiles> mediaDataList = mediaFilesRepository.getMediaFilesByUserIdAndCategory(user.getUserId(), MediaFileCategory.ProfilePic);
+                            List<String> profilePictureUrls = mediaDataList.stream()
+                                    .map(media -> s3Util.generateS3FilePath(media.getFilePath() + media.getFileType()))
+                                    .collect(Collectors.toList());
+                            userData.put("profilePictureUrls", profilePictureUrls);
+                            return userData;
+                        })
+                        .collect(Collectors.toList());
 
-	                        // Fetch profile pictures URLs for the user if available
-	                        MediaFileCategory profilePicCategory = MediaFileCategory.ProfilePic;
-	                        List<MediaFiles> mediaDataList = mediaFilesRepository.findAllByUserId(user.getUserId(), profilePicCategory);
-	                                
-
-	                        List<String> profilePictureUrls = mediaDataList.stream()
-	                                .map(media -> s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER
-	                                        + media.getFilePath() + media.getFileType())
-	                                .collect(Collectors.toList());
-
-	                        userData.put("profilePictureUrls", profilePictureUrls);
-	                        return userData;
-	                    })
-	                    .collect(Collectors.toList());
-
-	            return ResponseEntity.ok(userResponseList);
-	        } else {
-	            return ResponseEntity.notFound().build();
-	        }
-	    } catch (Exception e) {
-	        logger.error("Error occurred while retrieving users: " + e.getMessage());
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	    }
-	}
+                return ResponseEntity.ok(userResponseList);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred while retrieving users: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
 
-
-	@Override
-	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
-		Map<String, Object> response = new HashMap<>();
-		try {
-			User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
-
+    @Override
+    public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
 //	        if (user == null) {
 //	            return new Response(-1, "User not found", "");
 //	        }
-			logger.info("Get Messages by User ID Method Start");
-			Integer senderId = userDetails.userInfo().getId();
-			List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId,
-					message.getChatReceiverId());
-			List<Chat> receiverMessages = chatRepository
-					.getMessageListBySenderIdAndReceiverId(message.getChatReceiverId(), message.getChatSenderId());
+            logger.info("Get Messages by User ID Method Start");
+            Integer senderId = userDetails.userInfo().getId();
+            List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, message.getChatReceiverId());
+            List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(message.getChatReceiverId(), message.getChatSenderId());
 
-			List<Chat> allMessages = new ArrayList<>();
-			allMessages.addAll(senderMessages);
-			allMessages.addAll(receiverMessages);
+            List<Chat> allMessages = new ArrayList<>();
+            allMessages.addAll(senderMessages);
+            allMessages.addAll(receiverMessages);
 
-			response.put("userChat", allMessages);
-			response.put("numberOfItems", allMessages.size());
+            response.put("userChat", allMessages);
+            response.put("numberOfItems", allMessages.size());
 
-		} catch (Exception e) {
-			logger.error("Error occurred while retrieving messages: " + e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
-		logger.info("Get Messages by User ID Method End");
+        } catch (Exception e) {
+            logger.error("Error occurred while retrieving messages: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        logger.info("Get Messages by User ID Method End");
 
-		return ResponseEntity.ok(new Response(0, "Success", response));
-	}
+        return ResponseEntity.ok(new Response(0, "Success", response));
+    }
 
-	@Override
-	public ResponseEntity<?> getFirebaseTokenByuserId(Integer userId) {
-		try {
-			Optional<User> userOptional = userRepository.findById(userId);
-			if (userOptional.isPresent()) {
-
-				String firebaseToken = userOptional.get().getFirebaseDeviceToken();
-				if (firebaseToken != null) {
-					return ResponseEntity.ok(new Response(1, "Success", firebaseToken));
-				} else {
-
-					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Firebase token not found for the user.");
-				}
-			} else {
-
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + userId);
-			}
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Error occurred while retrieving Firebase token: " + e.getMessage());
-		}
-	}
+    @Override
+    public ResponseEntity<?> getFirebaseTokenByuserId(Integer userId) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (userOptional.isPresent()) {
+                String firebaseToken = userOptional.get().getFirebaseDeviceToken();
+                if (firebaseToken != null) {
+                    return ResponseEntity.ok(new Response(1, "Success", firebaseToken));
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Firebase token not found for the user.");
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + userId);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while retrieving Firebase token: " + e.getMessage());
+        }
+    }
 
 }
