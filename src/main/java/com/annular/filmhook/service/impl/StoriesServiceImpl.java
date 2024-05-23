@@ -24,6 +24,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -238,13 +239,42 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
         }
     }
 
+//    @Override
+//    public List<UserIdAndNameWebModel> getUserIdAndName(Integer loginUserId) {
+//        List<Story> storyList = storyRepository.findAll(); // Fetch all stories
+//        
+//        // Filter out the login user's details
+//        Map<Integer, String> userIdToNameMap = storyList.stream()
+//                .filter(story -> !story.getUser().getUserId().equals(loginUserId))
+//                .collect(Collectors.toMap(story -> story.getUser().getUserId(), 
+//                                          story -> story.getUser().getName(),
+//                                          (existing, replacement) -> existing)); // Keep existing name in case of duplicates
+//
+//        List<UserIdAndNameWebModel> userIdAndNames = userIdToNameMap.entrySet().stream()
+//                .map(entry -> {
+//                    Integer userId = entry.getKey();
+//                    String userName = entry.getValue();
+//                    String profilePicUrl = getProfilePicUrl(userId); // Get profile picture URL
+//                    return new UserIdAndNameWebModel(userId, userName, profilePicUrl);
+//                })
+//                .collect(Collectors.toList());
+//
+//        return userIdAndNames;
+//    }
     @Override
     public List<UserIdAndNameWebModel> getUserIdAndName(Integer loginUserId) {
         List<Story> storyList = storyRepository.findAll(); // Fetch all stories
-        
-        // Filter out the login user's details
+
+        // Get the current time
+        LocalDateTime currentTime = LocalDateTime.now();
+
+        // Filter out the login user's details and stories older than 24 hours
         Map<Integer, String> userIdToNameMap = storyList.stream()
-                .filter(story -> !story.getUser().getUserId().equals(loginUserId))
+                .filter(story -> !story.getUser().getUserId().equals(loginUserId)) // Exclude the login user's stories
+                .filter(story -> {
+                    LocalDateTime storyCreatedTime = convertToLocalDateTimeViaInstant(story.getCreatedOn());
+                    return Duration.between(storyCreatedTime, currentTime).toHours() <= 24;
+                }) // Exclude stories older than 24 hours
                 .collect(Collectors.toMap(story -> story.getUser().getUserId(), 
                                           story -> story.getUser().getName(),
                                           (existing, replacement) -> existing)); // Keep existing name in case of duplicates
@@ -260,7 +290,6 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
 
         return userIdAndNames;
     }
-
 
 
     private String getProfilePicUrl(Integer userId) {
