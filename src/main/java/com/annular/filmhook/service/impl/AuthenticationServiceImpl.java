@@ -224,15 +224,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Override
 	public Response verifyExpiration(RefreshToken token) {
-		LocalTime currentTime = LocalTime.now();
-		if (currentTime.isBefore(token.getExpiryToken())) {
-			return new Response(1, "Success", token.getToken());
-		} else {
-//			refreshTokenRepository.delete(token);
-//			throw new RuntimeException(token.getToken() + " RefreshToken was expired. Please make a new signIn request");
+//		LocalTime currentTime = LocalTime.now();
+//		if (currentTime.isBefore(token.getExpiryToken())) {
+//			return new Response(1, "Success", token.getToken());
+//		} else {
+////			refreshTokenRepository.delete(token);
+////			throw new RuntimeException(token.getToken() + " RefreshToken was expired. Please make a new signIn request");
 			return new Response(-1, "RefreshToken expired", "");
 		}
-	}
+	//}
 
 	@Override
 	public RefreshToken createRefreshToken(UserWebModel userWebModel) {
@@ -249,7 +249,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 //				}
 				refreashToken.setUserId(data.get().getUserId());
 				refreashToken.setToken(UUID.randomUUID().toString());
-				refreashToken.setExpiryToken(LocalTime.now().plusMinutes(45));
+				//refreashToken.setExpiryToken(LocalTime.now().plusMinutes(45));
 				refreashToken = refreshTokenRepository.save(refreashToken);
 				response.put("refreashToken", refreashToken);
 				logger.info("createRefreshToken method end");

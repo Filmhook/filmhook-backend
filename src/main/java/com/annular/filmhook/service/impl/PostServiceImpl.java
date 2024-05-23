@@ -21,6 +21,7 @@ import com.annular.filmhook.service.UserService;
 
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -55,6 +56,9 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     ShareRepository shareRepository;
+    
+	@Autowired
+	S3Util s3Util;
 
     @Override
     public PostWebModel savePostsWithFiles(PostWebModel postWebModel) {
@@ -69,7 +73,9 @@ public class PostServiceImpl implements PostService {
                         .description(postWebModel.getDescription())
                         .user(userFromDB)
                         .status(true)
+                        .privateOrPublic(postWebModel.getPrivateOrPublic())
                         .createdBy(postWebModel.getUserId())
+                        .locationName(postWebModel.getLocationName())
                         .createdOn(new Date())
                         .build();
                 Posts savedPost = postsRepository.saveAndFlush(posts);
@@ -139,18 +145,31 @@ public class PostServiceImpl implements PostService {
                             int likeCount = likeRepository.countByMediaFileId(post.getId());
                             int commentCount = commentRepository.countByMediaFileId(post.getId());
                             int shareCount = shareRepository.countByMediaFileId(post.getId());
+                            
+                            List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, post.getUser().getUserId());
+                            String profilePicturePath = null;
+                            if (!userProfilePic.isEmpty()) {
+                                FileOutputWebModel profilePic = userProfilePic.get(0);
+                                profilePicturePath = profilePic.getFilePath();
+                            }
+
+
 
                             // Preparing outputList
                             PostWebModel postWebModel = PostWebModel.builder()
                                     .userId(post.getUser().getUserId())
                                     .userName(post.getUser().getName())
                                     .postId(post.getId())
+                                    //.profileUrl(userProfilePic)
+                                    .userProfilePic(profilePicturePath )
                                     .description(post.getDescription())
                                     .likeCount(likeCount)
                                     .shareCount(shareCount)
                                     .commentCount(commentCount)
                                     .promoteFlag(post.getPromoteFlag())
                                     .postFiles(postFiles)
+                                    .privateOrPublic(post.getPrivateOrPublic())
+                                    .locationName(post.getLocationName())
                                     .professionNames(professionNames)
                                     .build();
                             responseList.add(postWebModel);

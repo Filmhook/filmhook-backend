@@ -19,6 +19,9 @@ public interface CommentRepository extends JpaRepository<Comment,Integer> {
 	@Query("select COUNT(c) from Comment c where c.postId=:id and c.status=true")
 	Integer getCommentCount(Integer id);
 
+    @Query("SELECT COUNT(c) FROM Comment c WHERE c.postId = :postId AND c.status=true")
+	Integer countCommentsByPostId(Integer postId);
+
     
 
 }

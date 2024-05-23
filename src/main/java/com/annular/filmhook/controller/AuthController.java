@@ -151,14 +151,14 @@ public class AuthController {
 	public ResponseEntity<?> refreshToken(@RequestBody UserWebModel userWebModel) {
 		Optional<RefreshToken> data = refreshTokenRepository.findByToken(userWebModel.getToken());
 		if (data.isPresent()) {
-			Response token = userService.verifyExpiration(data.get());
+			//Response token = userService.verifyExpiration(data.get());
 			Optional<User> userData = userRepository.findById(data.get().getUserId());
 			String jwt = jwtUtils.generateJwtTokenForRefreshToken(userData.get());
 			RefreshToken refreshToken = data.get();
-			refreshToken.setExpiryToken(LocalTime.now().plusMinutes(17));
+			//refreshToken.setExpiryToken(LocalTime.now().plusMinutes(17));
 			refreshTokenRepository.save(refreshToken);
 			return ResponseEntity.ok(new JwtResponse(jwt, userData.get().getUserId(), userData.get().getName(),
-					userData.get().getEmail(), "Success", 1, token.getData().toString(), userData.get().getUserType()));
+					userData.get().getEmail(), "Success", 1, "", userData.get().getUserType()));
 		}
 		return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
 	}

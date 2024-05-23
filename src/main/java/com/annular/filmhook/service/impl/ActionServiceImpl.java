@@ -53,6 +53,7 @@ public class ActionServiceImpl implements ActionService {
 
 	private static final Logger logger = LoggerFactory.getLogger(ActionServiceImpl.class);
 
+
 	@Override
 	public ResponseEntity<?> addLike(LikeWebModel likeWebModel) {
 	    HashMap<String, Object> response = new HashMap<>();
@@ -68,7 +69,11 @@ public class ActionServiceImpl implements ActionService {
 	            Likes like = existingLike.get();
 	            like.setStatus(likeWebModel.getStatus()); // Update status based on the request
 	            likeRepository.save(like); // Save the updated like
+	            
+	            // Get the updated like count
+	            Integer likeCount = likeRepository.countLikesByPostId(postId);
 	            response.put("likeInfo", like);
+	            response.put("likeCount", likeCount);
 	            return ResponseEntity.ok(new Response(0, "Like status updated", response));
 	        }
 	        
@@ -80,7 +85,10 @@ public class ActionServiceImpl implements ActionService {
 	        newLike.setCreatedBy(userId);
 	        likeRepository.save(newLike); // Save the new like
 	        
+	        // Get the updated like count
+	        Integer likeCount = likeRepository.countLikesByPostId(postId);
 	        response.put("likeInfo", newLike);
+	        response.put("likeCount", likeCount);
 	        return ResponseEntity.ok(new Response(1, "Like added successfully", response));
 	    } catch (Exception e) {
 	        // Handle exceptions
@@ -90,7 +98,6 @@ public class ActionServiceImpl implements ActionService {
 	    }
 	}
 
-	
 
 
 	@Override
@@ -112,24 +119,35 @@ public class ActionServiceImpl implements ActionService {
 		}
 	}
 
+
 	@Override
 	public ResponseEntity<?> addComment(CommentWebModel commentWebModel) {
-		try {
-			Comment comment = new Comment();
-			comment.setContent(commentWebModel.getContent());
-			comment.setUserId(userDetails.userInfo().getId());
-			comment.setPostId(commentWebModel.getPostId());
-			comment.setStatus(true);
+	    try {
+	        Comment comment = new Comment();
+	        comment.setContent(commentWebModel.getContent());
+	        comment.setUserId(userDetails.userInfo().getId());
+	        comment.setPostId(commentWebModel.getPostId());
+	        comment.setStatus(true);
 
-			Comment savedComment = commentRepository.save(comment);
+	        Comment savedComment = commentRepository.save(comment);
 
-			return ResponseEntity.ok(new Response(1, "Comment added successfully", savedComment));
-		} catch (Exception e) {
+	        // Get the updated comment count
+	        Integer commentCount = commentRepository.countCommentsByPostId(commentWebModel.getPostId());
 
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error adding comment", e.getMessage()));
-		}
+	        // Create a response object to include both the saved comment and the comment count
+	        HashMap<String, Object> response = new HashMap<>();
+	        response.put("commentInfo", savedComment);
+	        response.put("commentCount", commentCount);
+
+	        return ResponseEntity.ok(new Response(1, "Comment added successfully", response));
+	    } catch (Exception e) {
+	        // Handle exceptions
+	        logger.error("Error adding comment: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Error adding comment", e.getMessage()));
+	    }
 	}
+
 
 	@Override
 	public ResponseEntity<?> deleteComment(CommentWebModel commentWebModel) {
@@ -151,23 +169,51 @@ public class ActionServiceImpl implements ActionService {
 					.body(new Response(-1, "Error deleting comment", e.getMessage()));
 		}
 	}
-
+//
+//	@Override
+//	public ResponseEntity<?> addShare(ShareWebModel shareWebModel) {
+//		try {
+//			Share share = new Share();
+//			share.setStatus(true);
+//			share.setUserId(userDetails.userInfo().getId());
+//			share.setPostId(shareWebModel.getPostId());
+//			share.setPostUrl(shareWebModel.getPostUrl());
+//			
+//			Share shareData = shareRepository.save(share);
+//			return ResponseEntity.ok(new Response(1, "shared successfully", shareData));
+//		} catch (Exception e) {
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body(new Response(-1, "Error adding share", e.getMessage()));
+//		}
+//	}
 	@Override
 	public ResponseEntity<?> addShare(ShareWebModel shareWebModel) {
-		try {
-			Share share = new Share();
-			share.setStatus(true);
-			share.setUserId(userDetails.userInfo().getId());
-			share.setPostId(shareWebModel.getPostId());
-			share.setPostUrl(shareWebModel.getPostUrl());
-			
-			Share shareData = shareRepository.save(share);
-			return ResponseEntity.ok(new Response(1, "shared successfully", shareData));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error adding share", e.getMessage()));
-		}
+	    try {
+	        Share share = new Share();
+	        share.setStatus(true);
+	        share.setUserId(userDetails.userInfo().getId());
+	        share.setPostId(shareWebModel.getPostId());
+	        share.setPostUrl(shareWebModel.getPostUrl());
+
+	        Share shareData = shareRepository.save(share);
+
+	        // Get the updated share count
+	        Integer shareCount = shareRepository.countSharesByPostId(shareWebModel.getPostId());
+
+	        // Create a response object to include both the saved share and the share count
+	        HashMap<String, Object> response = new HashMap<>();
+	        response.put("shareInfo", shareData);
+	        response.put("shareCount", shareCount);
+
+	        return ResponseEntity.ok(new Response(1, "Shared successfully", response));
+	    } catch (Exception e) {
+	        // Handle exceptions
+	        logger.error("Error adding share: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Error adding share", e.getMessage()));
+	    }
 	}
+
 
 	@Override
 	public ResponseEntity<?> getComment(CommentWebModel commentWebModel) {

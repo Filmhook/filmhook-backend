@@ -64,6 +64,12 @@ public class Posts {
 
     @Column(name = "updated_by")
     private Integer updatedBy;
+    
+    @Column(name = "privateOrPublic")
+    private Boolean privateOrPublic;
+    
+    @Column(name = "locationName")
+    private String locationName;
 
     @Column(name = "updated_on")
     @CreationTimestamp

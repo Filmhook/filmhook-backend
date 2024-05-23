@@ -56,60 +56,114 @@ public class AuditionServiceImpl implements AuditionService {
 	//	@Autowired
 	//	KafkaProducer kafkaProducer;
 
+//	@Override
+//	public ResponseEntity<?> saveAudition(AuditionWebModel auditionWebModel) {
+//		HashMap<String, Object> response = new HashMap<String, Object>();
+//		try {
+//			logger.info("Save audition method start");
+//
+//			Optional<User> userFromDB = userService.getUser(auditionWebModel.getAuditionCreatedBy());
+//			Audition audition = new Audition();
+//
+//			AuditionRoles auditionRoles = new AuditionRoles();
+//
+//			audition.setAuditionTitle(auditionWebModel.getAuditionTitle());
+//			audition.setAuditionExperience(auditionWebModel.getAuditionExperience());
+//			audition.setAuditionCategory(auditionWebModel.getAuditionCategory());
+//			audition.setAuditionExpireOn(auditionWebModel.getAuditionExpireOn());
+//			audition.setAuditionPostedBy(userFromDB.get().getFilmHookCode());
+//			audition.setAuditionCreatedBy(auditionWebModel.getAuditionCreatedBy());
+//			audition.setAuditionAddress(auditionWebModel.getAuditionAddress());
+//			audition.setAuditionMessage(auditionWebModel.getAuditionMessage());
+//			audition.setAuditionIsactive(true);
+//
+//			Audition savedAudition = auditionRepository.save(audition);
+//			List<AuditionRoles> auditionRolesList = new ArrayList<>();
+//
+//			if(auditionWebModel.getAuditionRoles().length != 0) {
+//				String auditionRolesA[] = auditionWebModel.getAuditionRoles();
+//				for (String role : auditionRolesA) {
+//
+//					auditionRoles.setAuditionRoleDesc(role);
+//					//					auditionRoles.setAuditionReferenceId(savedAudition.getAuditionId());
+//					auditionRoles.setAudition(savedAudition);
+//					auditionRoles.setAuditionRoleCreatedBy(savedAudition.getAuditionCreatedBy());
+//					auditionRoles.setAuditionRoleIsactive(true);
+//
+//					auditionRolesList.add(auditionRolesRepository.save(auditionRoles));
+//
+//				}
+//			}
+//
+//			auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
+//			auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story table reference in media files table
+//			List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(auditionWebModel.getFileInputWebModel(), userFromDB.get());
+//
+//			response.put("Audition details", savedAudition);
+//			response.put("Audition roles", auditionRolesList);
+//			response.put("Media files", fileOutputWebModelList);
+//
+//		} catch (Exception e) {
+//			logger.error("Save audition Method Exception...", e);
+//			e.printStackTrace();
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body(new Response(-1, "Fail", e.getMessage()));
+//		}
+//		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details saved successfully", response));	
+//	}
 	@Override
 	public ResponseEntity<?> saveAudition(AuditionWebModel auditionWebModel) {
-		HashMap<String, Object> response = new HashMap<String, Object>();
-		try {
-			logger.info("Save audition method start");
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        logger.info("Save audition method start");
 
-			Optional<User> userFromDB = userService.getUser(auditionWebModel.getAuditionCreatedBy());
-			Audition audition = new Audition();
+	        Optional<User> userFromDB = userService.getUser(auditionWebModel.getAuditionCreatedBy());
+	        if (!userFromDB.isPresent()) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(-1, "User not found", null));
+	        }
 
-			AuditionRoles auditionRoles = new AuditionRoles();
+	        Audition audition = new Audition();
+	        audition.setAuditionTitle(auditionWebModel.getAuditionTitle());
+	        audition.setAuditionExperience(auditionWebModel.getAuditionExperience());
+	        audition.setAuditionCategory(auditionWebModel.getAuditionCategory());
+	        audition.setAuditionExpireOn(auditionWebModel.getAuditionExpireOn());
+	        audition.setAuditionPostedBy(userFromDB.get().getFilmHookCode());
+	        audition.setAuditionCreatedBy(auditionWebModel.getAuditionCreatedBy());
+	        audition.setAuditionAddress(auditionWebModel.getAuditionAddress());
+	        audition.setAuditionMessage(auditionWebModel.getAuditionMessage());
+	        audition.setAuditionIsactive(true);
 
-			audition.setAuditionTitle(auditionWebModel.getAuditionTitle());
-			audition.setAuditionExperience(auditionWebModel.getAuditionExperience());
-			audition.setAuditionCategory(auditionWebModel.getAuditionCategory());
-			audition.setAuditionExpireOn(auditionWebModel.getAuditionExpireOn());
-			audition.setAuditionPostedBy(userFromDB.get().getFilmHookCode());
-			audition.setAuditionCreatedBy(auditionWebModel.getAuditionCreatedBy());
-			audition.setAuditionAddress(auditionWebModel.getAuditionAddress());
-			audition.setAuditionMessage(auditionWebModel.getAuditionMessage());
-			audition.setAuditionIsactive(true);
+	        Audition savedAudition = auditionRepository.save(audition);
+	        List<AuditionRoles> auditionRolesList = new ArrayList<>();
 
-			Audition savedAudition = auditionRepository.save(audition);
-			List<AuditionRoles> auditionRolesList = new ArrayList<>();
+	        if (auditionWebModel.getAuditionRoles().length != 0) {
+	            String[] auditionRolesArray = auditionWebModel.getAuditionRoles();
+	            for (String role : auditionRolesArray) {
+	                AuditionRoles auditionRoles = new AuditionRoles();  // Create a new instance inside the loop
+	                auditionRoles.setAuditionRoleDesc(role);
+	                auditionRoles.setAudition(savedAudition);
+	                auditionRoles.setAuditionRoleCreatedBy(savedAudition.getAuditionCreatedBy());
+	                auditionRoles.setAuditionRoleIsactive(true);
 
-			if(auditionWebModel.getAuditionRoles().length != 0) {
-				String auditionRolesA[] = auditionWebModel.getAuditionRoles();
-				for (String role : auditionRolesA) {
+	                auditionRolesList.add(auditionRolesRepository.save(auditionRoles));
+	            }
+	        }
 
-					auditionRoles.setAuditionRoleDesc(role);
-					//					auditionRoles.setAuditionReferenceId(savedAudition.getAuditionId());
-					auditionRoles.setAudition(savedAudition);
-					auditionRoles.setAuditionRoleCreatedBy(savedAudition.getAuditionCreatedBy());
-					auditionRoles.setAuditionRoleIsactive(true);
+	        auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
+	        auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story table reference in media files table
+	        List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(auditionWebModel.getFileInputWebModel(), userFromDB.get());
 
-					auditionRolesList.add(auditionRolesRepository.save(auditionRoles));
+	        response.put("Audition details", savedAudition);
+	        response.put("Audition roles", auditionRolesList);
+	        response.put("Media files", fileOutputWebModelList);
 
-				}
-			}
-
-			auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
-			auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story table reference in media files table
-			List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(auditionWebModel.getFileInputWebModel(), userFromDB.get());
-
-			response.put("Audition details", savedAudition);
-			response.put("Audition roles", auditionRolesList);
-			response.put("Media files", fileOutputWebModelList);
-
-		} catch (Exception e) {
-			logger.error("Save audition Method Exception...", e);
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Fail", e.getMessage()));
-		}
-		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details saved successfully", response));	
+	    } catch (Exception e) {
+	        logger.error("Save audition Method Exception...", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Fail", e.getMessage()));
+	    }
+	    return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details saved successfully", response));
 	}
 
 	@Override

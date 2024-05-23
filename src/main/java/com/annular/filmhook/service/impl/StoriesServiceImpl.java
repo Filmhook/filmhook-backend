@@ -24,6 +24,9 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -91,19 +94,47 @@ public class StoriesServiceImpl implements StoriesService {
         return story;
     }
 
-    @Override
-    public List<StoriesWebModel> getStoryByUserId(Integer userId) {
-        List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
-        try {
-            List<Story> storyList = storyRepository.getStoryByUserId(userId);
-            if (storyList != null && !storyList.isEmpty()) {
-                storiesWebModelList = storyList.stream().map(this::transformData).collect(Collectors.toList());
-            }
-        } catch (Exception e) {
-            logger.error("Error at getStoryByUserId()...", e);
+//    @Override
+//    public List<StoriesWebModel> getStoryByUserId(Integer userId) {
+//        List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
+//        try {
+//            List<Story> storyList = storyRepository.getStoryByUserId(userId);
+//            if (storyList != null && !storyList.isEmpty()) {
+//                storiesWebModelList = storyList.stream().map(this::transformData).collect(Collectors.toList());
+//            }
+//        } catch (Exception e) {
+//            logger.error("Error at getStoryByUserId()...", e);
+//        }
+//        return storiesWebModelList;
+//    }
+
+
+@Override
+public List<StoriesWebModel> getStoryByUserId(Integer userId) {
+    List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
+    try {
+        List<Story> storyList = storyRepository.getStoryByUserId(userId);
+        if (storyList != null && !storyList.isEmpty()) {
+            // Get the current time and the time 24 hours ago
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime twentyFourHoursAgo = now.minusHours(24);
+
+            // Filter stories created within the last 24 hours
+            storiesWebModelList = storyList.stream()
+                .filter(story -> convertToLocalDateTimeViaInstant(story.getCreatedOn()).isAfter(twentyFourHoursAgo))
+                .map(this::transformData)
+                .collect(Collectors.toList());
         }
-        return storiesWebModelList;
+    } catch (Exception e) {
+        logger.error("Error at getStoryByUserId()...", e);
     }
+    return storiesWebModelList;
+}
+private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+    return Instant.ofEpochMilli(dateToConvert.getTime())
+        .atZone(ZoneId.systemDefault())
+        .toLocalDateTime();
+}
 
     private StoriesWebModel transformData(Story story) {
         StoriesWebModel storiesWebModel = new StoriesWebModel();

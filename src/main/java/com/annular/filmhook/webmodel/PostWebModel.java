@@ -8,26 +8,31 @@ import com.annular.filmhook.model.MediaFileCategory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Data
 @Builder
 public class PostWebModel {
 
-    private Integer userId;
-    private String userName;
+	private Integer userId;
+	private String userName;
+	//List<FileOutputWebModel> profileUrl;
 
-    private Integer postId;
-    private MediaFileCategory category;
-    private String description;
-    List<MultipartFile> files;
+	private String userProfilePic; // Add
 
-    private Integer likeCount;
-    private Integer commentCount;
-    private Integer shareCount;
-    private Boolean promoteFlag;
+	private Integer postId;
+	private MediaFileCategory category;
+	private String description;
+	List<MultipartFile> files;
 
-    List<FileOutputWebModel> postFiles;
-    Set<String> professionNames;
+	private Integer likeCount;
+	private Integer commentCount;
+	private Integer shareCount;
+	private Boolean promoteFlag;
 
+	List<FileOutputWebModel> postFiles;
+	Set<String> professionNames;
+	private String locationName;
+	private Boolean privateOrPublic;
 }
