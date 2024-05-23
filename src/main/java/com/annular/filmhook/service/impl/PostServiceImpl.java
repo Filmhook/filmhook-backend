@@ -7,6 +7,7 @@ import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+import com.annular.filmhook.model.FollowersRequest;
 
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
@@ -44,10 +45,10 @@ import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
+import com.annular.filmhook.repository.FriendRequestRepository;
 
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.util.FileUtil;
-import com.annular.filmhook.util.S3Util;
 
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -85,6 +86,9 @@ public class PostServiceImpl implements PostService {
 
     @Value("${annular.app.url}")
     private String appUrl;
+
+    @Autowired
+    FriendRequestRepository friendRequestRepository;
 
     @Override
     public PostWebModel savePostsWithFiles(PostWebModel postWebModel) {
@@ -175,12 +179,16 @@ public class PostServiceImpl implements PostService {
                                 professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
                             }
 
+                            // Fetching the ProfilePic Path
                             List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, post.getUser().getUserId());
                             String profilePicturePath = null;
                             if (!userProfilePic.isEmpty()) {
                                 FileOutputWebModel profilePic = userProfilePic.get(0);
                                 profilePicturePath = profilePic.getFilePath();
                             }
+
+                            //Fetching the followers count for the user
+                            List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
                             // Preparing outputList
                             PostWebModel postWebModel = PostWebModel.builder()
@@ -199,6 +207,7 @@ public class PostServiceImpl implements PostService {
                                     .privateOrPublic(post.getPrivateOrPublic())
                                     .locationName(post.getLocationName())
                                     .professionNames(professionNames)
+                                    .followersCount(followersList.size())
                                     .build();
                             responseList.add(postWebModel);
                         });
@@ -208,6 +217,7 @@ public class PostServiceImpl implements PostService {
             logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage());
             e.printStackTrace();
         }
+        logger.info("Final post count to respond :- [{}]", responseList.size());
         return responseList;
     }
 
@@ -262,7 +272,6 @@ public class PostServiceImpl implements PostService {
             Posts existingPost = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
             if (existingPost != null) {
                 Likes likeRowToSaveOrUpdate = null;
-
                 Likes existingLike = existingPost.getLikesCollection()
                         .stream()
                         .filter(obj -> Objects.nonNull(obj) && obj.getLikedBy().equals(likeWebModel.getUserId()))
@@ -277,15 +286,17 @@ public class PostServiceImpl implements PostService {
                 } else {
                     likeRowToSaveOrUpdate = Likes.builder()
                             .likedBy(likeWebModel.getUserId())
-                            .postId(likeWebModel.getPostId())
+                            .postId(existingPost.getId())
                             .liveDate(null)
                             .status(true)
                             .createdBy(likeWebModel.getUserId())
                             .createdOn(new Date())
                             .build();
                 }
-                likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
-                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(Likes::getStatus).count() : 0;
+                Likes savedLikes = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
+                existingPost.getLikesCollection().add(savedLikes); // Adding saved/updated likes into postLikesCollection
+                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(Likes::getStatus).count() : 0;;
+                logger.info("Like count for post id [{}] is :- [{}]",existingPost.getId(), currentPostTotalLikes);
                 return this.transformLikeData(likeRowToSaveOrUpdate, currentPostTotalLikes);
             }
         } catch (Exception e) {
@@ -297,7 +308,7 @@ public class PostServiceImpl implements PostService {
 
     private LikeWebModel transformLikeData(Likes likes, Integer totalCount) {
         return LikeWebModel.builder()
-                .userId(likes.getLikeId())
+                .userId(likes.getLikedBy())
                 .postId(likes.getPostId())
                 .likeId(likes.getLikeId())
                 .totalLikesCount(totalCount)
@@ -321,7 +332,9 @@ public class PostServiceImpl implements PostService {
                         .status(true)
                         .build();
                 Comment savedComment = commentRepository.save(comment);
+                post.getCommentCollection().add(savedComment); // Adding saved/updated likes into postCommentsCollection
                 Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(Comment::getStatus).count() : 0;
+                logger.info("Comments count for post id [{}] is :- [{}]",post.getId(), currentTotalCommentCount);
                 return this.transformCommentData(List.of(savedComment), currentTotalCommentCount).get(0);
             }
         } catch (Exception e) {
@@ -381,7 +394,9 @@ public class PostServiceImpl implements PostService {
                 if (comment != null) {
                     comment.setStatus(false);
                     Comment deletedComment = commentRepository.saveAndFlush(comment);
+                    post.getCommentCollection().removeIf(val -> val.getCommentId().equals(comment.getCommentId())); // removing saved/updated likes into postCommentsCollection
                     Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(Comment::getStatus).count() : 0;
+                    logger.info("Comments count for post id [{}] is :- [{}]",post.getId(), currentTotalCommentCount);
                     return this.transformCommentData(List.of(deletedComment), currentTotalCommentCount).get(0);
                 }
             }
@@ -399,14 +414,15 @@ public class PostServiceImpl implements PostService {
             if (existingPost != null) {
                 Share share = Share.builder()
                         .sharedBy(shareWebModel.getUserId())
-                        .postId(shareWebModel.getPostId())
+                        .postId(existingPost.getId())
                         .status(true)
                         .createdBy(shareWebModel.getUserId())
                         .createdOn(new Date())
                         .build();
-                shareRepository.saveAndFlush(share); // Save the updated like
-
+                Share savedShare = shareRepository.saveAndFlush(share); // Save the updated like
+                existingPost.getShareCollection().add(savedShare); // Adding saved/updated likes into postShareCollection
                 Integer currentTotalShareCount = existingPost.getShareCollection() != null ? (int) existingPost.getShareCollection().stream().filter(Share::getStatus).count() : 0;
+                logger.info("Shares count for post id [{}] is :- [{}]", existingPost.getId(), currentTotalShareCount);
                 return this.transformShareData(share, currentTotalShareCount);
             }
         } catch (Exception e) {

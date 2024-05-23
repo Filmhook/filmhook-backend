@@ -35,4 +35,5 @@ public class PostWebModel {
 	private String locationName;
 	private Boolean privateOrPublic;
 	private String postUrl;
+	private Integer followersCount;
 }

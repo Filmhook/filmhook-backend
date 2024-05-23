@@ -188,7 +188,7 @@ public class PostController {
     public ResponseEntity<?> addComment(@RequestBody CommentWebModel commentWebModel) {
         try {
             CommentWebModel commentWebModelOutput = postService.addComment(commentWebModel);
-            if(commentWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Comment added for the post...", ""));
+            if(commentWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Comment added for the post...", commentWebModelOutput));
         } catch (Exception e) {
             logger.error("addComment Method Exception -> {}", e.getMessage());
             e.printStackTrace();
@@ -201,8 +201,7 @@ public class PostController {
     public ResponseEntity<?> getComment(@RequestBody CommentWebModel commentWebModel) {
         try {
             List<CommentWebModel> commentList = postService.getComment(commentWebModel);
-            if (!Utility.isNullOrEmptyList(commentList))
-                return ResponseEntity.ok(new Response(1, "Comment retrieved for the post...", commentList));
+            if (!Utility.isNullOrEmptyList(commentList)) return ResponseEntity.ok(new Response(1, "Comment retrieved for the post...", commentList));
             else return ResponseEntity.ok(new Response(-1, "No Comments available for this post...", null));
         } catch (Exception e) {
             logger.error("getComment Method Exception -> {}", e.getMessage());
@@ -215,7 +214,7 @@ public class PostController {
     public ResponseEntity<?> deleteComment(@RequestBody CommentWebModel commentWebModel) {
         try {
             CommentWebModel commentWebModelOutput = postService.deleteComment(commentWebModel);
-            if(commentWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Comment deleted for the post...", ""));
+            if(commentWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Comment deleted for the post...", commentWebModelOutput));
         } catch (Exception e) {
             logger.error("deleteComment Method Exception -> {}", e.getMessage());
             e.printStackTrace();
