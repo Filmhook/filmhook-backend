@@ -74,24 +74,84 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	private static final Logger logger = LoggerFactory.getLogger(PinProfileServiceImpl.class);
 
+//	@Override
+//	public ResponseEntity<?> addProfile(UserProfilePinWebModel userProfilePinWebModel) {
+//	    try {
+//	        Integer userId = userDetails.userInfo().getId();
+//	        Integer pinProfileId = userProfilePinWebModel.getPinProfileId();
+//
+//	        // Check if the pin already exists for the user
+//	        Optional<UserProfilePin> existingPinOptional = pinProfileRepository.findByUserIdAndPinProfileId(userId, pinProfileId);
+//
+//	        UserProfilePin userProfilePin;
+//	        if (existingPinOptional.isPresent()) {
+//	            // Update the existing pin
+//	            userProfilePin = existingPinOptional.get();
+//	            userProfilePin.setUpdatedBy(userId);
+//	            //userProfilePin.setUpdatedOn(new Date()); // Assuming you have an updatedOn field in UserProfilePin
+//	        } else {
+//	            // Create a new pin
+//	            userProfilePin = new UserProfilePin();
+//	            userProfilePin.setUserId(userId);
+//	            userProfilePin.setPinProfileId(pinProfileId);
+//	            userProfilePin.setCreatedBy(userId);
+//	            userProfilePin.setStatus(true);
+//	        }
+//
+//	        // Save or update the pin
+//	        pinProfileRepository.save(userProfilePin);
+//
+//	        return ResponseEntity.ok("Pin added or updated successfully");
+//	    } catch (Exception e) {
+//	        logger.error("Error setting addPin: {}", e.getMessage());
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//	                .body(new Response(-1, "Error setting addPin", e.getMessage()));
+//	    }
+//	}
+
 	@Override
 	public ResponseEntity<?> addProfile(UserProfilePinWebModel userProfilePinWebModel) {
-		try {
-			UserProfilePin userProfilePin = new UserProfilePin();
-			userProfilePin.setUserId(userDetails.userInfo().getId());
-			userProfilePin.setPinProfileId(userProfilePinWebModel.getPinProfileId());
-			userProfilePin.setCreatedBy(userDetails.userInfo().getId());
-			userProfilePin.setStatus(true);
+	    try {
+	        Integer userId = userDetails.userInfo().getId();
+	        Integer pinProfileId = userProfilePinWebModel.getPinProfileId();
 
-			pinProfileRepository.save(userProfilePin);
+	        // Check if the pin already exists for the user
+	        Optional<UserProfilePin> existingPinOptional = pinProfileRepository.findByUserIdAndPinProfileId(userId, pinProfileId);
 
-			return ResponseEntity.ok("Pin added su  ccessfully");
-		} catch (Exception e) {
-			logger.error("Error setting addPin: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error setting addPin", e.getMessage()));
-		}
+	        UserProfilePin userProfilePin;
+	        if (existingPinOptional.isPresent()) {
+	            // Update the existing pin
+	            userProfilePin = existingPinOptional.get();
+	            userProfilePin.setUpdatedBy(userId);
+	            
+	            // Log the existing status before updating
+	            logger.info("Existing pin status before update: {}", userProfilePin.isStatus());
+
+	            // Toggle the status
+	            userProfilePin.setStatus(!userProfilePin.isStatus());
+
+	            // Log the updated status
+	            logger.info("Updated pin status: {}", userProfilePin.isStatus());
+	        } else {
+	            // Create a new pin
+	            userProfilePin = new UserProfilePin();
+	            userProfilePin.setUserId(userId);
+	            userProfilePin.setPinProfileId(pinProfileId);
+	            userProfilePin.setCreatedBy(userId);
+	            userProfilePin.setStatus(true);
+	        }
+
+	        // Save or update the pin
+	        pinProfileRepository.save(userProfilePin);
+
+	        return ResponseEntity.ok("Pin added or updated successfully");
+	    } catch (Exception e) {
+	        logger.error("Error setting addPin: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Error setting addPin", e.getMessage()));
+	    }
 	}
+
 
 	@Override
 	public ResponseEntity<?> addMedia(UserProfilePinWebModel userProfilePinWebModel) {

@@ -36,4 +36,6 @@ public class PostWebModel {
 	private Boolean privateOrPublic;
 	private String postUrl;
 	private Integer followersCount;
+	private Boolean likeStatus;
+	private Boolean pinStatus;
 }

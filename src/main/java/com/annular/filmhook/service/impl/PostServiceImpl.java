@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.UserProfilePin;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Comment;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -43,6 +45,7 @@ import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
+import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
@@ -55,13 +58,20 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 @Service
 public class PostServiceImpl implements PostService {
 
+    @Autowired
+    UserDetails userDetails;
+	
     public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
 
+    
     @Autowired
     MediaFilesService mediaFilesService;
 
     @Autowired
     FileUtil fileUtil;
+    
+    @Autowired
+    PinProfileRepository pinProfileRepository;
 
     @Autowired
     UserService userService;
@@ -190,20 +200,30 @@ public class PostServiceImpl implements PostService {
                             //Fetching the followers count for the user
                             List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
+                            // Fetching the likes details
+                            Integer userId = userDetails.userInfo().getId();
+                            Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), userId);
+                            Boolean likeStatus = likesList.map(Likes::getStatus).orElse(false);
+                          
+                            Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(userId,post.getUser().getUserId());
+                           Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
+                            
                             // Preparing outputList
                             PostWebModel postWebModel = PostWebModel.builder()
                                     .id(post.getId())
                                     .userId(post.getUser().getUserId())
                                     .userName(post.getUser().getName())
                                     .postId(post.getPostId())
-                                    .postUrl(this.generatePostUrl(post.getPostId()))
+                                    //.postUrl(this.generatePostUrl(post.getPostId()))
                                     .userProfilePic(profilePicturePath)
                                     .description(post.getDescription())
+                                    .pinStatus(pinStatus)
                                     .likeCount(post.getLikesCollection() != null ? post.getLikesCollection().size() : 0)
                                     .shareCount(post.getShareCollection() != null ? post.getShareCollection().size() : 0)
                                     .commentCount(post.getCommentCollection() != null ? post.getCommentCollection().size() : 0)
                                     .promoteFlag(post.getPromoteFlag())
                                     .postFiles(postFiles)
+                                    .likeStatus(likeStatus)
                                     .privateOrPublic(post.getPrivateOrPublic())
                                     .locationName(post.getLocationName())
                                     .professionNames(professionNames)
