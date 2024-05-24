@@ -1,11 +1,16 @@
 package com.annular.filmhook.webmodel;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import org.springframework.core.io.Resource;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class FileOutputWebModel {
 
 	private Integer id; // MySQL Primary key field

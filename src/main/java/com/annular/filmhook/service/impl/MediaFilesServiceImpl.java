@@ -238,10 +238,9 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
 
             // Calculate elapsed time
-            String elapsedTime = calculateElapsedTime(createdOn);
+            String elapsedTime = this.calculateElapsedTime(createdOn);
             fileOutputWebModel.setElapsedTime(elapsedTime);
-            
-            
+
             return fileOutputWebModel;
         } catch (Exception e) {
             logger.error("Error at transformData()...", e);
@@ -288,19 +287,19 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 
         long seconds = duration.getSeconds();
         if (seconds < 60) {
-            return seconds + " sec ";
+            return seconds + " sec";
         } else if (seconds < 3600) {
             long minutes = seconds / 60;
-            return minutes + (minutes == 1 ? " mts" : " mts ");
+            return minutes + (minutes == 1 ? " mt" : " mts");
         } else if (seconds < 86400) {
             long hours = seconds / 3600;
-            return hours + (hours == 1 ? " hr " : " hr ");
+            return hours + (hours == 1 ? " hr" : " hrs");
         } else if (seconds < 604800) {
             long days = seconds / 86400;
-            return days + (days == 1 ? " day " : " day ");
+            return days + (days == 1 ? " day" : " days");
         } else {
             long weeks = seconds / 604800;
-            return weeks + (weeks == 1 ? " week " : " week ");
+            return weeks + (weeks == 1 ? " week" : " weeks");
         }
     }
 }
