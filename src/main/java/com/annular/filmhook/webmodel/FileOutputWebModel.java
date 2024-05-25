@@ -32,5 +32,6 @@ public class FileOutputWebModel {
 	private Date updatedOn;
 	
 	private String elapsedTime;
+	private String filmHookCode;
 
 }

@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.AuditionService;
 import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
+import com.annular.filmhook.webmodel.AuditionDetailsWebModel;
+import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
 //import com.annular.filmhook.service.impl.KafkaProducer;
 import com.annular.filmhook.webmodel.AuditionWebModel;
 
@@ -45,10 +47,10 @@ public class AuditionController {
 	}
     
     @GetMapping("/getAuditionByCategory")
-    public ResponseEntity<?> getAuditionByCategory(@RequestParam("auditionTitle") String auditionTitle) {
+    public ResponseEntity<?> getAuditionByCategory(@RequestParam("categoryId") Integer categoryId) {
         try {
         	//logger.info("Audition category to be fetched :- " + auditionWebModel.getAuditionCategory());
-			return auditionService.getAuditionByCategory(auditionTitle);
+			return auditionService.getAuditionByCategory(categoryId);
 		} catch (Exception e) {
 			logger.error("Save audition Method Exception...", e);
 			e.printStackTrace();
@@ -81,5 +83,30 @@ public class AuditionController {
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
+    
+    @PostMapping("/auditionIgnorance")
+    public ResponseEntity<?> auditionIgnorance(@RequestBody AuditionIgnoranceWebModel auditionIgnoranceWebModel) {
+        try {
+        	
+			return auditionService.auditionIgnorance(auditionIgnoranceWebModel);
+		} catch (Exception e) {
+			logger.error("Save Audition Ignorance Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(200, "Success", ""));
+    }
+    
+    @PostMapping("/getAuditionDetails")
+    public ResponseEntity<?> getAuditionDetails(@RequestBody AuditionDetailsWebModel auditionDetailsWebModel) {
+        try {
+        	
+			return auditionService.getAuditionDetails(auditionDetailsWebModel);
+		} catch (Exception e) {
+			logger.error("getAuditionDetails Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(200, "Success", ""));
+    }
+    
 
 }

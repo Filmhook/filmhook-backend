@@ -232,6 +232,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             fileOutputWebModel.setCreatedOn(mediaFile.getCreatedOn());
             fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
             fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
+            fileOutputWebModel.setFilmHookCode(mediaFile.getUser().getFilmHookCode());
 
             // Convert Date to LocalDateTime
             Date createdDate = mediaFile.getCreatedOn();

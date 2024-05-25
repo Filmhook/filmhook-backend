@@ -3,7 +3,9 @@ package com.annular.filmhook.service.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.annular.filmhook.model.MediaFileCategory;
 import org.slf4j.Logger;
@@ -14,11 +16,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Audition;
 import com.annular.filmhook.model.AuditionAcceptanceDetails;
+import com.annular.filmhook.model.AuditionDetails;
+import com.annular.filmhook.model.AuditionIgnoranceDetails;
 import com.annular.filmhook.model.AuditionRoles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.AuditionAcceptanceRepository;
+import com.annular.filmhook.repository.AuditionDetailsRepository;
+import com.annular.filmhook.repository.AuditionIgnoranceRepository;
 import com.annular.filmhook.repository.AuditionRepository;
 import com.annular.filmhook.repository.AuditionRolesRepository;
 import com.annular.filmhook.service.AuditionService;
@@ -26,6 +33,8 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
+import com.annular.filmhook.webmodel.AuditionDetailsWebModel;
+import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
 import com.annular.filmhook.webmodel.AuditionRolesWebModel;
 import com.annular.filmhook.webmodel.AuditionWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -52,7 +61,16 @@ public class AuditionServiceImpl implements AuditionService {
 	
 	@Autowired
 	AuditionAcceptanceRepository acceptanceRepository;
+	
+	@Autowired
+	AuditionDetailsRepository auditionDetailsRepository;
+	
+	@Autowired
+	AuditionIgnoranceRepository auditionIgnoranceRepository;
 
+	@Autowired
+	UserDetails userDetails;
+	
 	//	@Autowired
 	//	KafkaProducer kafkaProducer;
 
@@ -166,73 +184,140 @@ public class AuditionServiceImpl implements AuditionService {
 	    return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details saved successfully", response));
 	}
 
+//	@Override
+//	public ResponseEntity<?> getAuditionByCategory(Integer categoryId) {
+//		HashMap<String, Object> response = new HashMap<String, Object>();
+//		try {
+//			logger.info("get audition by category method start");
+//
+//						List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId);
+//			//List<Audition> auditions = auditionRepository.findByAuditionTitle(auditionTitle);
+//
+//			if(auditions.size()>0) {
+//				List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
+//
+//				for(Audition audition : auditions) {
+//
+//					AuditionWebModel auditionWebModel = new AuditionWebModel();
+//
+//					auditionWebModel.setAuditionId(audition.getAuditionId());
+//					auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
+//					auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
+//					auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
+//					auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
+//					auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
+//					auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
+//					auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
+//					auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
+//					auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
+//
+//					if(audition.getAuditionRoles().size()>0) {
+//						List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
+//
+//						for(AuditionRoles auditionRoles : audition.getAuditionRoles()) {
+//
+//							AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
+//							auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
+//							auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
+//
+//							auditionRolesWebModelsList.add(auditionRolesWebModel);
+//
+//						}
+//
+//						auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
+//					}
+//
+//					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
+//					if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+//						auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
+//					}
+//
+//					auditionWebModelsList.add(auditionWebModel);
+//
+//				}
+//				response.put("Audition List", auditionWebModelsList);
+//
+//			}
+//			else {
+//				response.put("No auditions found", "");
+//			}
+//
+//		} catch (Exception e) {
+//			logger.error("get audition by category Method Exception...", e);
+//			e.printStackTrace();
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body(new Response(-1, "Fail", e.getMessage()));
+//		}
+//		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details fetched successfully", response));
+//	}
+	
 	@Override
-	public ResponseEntity<?> getAuditionByCategory(String auditionTitle) {
-		HashMap<String, Object> response = new HashMap<String, Object>();
-		try {
-			logger.info("get audition by category method start");
+	public ResponseEntity<?> getAuditionByCategory(Integer categoryId) {
+	    HashMap<String, Object> response = new HashMap<String, Object>();
+	    try {
+	        logger.info("get audition by category method start");
 
-			//			List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId);
-			List<Audition> auditions = auditionRepository.findByAuditionTitle(auditionTitle);
+	        Integer userId = userDetails.userInfo().getId();
+	        // Fetch the list of ignored auditions for the given user
+	        List<Integer> ignoredAuditionIds = auditionIgnoranceRepository.findIgnoredAuditionIdsByUserId(userId);
 
-			if(auditions.size()>0) {
-				List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
+	        // Fetch the list of auditions by category and exclude the ignored ones
+	        List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId)
+	                .stream()
+	                .filter(audition -> !ignoredAuditionIds.contains(audition.getAuditionId()))
+	                .collect(Collectors.toList());
 
-				for(Audition audition : auditions) {
+	        if (auditions.size() > 0) {
+	            List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
 
-					AuditionWebModel auditionWebModel = new AuditionWebModel();
+	            for (Audition audition : auditions) {
+	                AuditionWebModel auditionWebModel = new AuditionWebModel();
 
-					auditionWebModel.setAuditionId(audition.getAuditionId());
-					auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
-					auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
-					auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
-					auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
-					auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
-					auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
-					auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
-					auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
-					auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
+	                auditionWebModel.setAuditionId(audition.getAuditionId());
+	                auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
+	                auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
+	                auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
+	                auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
+	                auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
+	                auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
+	                auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
+	                auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
+	                auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
 
-					if(audition.getAuditionRoles().size()>0) {
-						List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
+	                if (audition.getAuditionRoles().size() > 0) {
+	                    List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
 
-						for(AuditionRoles auditionRoles : audition.getAuditionRoles()) {
+	                    for (AuditionRoles auditionRoles : audition.getAuditionRoles()) {
+	                        AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
+	                        auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
+	                        auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
 
-							AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
-							auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
-							auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
+	                        auditionRolesWebModelsList.add(auditionRolesWebModel);
+	                    }
 
-							auditionRolesWebModelsList.add(auditionRolesWebModel);
+	                    auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
+	                }
 
-						}
+	                List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
+	                if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+	                    auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
+	                }
 
-						auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
-					}
+	                auditionWebModelsList.add(auditionWebModel);
+	            }
+	            response.put("Audition List", auditionWebModelsList);
+	        } else {
+	            response.put("No auditions found", "");
+	        }
 
-					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
-					if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
-						auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
-					}
-
-					auditionWebModelsList.add(auditionWebModel);
-
-				}
-				response.put("Audition List", auditionWebModelsList);
-
-			}
-			else {
-				response.put("No auditions found", "");
-			}
-
-		} catch (Exception e) {
-			logger.error("get audition by category Method Exception...", e);
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Fail", e.getMessage()));
-		}
-		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details fetched successfully", response));
-	}
-
+	    } catch (Exception e) {
+	        logger.error("get audition by category Method Exception...", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Fail", e.getMessage()));
+	    }
+	    return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details fetched successfully", response));}
+	
 	@Override
 	public ResponseEntity<?> auditionAcceptance(AuditionAcceptanceWebModel acceptanceWebModel) {
 		HashMap<String, Object> response = new HashMap<String, Object>();
@@ -263,6 +348,72 @@ public class AuditionServiceImpl implements AuditionService {
 		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition acceptance details saved successfully", response));	
 	}
 
+	@Override
+	public ResponseEntity<?> auditionIgnorance(AuditionIgnoranceWebModel auditionIgnoranceWebModel) {
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        logger.info("Save audition ignorance method start");
 
+	        Optional<Audition> audition = auditionRepository.findById(auditionIgnoranceWebModel.getAuditionRefId());
 
+	        if (audition.isPresent()) {
+	            Optional<AuditionIgnoranceDetails> existingDetailsOptional = 
+	                auditionIgnoranceRepository.findByAuditionRefIdAndAuditionIgnoranceUser(
+	                    auditionIgnoranceWebModel.getAuditionRefId(), 
+	                    auditionIgnoranceWebModel.getAuditionIgnoranceUser()
+	                );
+
+	            AuditionIgnoranceDetails ignoranceDetails;
+	            if (existingDetailsOptional.isPresent()) {
+	                // Update the existing record
+	                ignoranceDetails = existingDetailsOptional.get();
+	                ignoranceDetails.setIgnoranceAccepted(auditionIgnoranceWebModel.isIgnoranceAccepted());
+	                ignoranceDetails.setAuditionIgnoranceUpdatedBy(auditionIgnoranceWebModel.getAuditionIgnoranceUser());
+	                
+	            } else {
+	                // Create a new record
+	                ignoranceDetails = new AuditionIgnoranceDetails();
+	                ignoranceDetails.setIgnoranceAccepted(auditionIgnoranceWebModel.isIgnoranceAccepted());
+	                ignoranceDetails.setAuditionIgnoranceUser(auditionIgnoranceWebModel.getAuditionIgnoranceUser());
+	                ignoranceDetails.setAuditionRefId(auditionIgnoranceWebModel.getAuditionRefId());
+	                ignoranceDetails.setAuditionIgnoranceCreatedBy(auditionIgnoranceWebModel.getAuditionIgnoranceUser());
+	            }
+
+	            ignoranceDetails = auditionIgnoranceRepository.save(ignoranceDetails);
+	            response.put("Audition ignorance details", ignoranceDetails);
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(new Response(-1, "Audition not found", null));
+	        }
+
+	    } catch (Exception e) {
+	        logger.error("Save audition ignorance method exception", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	            .body(new Response(-1, "Fail", e.getMessage()));
+	    }
+	    return ResponseEntity.status(HttpStatus.OK)
+	        .body(new Response(1, "Audition ignorance details saved successfully", response));
+	}
+
+	  public ResponseEntity<?> getAuditionDetails(AuditionDetailsWebModel auditionDetailsWebModel) {
+	        // Fetch all AuditionDetails
+	        List<AuditionDetails> auditionDetailsList = auditionDetailsRepository.findAll();
+
+	        if (auditionDetailsList.isEmpty()) {
+	            return ResponseEntity.notFound().build();
+	        }
+
+	        // Create a list to hold the response data
+	        List<Map<String, Object>> responseList = auditionDetailsList.stream()
+	                .map(auditionDetails -> {
+	                    Map<String, Object> response = new HashMap<>();
+	                    response.put("auditionDetailsId", auditionDetails.getAuditionDetailsId());
+	                    response.put("auditionDetailsName", auditionDetails.getAuditionDetailsName());
+	                    return response;
+	                })
+	                .collect(Collectors.toList());
+
+	        return ResponseEntity.ok(responseList);
+	    }
 }

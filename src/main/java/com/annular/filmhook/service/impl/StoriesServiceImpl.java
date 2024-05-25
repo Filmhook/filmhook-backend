@@ -1,10 +1,12 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.controller.StoriesController;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.StoryRepository;
 import com.annular.filmhook.service.MediaFilesService;
@@ -51,6 +53,9 @@ public class StoriesServiceImpl implements StoriesService {
 
     @Autowired
     UserService userService;
+    
+    @Autowired
+    FilmProfessionPermanentDetailRepository professionPermanentDetailsRepository;
     
     @Autowired
     S3Util s3Util;
@@ -268,38 +273,62 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
         // Get the current time
         LocalDateTime currentTime = LocalDateTime.now();
 
-        // Filter out the login user's details and stories older than 24 hours
+        // Filter stories to include only those created within the last 24 hours
         Map<Integer, String> userIdToNameMap = storyList.stream()
-                .filter(story -> !story.getUser().getUserId().equals(loginUserId)) // Exclude the login user's stories
                 .filter(story -> {
                     LocalDateTime storyCreatedTime = convertToLocalDateTimeViaInstant(story.getCreatedOn());
                     return Duration.between(storyCreatedTime, currentTime).toHours() <= 24;
-                }) // Exclude stories older than 24 hours
-                .collect(Collectors.toMap(story -> story.getUser().getUserId(), 
-                                          story -> story.getUser().getName(),
-                                          (existing, replacement) -> existing)); // Keep existing name in case of duplicates
+                }) // Include only stories created within the last 24 hours
+                .collect(Collectors.toMap(
+                        story -> story.getUser().getUserId(),
+                        story -> story.getUser().getName(),
+                        (existing, replacement) -> existing // Keep existing name in case of duplicates
+                ));
 
-        List<UserIdAndNameWebModel> userIdAndNames = userIdToNameMap.entrySet().stream()
-                .map(entry -> {
-                    Integer userId = entry.getKey();
-                    String userName = entry.getValue();
-                    String profilePicUrl = this.getProfilePicUrl(userId); // Get profile picture URL
-                    return new UserIdAndNameWebModel(userId, userName, profilePicUrl);
-                })
-                .collect(Collectors.toList());
+        List<UserIdAndNameWebModel> userIdAndNames = new ArrayList<>();
+
+        // Add the login user's details first if they have a story within the last 24 hours
+        if (userIdToNameMap.containsKey(loginUserId)) {
+            UserIdAndNameWebModel loginUserDetails = createUserIdAndNameWebModel(loginUserId, userIdToNameMap.get(loginUserId));
+            userIdAndNames.add(loginUserDetails);
+            userIdToNameMap.remove(loginUserId); // Remove the login user's entry to avoid duplication
+        }
+
+        // Add other user details
+        userIdAndNames.addAll(userIdToNameMap.entrySet().stream()
+                .map(entry -> createUserIdAndNameWebModel(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList()));
 
         return userIdAndNames;
     }
 
-
-    private String getProfilePicUrl(Integer userId) {
-        FileOutputWebModel userProfilePic = userService.getProfilePic(UserWebModel.builder().userId(userId).build());
-        if (userProfilePic != null) {
-            return s3Util.generateS3FilePath(userProfilePic.getFilePath() + userProfilePic.getFileType());
-        }
-        return null;
+    private UserIdAndNameWebModel createUserIdAndNameWebModel(Integer userId, String userName) {
+        String profilePicUrl = this.getProfilePicUrl(userId); // Get profile picture URL
+        List<String> professionNames = getProfessionNames(userId); // Get profession names
+        return new UserIdAndNameWebModel(userId, userName, profilePicUrl, professionNames);
     }
 
+    private List<String> getProfessionNames(Integer userId) {
+        List<FilmProfessionPermanentDetail> professions = professionPermanentDetailsRepository.findByUserId(userId);
+        return professions.stream()
+                .map(FilmProfessionPermanentDetail::getProfessionName)
+                .collect(Collectors.toList());
+    }
+
+
+
+    private String getProfilePicUrl(Integer userId) {
+        UserWebModel userWebModel = new UserWebModel();
+        userWebModel.setUserId(userId);
+        FileOutputWebModel profilePic = getProfilePic(userWebModel);
+        return profilePic != null ? profilePic.getFilePath() : null;
+    }
+
+    public FileOutputWebModel getProfilePic(UserWebModel userWebModel) {
+        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, userWebModel.getUserId());
+        if (outputWebModelList != null && !outputWebModelList.isEmpty()) return outputWebModelList.get(0);
+        return null;
+    }
 }
 
 
