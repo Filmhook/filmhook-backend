@@ -62,6 +62,9 @@ public class Audition {
 	@Column(name = "audition_isactive")
 	private boolean auditionIsactive;
 	
+	@Column(name = "auditionLocation")
+	private String auditionLocation;
+	
 	@Column(name = "audition_created_by")
 	private Integer auditionCreatedBy;
 	

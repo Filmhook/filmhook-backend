@@ -6,9 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +22,26 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+import com.annular.filmhook.model.FollowersRequest;
+import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
+import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserMediaPin;
 import com.annular.filmhook.model.UserProfilePin;
 import com.annular.filmhook.repository.CommentRepository;
+import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
+import com.annular.filmhook.repository.FriendRequestRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
+import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PinProfileService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.S3Util;
@@ -44,6 +55,12 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Autowired
 	PinProfileRepository pinProfileRepository;
+	
+	@Autowired
+	PostsRepository postsRepository;
+	
+	@Autowired
+	MediaFilesService mediaFilesService;
 
 	@Autowired
 	PinMediaRepository pinMediaRepository;
@@ -62,6 +79,12 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	@Autowired
 	FileUtil fileUtil;
+	
+	@Autowired
+	FriendRequestRepository friendRequestRepository;
+	
+	@Autowired
+	FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
 
 	@Autowired
 	LikeRepository likeRepository;
@@ -242,55 +265,95 @@ public class PinProfileServiceImpl implements PinProfileService {
 	    }
 	}
 
-
 	@Override
 	public ResponseEntity<?> getAllMediaPin() {
 	    try {
 	        logger.info("getAllMediaPin service start");
 
-	        List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userDetails.userInfo().getId());
+	        Integer userId = userDetails.userInfo().getId();
+	        List<UserMediaPin> userMediaPins = pinMediaRepository.findByUserId(userId);
 
 	        List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
 
 	        for (UserMediaPin userMediaPin : userMediaPins) {
+	            Optional<Posts> postOptional = postsRepository.findById(userMediaPin.getPinMediaId());
+	            if (!postOptional.isPresent()) {
+	                continue;
+	            }
+	            Posts post = postOptional.get();
 
-	            Optional<MediaFiles> mediaFileOptional = mediaFilesRepository.findById(userMediaPin.getPinMediaId());
+	            // Fetching post-files
+	            List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
-	            if (mediaFileOptional.isPresent()) {
-	                MediaFiles mediaFiles = mediaFileOptional.get();
-						int likeCount = likeRepository.countByMediaFileId(mediaFiles.getId());
-	                    int commentCount = commentRepository.countByMediaFileId(mediaFiles.getId());
-	                    int shareCount = shareRepository.countByMediaFileId(mediaFiles.getId());
+	            // Fetching the user Profession
+	            Set<String> professionNames = filmProfessionPermanentDetailRepository.findByUserId(post.getUser().getUserId())
+	                    .stream()
+	                    .map(FilmProfessionPermanentDetail::getProfessionName)
+	                    .collect(Collectors.toSet());
 
-	                    Map<String, Object> combinedDetails = new HashMap<>();
-	                    combinedDetails.put("userMediaPin", userMediaPin);
-	                    combinedDetails.put("filename", mediaFiles.getFileName());
-	                    combinedDetails.put("fileType", mediaFiles.getFileType());
-	                    combinedDetails.put("filepath", mediaFiles.getFilePath());
-	                    combinedDetails.put("fileDescription", mediaFiles.getDescription());
-	                    combinedDetails.put("fileUrl", s3Util.generateS3FilePath(mediaFiles.getFilePath() + mediaFiles.getFileType()));
-	                    combinedDetails.put("likeCount", likeCount);
-	                    combinedDetails.put("commentCount", commentCount);
-	                    combinedDetails.put("shareCount", shareCount);
-	                    combinedDetails.put("userName", mediaFiles.getUser().getName());
+                List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, post.getUser().getUserId());
+                String profilePicturePath = null;
+                if (!userProfilePic.isEmpty()) {
+                    FileOutputWebModel profilePic = userProfilePic.get(0);
+                    profilePicturePath = profilePic.getFilePath();
+                }
 
-						FileOutputWebModel profilePic = userService.getProfilePic(UserWebModel.builder().userId(mediaFiles.getUser().getUserId()).build());
-						// Add profilePicUrl if profilePic is present
-	                    if (profilePic != null) combinedDetails.put("profilePicUrl", s3Util.generateS3FilePath(profilePic.getFilePath() + profilePic.getFileType()));
-						else combinedDetails.put("profilePicUrl", null);
+	            // Fetching the followers count for the user
+	            //long followersCount = friendRequestRepository.countByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+	            List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
-						combinedDetailsList.add(combinedDetails);
-	                }
+	            // Fetching the likes details
+	            boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
+	                    .map(Likes::getStatus)
+	                    .orElse(false);
+
+	            // Fetching the pin status
+	            boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
+	                    .map(UserProfilePin::isStatus)
+	                    .orElse(false);
+
+	            // Preparing PostWebModel
+	            PostWebModel postWebModel = PostWebModel.builder()
+	                    .id(post.getId())
+	                    .userId(post.getUser().getUserId())
+	                    .userName(post.getUser().getName())
+	                    .postId(post.getPostId())
+	                    .userProfilePic(profilePicturePath)
+	                    .description(post.getDescription())
+	                    .pinStatus(pinStatus)
+	                    .likeCount(post.getLikesCollection() != null ? post.getLikesCollection().size() : 0)
+	                    .shareCount(post.getShareCollection() != null ? post.getShareCollection().size() : 0)
+	                    .commentCount(post.getCommentCollection() != null ? post.getCommentCollection().size() : 0)
+	                    .promoteFlag(post.getPromoteFlag())
+	                    .postFiles(postFiles)
+	                    .likeStatus(likeStatus)
+	                    .privateOrPublic(post.getPrivateOrPublic())
+	                    .locationName(post.getLocationName())
+	                    .professionNames(professionNames)
+	                    .followersCount(followersList.size())
+	                    .build();
+
+	            // Adding PostWebModel to the combined details list
+	            Map<String, Object> combinedDetails = new HashMap<>();
+	            combinedDetails.put("postWebModel", postWebModel);
+
+//	            FileOutputWebModel profilePic = userService.getProfilePic(UserWebModel.builder().userId(post.getUser().getUserId()).build());
+//	            combinedDetails.put("profilePicUrl", profilePic != null ? s3Util.generateS3FilePath(profilePic.getFilePath() + profilePic.getFileType()) : null);
+
+//	            List<String> postFileUrls = postFiles.stream()
+//	                    .map(file -> s3Util.generateS3FilePath(file.getFilePath() + file.getFileType()))
+//	                    .collect(Collectors.toList());
+//	            combinedDetails.put("postFiles", postFileUrls);
+
+	            combinedDetailsList.add(combinedDetails);
 	        }
 
-	        // Create the response map
 	        Map<String, Object> responseMap = new HashMap<>();
 	        responseMap.put("combinedDetailsList", combinedDetailsList);
 
 	        return ResponseEntity.ok(responseMap);
 	    } catch (Exception e) {
-	        logger.error("userMediaPins service Method Exception {} ", e);
-	        e.printStackTrace();
+	        logger.error("Error in getAllMediaPin: {}", e.getMessage(), e);
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
 	    }
 	}

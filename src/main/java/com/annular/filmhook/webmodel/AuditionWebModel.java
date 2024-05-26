@@ -29,6 +29,8 @@ public class AuditionWebModel {
 	private Integer auditionIgnoredCount;
 	
 	private Integer auditionCreatedBy;
+	
+	private String auditionLocation;
 
 //	private List<AuditionRolesWebModel> auditionRoles;
 	
