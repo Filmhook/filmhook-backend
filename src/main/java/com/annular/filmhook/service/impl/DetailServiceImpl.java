@@ -70,6 +70,7 @@ import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.service.UserService;
 
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
@@ -142,6 +143,9 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     FilmProfessionRepository filmProfessionRepository;
+    
+    @Autowired
+    S3Util s3Util;
 
     @Autowired
     FilmSubProfessionRepository filmSubProfessionRepository;
@@ -701,13 +705,24 @@ public class DetailServiceImpl implements DetailService {
                         Map<String, Object> professionMap = new HashMap<>();
                         String professionName = professionDetail.getProfessionName();
 
-                        List<String> subProfessions = new ArrayList<>();
+//                        List<String> subProfessions = new ArrayList<>();
+//                        for (FilmSubProfessionPermanentDetail subProfession : professionDetail.getFilmSubProfessionPermanentDetails()) {
+//                            subProfessions.add(subProfession.getFilmSubProfession().getSubProfessionName());
+//                            
+//                        }
+                        List<Map<String, Object>> subProfessionsList = new ArrayList<>();
                         for (FilmSubProfessionPermanentDetail subProfession : professionDetail.getFilmSubProfessionPermanentDetails()) {
-                            subProfessions.add(subProfession.getFilmSubProfession().getSubProfessionName());
+                            Map<String, Object> subProfessionMap = new HashMap<>();
+                            subProfessionMap.put("subProfessionName", subProfession.getFilmSubProfession().getSubProfessionName());
+                            subProfessionMap.put("subProfessionId", subProfession.getProfessionPermanentId()); 
+                            subProfessionMap.put("startingYear", subProfession.getStartingYear());
+                            subProfessionMap.put("endingYear", subProfession.getEndingYear());
+                            subProfessionsList.add(subProfessionMap);
                         }
 
                         professionMap.put("professionName", professionName);
-                        professionMap.put("subProfessionNames", subProfessions);
+                        professionMap.put("subProfessions", subProfessionsList);
+
                         professionsList.add(professionMap);
                     }
 
@@ -958,7 +973,8 @@ public class DetailServiceImpl implements DetailService {
                        .map(detail -> {
                            Map<String, Object> industryMap = new HashMap<>();
                            industryMap.put("industryName", detail.getIndustriesName());
-                           industryMap.put("image", detail.getIndustry().getFilePath());
+                           industryMap.put("image", detail.getIndustry().getFilePath() != null ? s3Util.generateS3FilePath(detail.getIndustry().getFilePath()) : null);
+
                            return industryMap;
                        })
                        .collect(Collectors.toSet());

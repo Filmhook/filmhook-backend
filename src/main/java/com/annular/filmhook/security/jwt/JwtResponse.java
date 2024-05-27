@@ -10,6 +10,7 @@ public class JwtResponse {
 	private Integer status;
 	private String token;
 	private String userType;
+	private String filmHookCode;
 
 	public String getToken() {
 		return token;
@@ -68,8 +69,12 @@ public class JwtResponse {
 	}
 
 
+
+
+	
+
 	public JwtResponse(String jwt, Integer id, String username, String email, String message, Integer status,
-			String token, String userType) {
+			String token, String userType, String filmHookCode) {
 		super();
 		this.jwt = jwt;
 		this.id = id;
@@ -79,9 +84,8 @@ public class JwtResponse {
 		this.status = status;
 		this.token = token;
 		this.userType = userType;
+		this.filmHookCode = filmHookCode;
 	}
-
-	
 
 	public String getUserType() {
 		return userType;
@@ -89,6 +93,14 @@ public class JwtResponse {
 
 	public void setUserType(String userType) {
 		this.userType = userType;
+	}
+
+	public String getFilmHookCode() {
+		return filmHookCode;
+	}
+
+	public void setFilmHookCode(String filmHookCode) {
+		this.filmHookCode = filmHookCode;
 	}
 
 }

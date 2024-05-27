@@ -175,6 +175,14 @@ public class ReportServiceImpl implements ReportService {
 
 	            Map<String, Object> combinedDetails = new HashMap<>();
 	            combinedDetails.put("postWebModel", postWebModel);
+	            
+	         // Fetch ReportTable details
+	            Optional<ReportPost> reportTableOptional = reportRepository.findById(reportPost.getReportpostId());
+	            if (reportTableOptional.isPresent()) {
+	                ReportPost reportTable = reportTableOptional.get();
+	                combinedDetails.put("reportDetails", reportTable);
+	            }
+
 	            combinedDetailsList.add(combinedDetails);
 	        }
 

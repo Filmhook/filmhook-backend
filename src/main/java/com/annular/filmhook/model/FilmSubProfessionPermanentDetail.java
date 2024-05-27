@@ -67,4 +67,10 @@ public class FilmSubProfessionPermanentDetail {
 
     @Column(name = "userId")
     private Integer userId;
+    
+    @Column(name ="starting_year")
+    private String startingYear;
+    
+    @Column(name ="ending_year")
+    private String endingYear;
 }

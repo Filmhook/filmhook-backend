@@ -84,7 +84,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 					.body(new Response(-1, "Fail", e.getMessage()));
 		}
 		return ResponseEntity.status(HttpStatus.OK)
-				.body(ResponseEntity.ok(new Response(1, "Success", "Market details saved successfully")));
+				.body(new Response(1, "Success", "Market details saved successfully"));
 
 	}
 
