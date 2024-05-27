@@ -25,4 +25,6 @@ public interface IndustryUserPermanentDetailsRepository extends JpaRepository<In
 	@Query("Select id From IndustryUserPermanentDetails id Where id.industry in (:industryIds) ")
 	List<IndustryUserPermanentDetails> getDataByIndustryIds(List<Industry> industryIds);
 
+	List<IndustryUserPermanentDetails> findByUserId(Integer id);
+
 }

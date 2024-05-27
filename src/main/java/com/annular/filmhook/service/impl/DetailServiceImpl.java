@@ -942,4 +942,39 @@ public class DetailServiceImpl implements DetailService {
         }
     }
 
-}
+    @Override
+    public ResponseEntity<?> getIndustryByuserId() {
+    	   try {
+               Integer userId = userDetails.userInfo().getId();
+               List<IndustryUserPermanentDetails> industryDetails = industryUserPermanentDetailsRepository.findByUserId(userId);
+
+               Map<String, Object> response = new HashMap<>();
+               if (industryDetails.isEmpty()) {
+                   response.put("message", "No industry data found for the user");
+                   return ResponseEntity.status(404).body(response);
+               }
+               
+               Set<Map<String, Object>> industryData = industryDetails.stream()
+                       .map(detail -> {
+                           Map<String, Object> industryMap = new HashMap<>();
+                           industryMap.put("industryName", detail.getIndustriesName());
+                           industryMap.put("image", detail.getIndustry().getFilePath());
+                           return industryMap;
+                       })
+                       .collect(Collectors.toSet());
+
+               response.put("industryData", industryData);
+               return ResponseEntity.ok(response);
+           } catch (Exception e) {
+               e.printStackTrace();
+               Map<String, Object> errorResponse = new HashMap<>();
+               errorResponse.put("message", "Error retrieving industry names");
+               errorResponse.put("error", e.getMessage());
+               return ResponseEntity.status(500).body(errorResponse);
+           }
+       }
+   }
+
+	
+
+

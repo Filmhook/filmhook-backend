@@ -236,4 +236,17 @@ public class DetailsController {
         }
 
     }
+    
+    @GetMapping("/getIndustryByuserId")
+    public ResponseEntity<?> getIndustryByuserId() {
+        try {
+            logger.info("getIndustryByuserId controller start");
+            return detailService.getIndustryByuserId();
+        } catch (Exception e) {
+            logger.error("getIndustryByuserId Method Exception -> ", e);
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+
+    }
 }
