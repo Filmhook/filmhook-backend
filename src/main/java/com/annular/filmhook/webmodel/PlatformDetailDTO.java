@@ -21,4 +21,10 @@ public class PlatformDetailDTO {
 	private Integer netWorth;
 
 	private Integer dailySalary;
+
+	public List<SubProfessionsWebModel> SubProfession;
+	
+	private String startingYear;
+	private String endingYear;
+
 }

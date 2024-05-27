@@ -78,6 +78,7 @@ import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
+import com.annular.filmhook.webmodel.SubProfessionsWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 
@@ -738,6 +739,25 @@ public class DetailServiceImpl implements DetailService {
         }
     }
 
+//    @Override
+//    public ResponseEntity<?> updateIndustryUserPermanentDetails(PlatformDetailDTO platformDetailDTO) {
+//        try {
+//            Optional<PlatformPermanentDetail> optionalPermanentDetails = platformPermanentDetailRepository.findById(platformDetailDTO.getPlatformPermanentId());
+//            if (optionalPermanentDetails.isPresent()) {
+//                PlatformPermanentDetail permanentDb = optionalPermanentDetails.get();
+//                permanentDb.setDailySalary(platformDetailDTO.getDailySalary());
+//                permanentDb.setFilmCount(platformDetailDTO.getFilmCount());
+//                permanentDb.setNetWorth(platformDetailDTO.getNetWorth());
+//                platformPermanentDetailRepository.save(permanentDb);
+//            }
+//            return ResponseEntity.ok("Industry user permanent details updated successfully.");
+//        } catch (Exception e) {
+//            logger.error("Error in updating industry user permanent details", e);
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update industry user permanent details.");
+//        }
+//    }
+
     @Override
     public ResponseEntity<?> updateIndustryUserPermanentDetails(PlatformDetailDTO platformDetailDTO) {
         try {
@@ -747,6 +767,20 @@ public class DetailServiceImpl implements DetailService {
                 permanentDb.setDailySalary(platformDetailDTO.getDailySalary());
                 permanentDb.setFilmCount(platformDetailDTO.getFilmCount());
                 permanentDb.setNetWorth(platformDetailDTO.getNetWorth());
+
+                for (SubProfessionsWebModel subProfessionDTO : platformDetailDTO.getSubProfession()) {
+                    Optional<FilmSubProfessionPermanentDetail> optionalSubProfession = filmSubProfessionPermanentDetailsRepository.findById(subProfessionDTO.getSubProfessionId());
+                    if (optionalSubProfession.isPresent()) {
+                        FilmSubProfessionPermanentDetail subProfessionDetail = optionalSubProfession.get();
+                        subProfessionDetail.setStartingYear(subProfessionDTO.getStartingYear());
+                        subProfessionDetail.setEndingYear(subProfessionDTO.getEndingYear());
+                        filmSubProfessionPermanentDetailsRepository.save(subProfessionDetail);
+                    } else {
+                        // Handle case when the sub-profession is not found
+                        logger.error("Sub-profession with ID {} not found", subProfessionDTO.getSubProfessionId());
+                    }
+                }
+
                 platformPermanentDetailRepository.save(permanentDb);
             }
             return ResponseEntity.ok("Industry user permanent details updated successfully.");
@@ -756,7 +790,6 @@ public class DetailServiceImpl implements DetailService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update industry user permanent details.");
         }
     }
-
     @Override
     public ResponseEntity<?> updateIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
         try {

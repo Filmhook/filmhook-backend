@@ -35,51 +35,119 @@ public class PromoteServiceImpl implements PromoteService {
 	@Autowired
 	PostsRepository postsRepository;
 
-    @Override
-    public ResponseEntity<?> addPromote(PromoteWebModel promoteWebModel) {
-        HashMap<String, Object> response = new HashMap<>();
-        try {
-            logger.info("addPromote method start");
-            Promote promote = new Promote();
-            promote.setAmount(promoteWebModel.getAmount());
-            promote.setCgst(promoteWebModel.getCgst());
-//			promote.setEndDate(promoteWebModel.getEndDate());
-            promote.setPrice(promoteWebModel.getPrice());
-            promote.setPostId(promoteWebModel.getPostId());
-            promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
-            promote.setTotalCost(promoteWebModel.getTotalCost());
-            promote.setTaxFee(promoteWebModel.getTaxFee());
-            promote.setSgst(promoteWebModel.getSgst());
-            promote.setCreatedBy(userDetails.userInfo().getId());
-            promote.setStatus(true);
-//			promote.setStartDate(promoteWebModel.getStartDate());
-//			promote.setCountry(promoteWebModel.getCountry());
-            if (promoteWebModel.getCountry() != null) {
-                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
-            }
-            promote.setUserId(userDetails.userInfo().getId());
-            promote.setMultimediaId(promoteWebModel.getMultimediaId());
-            promote = promoteRepository.save(promote);
-            response.put("promoteInfo", promote);
+//    @Override
+//    public ResponseEntity<?> addPromote(PromoteWebModel promoteWebModel) {
+//        HashMap<String, Object> response = new HashMap<>();
+//        try {
+//            logger.info("addPromote method start");
+//            Promote promote = new Promote();
+//            promote.setAmount(promoteWebModel.getAmount());
+//            promote.setCgst(promoteWebModel.getCgst());
+////			promote.setEndDate(promoteWebModel.getEndDate());
+//            promote.setPrice(promoteWebModel.getPrice());
+//            promote.setPostId(promoteWebModel.getPostId());
+//            promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
+//            promote.setTotalCost(promoteWebModel.getTotalCost());
+//            promote.setTaxFee(promoteWebModel.getTaxFee());
+//            promote.setSgst(promoteWebModel.getSgst());
+//            promote.setCreatedBy(userDetails.userInfo().getId());
+//            promote.setStatus(true);
+////			promote.setStartDate(promoteWebModel.getStartDate());
+////			promote.setCountry(promoteWebModel.getCountry());
+//            if (promoteWebModel.getCountry() != null) {
+//                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+//            }
+//            promote.setUserId(userDetails.userInfo().getId());
+//            promote.setMultimediaId(promoteWebModel.getMultimediaId());
+//            promote = promoteRepository.save(promote);
+//            response.put("promoteInfo", promote);
+//
+////			// Updating the promote flag in post-table
+////            Posts promotedPost = postsRepository.findById(promote.getPostId()).orElse(null);
+////            if (promotedPost != null) {
+////                promotedPost.setPromoteFlag(true);
+////                postsRepository.saveAndFlush(promotedPost);
+////                Posts demotedPost = postsRepository.findByPromoteFlag(true).orElse(null);
+////                if (demotedPost != null) {
+////                    demotedPost.setPromoteFlag(false);
+////                    postsRepository.saveAndFlush(demotedPost);
+////                }
+//            //}
+//            logger.info("addMethod method end");
+//            return ResponseEntity.ok(new Response(1, "Add promote successfully", response));
+//        } catch (Exception e) {
+//            logger.error("Error setting Promote: {}", e.getMessage());
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Error setting promote", e.getMessage()));
+//        }
+//    }
+	@Override
+	public ResponseEntity<?> addPromote(PromoteWebModel promoteWebModel) {
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        logger.info("addPromote method start");
 
-			// Updating the promote flag in post-table
-            Posts promotedPost = postsRepository.findById(promote.getPostId()).orElse(null);
-            if (promotedPost != null) {
-                promotedPost.setPromoteFlag(true);
-                postsRepository.saveAndFlush(promotedPost);
-                Posts demotedPost = postsRepository.findByPromoteFlag(true).orElse(null);
-                if (demotedPost != null) {
-                    demotedPost.setPromoteFlag(false);
-                    postsRepository.saveAndFlush(demotedPost);
-                }
+	        Promote promote;
+	        Integer userId = userDetails.userInfo().getId();
+
+	        // Check if a Promote already exists with the same postId and userId
+	        Promote existingPromote = promoteRepository.findByPostIdAndUserId(promoteWebModel.getPostId(), userId);
+	        if (existingPromote != null) {
+	            // Update the existing promote instead of creating a new one
+	            promote = existingPromote;
+	            promote.setAmount(promoteWebModel.getAmount());
+	            promote.setCgst(promoteWebModel.getCgst());
+	            promote.setPrice(promoteWebModel.getPrice());
+	            promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
+	            promote.setTotalCost(promoteWebModel.getTotalCost());
+	            promote.setTaxFee(promoteWebModel.getTaxFee());
+	            promote.setSgst(promoteWebModel.getSgst());
+	            promote.setCreatedBy(userId);
+//	            promote.setStatus(true);
+	            promote.setStatus(! promote.getStatus());
+	            if (promoteWebModel.getCountry() != null) {
+	                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+	            }
+	            promote.setMultimediaId(promoteWebModel.getMultimediaId());
+	        } else {
+	            // Create a new Promote if none exists
+	            promote = new Promote();
+	            promote.setAmount(promoteWebModel.getAmount());
+	            promote.setCgst(promoteWebModel.getCgst());
+	            promote.setPrice(promoteWebModel.getPrice());
+	            promote.setPostId(promoteWebModel.getPostId());
+	            promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
+	            promote.setTotalCost(promoteWebModel.getTotalCost());
+	            promote.setTaxFee(promoteWebModel.getTaxFee());
+	            promote.setSgst(promoteWebModel.getSgst());
+	            promote.setCreatedBy(userId);
+	            promote.setStatus(true);
+	            if (promoteWebModel.getCountry() != null) {
+	                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+	            }
+	            promote.setUserId(userId);
+	            promote.setMultimediaId(promoteWebModel.getMultimediaId());
+	        }
+
+	        promote = promoteRepository.save(promote);
+	        response.put("promoteInfo", promote);
+		// Updating the promote flag in post-table
+        Posts promotedPost = postsRepository.findById(promote.getPostId()).orElse(null);
+        if (promotedPost != null) {
+            promotedPost.setPromoteFlag(true);
+            postsRepository.saveAndFlush(promotedPost);
+            Posts demotedPost = postsRepository.findByPromoteFlag(true).orElse(null);
+            if (demotedPost != null) {
+                demotedPost.setPromoteFlag(false);
+                postsRepository.saveAndFlush(demotedPost);
             }
-            logger.info("addMethod method end");
-            return ResponseEntity.ok(new Response(1, "Add promote successfully", response));
-        } catch (Exception e) {
-            logger.error("Error setting Promote: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Error setting promote", e.getMessage()));
         }
-    }
+	        logger.info("addPromote method end");
+	        return ResponseEntity.ok(new Response(1, "Add promote successfully", response));
+	    } catch (Exception e) {
+	        logger.error("Error setting Promote: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Error setting promote", e.getMessage()));
+	    }
+	}
 
     @Override
     public ResponseEntity<?> updatePromote(PromoteWebModel promoteWebModel) {
