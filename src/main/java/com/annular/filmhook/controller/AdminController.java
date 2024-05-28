@@ -113,11 +113,11 @@ public class AdminController {
         }
     }
     
-    @GetMapping("changeStatusUnverifiedIndustrialUsers")
-	public Response changeStatusUnverifiedIndustrialUsers(@RequestParam("userId") Integer userId,@RequestParam("status")Boolean status) {
+    @PostMapping("changeStatusUnverifiedIndustrialUsers")
+	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
 		try {
 			logger.info("changeStatusUnverifiedIndustrialUsers controller start");
-			return adminService.changeStatusUnverifiedIndustrialUsers(userId,status);
+			return adminService.changeStatusUnverifiedIndustrialUsers(userWebModel);
 		} catch (Exception e) {
 			logger.info("changeStatusUnverifiedIndustrialUsers Method Exception" + e);
 			e.printStackTrace();

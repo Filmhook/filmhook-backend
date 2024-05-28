@@ -131,72 +131,7 @@ public class AuditionServiceImpl implements AuditionService {
 	    return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details saved successfully", response));
 	}
 
-//	@Override
-//	public ResponseEntity<?> getAuditionByCategory(Integer categoryId) {
-//		HashMap<String, Object> response = new HashMap<String, Object>();
-//		try {
-//			logger.info("get audition by category method start");
-//
-//						List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId);
-//			//List<Audition> auditions = auditionRepository.findByAuditionTitle(auditionTitle);
-//
-//			if(auditions.size()>0) {
-//				List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
-//
-//				for(Audition audition : auditions) {
-//
-//					AuditionWebModel auditionWebModel = new AuditionWebModel();
-//
-//					auditionWebModel.setAuditionId(audition.getAuditionId());
-//					auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
-//					auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
-//					auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
-//					auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
-//					auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
-//					auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
-//					auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
-//					auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
-//					auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
-//
-//					if(audition.getAuditionRoles().size()>0) {
-//						List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
-//
-//						for(AuditionRoles auditionRoles : audition.getAuditionRoles()) {
-//
-//							AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
-//							auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
-//							auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
-//
-//							auditionRolesWebModelsList.add(auditionRolesWebModel);
-//
-//						}
-//
-//						auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
-//					}
-//
-//					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
-//					if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
-//						auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
-//					}
-//
-//					auditionWebModelsList.add(auditionWebModel);
-//
-//				}
-//				response.put("Audition List", auditionWebModelsList);
-//
-//			}
-//			else {
-//				response.put("No auditions found", "");
-//			}
-//
-//		} catch (Exception e) {
-//			logger.error("get audition by category Method Exception...", e);
-//			e.printStackTrace();
-//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//					.body(new Response(-1, "Fail", e.getMessage()));
-//		}
-//		return ResponseEntity.status(HttpStatus.OK).body(new Response(1, "Audition details fetched successfully", response));
-//	}
+
 	
 	@Override
 	public ResponseEntity<?> getAuditionByCategory(Integer categoryId) {

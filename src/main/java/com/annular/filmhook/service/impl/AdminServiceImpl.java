@@ -294,24 +294,34 @@ public class AdminServiceImpl implements AdminService {
 			return new Response(-1, "There are no unverified users found.", responseList);
 		}
 	}
-
+	
 	@Override
 	public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
 	    try {
 	        HashMap<String, Object> response = new HashMap<>();
 
-	        Pageable paging = PageRequest.of(userWebModel.getPageNo() - 1, userWebModel.getPageSize());
-	        Page<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository.findByUserId(userWebModel.getUserId(), paging);
+	        // Fetch all user permanent details by userId without pagination
+	        List<IndustryUserPermanentDetails> userPermanentDetailsList = industryUserPermanentDetailsRepository.findByUserId(userWebModel.getUserId());
 
-	        if (userPermanentDetails.isEmpty()) {
+	        if (userPermanentDetailsList.isEmpty()) {
 	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User permanent details not found for user id: " + userWebModel.getUserId());
 	        } else {
-	            Map<String, Object> pageDetails = new HashMap<>();
-	            pageDetails.put("totalPages", userPermanentDetails.getTotalPages());
-	            pageDetails.put("totalRecords", userPermanentDetails.getTotalElements());
+	            Optional<User> userOptional = userService.getUser(userWebModel.getUserId());
+	            if (!userOptional.isPresent()) {
+	                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found for user id: " + userWebModel.getUserId());
+	            }
+	            User user = userOptional.get();
+
+	            // Fetching the ProfilePic Path
+	            List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, user.getUserId());
+	            String profilePicturePath = null;
+	            if (!userProfilePic.isEmpty()) {
+	                FileOutputWebModel profilePic = userProfilePic.get(0);
+	                profilePicturePath = profilePic.getFilePath();
+	            }
 
 	            List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
-	            for (IndustryUserPermanentDetails details : userPermanentDetails) {
+	            for (IndustryUserPermanentDetails details : userPermanentDetailsList) {
 	                IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
 	                responseDTO.setIndustriesName(details.getIndustriesName());
 	                responseDTO.setIupdId(details.getIupdId());
@@ -353,8 +363,9 @@ public class AdminServiceImpl implements AdminService {
 	                responseDTO.setPlatformDetails(platformDetailDTOList);
 	                responseDTOList.add(responseDTO);
 	            }
-	            response.put("PageInfo", pageDetails);
 	            response.put("Data", responseDTOList);
+	            response.put("userInfo", user);
+	            response.put("profilePicturePath", profilePicturePath);
 
 	            return ResponseEntity.ok(response);
 	        }
@@ -366,10 +377,98 @@ public class AdminServiceImpl implements AdminService {
 	}
 
 
-	@Override
-	public Response changeStatusUnverifiedIndustrialUsers(Integer userId, Boolean status) {
-	    List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userId);
+//	@Override
+//	public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
+//	    try {
+//	        HashMap<String, Object> response = new HashMap<>();
+//
+//	        Pageable paging = PageRequest.of(userWebModel.getPageNo() - 1, userWebModel.getPageSize());
+//	        Page<IndustryUserPermanentDetails> userPermanentDetails = industryUserPermanentDetailsRepository.findByUserId(userWebModel.getUserId(), paging);
+//
+//	        if (userPermanentDetails.isEmpty()) {
+//	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User permanent details not found for user id: " + userWebModel.getUserId());
+//	        } else {
+//	            Map<String, Object> pageDetails = new HashMap<>();
+//	            pageDetails.put("totalPages", userPermanentDetails.getTotalPages());
+//	            pageDetails.put("totalRecords", userPermanentDetails.getTotalElements());
+//
+//	            Optional<User> userOptional = userService.getUser(userWebModel.getUserId());
+//	            if (!userOptional.isPresent()) {
+//	                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found for user id: " + userWebModel.getUserId());
+//	            }
+//	            User user = userOptional.get();
+//	            // Fetching the ProfilePic Path
+//                List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, user.getUserId());
+//                String profilePicturePath = null;
+//                if (!userProfilePic.isEmpty()) {
+//                    FileOutputWebModel profilePic = userProfilePic.get(0);
+//                    profilePicturePath = profilePic.getFilePath();
+//                }
+//	            
+//	            List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
+//	            for (IndustryUserPermanentDetails details : userPermanentDetails) {
+//	                IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
+//	                responseDTO.setIndustriesName(details.getIndustriesName());
+//	                responseDTO.setIupdId(details.getIupdId());
+//
+//	                List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
+//	                List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();
+//	                for (PlatformPermanentDetail platformDetail : platformDetails) {
+//	                    PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
+//	                    platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
+//	                    platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
+//
+//	                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userWebModel.getUserId(), MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+//	                    platformDetailDTO.setOutputWebModelList(outputWebModelList);
+//
+//	                    platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
+//	                    platformDetailDTO.setDailySalary(platformDetail.getDailySalary());
+//	                    platformDetailDTO.setFilmCount(platformDetail.getFilmCount());
+//	                    platformDetailDTO.setNetWorth(platformDetail.getNetWorth());
+//
+//	                    List<ProfessionDetailDTO> professionDetailDTOList = new ArrayList<>();
+//	                    for (FilmProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
+//	                        ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
+//	                        professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
+//
+//	                        List<String> filmSubProfessionNames = filmSubProfessionRepository.findBySubProfessionName(professionDetail.getProfessionName().toUpperCase())
+//	                                .stream()
+//	                                .map(FilmSubProfession::getSubProfessionName)
+//	                                .collect(Collectors.toList());
+//	                        professionDetailDTO.setSubProfessionName(filmSubProfessionNames);
+//
+//	                        professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
+//	                        professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
+//
+//	                        professionDetailDTOList.add(professionDetailDTO);
+//	                    }
+//	                    platformDetailDTO.setProfessionDetails(professionDetailDTOList);
+//	                    platformDetailDTOList.add(platformDetailDTO);
+//	                }
+//	                responseDTO.setPlatformDetails(platformDetailDTOList);
+//	                responseDTOList.add(responseDTO);
+//	            }
+//	            //response.put("PageInfo", pageDetails);
+//	            response.put("Data", responseDTOList);
+//	            response.put("userInfo", user);
+//	            response.put("profilePicturePath", profilePicturePath);
+//
+//	            return ResponseEntity.ok(response);
+//	        }
+//	    } catch (Exception e) {
+//	        logger.error("Error occurred while retrieving industry user permanent details: {}", e.getMessage());
+//	        e.printStackTrace();
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve industry user permanent details.");
+//	    }
+//	}
 
+
+	@Override
+	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
+	    List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
+
+	    Boolean status = userWebModel.isStatus();
+	    
 	    // Iterate over the list and set status to false
 	    for (IndustryMediaFiles industryMediaFile : industryDbData) {
 	        industryMediaFile.setStatus(status);
@@ -381,10 +480,11 @@ public class AdminServiceImpl implements AdminService {
 
 	    // Update the userType in the User table
 	    if (!status) {
-	        Optional<User> userOptional = userRepository.findById(userId);
+	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
 	        if (userOptional.isPresent()) {
 	            User user = userOptional.get();
 	            user.setUserType("IndustryUser");
+	            user.setAdminReview(userWebModel.getAdminReview());
 	            userRepository.save(user);
 	            
 	            // Send verification email
@@ -398,10 +498,10 @@ public class AdminServiceImpl implements AdminService {
 	        }
 	    } else {
 	        // status true means userType change to Industry user and send mail notification
-	        Optional<User> userOptional = userRepository.findById(userId);
+	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
 	        if (userOptional.isPresent()) {
 	            User user = userOptional.get();
-	            user.setUserType("IndustryUser");
+	            user.setUserType("commonUser");
 	            userRepository.save(user);
 	            
 	            // Send notification email

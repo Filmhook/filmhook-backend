@@ -26,6 +26,7 @@ public class UserWebModel {
 	private String lastName;
 	private String middleName;
 	private String firebaseDeviceToken;
+	private String adminReview;
 
 
 	// Biography Section

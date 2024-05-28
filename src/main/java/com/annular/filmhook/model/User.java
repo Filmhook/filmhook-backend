@@ -194,5 +194,9 @@ public class User {
     
     @Column(name = "firebase_device_token")
     private String firebaseDeviceToken;
+    
+    @Column(name = "admin_review")
+    private String adminReview;
+    
 
 }
