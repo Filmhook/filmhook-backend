@@ -60,16 +60,16 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     UserDetails userDetails;
-	
+
     public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
 
-    
+
     @Autowired
     MediaFilesService mediaFilesService;
 
     @Autowired
     FileUtil fileUtil;
-    
+
     @Autowired
     PinProfileRepository pinProfileRepository;
 
@@ -204,10 +204,10 @@ public class PostServiceImpl implements PostService {
                             Integer userId = userDetails.userInfo().getId();
                             Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), userId);
                             Boolean likeStatus = likesList.map(Likes::getStatus).orElse(false);
-                          
-                            Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(userId,post.getUser().getUserId());
-                           Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
-                            
+
+                            Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(userId, post.getUser().getUserId());
+                            Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
+
                             // Preparing outputList
                             PostWebModel postWebModel = PostWebModel.builder()
                                     .id(post.getId())
@@ -231,7 +231,7 @@ public class PostServiceImpl implements PostService {
                                     .build();
                             responseList.add(postWebModel);
                         });
-                Collections.sort(responseList, Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag)).reversed());
+                responseList.sort(Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag).reversed()));
             }
         } catch (Exception e) {
             logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage());
@@ -255,7 +255,7 @@ public class PostServiceImpl implements PostService {
                 return new ByteArrayResource(fileUtil.downloadFile(s3data));
             }
         } catch (Exception e) {
-            logger.error("Error at getGalleryFile()...", e);
+            logger.error("Error at getAllPostByUserIdAndCategory()...", e);
             e.printStackTrace();
         }
         return null;
@@ -268,7 +268,7 @@ public class PostServiceImpl implements PostService {
             List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
             return new ByteArrayResource(fileUtil.downloadFile(s3data));
         } catch (Exception e) {
-            logger.error("Error at getGalleryFile()...", e);
+            logger.error("Error at getAllPostFilesByCategory()...", e);
             e.printStackTrace();
         }
         return null;
@@ -280,7 +280,7 @@ public class PostServiceImpl implements PostService {
             List<Posts> postList = postsRepository.findAll();
             return this.transformPostsDataToPostWebModel(postList);
         } catch (Exception e) {
-            logger.error("Error at getGalleryFilesByUser()...", e);
+            logger.error("Error at getAllUsersPosts()...", e);
             e.printStackTrace();
             return null;
         }
@@ -315,8 +315,8 @@ public class PostServiceImpl implements PostService {
                 }
                 Likes savedLikes = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
                 existingPost.getLikesCollection().add(savedLikes); // Adding saved/updated likes into postLikesCollection
-                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(Likes::getStatus).count() : 0;;
-                logger.info("Like count for post id [{}] is :- [{}]",existingPost.getId(), currentPostTotalLikes);
+                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(Likes::getStatus).count() : 0;
+                logger.info("Like count for post id [{}] is :- [{}]", existingPost.getId(), currentPostTotalLikes);
                 return this.transformLikeData(likeRowToSaveOrUpdate, currentPostTotalLikes);
             }
         } catch (Exception e) {
@@ -354,7 +354,7 @@ public class PostServiceImpl implements PostService {
                 Comment savedComment = commentRepository.save(comment);
                 post.getCommentCollection().add(savedComment); // Adding saved/updated likes into postCommentsCollection
                 Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(Comment::getStatus).count() : 0;
-                logger.info("Comments count for post id [{}] is :- [{}]",post.getId(), currentTotalCommentCount);
+                logger.info("Comments count for post id [{}] is :- [{}]", post.getId(), currentTotalCommentCount);
                 return this.transformCommentData(List.of(savedComment), currentTotalCommentCount).get(0);
             }
         } catch (Exception e) {
@@ -416,7 +416,7 @@ public class PostServiceImpl implements PostService {
                     Comment deletedComment = commentRepository.saveAndFlush(comment);
                     post.getCommentCollection().removeIf(val -> val.getCommentId().equals(comment.getCommentId())); // removing saved/updated likes into postCommentsCollection
                     Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(Comment::getStatus).count() : 0;
-                    logger.info("Comments count for post id [{}] is :- [{}]",post.getId(), currentTotalCommentCount);
+                    logger.info("Comments count for post id [{}] is :- [{}]", post.getId(), currentTotalCommentCount);
                     return this.transformCommentData(List.of(deletedComment), currentTotalCommentCount).get(0);
                 }
             }

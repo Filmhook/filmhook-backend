@@ -56,11 +56,6 @@ public class FilmProfession {
     @ToString.Exclude
     private byte[] image;
 
-    @ManyToOne
-    @JoinColumn(name = "platform_id", nullable = false)
-    @ToString.Exclude
-    private Platform platform;
-
     @Column(name = "icon_file_path")
     private String filePath;
 

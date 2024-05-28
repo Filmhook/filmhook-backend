@@ -255,7 +255,7 @@ public class UserController {
             logger.error("Error at getProfessionByPlatform -> {}", e.getMessage());
             return new Response(-1, "Error at profession search by platform...", null);
         }
-        return new Response(-1, "Profession(s) not found for platform id -> [{}]", searchWebModel.getPlatformId());
+        return new Response(-1, "Profession(s) not found for platform id -> [" +  searchWebModel.getPlatformId() + "]", "");
     }
 
     @PostMapping("/getSubProfessionByProfession")

@@ -81,6 +81,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     FilmSubProfessionPermanentDetailsRepository filmSubProfessionPermanentDetailsRepository;
 
+    @Autowired
+    PlatformFilmProfessionMapRepository platformFilmProfessionMapRepository;
+
     @Override
     public Optional<UserWebModel> getUserByUserId(Integer userId) {
         UserWebModel user = null;
@@ -461,7 +464,7 @@ public class UserServiceImpl implements UserService {
     public List<UserSearchWebModel> getAllProfessionByPlatformId(Integer platformId) {
         List<UserSearchWebModel> outputList = new ArrayList<>();
         try {
-            List<FilmProfession> professionList = filmProfessionRepository.findByPlatform(Platform.builder().platformId(platformId).build());
+            List<FilmProfession> professionList = platformFilmProfessionMapRepository.getFilmProfessionsByPlatform(Platform.builder().platformId(platformId).build());
             if (!Utility.isNullOrEmptyList(professionList)) {
                 UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
                         .professionList(this.transformProfessionData(professionList))
