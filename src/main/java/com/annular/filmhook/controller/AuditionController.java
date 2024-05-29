@@ -50,7 +50,7 @@ public class AuditionController {
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
 
-	@GetMapping("/getAuditionByCategory")
+	@PostMapping("/getAuditionByCategory")
 	public ResponseEntity<?> getAuditionByCategory(@RequestBody AuditionWebModel auditionWebModel) {
 		try {
 			// logger.info("Audition category to be fetched :- " +

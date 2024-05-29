@@ -6,6 +6,7 @@ import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
 
@@ -230,6 +231,19 @@ public class PostController {
             if(shareWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Post shared successfully...", shareWebModelOutput));
         } catch (Exception e) {
             logger.error("addShare Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+        return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
+    }
+    
+    @PostMapping("/addLink")
+    public ResponseEntity<?> addLink(@RequestBody LinkWebModel linkWebModel) {
+        try {
+        	LinkWebModel linkWebModels = postService.addLink(linkWebModel);
+            if(linkWebModels != null) return ResponseEntity.ok(new Response(1, "Post shared successfully...", linkWebModels));
+        } catch (Exception e) {
+            logger.error("addLink Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
         }

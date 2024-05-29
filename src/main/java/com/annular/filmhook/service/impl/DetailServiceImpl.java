@@ -334,95 +334,187 @@ public class DetailServiceImpl implements DetailService {
         }
     }
 
+//    @Override
+//    public ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
+//        try {
+//            if(userDetails.userInfo() != null && userDetails.userInfo().getId().equals(userId)) {
+//                Map<String, String> responseMap = new HashMap<>();
+//                StringBuilder unknownIndustries = new StringBuilder();
+//                for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
+//                    // Find the industry by name
+//                    Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
+//                    if (industry == null) {
+//                        unknownIndustries.append(industryUserPermanentDetailWebModel.getIndustriesName()).append(" ");
+//                        responseMap.put("error", "Unknown industry(s) found -> [ " + unknownIndustries + " ].\nThese industry and its details are not available in the master data. Please add a valid industry...");
+//                        continue;
+//                    }
+//                    // Create IndustryPermanentDetails object
+//                    IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
+//                    industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
+//                    industryPermanentDetails.setUserId(userId); // Set userId from method parameter
+//                    industryPermanentDetails.setIndustry(industry);
+//                    industryPermanentDetails.setCreatedBy(userId);
+//                    industryPermanentDetails.setCreatedOn(new Date());
+//                    industryPermanentDetails.setStatus(true);
+//                    // Save the IndustryPermanentDetails object
+//                    IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.saveAndFlush(industryPermanentDetails);
+//
+//                    // Iterate over platform details
+//                    for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
+//                        // Find the platform by name
+//                        Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
+//                        if (platform == null) continue;
+//                        // Create PlatformPermanentDetail object
+//                        PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
+//                        platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
+//                        platformPermanentDetail.setUserId(userId);
+//                        platformPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
+//                        platformPermanentDetail.setPlatform(platform);
+//                        // Save the PlatformPermanentDetail object
+//                        PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.saveAndFlush(platformPermanentDetail);
+//
+//                        // Iterate over profession details for this platform
+//                        for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
+//                            // Find the profession by name
+//                            FilmProfession profession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
+//                            if (profession == null) continue;
+//                            // Create ProfessionPermanentDetail object
+//                            FilmProfessionPermanentDetail filmProfessionPermanentDetail = new FilmProfessionPermanentDetail();
+//                            filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
+//                            filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName());
+//                            filmProfessionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
+//                            filmProfessionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
+//                            filmProfessionPermanentDetail.setFilmProfession(profession);
+//                            filmProfessionPermanentDetail.setUserId(userId);
+//                            // Save the ProfessionPermanentDetail object
+//                            FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.saveAndFlush(filmProfessionPermanentDetail);
+//
+//                            // Iterate over sub profession details for this profession
+//                            for (String subProfessionInput : professionDetail.getSubProfessionName()) {
+//                                // Find the sub-profession by name
+//                                FilmSubProfession subProfession = filmSubProfessionRepository.findBySubProfessionName(subProfessionInput.toUpperCase()).orElse(null);
+//                                if (subProfession == null) continue;
+//                                // sub-profession
+//                                FilmSubProfessionPermanentDetail subProfessionPermanentDetails = FilmSubProfessionPermanentDetail.builder()
+//                                        .professionName(subProfessionInput.toUpperCase())
+//                                        .userId(userId)
+//                                        .industryUserPermanentDetails(savedIndustryUserPermanentDetails)
+//                                        .platformPermanentDetail(savedPlatformPermanentDetail)
+//                                        .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
+//                                        .ppdProfessionId(0)
+//                                        .filmSubProfession(subProfession)
+//                                        .build();
+//                                filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
+//                            }
+//                        }
+//                    }
+//                }
+//                industryTemporaryDetailsRepository.deleteByUserId(userId);
+//                industryDetailsRepository.deleteByUserId(userId);
+//                platformDetailsRepository.deleteByUserId(userId);
+//                filmProfessionDetailRepository.deleteByUserId(userId);
+//                filmSubProfessionDetailRepository.deleteByUserId(userId);
+//
+//                if (responseMap.isEmpty()) {
+//                    // Return a success response
+//                    return ResponseEntity.ok("Industry user permanent details added successfully.");
+//                } else {
+//                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMap.get("error"));
+//                }
+//            } else {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Provided user is not a valid user...");
+//            }
+//        } catch (Exception e) {
+//            // Return an error response if an exception occurs
+//            e.printStackTrace();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add industry user permanent details.");
+//        }
+//    }
     @Override
     public ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
         try {
-            if(userDetails.userInfo() != null && userDetails.userInfo().getId().equals(userId)) {
-                Map<String, String> responseMap = new HashMap<>();
-                StringBuilder unknownIndustries = new StringBuilder();
-                for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
-                    // Find the industry by name
-                    Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
-                    if (industry == null) {
-                        unknownIndustries.append(industryUserPermanentDetailWebModel.getIndustriesName()).append(" ");
-                        responseMap.put("error", "Unknown industry(s) found -> [ " + unknownIndustries + " ].\nThese industry and its details are not available in the master data. Please add a valid industry...");
-                        continue;
-                    }
-                    // Create IndustryPermanentDetails object
-                    IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
-                    industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
-                    industryPermanentDetails.setUserId(userId); // Set userId from method parameter
-                    industryPermanentDetails.setIndustry(industry);
-                    industryPermanentDetails.setCreatedBy(userId);
-                    industryPermanentDetails.setCreatedOn(new Date());
-                    industryPermanentDetails.setStatus(true);
-                    // Save the IndustryPermanentDetails object
-                    IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.saveAndFlush(industryPermanentDetails);
+            Map<String, String> responseMap = new HashMap<>();
+            StringBuilder unknownIndustries = new StringBuilder();
+            for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
+                // Find the industry by name
+                Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
+                if (industry == null) {
+                    unknownIndustries.append(industryUserPermanentDetailWebModel.getIndustriesName()).append(" ");
+                    responseMap.put("error", "Unknown industry(s) found -> [ " + unknownIndustries + " ].\nThese industry and its details are not available in the master data. Please add a valid industry...");
+                    continue;
+                }
+                // Create IndustryPermanentDetails object
+                IndustryUserPermanentDetails industryPermanentDetails = new IndustryUserPermanentDetails();
+                industryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
+                industryPermanentDetails.setUserId(userId); // Set userId from method parameter
+                industryPermanentDetails.setIndustry(industry);
+                industryPermanentDetails.setCreatedBy(userId);
+                industryPermanentDetails.setCreatedOn(new Date());
+                industryPermanentDetails.setStatus(true);
+                // Save the IndustryPermanentDetails object
+                IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.saveAndFlush(industryPermanentDetails);
 
-                    // Iterate over platform details
-                    for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
-                        // Find the platform by name
-                        Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
-                        if (platform == null) continue;
-                        // Create PlatformPermanentDetail object
-                        PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
-                        platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
-                        platformPermanentDetail.setUserId(userId);
-                        platformPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
-                        platformPermanentDetail.setPlatform(platform);
-                        // Save the PlatformPermanentDetail object
-                        PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.saveAndFlush(platformPermanentDetail);
+                // Iterate over platform details
+                for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
+                    // Find the platform by name
+                    Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
+                    if (platform == null) continue;
+                    // Create PlatformPermanentDetail object
+                    PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
+                    platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
+                    platformPermanentDetail.setUserId(userId);
+                    platformPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
+                    platformPermanentDetail.setPlatform(platform);
+                    // Save the PlatformPermanentDetail object
+                    PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.saveAndFlush(platformPermanentDetail);
 
-                        // Iterate over profession details for this platform
-                        for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
-                            // Find the profession by name
-                            FilmProfession profession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
-                            if (profession == null) continue;
-                            // Create ProfessionPermanentDetail object
-                            FilmProfessionPermanentDetail filmProfessionPermanentDetail = new FilmProfessionPermanentDetail();
-                            filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
-                            filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName());
-                            filmProfessionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
-                            filmProfessionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
-                            filmProfessionPermanentDetail.setFilmProfession(profession);
-                            filmProfessionPermanentDetail.setUserId(userId);
-                            // Save the ProfessionPermanentDetail object
-                            FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.saveAndFlush(filmProfessionPermanentDetail);
+                    // Iterate over profession details for this platform
+                    for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
+                        // Find the profession by name
+                        FilmProfession profession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
+                        if (profession == null) continue;
+                        // Create ProfessionPermanentDetail object
+                        FilmProfessionPermanentDetail filmProfessionPermanentDetail = new FilmProfessionPermanentDetail();
+                        filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
+                        filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName());
+                        filmProfessionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
+                        filmProfessionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
+                        filmProfessionPermanentDetail.setFilmProfession(profession);
+                        filmProfessionPermanentDetail.setUserId(userId);
+                        // Save the ProfessionPermanentDetail object
+                        FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.saveAndFlush(filmProfessionPermanentDetail);
 
-                            // Iterate over sub profession details for this profession
-                            for (String subProfessionInput : professionDetail.getSubProfessionName()) {
-                                // Find the sub-profession by name
-                                FilmSubProfession subProfession = filmSubProfessionRepository.findBySubProfessionName(subProfessionInput.toUpperCase()).orElse(null);
-                                if (subProfession == null) continue;
-                                // sub-profession
-                                FilmSubProfessionPermanentDetail subProfessionPermanentDetails = FilmSubProfessionPermanentDetail.builder()
-                                        .professionName(subProfessionInput.toUpperCase())
-                                        .userId(userId)
-                                        .industryUserPermanentDetails(savedIndustryUserPermanentDetails)
-                                        .platformPermanentDetail(savedPlatformPermanentDetail)
-                                        .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
-                                        .ppdProfessionId(0)
-                                        .filmSubProfession(subProfession)
-                                        .build();
-                                filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
-                            }
+                        // Iterate over sub profession details for this profession
+                        for (String subProfessionInput : professionDetail.getSubProfessionName()) {
+                            // Find the sub-profession by name
+                            FilmSubProfession subProfession = filmSubProfessionRepository.findBySubProfessionName(subProfessionInput.toUpperCase()).orElse(null);
+                            if (subProfession == null) continue;
+                            // sub-profession
+                            FilmSubProfessionPermanentDetail subProfessionPermanentDetails = FilmSubProfessionPermanentDetail.builder()
+                                    .professionName(subProfessionInput.toUpperCase())
+                                    .userId(userId)
+                                    .industryUserPermanentDetails(savedIndustryUserPermanentDetails)
+                                    .platformPermanentDetail(savedPlatformPermanentDetail)
+                                    .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
+                                    .ppdProfessionId(0)
+                                    .filmSubProfession(subProfession)
+                                    .build();
+                            filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
                         }
                     }
                 }
-                industryTemporaryDetailsRepository.deleteByUserId(userId);
-                industryDetailsRepository.deleteByUserId(userId);
-                platformDetailsRepository.deleteByUserId(userId);
-                filmProfessionDetailRepository.deleteByUserId(userId);
-                filmSubProfessionDetailRepository.deleteByUserId(userId);
+            }
+            industryTemporaryDetailsRepository.deleteByUserId(userId);
+            industryDetailsRepository.deleteByUserId(userId);
+            platformDetailsRepository.deleteByUserId(userId);
+            filmProfessionDetailRepository.deleteByUserId(userId);
+            filmSubProfessionDetailRepository.deleteByUserId(userId);
 
-                if (responseMap.isEmpty()) {
-                    // Return a success response
-                    return ResponseEntity.ok("Industry user permanent details added successfully.");
-                } else {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMap.get("error"));
-                }
+            if (responseMap.isEmpty()) {
+                // Return a success response
+                return ResponseEntity.ok("Industry user permanent details added successfully.");
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Provided user is not a valid user...");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseMap.get("error"));
             }
         } catch (Exception e) {
             // Return an error response if an exception occurs
@@ -430,6 +522,7 @@ public class DetailServiceImpl implements DetailService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add industry user permanent details.");
         }
     }
+
 
     @Override
     public List<FileOutputWebModel> saveIndustryUserFiles(IndustryFileInputWebModel inputFileData) {

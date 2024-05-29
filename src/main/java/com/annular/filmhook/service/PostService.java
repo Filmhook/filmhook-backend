@@ -2,6 +2,7 @@ package com.annular.filmhook.service;
 
 import com.annular.filmhook.webmodel.CommentWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
 import org.springframework.core.io.Resource;
@@ -34,5 +35,7 @@ public interface PostService {
     CommentWebModel deleteComment(CommentWebModel commentWebModel);
 
     ShareWebModel addShare(ShareWebModel shareWebModel);
+
+	LinkWebModel addLink(LinkWebModel linkWebModel);
 
 }

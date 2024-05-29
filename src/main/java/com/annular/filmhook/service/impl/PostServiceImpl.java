@@ -4,6 +4,7 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserProfilePin;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Likes;
+import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.MediaFileCategory;
@@ -14,6 +15,7 @@ import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
 
@@ -45,6 +47,7 @@ import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
+import com.annular.filmhook.repository.LinkRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
@@ -87,6 +90,9 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     LikeRepository likeRepository;
+    
+    @Autowired
+    LinkRepository linkRepository;
 
     @Autowired
     CommentRepository commentRepository;
@@ -465,4 +471,26 @@ public class PostServiceImpl implements PostService {
                 .updatedOn(share.getUpdatedOn())
                 .build();
     }
+
+    @Override
+    public LinkWebModel addLink(LinkWebModel linkWebModel) {
+        Link link = Link.builder()
+                .links(linkWebModel.getLinks())
+                .status(linkWebModel.getStatus())
+                .createdBy(linkWebModel.getCreatedBy())
+                .createdOn(linkWebModel.getCreatedOn())
+                .updatedBy(linkWebModel.getUpdatedBy())
+                .updatedOn(linkWebModel.getUpdatedOn())
+                .userId(linkWebModel.getUserId())
+                .build();
+        
+        Link savedLink = linkRepository.save(link);
+        
+        linkWebModel.setLinkId(savedLink.getLinkId());
+        linkWebModel.setCreatedOn(savedLink.getCreatedOn());
+        linkWebModel.setUpdatedOn(savedLink.getUpdatedOn());
+        
+        return linkWebModel;
+    }
+
 }
