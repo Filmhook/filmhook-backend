@@ -31,6 +31,10 @@ public class AuditionWebModel {
 	private Integer auditionCreatedBy;
 	
 	private String auditionLocation;
+	
+	private Boolean flag;
+	
+	private String searchKey;
 
 //	private List<AuditionRolesWebModel> auditionRoles;
 	

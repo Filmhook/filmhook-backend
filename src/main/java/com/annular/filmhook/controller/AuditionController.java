@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.AuditionService;
+import com.annular.filmhook.webmodel.AddressListWebModel;
 import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
 import com.annular.filmhook.webmodel.AuditionDetailsWebModel;
 import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
@@ -24,17 +25,20 @@ import com.annular.filmhook.webmodel.AuditionWebModel;
 
 @RestController
 @RequestMapping("/audition")
-public class AuditionController { 
+public class AuditionController {
 
 	public static final Logger logger = LoggerFactory.getLogger(AuditionController.class);
-	
+
 	@Autowired
 	AuditionService auditionService;
+
 	
+
 //	@Autowired
 //	KafkaProducer kafkaProducer;
-	
-    @RequestMapping(path = "/saveAudition", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+
+	@RequestMapping(path = "/saveAudition", method = RequestMethod.POST, consumes = {
+			MediaType.MULTIPART_FORM_DATA_VALUE })
 	public ResponseEntity<?> saveAudition(@ModelAttribute AuditionWebModel auditionWebModel) {
 		try {
 			logger.info("Audition data to be saved :- " + auditionWebModel);
@@ -45,37 +49,45 @@ public class AuditionController {
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
-    
-    @GetMapping("/getAuditionByCategory")
-    public ResponseEntity<?> getAuditionByCategory(@RequestParam("categoryId") Integer categoryId) {
-        try {
-        	//logger.info("Audition category to be fetched :- " + auditionWebModel.getAuditionCategory());
-			return auditionService.getAuditionByCategory(categoryId);
+
+	@GetMapping("/getAuditionByCategory")
+	public ResponseEntity<?> getAuditionByCategory(@RequestBody AuditionWebModel auditionWebModel) {
+		try {
+			// logger.info("Audition category to be fetched :- " +
+			// auditionWebModel.getAuditionCategory());
+			if (auditionWebModel.getFlag() == false) {
+				return auditionService.getAuditionByCategory(auditionWebModel.getAuditionCategory());
+			} else if (auditionWebModel.getFlag() == true) {
+
+				return auditionService.getAuditionByFilterAddress(auditionWebModel.getAuditionCategory(),auditionWebModel.getSearchKey());
+			} else {
+				return ResponseEntity.badRequest().body(new Response(-1, "Invalid flag value", ""));
+			}
 		} catch (Exception e) {
 			logger.error("Save audition Method Exception...", e);
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
-    }
-    
-    @PostMapping("/auditionAcceptance")
-    public ResponseEntity<?> auditionAcceptance(@RequestBody AuditionAcceptanceWebModel acceptanceWebModel) {
-        try {
-        	logger.info("Audition Acceptance to be saved :- " + acceptanceWebModel.isAuditionAccepted());
+	}
+
+	@PostMapping("/auditionAcceptance")
+	public ResponseEntity<?> auditionAcceptance(@RequestBody AuditionAcceptanceWebModel acceptanceWebModel) {
+		try {
+			logger.info("Audition Acceptance to be saved :- " + acceptanceWebModel.isAuditionAccepted());
 			return auditionService.auditionAcceptance(acceptanceWebModel);
 		} catch (Exception e) {
 			logger.error("Save Audition Acceptance Method Exception...", e);
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
-    }
-    
-    
-    @RequestMapping(path = "/saveAuditions", method = RequestMethod.POST)
+	}
+
+	@RequestMapping(path = "/saveAuditions", method = RequestMethod.POST)
 	public ResponseEntity<?> saveAsdudition() {
 		try {
 			logger.info("\n\n controleer to check kafka \n\n");
-			//kafkaProducer.sendNotification(">>>>>>>>>>>>>>>>>>>>>>My first notifiavtion");
+			// kafkaProducer.sendNotification(">>>>>>>>>>>>>>>>>>>>>>My first
+			// notifiavtion");
 			return null;
 		} catch (Exception e) {
 			logger.error("Save audition Method Exception...", e);
@@ -83,30 +95,41 @@ public class AuditionController {
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
-    
-    @PostMapping("/auditionIgnorance")
-    public ResponseEntity<?> auditionIgnorance(@RequestBody AuditionIgnoranceWebModel auditionIgnoranceWebModel) {
-        try {
-        	
+
+	@PostMapping("/auditionIgnorance")
+	public ResponseEntity<?> auditionIgnorance(@RequestBody AuditionIgnoranceWebModel auditionIgnoranceWebModel) {
+		try {
+
 			return auditionService.auditionIgnorance(auditionIgnoranceWebModel);
 		} catch (Exception e) {
 			logger.error("Save Audition Ignorance Method Exception...", e);
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
-    }
-    
-    @PostMapping("/getAuditionDetails")
-    public ResponseEntity<?> getAuditionDetails(@RequestBody AuditionDetailsWebModel auditionDetailsWebModel) {
-        try {
-        	
+	}
+
+	@PostMapping("/getAuditionDetails")
+	public ResponseEntity<?> getAuditionDetails(@RequestBody AuditionDetailsWebModel auditionDetailsWebModel) {
+		try {
+
 			return auditionService.getAuditionDetails(auditionDetailsWebModel);
 		} catch (Exception e) {
 			logger.error("getAuditionDetails Method Exception...", e);
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
-    }
-    
+	}
+
+	@PostMapping("/getAddressList")
+	public ResponseEntity<?> getAddressList(@RequestBody AddressListWebModel AddressListWebModel) {
+		try {
+
+			return auditionService.getAddressList(AddressListWebModel);
+		} catch (Exception e) {
+			logger.error("getAddressList Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(200, "Success", ""));
+	}
 
 }

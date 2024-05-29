@@ -114,7 +114,7 @@ public class AdminController {
     }
     
     @PostMapping("changeStatusUnverifiedIndustrialUsers")
-	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
+	public Response changeStatusUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel) {
 		try {
 			logger.info("changeStatusUnverifiedIndustrialUsers controller start");
 			return adminService.changeStatusUnverifiedIndustrialUsers(userWebModel);

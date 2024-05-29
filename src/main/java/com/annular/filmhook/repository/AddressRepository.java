@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.AddressList;
 
 @Repository
-public interface AddressListRepository extends JpaRepository<AddressList, Integer>{
+public interface AddressRepository extends JpaRepository<AddressList, Integer>{
 
 }

@@ -461,32 +461,42 @@ public class AdminServiceImpl implements AdminService {
 //	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve industry user permanent details.");
 //	    }
 //	}
-
-
 	@Override
 	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
-	    List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
-
-	    Boolean status = userWebModel.isStatus();
-	    
-	    // Iterate over the list and set status to false
-	    for (IndustryMediaFiles industryMediaFile : industryDbData) {
-	        industryMediaFile.setStatus(status);
-	        // You may perform additional operations if needed
+	    // Check if userId is not null
+	    if (userWebModel.getUserId() == null) {
+	        return new Response(-1, "User ID must not be null", null);
 	    }
 
-	    // Save the updated records back to the database
-	    industryMediaFileRepository.saveAll(industryDbData);
+	    try {
+	        List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
 
-	    // Update the userType in the User table
-	    if (!status) {
+	        Boolean status = userWebModel.isStatus();
+	        System.out.println(">>>>>>>>>>>>" + userWebModel.isStatus());
+
+	        // Iterate over the list and set status to false
+	        for (IndustryMediaFiles industryMediaFile : industryDbData) {
+	            industryMediaFile.setStatus(status);
+	            // You may perform additional operations if needed
+	        }
+
+	        // Save the updated records back to the database
+	        industryMediaFileRepository.saveAll(industryDbData);
+
+	        // Update the userType in the User table
 	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-	        if (userOptional.isPresent()) {
-	            User user = userOptional.get();
+	        System.out.println(">>>>>>>>>>>"+userWebModel.getUserId());
+	        if (!userOptional.isPresent()) {
+	            return new Response(-1, "User not found", null); // Return an error response if user is not found
+	        }
+
+	        User user = userOptional.get();
+	        if (!status) {
+	            System.out.println("user" + userWebModel.getUserId());
 	            user.setUserType("IndustryUser");
 	            user.setAdminReview(userWebModel.getAdminReview());
 	            userRepository.save(user);
-	            
+
 	            // Send verification email
 	            boolean emailSent = sendVerificationEmail(user, status);
 	            if (!emailSent) {
@@ -494,30 +504,86 @@ public class AdminServiceImpl implements AdminService {
 	                return new Response(-1, "Failed to send verification email", null);
 	            }
 	        } else {
-	            return new Response(-1, "User not found", null); // Return an error response if user is not found
-	        }
-	    } else {
-	        // status true means userType change to Industry user and send mail notification
-	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-	        if (userOptional.isPresent()) {
-	            User user = userOptional.get();
+	            // status true means userType change to Industry user and send mail notification
 	            user.setUserType("commonUser");
 	            userRepository.save(user);
-	            
+
 	            // Send notification email
-	            boolean emailSent = sendVerificationEmail(user,status);
+	            boolean emailSent = sendVerificationEmail(user, status);
 	            if (!emailSent) {
 	                // Handle case where email sending fails
 	                return new Response(-1, "Failed to send notification email", null);
 	            }
-	        } else {
-	            return new Response(-1, "User not found", null); // Return an error response if user is not found
 	        }
-	    }
 
-	    // Return a success response
-	    return new Response(1, "Success", "Status updated successfully");
+	        // Return a success response
+	        return new Response(1, "Success", "Status updated successfully");
+	    } catch (Exception e) {
+	        logger.error("Error occurred while updating status: {}", e.getMessage());
+	        e.printStackTrace();
+	        return new Response(-1, "Failed to update status", e.getMessage());
+	    }
 	}
+
+
+//
+//	@Override
+//	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
+//	    List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
+//
+//	    Boolean status = userWebModel.isStatus();
+//	    System.out.println(">>>>>>>>>>>>"+userWebModel.isStatus());
+//	    
+//	    // Iterate over the list and set status to false
+//	    for (IndustryMediaFiles industryMediaFile : industryDbData) {
+//	        industryMediaFile.setStatus(status);
+//	        // You may perform additional operations if needed
+//	    }
+//
+//	    // Save the updated records back to the database
+//	    industryMediaFileRepository.saveAll(industryDbData);
+//
+//	    // Update the userType in the User table
+//	    if (!status) {
+//	    	System.out.println("user"+userWebModel.getUserId());
+//	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+//	        if (userOptional.isPresent()) {
+//	            User user = userOptional.get();
+//	            user.setUserType("IndustryUser");
+//	            user.setAdminReview(userWebModel.getAdminReview());
+//	            userRepository.save(user);
+//	            
+//	            // Send verification email
+//	            boolean emailSent = sendVerificationEmail(user, status);
+//	            if (!emailSent) {
+//	                // Handle case where email sending fails
+//	                return new Response(-1, "Failed to send verification email", null);
+//	            }
+//	        } else {
+//	            return new Response(-1, "User not found", null); // Return an error response if user is not found
+//	        }
+//	    } else {
+//	        // status true means userType change to Industry user and send mail notification
+//	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+//	        if (userOptional.isPresent()) {
+//	            User user = userOptional.get();
+//	            user.setUserType("commonUser");
+//	            userRepository.save(user);
+//	            
+//	            // Send notification email
+//	            boolean emailSent = sendVerificationEmail(user,status);
+//	            if (!emailSent) {
+//	                // Handle case where email sending fails
+//	                return new Response(-1, "Failed to send notification email", null);
+//	            }
+//	        } else {
+//	            return new Response(-1, "User not found", null); // Return an error response if user is not found
+//	        }
+//	    }
+//
+//	    // Return a success response
+//	    return new Response(1, "Success", "Status updated successfully");
+//	}
 
 
 
