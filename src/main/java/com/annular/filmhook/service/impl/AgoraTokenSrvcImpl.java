@@ -22,95 +22,95 @@ import java.util.Optional;
 @Service
 public class AgoraTokenSrvcImpl implements AgoraTokenService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AgoraTokenSrvcImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(AgoraTokenSrvcImpl.class);
 
-    @Autowired
-    AgoraConfig agoraConfig;
+	@Autowired
+	AgoraConfig agoraConfig;
 
-    @Autowired
-    private UserRepository userRepository;
+	@Autowired
+	private UserRepository userRepository;
 
-    @Override
-    public String getAgoraRTCToken(AgoraWebModel agoraWebModel) {
-        try {
-            RtcTokenBuilder rtcTokenBuilder = new RtcTokenBuilder();
+	@Override
+	public String getAgoraRTCToken(AgoraWebModel agoraWebModel) {
+		try {
+			RtcTokenBuilder rtcTokenBuilder = new RtcTokenBuilder();
 
-            String channelName = Utility.isNullOrBlankWithTrim(agoraWebModel.getChannelName()) ? agoraConfig.getChannelName() : agoraWebModel.getChannelName();
-            int expireTime = agoraWebModel.getExpirationTimeInSeconds() == 0 ? agoraConfig.getExpirationTimeInSeconds() : agoraWebModel.getExpirationTimeInSeconds();
-            RtcTokenBuilder.Role role = this.getRtcTokenBuilderRole(agoraWebModel.getRole());
-            int uid = agoraWebModel.getUserId() == 0 ? agoraConfig.getUid() : agoraWebModel.getUserId();
-            if (channelName == null) return "Channel ID cannot be blank"; // check for null channelName
-            int timestamp = (int) (System.currentTimeMillis() / 1000 + expireTime);
+			String channelName = Utility.isNullOrBlankWithTrim(agoraWebModel.getChannelName())
+					? agoraConfig.getChannelName()
+					: agoraWebModel.getChannelName();
+			System.out.println("channelName" + agoraWebModel.getChannelName());
+			int expireTime = agoraWebModel.getExpirationTimeInSeconds() == 0 ? agoraConfig.getExpirationTimeInSeconds()
+					: agoraWebModel.getExpirationTimeInSeconds();
+			System.out.println("expireTime" + expireTime);
+			RtcTokenBuilder.Role role = this.getRtcTokenBuilderRole(agoraWebModel.getRole());
+			System.out.println("role" + role);
+			int uid = agoraWebModel.getUserId() == 0 ? agoraConfig.getUid() : agoraWebModel.getUserId();
+			System.out.println("userId" + uid);
+			if (channelName == null)
+				return "Channel ID cannot be blank"; // check for null channelName
+			int timestamp = (int) (System.currentTimeMillis() / 1000 + expireTime);
+			System.out.println("timestamp" + timestamp);
 
-            return rtcTokenBuilder.buildTokenWithUid(
-                    agoraConfig.getAppId(),
-                    agoraConfig.getAppCertificate(),
-                    channelName,
-                    uid,
-                    role,
-                    timestamp);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+			return rtcTokenBuilder.buildTokenWithUid(agoraConfig.getAppId(), agoraConfig.getAppCertificate(),
+					channelName, uid, role, timestamp);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-    private RtcTokenBuilder.Role getRtcTokenBuilderRole(int role) {
-        RtcTokenBuilder.Role responseRole = null;
-        if (role == 0) {
-            responseRole = RtcTokenBuilder.Role.Role_Attendee;
-        } else if (role == 1) {
-            responseRole = RtcTokenBuilder.Role.Role_Publisher;
-        } else if (role == 2) {
-            responseRole = RtcTokenBuilder.Role.Role_Subscriber;
-        }
-        return responseRole;
-    }
+	private RtcTokenBuilder.Role getRtcTokenBuilderRole(int role) {
+		RtcTokenBuilder.Role responseRole = null;
+		if (role == 0) {
+			responseRole = RtcTokenBuilder.Role.Role_Attendee;
+		} else if (role == 1) {
+			responseRole = RtcTokenBuilder.Role.Role_Publisher;
+		} else if (role == 2) {
+			responseRole = RtcTokenBuilder.Role.Role_Subscriber;
+		}
+		return responseRole;
+	}
 
-    @Override
-    public String getAgoraRTMToken(AgoraWebModel agoraWebModel) {
-        try {
-            if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
-            RtmTokenBuilder token = new RtmTokenBuilder();
-            return token.buildToken(
-                    agoraConfig.getAppId(),
-                    agoraConfig.getAppCertificate(),
-                    String.valueOf(agoraWebModel.getUserId()),
-                    RtmTokenBuilder.Role.Rtm_User,
-                    agoraConfig.getExpirationTimeInSeconds());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
+	@Override
+	public String getAgoraRTMToken(AgoraWebModel agoraWebModel) {
+		try {
+			if (agoraWebModel.getUserId() == null)
+				return "User ID cannot be blank";
+			RtmTokenBuilder token = new RtmTokenBuilder();
+			return token.buildToken(agoraConfig.getAppId(), agoraConfig.getAppCertificate(),
+					String.valueOf(agoraWebModel.getUserId()), RtmTokenBuilder.Role.Rtm_User,
+					agoraConfig.getExpirationTimeInSeconds());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-    @Override
-    public String getAgoraChatToken(AgoraWebModel agoraWebModel) {
-        try {
-            if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
-            Optional<User> user = userRepository.findById(agoraWebModel.getUserId());
-            User dbUser = null;
-            if (user.isPresent()) {
-                dbUser = user.get();
-                if (dbUser.getTempToken() != null && dbUser.getTempToken().isEmpty()) {
-                    ChatTokenBuilder2 builder = new ChatTokenBuilder2();
-                    String token = builder.buildUserToken(
-                            agoraConfig.getAppId(),
-                            agoraConfig.getAppCertificate(),
-                            String.valueOf(agoraWebModel.getUserId()),
-                            agoraWebModel.getExpirationTimeInSeconds());
-                    // Save the token to the user table
-                    dbUser.setTempToken(token);
-                    userRepository.saveAndFlush(dbUser);
-                    return token;
-                } else {
-                    return dbUser.getTempToken();
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        return null;
-    }
+	@Override
+	public String getAgoraChatToken(AgoraWebModel agoraWebModel) {
+		try {
+			if (agoraWebModel.getUserId() == null)
+				return "User ID cannot be blank";
+			Optional<User> user = userRepository.findById(agoraWebModel.getUserId());
+			System.out.println(">>>>>>>>>>>>>>" + user);
+			// User dbUser = null;
+			if (user.isPresent()) {
+				User dbUser = user.get();
+
+				ChatTokenBuilder2 builder = new ChatTokenBuilder2();
+
+				String token = builder.buildUserToken(agoraConfig.getAppId(), agoraConfig.getAppCertificate(),
+						String.valueOf(agoraWebModel.getUserId()), agoraWebModel.getExpirationTimeInSeconds());
+				// Save the token to the user table
+				dbUser.setTempToken(token);
+				userRepository.saveAndFlush(dbUser);
+				return token;
+				
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		return null;
+	}
 }

@@ -321,7 +321,9 @@ public class PostServiceImpl implements PostService {
                 }
                 Likes savedLikes = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
                 existingPost.getLikesCollection().add(savedLikes); // Adding saved/updated likes into postLikesCollection
-                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(Likes::getStatus).count() : 0;
+               // Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(Likes::getStatus).count() : 0;
+             // Get the updated like count
+                Integer currentPostTotalLikes = likeRepository.countLikesByPostId(likeWebModel.getPostId());
                 logger.info("Like count for post id [{}] is :- [{}]", existingPost.getId(), currentPostTotalLikes);
                 return this.transformLikeData(likeRowToSaveOrUpdate, currentPostTotalLikes);
             }
@@ -400,8 +402,10 @@ public class PostServiceImpl implements PostService {
             Posts post = postsRepository.findById(commentWebModel.getPostId()).orElse(null);
             if (post != null) {
                 List<Comment> commentData = post.getCommentCollection() != null ? (List<Comment>) post.getCommentCollection() : new ArrayList<>();
-                Long currentTotalCommentCount = !commentData.isEmpty() ? commentData.stream().filter(Comment::getStatus).count() : 0;
-                return this.transformCommentData(commentData, currentTotalCommentCount);
+                // Filter comments where status is true
+                List<Comment> filteredCommentData = commentData.stream().filter(Comment::getStatus).collect(Collectors.toList());
+                Long currentTotalCommentCount = (long) filteredCommentData.size();
+                return this.transformCommentData(filteredCommentData, currentTotalCommentCount);
             }
         } catch (Exception e) {
             logger.error("Error at getComment() -> {}", e.getMessage());
