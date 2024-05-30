@@ -291,6 +291,10 @@ public class ReportServiceImpl implements ReportService {
 
 		        // Fetch user details for the reportUserIds
 		        List<User> users = userRepository.findAllById(reportUserIdss);
+		     // Count the number of reports per user
+		        List<ReportPost> postData = reportRepository.findAll();
+		        Map<Integer, Long> reportCountsPerUser = postData.stream()
+		                .collect(Collectors.groupingBy(ReportPost::getUserId, Collectors.counting()));
 
 		        // Create a list of maps, each containing a userId and userName
 		        List<Map<String, Object>> reportUserIds= users.stream()
@@ -298,6 +302,8 @@ public class ReportServiceImpl implements ReportService {
 		                    Map<String, Object> userMap = new HashMap<>();
 		                    userMap.put("userId", user.getUserId());
 		                    userMap.put("username", user.getName());
+		                    userMap.put("reportCount", reportCountsPerUser.getOrDefault(user.getUserId(), 0L));
+
 		                    return userMap;
 		                })
 		                .collect(Collectors.toList());

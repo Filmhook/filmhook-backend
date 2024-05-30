@@ -2,6 +2,7 @@ package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -746,13 +747,13 @@ public class DetailServiceImpl implements DetailService {
                     Platform platform = platformOptional.get();
                     Map<String, Object> platformMap = new HashMap<>();
                     platformMap.put("platformName", platformName);
-                    /*if (platform.getImage() != null) {
+                    if (platform.getImage() != null) {
                         String base64Image = Base64.getEncoder().encodeToString(platform.getImage());
                         platformMap.put("platformImage", base64Image);
                     } else {
                         // Handle case when platform image is not found
                         platformMap.put("image", "default_image_url");
-                    }*/
+                    }
 
                     // Fetch industries for the platform
                     Set<Map<String, String>> industries = new HashSet<>();
@@ -763,14 +764,14 @@ public class DetailServiceImpl implements DetailService {
 
                             // Fetch industry image
                             Optional<Industry> industryOptional = industryRepository.findByIndustryName(industryName);
-                            /*if (industryOptional.isPresent()) {
+                            if (industryOptional.isPresent()) {
                                 Industry industry = industryOptional.get();
                                 String base64Image = Base64.getEncoder().encodeToString(industry.getImage());
                                 industryMap.put("industryimage", base64Image);
                             } else {
                                 // Handle case when industry is not found
                                 industryMap.put("image", "default_image_url");
-                            }*/
+                            }
                             industryMap.put("industryName", industryName);
                             industries.add(industryMap);
                         }
