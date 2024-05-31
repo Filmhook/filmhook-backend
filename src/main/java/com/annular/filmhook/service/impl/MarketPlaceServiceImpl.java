@@ -156,6 +156,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 					ShootingLocationWebModel shootingLocationWebModels = new ShootingLocationWebModel();
 					shootingLocationWebModels.setShootingLocationId(shootingLocations.getShootingLocationId());
 					shootingLocationWebModels.setCost(shootingLocations.getCost());
+					shootingLocationWebModels.setShootingTermsAndCondition(shootingLocations.getShootingTermsAndCondition());
 					shootingLocationWebModels.setLocationUrl(shootingLocations.getLocationUrl());
 					shootingLocationWebModels
 							.setIndoorOrOutdoorLocation(shootingLocations.getIndoorOrOutdoorLocation());
