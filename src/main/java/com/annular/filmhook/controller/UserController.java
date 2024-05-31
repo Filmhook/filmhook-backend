@@ -2,9 +2,7 @@ package com.annular.filmhook.controller;
 
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -30,12 +28,6 @@ public class UserController {
 
     @Autowired
     UserService userService;
-
-    @Autowired
-    AwsS3Service awsS3Service;
-
-    @Autowired
-    S3Util s3Util;
 
     @GetMapping("/getAllUsers")
     public Response getAllUsers() {

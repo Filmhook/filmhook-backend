@@ -39,6 +39,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -191,10 +192,12 @@ public class PostServiceImpl implements PostService {
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
                     // Fetching the user Profession
-                    Set<String> professionNames = null;
+                    Set<String> professionNames = new HashSet<>();
                     List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.findByUserId(post.getUser().getUserId());
                     if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
                         professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
+                    } else {
+                        professionNames.add("CommonUser");
                     }
 
                     // Fetching the ProfilePic Path
