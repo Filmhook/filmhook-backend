@@ -24,11 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.webmodel.UserWebModel;
+import com.annular.filmhook.webmodel.AddressListWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.IndustryWebModel;
@@ -45,6 +47,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     CalendarUtil calendarUtil;
+    
+    @Autowired
+    AddressListOnSignUpRepsitory addressListOnSignUpRepsitory;
 
     @Autowired
     S3Util s3Util;
@@ -114,6 +119,8 @@ public class UserServiceImpl implements UserService {
         userWebModel.setPhoneNumber(user.getPhoneNumber());
         userWebModel.setCurrentAddress(user.getCurrentAddress());
         userWebModel.setHomeAddress(user.getHomeAddress());
+        userWebModel.setBirthPlace(user.getBirthPlace());
+        userWebModel.setLivingPlace(user.getLivingPlace());
 
         userWebModel.setHeight(user.getHeight());
         userWebModel.setWeight(user.getWeight());
@@ -193,10 +200,9 @@ public class UserServiceImpl implements UserService {
 //				userInput.getDob()));
         userToUpdate.setDob(userInput.getDob());
         userToUpdate.setGender(userInput.getGender());
-        userToUpdate.setCountry(userInput.getCountry());
-        userToUpdate.setState(userInput.getState());
-        userToUpdate.setDistrict(userInput.getDistrict());
-        //userToUpdate.setPhoneNumber(userInput.getPhoneNumber());
+        userToUpdate.setBirthPlace(userInput.getBirthPlace());
+        userToUpdate.setLivingPlace(userInput.getLivingPlace());
+
         userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
         userToUpdate.setHomeAddress(userInput.getHomeAddress());
 
@@ -647,5 +653,17 @@ public class UserServiceImpl implements UserService {
         return professionUserMap;
     }
 
-
+	@Override
+	public ResponseEntity<?> getAddressListOnSignUp(AddressListWebModel addressListWebModel) {
+		List<AddressListOnSignUp> addressLists = addressListOnSignUpRepsitory.findAll();
+		List<Map<String, Object>> result = addressLists.stream().map(address -> {
+			Map<String, Object> map = new HashMap<>();
+			map.put("id", address.getAddressListOnSignUp());
+			map.put("address", address.getAddress());
+			return map;
+		}).collect(Collectors.toList());
+		return ResponseEntity.ok(result);
+	}
+		
+	
 }

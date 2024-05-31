@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.Column;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -27,6 +29,8 @@ public class UserWebModel {
 	private String middleName;
 	private String firebaseDeviceToken;
 	private String adminReview;
+	private String livingPlace;
+	private String birthPlace;
 
 
 	// Biography Section

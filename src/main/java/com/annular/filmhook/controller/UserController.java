@@ -8,6 +8,7 @@ import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
+import com.annular.filmhook.webmodel.AddressListWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -280,6 +282,17 @@ public class UserController {
             return new Response(-1, "Error at final user search...", null);
         }
         return new Response(-1, "User(s) not found for all criteria...", null);
+    }
+
+    @PostMapping("/getAddressListOnSignUp")
+    public ResponseEntity<?> getAddressListOnSignUp(@RequestBody AddressListWebModel AddressListWebModel) {
+        try {
+            return userService.getAddressListOnSignUp(AddressListWebModel);
+        } catch (Exception e) {
+            logger.error("getAddressListOnSignUp Method Exception...", e);
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(200, "Success", ""));
     }
 
 }

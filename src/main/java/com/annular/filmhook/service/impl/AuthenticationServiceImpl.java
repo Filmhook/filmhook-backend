@@ -93,10 +93,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setMobileNumberStatus(false);
                 user.setDob(Utility.isNullOrBlankWithTrim(userWebModel.getDob()) ? "" : CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userWebModel.getDob()));
                 user.setGender(userWebModel.getGender());
-                user.setCountry(userWebModel.getCountry());
-                user.setState(userWebModel.getState());
+                user.setBirthPlace(userWebModel.getBirthPlace());
                 user.setUserType(userWebModel.getUserType());
-                user.setDistrict(userWebModel.getDistrict());
+                user.setLivingPlace(userWebModel.getLivingPlace());
 
                 // Generate and set FilmHook code
                 String filmHookCode = this.generateFilmHookCode();

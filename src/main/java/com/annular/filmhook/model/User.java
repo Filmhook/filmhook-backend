@@ -197,6 +197,12 @@ public class User {
     
     @Column(name = "admin_review")
     private String adminReview;
+
+    @Column(name = "living_place")
+    private String livingPlace;
+
+    @Column(name = "birth_place")
+    private String birthPlace;
     
 
 }

@@ -35,6 +35,7 @@ import com.annular.filmhook.webmodel.UserWebModel;
 
 @RestController
 @RequestMapping("/user")
+
 public class AuthController {
 
     public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
