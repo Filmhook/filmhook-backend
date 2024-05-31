@@ -38,6 +38,10 @@ import java.util.UUID;
 import java.util.Date;
 import java.util.Optional;
 import java.util.List;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
@@ -217,16 +221,19 @@ public class PostServiceImpl implements PostService {
 					Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(userId,
 							post.getUser().getUserId());
 					Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
-
+					Integer currentPostTotalLikes = likeRepository.countLikesByPostId(post.getId());
+					Integer currentPostTotalComments = commentRepository.countCommentsByPostId(post.getId());
+					Integer currentPostTotalShare = shareRepository.countSharesByPostId(post.getId());
 					// Preparing outputList
 					PostWebModel postWebModel = PostWebModel.builder().id(post.getId())
 							.userId(post.getUser().getUserId()).userName(post.getUser().getName())
 							.postId(post.getPostId())
 							// .postUrl(this.generatePostUrl(post.getPostId()))
 							.userProfilePic(profilePicturePath).description(post.getDescription()).pinStatus(pinStatus)
-							.likeCount(post.getLikesCollection() != null ? post.getLikesCollection().size() : 0)
-							.shareCount(post.getShareCollection() != null ? post.getShareCollection().size() : 0)
-							.commentCount(post.getCommentCollection() != null ? post.getCommentCollection().size() : 0)
+							//.likeCount(post.getLikesCollection() != null ? post.getLikesCollection().size() : 0)
+							.likeCount(currentPostTotalLikes)
+							.shareCount(currentPostTotalShare)
+							.commentCount(currentPostTotalComments)
 							.promoteFlag(post.getPromoteFlag()).postFiles(postFiles).likeStatus(likeStatus)
 							.privateOrPublic(post.getPrivateOrPublic()).locationName(post.getLocationName())
 							.professionNames(professionNames).followersCount(followersList.size()).build();
@@ -375,7 +382,12 @@ public class PostServiceImpl implements PostService {
                         profilePicturePath = profilePic.getFilePath();
                     }
                 }
+                // Convert Date to LocalDateTime
+                Date createdDate = comment.getCreatedOn();
+                LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
 
+                // Calculate elapsed time
+                String elapsedTime = this.calculateElapsedTime(createdOn);
 				
 				CommentWebModel commentWebModel = CommentWebModel.builder().commentId(comment.getCommentId())
 						.postId(comment.getPostId()).userId(comment.getCommentedBy()).content(comment.getContent())
@@ -383,6 +395,7 @@ public class PostServiceImpl implements PostService {
 						.createdBy(comment.getCreatedBy()).createdOn(comment.getCreatedOn())
 						.userProfilePic(profilePicturePath)
 						.userName(username)
+						.time(elapsedTime)
 						.updatedBy(comment.getUpdatedBy()).updatedOn(comment.getUpdatedOn()).build();
 				commentWebModelList.add(commentWebModel);
 			});
@@ -486,4 +499,27 @@ public class PostServiceImpl implements PostService {
 		return linkWebModel;
 	}
 
+	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
+
+    private String calculateElapsedTime(LocalDateTime createdOn) {
+        LocalDateTime now = LocalDateTime.now();
+        Duration duration = Duration.between(createdOn, now);
+
+        long seconds = duration.getSeconds();
+        if (seconds < 60) {
+            return seconds + " sec";
+        } else if (seconds < 3600) {
+            long minutes = seconds / 60;
+            return minutes + (minutes == 1 ? " mt" : " mts");
+        } else if (seconds < 86400) {
+            long hours = seconds / 3600;
+            return hours + (hours == 1 ? " hr" : " hrs");
+        } else if (seconds < 604800) {
+            long days = seconds / 86400;
+            return days + (days == 1 ? " day" : " days");
+        } else {
+            long weeks = seconds / 604800;
+            return weeks + (weeks == 1 ? " week" : " weeks");
+        }
+    }
 }

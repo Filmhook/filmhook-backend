@@ -99,7 +99,8 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 			return ResponseEntity.ok().body(ResponseEntity.ok(new Response(1, "Success", marketPlaceWebModelList)));
 		} catch (Exception e) {
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
 		}
 	}
 
@@ -108,11 +109,13 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 		try {
 
 			Optional<User> userFromDB = userService.getUser(shootingLocationWebModel.getUserId());
+			System.out.println(shootingLocationWebModel.getShootingTermsAndCondition());
 
 			ShootingLocation shootingLocation = ShootingLocation.builder()
 					.shootingLocationName(shootingLocationWebModel.getShootingLocationName())
 					.shootingLocationDescription(shootingLocationWebModel.getShootingLocationDescription())
-					 .shootingtermsAndCondition(shootingLocationWebModel.getShootingtermsAndCondition())
+					.shootingTermsAndCondition(shootingLocationWebModel.getShootingTermsAndCondition())
+
 					.locationUrl(shootingLocationWebModel.getLocationUrl())
 					.indoorOrOutdoorLocation(shootingLocationWebModel.getIndoorOrOutdoorLocation())
 					.cost(shootingLocationWebModel.getCost()).hourMonthDay(shootingLocationWebModel.getHourMonthDay())
@@ -154,13 +157,17 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 					shootingLocationWebModels.setShootingLocationId(shootingLocations.getShootingLocationId());
 					shootingLocationWebModels.setCost(shootingLocations.getCost());
 					shootingLocationWebModels.setLocationUrl(shootingLocations.getLocationUrl());
-					shootingLocationWebModels.setIndoorOrOutdoorLocation(shootingLocations.getIndoorOrOutdoorLocation());
+					shootingLocationWebModels
+							.setIndoorOrOutdoorLocation(shootingLocations.getIndoorOrOutdoorLocation());
 					shootingLocationWebModels.setHourMonthDay(shootingLocations.getHourMonthDay());
 					shootingLocationWebModels.setShootingLocationName(shootingLocations.getShootingLocationName());
-					shootingLocationWebModels.setShootingLocationUpdatedBy(shootingLocations.getShootingLocationUpdatedBy());
-					shootingLocationWebModels.setShootingLocationCreatedBy(shootingLocations.getShootingLocationCreatedBy());
+					shootingLocationWebModels
+							.setShootingLocationUpdatedBy(shootingLocations.getShootingLocationUpdatedBy());
+					shootingLocationWebModels
+							.setShootingLocationCreatedBy(shootingLocations.getShootingLocationCreatedBy());
 					shootingLocationWebModels.setUserId(shootingLocations.getUserId());
-					shootingLocationWebModels.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
+					shootingLocationWebModels
+							.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
 
 					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(
 							MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
@@ -201,22 +208,18 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 		try {
 			if (!Utility.isNullOrEmptyList(marketPlaces)) {
 				marketPlaces.stream().filter(Objects::nonNull).forEach(marketPlace -> {
-					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.MarketPlace, marketPlace.getMarketPlaceId());
+					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.MarketPlace, marketPlace.getMarketPlaceId());
 					MarketPlaceWebModel marketPlaceWebModel = MarketPlaceWebModel.builder()
-							.marketPlaceId(marketPlace.getMarketPlaceId())
-							.companyName(marketPlace.getCompanyName())
-							.cost(marketPlace.getCost())
-							.count(marketPlace.getCount())
-							.newProduct(marketPlace.getNewProduct())
-							.productName(marketPlace.getProductName())
+							.marketPlaceId(marketPlace.getMarketPlaceId()).companyName(marketPlace.getCompanyName())
+							.cost(marketPlace.getCost()).count(marketPlace.getCount())
+							.newProduct(marketPlace.getNewProduct()).productName(marketPlace.getProductName())
 							.productDescription(marketPlace.getProductDescription())
-							.rentalOrsale(marketPlace.getRentalOrsale())
-							.userId(marketPlace.getUserId())
+							.rentalOrsale(marketPlace.getRentalOrsale()).userId(marketPlace.getUserId())
 							.marketPlaceCreatedOn(marketPlace.getMarketPlaceCreatedOn())
 							.marketPlaceCreatedBy(marketPlace.getMarketPlaceCreatedBy())
 							.marketPlaceIsactive(marketPlace.isMarketPlaceIsactive())
-							.fileOutputWebModel(fileOutputWebModelList)
-							.build();
+							.fileOutputWebModel(fileOutputWebModelList).build();
 					outputList.add(marketPlaceWebModel);
 				});
 			}

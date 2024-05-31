@@ -11,7 +11,7 @@ import com.annular.filmhook.model.Likes;
 @Repository
 public interface LikeRepository extends JpaRepository<Likes,Integer>{
 	
-    @Query("select l from Likes l where l.likedBy=:userId and l.postId=:postId")
+    @Query("select l from Likes l where l.likedBy=:userId and l.postId=:postId and l.status=true")
 	Optional<Likes> getLikesByUserIdAndPostId(Integer userId, Integer postId);
 
     @Query("SELECT COUNT(l) FROM Likes l WHERE l.postId = :id and l.status=true")

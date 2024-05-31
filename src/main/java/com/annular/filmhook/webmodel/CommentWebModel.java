@@ -16,6 +16,7 @@ public class CommentWebModel {
 	private Long totalCommentCount;
 
 	private Boolean status;
+	private String time;
 
 	private Integer createdBy;
 	private Date createdOn;

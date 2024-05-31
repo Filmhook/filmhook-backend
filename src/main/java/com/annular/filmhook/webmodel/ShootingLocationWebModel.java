@@ -14,13 +14,12 @@ import lombok.Data;
 
 @Data
 public class ShootingLocationWebModel {
-	
-	
 
 	private Integer shootingLocationId;
 	private String shootingLocationName;
 	private String shootingLocationDescription;
-	private String shootingtermsAndCondition;
+	private String shootingTermsAndCondition;
+
 	private Boolean indoorOrOutdoorLocation;
 	private String locationUrl;
 	private float cost;
@@ -31,7 +30,7 @@ public class ShootingLocationWebModel {
 	private Integer shootingLocationUpdatedBy;
 	private Date shootingLocationUpdatedOn;
 	private Integer userId;
-	
+
 	private FileInputWebModel fileInputWebModel; // for file input details
 	private List<FileOutputWebModel> fileOutputWebModel; // for file output details
 

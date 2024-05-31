@@ -9,6 +9,7 @@ import com.annular.filmhook.webmodel.LikeWebModel;
 import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

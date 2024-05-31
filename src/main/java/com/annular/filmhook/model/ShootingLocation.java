@@ -40,7 +40,7 @@ public class ShootingLocation {
 	private String shootingLocationDescription;
 	
 	@Column(name = "shooting_termsAnd_Condition")
-	private String shootingtermsAndCondition;
+	private String shootingTermsAndCondition;
 	
 	@Column(name = "Indoor_or_outdoor")
 	private Boolean indoorOrOutdoorLocation;
@@ -73,5 +73,6 @@ public class ShootingLocation {
 	
 	@Column(name = "userId")
 	private Integer userId;
-
+	
+	
 }
