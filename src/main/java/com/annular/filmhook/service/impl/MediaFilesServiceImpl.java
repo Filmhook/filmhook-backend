@@ -10,6 +10,7 @@ import com.annular.filmhook.repository.StoryRepository;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
@@ -239,7 +240,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
 
             // Calculate elapsed time
-            String elapsedTime = this.calculateElapsedTime(createdOn);
+            String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
             fileOutputWebModel.setElapsedTime(elapsedTime);
 
             return fileOutputWebModel;
@@ -280,27 +281,4 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         }
     }
 
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX");
-
-    private String calculateElapsedTime(LocalDateTime createdOn) {
-        LocalDateTime now = LocalDateTime.now();
-        Duration duration = Duration.between(createdOn, now);
-
-        long seconds = duration.getSeconds();
-        if (seconds < 60) {
-            return seconds + " sec";
-        } else if (seconds < 3600) {
-            long minutes = seconds / 60;
-            return minutes + (minutes == 1 ? " mt" : " mts");
-        } else if (seconds < 86400) {
-            long hours = seconds / 3600;
-            return hours + (hours == 1 ? " hr" : " hrs");
-        } else if (seconds < 604800) {
-            long days = seconds / 86400;
-            return days + (days == 1 ? " day" : " days");
-        } else {
-            long weeks = seconds / 604800;
-            return weeks + (weeks == 1 ? " week" : " weeks");
-        }
-    }
 }
