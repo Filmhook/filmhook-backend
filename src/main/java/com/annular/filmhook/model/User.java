@@ -204,5 +204,11 @@ public class User {
     @Column(name = "birth_place")
     private String birthPlace;
     
+    @Column(name = "experience")
+    private Integer experience;
+    
+    @Column(name = "schedule")
+    private String schedule;
+    
 
 }

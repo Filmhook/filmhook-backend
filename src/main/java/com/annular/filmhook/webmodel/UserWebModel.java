@@ -31,6 +31,9 @@ public class UserWebModel {
 	private String adminReview;
 	private String livingPlace;
 	private String birthPlace;
+	private Integer experience;
+	private String schedule;
+
 
 
 	// Biography Section

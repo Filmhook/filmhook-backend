@@ -121,6 +121,8 @@ public class UserServiceImpl implements UserService {
         userWebModel.setHomeAddress(user.getHomeAddress());
         userWebModel.setBirthPlace(user.getBirthPlace());
         userWebModel.setLivingPlace(user.getLivingPlace());
+        userWebModel.setSchedule(user.getSchedule());
+        userWebModel.setExperience(user.getExperience());
 
         userWebModel.setHeight(user.getHeight());
         userWebModel.setWeight(user.getWeight());
@@ -202,6 +204,8 @@ public class UserServiceImpl implements UserService {
         userToUpdate.setGender(userInput.getGender());
         userToUpdate.setBirthPlace(userInput.getBirthPlace());
         userToUpdate.setLivingPlace(userInput.getLivingPlace());
+        userToUpdate.setExperience(userInput.getExperience());
+        userToUpdate.setSchedule(userInput.getSchedule());
 
         userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
         userToUpdate.setHomeAddress(userInput.getHomeAddress());
