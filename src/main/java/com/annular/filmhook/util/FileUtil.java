@@ -3,6 +3,11 @@ package com.annular.filmhook.util;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.AwsS3Service;
 
+import io.github.techgnious.IVCompressor;
+import io.github.techgnious.dto.ImageFormats;
+import io.github.techgnious.dto.ResizeResolution;
+import io.github.techgnious.dto.VideoFormats;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,14 +16,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.Files;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 public class FileUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(FileUtil.class);
+
+    private static final Set<String> IMAGE_FORMATS = Set.of(".jpg", ".jpeg", ".png");
+    private static final Set<String> VIDEO_FORMATS = Set.of(".mp4", ".mkv", ".flv", ".mov", ".avi", ".wmv");
 
     @Autowired
     AwsS3Service awsS3Service;
@@ -37,9 +53,11 @@ public class FileUtil {
     public byte[] downloadFile(List<S3Object> s3data) {
         return awsS3Service.getObjectFromS3(s3Util.getS3BucketName(), s3data);
     }
+
     public byte[] downloadFile(String objectKey) {
         return awsS3Service.getObjectFromS3(s3Util.getS3BucketName(), objectKey);
     }
+
     public void deleteFiles(List<S3Object> s3ObjectList) {
         awsS3Service.deleteObjectsFromS3(s3Util.getS3BucketName(), s3ObjectList);
     }
@@ -87,13 +105,13 @@ public class FileUtil {
     }
 
     public static String generateFilePath(String category) {
-    	 return new StringBuilder()
-                 .append(category)
-                 .append("/")
+        return new StringBuilder()
+                .append(category)
+                .append("/")
                 // .append(user.getUserId()).append("_").append(user.getName().toLowerCase().replace(" ", ""))
                 // .append("/")
                 // .append(fileName)
-                 .toString(); 
+                .toString();
     }
 
     public static String generateDestinationPath(String category) {
@@ -103,5 +121,71 @@ public class FileUtil {
                 .toString();
     }
 
+    public static boolean isImageFile(String fileFormat) {
+        return IMAGE_FORMATS.contains(fileFormat);
+    }
+
+    public static boolean isVideoFile(String fileFormat) {
+        return VIDEO_FORMATS.contains(fileFormat);
+    }
+
+    public static void compressImageFile(File inputFile, String inputFileType, File outputFile) {
+        try {
+            logger.info("Input image file size to compress -> [{}] with file format -> [{}]", inputFile.length(), inputFileType);
+
+            /*BufferedImage inputImage = ImageIO.read(inputFile);
+
+            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(inputFileType);
+            ImageWriter writer = writers.next();
+
+            ImageOutputStream outputStream = ImageIO.createImageOutputStream(outputFile);
+            writer.setOutput(outputStream);
+
+            ImageWriteParam params = writer.getDefaultWriteParam();
+            params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            params.setCompressionQuality(0.5f);
+
+            writer.write(null, new IIOImage(inputImage, null, null), params);
+
+            outputStream.close();
+            writer.dispose();
+            logger.info("Compressed image file size -> [{}]", outputFile.length());*/
+
+            IVCompressor compressor = new IVCompressor();
+            byte[] compressedFile = compressor.resizeImageUsingFile(inputFile, ImageFormats.valueOf(inputFileType.toUpperCase()), ResizeResolution.R360P);
+            convertByteArrayToFile(outputFile, compressedFile);
+            logger.info("Compressed image file size using IVCompressor -> [{}]", compressedFile.length);
+
+        } catch (Exception e) {
+            logger.error("Error at compressImageFile() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void compressVideoFile(File inputFile, String inputFileType, File outputFile) {
+        try {
+            logger.info("Input video file size to compress -> [{}] with file format -> [{}]", inputFile.length(), inputFileType);
+
+            IVCompressor compressor = new IVCompressor();
+            byte[] compressedFile = compressor.reduceVideoSize(inputFile, VideoFormats.valueOf(inputFileType.toUpperCase()), ResizeResolution.R360P);
+            convertByteArrayToFile(outputFile, compressedFile);
+
+            logger.info("Compressed video file size -> [{}]", outputFile.length());
+        } catch (Exception e) {
+            logger.error("Error at compressVideoFile() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void convertByteArrayToFile(File outputFile, byte[] bytes) {
+        try {
+            OutputStream os = new FileOutputStream(outputFile);
+            os.write(bytes);
+            os.close();
+        } catch (Exception e) {
+            logger.error("Error at convertByteArrayToFile() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
 }

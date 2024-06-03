@@ -25,10 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -70,11 +68,24 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             mediaFilesMap.forEach((mediaFile, inputFile) -> {
                 mediaFilesRepository.saveAndFlush(mediaFile);
                 try {
-                    File file = File.createTempFile(mediaFile.getFileId(), null);
-                    FileUtil.convertMultiPartFileToFile(inputFile, file);
-                    String response = fileUtil.uploadFile(file, mediaFile.getFilePath() + mediaFile.getFileType());
+                    File orginalFile = File.createTempFile(mediaFile.getFileId(), null);
+                    File compressedFile = File.createTempFile(mediaFile.getFileId(), null);
+
+                    FileUtil.convertMultiPartFileToFile(inputFile, orginalFile); // Converting from Multipart to file
+
+                    // Compressing the files before save
+                    if (FileUtil.isImageFile(mediaFile.getFileType())) {
+                        FileUtil.compressImageFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+                    } else if (FileUtil.isVideoFile(mediaFile.getFileType())) {
+                        FileUtil.compressVideoFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+                    } else {
+                        compressedFile = orginalFile;
+                    }
+
+                    String response = fileUtil.uploadFile(compressedFile, mediaFile.getFilePath() + mediaFile.getFileType());
                     if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-                        file.delete(); // deleting temp file
+                        orginalFile.delete();
+                        compressedFile.delete(); // deleting temp file
                         fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
                     }
                 } catch (IOException e) {
