@@ -47,6 +47,6 @@ public interface DetailService {
 
 	ResponseEntity<?> verifyFilmHook(UserWebModel userWebModel);
 
-	ResponseEntity<?> getIndustryByuserId();
+	ResponseEntity<?> getIndustryByuserId(Integer userId);
 
 }

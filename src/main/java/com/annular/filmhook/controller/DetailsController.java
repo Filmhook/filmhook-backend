@@ -238,10 +238,10 @@ public class DetailsController {
     }
     
     @GetMapping("/getIndustryByuserId")
-    public ResponseEntity<?> getIndustryByuserId() {
+    public ResponseEntity<?> getIndustryByuserId(@RequestParam("userId")Integer userId) {
         try {
             logger.info("getIndustryByuserId controller start");
-            return detailService.getIndustryByuserId();
+            return detailService.getIndustryByuserId(userId);
         } catch (Exception e) {
             logger.error("getIndustryByuserId Method Exception -> ", e);
             e.printStackTrace();

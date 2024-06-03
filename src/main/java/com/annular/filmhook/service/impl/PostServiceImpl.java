@@ -500,19 +500,17 @@ public class PostServiceImpl implements PostService {
     public LinkWebModel addLink(LinkWebModel linkWebModel) {
         Link link = Link.builder()
                 .links(linkWebModel.getLinks())
-                .status(linkWebModel.getStatus())
-                .createdBy(linkWebModel.getCreatedBy())
-                .createdOn(linkWebModel.getCreatedOn())
-                .updatedBy(linkWebModel.getUpdatedBy())
-                .updatedOn(linkWebModel.getUpdatedOn())
+                .status(true)
+                .createdBy(linkWebModel.getUserId())
+                .createdOn(new Date())
                 .userId(linkWebModel.getUserId())
                 .build();
 
         Link savedLink = linkRepository.save(link);
 
         linkWebModel.setLinkId(savedLink.getLinkId());
-        linkWebModel.setCreatedOn(savedLink.getCreatedOn());
-        linkWebModel.setUpdatedOn(savedLink.getUpdatedOn());
+        linkWebModel.setCreatedOn(new Date());
+        linkWebModel.setUpdatedOn(new Date());
 
         return linkWebModel;
     }

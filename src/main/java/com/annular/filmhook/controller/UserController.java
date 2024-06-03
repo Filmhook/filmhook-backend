@@ -170,7 +170,7 @@ public class UserController {
      * @param userWebModel
      * @return Response
      */
-    @DeleteMapping("/deleteProfilePic")
+    @PostMapping("/deleteProfilePic")
     public Response deleteProfilePic(@RequestBody UserWebModel userWebModel) {
         try {
             userService.deleteUserProfilePic(userWebModel);
@@ -216,7 +216,7 @@ public class UserController {
      * @param userWebModel
      * @return Response
      */
-    @DeleteMapping("/deleteCoverPic")
+    @PostMapping("/deleteCoverPic")
     public Response deleteCoverPic(@RequestBody UserWebModel userWebModel) {
         try {
             userService.deleteUserCoverPic(userWebModel);

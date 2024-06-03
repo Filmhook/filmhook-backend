@@ -987,9 +987,9 @@ public class DetailServiceImpl implements DetailService {
     }
 
     @Override
-    public ResponseEntity<?> getIndustryByuserId() {
+    public ResponseEntity<?> getIndustryByuserId(Integer userId) {
         try {
-            Integer userId = userDetails.userInfo().getId();
+            //Integer userId = userDetails.userInfo().getId();
             List<IndustryUserPermanentDetails> industryDetails = industryUserPermanentDetailsRepository.findByUserId(userId);
 
             Map<String, Object> response = new HashMap<>();
