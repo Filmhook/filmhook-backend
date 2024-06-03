@@ -22,6 +22,9 @@ public class PromoteWebModel {
 	private Integer totalCost;
 	private Integer taxFee;
 	private Integer cgst;
+	private Boolean promoteStatus;
+	
+
 	private Integer sgst;
 	private Integer price;
     private Integer userId;

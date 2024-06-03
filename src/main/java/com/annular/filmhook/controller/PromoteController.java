@@ -1,17 +1,23 @@
 package com.annular.filmhook.controller;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.PromoteService;
+import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.PromoteWebModel;
 
 @RestController
@@ -22,6 +28,9 @@ public class PromoteController {
 
 	@Autowired
 	PromoteService promoteService;
+	
+	@Autowired
+	PostService postService;
 
 	@PostMapping("/addPromote")
 	public ResponseEntity<?> addPromote(@RequestBody PromoteWebModel promoteWebModel) {
@@ -85,6 +94,32 @@ public class PromoteController {
 		
 	}
 
+	@GetMapping("/getPromoteByUserId")
+	public Response getPromoteByUserId(@RequestParam("userId") Integer userId) {
+		try {
+			List<PostWebModel> outputList = postService.getPostsByUserIds(userId);
+			if (outputList != null && !outputList.isEmpty()) {
+				return new Response(1, "Post(s) found successfully...", outputList);
+			} else {
+				return new Response(-1, "No file(s) available for this user...", null);
+			}
+		} catch (Exception e) {
+			logger.error("Error at getPostsByUserId()...", e);
+		}
+		return new Response(-1, "Post files were not found...", null);
+	}
 
+	@PostMapping("/deletePromoteByUserId")
+	public ResponseEntity<?> deletePromoteByUserId(@RequestBody PromoteWebModel promoteWebModel) {
+		try {
+			logger.info("deletePromoteByUserId controller start");
+			return promoteService.deletePromoteByUserId(promoteWebModel);
+		} catch (Exception e) {
+			logger.error("deletePromoteByUserId  Method Exception {} " + e);
+			e.printStackTrace();
+			return ResponseEntity.ok(new Response(-1, "Fail", ""));
+		}
+	
 
-}
+	}}
+

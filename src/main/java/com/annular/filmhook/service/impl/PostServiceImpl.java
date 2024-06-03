@@ -126,6 +126,7 @@ public class PostServiceImpl implements PostService {
                         .user(userFromDB).status(true)
                         .privateOrPublic(postWebModel.getPrivateOrPublic())
                         .promoteFlag(false)
+                        .promoteStatus(true)
                         .createdBy(postWebModel.getUserId())
                         .locationName(postWebModel.getLocationName())
                         .createdOn(new Date())
@@ -514,5 +515,15 @@ public class PostServiceImpl implements PostService {
 
         return linkWebModel;
     }
+    @Override
+    public List<PostWebModel> getPostsByUserIds(Integer userId) {
+        try {
+            List<Posts> postList = postsRepository.findByUsers(User.builder().userId(userId).build());
+            return this.transformPostsDataToPostWebModel(postList);
+        } catch (Exception e) {
+            logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
 
-}
+}}

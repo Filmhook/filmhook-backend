@@ -95,5 +95,8 @@ public class Posts {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
+    
+    @Column(name = "promoteStatus")
+    private Boolean promoteStatus;
 
 }

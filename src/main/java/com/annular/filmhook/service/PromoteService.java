@@ -16,4 +16,6 @@ public interface PromoteService {
 
 	ResponseEntity<?> getByPromoteId(PromoteWebModel promoteWebModel);
 
+	ResponseEntity<?> deletePromoteByUserId(PromoteWebModel promoteWebModel);
+
 }

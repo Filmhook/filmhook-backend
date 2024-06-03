@@ -40,4 +40,6 @@ public interface PostService {
 
 	LinkWebModel addLink(LinkWebModel linkWebModel);
 
+	List<PostWebModel> getPostsByUserIds(Integer userId);
+
 }
