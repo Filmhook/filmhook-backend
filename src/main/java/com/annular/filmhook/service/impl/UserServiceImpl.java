@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -556,7 +557,6 @@ public class UserServiceImpl implements UserService {
            ]
         }*/
         Map<String, List<Map<String, Object>>> professionUserMap = new HashMap<>();
-        List<Map<String, Object>> userDataList = new ArrayList<>();
 
         List<IndustryUserPermanentDetails> userIndustryDetails;
         List<PlatformPermanentDetail> userPlatformDetails;
@@ -620,36 +620,55 @@ public class UserServiceImpl implements UserService {
 
             // Iterating the UserIds and preparing the output
             if (!Utility.isNullOrEmptySet(uniqueUsersSet)) {
-                uniqueUsersSet.stream().filter(Objects::nonNull).map(this::getUser).forEach(user -> user.ifPresent(userList::add));
+                logger.info("Unique User list -> {}", uniqueUsersSet);
+                uniqueUsersSet.stream()
+                        .filter(Objects::nonNull)
+                        .map(this::getUser)
+                        .forEach(user -> user.ifPresent(userList::add)); // getting all details about the user
 
                 if(!Utility.isNullOrEmptyList(userList)) {
                     userList.stream()
                             .filter(Objects::nonNull)
                             .forEach(user -> {
+                                logger.debug("User iteration -> {}", user.getName());
                                 UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
                                 List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.findByUserId(user.getUserId());
                                 if (!Utility.isNullOrEmptyList(userProfessionDataList)) {
                                     userProfessionDataList.stream()
                                             .filter(Objects::nonNull)
                                             .forEach(professionData -> {
+                                                logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
 
-                                                Map<String, Object> map = new HashMap<>();
+                                                Map<String, Object> map = new LinkedHashMap<>();
                                                 map.put("userId", userWebModel.getUserId());
                                                 map.put("name", userWebModel.getName());
                                                 map.put("dob", userWebModel.getDob());
                                                 map.put("userProfilePic", userWebModel.getProfilePicOutput() != null ? userWebModel.getProfilePicOutput().getFilePath() : "");
+
                                                 map.put("userRating", "");
                                                 map.put("experience", "");
                                                 map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
                                                 map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
-                                                userDataList.add(map);
 
-                                                professionUserMap.putIfAbsent(professionData.getProfessionName(), userDataList);
+                                                map.put("industry", professionData.getIndustryUserPermanentDetails().getIndustriesName());
+                                                map.put("platform", professionData.getPlatformPermanentDetail().getPlatformName());
+                                                map.put("filmProfession", professionData.getFilmProfession().getProfessionName());
+                                                map.put("filmSubProfession", professionData.getFilmSubProfessionPermanentDetails().stream().map(item -> item.getFilmSubProfession().getSubProfessionName()).collect(Collectors.toList()));
+
+                                                List<Map<String, Object>> finalUserList;
+                                                if (professionUserMap.get(professionData.getProfessionName()) == null) {
+                                                    finalUserList = new ArrayList<>();
+                                                } else {
+                                                    finalUserList = professionUserMap.get(professionData.getProfessionName());
+                                                }
+                                                finalUserList.add(map);
+                                                professionUserMap.put(professionData.getProfessionName(), finalUserList);
                                             });
                                 }
                             });
                 }
             }
+            logger.info("Final user search result -> [{}]", professionUserMap.size());
         } catch (Exception e) {
             logger.error("Error at getUserByAllSearchCriteria() -> [{}]", e.getMessage());
             e.printStackTrace();

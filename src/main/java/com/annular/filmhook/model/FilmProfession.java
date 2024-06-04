@@ -61,6 +61,7 @@ public class FilmProfession {
 
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "profession")
     @ToString.Exclude
+    @JsonIgnore
     private Collection<FilmSubProfession> filmSubProfessionCollection;
 
 }

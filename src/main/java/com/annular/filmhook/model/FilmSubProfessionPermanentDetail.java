@@ -63,6 +63,7 @@ public class FilmSubProfessionPermanentDetail {
     @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "film_sub_profession_id", nullable = false)
+    @JsonIgnore
     private FilmSubProfession filmSubProfession;
 
     @Column(name = "userId")

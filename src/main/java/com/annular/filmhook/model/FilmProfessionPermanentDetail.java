@@ -76,5 +76,7 @@ public class FilmProfessionPermanentDetail {
 	private Integer userId;
 
 	@OneToMany(mappedBy = "filmProfessionPermanentDetail", cascade = CascadeType.ALL)
+	@JsonIgnore
+	@ToString.Exclude
 	private List<FilmSubProfessionPermanentDetail> filmSubProfessionPermanentDetails;
 }
