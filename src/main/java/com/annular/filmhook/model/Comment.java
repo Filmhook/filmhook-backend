@@ -37,7 +37,7 @@ public class Comment {
     private Integer commentedBy; // primary key of user table
 
     @Column(name = "post_Id")
-    private Integer postId; // primary key of posts,userMediaPin,userProfilePin
+	private Integer postId; // primary key of posts,userMediaPin,userProfilePin
     
     @Column(name = "content")
     private String content;

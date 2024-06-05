@@ -1,6 +1,7 @@
 package com.annular.filmhook.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -14,5 +15,9 @@ public interface AuditionAcceptanceRepository extends JpaRepository<AuditionAcce
 
 	@Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = false")
 	Integer getIgnoredCount(Integer auditionId);
+
+	@Modifying
+    @Query("DELETE FROM AuditionAcceptanceDetails aad WHERE aad.auditionRefId = :auditionRefId")
+	void deleteByAuditionRefId(Integer auditionRefId);
 
 }

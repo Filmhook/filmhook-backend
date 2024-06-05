@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import com.annular.filmhook.model.MediaFileCategory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -416,6 +418,115 @@ public class AuditionServiceImpl implements AuditionService {
 		}
 
 
+      @Transactional
+		public ResponseEntity<?> deleteAuditionById(Integer auditionId, Integer userId) {
+	        try {
+	            Optional<Audition> auditionData = auditionRepository.findById(auditionId);
+	            if (auditionData.isPresent()) {
+	                Audition audition = auditionData.get();
+	                logger.info("User ID: {}", userId);
+	                logger.info("Audition Created By: {}", audition.getAuditionCreatedBy());
+	                if (audition.getAuditionCreatedBy().equals(userId)) {
+	                	auditionRolesRepository.deleteByAuditionId(auditionId);
+	                    auditionRepository.deleteById(auditionId);
+	                    //auditionRolesRepository.deleteByAuditionId(auditionId);
+	                    acceptanceRepository.deleteByAuditionRefId(auditionId); // Delete related AuditionAcceptanceDetails
+	                    auditionIgnoranceRepository.deleteByAuditionRefId(auditionId);
+	                    return ResponseEntity.ok(new Response(1, "Audition deleted successfully.", null));
+	                } else {
+	                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                            .body(new Response(-1, "Unauthorized: You do not have permission to delete this audition.", null));
+	                }
+	            } else {
+	                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                        .body(new Response(-1, "Audition not found.", null));
+	            }
+	        } catch (Exception e) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(-1, "Fail", e.getMessage()));
+	        }
+	    }
+
+      @Override
+      public ResponseEntity<?> updateAudition(AuditionWebModel auditionWebModel) {
+          HashMap<String, Object> response = new HashMap<>();
+          try {
+              logger.info("Update audition method start");
+
+              // Check if the auditionId is provided
+              if (auditionWebModel.getAuditionId() == null) {
+                  return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                          .body(new Response(-1, "Audition ID is required for updating.", null));
+              }
+
+              // Check if the audition exists
+              Optional<Audition> existingAuditionOptional = auditionRepository.findById(auditionWebModel.getAuditionId());
+              if (!existingAuditionOptional.isPresent()) {
+                  return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                          .body(new Response(-1, "Audition not found.", null));
+              }
+
+              Audition existingAudition = existingAuditionOptional.get();
+
+              // Update audition details
+              existingAudition.setAuditionTitle(auditionWebModel.getAuditionTitle());
+              existingAudition.setAuditionExperience(auditionWebModel.getAuditionExperience());
+              existingAudition.setAuditionCategory(auditionWebModel.getAuditionCategory());
+              existingAudition.setAuditionExpireOn(auditionWebModel.getAuditionExpireOn());
+              existingAudition.setAuditionAddress(auditionWebModel.getAuditionAddress());
+              existingAudition.setAuditionMessage(auditionWebModel.getAuditionMessage());
+              existingAudition.setAuditionLocation(auditionWebModel.getAuditionLocation());
+
+              // Update the audition
+              Audition savedAudition = auditionRepository.save(existingAudition);
+              
+
+  			//auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
+  			//auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story
+  			//List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
+			//		.saveMediaFiles(auditionWebModel.getFileInputWebModel(),existingAudition.getAuditionCreatedBy() );	
+              
+              
+              
+              List<AuditionRoles> auditionRolesList = new ArrayList<>();
+
+              // Update existing roles if auditionRolesId is provided
+              if (auditionWebModel.getAuditionRolesWebModels() != null && !auditionWebModel.getAuditionRolesWebModels().isEmpty()) {
+                  for (AuditionRolesWebModel role : auditionWebModel.getAuditionRolesWebModels()) {
+                      if (role.getAuditionRoleId() != null) {
+                          Optional<AuditionRoles> existingRoleOptional = auditionRolesRepository.findById(role.getAuditionRoleId());
+                          if (existingRoleOptional.isPresent()) {
+                              AuditionRoles existingRole = existingRoleOptional.get();
+                              existingRole.setAuditionRoleDesc(role.getAuditionRoleDesc());
+                              auditionRolesList.add(auditionRolesRepository.save(existingRole));
+                          }
+                      }
+                  }
+              }
+
+              // Create new roles if auditionRolesId is not provided
+              if (auditionWebModel.getAuditionRoles() != null && auditionWebModel.getAuditionRoles().length > 0) {
+                  for (String roleDesc : auditionWebModel.getAuditionRoles()) {
+                      AuditionRoles newRole = new AuditionRoles();
+                      newRole.setAudition(savedAudition);
+                      newRole.setAuditionRoleDesc(roleDesc);
+                      newRole.setAuditionRoleCreatedBy(auditionWebModel.getAuditionCreatedBy());
+                      newRole.setAuditionRoleIsactive(true);
+                      auditionRolesList.add(auditionRolesRepository.save(newRole));
+                  }
+              }
+
+              response.put("Audition details", savedAudition);
+             
+          } catch (Exception e) {
+              logger.error("Update audition Method Exception...", e);
+              e.printStackTrace();
+              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                      .body(new Response(-1, "Fail", e.getMessage()));
+          }
+          return ResponseEntity.status(HttpStatus.OK)
+                  .body(new Response(1, "Audition details updated successfully", response));
+      }
 
 
 

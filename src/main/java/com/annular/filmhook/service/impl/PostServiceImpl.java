@@ -526,4 +526,50 @@ public class PostServiceImpl implements PostService {
             return null;
         }
 
-}}
+}
+
+    @Override
+    public CommentWebModel updateComment(CommentWebModel commentWebModel) {
+        try {
+            // Fetch the existing comment by ID
+            Optional<Comment> existingCommentOptional = commentRepository.findById(commentWebModel.getCommentId());
+            
+            if (existingCommentOptional.isPresent()) {
+                Comment existingComment = existingCommentOptional.get();
+                
+                // Update the content of the comment
+                existingComment.setContent(commentWebModel.getContent());
+                existingComment.setUpdatedOn(new Date());
+                existingComment.setUpdatedBy(commentWebModel.getUserId());
+
+                // Save the updated comment back to the repository
+                Comment updatedComment = commentRepository.saveAndFlush(existingComment);
+
+                // Transform the updated comment to CommentWebModel and return it
+                return transformToCommentWebModel(updatedComment);
+            } else {
+                // If the comment with the given ID is not found, log an error and return null or throw an exception
+                logger.error("Comment with ID [{}] not found", commentWebModel.getCommentId());
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("Error at updateComment() -> {}", e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Helper method to transform Comment to CommentWebModel
+    private CommentWebModel transformToCommentWebModel(Comment comment) {
+        return CommentWebModel.builder()
+                .commentId(comment.getCommentId())
+                .postId(comment.getPostId())
+                .userId(comment.getCommentedBy())
+                .content(comment.getContent())
+                .createdOn(comment.getCreatedOn())
+                .updatedOn(comment.getUpdatedOn())
+                .status(comment.getStatus())
+                .build();
+    }
+
+	}

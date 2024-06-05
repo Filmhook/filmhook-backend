@@ -24,4 +24,8 @@ public interface AuditionService {
 
 	ResponseEntity<?> getAuditionByFilterAddress(Integer auditionCategory, String searchKey);
 
+	ResponseEntity<?> deleteAuditionById(Integer auditionId, Integer userId);
+
+	ResponseEntity<?> updateAudition(AuditionWebModel auditionWebModel);
+
 }

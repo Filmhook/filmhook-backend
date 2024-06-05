@@ -13,6 +13,8 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -41,7 +43,7 @@ public class AuditionRoles {
 	
 //	@Column (name = "audition_reference_Id")
 //	private Integer auditionReferenceId;
-	
+	@JsonBackReference
 	@ManyToOne
     @JoinColumn(name = "audition_id", nullable = false)
     private Audition audition;

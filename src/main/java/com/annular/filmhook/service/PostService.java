@@ -42,4 +42,6 @@ public interface PostService {
 
 	List<PostWebModel> getPostsByUserIds(Integer userId);
 
+	CommentWebModel updateComment(CommentWebModel commentWebModel);
+
 }

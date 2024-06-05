@@ -198,6 +198,19 @@ public class PostController {
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
     }
+    @PostMapping("/updateComment")
+    public ResponseEntity<?> updateComment(@RequestBody CommentWebModel commentWebModel)
+    {
+    try {
+        CommentWebModel commentWebModelOutput = postService.updateComment(commentWebModel);
+        if(commentWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Comment added for the post...", commentWebModelOutput));
+    } catch (Exception e) {
+        logger.error("addComment Method Exception -> {}", e.getMessage());
+        e.printStackTrace();
+        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+    }
+    return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
+    }
 
     @PostMapping("/getComment")
     public ResponseEntity<?> getComment(@RequestBody CommentWebModel commentWebModel) {

@@ -3,6 +3,7 @@ package com.annular.filmhook.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -131,5 +132,32 @@ public class AuditionController {
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
+
+	
+	@PostMapping("/deleteAuditionById")
+	public ResponseEntity<?> deleteAuditionById(@RequestBody AuditionWebModel auditionWebModel) {
+		try {
+			
+		return auditionService.deleteAuditionById(auditionWebModel.getAuditionId(),auditionWebModel.getAuditionCreatedBy());
+			
+		} catch (Exception e) {
+			logger.error("Save audition Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(200, "Success", ""));
+	}
+	@PostMapping("/updateAudition")
+    public ResponseEntity<?> updateAudition(@ModelAttribute AuditionWebModel auditionWebModel) {
+        try {
+            if (auditionWebModel.getAuditionId() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new Response(-1, "Audition ID is required for updating.", null));
+            }
+            return auditionService.updateAudition(auditionWebModel);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Fail", e.getMessage()));
+        }
+    }
 
 }
