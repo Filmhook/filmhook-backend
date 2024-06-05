@@ -10,4 +10,6 @@ public interface BookingService {
 
     List<BookingWebModel> getBookingsByUserId(Integer userId);
 
+    List<BookingWebModel> getConfirmedBookingsByUserId(Integer userId);
+
 }

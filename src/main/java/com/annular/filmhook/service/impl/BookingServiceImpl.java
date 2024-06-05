@@ -123,4 +123,15 @@ public class BookingServiceImpl implements BookingService {
         return bookingWebModels;
     }
 
+    @Override
+    public List<BookingWebModel> getConfirmedBookingsByUserId(Integer userId) {
+        try {
+            User userToSearch = User.builder().userId(userId).build();
+            return this.transformBookingData(bookingsRepository.getConfirmedBookingsByBookedUser(userToSearch));
+        } catch (Exception e) {
+            logger.error("Error at getAcceptedBookingsByUserId() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

@@ -103,4 +103,6 @@ public class UserWebModel {
 	//Pagination details
 	private Integer pageNo;
 	private Integer pageSize;
+
+	private String bookingAvailableDate;
 }

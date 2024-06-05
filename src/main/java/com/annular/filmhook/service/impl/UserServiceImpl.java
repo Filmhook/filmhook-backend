@@ -13,14 +13,19 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Comparator;
+
+import java.time.LocalDate;
 
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.*;
 
+import com.annular.filmhook.service.BookingService;
 import com.annular.filmhook.service.MediaFilesService;
 
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +42,7 @@ import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.IndustryWebModel;
 import com.annular.filmhook.webmodel.ProfessionWebModel;
 import com.annular.filmhook.webmodel.SubProfessionWebModel;
+import com.annular.filmhook.webmodel.BookingWebModel;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -89,6 +95,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     PlatformFilmProfessionMapRepository platformFilmProfessionMapRepository;
+
+    @Autowired
+    BookingService bookingService;
 
     @Override
     public Optional<UserWebModel> getUserByUserId(Integer userId) {
@@ -168,6 +177,16 @@ public class UserServiceImpl implements UserService {
 
         List<FileOutputWebModel> coverPicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.CoverPic, user.getUserId());
         if(!Utility.isNullOrEmptyList(coverPicList)) userWebModel.setCoverPhotoOutput(coverPicList.get(0));
+
+        String dateString = "";
+        LocalDate finalDate = LocalDate.now();
+        List<BookingWebModel> userBookings = bookingService.getConfirmedBookingsByUserId(user.getUserId());
+        if(!Utility.isNullOrEmptyList(userBookings)) {
+            userBookings.sort(Comparator.comparing(BookingWebModel::getToDate).reversed());
+            finalDate = CalendarUtil.getNextDate(userBookings.get(0).getToDate());
+        }
+        dateString = CalendarUtil.getFormatedDateString(finalDate, CalendarUtil.UI_DATE_FORMAT);
+        userWebModel.setBookingAvailableDate(dateString);
 
         return userWebModel;
     }

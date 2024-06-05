@@ -25,6 +25,8 @@ public class CalendarUtil {
     public final static String MYSQL_DATE_FORMAT = "yyyy-MM-dd";
     public final static String YYYY_MM_DD = "yyyy-MM-dd";
 
+    public final static DateTimeFormatter DD_MM_YYYY_DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
     public static String convertDateFormat(String inputFormat, String outputFormat, String inputDateTime) {
         try {
             final SimpleDateFormat sdf = new SimpleDateFormat(inputFormat);
@@ -55,8 +57,13 @@ public class CalendarUtil {
         return ChronoUnit.DAYS.between(fromDate, currentDate);
     }
 
-    public static String getFormatedDateString(Date date) {
-        return new SimpleDateFormat(YYYY_MM_DD).format(date);
+    public static String getFormatedDateString(Date date, String format) {
+        return new SimpleDateFormat(format).format(date);
+    }
+
+    public static String getFormatedDateString(LocalDate date, String format) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(format);
+        return date.format(dateTimeFormatter);
     }
 
     public static String calculateElapsedTime(LocalDateTime createdOn) {
@@ -79,5 +86,17 @@ public class CalendarUtil {
             long weeks = seconds / 604800;
             return weeks + (weeks == 1 ? " week" : " weeks");
         }
+    }
+
+    public static LocalDate getNextDate(String date) {
+        logger.debug("Input Date to get next day's date -> {}", date);
+
+        LocalDate localDate = LocalDate.parse(date, DD_MM_YYYY_DATETIME_FORMATTER);
+        logger.debug("Input date as LocalDate -> {}", localDate);
+
+        LocalDate outputDate = localDate.plusDays(1);
+        logger.debug("Next da LocalDate -> {}", outputDate);
+
+        return outputDate;
     }
 }

@@ -29,7 +29,8 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 			FilmProfession filmProfession = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId()).orElse(null);
 			if (filmProfession != null) {
 				List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
-						.map(FilmSubProfession::getSubProfessionName)
+                        .filter(subProfession -> subProfession.getStatus().equals(true))
+                        .map(FilmSubProfession::getSubProfessionName)
 						.collect(Collectors.toList());
 				// Create a map with the desired structure
 				Map<String, Object> responseMap = new HashMap<>();
@@ -50,13 +51,15 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
         List<Map<String, Object>> professionList = new ArrayList<>();
         try {
             List<FilmProfession> professions = filmProfessionRepository.findAll();
-            for (FilmProfession profession : professions) {
-                Map<String, Object> professionMap = new HashMap<>();
-                professionMap.put("filmProfessionId", profession.getFilmProfessionId());
-                professionMap.put("professionName", profession.getProfessionName());
-                //professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
-                professionList.add(professionMap);
-            }
+            professions.stream()
+                    .filter(profession -> profession.getStatus().equals(true))
+                    .forEach(profession -> {
+                        Map<String, Object> professionMap = new HashMap<>();
+                        professionMap.put("filmProfessionId", profession.getFilmProfessionId());
+                        professionMap.put("professionName", profession.getProfessionName());
+                        //professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
+                        professionList.add(professionMap);
+                    });
             response.put("professionMapList", professionList);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
