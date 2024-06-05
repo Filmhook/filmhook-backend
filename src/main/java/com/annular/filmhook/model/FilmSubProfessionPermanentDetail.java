@@ -70,8 +70,8 @@ public class FilmSubProfessionPermanentDetail {
     private Integer userId;
     
     @Column(name ="starting_year")
-    private String startingYear;
+    private Integer startingYear;
     
     @Column(name ="ending_year")
-    private String endingYear;
+    private Integer endingYear;
 }

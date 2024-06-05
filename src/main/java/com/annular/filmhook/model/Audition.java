@@ -3,13 +3,7 @@ package com.annular.filmhook.model;
 import java.sql.Date;
 import java.util.List;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -78,6 +72,11 @@ public class Audition {
 	@Column(name = "audition_updatedon")
 	@CreationTimestamp
 	private Date auditionUpdatedOn;
+
+	@ToString.Exclude
+	@ManyToOne
+	@JoinColumn(name = "user_id")
+	private User user;
 	
 	
 

@@ -95,6 +95,7 @@ public class AuditionServiceImpl implements AuditionService {
 
 			Audition audition = new Audition();
 			audition.setAuditionTitle(auditionWebModel.getAuditionTitle());
+			audition.setUser(userFromDB.get());
 			audition.setAuditionExperience(auditionWebModel.getAuditionExperience());
 			audition.setAuditionCategory(auditionWebModel.getAuditionCategory());
 			audition.setAuditionExpireOn(auditionWebModel.getAuditionExpireOn());
@@ -479,14 +480,14 @@ public class AuditionServiceImpl implements AuditionService {
 
               // Update the audition
               Audition savedAudition = auditionRepository.save(existingAudition);
-              
 
-  			//auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
-  			//auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story
-  			//List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
-			//		.saveMediaFiles(auditionWebModel.getFileInputWebModel(),existingAudition.getAuditionCreatedBy() );	
-              
-              
+
+  			auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
+  			auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story
+  			List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(auditionWebModel.getFileInputWebModel(),existingAudition.getUser());
+
+			  mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(savedAudition.getUser().getUserId(), MediaFileCategory.Audition, auditionWebModel.getMediaFilesIds());
+
               
               List<AuditionRoles> auditionRolesList = new ArrayList<>();
 

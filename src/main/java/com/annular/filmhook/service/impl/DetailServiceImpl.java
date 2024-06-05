@@ -140,7 +140,7 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     S3Util s3Util;
-
+    
     @Autowired
     FilmSubProfessionRepository filmSubProfessionRepository;
 
@@ -724,6 +724,8 @@ public class DetailServiceImpl implements DetailService {
 
                     platformMap.put("professions", professionsList);
                     responseList.add(platformMap);
+             
+                    
                 }
             }
 
@@ -770,6 +772,21 @@ public class DetailServiceImpl implements DetailService {
                         subProfessionDetail.setStartingYear(subProfessionDTO.getStartingYear());
                         subProfessionDetail.setEndingYear(subProfessionDTO.getEndingYear());
                         filmSubProfessionPermanentDetailsRepository.save(subProfessionDetail);
+                     // Calculate the total experience for the user
+                        List<FilmSubProfessionPermanentDetail> details = filmSubProfessionPermanentDetailsRepository.findByUserId(userDetails.userInfo().getId());
+                        int totalExperience = details.stream()
+                                                     .mapToInt(data -> data.getEndingYear() - data.getStartingYear())
+                                                     .sum();
+
+                        // Fetch the user and update the experience
+                        Optional<User> userOptional = userRepository.findById(userDetails.userInfo().getId());
+                        if (userOptional.isPresent()) {
+                            User userToUpdate = userOptional.get();
+                            userToUpdate.setExperience(totalExperience); // Assuming there's a setExperience method
+                            userRepository.save(userToUpdate);
+                        } else {
+                            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+                        }
                     } else {
                         // Handle case when the sub-profession is not found
                         logger.error("Sub-profession with ID {} not found", subProfessionDTO.getSubProfessionId());

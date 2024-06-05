@@ -6,7 +6,7 @@ import lombok.Data;
 public class SubProfessionsWebModel {
 	
 	private Integer subProfessionId;
-    private String startingYear;
-    private String endingYear;
+    private Integer startingYear;
+    private Integer endingYear;
 
 }

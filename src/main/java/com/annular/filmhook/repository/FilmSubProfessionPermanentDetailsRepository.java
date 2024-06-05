@@ -13,4 +13,6 @@ public interface FilmSubProfessionPermanentDetailsRepository extends JpaReposito
 
     @Query("select p from FilmSubProfessionPermanentDetail p where p.filmSubProfession in (:subProfessionIds)")
     List<FilmSubProfessionPermanentDetail> getDataBySubProfessionIds(List<FilmSubProfession> subProfessionIds);
+
+	List<FilmSubProfessionPermanentDetail> findByUserId(Integer userId);
 }

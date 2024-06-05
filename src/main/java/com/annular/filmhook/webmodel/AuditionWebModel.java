@@ -36,6 +36,8 @@ public class AuditionWebModel {
 	
 	private String searchKey;
 
+	private Integer userId;
+
 //	private List<AuditionRolesWebModel> auditionRoles;
 	
 	private String auditionRoles[];
@@ -44,5 +46,7 @@ public class AuditionWebModel {
 	
 	private FileInputWebModel fileInputWebModel; // for file input details
 	private List<FileOutputWebModel> fileOutputWebModel; // for file output details
+
+	private List<Integer> mediaFilesIds; // FOr Delete purpose
 
 }
