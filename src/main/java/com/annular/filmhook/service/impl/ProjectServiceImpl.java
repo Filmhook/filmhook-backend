@@ -52,7 +52,18 @@ public class ProjectServiceImpl implements ProjectService {
                 projectWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Project);
                 projectWebModel.getFileInputWebModel().setCategoryRefId(platformFromDB.get().getPlatformPermanentId());
                 //projectWebModel.getFileInputWebModel().setDescription(null);
-                return mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
+           
+                //return mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
+                List<FileOutputWebModel> savedFiles = mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
+                PlatformPermanentDetail platformPermanentDetail = platformFromDB.get();
+                int currentFilmCount = platformPermanentDetail.getFilmCount();
+                platformPermanentDetail.setFilmCount(currentFilmCount + savedFiles.size());
+
+                // Save the updated film count back to the database
+                platformPermanentDetailRepository.save(platformPermanentDetail);
+                
+                // Add saved files to the output list
+                outputList.addAll(savedFiles);
             }
         } catch (Exception e) {
             logger.error("Error at saveProjectFiles(): ", e);
