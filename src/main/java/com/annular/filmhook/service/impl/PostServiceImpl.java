@@ -426,16 +426,20 @@ public class PostServiceImpl implements PostService {
             Posts post = postsRepository.findById(commentWebModel.getPostId()).orElse(null);
             if (post != null) {
                 List<Comment> commentData = (List<Comment>) post.getCommentCollection();
-                Long currentTotalCommentCount = !Utility.isNullOrEmptyList(commentData) ? commentData.stream().filter(comment -> comment.getStatus().equals(true)).count() : 0;
-                return this.transformCommentData(commentData, currentTotalCommentCount);
+                // Filter comments with status true
+                List<Comment> filteredComments = commentData.stream()
+                                                            .filter(comment -> comment.getStatus().equals(true))
+                                                            .collect(Collectors.toList());
+                Long currentTotalCommentCount = (long) filteredComments.size();
+                return this.transformCommentData(filteredComments, currentTotalCommentCount);
             }
         } catch (Exception e) {
             logger.error("Error at getComment() -> {}", e.getMessage());
             e.printStackTrace();
-            return null;
         }
         return null;
     }
+
 
     @Override
     public CommentWebModel deleteComment(CommentWebModel commentWebModel) {

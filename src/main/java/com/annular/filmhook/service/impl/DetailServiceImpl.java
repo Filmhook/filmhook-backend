@@ -765,43 +765,52 @@ public class DetailServiceImpl implements DetailService {
                 permanentDb.setFilmCount(platformDetailDTO.getFilmCount());
                 permanentDb.setNetWorth(platformDetailDTO.getNetWorth());
 
-                for (SubProfessionsWebModel subProfessionDTO : platformDetailDTO.getSubProfession()) {
-                    Optional<FilmSubProfessionPermanentDetail> optionalSubProfession = filmSubProfessionPermanentDetailsRepository.findById(subProfessionDTO.getSubProfessionId());
-                    if (optionalSubProfession.isPresent()) {
-                        FilmSubProfessionPermanentDetail subProfessionDetail = optionalSubProfession.get();
-                        subProfessionDetail.setStartingYear(subProfessionDTO.getStartingYear());
-                        subProfessionDetail.setEndingYear(subProfessionDTO.getEndingYear());
-                        filmSubProfessionPermanentDetailsRepository.save(subProfessionDetail);
-                     // Calculate the total experience for the user
-                        List<FilmSubProfessionPermanentDetail> details = filmSubProfessionPermanentDetailsRepository.findByUserId(userDetails.userInfo().getId());
-                        int totalExperience = details.stream()
-                                                     .mapToInt(data -> data.getEndingYear() - data.getStartingYear())
-                                                     .sum();
+                List<SubProfessionsWebModel> subProfessions = platformDetailDTO.getSubProfession();
+                if (subProfessions != null) {
+                    for (SubProfessionsWebModel subProfessionDTO : subProfessions) {
+                        Optional<FilmSubProfessionPermanentDetail> optionalSubProfession = filmSubProfessionPermanentDetailsRepository.findById(subProfessionDTO.getSubProfessionId());
+                        if (optionalSubProfession.isPresent()) {
+                            FilmSubProfessionPermanentDetail subProfessionDetail = optionalSubProfession.get();
+                            subProfessionDetail.setStartingYear(subProfessionDTO.getStartingYear());
+                            subProfessionDetail.setEndingYear(subProfessionDTO.getEndingYear());
+                            filmSubProfessionPermanentDetailsRepository.save(subProfessionDetail);
 
-                        // Fetch the user and update the experience
-                        Optional<User> userOptional = userRepository.findById(userDetails.userInfo().getId());
-                        if (userOptional.isPresent()) {
-                            User userToUpdate = userOptional.get();
-                            userToUpdate.setExperience(totalExperience); // Assuming there's a setExperience method
-                            userRepository.save(userToUpdate);
+                            // Calculate the total experience for the user
+                            List<FilmSubProfessionPermanentDetail> details = filmSubProfessionPermanentDetailsRepository.findByUserId(userDetails.userInfo().getId());
+                            int totalExperience = details.stream()
+                                                         .mapToInt(data -> data.getEndingYear() - data.getStartingYear())
+                                                         .sum();
+
+                            // Fetch the user and update the experience
+                            Optional<User> userOptional = userRepository.findById(userDetails.userInfo().getId());
+                            if (userOptional.isPresent()) {
+                                User userToUpdate = userOptional.get();
+                                userToUpdate.setExperience(totalExperience); // Assuming there's a setExperience method
+                                userRepository.save(userToUpdate);
+                            } else {
+                                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+                            }
                         } else {
-                            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+                            // Handle case when the sub-profession is not found
+                            logger.error("Sub-profession with ID {} not found", subProfessionDTO.getSubProfessionId());
                         }
-                    } else {
-                        // Handle case when the sub-profession is not found
-                        logger.error("Sub-profession with ID {} not found", subProfessionDTO.getSubProfessionId());
                     }
+                } else {
+                    logger.warn("No sub-professions provided in the update request.");
                 }
 
                 platformPermanentDetailRepository.save(permanentDb);
+                return ResponseEntity.ok("Industry user permanent details updated successfully.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Platform details not found.");
             }
-            return ResponseEntity.ok("Industry user permanent details updated successfully.");
         } catch (Exception e) {
             logger.error("Error in updating industry user permanent details", e);
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update industry user permanent details.");
         }
     }
+
 
     @Override
     public ResponseEntity<?> updateIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {

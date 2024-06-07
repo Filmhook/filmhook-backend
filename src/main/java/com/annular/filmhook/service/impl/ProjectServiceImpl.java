@@ -55,15 +55,24 @@ public class ProjectServiceImpl implements ProjectService {
            
                 //return mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
                 List<FileOutputWebModel> savedFiles = mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
-                PlatformPermanentDetail platformPermanentDetail = platformFromDB.get();
-                int currentFilmCount = platformPermanentDetail.getFilmCount();
-                platformPermanentDetail.setFilmCount(currentFilmCount + savedFiles.size());
+               // PlatformPermanentDetail platformPermanentDetail = platformFromDB.get();
+                //int currentFilmCount = platformPermanentDetail.getFilmCount();
+                //platformPermanentDetail.setFilmCount(currentFilmCount + savedFiles.size());
 
                 // Save the updated film count back to the database
-                platformPermanentDetailRepository.save(platformPermanentDetail);
+               // platformPermanentDetailRepository.save(platformPermanentDetail);
                 
                 // Add saved files to the output list
                 outputList.addAll(savedFiles);
+                PlatformPermanentDetail platformPermanentDetail = platformFromDB.get();
+                Integer filmCount = platformPermanentDetail.getFilmCount();
+                int currentFilmCount = (filmCount != null) ? filmCount : 0;
+                platformPermanentDetail.setFilmCount(currentFilmCount + savedFiles.size());
+                System.out.println(">>>>>>>>>>>>>>>" + (currentFilmCount + savedFiles.size()));
+                // Save the updated film count back to the database
+                platformPermanentDetailRepository.save(platformPermanentDetail);
+
+                
             }
         } catch (Exception e) {
             logger.error("Error at saveProjectFiles(): ", e);
