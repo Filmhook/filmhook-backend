@@ -67,6 +67,7 @@ import com.annular.filmhook.service.UserService;
 
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.S3Util;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
@@ -655,8 +656,8 @@ public class DetailServiceImpl implements DetailService {
                     Map<String, Object> platformMap = new HashMap<>();
                     platformMap.put("platformName", platformName);
                     if (platform.getImage() != null) {
-                        String base64Image = Base64.getEncoder().encodeToString(platform.getImage());
-                        platformMap.put("platformImage", base64Image);
+                        //String base64Image = Base64.getEncoder().encodeToString(platform.getImage());
+                        platformMap.put("platformImage", !Utility.isNullOrBlankWithTrim(platform.getFilePath()) ? s3Util.generateS3FilePath(platform.getFilePath()) : "");
                     } else {
                         // Handle case when platform image is not found
                         platformMap.put("image", "default_image_url");
@@ -673,8 +674,8 @@ public class DetailServiceImpl implements DetailService {
                             Optional<Industry> industryOptional = industryRepository.findByIndustryName(industryName);
                             if (industryOptional.isPresent()) {
                                 Industry industry = industryOptional.get();
-                                String base64Image = Base64.getEncoder().encodeToString(industry.getImage());
-                                industryMap.put("industryimage", base64Image);
+                                //String base64Image = Base64.getEncoder().encodeToString(industry.getImage());
+                                industryMap.put("industryimage", !Utility.isNullOrBlankWithTrim(industry.getFilePath()) ? s3Util.generateS3FilePath(industry.getFilePath()) : "");
                             } else {
                                 // Handle case when industry is not found
                                 industryMap.put("image", "default_image_url");
@@ -705,7 +706,26 @@ public class DetailServiceImpl implements DetailService {
 //                        for (FilmSubProfessionPermanentDetail subProfession : professionDetail.getFilmSubProfessionPermanentDetails()) {
 //                            subProfessions.add(subProfession.getFilmSubProfession().getSubProfessionName());
 //                        }
+                        
+                        // Fetch the profession entity from the database based on professionName
+                        Optional<FilmProfession> professionOptional = filmProfessionRepository.findByProfessionName(professionName);
+                        if (professionOptional.isPresent()) {
+                            FilmProfession profession = professionOptional.get();
 
+                            // Get the icon file path from the profession entity
+                            
+                            professionMap.put("professionName", professionName);
+                            professionMap.put("professionIcon", !Utility.isNullOrBlankWithTrim(profession.getFilePath()) ? s3Util.generateS3FilePath(profession.getFilePath()) : ""); // Adding icon file path to the response
+
+                            // Fetching sub-professions and other details can continue as before
+                            // ...
+                        } else {
+                            // Handle case when profession is not found
+                            // You can choose to skip this profession or handle it according to your requirements
+                            professionMap.put("professionName", professionName);
+                            professionMap.put("professionIcon", "default_icon_file_path"); // Default icon file path if profession is not found
+                            // ...
+                        }
                         List<Map<String, Object>> subProfessionsList = new ArrayList<>();
                         for (FilmSubProfessionPermanentDetail subProfession : professionDetail.getFilmSubProfessionPermanentDetails()) {
                             Map<String, Object> subProfessionMap = new HashMap<>();
