@@ -188,8 +188,8 @@ public class PostServiceImpl implements PostService {
         List<PostWebModel> responseList = new ArrayList<>();
         try {
             if (!Utility.isNullOrEmptyList(postList)) {
-            	
-               postList.stream().filter(Objects::nonNull).forEach(post -> {
+
+                postList.stream().filter(Objects::nonNull).forEach(post -> {
                     // Fetching post-files
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
@@ -245,9 +245,12 @@ public class PostServiceImpl implements PostService {
                             .locationName(post.getLocationName())
                             .professionNames(professionNames)
                             .followersCount(followersList.size())
+                            .createdOn(post.getCreatedOn())
+                            .createdBy(post.getCreatedBy())
                             .build();
                     responseList.add(postWebModel);
                 });
+                responseList.sort(Comparator.comparing(PostWebModel::getCreatedOn).reversed());
                 responseList.sort(Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag).reversed()));
             }
         } catch (Exception e) {

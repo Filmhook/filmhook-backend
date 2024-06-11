@@ -7,6 +7,7 @@ import com.annular.filmhook.model.MediaFileCategory;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,4 +39,7 @@ public class PostWebModel {
 	private Integer followersCount;
 	private Boolean likeStatus;
 	private Boolean pinStatus;
+
+	private Date createdOn;
+	private Integer createdBy;
 }
