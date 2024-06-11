@@ -23,5 +23,7 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
 	@Query("SELECT p FROM Posts p WHERE p.user = :userId AND p.promoteStatus = true")
 	List<Posts> findByUsers(User userId);
 
+	List<Posts> findAllByPromoteFlag(boolean b);
+
 	// List<Posts> findByPromoteFlagAndUserId(boolean b, Integer id);
 }

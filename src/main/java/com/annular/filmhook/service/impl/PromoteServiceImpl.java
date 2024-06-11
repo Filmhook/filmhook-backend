@@ -38,74 +38,82 @@ public class PromoteServiceImpl implements PromoteService {
 
 	@Override
 	public ResponseEntity<?> addPromote(PromoteWebModel promoteWebModel) {
-		HashMap<String, Object> response = new HashMap<>();
-		try {
-			logger.info("addPromote method start");
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        logger.info("addPromote method start");
 
-			Promote promote = null;
-			Integer userId = userDetails.userInfo().getId();
+	        Promote promote = null;
+	        Integer userId = userDetails.userInfo().getId();
 
-			// Check if a Promote already exists with the same postId and userId
-			Promote existingPromote = promoteRepository.findByPostIdAndUserId(promoteWebModel.getPostId(), userId);
-			if (existingPromote != null) {
-				// Update the existing promote instead of creating a new one
-				promote = existingPromote;
-				promote.setAmount(promoteWebModel.getAmount());
-				promote.setCgst(promoteWebModel.getCgst());
-				promote.setPrice(promoteWebModel.getPrice());
-				promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
-				promote.setTotalCost(promoteWebModel.getTotalCost());
-				promote.setTaxFee(promoteWebModel.getTaxFee());
-				promote.setSgst(promoteWebModel.getSgst());
-				promote.setStatus(!promote.getStatus());
-				if (promoteWebModel.getCountry() != null) {
-					promote.setCountry(String.join(",", promoteWebModel.getCountry()));
-				}
-				promote.setUpdatedOn(new Date());
-				promote.setUpdatedBy(userId);
-				promote.setMultimediaId(promoteWebModel.getMultimediaId());
-			} else {
-				// Create a new Promote if none exists
-				promote = new Promote();
-				promote.setAmount(promoteWebModel.getAmount());
-				promote.setCgst(promoteWebModel.getCgst());
-				promote.setPrice(promoteWebModel.getPrice());
-				promote.setPostId(promoteWebModel.getPostId());
-				promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
-				promote.setTotalCost(promoteWebModel.getTotalCost());
-				promote.setTaxFee(promoteWebModel.getTaxFee());
-				promote.setSgst(promoteWebModel.getSgst());
-				promote.setCreatedBy(userId);
-				promote.setCreatedOn(new Date());
-				promote.setStatus(true);
-				if (promoteWebModel.getCountry() != null) {
-					promote.setCountry(String.join(",", promoteWebModel.getCountry()));
-				}
-				promote.setUserId(userId);
-				promote.setMultimediaId(promoteWebModel.getMultimediaId());
-			}
+	        // Check if a Promote already exists with the same postId and userId
+	        Promote existingPromote = promoteRepository.findByPostIdAndUserId(promoteWebModel.getPostId(), userId);
+	        if (existingPromote != null) {
+	            // Update the existing promote instead of creating a new one
+	            promote = existingPromote;
+	            promote.setAmount(promoteWebModel.getAmount());
+	            promote.setCgst(promoteWebModel.getCgst());
+	            promote.setPrice(promoteWebModel.getPrice());
+	            promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
+	            promote.setTotalCost(promoteWebModel.getTotalCost());
+	            promote.setTaxFee(promoteWebModel.getTaxFee());
+	            promote.setSgst(promoteWebModel.getSgst());
+	            promote.setStatus(!promote.getStatus());
+	            if (promoteWebModel.getCountry() != null) {
+	                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+	            }
+	            promote.setUpdatedOn(new Date());
+	            promote.setUpdatedBy(userId);
+	            promote.setMultimediaId(promoteWebModel.getMultimediaId());
+	        } else {
+	            // Create a new Promote if none exists
+	            promote = new Promote();
+	            promote.setAmount(promoteWebModel.getAmount());
+	            promote.setCgst(promoteWebModel.getCgst());
+	            promote.setPrice(promoteWebModel.getPrice());
+	            promote.setPostId(promoteWebModel.getPostId());
+	            promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
+	            promote.setTotalCost(promoteWebModel.getTotalCost());
+	            promote.setTaxFee(promoteWebModel.getTaxFee());
+	            promote.setSgst(promoteWebModel.getSgst());
+	            promote.setCreatedBy(userId);
+	            promote.setCreatedOn(new Date());
+	            promote.setStatus(true);
+	            if (promoteWebModel.getCountry() != null) {
+	                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+	            }
+	            promote.setUserId(userId);
+	            promote.setMultimediaId(promoteWebModel.getMultimediaId());
+	        }
 
-			promote = promoteRepository.save(promote);
-			response.put("promoteInfo", promote);
+	        promote = promoteRepository.save(promote);
+	        response.put("promoteInfo", promote);
 
-			// Updating the promote flag in post-table
-			Posts promotedPost = postsRepository.findById(promote.getPostId()).orElse(null);
-			if (promotedPost != null) {
-				promotedPost.setPromoteFlag(true);
-				postsRepository.saveAndFlush(promotedPost);
-				Posts demotedPost = postsRepository.findByPromoteFlag(true).orElse(null);
-				if (demotedPost != null) {
-					demotedPost.setPromoteFlag(false);
-					postsRepository.saveAndFlush(demotedPost);
-				}
-			}
-			return ResponseEntity.ok(new Response(1, "Add promote successfully", response));
-		} catch (Exception e) {
-			logger.error("Error setting Promote: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error setting promote", e.getMessage()));
-		}
+	        // Updating the promote flag in post-table
+	        Posts promotedPost = postsRepository.findById(promote.getPostId()).orElse(null);
+	        if (promotedPost != null) {
+	            promotedPost.setPromoteFlag(promote.getStatus());
+	            promotedPost.setPromoteStatus(promote.getStatus()); // Assuming there's a promoteStatus field
+	            postsRepository.save(promotedPost);
+
+	            // Find and update all posts with promoteFlag set to true, except the current promoted post
+	            List<Posts> promotedPosts = postsRepository.findAllByPromoteFlag(true);
+	            for (Posts post : promotedPosts) {
+	                if (!post.getId().equals(promotedPost.getId())) {
+	                    post.setPromoteFlag(false);
+	                    post.setPromoteStatus(false); // Assuming there's a promoteStatus field
+	                    postsRepository.save(post);
+	                }
+	            }
+	        }
+
+	        return ResponseEntity.ok(new Response(1, "Add promote successfully", response));
+	    } catch (Exception e) {
+	        logger.error("Error setting Promote: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Error setting promote", e.getMessage()));
+	    }
 	}
+
 
 	@Override
 	public ResponseEntity<?> updatePromote(PromoteWebModel promoteWebModel) {
