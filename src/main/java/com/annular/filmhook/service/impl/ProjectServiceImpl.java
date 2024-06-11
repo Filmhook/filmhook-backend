@@ -68,18 +68,15 @@ public class ProjectServiceImpl implements ProjectService {
                 Integer filmCount = platformPermanentDetail.getFilmCount();
                 int currentFilmCount = (filmCount != null) ? filmCount : 0;
                 platformPermanentDetail.setFilmCount(currentFilmCount + savedFiles.size());
-                System.out.println(">>>>>>>>>>>>>>>" + (currentFilmCount + savedFiles.size()));
+                logger.info("Total film count -> {}", currentFilmCount + savedFiles.size());
                 // Save the updated film count back to the database
                 platformPermanentDetailRepository.save(platformPermanentDetail);
-
-                
             }
         } catch (Exception e) {
-            logger.error("Error at saveProjectFiles(): ", e);
+            logger.error("Error at saveProjectFiles() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputList;
-
     }
 
     @Override

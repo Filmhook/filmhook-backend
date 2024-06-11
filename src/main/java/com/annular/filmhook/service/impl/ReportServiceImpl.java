@@ -25,7 +25,6 @@ import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.MediaFileCategory;
-import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
@@ -133,7 +132,7 @@ public class ReportServiceImpl implements ReportService {
 						.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
 				Set<String> professionNames = filmProfessionPermanentDetailRepository
-						.findByUserId(post.getUser().getUserId()).stream()
+						.getProfessionDataByUserId(post.getUser().getUserId()).stream()
 						.map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
 
 				List<FileOutputWebModel> userProfilePic = mediaFilesService
@@ -240,7 +239,7 @@ public class ReportServiceImpl implements ReportService {
 						.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
 				Set<String> professionNames = filmProfessionPermanentDetailRepository
-						.findByUserId(post.getUser().getUserId()).stream()
+						.getProfessionDataByUserId(post.getUser().getUserId()).stream()
 						.map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
 
 				List<FileOutputWebModel> userProfilePic = mediaFilesService

@@ -74,4 +74,8 @@ public class FilmSubProfessionPermanentDetail {
     
     @Column(name ="ending_year")
     private Integer endingYear;
+
+    @Column(name = "status")
+    private Boolean status;
+    
 }

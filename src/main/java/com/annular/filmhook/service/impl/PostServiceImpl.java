@@ -195,7 +195,7 @@ public class PostServiceImpl implements PostService {
 
                     // Fetching the user Profession
                     Set<String> professionNames = new HashSet<>();
-                    List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.findByUserId(post.getUser().getUserId());
+                    List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId());
                     if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
                         professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
                     } else {
@@ -431,8 +431,8 @@ public class PostServiceImpl implements PostService {
                 List<Comment> commentData = (List<Comment>) post.getCommentCollection();
                 // Filter comments with status true
                 List<Comment> filteredComments = commentData.stream()
-                                                            .filter(comment -> comment.getStatus().equals(true))
-                                                            .collect(Collectors.toList());
+                        .filter(comment -> comment.getStatus().equals(true))
+                        .collect(Collectors.toList());
                 Long currentTotalCommentCount = (long) filteredComments.size();
                 return this.transformCommentData(filteredComments, currentTotalCommentCount);
             }
@@ -522,6 +522,7 @@ public class PostServiceImpl implements PostService {
 
         return linkWebModel;
     }
+
     @Override
     public List<PostWebModel> getPostsByUserIds(Integer userId) {
         try {
@@ -533,17 +534,17 @@ public class PostServiceImpl implements PostService {
             return null;
         }
 
-}
+    }
 
     @Override
     public CommentWebModel updateComment(CommentWebModel commentWebModel) {
         try {
             // Fetch the existing comment by ID
             Optional<Comment> existingCommentOptional = commentRepository.findById(commentWebModel.getCommentId());
-            
+
             if (existingCommentOptional.isPresent()) {
                 Comment existingComment = existingCommentOptional.get();
-                
+
                 // Update the content of the comment
                 existingComment.setContent(commentWebModel.getContent());
                 existingComment.setUpdatedOn(new Date());
@@ -579,4 +580,4 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-	}
+}

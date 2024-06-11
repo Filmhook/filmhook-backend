@@ -3,7 +3,6 @@ package com.annular.filmhook.service.impl;
 import com.annular.filmhook.controller.StoriesController;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.MediaFileCategory;
-import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
@@ -309,7 +308,7 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
     }
 
     private List<String> getProfessionNames(Integer userId) {
-        List<FilmProfessionPermanentDetail> professions = professionPermanentDetailsRepository.findByUserId(userId);
+        List<FilmProfessionPermanentDetail> professions = professionPermanentDetailsRepository.getProfessionDataByUserId(userId);
         return professions.stream()
                 .map(FilmProfessionPermanentDetail::getProfessionName)
                 .collect(Collectors.toList());

@@ -79,4 +79,8 @@ public class FilmProfessionPermanentDetail {
 	@JsonIgnore
 	@ToString.Exclude
 	private List<FilmSubProfessionPermanentDetail> filmSubProfessionPermanentDetails;
+
+	@Column(name = "status")
+	private Boolean status;
+
 }

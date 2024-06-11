@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
-import com.annular.filmhook.webmodel.UserWebModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -286,7 +285,7 @@ public class PinProfileServiceImpl implements PinProfileService {
 	            List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
 	            // Fetching the user Profession
-	            Set<String> professionNames = filmProfessionPermanentDetailRepository.findByUserId(post.getUser().getUserId())
+	            Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId())
 	                    .stream()
 	                    .map(FilmProfessionPermanentDetail::getProfessionName)
 	                    .collect(Collectors.toSet());

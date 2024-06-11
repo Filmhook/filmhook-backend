@@ -69,4 +69,8 @@ public class PlatformPermanentDetail {
 
     @Column(name = "userId")
     private Integer userId;
+
+    @Column(name = "status")
+    private Boolean status;
+
 }

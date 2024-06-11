@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     CalendarUtil calendarUtil;
-    
+
     @Autowired
     AddressListOnSignUpRepsitory addressListOnSignUpRepsitory;
 
@@ -173,15 +174,15 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUpdateOn(user.getUpdatedOn());
 
         List<FileOutputWebModel> profilePicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.ProfilePic, user.getUserId());
-        if(!Utility.isNullOrEmptyList(profilePicList)) userWebModel.setProfilePicOutput(profilePicList.get(0));
+        if (!Utility.isNullOrEmptyList(profilePicList)) userWebModel.setProfilePicOutput(profilePicList.get(0));
 
         List<FileOutputWebModel> coverPicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.CoverPic, user.getUserId());
-        if(!Utility.isNullOrEmptyList(coverPicList)) userWebModel.setCoverPhotoOutput(coverPicList.get(0));
+        if (!Utility.isNullOrEmptyList(coverPicList)) userWebModel.setCoverPhotoOutput(coverPicList.get(0));
 
         String dateString = "";
         LocalDate finalDate = LocalDate.now();
         List<BookingWebModel> userBookings = bookingService.getConfirmedBookingsByUserId(user.getUserId());
-        if(!Utility.isNullOrEmptyList(userBookings)) {
+        if (!Utility.isNullOrEmptyList(userBookings)) {
             userBookings.sort(Comparator.comparing(BookingWebModel::getToDate).reversed());
             finalDate = CalendarUtil.getNextDate(userBookings.get(0).getToDate());
         }
@@ -645,16 +646,34 @@ public class UserServiceImpl implements UserService {
                         .map(this::getUser)
                         .forEach(user -> user.ifPresent(userList::add)); // getting all details about the user
 
-                if(!Utility.isNullOrEmptyList(userList)) {
+                if (!Utility.isNullOrEmptyList(userList)) {
                     userList.stream()
                             .filter(Objects::nonNull)
                             .forEach(user -> {
                                 logger.debug("User iteration -> {}", user.getName());
                                 UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
-                                List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.findByUserId(user.getUserId());
+                                List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(user.getUserId());
+                                logger.info("User Profession Data list size [{}] for [{}]", userProfessionDataList.size(), user.getName());
                                 if (!Utility.isNullOrEmptyList(userProfessionDataList)) {
                                     userProfessionDataList.stream()
                                             .filter(Objects::nonNull)
+                                            .filter(filter1 -> searchWebModel.getIndustryIds().contains(filter1.getIndustryUserPermanentDetails().getIndustry().getIndustryId()))
+                                            .filter(filter2 -> searchWebModel.getPlatformId().equals(filter2.getPlatformPermanentDetail().getPlatform().getPlatformId()))
+                                            .filter(filter3 -> searchWebModel.getProfessionIds().contains(filter3.getFilmProfession().getFilmProfessionId()))
+                                            .filter(filter4 -> {
+                                                AtomicBoolean match = new AtomicBoolean(false);
+                                                if (!Utility.isNullOrEmptyList(searchWebModel.getSubProfessionIds())) {
+                                                    searchWebModel.getSubProfessionIds()
+                                                            .forEach(val ->
+                                                                    match.set(filter4.getFilmProfession().getFilmSubProfessionCollection()
+                                                                                    .stream()
+                                                                                    .anyMatch(dbVal -> dbVal.getSubProfessionId().equals(val)))
+                                                            );
+                                                } else {
+                                                    match.set(true);
+                                                }
+                                                return match.get();
+                                            })
                                             .forEach(professionData -> {
                                                 logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
 
@@ -669,10 +688,21 @@ public class UserServiceImpl implements UserService {
                                                 map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
                                                 map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
 
+                                                map.put("industryId", professionData.getIndustryUserPermanentDetails().getIndustry().getIndustryId());
                                                 map.put("industry", professionData.getIndustryUserPermanentDetails().getIndustriesName());
+
+                                                map.put("platformId", professionData.getPlatformPermanentDetail().getPlatform().getPlatformId());
                                                 map.put("platform", professionData.getPlatformPermanentDetail().getPlatformName());
+
+                                                map.put("filmProfessionId", professionData.getFilmProfession().getFilmProfessionId());
                                                 map.put("filmProfession", professionData.getFilmProfession().getProfessionName());
-                                                map.put("filmSubProfession", professionData.getFilmSubProfessionPermanentDetails().stream().map(item -> item.getFilmSubProfession().getSubProfessionName()).collect(Collectors.toList()));
+
+                                                map.put("filmSubProfession", professionData.getFilmSubProfessionPermanentDetails()
+                                                        .stream()
+                                                        .collect(Collectors.toMap(
+                                                                key -> key.getFilmSubProfession().getSubProfessionId(),
+                                                                value -> value.getFilmSubProfession().getSubProfessionName())
+                                                        ));
 
                                                 List<Map<String, Object>> finalUserList;
                                                 if (professionUserMap.get(professionData.getProfessionName()) == null) {
@@ -687,7 +717,7 @@ public class UserServiceImpl implements UserService {
                             });
                 }
             }
-            logger.info("Final user search result -> [{}]", professionUserMap.size());
+            logger.info("Final user search result -> [{}]", professionUserMap.keySet().size());
         } catch (Exception e) {
             logger.error("Error at getUserByAllSearchCriteria() -> [{}]", e.getMessage());
             e.printStackTrace();
@@ -695,17 +725,17 @@ public class UserServiceImpl implements UserService {
         return professionUserMap;
     }
 
-	@Override
-	public ResponseEntity<?> getAddressListOnSignUp(AddressListWebModel addressListWebModel) {
-		List<AddressListOnSignUp> addressLists = addressListOnSignUpRepsitory.findAll();
-		List<Map<String, Object>> result = addressLists.stream().map(address -> {
-			Map<String, Object> map = new HashMap<>();
-			map.put("id", address.getAddressListOnSignUp());
-			map.put("address", address.getAddress());
-			return map;
-		}).collect(Collectors.toList());
-		return ResponseEntity.ok(result);
-	}
-		
-	
+    @Override
+    public ResponseEntity<?> getAddressListOnSignUp(AddressListWebModel addressListWebModel) {
+        List<AddressListOnSignUp> addressLists = addressListOnSignUpRepsitory.findAll();
+        List<Map<String, Object>> result = addressLists.stream().map(address -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", address.getAddressListOnSignUp());
+            map.put("address", address.getAddress());
+            return map;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+
 }
