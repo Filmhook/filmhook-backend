@@ -188,6 +188,8 @@ public class PostServiceImpl implements PostService {
         List<PostWebModel> responseList = new ArrayList<>();
         try {
             if (!Utility.isNullOrEmptyList(postList)) {
+            	 // Sort the postList based on timestamp (assuming there's a timestamp field in Posts)
+                postList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
                 postList.stream().filter(Objects::nonNull).forEach(post -> {
                     // Fetching post-files
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
@@ -327,7 +329,9 @@ public class PostServiceImpl implements PostService {
                 }
                 Likes savedLikes = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
                 existingPost.getLikesCollection().add(savedLikes); // Adding saved/updated likes into postLikesCollection
-                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(like -> like.getStatus().equals(true)).count() : 0;
+                //Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(like -> like.getStatus().equals(true)).count() : 0;
+                Integer currentPostTotalLikes = likeRepository.countLikesByPostId(likeWebModel.getPostId());
+
                 logger.info("Like count for post id [{}] is :- [{}]", existingPost.getId(), currentPostTotalLikes);
                 return this.transformLikeData(likeRowToSaveOrUpdate, currentPostTotalLikes);
             }
