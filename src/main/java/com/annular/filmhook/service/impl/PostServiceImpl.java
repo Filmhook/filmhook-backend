@@ -188,9 +188,8 @@ public class PostServiceImpl implements PostService {
         List<PostWebModel> responseList = new ArrayList<>();
         try {
             if (!Utility.isNullOrEmptyList(postList)) {
-            	 // Sort the postList based on timestamp (assuming there's a timestamp field in Posts)
-                postList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
-                postList.stream().filter(Objects::nonNull).forEach(post -> {
+            	
+               postList.stream().filter(Objects::nonNull).forEach(post -> {
                     // Fetching post-files
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
