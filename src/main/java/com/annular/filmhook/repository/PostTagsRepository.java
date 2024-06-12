@@ -3,9 +3,9 @@ package com.annular.filmhook.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.annular.filmhook.model.Tag;
+import com.annular.filmhook.model.PostTags;
 
 @Repository
-public interface TagRepository extends JpaRepository<Tag,Integer> {
+public interface PostTagsRepository extends JpaRepository<PostTags, Integer> {
 
 }

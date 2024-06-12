@@ -56,19 +56,19 @@ public class Posts {
     private User user;
 
     @LazyCollection(LazyCollectionOption.FALSE)
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "postId")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postId")
     @ToString.Exclude
     @JsonIgnore
     private Collection<Likes> likesCollection;
 
     @LazyCollection(LazyCollectionOption.FALSE)
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "postId")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postId")
     @ToString.Exclude
     @JsonIgnore
     private Collection<Comment> commentCollection;
 
     @LazyCollection(LazyCollectionOption.FALSE)
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "postId")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postId")
     @ToString.Exclude
     @JsonIgnore
     private Collection<Share> shareCollection;
@@ -95,8 +95,14 @@ public class Posts {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
+
     @Column(name = "promoteStatus")
     private Boolean promoteStatus;
+
+    @LazyCollection(LazyCollectionOption.FALSE)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postId")
+    @ToString.Exclude
+    @JsonIgnore
+    private Collection<PostTags> postTagsCollection;
 
 }

@@ -75,16 +75,16 @@ public class CalendarUtil {
             return seconds + " s";
         } else if (seconds < 3600) {
             long minutes = seconds / 60;
-            return minutes + (minutes == 1 ? " m" : " m");
+            return minutes + (" m");
         } else if (seconds < 86400) {
             long hours = seconds / 3600;
-            return hours + (hours == 1 ? " h" : " h");
+            return hours + (" h");
         } else if (seconds < 604800) {
             long days = seconds / 86400;
-            return days + (days == 1 ? " d" : " d");
+            return days + (" d");
         } else {
             long weeks = seconds / 604800;
-            return weeks + (weeks == 1 ? " w" : " w");
+            return weeks + (" w");
         }
     }
 

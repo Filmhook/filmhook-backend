@@ -7,10 +7,11 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
@@ -21,19 +22,28 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "tag")
+@Table(name = "post_tags")
 @Builder
 @Getter
 @Setter
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Tag {
+public class PostTags {
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "tag_id")
-    private Integer tagId;
+	@Column(name = "id")
+    private Integer id;
+
+    @ManyToOne
+    @JoinColumn(name = "tagged_user") // User table reference
+    @ToString.Exclude
+    @JsonIgnore
+    private User taggedUser;
+
+    @Column(name = "post_id") // Post-table reference
+    private Integer postId;
    
     @Column(name = "status")
     private Boolean status;
@@ -51,13 +61,5 @@ public class Tag {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
-    @ToString.Exclude
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-    
-    @Column(name = "category_ref_id") // for all referred table's[Post,Story] primary key
-    private Integer categoryRefId;
 
 }

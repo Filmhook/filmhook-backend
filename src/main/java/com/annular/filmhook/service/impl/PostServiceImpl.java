@@ -7,7 +7,7 @@ import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
-import com.annular.filmhook.model.Tag;
+import com.annular.filmhook.model.PostTags;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
@@ -55,7 +55,7 @@ import com.annular.filmhook.repository.LinkRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
-import com.annular.filmhook.repository.TagRepository;
+import com.annular.filmhook.repository.PostTagsRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
 
@@ -107,9 +107,9 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     ShareRepository shareRepository;
-    
+
     @Autowired
-    TagRepository tagRepository;
+    PostTagsRepository postTagsRepository;
 
     @Value("${annular.app.url}")
     private String appUrl;
@@ -128,7 +128,8 @@ public class PostServiceImpl implements PostService {
                 Posts posts = Posts.builder()
                         .postId(UUID.randomUUID().toString())
                         .description(postWebModel.getDescription())
-                        .user(userFromDB).status(true)
+                        .user(userFromDB)
+                        .status(true)
                         .privateOrPublic(postWebModel.getPrivateOrPublic())
                         .promoteFlag(false)
                         .promoteStatus(true)
@@ -138,37 +139,36 @@ public class PostServiceImpl implements PostService {
                         .build();
                 Posts savedPost = postsRepository.saveAndFlush(posts);
 
-                // Saving the Post files in the media_files table
-                FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-                        .userId(postWebModel.getUserId())
-                        .category(MediaFileCategory.Post)
-                        .categoryRefId(savedPost.getId())
-                        .files(postWebModel.getFiles())
-                        .build();
-                mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
-                
-                // Saving Tags (if any) in the tag table
-                if (postWebModel.getTags() != null && !postWebModel.getTags().isEmpty()) {
-                    for (Integer taggedUserId : postWebModel.getTags()) {
-                        User taggedUser = userService.getUser(taggedUserId).orElse(null);
-                        if (taggedUser != null) {
-                            Tag tag = Tag.builder()
+                if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
+                    // Saving the Post files in the media_files table
+                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                            .userId(postWebModel.getUserId())
+                            .category(MediaFileCategory.Post)
+                            .categoryRefId(savedPost.getId())
+                            .files(postWebModel.getFiles())
+                            .build();
+                    mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+                }
+
+                // Saving Tagged users (if anything with post)
+                if (!Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())) {
+                    List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
+                            .map(taggedUserId -> PostTags.builder()
+                                    .postId(savedPost.getId())
+                                    .taggedUser(User.builder().userId(taggedUserId).build())
                                     .status(true)
                                     .createdBy(postWebModel.getUserId())
                                     .createdOn(new Date())
-                                    .user(taggedUser)
-                                    .categoryRefId(savedPost.getId())
-                                    .build();
-                            tagRepository.save(tag);
-                        }
-                    }
+                                    .build())
+                            .collect(Collectors.toList());
+                    postTagsRepository.saveAllAndFlush(tagsList);
                 }
 
-
-                return this.transformPostsDataToPostWebModel(List.of(savedPost)).get(0);
+                List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
+                return responseList.isEmpty() ? null : responseList.get(0);
             }
         } catch (Exception e) {
-            logger.error("Error at savePostsWithFiles()...", e);
+            logger.error("Error at savePostsWithFiles() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -183,7 +183,7 @@ public class PostServiceImpl implements PostService {
                 return new ByteArrayResource(fileUtil.downloadFile(filePath));
             }
         } catch (Exception e) {
-            logger.error("Error at getPostFile()...", e);
+            logger.error("Error at getPostFile() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -204,7 +204,8 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostWebModel getPostByPostId(String postId) {
         Posts post = postsRepository.findByPostId(postId);
-        return transformPostsDataToPostWebModel(List.of(post)).get(0);
+        List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
+        return responseList.isEmpty() ? null : responseList.get(0);
     }
 
     private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
@@ -248,6 +249,13 @@ public class PostServiceImpl implements PostService {
                     Integer commentCount = post.getShareCollection() != null ? (int) post.getShareCollection().stream().filter(comment -> comment.getStatus().equals(true)).count() : 0;
                     Integer shareCount = post.getCommentCollection() != null ? (int) post.getCommentCollection().stream().filter(share -> share.getStatus().equals(true)).count() : 0;
 
+                    List<Integer> taggedUsers = post.getPostTagsCollection() != null
+                            ? post.getPostTagsCollection().stream()
+                                    .filter(postTags -> postTags.getStatus().equals(true))
+                                    .map(postTags -> postTags.getTaggedUser().getUserId())
+                                    .collect(Collectors.toList())
+                            : null;
+
                     // Preparing outputList
                     PostWebModel postWebModel = PostWebModel.builder()
                             .id(post.getId())
@@ -270,6 +278,7 @@ public class PostServiceImpl implements PostService {
                             .followersCount(followersList.size())
                             .createdOn(post.getCreatedOn())
                             .createdBy(post.getCreatedBy())
+                            .taggedUsers(taggedUsers)
                             .build();
                     responseList.add(postWebModel);
                 });
@@ -298,7 +307,7 @@ public class PostServiceImpl implements PostService {
                 return new ByteArrayResource(fileUtil.downloadFile(s3data));
             }
         } catch (Exception e) {
-            logger.error("Error at getAllPostByUserIdAndCategory()...", e);
+            logger.error("Error at getAllPostByUserIdAndCategory() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -311,7 +320,7 @@ public class PostServiceImpl implements PostService {
             List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
             return new ByteArrayResource(fileUtil.downloadFile(s3data));
         } catch (Exception e) {
-            logger.error("Error at getAllPostFilesByCategory()...", e);
+            logger.error("Error at getAllPostFilesByCategory() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return null;
@@ -323,7 +332,7 @@ public class PostServiceImpl implements PostService {
             List<Posts> postList = postsRepository.findAll();
             return this.transformPostsDataToPostWebModel(postList);
         } catch (Exception e) {
-            logger.error("Error at getAllUsersPosts()...", e);
+            logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
             e.printStackTrace();
             return null;
         }
