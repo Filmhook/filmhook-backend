@@ -15,4 +15,7 @@ public interface MarketPlaceRepository extends JpaRepository<MarketPlace, Intege
 	List<MarketPlace> findByRentalOrSale(Boolean rentalOrsale);
 
     List<MarketPlace> findByUserId(Integer userId);
+
+    @Query("SELECT m from MarketPlace m where m.companyName = :searchKey Or m.productName = :searchKey")
+	List<MarketPlace> findBySearchKey(String searchKey);
 }

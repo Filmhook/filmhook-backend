@@ -18,4 +18,8 @@ public interface MarketPlaceService {
 	ResponseEntity<?> getShootingLocation();
 
 	List<MarketPlaceWebModel> getUserMarketPlaces(Integer userId);
+
+	ResponseEntity<?> getSearchMarketPlace(String searchKey);
+
+	ResponseEntity<?> getSearchShootingLocation(String searchKey);
 }

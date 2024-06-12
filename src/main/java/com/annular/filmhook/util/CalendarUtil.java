@@ -72,19 +72,19 @@ public class CalendarUtil {
 
         long seconds = duration.getSeconds();
         if (seconds < 60) {
-            return seconds + " sec";
+            return seconds + " s";
         } else if (seconds < 3600) {
             long minutes = seconds / 60;
-            return minutes + (minutes == 1 ? " mt" : " mts");
+            return minutes + (minutes == 1 ? " m" : " mts");
         } else if (seconds < 86400) {
             long hours = seconds / 3600;
-            return hours + (hours == 1 ? " hr" : " hrs");
+            return hours + (hours == 1 ? " h" : " hrs");
         } else if (seconds < 604800) {
             long days = seconds / 86400;
-            return days + (days == 1 ? " day" : " days");
+            return days + (days == 1 ? " d" : " days");
         } else {
             long weeks = seconds / 604800;
-            return weeks + (weeks == 1 ? " week" : " weeks");
+            return weeks + (weeks == 1 ? " w" : " weeks");
         }
     }
 

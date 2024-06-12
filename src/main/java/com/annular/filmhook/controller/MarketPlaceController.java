@@ -86,4 +86,26 @@ public class MarketPlaceController {
 		}
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
+	
+	@GetMapping("/getSearchMarketPlace")
+	public ResponseEntity<?> getSearchMarketPlace(@RequestParam ("searchKey") String searchKey) {
+		try {
+         return marketPlaceService.getSearchMarketPlace(searchKey);
+		} catch (Exception e) {
+			logger.error("getSearchMarketPlace Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(200, "Success", ""));
+	}
+	
+	@GetMapping("/getSearchShootingLocation")
+	public ResponseEntity<?> getSearchShootingLocation(@RequestParam ("searchKey") String searchKey) {
+		try {
+         return marketPlaceService.getSearchShootingLocation(searchKey);
+		} catch (Exception e) {
+			logger.error("getSearchShootingLocatione Method Exception...", e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(200, "Success", ""));
+	}
 }

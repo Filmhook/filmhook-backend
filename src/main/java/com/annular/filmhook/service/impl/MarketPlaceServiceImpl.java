@@ -230,4 +230,65 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 		}
 		return outputList;
 	}
+
+	@Override
+	public ResponseEntity<?> getSearchMarketPlace(String searchKey) {
+		List<MarketPlaceWebModel> marketPlaceWebModelList = new ArrayList<>();
+		try {
+			List<MarketPlace> marketPlaces = marketPlaceRepository.findBySearchKey(searchKey);
+			if (!marketPlaces.isEmpty()) {
+				marketPlaceWebModelList = this.transformMarketPlaceData(marketPlaces);
+			}
+			return ResponseEntity.ok(new Response(1, "Success", marketPlaceWebModelList));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
+		}
+	}
+
+	@Override
+	public ResponseEntity<?> getSearchShootingLocation(String searchKey) {
+		try {
+			List<ShootingLocation> shootingLocation = shootingLocationRepository.findBySearchKey(searchKey);
+			if (!shootingLocation.isEmpty()) {
+				List<ShootingLocationWebModel> shootingLocationWebModel = new ArrayList<>();
+
+				for (ShootingLocation shootingLocations : shootingLocation) {
+					ShootingLocationWebModel shootingLocationWebModels = new ShootingLocationWebModel();
+					shootingLocationWebModels.setShootingLocationId(shootingLocations.getShootingLocationId());
+					shootingLocationWebModels.setCost(shootingLocations.getCost());
+					shootingLocationWebModels.setShootingTermsAndCondition(shootingLocations.getShootingTermsAndCondition());
+					shootingLocationWebModels.setLocationUrl(shootingLocations.getLocationUrl());
+					shootingLocationWebModels
+							.setIndoorOrOutdoorLocation(shootingLocations.getIndoorOrOutdoorLocation());
+					shootingLocationWebModels.setHourMonthDay(shootingLocations.getHourMonthDay());
+					shootingLocationWebModels.setShootingLocationName(shootingLocations.getShootingLocationName());
+					shootingLocationWebModels
+							.setShootingLocationUpdatedBy(shootingLocations.getShootingLocationUpdatedBy());
+					shootingLocationWebModels
+							.setShootingLocationCreatedBy(shootingLocations.getShootingLocationCreatedBy());
+					shootingLocationWebModels.setUserId(shootingLocations.getUserId());
+					shootingLocationWebModels
+							.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
+
+					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
+					if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+						shootingLocationWebModels.setFileOutputWebModel(fileOutputWebModelList);
+					}
+
+					shootingLocationWebModel.add(shootingLocationWebModels);
+				}
+				return ResponseEntity.status(HttpStatus.OK)
+						.body(ResponseEntity.ok(new Response(1, "Success", shootingLocationWebModel)));
+
+			} else {
+				return ResponseEntity.notFound().build();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
+		}}
 }
