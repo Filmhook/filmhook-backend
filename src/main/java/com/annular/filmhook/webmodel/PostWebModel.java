@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.User;
 
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,4 +43,6 @@ public class PostWebModel {
 
 	private Date createdOn;
 	private Integer createdBy;
+	
+	private List<Integer> tags;
 }

@@ -145,7 +145,7 @@ public class UserServiceImpl implements UserService {
         userWebModel.setBicepsSize(user.getBiceps());
 
         userWebModel.setReligion(user.getReligion());
-        userWebModel.setCaste(user.getCaste());
+        //userWebModel.setCaste(user.getCaste());
         userWebModel.setMaritalStatus(user.getMaritalStatus());
         userWebModel.setSpouseName(user.getSpouseName());
         if (user.getChildrenNames() != null) {
@@ -285,7 +285,7 @@ public class UserServiceImpl implements UserService {
 
     private void prepareUserPersonalInfo(UserWebModel userInput, User userToUpdate) {
         userToUpdate.setReligion(userInput.getReligion());
-        userToUpdate.setCaste(userInput.getCaste());
+        //userToUpdate.setCaste(userInput.getCaste());
         userToUpdate.setMaritalStatus(userInput.getMaritalStatus());
         if (userInput.getChildrenNames() != null) {
             userToUpdate.setChildrenNames(String.join(",", userInput.getChildrenNames()));
@@ -736,6 +736,30 @@ public class UserServiceImpl implements UserService {
         }).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
+
+	@Override
+	public Optional<?> updateUserName(UserWebModel userWebModel) {
+		 try {
+	            Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+	            if (userOptional.isPresent()) {
+	                User user = userOptional.get();
+	                user.setFirstName(userWebModel.getFirstName());
+	                user.setLastName(userWebModel.getLastName());
+	                user.setName(user.getFirstName() + " " + user.getLastName());
+	                user.setUpdatedOn(new Date());
+
+	                User updatedUser = userRepository.save(user);
+	                return Optional.of(updatedUser);
+	            } else {
+	                return Optional.empty(); // User not found
+	            }
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return Optional.empty(); // In case of any exception
+	        }
+	    }
+
+	
 
 
 }

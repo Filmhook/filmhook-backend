@@ -7,6 +7,7 @@ import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
+import com.annular.filmhook.model.Tag;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
@@ -54,6 +55,7 @@ import com.annular.filmhook.repository.LinkRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
+import com.annular.filmhook.repository.TagRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
 
@@ -105,6 +107,9 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     ShareRepository shareRepository;
+    
+    @Autowired
+    TagRepository tagRepository;
 
     @Value("${annular.app.url}")
     private String appUrl;
@@ -141,6 +146,24 @@ public class PostServiceImpl implements PostService {
                         .files(postWebModel.getFiles())
                         .build();
                 mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+                
+                // Saving Tags (if any) in the tag table
+                if (postWebModel.getTags() != null && !postWebModel.getTags().isEmpty()) {
+                    for (Integer taggedUserId : postWebModel.getTags()) {
+                        User taggedUser = userService.getUser(taggedUserId).orElse(null);
+                        if (taggedUser != null) {
+                            Tag tag = Tag.builder()
+                                    .status(true)
+                                    .createdBy(postWebModel.getUserId())
+                                    .createdOn(new Date())
+                                    .user(taggedUser)
+                                    .categoryRefId(savedPost.getId())
+                                    .build();
+                            tagRepository.save(tag);
+                        }
+                    }
+                }
+
 
                 return this.transformPostsDataToPostWebModel(List.of(savedPost)).get(0);
             }

@@ -52,4 +52,6 @@ public interface UserService {
 
 	ResponseEntity<?> getAddressListOnSignUp(AddressListWebModel addressListWebModel);
 
+	Optional<?> updateUserName(UserWebModel userWebModel);
+
 }

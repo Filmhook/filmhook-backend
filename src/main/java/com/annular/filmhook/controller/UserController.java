@@ -286,5 +286,15 @@ public class UserController {
         }
         return ResponseEntity.ok(new Response(200, "Success", ""));
     }
+    
+    @PutMapping("/updateUserName")
+    public Response updateUserName(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.updateUserName(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "Updated Successfully...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
 
 }
