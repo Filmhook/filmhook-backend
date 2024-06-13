@@ -39,17 +39,6 @@ public class MarketPlaceController {
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
 
-	@GetMapping("/getMarketPlaceByRentalOrSale")
-	public ResponseEntity<?> getMarketPlaceByRentalOrSale(@RequestParam("RentalOrSale") Boolean rentalOrsale) {
-		try {
-
-			return marketPlaceService.getMarketPlaceByRentalOrSale(rentalOrsale);
-		} catch (Exception e) {
-			logger.error("getMarketPlaceByRentalOrSale Method Exception...", e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(200, "Success", ""));
-	}
 
 	@GetMapping("/getUserMarketPlaces")
 	public ResponseEntity<?> getUserMarketPlaces(@RequestParam("userId") Integer userId) {
@@ -75,17 +64,25 @@ public class MarketPlaceController {
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
 	
+	 @GetMapping("/getSearchMarketPlace")
+	  public ResponseEntity<?> getSearchMarketPlace(@RequestParam("flag") int flag, 
+	                                                      @RequestParam(value = "searchKey", required = false) String searchKey, 
+	                                                      @RequestParam(value = "rentalOrSale", required = false) Boolean rentalOrSale) {
+	        try {
+	            if (flag == 0 && rentalOrSale != null) {
+	                return marketPlaceService.getMarketPlaceByRentalOrSale(rentalOrSale);
+	            } else if (flag == 1 && searchKey != null) {
+	                return marketPlaceService.getSearchMarketPlace(searchKey);
+	            } else {
+	                return ResponseEntity.badRequest().body(new Response(400, "Invalid request parameters", ""));
+	            }
+	        } catch (Exception e) {
+	            logger.error("handleMarketPlaceRequest Method Exception...", e);
+	            e.printStackTrace();
+	            return ResponseEntity.status(500).body(new Response(500, "Internal server error", ""));
+	        }
+	 }
 	
-	@GetMapping("/getSearchMarketPlace")
-	public ResponseEntity<?> getSearchMarketPlace(@RequestParam ("searchKey") String searchKey) {
-		try {
-         return marketPlaceService.getSearchMarketPlace(searchKey);
-		} catch (Exception e) {
-			logger.error("getSearchMarketPlace Method Exception...", e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(200, "Success", ""));
-	}
 	
 	
 	@GetMapping("/getShootingLocation")

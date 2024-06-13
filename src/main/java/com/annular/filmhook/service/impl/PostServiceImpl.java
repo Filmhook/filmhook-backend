@@ -417,7 +417,7 @@ public class PostServiceImpl implements PostService {
                 post.getCommentCollection().add(savedComment); // Adding saved/updated likes into postCommentsCollection
                 Long currentTotalCommentCount = post.getCommentCollection() != null
                         ? post.getCommentCollection().stream()
-                            .filter(cmt -> cmt.getStatus().equals(true) && cmt.getCategory().equalsIgnoreCase("Post"))
+                            .filter(cmt -> cmt.getStatus().equals(true) && "Post".equalsIgnoreCase(cmt.getCategory()))
                             .count()
                         : 0;
                 logger.info("Comments count for post id [{}] is :- [{}]", post.getId(), currentTotalCommentCount);
