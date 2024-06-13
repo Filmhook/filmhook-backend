@@ -492,7 +492,8 @@ public class PostServiceImpl implements PostService {
                 List<Comment> commentData = (List<Comment>) post.getCommentCollection();
                 // Filter comments with status true
                 List<Comment> filteredComments = commentData.stream()
-                        .filter(comment -> comment.getStatus().equals(true) && comment.getCategory().equalsIgnoreCase("Post"))
+                        .filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true)
+                                && comment.getCategory() != null && "Post".equalsIgnoreCase(comment.getCategory()))
                         .collect(Collectors.toList());
                 Long currentTotalCommentCount = (long) filteredComments.size();
                 return this.transformCommentData(filteredComments, currentTotalCommentCount);
@@ -517,8 +518,8 @@ public class PostServiceImpl implements PostService {
                     post.getCommentCollection().removeIf(val -> val.getCommentId().equals(comment.getCommentId())); // removing saved/updated likes into postCommentsCollection
                     Long currentTotalCommentCount = post.getCommentCollection() != null
                             ? post.getCommentCollection().stream()
-                                    .filter(cmt -> cmt.getStatus().equals(true) && cmt.getCategory().equalsIgnoreCase("Post"))
-                                    .count()
+                                .filter(cmt -> cmt.getStatus().equals(true) && "Post".equalsIgnoreCase(cmt.getCategory()))
+                                .count()
                             : 0;
                     logger.info("Comments count :- [{}]", currentTotalCommentCount);
                     return this.transformCommentData(List.of(deletedComment), currentTotalCommentCount).get(0);
@@ -625,8 +626,8 @@ public class PostServiceImpl implements PostService {
 
                     Long currentTotalCommentCount = post.getCommentCollection() != null
                             ? post.getCommentCollection().stream()
-                                    .filter(cmt -> cmt.getStatus().equals(true) && cmt.getCategory().equalsIgnoreCase("Post"))
-                                    .count()
+                                .filter(cmt -> cmt.getStatus().equals(true) && "Post".equalsIgnoreCase(cmt.getCategory()))
+                                .count()
                             : 0;
                     return this.transformCommentData(List.of(updatedComment), currentTotalCommentCount).get(0);
                 } else {
