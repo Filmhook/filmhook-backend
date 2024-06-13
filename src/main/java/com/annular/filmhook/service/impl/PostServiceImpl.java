@@ -367,11 +367,7 @@ public class PostServiceImpl implements PostService {
                 Likes savedLikes = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
                 existingPost.getLikesCollection().add(savedLikes); // Adding saved/updated likes into postLikesCollection
 
-                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null
-                        ? (int) existingPost.getLikesCollection().stream()
-                                    .filter(like -> like.getStatus().equals(true) && like.getCategory().equalsIgnoreCase("Post"))
-                                    .count()
-                        : 0;
+                Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(like -> like.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(like.getCategory()) && like.getCategory().equalsIgnoreCase("Post")).count() : 0;
                 logger.info("Like count for post id [{}] is :- [{}]", existingPost.getId(), currentPostTotalLikes);
                 return this.transformLikeData(likeRowToSaveOrUpdate, currentPostTotalLikes);
             }
@@ -415,11 +411,7 @@ public class PostServiceImpl implements PostService {
                         .build();
                 Comment savedComment = commentRepository.save(comment);
                 post.getCommentCollection().add(savedComment); // Adding saved/updated likes into postCommentsCollection
-                Long currentTotalCommentCount = post.getCommentCollection() != null
-                        ? post.getCommentCollection().stream()
-                            .filter(cmt -> cmt.getStatus().equals(true) && "Post".equalsIgnoreCase(cmt.getCategory()))
-                            .count()
-                        : 0;
+                Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(cmt -> cmt.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(cmt.getCategory()) && cmt.getCategory().equalsIgnoreCase("Post")).count() : 0;
                 logger.info("Comments count for post id [{}] is :- [{}]", post.getId(), currentTotalCommentCount);
                 return this.transformCommentData(List.of(savedComment), currentTotalCommentCount).get(0);
             }
@@ -491,10 +483,7 @@ public class PostServiceImpl implements PostService {
             if (post != null) {
                 List<Comment> commentData = (List<Comment>) post.getCommentCollection();
                 // Filter comments with status true
-                List<Comment> filteredComments = commentData.stream()
-                        .filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true)
-                                && comment.getCategory() != null && "Post".equalsIgnoreCase(comment.getCategory()))
-                        .collect(Collectors.toList());
+                List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase("Post")).collect(Collectors.toList());
                 Long currentTotalCommentCount = (long) filteredComments.size();
                 return this.transformCommentData(filteredComments, currentTotalCommentCount);
             }
@@ -516,11 +505,7 @@ public class PostServiceImpl implements PostService {
                     comment.setStatus(false);
                     Comment deletedComment = commentRepository.saveAndFlush(comment);
                     post.getCommentCollection().removeIf(val -> val.getCommentId().equals(comment.getCommentId())); // removing saved/updated likes into postCommentsCollection
-                    Long currentTotalCommentCount = post.getCommentCollection() != null
-                            ? post.getCommentCollection().stream()
-                                .filter(cmt -> cmt.getStatus().equals(true) && "Post".equalsIgnoreCase(cmt.getCategory()))
-                                .count()
-                            : 0;
+                    Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(cmt -> cmt.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(cmt.getCategory()) && cmt.getCategory().equalsIgnoreCase("Post")).count() : 0;
                     logger.info("Comments count :- [{}]", currentTotalCommentCount);
                     return this.transformCommentData(List.of(deletedComment), currentTotalCommentCount).get(0);
                 }
@@ -624,11 +609,7 @@ public class PostServiceImpl implements PostService {
                     // Transform the updated comment to CommentWebModel and return it
                     //return this.transformToCommentWebModel(updatedComment);
 
-                    Long currentTotalCommentCount = post.getCommentCollection() != null
-                            ? post.getCommentCollection().stream()
-                                .filter(cmt -> cmt.getStatus().equals(true) && "Post".equalsIgnoreCase(cmt.getCategory()))
-                                .count()
-                            : 0;
+                    Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(cmt -> cmt.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(cmt.getCategory()) && cmt.getCategory().equalsIgnoreCase("Post")).count() : 0;
                     return this.transformCommentData(List.of(updatedComment), currentTotalCommentCount).get(0);
                 } else {
                     // If the comment with the given ID is not found, log an error and return null or throw an exception

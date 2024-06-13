@@ -80,7 +80,7 @@ public class FileUtil {
         return new StringBuilder()
                 .append(category)
                 .append("/")
-                .append(user.getUserId()).append("_").append(user.getName().toLowerCase().replace(" ", ""))
+                .append(user.getUserId())
                 .append("/")
                 .toString();
     }
@@ -89,7 +89,7 @@ public class FileUtil {
         return new StringBuilder()
                 .append(category)
                 .append("/")
-                .append(user.getUserId()).append("_").append(user.getName().toLowerCase().replace(" ", ""))
+                .append(user.getUserId())
                 .append("/")
                 .append(fileName)
                 .toString();
@@ -108,9 +108,6 @@ public class FileUtil {
         return new StringBuilder()
                 .append(category)
                 .append("/")
-                // .append(user.getUserId()).append("_").append(user.getName().toLowerCase().replace(" ", ""))
-                // .append("/")
-                // .append(fileName)
                 .toString();
     }
 
