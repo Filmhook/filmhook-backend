@@ -54,4 +54,6 @@ public interface UserService {
 
 	Optional<?> updateUserName(UserWebModel userWebModel);
 
+	Optional<?> getUserId(UserWebModel userWebModel);
+
 }

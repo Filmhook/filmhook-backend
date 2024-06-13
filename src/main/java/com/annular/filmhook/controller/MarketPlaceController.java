@@ -75,17 +75,6 @@ public class MarketPlaceController {
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
 	
-	@GetMapping("/getShootingLocation")
-	public ResponseEntity<?> getShootingLocation() {
-		try {
-
-			return marketPlaceService.getShootingLocation();
-		} catch (Exception e) {
-			logger.error("getShootingLocation Method Exception...", e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(200, "Success", ""));
-	}
 	
 	@GetMapping("/getSearchMarketPlace")
 	public ResponseEntity<?> getSearchMarketPlace(@RequestParam ("searchKey") String searchKey) {
@@ -98,14 +87,22 @@ public class MarketPlaceController {
 		return ResponseEntity.ok(new Response(200, "Success", ""));
 	}
 	
-	@GetMapping("/getSearchShootingLocation")
-	public ResponseEntity<?> getSearchShootingLocation(@RequestParam ("searchKey") String searchKey) {
-		try {
-         return marketPlaceService.getSearchShootingLocation(searchKey);
-		} catch (Exception e) {
-			logger.error("getSearchShootingLocatione Method Exception...", e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(200, "Success", ""));
+	
+	@GetMapping("/getShootingLocation")
+    public ResponseEntity<?> getShootingLocation(@RequestParam("flag") int flag, 
+                                               @RequestParam(value = "searchKey", required = false) String searchKey) {
+        try {
+            if (flag == 0) {
+                return marketPlaceService.getShootingLocation();
+            } else if (flag == 1 && searchKey != null) {
+                return marketPlaceService.getSearchShootingLocation(searchKey);
+            } else {
+                return ResponseEntity.badRequest().body(new Response(400, "Invalid request parameters", ""));
+            }
+        } catch (Exception e) {
+            logger.error("handleUserRequest Method Exception...", e);
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(new Response(500, "Internal server error", ""));
+        }
 	}
 }

@@ -759,7 +759,16 @@ public class UserServiceImpl implements UserService {
 	        }
 	    }
 
-	
-
-
+	public Optional<HashMap<String, String>> getUserId(UserWebModel userWebModel) {
+	    Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+	    if (userOptional.isPresent()) {
+	        User user = userOptional.get();
+	        HashMap<String, String> userMap = new HashMap<>();
+	        userMap.put("firstName", user.getFirstName());
+	        userMap.put("lastName", user.getLastName());
+	        userMap.put("userName", user.getName());
+	        return Optional.of(userMap);
+	    }
+	    return Optional.empty();
+	}
 }

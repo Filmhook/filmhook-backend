@@ -132,7 +132,7 @@ public class AuthController {
                     "Login Successful",
                     1,
                     refreshToken.getToken(),
-                    userDetails.getUserType(),user.getFilmHookCode()));
+                    userDetails.getUserType(),user.getFilmHookCode(),user.getFirstName(),user.getLastName()));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
@@ -151,7 +151,7 @@ public class AuthController {
             String jwt = jwtUtils.generateJwtToken(authentication);
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             logger.info("Admin Login ---- Finished");
-            return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), "Login Successfully", 1, refreshToken.getToken(), userDetails.getUserType(),""));
+            return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), "Login Successfully", 1, refreshToken.getToken(), userDetails.getUserType(),"","",""));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
@@ -174,7 +174,7 @@ public class AuthController {
                     "Success",
                     1,
                     token.getData().toString(),
-                    userData.get().getUserType(),"")
+                    userData.get().getUserType(),"","","")
             );
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));

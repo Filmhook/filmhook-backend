@@ -296,5 +296,16 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
+    
+    @PostMapping("/getUserId")
+    public Response getUserId(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.getUserId(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "getUserId...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
 
 }
