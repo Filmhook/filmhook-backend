@@ -33,11 +33,17 @@ public class Likes {
 	@Column(name = "like_id")
     private Integer likeId;
 
-    @Column(name = "liked_by")
-    private Integer likedBy; // primary key for user table
+    @Column(name="category")
+    private String category; // 'Post' or 'Comment'
 
     @Column(name = "post_Id")
     private Integer postId; // primary key for post table
+
+    @Column(name = "comment_Id", columnDefinition = "int default null")
+    private Integer commentId; // primary key of Comment
+
+    @Column(name = "liked_by")
+    private Integer likedBy; // primary key for user table
 
     @Column(name = "status")
     private Boolean status;

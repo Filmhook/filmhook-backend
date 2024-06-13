@@ -1,6 +1,7 @@
 package com.annular.filmhook.service;
 
-import com.annular.filmhook.webmodel.CommentWebModel;
+import com.annular.filmhook.webmodel.CommentInputWebModel;
+import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
 import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
@@ -30,11 +31,11 @@ public interface PostService {
 
     LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel);
 
-    CommentWebModel addComment(CommentWebModel commentWebModel);
+    CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel);
 
-    List<CommentWebModel> getComment(CommentWebModel commentWebModel);
+    List<CommentOutputWebModel> getComment(CommentInputWebModel commentInputWebModel);
 
-    CommentWebModel deleteComment(CommentWebModel commentWebModel);
+    CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel);
 
     ShareWebModel addShare(ShareWebModel shareWebModel);
 
@@ -42,6 +43,6 @@ public interface PostService {
 
 	List<PostWebModel> getPostsByUserIds(Integer userId);
 
-	CommentWebModel updateComment(CommentWebModel commentWebModel);
+    CommentOutputWebModel updateComment(CommentInputWebModel commentInputWebModel);
 
 }

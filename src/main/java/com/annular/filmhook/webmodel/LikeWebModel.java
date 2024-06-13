@@ -14,12 +14,14 @@ public class LikeWebModel {
     private Integer postId; // primary key of posts table
     private Integer totalLikesCount;
 
+    private String category; // 'Post' or 'Comment'
+    private Integer commentId; // Comment primary key. If like is for any comment.
+
     private Boolean status;
 
     private Integer createdBy;
     private Date createdOn;
     private Integer updatedBy;
     private Date updatedOn;
-
 
 }

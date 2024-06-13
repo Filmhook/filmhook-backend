@@ -33,12 +33,18 @@ public class Comment {
 	@Column(name = "comment_id")
     private Integer commentId;
 
+    @Column(name="category")
+    private String category; // Post or Comment
+
+    @Column(name = "post_Id")
+	private Integer postId; // primary key of posts, userMediaPin, userProfilePin
+
+    @Column(name = "parent_comment_Id", columnDefinition = "int default null")
+    private Integer parentCommentId; // primary key of parent comment
+
     @Column(name = "commented_by")
     private Integer commentedBy; // primary key of user table
 
-    @Column(name = "post_Id")
-	private Integer postId; // primary key of posts,userMediaPin,userProfilePin
-    
     @Column(name = "content")
     private String content;
     

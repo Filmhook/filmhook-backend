@@ -14,6 +14,7 @@ import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
@@ -103,42 +104,44 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     private Map<MediaFiles, MultipartFile> prepareMultipleMediaFilesData(FileInputWebModel fileInput, User user) {
         Map<MediaFiles, MultipartFile> mediaFilesMap = new HashMap<>();
         try {
-            fileInput.getFiles().stream()
-                    .filter(Objects::nonNull)
-                    .forEach(file -> {
-                        MediaFiles mediaFiles = new MediaFiles();
-                        mediaFiles.setUser(user);
-                        mediaFiles.setCategory(fileInput.getCategory());
-                        mediaFiles.setCategoryRefId(fileInput.getCategoryRefId());
-                        mediaFiles.setDescription(fileInput.getDescription());
-                        mediaFiles.setFileId(UUID.randomUUID().toString());
-                        mediaFiles.setFileName(file.getOriginalFilename());
-                        mediaFiles.setFilePath(FileUtil.generateFilePath(mediaFiles.getUser(), fileInput.getCategory().toString(), mediaFiles.getFileId()));
-                        mediaFiles.setFileType(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")));
-                        mediaFiles.setFileSize(file.getSize());
-                        mediaFiles.setStatus(true);
-                        mediaFiles.setCreatedBy(user.getUserId());
-                        mediaFiles.setCreatedOn(new Date());
-                        mediaFilesRepository.save(mediaFiles);
+            if (!Utility.isNullOrEmptyList(fileInput.getFiles())) {
+                fileInput.getFiles().stream()
+                        .filter(Objects::nonNull)
+                        .forEach(file -> {
+                            MediaFiles mediaFiles = new MediaFiles();
+                            mediaFiles.setUser(user);
+                            mediaFiles.setCategory(fileInput.getCategory());
+                            mediaFiles.setCategoryRefId(fileInput.getCategoryRefId());
+                            mediaFiles.setDescription(fileInput.getDescription());
+                            mediaFiles.setFileId(UUID.randomUUID().toString());
+                            mediaFiles.setFileName(file.getOriginalFilename());
+                            mediaFiles.setFilePath(FileUtil.generateFilePath(mediaFiles.getUser(), fileInput.getCategory().toString(), mediaFiles.getFileId()));
+                            mediaFiles.setFileType(!Utility.isNullOrBlankWithTrim(file.getOriginalFilename()) ? file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")) : "");
+                            mediaFiles.setFileSize(file.getSize());
+                            mediaFiles.setStatus(true);
+                            mediaFiles.setCreatedBy(user.getUserId());
+                            mediaFiles.setCreatedOn(new Date());
+                            mediaFilesRepository.save(mediaFiles);
 
-                        // Save multiMediaTable
-                        try {
-                            MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
-                            multiMediaFiles.setFileName(mediaFiles.getFileName());
-                            multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
-                            multiMediaFiles.setFileDomainId(FilmHookConstants.GALLERY);
-                            multiMediaFiles.setFileDomainReferenceId(mediaFiles.getId());
-                            multiMediaFiles.setFileIsActive(true);
-                            multiMediaFiles.setFileCreatedBy(user.getUserId());
-                            multiMediaFiles.setFileSize(mediaFiles.getFileSize());
-                            multiMediaFiles.setFileType(mediaFiles.getFileType());
-                            multiMediaFiles = multiMediaFilesRepository.save(multiMediaFiles);
-                            logger.info("MultiMediaFiles entity saved in the database with ID: {}", multiMediaFiles.getMultiMediaFileId());
-                        } catch (Exception e) {
-                            logger.error("Error saving MultiMediaFiles", e);
-                        }
-                        mediaFilesMap.put(mediaFiles, file);
-                    });
+                            // Save multiMediaTable
+                            try {
+                                MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
+                                multiMediaFiles.setFileName(mediaFiles.getFileName());
+                                multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
+                                multiMediaFiles.setFileDomainId(FilmHookConstants.GALLERY);
+                                multiMediaFiles.setFileDomainReferenceId(mediaFiles.getId());
+                                multiMediaFiles.setFileIsActive(true);
+                                multiMediaFiles.setFileCreatedBy(user.getUserId());
+                                multiMediaFiles.setFileSize(mediaFiles.getFileSize());
+                                multiMediaFiles.setFileType(mediaFiles.getFileType());
+                                multiMediaFiles = multiMediaFilesRepository.save(multiMediaFiles);
+                                logger.info("MultiMediaFiles entity saved in the database with ID: {}", multiMediaFiles.getMultiMediaFileId());
+                            } catch (Exception e) {
+                                logger.error("Error saving MultiMediaFiles", e);
+                            }
+                            mediaFilesMap.put(mediaFiles, file);
+                        });
+            }
         } catch (Exception e) {
             logger.error("Error occurred at prepareMultipleMediaFilesData() -> ", e);
             e.printStackTrace();
