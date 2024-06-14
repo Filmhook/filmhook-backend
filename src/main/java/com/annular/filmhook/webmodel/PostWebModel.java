@@ -43,4 +43,6 @@ public class PostWebModel {
 	private Integer createdBy;
 	
 	private List<Integer> taggedUsers;
+	private Integer pageNo;
+	private Integer pageSize;
 }

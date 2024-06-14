@@ -27,7 +27,7 @@ public interface PostService {
 
     Resource getAllPostFilesByCategory(String category);
 
-    List<PostWebModel> getAllUsersPosts();
+    List<PostWebModel> getAllUsersPosts(PostWebModel postWebModel);
 
     LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel);
 

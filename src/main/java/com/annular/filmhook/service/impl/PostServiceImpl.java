@@ -28,6 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
@@ -328,9 +330,10 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostWebModel> getAllUsersPosts() {
+    public List<PostWebModel> getAllUsersPosts(PostWebModel postWebModel) {
         try {
-            List<Posts> postList = postsRepository.findAll().stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
+            Pageable paging = PageRequest.of(postWebModel.getPageNo() - 1, postWebModel.getPageSize());
+            List<Posts> postList = postsRepository.findAll(paging).stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
             return this.transformPostsDataToPostWebModel(postList);
         } catch (Exception e) {
             logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
