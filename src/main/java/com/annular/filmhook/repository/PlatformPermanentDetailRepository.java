@@ -33,4 +33,7 @@ public interface PlatformPermanentDetailRepository extends JpaRepository<Platfor
 
 	@Query("Select p From PlatformPermanentDetail p Where p.platform = :platformId")
     List<PlatformPermanentDetail> getDataByPlatformId(Platform platformId);
+
+	@Query("Select distinct(p.userId) From PlatformPermanentDetail p Where p.platform = :platformId")
+	List<Integer> getUsersByPlatformId(Platform platformId);
 }

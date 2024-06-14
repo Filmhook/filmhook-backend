@@ -372,6 +372,7 @@ public class DetailServiceImpl implements DetailService {
                         platformPermanentDetail.setUserId(userId);
                         platformPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
                         platformPermanentDetail.setPlatform(platform);
+                        platformPermanentDetail.setStatus(true);
                         // Save the PlatformPermanentDetail object
                         PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.saveAndFlush(platformPermanentDetail);
 
@@ -388,6 +389,7 @@ public class DetailServiceImpl implements DetailService {
                             filmProfessionPermanentDetail.setPlatformPermanentDetail(savedPlatformPermanentDetail);
                             filmProfessionPermanentDetail.setFilmProfession(profession);
                             filmProfessionPermanentDetail.setUserId(userId);
+                            filmProfessionPermanentDetail.setStatus(true);
                             // Save the ProfessionPermanentDetail object
                             FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.saveAndFlush(filmProfessionPermanentDetail);
 
@@ -405,6 +407,7 @@ public class DetailServiceImpl implements DetailService {
                                         .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
                                         .ppdProfessionId(0)
                                         .filmSubProfession(subProfession)
+                                        .status(true)
                                         .build();
                                 filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
                             }

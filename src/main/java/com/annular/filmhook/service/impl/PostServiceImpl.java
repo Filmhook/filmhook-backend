@@ -330,7 +330,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostWebModel> getAllUsersPosts() {
         try {
-            List<Posts> postList = postsRepository.findAll();
+            List<Posts> postList = postsRepository.findAll().stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
             return this.transformPostsDataToPostWebModel(postList);
         } catch (Exception e) {
             logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
