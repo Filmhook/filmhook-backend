@@ -348,13 +348,6 @@ public class PostServiceImpl implements PostService {
                     likeRowToSaveOrUpdate.setStatus(!existingLike.getStatus());
                     likeRowToSaveOrUpdate.setUpdatedBy(likeWebModel.getUserId());
                     likeRowToSaveOrUpdate.setUpdatedOn(new Date());
-
-                    if (!Utility.isNullOrBlankWithTrim(likeWebModel.getCategory())) {
-                        if (likeWebModel.getCategory().equalsIgnoreCase("Post"))
-                            post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() - 1 : 0); // Decreasing Post like count
-                        else if (likeWebModel.getCategory().equalsIgnoreCase("Comment") && existingComment != null)
-                            existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() - 1 : 0); // Decreasing Comment like count
-                    }
                 } else {
                     likeRowToSaveOrUpdate = Likes.builder()
                             .category(likeWebModel.getCategory())
@@ -366,22 +359,25 @@ public class PostServiceImpl implements PostService {
                             .createdBy(likeWebModel.getUserId())
                             .createdOn(new Date())
                             .build();
-
-                    if (!Utility.isNullOrBlankWithTrim(likeWebModel.getCategory())) {
-                        if (likeWebModel.getCategory().equalsIgnoreCase("Post"))
-                            post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() + 1 : 1); // Increasing Post like count
-                        else if (likeWebModel.getCategory().equalsIgnoreCase("Comment") && existingComment != null)
-                            existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() + 1 : 1);
-                    }
                 }
                 Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
 
                 Integer totalLikes = 0;
                 if (!Utility.isNullOrBlankWithTrim(likeWebModel.getCategory())) {
                     if (likeWebModel.getCategory().equalsIgnoreCase("Post")) {
+                        if (likeRowToSaveOrUpdate.getStatus()) {
+                            post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() + 1 : 1); // Increasing Post's like count
+                        } else {
+                            post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() - 1 : 0); // Decreasing Post's like count
+                        }
                         postsRepository.saveAndFlush(post);
                         totalLikes = post.getLikesCount();
                     } else if (likeWebModel.getCategory().equalsIgnoreCase("Comment") && existingComment != null) {
+                        if (likeRowToSaveOrUpdate.getStatus()) {
+                            existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() + 1 : 1); // Increasing Comment's like count
+                        } else {
+                            existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() - 1 : 0); // Decreasing Comment's like count
+                        }
                         commentRepository.saveAndFlush(existingComment);
                         totalLikes = existingComment.getLikesCount();
                     }
@@ -519,6 +515,8 @@ public class PostServiceImpl implements PostService {
                 Comment comment = commentRepository.findById(commentInputWebModel.getCommentId()).orElse(null);
                 if (comment != null) {
                     comment.setStatus(false);
+                    comment.setUpdatedBy(commentInputWebModel.getUserId());
+                    comment.setUpdatedOn(new Date());
                     Comment deletedComment = commentRepository.saveAndFlush(comment);
 
                     if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Posts")) {
