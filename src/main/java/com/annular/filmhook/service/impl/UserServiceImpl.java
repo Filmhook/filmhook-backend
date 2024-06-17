@@ -219,7 +219,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserBiographyData(UserWebModel userInput, User userToUpdate) {
-		userToUpdate.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userInput.getDob()));
+        userToUpdate.setDob(CalendarUtil.convertDateFormat(CalendarUtil.UI_DATE_FORMAT, CalendarUtil.MYSQL_DATE_FORMAT, userInput.getDob()));
         userToUpdate.setDob(userInput.getDob());
         userToUpdate.setGender(userInput.getGender());
         userToUpdate.setBirthPlace(userInput.getBirthPlace());
@@ -561,6 +561,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Map<String, List<Map<String, Object>>> getUserByAllSearchCriteria(UserSearchWebModel searchWebModel) {
 
+        // Output Format
         /*{
            "PRODUCER" : [
                {
@@ -582,13 +583,13 @@ public class UserServiceImpl implements UserService {
         List<FilmProfessionPermanentDetail> userProfessionDetails;
         List<FilmSubProfessionPermanentDetail> userFilmSubProfessionDetails;*/
 
-        List<Integer> userIndustryDetails;
+        /*List<Integer> userIndustryDetails;
         List<Integer> userPlatformDetails;
         List<Integer> userProfessionDetails;
         List<Integer> userFilmSubProfessionDetails;
 
         Set<Integer> uniqueUsersSet = new HashSet<>();
-        List<User> userList = new ArrayList<>();
+        List<User> userList = new ArrayList<>();*/
 
         try {
             // Example search
@@ -760,8 +761,8 @@ public class UserServiceImpl implements UserService {
                                 FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(professionData.getUserId()).build());
                                 map.put("userProfilePic", profilePic != null ? profilePic.getFilePath() : "");
 
-                                map.put("userRating", "");
-                                map.put("experience", "");
+                                map.put("userRating", "9.7");
+                                map.put("experience", user.getExperience());
                                 map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
                                 map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
 
@@ -838,5 +839,11 @@ public class UserServiceImpl implements UserService {
             return Optional.of(userMap);
         }
         return Optional.empty();
+    }
+
+    @Override
+    public String getProfilePicUrl(Integer userId) {
+        FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(userId).build());
+        return profilePic != null ? profilePic.getFilePath() : "";
     }
 }

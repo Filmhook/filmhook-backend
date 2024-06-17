@@ -47,6 +47,9 @@ public class Comment {
 
     @Column(name = "content")
     private String content;
+
+    @Column(name = "likes_count", nullable = false, columnDefinition = "int default 0")
+    private Integer likesCount;
     
     @Column(name = "status")
     private Boolean status;

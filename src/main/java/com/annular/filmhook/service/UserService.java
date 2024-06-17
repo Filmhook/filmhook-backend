@@ -56,4 +56,5 @@ public interface UserService {
 
 	Optional<?> getUserId(UserWebModel userWebModel);
 
+    String getProfilePicUrl(Integer userId);
 }

@@ -19,7 +19,7 @@ public class CommentOutputWebModel {
 	private Integer parentCommentId; // Comment primary key. If comment is for any parent comment.
 
 	private Integer totalLikesCount;
-	private Long totalCommentCount;
+	private Integer totalCommentCount;
 
 	private Boolean status;
 	private String time;

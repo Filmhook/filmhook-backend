@@ -271,9 +271,9 @@ public class UserController {
             if(outputMap != null && !outputMap.isEmpty()) return new Response(1, "User(s) found successfully...", outputMap);
         } catch (Exception e) {
             logger.error("Error at getUserByAllCriteria -> {}", e.getMessage());
-            return new Response(-1, "Error at final user search...", null);
+            return new Response(-1, "Error at user search...", null);
         }
-        return new Response(-1, "User(s) not found for all criteria...", null);
+        return new Response(-1, "User(s) not found for the given search criteria...", null);
     }
 
     @PostMapping("/getAddressListOnSignUp")

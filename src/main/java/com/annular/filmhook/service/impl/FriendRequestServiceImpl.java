@@ -144,7 +144,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                                     .userName(user.getName())
                                     .userGender(user.getGender())
                                     .userType(request.getUserType())
-                                    .userProfilePicUrl(this.getProfilePicUrl(user.getUserId()))
+                                    .userProfilePicUrl(userService.getProfilePicUrl(user.getUserId()))
                                     .followersRequestCreatedBy(request.getFollowersRequestCreatedBy())
                                     .followersRequestCreatedOn(request.getFollowersRequestCreatedOn())
                                     .followersRequestUpdatedBy(request.getFollowersRequestUpdatedBy())
@@ -158,11 +158,6 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             e.printStackTrace();
         }
         return outputList;
-    }
-
-    private String getProfilePicUrl(Integer userId) {
-        FileOutputWebModel profilePic = userService.getProfilePic(UserWebModel.builder().userId(userId).build());
-        return profilePic != null ? profilePic.getFilePath() : "";
     }
 
 }

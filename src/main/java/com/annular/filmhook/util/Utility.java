@@ -30,4 +30,6 @@ public class Utility {
     public static boolean isNullOrEmptyMap(Map<?, ?> value) {
         return value == null || value.isEmpty();
     }
+
+    public static boolean isNullOrZero(Integer value) { return value == null || value == 0; }
 }

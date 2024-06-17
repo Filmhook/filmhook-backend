@@ -55,6 +55,15 @@ public class Posts {
     @ToString.Exclude
     private User user;
 
+    @Column(name = "likes_count", nullable = false, columnDefinition = "int default 0")
+    private Integer likesCount;
+
+    @Column(name = "comments_count", nullable = false, columnDefinition = "int default 0")
+    private Integer commentsCount;
+
+    @Column(name = "shares_count", nullable = false, columnDefinition = "int default 0")
+    private Integer sharesCount;
+
     @LazyCollection(LazyCollectionOption.FALSE)
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "postId")
     @ToString.Exclude
