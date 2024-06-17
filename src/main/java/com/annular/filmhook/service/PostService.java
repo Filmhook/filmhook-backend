@@ -27,8 +27,8 @@ public interface PostService {
 
     Resource getAllPostFilesByCategory(String category);
 
-    List<PostWebModel> getAllUsersPosts(PostWebModel postWebModel);
-
+    List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize);
+    
     LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel);
 
     CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel);
@@ -45,4 +45,5 @@ public interface PostService {
 
     CommentOutputWebModel updateComment(CommentInputWebModel commentInputWebModel);
 
+	
 }
