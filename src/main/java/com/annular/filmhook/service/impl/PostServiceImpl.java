@@ -321,9 +321,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostWebModel> getAllUsersPosts(PostWebModel postWebModel) {
+    public List<PostWebModel> getAllUsersPosts(Integer pageNo,Integer pageSize) {
         try {
-            Pageable paging = PageRequest.of(postWebModel.getPageNo() - 1, postWebModel.getPageSize());
+            Pageable paging = PageRequest.of(pageNo - 1, pageSize);
             List<Posts> postList = postsRepository.findAll(paging).stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
             return this.transformPostsDataToPostWebModel(postList);
         } catch (Exception e) {
@@ -332,6 +332,7 @@ public class PostServiceImpl implements PostService {
             return null;
         }
     }
+
 
     @Override
     public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
