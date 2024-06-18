@@ -239,10 +239,6 @@ public class PostServiceImpl implements PostService {
                     Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(loggedInUser, post.getUser().getUserId());
                     Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
 
-                    //Integer likeCount = post.getLikesCollection() != null ? (int) post.getLikesCollection().stream().filter(like -> like.getStatus().equals(true)).count() : 0;
-                    //Integer commentCount = post.getShareCollection() != null ? (int) post.getShareCollection().stream().filter(comment -> comment.getStatus().equals(true)).count() : 0;
-                    //Integer shareCount = post.getCommentCollection() != null ? (int) post.getCommentCollection().stream().filter(share -> share.getStatus().equals(true)).count() : 0;
-
                     List<Integer> taggedUsers = post.getPostTagsCollection() != null
                             ? post.getPostTagsCollection().stream()
                                     .filter(postTags -> postTags.getStatus().equals(true))
@@ -383,11 +379,6 @@ public class PostServiceImpl implements PostService {
                         totalLikes = existingComment.getLikesCount();
                     }
                 }
-
-                //existingPost.getLikesCollection().add(savedLikes); // Adding saved/updated likes into postLikesCollection
-                //Integer currentPostTotalLikes = existingPost.getLikesCollection() != null ? (int) existingPost.getLikesCollection().stream().filter(like -> like.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(like.getCategory()) && like.getCategory().equalsIgnoreCase("Post")).count() : 0;
-                //logger.info("Like count for post id [{}] is :- [{}]", post.getId(), currentPostTotalLikes);
-
                 logger.info("Like count for post id [{}] is :- [{}]", post.getId(), totalLikes);
                 return this.transformLikeData(savedLike, totalLikes);
             }
@@ -432,12 +423,10 @@ public class PostServiceImpl implements PostService {
                         .build();
                 Comment savedComment = commentRepository.save(comment);
 
-                post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() + 1 : 1); // Increasing the comments count in post's table
-                postsRepository.saveAndFlush(post);
-
-                //post.getCommentCollection().add(savedComment); // Adding saved/updated likes into postCommentsCollection
-                //Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(cmt -> cmt.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(cmt.getCategory()) && cmt.getCategory().equalsIgnoreCase("Post")).count() : 0;
-                //logger.info("Comments count for post id [{}] is :- [{}]", post.getId(), currentTotalCommentCount);
+                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Posts")) {
+                    post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() + 1 : 1); // Increasing the comments count in post's table
+                    postsRepository.saveAndFlush(post);
+                }
 
                 logger.info("Comments count for post id [{}] is :- [{}]", post.getId(), post.getCommentsCount());
                 return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
@@ -462,8 +451,6 @@ public class PostServiceImpl implements PostService {
                 List<CommentOutputWebModel> childComments = null;
                 List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
                 if (!Utility.isNullOrEmptyList(dbChildComments)) childComments = this.transformCommentData(dbChildComments, 0);
-
-                //Integer likeCount = likeRepository.getLikesForCommentByCommentId(comment.getPostId(), comment.getCommentId());
 
                 CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
                         .commentId(comment.getCommentId())
@@ -498,7 +485,6 @@ public class PostServiceImpl implements PostService {
                 List<Comment> commentData = (List<Comment>) post.getCommentCollection();
                 // Filter comments with status true
                 List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase("Post")).collect(Collectors.toList());
-                //Long currentTotalCommentCount = (long) filteredComments.size();
                 return this.transformCommentData(filteredComments, post.getCommentsCount());
             }
         } catch (Exception e) {
@@ -524,10 +510,6 @@ public class PostServiceImpl implements PostService {
                         post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() - 1 : 0); // Decreasing the comments count from post's table
                         postsRepository.saveAndFlush(post);
                     }
-
-                    //post.getCommentCollection().removeIf(val -> val.getCommentId().equals(comment.getCommentId())); // removing saved/updated likes into postCommentsCollection
-                    //Long currentTotalCommentCount = post.getCommentCollection() != null ? post.getCommentCollection().stream().filter(cmt -> cmt.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(cmt.getCategory()) && cmt.getCategory().equalsIgnoreCase("Post")).count() : 0;
-                    //logger.info("Comments count :- [{}]", currentTotalCommentCount);
 
                     logger.info("Comments count :- [{}]", post.getCommentsCount());
                     return this.transformCommentData(List.of(deletedComment), post.getCommentsCount()).get(0);
@@ -555,10 +537,6 @@ public class PostServiceImpl implements PostService {
 
                 post.setSharesCount(!Utility.isNullOrZero(post.getSharesCount()) ? post.getSharesCount() + 1 : 1); // Increasing the share count in post's table
                 postsRepository.saveAndFlush(post);
-
-                //existingPost.getShareCollection().add(savedShare); // Adding saved/updated likes into postShareCollection
-                //Integer currentTotalShareCount = existingPost.getShareCollection() != null ? (int) existingPost.getShareCollection().stream().filter(val -> val.getStatus().equals(true)).count() : 0;
-                //logger.info("Shares count for post id [{}] is :- [{}]", existingPost.getId(), currentTotalShareCount);
 
                 logger.info("Shares count for post id [{}] is :- [{}]", post.getId(), post.getSharesCount());
                 return this.transformShareData(savedShare, post.getSharesCount());
