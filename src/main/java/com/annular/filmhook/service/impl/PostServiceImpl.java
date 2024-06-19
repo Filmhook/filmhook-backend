@@ -151,6 +151,18 @@ public class PostServiceImpl implements PostService {
                             .build();
                     mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
                 }
+                
+                // Save audio files
+                if (!Utility.isNullOrEmptyList(postWebModel.getAudioFiles())) {
+                    FileInputWebModel audioInputWebModel = FileInputWebModel.builder()
+                            .userId(postWebModel.getUserId())
+                            .category(MediaFileCategory.Audio) // Assume Audio category is defined in MediaFileCategory
+                            .categoryRefId(savedPost.getId())
+                            .files(postWebModel.getAudioFiles())
+                            .build();
+                    mediaFilesService.saveMediaFiles(audioInputWebModel, userFromDB);
+                }
+
 
                 // Saving Tagged users (if anything with post)
                 if (!Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())) {
@@ -218,6 +230,10 @@ public class PostServiceImpl implements PostService {
                 postList.stream().filter(Objects::nonNull).forEach(post -> {
                     // Fetching post-files
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+                    
+                    // Fetch audio files
+                    List<FileOutputWebModel> audioFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audio, post.getId());
+
 
                     // Fetching the user Profession
                     Set<String> professionNames = new HashSet<>();
@@ -245,7 +261,14 @@ public class PostServiceImpl implements PostService {
                                     .map(postTags -> postTags.getTaggedUser().getUserId())
                                     .collect(Collectors.toList())
                             : null;
-
+                    // Combine post and audio files
+                    List<FileOutputWebModel> allFiles = new ArrayList<>();
+                    if (postFiles != null) {
+                        allFiles.addAll(postFiles);
+                    }
+                    if (audioFiles != null) {
+                        allFiles.addAll(audioFiles);
+                    }
                     // Preparing outputList
                     PostWebModel postWebModel = PostWebModel.builder()
                             .id(post.getId())
@@ -261,6 +284,7 @@ public class PostServiceImpl implements PostService {
                             .commentCount(post.getCommentsCount())
                             .promoteFlag(post.getPromoteFlag())
                             .postFiles(postFiles)
+                            .audioFile(audioFiles)
                             .likeStatus(likeStatus)
                             .privateOrPublic(post.getPrivateOrPublic())
                             .locationName(post.getLocationName())
