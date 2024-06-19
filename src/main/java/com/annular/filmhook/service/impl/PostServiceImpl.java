@@ -122,12 +122,13 @@ public class PostServiceImpl implements PostService {
             User userFromDB = userService.getUser(postWebModel.getUserId()).orElse(null);
             if (userFromDB != null) {
                 logger.info("User found: {}", userFromDB.getName());
-
+                
                 // Saving the Post details in the post-table
                 Posts posts = Posts.builder()
                         .postId(UUID.randomUUID().toString())
                         .description(postWebModel.getDescription())
                         .user(userFromDB)
+                        .postLinkUrls(postWebModel.getPostLinkUrl())
                         .status(true)
                         .privateOrPublic(postWebModel.getPrivateOrPublic())
                         .promoteFlag(false)
@@ -261,6 +262,7 @@ public class PostServiceImpl implements PostService {
                             .commentCount(post.getCommentsCount())
                             .promoteFlag(post.getPromoteFlag())
                             .postFiles(postFiles)
+                            .postLinkUrl(post.getPostLinkUrls())
                             .likeStatus(likeStatus)
                             .privateOrPublic(post.getPrivateOrPublic())
                             .locationName(post.getLocationName())

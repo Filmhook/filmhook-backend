@@ -41,6 +41,8 @@ public class PostWebModel {
 
 	private Date createdOn;
 	private Integer createdBy;
+	private String postLinkUrl;
+
 	
 	private List<Integer> taggedUsers;
 	private Integer pageNo;

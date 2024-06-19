@@ -104,6 +104,9 @@ public class Posts {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
+    
+    @Column(name = "post_link_url")
+    private String postLinkUrls;
 
     @Column(name = "promoteStatus")
     private Boolean promoteStatus;
