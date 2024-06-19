@@ -14,7 +14,6 @@ public enum MediaFileCategory {
     ProfilePic,
     CoverPic,
     MarketPlace,
-    ShootingLocation,
-    Audio
+    ShootingLocation
 
 }

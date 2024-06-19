@@ -30,7 +30,6 @@ public class PostWebModel {
 	private Boolean promoteFlag;
 
 	private List<FileOutputWebModel> postFiles;
-	private List<FileOutputWebModel> audioFile;
 	private Set<String> professionNames;
 	private String userProfilePic;
 	private String locationName;
@@ -46,5 +45,4 @@ public class PostWebModel {
 	private List<Integer> taggedUsers;
 	private Integer pageNo;
 	private Integer pageSize;
-	List<MultipartFile> audioFiles; // Add this field for audio files
 }
