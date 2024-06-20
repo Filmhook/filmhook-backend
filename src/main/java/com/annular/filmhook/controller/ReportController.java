@@ -70,4 +70,15 @@ public class ReportController {
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
 
+	@PostMapping("/getReportsByUserId")
+	public ResponseEntity<?> getReportsByUserId(@RequestBody ReportPostWebModel postWebModel) {
+		try {
+			logger.info("getReportsByUserId controller start");
+			return reportService.getReportsByUserId(postWebModel);
+		} catch (Exception e) {
+			logger.error("getAllReportsByPostId Method Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 }

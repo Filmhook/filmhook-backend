@@ -334,4 +334,82 @@ public class ReportServiceImpl implements ReportService {
 		}
 	}
 
-}
+	 @Override
+	    public ResponseEntity<?> getReportsByUserId(ReportPostWebModel postWebModel) {
+	        Map<String, Object> response = new HashMap<>();
+	        List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
+
+	        try {
+	            List<ReportPost> reportPosts = reportRepository.findByUserId(postWebModel.getUserId());
+
+	            for (ReportPost reportPost : reportPosts) {
+	                Optional<Posts> postOptional = postsRepository.findById(reportPost.getPostId());
+	                if (!postOptional.isPresent()) {
+	                    continue;
+	                }
+	                Posts post = postOptional.get();
+
+	                List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+
+	                Set<String> professionNames = filmProfessionPermanentDetailRepository
+	                        .getProfessionDataByUserId(post.getUser().getUserId()).stream()
+	                        .map(FilmProfessionPermanentDetail::getProfessionName)
+	                        .collect(Collectors.toSet());
+
+	                List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, post.getUser().getUserId());
+	                String profilePicturePath = null;
+	                if (!userProfilePic.isEmpty()) {
+	                    FileOutputWebModel profilePic = userProfilePic.get(0);
+	                    profilePicturePath = profilePic.getFilePath();
+	                }
+
+	                List<FollowersRequest> followersList = friendRequestRepository
+	                        .findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+
+	                Integer userId = userDetails.userInfo().getId();
+	                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId).map(Likes::getStatus).orElse(false);
+
+	                boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
+	                        .map(UserProfilePin::isStatus).orElse(false);
+
+	                PostWebModel postWebModels = PostWebModel.builder()
+	                        .id(post.getId())
+	                        .userId(post.getUser().getUserId())
+	                        .userName(post.getUser().getName())
+	                        .postId(post.getPostId())
+	                        .userProfilePic(profilePicturePath)
+	                        .description(post.getDescription())
+	                        .pinStatus(pinStatus)
+	                        .likeCount(post.getLikesCollection() != null ? post.getLikesCollection().size() : 0)
+	                        .shareCount(post.getShareCollection() != null ? post.getShareCollection().size() : 0)
+	                        .commentCount(post.getCommentCollection() != null ? post.getCommentCollection().size() : 0)
+	                        .promoteFlag(post.getPromoteFlag())
+	                        .postFiles(postFiles)
+	                        .likeStatus(likeStatus)
+	                        .privateOrPublic(post.getPrivateOrPublic())
+	                        .locationName(post.getLocationName())
+	                        .professionNames(professionNames)
+	                        .followersCount(followersList.size())
+	                        .build();
+
+	                Map<String, Object> combinedDetails = new HashMap<>();
+	                combinedDetails.put("postWebModel", postWebModels);
+
+	                combinedDetails.put("reportDetails", reportPost);
+
+	                combinedDetailsList.add(combinedDetails);
+	            }
+
+	            response.put("combinedDetailsList", combinedDetailsList);
+
+	            return ResponseEntity.ok(response);
+	        } catch (Exception e) {
+	            logger.error("Error in getReportsByUserId: {}", e.getMessage(), e);
+	            Map<String, Object> errorResponse = new HashMap<>();
+	            errorResponse.put("message", "Error retrieving post reports");
+	            errorResponse.put("error", e.getMessage());
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+	        }
+	    }
+	}
+

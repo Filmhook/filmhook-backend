@@ -14,4 +14,6 @@ public interface ReportService {
 
 	ResponseEntity<?> getAllReportsByPostId(ReportPostWebModel postWebModel);
 
+	ResponseEntity<?> getReportsByUserId(ReportPostWebModel postWebModel);
+
 }

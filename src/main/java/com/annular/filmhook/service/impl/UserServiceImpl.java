@@ -64,6 +64,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     MediaFilesService mediaFilesService;
+    
+    @Autowired
+    UserService userService;
 
     @Override
     public List<UserWebModel> getAllUsers() {
@@ -836,6 +839,23 @@ public class UserServiceImpl implements UserService {
             userMap.put("firstName", user.getFirstName());
             userMap.put("lastName", user.getLastName());
             userMap.put("userName", user.getName());
+            userMap.put("userProfilePic", userService.getProfilePicUrl(userWebModel.getUserId()));
+
+            // Fetching the user Profession
+            Set<String> professionNames = new HashSet<>();
+            List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(userWebModel.getUserId());
+            if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
+                professionNames = professionPermanentDataList.stream()
+                                    .map(FilmProfessionPermanentDetail::getProfessionName)
+                                    .collect(Collectors.toSet());
+            } else {
+                professionNames.add("CommonUser");
+            }
+            
+            // Convert the professionNames set to a comma-separated string
+            String professionNamesString = String.join(", ", professionNames);
+            userMap.put("professionNames", professionNamesString);
+            
             return Optional.of(userMap);
         }
         return Optional.empty();

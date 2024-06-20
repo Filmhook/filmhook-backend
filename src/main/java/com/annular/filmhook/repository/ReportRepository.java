@@ -13,4 +13,6 @@ public interface ReportRepository extends JpaRepository<ReportPost,Integer> {
 
 	List<ReportPost> findByPostId(Integer postId);
 
+	List<ReportPost> findByUserId(Integer userId);
+
 }
