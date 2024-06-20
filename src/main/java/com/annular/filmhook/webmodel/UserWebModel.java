@@ -33,6 +33,7 @@ public class UserWebModel {
 	private String birthPlace;
 	private Integer experience;
 	private String schedule;
+	
 
 
 
@@ -78,6 +79,7 @@ public class UserWebModel {
 
 	// User status
 	private boolean status;
+	private boolean flag;
 
 	private String token;
 

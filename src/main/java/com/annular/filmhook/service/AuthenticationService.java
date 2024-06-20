@@ -37,6 +37,14 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> emailNotification(UserWebModel userWebModel, String request);
 
+	ResponseEntity<?> addSecondaryMobileNo(UserWebModel userWebModel);
+
+	ResponseEntity<?> otpSendEmail(UserWebModel userWebModel);
+
+	ResponseEntity<?> verifyMobileOtp(UserWebModel userWebModel);
+
+	ResponseEntity<?> verifyEmail(UserWebModel userWebModel);
+
 	
 
 	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
