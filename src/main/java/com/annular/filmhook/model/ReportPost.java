@@ -31,7 +31,7 @@ public class ReportPost {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "report_post_id")
-    private Integer reportpostId;;
+    private Integer reportPostId;
 
     @Column(name = "userId")
     private Integer userId;//foreign key for user table 

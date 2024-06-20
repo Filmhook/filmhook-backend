@@ -3,6 +3,7 @@ package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -119,6 +120,7 @@ public class UserController {
 
 
     // Work category and profession information
+
     /**
      * Method to update Work category and profession information
      *
@@ -249,7 +251,7 @@ public class UserController {
             logger.error("Error at getProfessionByPlatform -> {}", e.getMessage());
             return new Response(-1, "Error at profession search by platform...", null);
         }
-        return new Response(-1, "Profession(s) not found for platform id -> [" +  searchWebModel.getPlatformId() + "]", "");
+        return new Response(-1, "Profession(s) not found for platform id -> [" + searchWebModel.getPlatformId() + "]", "");
     }
 
     @PostMapping("/getSubProfessionByProfession")
@@ -265,7 +267,7 @@ public class UserController {
     }
 
     @PostMapping("/getFinalUserList")
-    public Response getUserByAllCriteria(@RequestBody UserSearchWebModel searchWebModel){
+    public Response getUserByAllCriteria(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             Map<String, List<Map<String, Object>>> outputMap = userService.getUserByAllSearchCriteria(searchWebModel);
             if(outputMap != null && !outputMap.isEmpty()) return new Response(1, "User(s) found successfully...", outputMap);
@@ -286,7 +288,7 @@ public class UserController {
         }
         return ResponseEntity.ok(new Response(200, "Success", ""));
     }
-    
+
     @PutMapping("/updateUserName")
     public Response updateUserName(@RequestBody UserWebModel userWebModel) {
         Optional<?> updatedUser = userService.updateUserName(userWebModel);
@@ -296,7 +298,7 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
-    
+
     @PostMapping("/getUserId")
     public Response getUserId(@RequestBody UserWebModel userWebModel) {
         Optional<?> updatedUser = userService.getUserId(userWebModel);
@@ -307,5 +309,14 @@ public class UserController {
         }
     }
 
+    @GetMapping("/getUserByName")
+    public Response getUserId(@RequestParam("name") String name) {
+        List<UserWebModel> users = userService.getUserByName(name);
+        if (!Utility.isNullOrEmptyList(users)) {
+            return new Response(1, "User(s) found successfully...", users);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
 
 }

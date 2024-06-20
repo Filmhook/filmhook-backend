@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.Map;
@@ -64,7 +63,7 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     MediaFilesService mediaFilesService;
-    
+
     @Autowired
     UserService userService;
 
@@ -846,16 +845,16 @@ public class UserServiceImpl implements UserService {
             List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(userWebModel.getUserId());
             if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
                 professionNames = professionPermanentDataList.stream()
-                                    .map(FilmProfessionPermanentDetail::getProfessionName)
-                                    .collect(Collectors.toSet());
+                        .map(FilmProfessionPermanentDetail::getProfessionName)
+                        .collect(Collectors.toSet());
             } else {
                 professionNames.add("CommonUser");
             }
-            
+
             // Convert the professionNames set to a comma-separated string
             String professionNamesString = String.join(", ", professionNames);
             userMap.put("professionNames", professionNamesString);
-            
+
             return Optional.of(userMap);
         }
         return Optional.empty();
@@ -865,5 +864,28 @@ public class UserServiceImpl implements UserService {
     public String getProfilePicUrl(Integer userId) {
         FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(userId).build());
         return profilePic != null ? profilePic.getFilePath() : "";
+    }
+
+    @Override
+    public List<UserWebModel> getUserByName(String name) {
+        List<UserWebModel> responseList = new ArrayList<>();
+        try {
+            List<User> usersList = userRepository.findByNameContainingIgnoreCase(name);
+            if (!Utility.isNullOrEmptyList(usersList)) {
+                responseList = usersList.stream()
+                        .filter(Objects::nonNull)
+                        .map(user -> UserWebModel.builder()
+                                .userId(user.getUserId())
+                                .name(user.getName())
+                                .profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
+                                .profilePicUrl(this.getProfilePicUrl(user.getUserId()))
+                                .build())
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            logger.error("Error occurred at getUserByName() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return responseList;
     }
 }

@@ -7,11 +7,13 @@ import lombok.Data;
 @Data
 public class ReportPostWebModel {
 
-	private Integer reportPostId;;
-	private Integer userId;//foreign key for user table 
-	private Integer postId;//foreign key for media files
+	private Integer reportPostId;
+	private Integer userId; // primary key of user table
+	private Integer postId; // primary key of posts table
 	private String reason;
+
 	private Boolean status;
+
 	private Integer createdBy;
 	private Date createdOn;
 	private Integer updatedBy;

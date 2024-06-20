@@ -96,41 +96,6 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	private static final Logger logger = LoggerFactory.getLogger(PinProfileServiceImpl.class);
 
-//	@Override
-//	public ResponseEntity<?> addProfile(UserProfilePinWebModel userProfilePinWebModel) {
-//	    try {
-//	        Integer userId = userDetails.userInfo().getId();
-//	        Integer pinProfileId = userProfilePinWebModel.getPinProfileId();
-//
-//	        // Check if the pin already exists for the user
-//	        Optional<UserProfilePin> existingPinOptional = pinProfileRepository.findByUserIdAndPinProfileId(userId, pinProfileId);
-//
-//	        UserProfilePin userProfilePin;
-//	        if (existingPinOptional.isPresent()) {
-//	            // Update the existing pin
-//	            userProfilePin = existingPinOptional.get();
-//	            userProfilePin.setUpdatedBy(userId);
-//	            //userProfilePin.setUpdatedOn(new Date()); // Assuming you have an updatedOn field in UserProfilePin
-//	        } else {
-//	            // Create a new pin
-//	            userProfilePin = new UserProfilePin();
-//	            userProfilePin.setUserId(userId);
-//	            userProfilePin.setPinProfileId(pinProfileId);
-//	            userProfilePin.setCreatedBy(userId);
-//	            userProfilePin.setStatus(true);
-//	        }
-//
-//	        // Save or update the pin
-//	        pinProfileRepository.save(userProfilePin);
-//
-//	        return ResponseEntity.ok("Pin added or updated successfully");
-//	    } catch (Exception e) {
-//	        logger.error("Error setting addPin: {}", e.getMessage());
-//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//	                .body(new Response(-1, "Error setting addPin", e.getMessage()));
-//	    }
-//	}
-
 	@Override
 	public ResponseEntity<?> addProfile(UserProfilePinWebModel userProfilePinWebModel) {
 	    try {
@@ -169,8 +134,7 @@ public class PinProfileServiceImpl implements PinProfileService {
 	        return ResponseEntity.ok("Pin added or updated successfully");
 	    } catch (Exception e) {
 	        logger.error("Error setting addPin: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1, "Error setting addPin", e.getMessage()));
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Error setting addPin", e.getMessage()));
 	    }
 	}
 
@@ -203,12 +167,10 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	        // Save or update the pin
 	        pinMediaRepository.save(userMediaPin);
-
 	        return ResponseEntity.ok("Pin added or updated successfully");
 	    } catch (Exception e) {
-	        logger.error("Error setting addPin: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1, "Error setting addPin", e.getMessage()));
+	        logger.error("Error setting addMedia() -> {}", e.getMessage());
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Error setting addPin", e.getMessage()));
 	    }
 	}
 
@@ -216,7 +178,6 @@ public class PinProfileServiceImpl implements PinProfileService {
 	public ResponseEntity<?> getAllProfilePin() {
 	    try {
 	        logger.info("getAllProfilePin service start");
-
 	        List<UserProfilePin> userProfilePins = pinProfileRepository.findByUserId(userDetails.userInfo().getId());
 	        List<LinkedHashMap<String, Object>> responseList = new ArrayList<>();
 	        for (UserProfilePin userProfilePin : userProfilePins) {
@@ -247,20 +208,19 @@ public class PinProfileServiceImpl implements PinProfileService {
 	                        // Handle case where profile picture is not found
 	                        pinData.put("profilePicUrl", null);
 	                    }
-	                    
 	                    responseList.add(pinData);
 	                } else {
-	                    logger.warn("User not found for pinProfileId: " + pinProfileId);
+	                    logger.warn("User not found for pinProfileId :- {}", pinProfileId);
 	                }
 	            } else {
-	                logger.warn("pinProfileId is null for userProfilePin: " + userProfilePin);
+	                logger.warn("pinProfileId is null for userProfilePin :- {}", userProfilePin);
 	            }
 	        }
 	        return ResponseEntity.ok(responseList);
 	    } catch (Exception e) {
-	        logger.error("getAllProfilePin service Method Exception {} ", e);
+	        logger.error("getAllProfilePin service Method Exception -> {}", e.getMessage());
 	        e.printStackTrace();
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
 	    }
 	}
 
@@ -275,27 +235,16 @@ public class PinProfileServiceImpl implements PinProfileService {
 	        List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
 
 	        for (UserMediaPin userMediaPin : userMediaPins) {
-	            Optional<Posts> postOptional = postsRepository.findById(userMediaPin.getPinMediaId());
-	            if (!postOptional.isPresent()) {
-	                continue;
-	            }
-	            Posts post = postOptional.get();
+	            Posts post = postsRepository.findById(userMediaPin.getPinMediaId()).orElse(null);
+	            if (post == null) continue;
 
 	            // Fetching post-files
 	            List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
 	            // Fetching the user Profession
-	            Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId())
-	                    .stream()
+	            Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId()).stream()
 	                    .map(FilmProfessionPermanentDetail::getProfessionName)
 	                    .collect(Collectors.toSet());
-
-                List<FileOutputWebModel> userProfilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, post.getUser().getUserId());
-                String profilePicturePath = null;
-                if (!userProfilePic.isEmpty()) {
-                    FileOutputWebModel profilePic = userProfilePic.get(0);
-                    profilePicturePath = profilePic.getFilePath();
-                }
 
 	            // Fetching the followers count for the user
 	            //long followersCount = friendRequestRepository.countByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
@@ -317,12 +266,12 @@ public class PinProfileServiceImpl implements PinProfileService {
 	                    .userId(post.getUser().getUserId())
 	                    .userName(post.getUser().getName())
 	                    .postId(post.getPostId())
-	                    .userProfilePic(profilePicturePath)
+	                    .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
 	                    .description(post.getDescription())
 	                    .pinStatus(pinStatus)
-	                    .likeCount(post.getLikesCollection() != null ? post.getLikesCollection().size() : 0)
-	                    .shareCount(post.getShareCollection() != null ? post.getShareCollection().size() : 0)
-	                    .commentCount(post.getCommentCollection() != null ? post.getCommentCollection().size() : 0)
+	                    .likeCount(post.getLikesCount())
+	                    .shareCount(post.getSharesCount())
+	                    .commentCount(post.getCommentsCount())
 	                    .promoteFlag(post.getPromoteFlag())
 	                    .postFiles(postFiles)
 	                    .likeStatus(likeStatus)
@@ -336,9 +285,6 @@ public class PinProfileServiceImpl implements PinProfileService {
 	            Map<String, Object> combinedDetails = new HashMap<>();
 	            combinedDetails.put("postWebModel", postWebModel);
 
-//	            FileOutputWebModel profilePic = userService.getProfilePic(UserWebModel.builder().userId(post.getUser().getUserId()).build());
-//	            combinedDetails.put("profilePicUrl", profilePic != null ? s3Util.generateS3FilePath(profilePic.getFilePath() + profilePic.getFileType()) : null);
-
 //	            List<String> postFileUrls = postFiles.stream()
 //	                    .map(file -> s3Util.generateS3FilePath(file.getFilePath() + file.getFileType()))
 //	                    .collect(Collectors.toList());
@@ -346,24 +292,19 @@ public class PinProfileServiceImpl implements PinProfileService {
 
 	            combinedDetailsList.add(combinedDetails);
 	        }
-
 	        Map<String, Object> responseMap = new HashMap<>();
 	        responseMap.put("combinedDetailsList", combinedDetailsList);
-
 	        return ResponseEntity.ok(responseMap);
 	    } catch (Exception e) {
 	        logger.error("Error in getAllMediaPin: {}", e.getMessage(), e);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
 	    }
 	}
-
-	
 
 	@Override
 	public ResponseEntity<?> getByProfileId(UserProfilePinWebModel userProfilePinWebModel) {
 		try {
 			logger.info("getByProfileId service start");
-
 			Integer profileId = userProfilePinWebModel.getPinProfileId();
 			if (profileId != null) {
 				Optional<UserProfilePin> userProfilePinOptional = pinProfileRepository.findById(profileId);
@@ -382,20 +323,19 @@ public class PinProfileServiceImpl implements PinProfileService {
 						// Add other details as needed
 						return ResponseEntity.ok(responseData);
 					} else {
-						logger.warn("User not found for pinProfileId: " + userProfilePin.getPinProfileId());
+						logger.warn("User not found for pinProfileId :- {}", userProfilePin.getPinProfileId());
 					}
 				} else {
-					logger.warn("UserProfilePin not found for profileId: " + profileId);
+					logger.warn("UserProfilePin not found for profileId :- {}", profileId);
 				}
 			} else {
 				logger.warn("profileId is null in request");
 			}
-
 			return ResponseEntity.notFound().build();
 		} catch (Exception e) {
-			logger.error("getByProfileId service Method Exception {} ", e);
+			logger.error("getByProfileId service Method Exception {} ", e.getMessage());
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+			return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
 		}
 
 	}
@@ -403,50 +343,40 @@ public class PinProfileServiceImpl implements PinProfileService {
 	@Override
 	public ResponseEntity<?> profilePinStatus(UserProfilePinWebModel userProfilePinWebModel) {
 		try {
-			logger.info("changePinStatus service start");
-
-			Optional<UserProfilePin> pinOptional = pinProfileRepository
-					.findById(userProfilePinWebModel.getUserProfilePinId());
+			logger.info("profilePinStatus service start");
+			Optional<UserProfilePin> pinOptional = pinProfileRepository.findById(userProfilePinWebModel.getUserProfilePinId());
 			if (pinOptional.isPresent()) {
 				UserProfilePin userProfilePin = pinOptional.get();
 				userProfilePin.setStatus(userProfilePinWebModel.isStatus());
-
 				pinProfileRepository.save(userProfilePin);
-
 				return ResponseEntity.ok("Pin status changed successfully");
 			} else {
-
 				return ResponseEntity.notFound().build();
 			}
 		} catch (Exception e) {
-			logger.error("changePinStatus service Method Exception {} ", e);
+			logger.error("changePinStatus service Method Exception -> {} ", e.getMessage());
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+			return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
 		}
 	}
 
 	@Override
 	public ResponseEntity<?> mediaPinStatus(UserProfilePinWebModel userProfilePinWebModel) {
 		try {
-			logger.info("changePinStatus service start");
-
-			Optional<UserMediaPin> pinOptional = pinMediaRepository
-					.findById(userProfilePinWebModel.getUserMediaPinId());
+			logger.info("mediaPinStatus service start");
+			Optional<UserMediaPin> pinOptional = pinMediaRepository.findById(userProfilePinWebModel.getUserMediaPinId());
 			if (pinOptional.isPresent()) {
 				UserMediaPin userProfilePin = pinOptional.get();
 				userProfilePin.setStatus(userProfilePinWebModel.isStatus());
-
 				pinMediaRepository.save(userProfilePin);
-
 				return ResponseEntity.ok("Pin status changed successfully");
 			} else {
-
 				return ResponseEntity.notFound().build();
 			}
 		} catch (Exception e) {
-			logger.error("changePinStatus service Method Exception {} ", e);
+			logger.error("changePinStatus service Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+			return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
 		}
 	}
 }
