@@ -116,5 +116,14 @@ public class Posts {
     @ToString.Exclude
     @JsonIgnore
     private Collection<PostTags> postTagsCollection;
+    
+    @Column(name = "latitude")
+    private String latitude;
+    
+    @Column(name = "longtitude")
+    private String longitude;
+    
+    @Column(name ="address")
+    private String address;
 
 }

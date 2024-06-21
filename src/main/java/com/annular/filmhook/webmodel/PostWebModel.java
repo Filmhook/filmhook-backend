@@ -47,4 +47,7 @@ public class PostWebModel {
 	private List<Integer> taggedUsers;
 	private Integer pageNo;
 	private Integer pageSize;
+    private String latitude;
+    private String longitude;
+    private String address;
 }

@@ -2,11 +2,13 @@ package com.annular.filmhook.model;
 
 import java.util.Date;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -219,15 +221,9 @@ public class User {
     @Column(name = "verified")
     private Boolean verified;
     
-    @Column(name = "latitude")
-    private String latitude;
-    
-    @Column(name = "longtitude")
-    private String longitude;
-    
-    @Column(name ="locationAddress")
-    private String locationAddress;
-    
+    @JsonIgnore
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Location location;
     
 
 }

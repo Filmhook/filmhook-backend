@@ -40,6 +40,7 @@ import com.annular.filmhook.webmodel.AddressListWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.IndustryWebModel;
+import com.annular.filmhook.webmodel.LocationWebModel;
 import com.annular.filmhook.webmodel.ProfessionWebModel;
 import com.annular.filmhook.webmodel.SubProfessionWebModel;
 import com.annular.filmhook.webmodel.BookingWebModel;
@@ -66,6 +67,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     UserService userService;
+    
+    @Autowired
+    LocationRepository locationRepository;
 
     @Override
     public List<UserWebModel> getAllUsers() {
@@ -902,4 +906,37 @@ public class UserServiceImpl implements UserService {
         }
         return responseList;
     }
+    
+    @Override
+    public Optional<Location> saveLocationByUserId(LocationWebModel locationWebModel) {
+        Optional<User> userOptional = userRepository.findById(locationWebModel.getUserId());
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            Location location = user.getLocation();
+
+            if (location == null) {
+                // If location doesn't exist, create a new one
+                location = new Location();
+                location.setUser(user);  // Associate the new location with the user
+            }
+
+            // Update location details
+            location.setLocationLatitude(locationWebModel.getLocationLatitude());
+            location.setLocationLongitude(locationWebModel.getLocationLongitude());
+            location.setLocationAddress(locationWebModel.getLocationAddress());
+            location.setLocationLandMark(locationWebModel.getLocationLandMark());
+            location.setLocationName(locationWebModel.getLocationName());
+
+            // Save location
+            Location savedLocation = locationRepository.save(location);
+            user.setLocation(savedLocation);
+            userRepository.save(user);
+
+            return Optional.of(savedLocation);
+        } else {
+            return Optional.empty();
+        }
+    }
+
 }

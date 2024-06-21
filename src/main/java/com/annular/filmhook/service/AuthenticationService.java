@@ -51,6 +51,8 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel);
 
+	ResponseEntity<?> getSeconadryEmailId(UserWebModel userWebModel);
+
 	
 
 	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,

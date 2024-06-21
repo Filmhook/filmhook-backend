@@ -112,4 +112,5 @@ public class UserWebModel {
     private String secondaryEmail;
     private Integer secondaryemailOtp;
     private Boolean verified;
+
 }

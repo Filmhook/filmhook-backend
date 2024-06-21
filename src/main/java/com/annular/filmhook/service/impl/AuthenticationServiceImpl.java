@@ -726,6 +726,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	    }
 	}
 
+	@Override
+	public ResponseEntity<?> getSeconadryEmailId(UserWebModel userWebModel) {
+		    try {
+		        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+		        if (userOptional.isPresent()) {
+		            User user = userOptional.get();
+
+		            // Check if the secondary email is verified
+		            if (user.getVerified() == true) {
+		                // Return the secondary email if it is verified
+		                Map<String, Object> response = new HashMap<>();
+		                response.put("status", 1);
+		                response.put("secondaryEmail", user.getSecondaryEmail());
+		                response.put("message", "Secondary email retrieved successfully");
+		                return ResponseEntity.ok(response);
+		            } else {
+		                // Return a message indicating the secondary email is not verified
+		                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Secondary email is not verified");
+		            }
+		        } else {
+		            // Return a message indicating the user is not found
+		            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+		        }
+		    } catch (Exception e) {
+		        // Handle any exceptions and return an internal server error message
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                .body("Error retrieving secondary email: " + e.getMessage());
+		    }
+		}
 
 
 }
