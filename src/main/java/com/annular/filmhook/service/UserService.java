@@ -64,4 +64,6 @@ public interface UserService {
 
     List<UserWebModel> getUserByName(String name);
 
+	Optional<Location> saveLocationByUserId(LocationWebModel locationWebModel);
+
 }
