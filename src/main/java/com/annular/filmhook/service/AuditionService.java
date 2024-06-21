@@ -2,7 +2,6 @@ package com.annular.filmhook.service;
 
 import org.springframework.http.ResponseEntity;
 
-import com.annular.filmhook.webmodel.AddressListWebModel;
 import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
 import com.annular.filmhook.webmodel.AuditionDetailsWebModel;
 import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
@@ -10,22 +9,24 @@ import com.annular.filmhook.webmodel.AuditionWebModel;
 
 public interface AuditionService {
 
-	ResponseEntity<?> saveAudition(AuditionWebModel auditionWebModel);
+    ResponseEntity<?> saveAudition(AuditionWebModel auditionWebModel);
 
-	ResponseEntity<?> auditionAcceptance(AuditionAcceptanceWebModel acceptanceWebModel);
+    ResponseEntity<?> auditionAcceptance(AuditionAcceptanceWebModel acceptanceWebModel);
 
-	ResponseEntity<?> auditionIgnorance(AuditionIgnoranceWebModel auditionIgnoranceWebModel);
+    ResponseEntity<?> auditionIgnorance(AuditionIgnoranceWebModel auditionIgnoranceWebModel);
 
-	ResponseEntity<?> getAuditionDetails(AuditionDetailsWebModel auditionDetailsWebModel);
+    ResponseEntity<?> getAuditionDetails(AuditionDetailsWebModel auditionDetailsWebModel);
 
-	ResponseEntity<?> getAddressList(AddressListWebModel addressListWebModel);
+    ResponseEntity<?> getAllAddressList();
 
-	ResponseEntity<?> getAuditionByCategory(Integer auditionCategory);
+    ResponseEntity<?> getAddressList(String address);
 
-	ResponseEntity<?> getAuditionByFilterAddress(Integer auditionCategory, String searchKey);
+    ResponseEntity<?> getAuditionByCategory(Integer auditionCategory);
 
-	ResponseEntity<?> deleteAuditionById(Integer auditionId, Integer userId);
+    ResponseEntity<?> getAuditionByFilterAddress(Integer auditionCategory, String searchKey);
 
-	ResponseEntity<?> updateAudition(AuditionWebModel auditionWebModel);
+    ResponseEntity<?> deleteAuditionById(Integer auditionId, Integer userId);
+
+    ResponseEntity<?> updateAudition(AuditionWebModel auditionWebModel);
 
 }

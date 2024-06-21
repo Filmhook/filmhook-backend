@@ -5,7 +5,10 @@ import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.AddressList;
 
-@Repository
-public interface AddressRepository extends JpaRepository<AddressList, Integer>{
+import java.util.List;
 
+@Repository
+public interface AddressRepository extends JpaRepository<AddressList, Integer> {
+
+    List<AddressList> findByAddressContainingIgnoreCase(String address);
 }

@@ -30,27 +30,27 @@ public class AddressListOnSignUp {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "addresslist_onsignup_id")
-	private Integer addressListOnSignUp;
+	@Column(name = "id")
+	private Integer id;
 
 	@Column(name = "address")
 	private String address;
 
-	@Column(name = "address_isactive")
-	private boolean addressIsactive;
+	@Column(name = "status", columnDefinition = "tinyint default true")
+	private Boolean status;
 
-	@Column(name = "address_created_by")
-	private Integer addressCreatedBy;
+	@Column(name = "created_by")
+	private Integer createdBy;
 
-	@Column(name = "address_createdon")
+	@Column(name = "created_on")
 	@CreationTimestamp
-	private Date addresssCreatedOn;
+	private Date createdOn;
 
-	@Column(name = "address_updated_by")
-	private Integer addressUpdatedBy;
+	@Column(name = "updated_by")
+	private Integer updatedBy;
 
-	@Column(name = "address_updated_on")
+	@Column(name = "updated_on")
 	@CreationTimestamp
-	private Date address_Updated_On;
+	private Date updatedOn;
 
 }

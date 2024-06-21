@@ -278,10 +278,21 @@ public class UserController {
         return new Response(-1, "User(s) not found for the given search criteria...", null);
     }
 
-    @PostMapping("/getAddressListOnSignUp")
-    public ResponseEntity<?> getAddressListOnSignUp(@RequestBody AddressListWebModel AddressListWebModel) {
+    @GetMapping("/getAllAddressListOnSignUp")
+    public ResponseEntity<?> getAllAddressListOnSignUp() {
         try {
-            return userService.getAddressListOnSignUp(AddressListWebModel);
+            return userService.getAllAddressListOnSignUp();
+        } catch (Exception e) {
+            logger.error("getAllAddressListOnSignUp Method Exception...", e);
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(200, "Success", ""));
+    }
+
+    @GetMapping("/getAddressListOnSignUp")
+    public ResponseEntity<?> getAddressListOnSignUp(@RequestParam("address") String address) {
+        try {
+            return userService.getAddressListOnSignUp(address);
         } catch (Exception e) {
             logger.error("getAddressListOnSignUp Method Exception...", e);
             e.printStackTrace();

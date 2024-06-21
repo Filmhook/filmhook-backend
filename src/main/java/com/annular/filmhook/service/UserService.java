@@ -50,7 +50,9 @@ public interface UserService {
 
     Map<String, List<Map<String, Object>>> getUserByAllSearchCriteria(UserSearchWebModel searchWebModel);
 
-    ResponseEntity<?> getAddressListOnSignUp(AddressListWebModel addressListWebModel);
+    ResponseEntity<?> getAllAddressListOnSignUp();
+
+    ResponseEntity<?> getAddressListOnSignUp(String address);
 
     Optional<?> updateUserName(UserWebModel userWebModel);
 
@@ -59,4 +61,5 @@ public interface UserService {
     String getProfilePicUrl(Integer userId);
 
     List<UserWebModel> getUserByName(String name);
+
 }

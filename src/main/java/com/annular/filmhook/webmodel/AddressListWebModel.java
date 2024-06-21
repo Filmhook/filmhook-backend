@@ -1,19 +1,21 @@
 package com.annular.filmhook.webmodel;
 
-import java.sql.Date;
+import java.util.Date;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class AddressListWebModel {
-	
 
-	private Integer addressListId;
-	private String address;
-	private boolean addressIsactive;
-	private Integer addressCreatedBy;
-	private Date addresssCreatedOn;
-	private Integer addressUpdatedBy;
-	private Date address_Updated_On;
+    private Integer id;
+    private String address;
+    private boolean status;
+
+    private Integer createdBy;
+    private Date createdOn;
+    private Integer updatedBy;
+    private Date updatedOn;
 
 }

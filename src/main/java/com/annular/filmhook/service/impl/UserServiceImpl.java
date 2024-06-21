@@ -56,7 +56,7 @@ public class UserServiceImpl implements UserService {
     CalendarUtil calendarUtil;
 
     @Autowired
-    AddressListOnSignUpRepsitory addressListOnSignUpRepsitory;
+    AddressListOnSignUpRepository addressListOnSignUpRepository;
 
     @Autowired
     S3Util s3Util;
@@ -797,14 +797,28 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<?> getAddressListOnSignUp(AddressListWebModel addressListWebModel) {
-        List<AddressListOnSignUp> addressLists = addressListOnSignUpRepsitory.findAll();
-        List<Map<String, Object>> result = addressLists.stream().map(address -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", address.getAddressListOnSignUp());
-            map.put("address", address.getAddress());
-            return map;
-        }).collect(Collectors.toList());
+    public ResponseEntity<?> getAllAddressListOnSignUp() {
+        List<AddressListOnSignUp> addressLists = addressListOnSignUpRepository.findAll().stream().filter(addressList -> addressList.getStatus().equals(true)).collect(Collectors.toList());
+        List<AddressListWebModel> result = addressLists.stream()
+                .map(addr -> AddressListWebModel.builder()
+                        .id(addr.getId())
+                        .address(addr.getAddress())
+                        .status(addr.getStatus())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<?> getAddressListOnSignUp(String address) {
+        List<AddressListOnSignUp> addressLists = addressListOnSignUpRepository.findByAddressContainingIgnoreCase(address);
+        List<AddressListWebModel> result = addressLists.stream()
+                .map(addr -> AddressListWebModel.builder()
+                        .id(addr.getId())
+                        .address(addr.getAddress())
+                        .status(addr.getStatus())
+                        .build())
+                .collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
 

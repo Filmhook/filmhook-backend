@@ -1,14 +1,12 @@
 package com.annular.filmhook.model;
 
 import java.sql.Date;
-import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -30,29 +28,29 @@ import lombok.ToString;
 @NoArgsConstructor
 public class AddressList {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "address_list_id")
-	private Integer addressListId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer id;
 
-	@Column(name = "address")
-	private String address;
+    @Column(name = "address")
+    private String address;
 
-	@Column(name = "address_isactive")
-	private boolean addressIsactive;
+    @Column(name = "status", columnDefinition = "tinyint default true")
+    private Boolean status;
 
-	@Column(name = "address_created_by")
-	private Integer addressCreatedBy;
+    @Column(name = "created_by")
+    private Integer createdBy;
 
-	@Column(name = "address_createdon")
-	@CreationTimestamp
-	private Date addresssCreatedOn;
+    @Column(name = "created_on")
+    @CreationTimestamp
+    private Date createdOn;
 
-	@Column(name = "address_updated_by")
-	private Integer addressUpdatedBy;
+    @Column(name = "updated_by")
+    private Integer updatedBy;
 
-	@Column(name = "address_updated_on")
-	@CreationTimestamp
-	private Date address_Updated_On;
+    @Column(name = "updated_on")
+    @CreationTimestamp
+    private Date updatedOn;
 
 }
