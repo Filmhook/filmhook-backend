@@ -45,6 +45,12 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> verifyEmail(UserWebModel userWebModel);
 
+	ResponseEntity<?> addSecondaryEmail(UserWebModel userWebModel);
+
+	ResponseEntity<?> verifyOldEmailOtps(UserWebModel userWebModel);
+
+	ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel);
+
 	
 
 	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,

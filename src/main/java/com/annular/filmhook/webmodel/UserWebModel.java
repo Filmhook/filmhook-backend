@@ -109,4 +109,7 @@ public class UserWebModel {
     private Integer pageSize;
 
     private String bookingAvailableDate;
+    private String secondaryEmail;
+    private Integer secondaryemailOtp;
+    private Boolean verified;
 }

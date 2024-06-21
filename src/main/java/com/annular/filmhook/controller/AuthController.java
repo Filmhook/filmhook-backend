@@ -303,5 +303,41 @@ public class AuthController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    
+    @PostMapping("addSecondaryEmail")
+    public ResponseEntity<?> addSecondaryEmail(@RequestBody UserWebModel userWebModel) {
+        try {
+            logger.info("addSecondaryEmail :- {}", userWebModel);
+            return userService.addSecondaryEmail(userWebModel);
+        } catch (Exception e) {
+            logger.error("addSecondaryEmail Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @PostMapping("verifyOldEmailOtps")
+    public ResponseEntity<?> verifyOldEmailOtps(@RequestBody UserWebModel userWebModel) {
+        try {
+            logger.info("verifyOldEmailOtps :- {}", userWebModel);
+            return userService.verifyOldEmailOtps(userWebModel);
+        } catch (Exception e) {
+            logger.error("verifyOldEmailOtps Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
+    @PostMapping("verifynewEmailOtps")
+    public ResponseEntity<?> verifynewEmailOtps(@RequestBody UserWebModel userWebModel) {
+        try {
+            logger.info("verifynewEmailOtps :- {}", userWebModel);
+            return userService.verifynewEmailOtps(userWebModel);
+        } catch (Exception e) {
+            logger.error("verifynewEmailOtps Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
 }

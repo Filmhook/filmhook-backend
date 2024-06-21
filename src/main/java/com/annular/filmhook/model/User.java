@@ -210,5 +210,24 @@ public class User {
     @Column(name = "schedule")
     private String schedule;
     
+    @Column(name = "secondary_email")
+    private String secondaryEmail;
+    
+    @Column(name = "secondaryemail_otp")
+    private Integer secondaryemailOtp;
+    
+    @Column(name = "verified")
+    private Boolean verified;
+    
+    @Column(name = "latitude")
+    private String latitude;
+    
+    @Column(name = "longtitude")
+    private String longitude;
+    
+    @Column(name ="locationAddress")
+    private String locationAddress;
+    
+    
 
 }

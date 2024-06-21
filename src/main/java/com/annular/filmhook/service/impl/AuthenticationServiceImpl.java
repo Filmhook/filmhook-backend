@@ -147,7 +147,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public boolean sendVerificationEmail(User user) {
         boolean response = false;
         try {
-            if (user.getOtp() == null) {
+            if (user.getEmailOtp() == null) {
                 throw new IllegalArgumentException("OTP is null");
             }
 
@@ -589,5 +589,143 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return ResponseEntity.internalServerError().body("Error verifying OTP and updating phone number: " + e.getMessage());
         }
     }
+
+	@Override
+	public ResponseEntity<?> addSecondaryEmail(UserWebModel userWebModel) {
+		try {
+	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+	        if (!userOptional.isPresent()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+	        }
+
+	        User user = userOptional.get();
+	        String newEmail = userWebModel.getSecondaryEmail();
+	        user.setSecondaryEmail(newEmail);
+            userRepository.save(user);
+	     // Generate OTP
+            int otp = Integer.parseInt(this.generateOtp(4));
+            user.setEmailOtp(otp);
+            userRepository.save(user);
+
+            // Send verification email
+            boolean sendVerificationRes = this.sendVerificationEmail(user);
+            if (!sendVerificationRes) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
+            }
+            
+         // Generate OTP
+            int otps = Integer.parseInt(this.generateOtp(4));
+            user.setSecondaryemailOtp(otps);
+            userRepository.save(user);
+	          
+            
+            
+            //send verification secondaryEmail
+            boolean sendVerificationRess = this.sendVerificationSecondaryEmail(user);
+            if (!sendVerificationRess) {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
+            }
+            // Prepare response
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "OTP sent to primary and secondary email addresses.");
+            response.put("newEmail", newEmail);
+            response.put("oldEmailMessage", "OTP has been sent to " + user.getEmail());
+
+            return ResponseEntity.ok(response);
+	       
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Error verifying email: " + e.getMessage());
+	    }
+		
+
+	}
+	public boolean sendVerificationSecondaryEmail(User user) {
+        boolean response = false;
+        try {
+            if (user.getEmail() == null) {
+                throw new IllegalArgumentException("OTP is null");
+            }
+
+            String subject = "Verify Your EmailID";
+            String senderName = "FilmHook";
+            String mailContent = "<p>Hello " + user.getName() + ",</p>";
+            mailContent += "<p>Please use the following OTP to verify your email on FilmHook:</p>";
+            mailContent += "<h3>" + user.getSecondaryemailOtp() + "</h3>";
+            mailContent += "<p>Thank You<br>FilmHook</p>";
+
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message);
+            helper.setFrom("filmhookapps@gmail", senderName);
+            helper.setTo(user.getSecondaryEmail());
+            helper.setSubject(subject);
+            helper.setText(mailContent, true);
+
+            javaMailSender.send(message);
+            response = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
+
+	@Override
+	public ResponseEntity<?> verifyOldEmailOtps(UserWebModel userWebModel) {
+	    try {
+	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+	        if (!userOptional.isPresent()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+	        }
+
+	        User user = userOptional.get();
+	        int providedOtp = userWebModel.getEmailOtp();
+
+	        // Verify the OTP
+	        if (user.getEmailOtp() == providedOtp) {
+	            // OTP matches
+	            return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
+	        } else {
+	            // OTP does not match, clear secondary email and OTP fields
+	            user.setSecondaryEmail(null);
+	            user.setSecondaryemailOtp(0);
+	            userRepository.save(user);
+
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Error verifying email OTP: " + e.getMessage());
+	    }
+	}
+
+	@Override
+	public ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel) {
+	    try {
+	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+	        if (!userOptional.isPresent()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+	        }
+
+	        User user = userOptional.get();
+	        int providedOtp = userWebModel.getSecondaryemailOtp();
+
+	        // Verify the OTP
+	        if (user.getSecondaryemailOtp() == providedOtp) {
+	            // OTP matches, mark the secondary email as verified
+	            user.setVerified(true);
+	            userRepository.save(user);
+
+	            return ResponseEntity.ok(new Response(1, "Secondary email verified successfully", "success"));
+	        } else {
+	            // OTP does not match
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(-1, "Invalid OTP", "error"));
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Error verifying secondary email OTP: " + e.getMessage());
+	    }
+	}
+
+
 
 }
