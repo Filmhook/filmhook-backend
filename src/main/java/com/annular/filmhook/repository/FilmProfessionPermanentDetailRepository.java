@@ -28,4 +28,6 @@ public interface FilmProfessionPermanentDetailRepository extends JpaRepository<F
 
 	@Query("select p from FilmProfessionPermanentDetail p where p.userId=:userId and p.status=true")
 	List<FilmProfessionPermanentDetail> getProfessionDataByUserId(Integer userId);
+
+	List<FilmProfessionPermanentDetail> findByUserId(Integer userId);
 }

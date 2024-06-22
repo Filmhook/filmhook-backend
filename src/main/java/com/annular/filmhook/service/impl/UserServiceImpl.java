@@ -938,5 +938,57 @@ public class UserServiceImpl implements UserService {
             return Optional.empty();
         }
     }
+    @Override
+    public List<Map<String, Object>> findUsersNearLocation(LocationWebModel locationWebModel) {
+        Integer userId = locationWebModel.getUserId();
 
-}
+        if (userId != null) {
+            Optional<User> userOptional = userRepository.findById(userId);
+            User user = userOptional.orElseThrow(() -> new RuntimeException("User not found"));
+
+            Location userLocation = user.getLocation();
+            if (userLocation == null) {
+                throw new RuntimeException("User location not found");
+            }
+
+            // Fetch all users except the user with userId
+            List<User> allUsers = userRepository.findAll().stream()
+                    .filter(u -> !u.getUserId().equals(userId))
+                    .collect(Collectors.toList());
+
+            // Create a list to store each user's location details
+            List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
+            
+            for (User u : allUsers) {
+                if (u.getLocation() != null) {
+                    Map<String, Object> userDetails = new HashMap<>();
+                    userDetails.put("userId", u.getUserId());
+                    userDetails.put("latitude", u.getLocation().getLocationLatitude());
+                    userDetails.put("longitude", u.getLocation().getLocationLongitude());
+                    userDetails.put("profilePic", userService.getProfilePicUrl(u.getUserId()));
+                    
+                 // Fetching the user Profession
+                    Set<String> professionNames = new HashSet<>();
+                    List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(u.getUserId());
+                    if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
+                        professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
+                    } else {
+                        professionNames.add("CommonUser");
+                    }
+
+                    userDetails.put("professionNames", professionNames);
+                    nearbyUsersList.add(userDetails);
+                }
+            }
+
+            return nearbyUsersList;
+        } else {
+            throw new RuntimeException("User ID must be provided");
+        }
+    }
+
+
+
+    
+
+    }

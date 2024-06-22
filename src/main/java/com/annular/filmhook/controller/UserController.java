@@ -2,9 +2,11 @@ package com.annular.filmhook.controller;
 
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.Location;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.LocationWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.AddressListWebModel;
@@ -13,10 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -329,5 +333,34 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
+    
+    @PostMapping("/saveLocationByUserId")
+    public Response saveLocationByUserId(@RequestBody LocationWebModel locationWebModel) {
+        Optional<Location> updatedLocation = userService.saveLocationByUserId(locationWebModel);
+        if (updatedLocation.isPresent()) {
+            return new Response(1, "Location saved/updated successfully...", updatedLocation.get());
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    @PostMapping("/getUsersNearLocation")
+    public Map<String, Object> getUsersNearLocation(@RequestBody LocationWebModel locationWebModel) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            List<Map<String, Object>> nearbyUsers = userService.findUsersNearLocation(locationWebModel);
+            response.put("status", 1);
+            response.put("message", "Nearby users found successfully");
+            response.put("data", nearbyUsers);
+        } catch (RuntimeException e) {
+            response.put("status", -1);
+            response.put("message", e.getMessage());
+            response.put("data", null);
+        }
+
+        return response;
+    }
+
 
 }

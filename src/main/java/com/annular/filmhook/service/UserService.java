@@ -66,4 +66,6 @@ public interface UserService {
 
 	Optional<Location> saveLocationByUserId(LocationWebModel locationWebModel);
 
+	List<Map<String, Object>> findUsersNearLocation(LocationWebModel locationWebModel);
+
 }
