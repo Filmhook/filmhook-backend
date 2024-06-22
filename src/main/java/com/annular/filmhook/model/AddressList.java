@@ -27,30 +27,33 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AddressList {
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Integer id;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer id;
+	@Column(name = "sign_up_address")
+	private String signUpAddress;
 
-    @Column(name = "address")
-    private String address;
+	@Column(name = "audition_address")
+	private String auditionAddress;
 
-    @Column(name = "status", columnDefinition = "tinyint default true")
-    private Boolean status;
+	@Column(name = "status", columnDefinition = "tinyint default true")
+	private Boolean status;
 
-    @Column(name = "created_by")
-    private Integer createdBy;
+	@Column(name = "created_by")
+	private Integer createdBy;
 
-    @Column(name = "created_on")
-    @CreationTimestamp
-    private Date createdOn;
+	@Column(name = "created_on")
+	@CreationTimestamp
+	private Date createdOn;
 
-    @Column(name = "updated_by")
-    private Integer updatedBy;
+	@Column(name = "updated_by")
+	private Integer updatedBy;
 
-    @Column(name = "updated_on")
-    @CreationTimestamp
-    private Date updatedOn;
+	@Column(name = "updated_on")
+	@CreationTimestamp
+	private Date updatedOn;
 
 }

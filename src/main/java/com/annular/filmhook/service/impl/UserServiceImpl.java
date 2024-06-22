@@ -57,7 +57,7 @@ public class UserServiceImpl implements UserService {
     CalendarUtil calendarUtil;
 
     @Autowired
-    AddressListOnSignUpRepository addressListOnSignUpRepository;
+    AddressListRepository addressListRepository;
 
     @Autowired
     S3Util s3Util;
@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     UserService userService;
-    
+
     @Autowired
     LocationRepository locationRepository;
 
@@ -802,11 +802,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ResponseEntity<?> getAllAddressListOnSignUp() {
-        List<AddressListOnSignUp> addressLists = addressListOnSignUpRepository.findAll().stream().filter(addressList -> addressList.getStatus().equals(true)).collect(Collectors.toList());
+        List<AddressList> addressLists = addressListRepository.findAll().parallelStream()
+                .filter(address -> address.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(address.getSignUpAddress()))
+                .collect(Collectors.toList());
         List<AddressListWebModel> result = addressLists.stream()
                 .map(addr -> AddressListWebModel.builder()
                         .id(addr.getId())
-                        .address(addr.getAddress())
+                        .address(addr.getSignUpAddress())
                         .status(addr.getStatus())
                         .build())
                 .collect(Collectors.toList());
@@ -815,11 +817,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ResponseEntity<?> getAddressListOnSignUp(String address) {
-        List<AddressListOnSignUp> addressLists = addressListOnSignUpRepository.findByAddressContainingIgnoreCase(address);
+        List<AddressList> addressLists = addressListRepository.findBySignUpAddressContainingIgnoreCase(address).parallelStream()
+                .filter(addressList -> addressList.getStatus().equals(true))
+                .collect(Collectors.toList());
         List<AddressListWebModel> result = addressLists.stream()
                 .map(addr -> AddressListWebModel.builder()
                         .id(addr.getId())
-                        .address(addr.getAddress())
+                        .address(addr.getSignUpAddress())
                         .status(addr.getStatus())
                         .build())
                 .collect(Collectors.toList());
@@ -906,7 +910,7 @@ public class UserServiceImpl implements UserService {
         }
         return responseList;
     }
-    
+
     @Override
     public Optional<Location> saveLocationByUserId(LocationWebModel locationWebModel) {
         Optional<User> userOptional = userRepository.findById(locationWebModel.getUserId());

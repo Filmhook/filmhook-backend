@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
+import com.annular.filmhook.util.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,7 @@ import com.annular.filmhook.model.AuditionRoles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.MediaFileCategory;
 
-import com.annular.filmhook.repository.AddressRepository;
+import com.annular.filmhook.repository.AddressListRepository;
 import com.annular.filmhook.repository.AuditionAcceptanceRepository;
 import com.annular.filmhook.repository.AuditionDetailsRepository;
 import com.annular.filmhook.repository.AuditionIgnoranceRepository;
@@ -72,7 +73,7 @@ public class AuditionServiceImpl implements AuditionService {
     AuditionDetailsRepository auditionDetailsRepository;
 
     @Autowired
-    AddressRepository addressRepository;
+    AddressListRepository addressListRepository;
 
     @Autowired
     AuditionIgnoranceRepository auditionIgnoranceRepository;
@@ -284,11 +285,13 @@ public class AuditionServiceImpl implements AuditionService {
 
     @Override
     public ResponseEntity<?> getAllAddressList() {
-        List<AddressList> addressLists = addressRepository.findAll().stream().filter(addressList -> addressList.getStatus().equals(true)).collect(Collectors.toList());
+        List<AddressList> addressLists = addressListRepository.findAll().parallelStream()
+                .filter(address -> address.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(address.getAuditionAddress()))
+                .collect(Collectors.toList());
         List<AddressListWebModel> result = addressLists.stream()
                 .map(addr -> AddressListWebModel.builder()
                         .id(addr.getId())
-                        .address(addr.getAddress())
+                        .address(addr.getAuditionAddress())
                         .status(addr.getStatus())
                         .build())
                 .collect(Collectors.toList());
@@ -297,11 +300,13 @@ public class AuditionServiceImpl implements AuditionService {
 
     @Override
     public ResponseEntity<?> getAddressList(String address) {
-        List<AddressList> addressLists = addressRepository.findByAddressContainingIgnoreCase(address);
+        List<AddressList> addressLists = addressListRepository.findByAuditionAddressContainingIgnoreCase(address).parallelStream()
+                .filter(addressList -> addressList.getStatus().equals(true))
+                .collect(Collectors.toList());
         List<AddressListWebModel> result = addressLists.stream()
                 .map(addr -> AddressListWebModel.builder()
                         .id(addr.getId())
-                        .address(addr.getAddress())
+                        .address(addr.getAuditionAddress())
                         .status(addr.getStatus())
                         .build())
                 .collect(Collectors.toList());
