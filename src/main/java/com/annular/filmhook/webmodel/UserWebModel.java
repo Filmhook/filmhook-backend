@@ -114,6 +114,7 @@ public class UserWebModel {
     private Boolean verified;
     private Double distance;
     private String professionName;
+    private String changeEmailId;
 	
 
 }

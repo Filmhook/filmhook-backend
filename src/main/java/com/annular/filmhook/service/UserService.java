@@ -68,4 +68,8 @@ public interface UserService {
 
 	List<Map<String, Object>> findUsersNearLocation(LocationWebModel locationWebModel);
 
+	Optional<User> changePrimaryEmaiId(UserWebModel userWebModel);
+
+	Optional<User> changePrimaryEmaiIdVerified(UserWebModel userWebModel);
+
 }

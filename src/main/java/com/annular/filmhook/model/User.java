@@ -225,5 +225,7 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Location location;
     
+    @Column(name = "changeEmailId")
+    private String changeEmailId;
 
 }

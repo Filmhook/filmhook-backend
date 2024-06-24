@@ -6,7 +6,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
+
+import javax.mail.internet.MimeMessage;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
@@ -17,6 +21,7 @@ import java.util.Comparator;
 
 import java.time.LocalDate;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.*;
 
@@ -30,11 +35,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.CalendarUtil;
+import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.AddressListWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -68,6 +77,12 @@ public class UserServiceImpl implements UserService {
     @Autowired
     UserService userService;
 
+    @Autowired
+    private JavaMailSender javaMailSender;
+
+    @Autowired
+    MailNotification notifications;
+    
     @Autowired
     LocationRepository locationRepository;
 
@@ -1031,6 +1046,99 @@ public class UserServiceImpl implements UserService {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return EARTH_RADIUS * c;
     }
+
+    @Override
+    public Optional<User> changePrimaryEmaiId(UserWebModel userWebModel) {
+        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setChangeEmailId(userWebModel.getChangeEmailId());
+      
+            // Generate OTP
+            int otp = Integer.parseInt(this.generateOtp(4));
+            user.setEmailOtp(otp);
+            userRepository.save(user);
+
+            // Send verification email
+            boolean sendVerificationRes = this.sendVerificationEmail(user);
+            if (!sendVerificationRes) {
+                // Handle email sending failure appropriately
+                return Optional.empty();
+            }
+
+            return Optional.of(user);
+        } else {
+            return Optional.empty();
+        }
+    }
+    public boolean sendVerificationEmail(User user) {
+        boolean response = false;
+        try {
+            if (user.getEmailOtp() == null) {
+                throw new IllegalArgumentException("OTP is null");
+            }
+
+            String subject = "Verify Your EmailID";
+            String senderName = "FilmHook";
+            String mailContent = "<p>Hello " + user.getName() + ",</p>";
+            mailContent += "<p>Please use the following OTP to verify your email on FilmHook:</p>";
+            mailContent += "<h3>" + user.getEmailOtp() + "</h3>";
+            mailContent += "<p>Thank You<br>FilmHook</p>";
+
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message);
+            helper.setFrom("filmhookapps@gmail", senderName);
+            helper.setTo(user.getChangeEmailId());
+            helper.setSubject(subject);
+            helper.setText(mailContent, true);
+
+            javaMailSender.send(message);
+            response = true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
+    
+ // Helper method to generate OTP
+    private String generateOtp(int length) {
+        Random random = new Random();
+        StringBuilder otp = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            otp.append(random.nextInt(10));
+        }
+        return otp.toString();
+    }
+
+    @Override
+    public Optional<User> changePrimaryEmaiIdVerified(UserWebModel userWebModel) {
+        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+        if (!userOptional.isPresent()) {
+            return Optional.empty();
+        }
+
+        User user = userOptional.get();
+        int providedOtp = userWebModel.getEmailOtp();
+
+        // Verify the OTP
+        if (user.getEmailOtp() != null && user.getEmailOtp().equals(providedOtp)) {
+            // OTP matches, update the email and mark it as verified
+            user.setEmail(user.getChangeEmailId());
+            user.setChangeEmailId(null); // Clear the change email field
+            user.setVerified(true); // Mark as verified
+            user.setEmailOtp(null); // Clear the OTP field
+
+            userRepository.save(user); // Save changes
+
+            return Optional.of(user); // Return the updated user
+        } else {
+            // OTP does not match or OTP is null
+            return Optional.empty();
+        }
+    }
+
+
 }
 
     

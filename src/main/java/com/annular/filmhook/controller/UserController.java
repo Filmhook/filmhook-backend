@@ -3,6 +3,7 @@ package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Location;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -360,6 +361,25 @@ public class UserController {
         }
 
         return response;
+    }
+    @PostMapping("/changePrimaryEmaiId")
+    public Response changePrimaryEmaiId(@RequestBody UserWebModel userWebModel) {
+        Optional<User> updatedEmailId = userService.changePrimaryEmaiId(userWebModel);
+        if (updatedEmailId.isPresent()) {
+            return new Response(1, "otp send successfully...", updatedEmailId.get());
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+    
+    @PostMapping("/changePrimaryEmaiIdVerified")
+    public Response changePrimaryEmaiIdVerified(@RequestBody UserWebModel userWebModel) {
+        Optional<User> updatedEmailId = userService.changePrimaryEmaiIdVerified(userWebModel);
+        if (updatedEmailId.isPresent()) {
+            return new Response(1, "verified and primay EmailId updated successfully...", updatedEmailId.get());
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
     }
 
 
