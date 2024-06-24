@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     MailNotification notifications;
-    
+
     @Autowired
     LocationRepository locationRepository;
 
@@ -927,124 +927,105 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Optional<Location> saveLocationByUserId(LocationWebModel locationWebModel) {
-        Optional<User> userOptional = userRepository.findById(locationWebModel.getUserId());
-
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            Location location = user.getLocation();
-
-            if (location == null) {
-                // If location doesn't exist, create a new one
-                location = new Location();
-                location.setUser(user);  // Associate the new location with the user
-            }
-
-            // Update location details
-            location.setLocationLatitude(locationWebModel.getLocationLatitude());
-            location.setLocationLongitude(locationWebModel.getLocationLongitude());
-            location.setLocationAddress(locationWebModel.getLocationAddress());
-            location.setLocationLandMark(locationWebModel.getLocationLandMark());
-            location.setLocationName(locationWebModel.getLocationName());
-
-            // Save location
-            Location savedLocation = locationRepository.save(location);
-            user.setLocation(savedLocation);
-            userRepository.save(user);
-
-            return Optional.of(savedLocation);
-        } else {
-            return Optional.empty();
-        }
-    }
-    @Override
-    public List<Map<String, Object>> findUsersNearLocation(LocationWebModel locationWebModel) {
-        Integer userId = locationWebModel.getUserId();
-
-        if (userId == null) {
-            throw new RuntimeException("User ID must be provided");
-        }
-
-        Optional<User> userOptional = userRepository.findById(userId);
-        User user = userOptional.orElseThrow(() -> new RuntimeException("User not found"));
-
-        Location userLocation = user.getLocation();
-        if (userLocation == null) {
-            throw new RuntimeException("User location not found");
-        }
-
-        double userLat = parseDouble(userLocation.getLocationLatitude());
-        double userLon = parseDouble(userLocation.getLocationLongitude());
-
-        // Fetch all users except the user with userId
-        List<User> allUsers = userRepository.findAll().stream()
-                .filter(u -> !u.getUserId().equals(userId))
-                .collect(Collectors.toList());
-
-        // Create a list to store each user's location details with distance
-        List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
-
-        for (User u : allUsers) {
-            Location location = u.getLocation();
-            if (location != null) {
-                double lat = parseDouble(location.getLocationLatitude());
-                double lon = parseDouble(location.getLocationLongitude());
-                double distance = calculateDistance(userLat, userLon, lat, lon);
-                System.out.print("distance"+distance);
-
-                Map<String, Object> userDetails = new HashMap<>();
-                userDetails.put("userId", u.getUserId());
-                userDetails.put("latitude", location.getLocationLatitude());
-                userDetails.put("longitude", location.getLocationLongitude());
-                userDetails.put("profilePic", userService.getProfilePicUrl(u.getUserId()));
-                userDetails.put("distance", Math.round(distance) + "km");
-
-                // Fetching the user Profession
-                Set<String> professionNames = new HashSet<>();
-                List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(u.getUserId());
-                if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
-                    professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
-                } else {
-                    professionNames.add("CommonUser");
-                }
-                userDetails.put("professionNames", professionNames);
-
-                nearbyUsersList.add(userDetails);
-            }
-        }
-
-        // Sort users by distance
-        nearbyUsersList.sort(Comparator.comparingDouble(u -> (double) u.get("distance")));
-
-       return nearbyUsersList;
-    }
-
-    private double parseDouble(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new NumberFormatException("Empty or null string");
-        }
-        if (value.equalsIgnoreCase("NaN") || value.equalsIgnoreCase("Infinity")) {
-            throw new NumberFormatException("Invalid double value: " + value);
-        }
+    public Optional<Location> saveUserLocation(LocationWebModel locationWebModel) {
         try {
-            return Double.parseDouble(value.trim());
-        } catch (NumberFormatException e) {
-            // Log the value causing the exception for debugging
-            System.err.println("Invalid double value: " + value);
-            throw new NumberFormatException("Invalid double value: " + value);
+            User user = userRepository.findById(locationWebModel.getUserId()).orElse(null);
+            if (user != null) {
+                Location location = null;
+
+                Location userLocation = user.getLocation();
+                if (userLocation != null) {
+                    location = userLocation;
+                    location.setUpdatedBy(user.getUserId());
+                    location.setUpdatedOn(new Date());
+                } else {
+                    // If location doesn't exist, create a new one
+                    location = new Location();
+                    location.setUser(user);  // Associate the new location with the user
+                    location.setStatus(true);
+                    location.setCreatedBy(user.getUserId());
+                    location.setCreatedOn(new Date());
+                }
+
+                // Update location details
+                location.setLatitude(Utility.parseDouble(locationWebModel.getLatitude()));
+                location.setLongitude(Utility.parseDouble(locationWebModel.getLongitude()));
+                location.setAddress(locationWebModel.getAddress());
+                location.setLandMark(locationWebModel.getLandMark());
+                location.setLocationName(locationWebModel.getLocationName());
+
+                // Save location
+                Location savedLocation = locationRepository.save(location);
+                return Optional.of(savedLocation);
+            }
+        } catch (Exception e) {
+            logger.error("Error at saveLocationByUserId() -> {}", e.getMessage());
+            e.printStackTrace();
         }
+        return Optional.empty();
     }
 
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int EARTH_RADIUS = 6371; // Radius in kilometers
+    @Override
+    public List<Map<String, Object>> findNearByUsers(Integer userId, Integer range) {
+        try {
+            if (userId != null) {
+                Optional<User> userOptional = userRepository.findById(userId);
+                User user = userOptional.orElseThrow(() -> new RuntimeException("User not found"));
 
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                + Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return EARTH_RADIUS * c;
+                Location loggedInUserLocation = user.getLocation();
+                if (loggedInUserLocation == null) {
+                    throw new RuntimeException("User location not found");
+                }
+
+                // Fetch all nearBy users except the loggedIn user
+                Double rangeInMiles = 0.6213711922 * range; // 1 Mile(s) = 0.6213711922 * [km(s)]
+                List<User> nearByUsers = locationRepository.getNearByUsers(user.getUserId(), rangeInMiles, loggedInUserLocation.getLatitude(), loggedInUserLocation.getLongitude()).stream()
+                        .map(val -> this.getUser(val).orElse(null))
+                        .collect(Collectors.toList());
+
+                // Create a list to store each user's location details
+                List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
+                nearByUsers.stream()
+                        .filter(Objects::nonNull)
+                        .forEach(userData -> {
+                            Location location = userData.getLocation();
+                            if (location != null) {
+                                double distance = Utility.calculateDistance(loggedInUserLocation.getLatitude(), loggedInUserLocation.getLongitude(), location.getLatitude(), location.getLongitude());
+                                logger.debug("[{}] is [{}] away from you...", userData.getName(), (Math.round(distance) + " Km"));
+
+                                Map<String, Object> userDetails = new LinkedHashMap<>();
+                                userDetails.put("userId", userData.getUserId());
+                                userDetails.put("latitude", userData.getLocation().getLatitude());
+                                userDetails.put("longitude", userData.getLocation().getLongitude());
+                                userDetails.put("distance", Math.round(distance));
+                                userDetails.put("distanceUnit", "Km");
+                                userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
+
+                                // Fetching the user Profession
+                                Set<String> professionNames = new HashSet<>();
+                                List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(userData.getUserId());
+                                if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
+                                    professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
+                                } else {
+                                    professionNames.add("CommonUser");
+                                }
+
+                                userDetails.put("professionNames", professionNames);
+                                nearbyUsersList.add(userDetails);
+                            }
+                        });
+                // Sort users by distance
+                nearbyUsersList.sort(Comparator.comparingLong(u -> (long) u.get("distance")));
+                logger.info("NearBy Users count -> [{}]", nearbyUsersList.size());
+                return nearbyUsersList;
+            } else {
+                throw new RuntimeException("User ID must be provided");
+            }
+        } catch (Exception e) {
+            logger.error("Error at getNearByUsers() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -1054,7 +1035,7 @@ public class UserServiceImpl implements UserService {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             user.setChangeEmailId(userWebModel.getChangeEmailId());
-      
+
             // Generate OTP
             int otp = Integer.parseInt(this.generateOtp(4));
             user.setEmailOtp(otp);
@@ -1072,6 +1053,7 @@ public class UserServiceImpl implements UserService {
             return Optional.empty();
         }
     }
+
     public boolean sendVerificationEmail(User user) {
         boolean response = false;
         try {
@@ -1100,8 +1082,8 @@ public class UserServiceImpl implements UserService {
         }
         return response;
     }
-    
- // Helper method to generate OTP
+
+    // Helper method to generate OTP
     private String generateOtp(int length) {
         Random random = new Random();
         StringBuilder otp = new StringBuilder();
@@ -1138,9 +1120,4 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-
 }
-
-    
-
-    

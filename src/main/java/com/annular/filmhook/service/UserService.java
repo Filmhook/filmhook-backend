@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.model.Location;
 import com.annular.filmhook.model.User;
-import com.annular.filmhook.webmodel.AddressListWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.LocationWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
@@ -64,9 +63,9 @@ public interface UserService {
 
     List<UserWebModel> getUserByName(String name);
 
-	Optional<Location> saveLocationByUserId(LocationWebModel locationWebModel);
+	Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
 
-	List<Map<String, Object>> findUsersNearLocation(LocationWebModel locationWebModel);
+	List<Map<String, Object>> findNearByUsers(Integer userId, Integer range);
 
 	Optional<User> changePrimaryEmaiId(UserWebModel userWebModel);
 

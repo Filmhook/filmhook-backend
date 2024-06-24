@@ -220,11 +220,12 @@ public class User {
     
     @Column(name = "verified")
     private Boolean verified;
-    
-    @JsonIgnore
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @JsonIgnore
     private Location location;
-    
+
     @Column(name = "changeEmailId")
     private String changeEmailId;
 

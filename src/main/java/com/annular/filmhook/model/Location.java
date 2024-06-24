@@ -12,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
@@ -33,8 +34,8 @@ public class Location {
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "location_id")
-    private Integer locationId;
+	@Column(name = "id")
+    private Integer id;
    
     @Column(name = "status")
     private Boolean status;
@@ -53,22 +54,24 @@ public class Location {
     @CreationTimestamp
     private Date updatedOn;
     
-    @Column(name = "location_latitude")
-    private String locationLatitude;
+    @Column(name = "latitude", columnDefinition = "double default 0.0")
+    private Double latitude;
     
-    @Column(name = "location_longitude")
-    private String locationLongitude;
+    @Column(name = "longitude", columnDefinition = "double default 0.0")
+    private Double longitude;
     
-    @Column(name = "location_address")
-    private String locationAddress;
+    @Column(name = "address")
+    private String address;
     
     @Column(name = "location_name")
     private String locationName;
     
-    @Column(name = "location_landMark")
-    private String locationLandMark;
+    @Column(name = "landmark")
+    private String landMark;
     
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id")
+    @ToString.Exclude
+    @JsonIgnore
     private User user;
 }

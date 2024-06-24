@@ -10,18 +10,15 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.LocationWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
-import com.annular.filmhook.webmodel.AddressListWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -239,7 +236,8 @@ public class UserController {
     public Response getIndustryByCountry(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllIndustryByCountryIds(searchWebModel.getCountryIds());
-            if(userSearchWebModelList != null && !userSearchWebModelList.isEmpty()) return new Response(1, "Industry(s) found successfully...", userSearchWebModelList);
+            if (userSearchWebModelList != null && !userSearchWebModelList.isEmpty())
+                return new Response(1, "Industry(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getIndustryByCountry -> {}", e.getMessage());
             return new Response(-1, "Error at industry search by country...", null);
@@ -251,7 +249,8 @@ public class UserController {
     public Response getProfessionByPlatform(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllProfessionByPlatformId(searchWebModel.getPlatformId());
-            if(userSearchWebModelList != null && !userSearchWebModelList.isEmpty()) return new Response(1, "Profession(s) found successfully...", userSearchWebModelList);
+            if (userSearchWebModelList != null && !userSearchWebModelList.isEmpty())
+                return new Response(1, "Profession(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getProfessionByPlatform -> {}", e.getMessage());
             return new Response(-1, "Error at profession search by platform...", null);
@@ -263,7 +262,8 @@ public class UserController {
     public Response getSubProfessionByProfession(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllSubProfessionByProfessionId(searchWebModel.getProfessionIds());
-            if(userSearchWebModelList != null && !userSearchWebModelList.isEmpty()) return new Response(1, "Sub Profession(s) found successfully...", userSearchWebModelList);
+            if (userSearchWebModelList != null && !userSearchWebModelList.isEmpty())
+                return new Response(1, "Sub Profession(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getSubProfessionByProfession -> {}", e.getMessage());
             return new Response(-1, "Error at sub profession search by platform...", null);
@@ -275,7 +275,8 @@ public class UserController {
     public Response getUserByAllCriteria(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             Map<String, List<Map<String, Object>>> outputMap = userService.getUserByAllSearchCriteria(searchWebModel);
-            if(outputMap != null && !outputMap.isEmpty()) return new Response(1, "User(s) found successfully...", outputMap);
+            if (outputMap != null && !outputMap.isEmpty())
+                return new Response(1, "User(s) found successfully...", outputMap);
         } catch (Exception e) {
             logger.error("Error at getUserByAllCriteria -> {}", e.getMessage());
             return new Response(-1, "Error at user search...", null);
@@ -334,33 +335,23 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
-    
-    @PostMapping("/saveLocationByUserId")
-    public Response saveLocationByUserId(@RequestBody LocationWebModel locationWebModel) {
-        Optional<Location> updatedLocation = userService.saveLocationByUserId(locationWebModel);
-        if (updatedLocation.isPresent()) {
-            return new Response(1, "Location saved/updated successfully...", updatedLocation.get());
-        } else {
-            return new Response(-1, "User not found...", null);
-        }
+
+    @PostMapping("/saveUserLocation")
+    public Response saveUserLocation(@RequestBody LocationWebModel locationWebModel) {
+        Optional<Location> updatedLocation = userService.saveUserLocation(locationWebModel);
+        return updatedLocation.map(location -> new Response(1, "Location saved/updated successfully...", location))
+                .orElseGet(() -> new Response(-1, "User not found...", null));
     }
 
-    @PostMapping("/getUsersNearLocation")
-    public Map<String, Object> getUsersNearLocation(@RequestBody LocationWebModel locationWebModel) {
-        Map<String, Object> response = new HashMap<>();
-        
+    @GetMapping("/getNearByUsers")
+    public Response getNearByUsers(@RequestParam("userId") Integer userId, @RequestParam("range") Integer range) {
         try {
-            List<Map<String, Object>> nearbyUsers = userService.findUsersNearLocation(locationWebModel);
-            response.put("status", 1);
-            response.put("message", "Nearby users found successfully");
-            response.put("data", nearbyUsers);
+            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId, range);
+            if (!Utility.isNullOrEmptyList(nearbyUsers)) return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
         } catch (RuntimeException e) {
-            response.put("status", -1);
-            response.put("message", e.getMessage());
-            response.put("data", null);
+            return new Response(-1, "Error", e.getMessage());
         }
-
-        return response;
+        return new Response(-1, "Nearby user(s) not found...", "");
     }
     @PostMapping("/changePrimaryEmaiId")
     public Response changePrimaryEmaiId(@RequestBody UserWebModel userWebModel) {
@@ -381,6 +372,5 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
-
 
 }
