@@ -946,53 +946,93 @@ public class UserServiceImpl implements UserService {
     public List<Map<String, Object>> findUsersNearLocation(LocationWebModel locationWebModel) {
         Integer userId = locationWebModel.getUserId();
 
-        if (userId != null) {
-            Optional<User> userOptional = userRepository.findById(userId);
-            User user = userOptional.orElseThrow(() -> new RuntimeException("User not found"));
-
-            Location userLocation = user.getLocation();
-            if (userLocation == null) {
-                throw new RuntimeException("User location not found");
-            }
-
-            // Fetch all users except the user with userId
-            List<User> allUsers = userRepository.findAll().stream()
-                    .filter(u -> !u.getUserId().equals(userId))
-                    .collect(Collectors.toList());
-
-            // Create a list to store each user's location details
-            List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
-            
-            for (User u : allUsers) {
-                if (u.getLocation() != null) {
-                    Map<String, Object> userDetails = new HashMap<>();
-                    userDetails.put("userId", u.getUserId());
-                    userDetails.put("latitude", u.getLocation().getLocationLatitude());
-                    userDetails.put("longitude", u.getLocation().getLocationLongitude());
-                    userDetails.put("profilePic", userService.getProfilePicUrl(u.getUserId()));
-                    
-                 // Fetching the user Profession
-                    Set<String> professionNames = new HashSet<>();
-                    List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(u.getUserId());
-                    if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
-                        professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
-                    } else {
-                        professionNames.add("CommonUser");
-                    }
-
-                    userDetails.put("professionNames", professionNames);
-                    nearbyUsersList.add(userDetails);
-                }
-            }
-
-            return nearbyUsersList;
-        } else {
+        if (userId == null) {
             throw new RuntimeException("User ID must be provided");
+        }
+
+        Optional<User> userOptional = userRepository.findById(userId);
+        User user = userOptional.orElseThrow(() -> new RuntimeException("User not found"));
+
+        Location userLocation = user.getLocation();
+        if (userLocation == null) {
+            throw new RuntimeException("User location not found");
+        }
+
+        double userLat = parseDouble(userLocation.getLocationLatitude());
+        double userLon = parseDouble(userLocation.getLocationLongitude());
+
+        // Fetch all users except the user with userId
+        List<User> allUsers = userRepository.findAll().stream()
+                .filter(u -> !u.getUserId().equals(userId))
+                .collect(Collectors.toList());
+
+        // Create a list to store each user's location details with distance
+        List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
+
+        for (User u : allUsers) {
+            Location location = u.getLocation();
+            if (location != null) {
+                double lat = parseDouble(location.getLocationLatitude());
+                double lon = parseDouble(location.getLocationLongitude());
+                double distance = calculateDistance(userLat, userLon, lat, lon);
+                System.out.print("distance"+distance);
+
+                Map<String, Object> userDetails = new HashMap<>();
+                userDetails.put("userId", u.getUserId());
+                userDetails.put("latitude", location.getLocationLatitude());
+                userDetails.put("longitude", location.getLocationLongitude());
+                userDetails.put("profilePic", userService.getProfilePicUrl(u.getUserId()));
+                userDetails.put("distance", Math.round(distance) + "km");
+
+                // Fetching the user Profession
+                Set<String> professionNames = new HashSet<>();
+                List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(u.getUserId());
+                if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
+                    professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
+                } else {
+                    professionNames.add("CommonUser");
+                }
+                userDetails.put("professionNames", professionNames);
+
+                nearbyUsersList.add(userDetails);
+            }
+        }
+
+        // Sort users by distance
+        nearbyUsersList.sort(Comparator.comparingDouble(u -> (double) u.get("distance")));
+
+       return nearbyUsersList;
+    }
+
+    private double parseDouble(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new NumberFormatException("Empty or null string");
+        }
+        if (value.equalsIgnoreCase("NaN") || value.equalsIgnoreCase("Infinity")) {
+            throw new NumberFormatException("Invalid double value: " + value);
+        }
+        try {
+            return Double.parseDouble(value.trim());
+        } catch (NumberFormatException e) {
+            // Log the value causing the exception for debugging
+            System.err.println("Invalid double value: " + value);
+            throw new NumberFormatException("Invalid double value: " + value);
         }
     }
 
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int EARTH_RADIUS = 6371; // Radius in kilometers
 
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                + Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return EARTH_RADIUS * c;
+    }
+}
 
     
 
-    }
+    
