@@ -1,10 +1,19 @@
 package com.annular.filmhook.webmodel;
 
 import java.util.Date;
+import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.Data;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ChatWebModel {
 
 	private Integer chatId;
@@ -20,5 +29,8 @@ public class ChatWebModel {
 	private Date timeStamp;
 	private String userAccountName;
 	private Integer userId;
+
+	List<MultipartFile> files;
+	List<FileOutputWebModel> chatFiles;
 
 }

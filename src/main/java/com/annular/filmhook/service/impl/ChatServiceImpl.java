@@ -25,9 +25,13 @@ import com.annular.filmhook.repository.ChatRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.ChatService;
+import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.S3Util;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.ChatWebModel;
+import com.annular.filmhook.webmodel.FileInputWebModel;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
 
 @Service
 public class ChatServiceImpl implements ChatService {
@@ -40,6 +44,9 @@ public class ChatServiceImpl implements ChatService {
 
     @Autowired
     FileUtil fileUtil;
+    
+    @Autowired
+    MediaFilesService mediaFilesService;
 
     @Autowired
     S3Util s3Util;
@@ -72,6 +79,17 @@ public class ChatServiceImpl implements ChatService {
                         .build();
 
                 chatRepository.save(chat);
+                
+                if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
+                    // Saving the chat files in the media_files table
+                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                            .userId(chatWebModel.getUserId())
+                            .category(MediaFileCategory.Chat)
+                            .categoryRefId(chat.getChatId())
+                            .files(chatWebModel.getFiles())
+                            .build();
+                    mediaFilesService.saveMediaFiles(fileInputWebModel, userOptional.get());
+                }
                 return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
             } else {
                 return ResponseEntity.notFound().build();
@@ -122,25 +140,54 @@ public class ChatServiceImpl implements ChatService {
     public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
         Map<String, Object> response = new HashMap<>();
         try {
+            // Fetch the user by receiver ID
             User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
-//	        if (user == null) {
-//	            return new Response(-1, "User not found", "");
-//	        }
-            logger.info("Get Messages by User ID Method Start");
-            Integer senderId = userDetails.userInfo().getId();
-            List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, message.getChatReceiverId());
-            List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(message.getChatReceiverId(), message.getChatSenderId());
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "User not found", ""));
+            }
 
+            logger.info("Get Messages by User ID Method Start");
+
+            // Fetch sender and receiver IDs
+            Integer senderId = userDetails.userInfo().getId();
+            Integer receiverId = message.getChatReceiverId();
+
+            // Fetch messages sent by the current user to the receiver
+            List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, receiverId);
+
+            // Fetch messages received by the current user from the receiver
+            List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId);
+
+            // Combine both lists of messages
             List<Chat> allMessages = new ArrayList<>();
             allMessages.addAll(senderMessages);
             allMessages.addAll(receiverMessages);
 
-            response.put("userChat", allMessages);
-            response.put("numberOfItems", allMessages.size());
+            // Construct the response structure
+            List<ChatWebModel> messagesWithFiles = new ArrayList<>();
+            for (Chat chat : allMessages) {
+                List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
+                ChatWebModel chatWebModel = ChatWebModel.builder()
+                        .chatId(chat.getChatId())
+                        .chatSenderId(chat.getChatSenderId())
+                        .chatReceiverId(chat.getChatReceiverId())
+                        .chatIsActive(chat.getChatIsActive())
+                        .chatCreatedBy(chat.getChatCreatedBy())
+                        .chatCreatedOn(chat.getChatCreatedOn())
+                        .chatUpdatedBy(chat.getChatUpdatedBy())
+                        .chatUpdatedOn(chat.getChatUpdatedOn())
+                        .chatFiles(mediaFiles)
+                        .build();
+                messagesWithFiles.add(chatWebModel);
+            }
+
+            // Put the final response together
+            response.put("userChat", messagesWithFiles);
+            response.put("numberOfItems", messagesWithFiles.size());
 
         } catch (Exception e) {
             logger.error("Error occurred while retrieving messages: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Internal Server Error", ""));
         }
         logger.info("Get Messages by User ID Method End");
 
