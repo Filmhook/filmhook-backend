@@ -2,10 +2,13 @@ package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -158,29 +161,39 @@ public class ChatServiceImpl implements ChatService {
             // Fetch messages received by the current user from the receiver
             List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId);
 
-            // Combine both lists of messages
-            List<Chat> allMessages = new ArrayList<>();
+            // Combine both lists of messages without duplicates
+            Set<Chat> allMessages = new HashSet<>();
             allMessages.addAll(senderMessages);
             allMessages.addAll(receiverMessages);
 
             // Construct the response structure
             List<ChatWebModel> messagesWithFiles = new ArrayList<>();
             for (Chat chat : allMessages) {
-                List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
-                ChatWebModel chatWebModel = ChatWebModel.builder()
-                        .chatId(chat.getChatId())
-                        .chatSenderId(chat.getChatSenderId())
-                        .chatReceiverId(chat.getChatReceiverId())
-                        .chatIsActive(chat.getChatIsActive())
-                        .chatCreatedBy(chat.getChatCreatedBy())
-                        .chatCreatedOn(chat.getChatCreatedOn())
-                        .chatUpdatedBy(chat.getChatUpdatedBy())
-                        .chatUpdatedOn(chat.getChatUpdatedOn())
-                        .chatFiles(mediaFiles)
-                        .build();
-                messagesWithFiles.add(chatWebModel);
+                Optional<User> userData = userRepository.findById(chat.getChatSenderId());
+                if (userData.isPresent()) {
+                    List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
+                    ChatWebModel chatWebModel = ChatWebModel.builder()
+                            .chatId(chat.getChatId())
+                            .chatSenderId(chat.getChatSenderId())
+                            .chatReceiverId(chat.getChatReceiverId())
+                            .chatIsActive(chat.getChatIsActive())
+                            .chatCreatedBy(chat.getChatCreatedBy())
+                            .chatCreatedOn(chat.getChatCreatedOn())
+                            .chatUpdatedBy(chat.getChatUpdatedBy())
+                            .chatUpdatedOn(chat.getChatUpdatedOn())
+                            .chatFiles(mediaFiles)
+                            .message(chat.getMessage())
+                            .userType(userData.get().getUserType())
+                            .userAccountName(userData.get().getName())
+                            .userId(userData.get().getUserId())
+                            .build();
+                    messagesWithFiles.add(chatWebModel);
+                }
             }
 
+         // Sort messagesWithFiles by chatId
+            messagesWithFiles.sort(Comparator.comparing(ChatWebModel::getChatId));
+            
             // Put the final response together
             response.put("userChat", messagesWithFiles);
             response.put("numberOfItems", messagesWithFiles.size());
@@ -190,6 +203,7 @@ public class ChatServiceImpl implements ChatService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Internal Server Error", ""));
         }
         logger.info("Get Messages by User ID Method End");
+
 
         return ResponseEntity.ok(new Response(0, "Success", response));
     }

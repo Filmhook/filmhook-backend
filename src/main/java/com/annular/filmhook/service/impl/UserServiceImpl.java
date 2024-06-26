@@ -1000,7 +1000,7 @@ public class UserServiceImpl implements UserService {
                                 userDetails.put("distance", Math.round(distance));
                                 userDetails.put("distanceUnit", "Km");
                                 userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
-
+                                userDetails.put("userName", userData.getName());
                                 // Fetching the user Profession
                                 Set<String> professionNames = new HashSet<>();
                                 List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(userData.getUserId());
