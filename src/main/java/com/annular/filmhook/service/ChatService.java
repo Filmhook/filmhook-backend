@@ -9,7 +9,7 @@ public interface ChatService {
 
 	ResponseEntity<?> saveMessage(ChatWebModel chatWebModel);
 
-	ResponseEntity<?> getAllUser(ChatWebModel chatWebModel);
+    ResponseEntity<?> getAllUser();
 
 	ResponseEntity<?> getMessageByUserId(ChatWebModel chatWebModel);
 

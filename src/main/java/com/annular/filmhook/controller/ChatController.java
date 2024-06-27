@@ -49,11 +49,11 @@ public class ChatController {
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
-    @PostMapping("/getAllUser")
-    public ResponseEntity<?> getAllUser(@RequestBody ChatWebModel chatWebModel) {
+    @GetMapping("/getAllUser")
+    public ResponseEntity<?> getAllUser() {
         try {
             logger.info("getAllUser controller start");
-            return chatService.getAllUser(chatWebModel);
+            return chatService.getAllUser();
         } catch (Exception e) {
             logger.error("getAllUser Method Exception {}", e.getMessage());
             e.printStackTrace();

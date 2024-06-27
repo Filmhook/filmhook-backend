@@ -1,6 +1,7 @@
 package com.annular.filmhook.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,6 +22,7 @@ public interface ChatRepository extends JpaRepository<Chat,Integer> {
            "OR (c.chatSenderId = :receiverId AND c.chatReceiverId = :senderId) ORDER BY c.timeStamp DESC")
     List<Chat> findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(Integer senderId, Integer receiverId);
 
-	
+    @Query(value = "SELECT * FROM chat c WHERE c.chat_sender_id=:senderId AND c.chat_receiver_id=:receiverId ORDER BY c.time_stamp DESC LIMIT 1;", nativeQuery = true)
+    Optional<Chat> getLatestMessage(Integer senderId, Integer receiverId);
 
 }

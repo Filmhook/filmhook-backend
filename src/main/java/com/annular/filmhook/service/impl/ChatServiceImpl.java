@@ -1,16 +1,19 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Date;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +61,7 @@ public class ChatServiceImpl implements ChatService {
     MediaFilesRepository mediaFilesRepository;
 
     @Autowired
-    UserDetails userDetails;
+    private UserService userService;
 
     public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
@@ -79,6 +82,8 @@ public class ChatServiceImpl implements ChatService {
                         .chatSenderId(userId)
                         .userType(user.getUserType())
                         .chatIsActive(true) // Assuming chat is active by default
+                        .chatCreatedBy(userId)
+                        .chatCreatedOn(new Date())
                         .build();
 
                 chatRepository.save(chat);
@@ -104,26 +109,25 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public ResponseEntity<?> getAllUser(ChatWebModel chatWebModel) {
+    public ResponseEntity<?> getAllUser() {
         try {
             logger.info("Get All Users Method Start");
+            Integer loggedInUserId = userDetails.userInfo().getId();
 
-            // Assuming you have a method in your repository to fetch all users
-            List<User> users = userRepository.findAll();
+            // After getting all users except current logged-in user.
+            List<User> users = userRepository.getAllActiveUserExceptCurrentUser(loggedInUserId);
+            logger.info("Total users count for chat -> [{}]", users.size());
 
             // If users exist, map them to a list of simplified user models containing ID, name, and profile picture URLs
             if (!users.isEmpty()) {
                 List<Map<String, Object>> userResponseList = users.stream()
                         .map(user -> {
-                            Map<String, Object> userData = new HashMap<>();
+                            Map<String, Object> userData = new LinkedHashMap<>();
                             userData.put("userId", user.getUserId());
-                            userData.put("userName", user.getName());
-                            // Fetch profile pictures URLs for the user if available
-                            List<MediaFiles> mediaDataList = mediaFilesRepository.getMediaFilesByUserIdAndCategory(user.getUserId(), MediaFileCategory.ProfilePic);
-                            List<String> profilePictureUrls = mediaDataList.stream()
-                                    .map(media -> s3Util.generateS3FilePath(media.getFilePath() + media.getFileType()))
-                                    .collect(Collectors.toList());
-                            userData.put("profilePictureUrls", profilePictureUrls);
+                            userData.put("userName", Utility.isNullOrBlankWithTrim(user.getName()) ? "" : user.getName());
+                            userData.put("profilePicUrl", userService.getProfilePicUrl(user.getUserId())); // Fetch profile pictures URLs for the user if available
+                            this.getLatestChatMessage(loggedInUserId, user, userData); // To display in the chat user list
+
                             return userData;
                         })
                         .collect(Collectors.toList());
@@ -138,6 +142,32 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    public void getLatestChatMessage(Integer loggedInUserId, User user, Map<String, Object> dataMap) {
+        String latestMsg = "", latestMsgTime = "";
+        try {
+            Optional<Chat> lastChat = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
+            if (lastChat.isPresent()) {
+                if (!Utility.isNullOrBlankWithTrim(lastChat.get().getMessage())) {
+                    latestMsg = lastChat.get().getMessage();
+                } else {
+                    List<FileOutputWebModel> files = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.get().getChatId()).stream()
+                            .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+                            .collect(Collectors.toList());
+                    if (!Utility.isNullOrEmptyList(files)) {
+                        String fileType = files.get(files.size() - 1).getFileType();
+                        if (FileUtil.isImageFile(fileType)) latestMsg = "Photo";
+                        else if (FileUtil.isVideoFile(fileType)) latestMsg = "Audio/Video";
+                    }
+                }
+                latestMsgTime = String.valueOf(lastChat.get().getTimeStamp());
+            }
+        } catch (Exception e) {
+            logger.error("Error while getting latest chat message -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        dataMap.put("latestMessage", latestMsg);
+        dataMap.put("latestMsgTime", latestMsgTime);
+    }
 
     @Override
     public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
