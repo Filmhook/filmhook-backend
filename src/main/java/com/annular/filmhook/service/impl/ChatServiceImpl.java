@@ -137,8 +137,10 @@ public class ChatServiceImpl implements ChatService {
 
                             return userData;
                         })
-                        .sorted(Comparator.nullsLast(Comparator.comparing(d -> (String) d.get("userName"))))
                         .collect(Collectors.toList());
+
+                Comparator<Map<String, Object>> comparator = Comparator.comparing(data -> (String) data.get("latestMsgTime"));
+                userResponseList.sort(comparator.reversed());
 
                 return ResponseEntity.ok(userResponseList);
             } else {
