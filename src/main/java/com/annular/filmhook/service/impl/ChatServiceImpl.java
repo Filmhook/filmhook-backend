@@ -104,16 +104,26 @@ public class ChatServiceImpl implements ChatService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
     @Override
     public ResponseEntity<?> getAllUser() {
         try {
             logger.info("Get All Users Method Start");
             Integer loggedInUserId = userDetails.userInfo().getId();
 
-            // After getting all users except current logged-in user.
-            List<User> users = userRepository.getAllActiveUserExceptCurrentUser(loggedInUserId);
-            logger.info("Total users count for chat -> [{}]", users.size());
+            // Fetch all distinct user IDs associated with the logged-in user from ChatRepository
+            Set<Integer> chatUserIds = new HashSet<>();
+            chatUserIds.addAll(chatRepository.findSenderIdsByReceiverId(loggedInUserId));
+            chatUserIds.addAll(chatRepository.findReceiverIdsBySenderId(loggedInUserId));
+
+            // Remove the logged-in user's ID from the set
+            chatUserIds.remove(loggedInUserId);
+
+            if (chatUserIds.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Fetch user details for the user IDs
+            List<User> users = userRepository.findAllById(chatUserIds);
 
             // If users exist, map them to a list of simplified user models containing ID, name, and profile picture URLs
             if (!users.isEmpty()) {
@@ -139,6 +149,7 @@ public class ChatServiceImpl implements ChatService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     public void getLatestChatMessage(Integer loggedInUserId, User user, Map<String, Object> dataMap) {
         String latestMsg = "", latestMsgTime = "";
