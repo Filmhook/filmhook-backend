@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
 
+
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
@@ -31,6 +33,7 @@ public class ChatController {
     @Autowired
     FcmService fcmService;
 
+    
     public static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
 
@@ -91,4 +94,14 @@ public class ChatController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    
+    @PostMapping("getLastMessagebyid")
+	public ResponseEntity<Response> getLastMessageById(@RequestBody ChatWebModel message) {
+				try {
+			Response response = chatService.getLastMessageById(message);
+			return new ResponseEntity<>(response, HttpStatus.OK);
+		} catch (Exception e) {
+			return new ResponseEntity<>(new Response(-1, "Error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }

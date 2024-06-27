@@ -431,7 +431,7 @@ public class PostServiceImpl implements PostService {
                         .build();
                 Comment savedComment = commentRepository.save(comment);
 
-                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Posts")) {
+                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Post")) {
                     post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() + 1 : 1); // Increasing the comments count in post's table
                     postsRepository.saveAndFlush(post);
                 }
@@ -514,7 +514,7 @@ public class PostServiceImpl implements PostService {
                     comment.setUpdatedOn(new Date());
                     Comment deletedComment = commentRepository.saveAndFlush(comment);
 
-                    if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Posts")) {
+                    if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Post")) {
                         post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() - 1 : 0); // Decreasing the comments count from post's table
                         postsRepository.saveAndFlush(post);
                     }

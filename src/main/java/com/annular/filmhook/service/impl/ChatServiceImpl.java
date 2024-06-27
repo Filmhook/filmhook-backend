@@ -227,4 +227,31 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    @Override
+    public Response getLastMessageById(ChatWebModel message) {
+        try {
+            logger.info("getLastMessageById Method Start");
+
+            List<Chat> lastMessages = chatRepository.findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(
+                    message.getChatSenderId(), message.getChatReceiverId());
+System.out.println("message"+message.getChatSenderId());
+System.out.println("message1"+message.getChatReceiverId());
+            if (!lastMessages.isEmpty()) {
+                Chat lastMessage = lastMessages.get(0);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("lastMessage", lastMessage);
+                logger.info("getLastMessageById Method End");
+                return new Response(1, "Success", response);
+            } else {
+                logger.info("getLastMessageById Method End");
+                return new Response(-1, "No messages found between the sender and receiver", null);
+            }
+        } catch (Exception e) {
+            logger.error("getLastMessageById Method Exception {}", e);
+            return new Response(-1, "Error", e.getMessage());
+        }
+    }
+	
+
 }

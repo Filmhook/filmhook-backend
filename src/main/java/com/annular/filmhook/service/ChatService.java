@@ -2,6 +2,7 @@ package com.annular.filmhook.service;
 
 import org.springframework.http.ResponseEntity;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.webmodel.ChatWebModel;
 
 public interface ChatService {
@@ -13,5 +14,7 @@ public interface ChatService {
 	ResponseEntity<?> getMessageByUserId(ChatWebModel chatWebModel);
 
 	ResponseEntity<?> getFirebaseTokenByuserId(Integer userId);
+
+	Response getLastMessageById(ChatWebModel message);
 
 }
