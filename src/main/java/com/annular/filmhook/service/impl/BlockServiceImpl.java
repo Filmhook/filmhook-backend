@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.annular.filmhook.service.MediaFilesService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
@@ -34,20 +34,11 @@ public class BlockServiceImpl implements BlockService {
 	@Autowired
 	UserDetails userDetails;
 
-	@Autowired
-	UserRepository userRepository;
+    @Autowired
+    BlockRepository blockRepository;
 
-	@Autowired
-	BlockRepository blockRepository;
-	
-	@Autowired
-	S3Util s3Util;
-	
-	@Autowired
-	FileUtil fileUtil;
-	
-	@Autowired
-	MediaFilesService mediaFilesService;
+    @Autowired
+    private UserService userService;
 
 	private static final Logger logger = LoggerFactory.getLogger(BlockServiceImpl.class);
 
@@ -81,42 +72,35 @@ public class BlockServiceImpl implements BlockService {
 
 	}
 
-	private List<BlockWebModel> transformBlockToBlockWebModel(List<Block> blockList) {
-		List<BlockWebModel> blockWebModels = new ArrayList<>();
-		try {
-			if(!Utility.isNullOrEmptyList(blockList)) {
-				blockList.stream()
-						.filter(Objects::nonNull)
-						.filter(block -> block.getBlockedUser() != null)
-						.forEach(block -> {
-
-							BlockWebModel.BlockWebModelBuilder blockWebModel = BlockWebModel.builder()
-									.blockId(block.getBlockId())
-									.blockedBy(block.getBlockedBy().getUserId())
-									.blockedUser(block.getBlockedUser().getUserId())
-									.blockStatus(block.getBlockStatus())
-									.blockedUserName(block.getBlockedUser().getName())
-									.blockedUserGender(block.getBlockedUser().getGender())
-									.createdBy(block.getCreatedBy())
-									.createdOn(block.getCreatedOn())
-									.updatedBy(block.getUpdatedBy())
-									.updatedOn(block.getUpdatedOn());
-
-							List<FileOutputWebModel> profilePic = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, block.getBlockedUser().getUserId());
-							String profilePicUrl = null;
-							if (!Utility.isNullOrEmptyList(profilePic)) {
-								profilePicUrl = s3Util.generateS3FilePath(profilePic.get(0).getFilePath() + profilePic.get(0).getFileType());
-								blockWebModel.blockedUserProfilePicUrl(profilePicUrl);
-							}
-
-							blockWebModels.add(blockWebModel.build());
-						});
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return blockWebModels;
-	}
+    private List<BlockWebModel> transformBlockToBlockWebModel(List<Block> blockList) {
+        List<BlockWebModel> blockWebModels = new ArrayList<>();
+        try {
+            if (!Utility.isNullOrEmptyList(blockList)) {
+                blockList.stream()
+                        .filter(Objects::nonNull)
+                        .filter(block -> block.getBlockedUser() != null)
+                        .forEach(block -> {
+                            BlockWebModel blockWebModel = BlockWebModel.builder()
+                                    .blockId(block.getBlockId())
+                                    .blockedBy(block.getBlockedBy().getUserId())
+                                    .blockedUser(block.getBlockedUser().getUserId())
+                                    .blockStatus(block.getBlockStatus())
+                                    .blockedUserName(block.getBlockedUser().getName())
+                                    .blockedUserGender(block.getBlockedUser().getGender())
+                                    .blockedUserProfilePicUrl(userService.getProfilePicUrl(block.getBlockedUser().getUserId()))
+                                    .createdBy(block.getCreatedBy())
+                                    .createdOn(block.getCreatedOn())
+                                    .updatedBy(block.getUpdatedBy())
+                                    .updatedOn(block.getUpdatedOn())
+                                    .build();
+                            blockWebModels.add(blockWebModel);
+                        });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return blockWebModels;
+    }
 
 	@Override
 	public ResponseEntity<?> getAllBlock(Integer userId) {
