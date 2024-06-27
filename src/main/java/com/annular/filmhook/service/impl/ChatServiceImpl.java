@@ -55,10 +55,7 @@ public class ChatServiceImpl implements ChatService {
     MediaFilesService mediaFilesService;
 
     @Autowired
-    S3Util s3Util;
-
-    @Autowired
-    MediaFilesRepository mediaFilesRepository;
+    UserDetails userDetails;
 
     @Autowired
     private UserService userService;

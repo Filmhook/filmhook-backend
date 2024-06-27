@@ -72,6 +72,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     List<User> findByNameContainingIgnoreCase(String name);
 
+    @Query("select u from User u where u.id!=:loggedInUserId and u.status=true")
+    List<User> getAllActiveUserExceptCurrentUser(Integer loggedInUserId);
+
 //	@Query("select u from User u where u.userType='industrialUser' and u.status = false")
 //	List<User> getAllUnverifiedIndustrialUsers();
 
