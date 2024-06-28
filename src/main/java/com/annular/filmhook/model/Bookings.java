@@ -73,4 +73,5 @@ public class Bookings {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
+
 }

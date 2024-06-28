@@ -29,39 +29,39 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Platform {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "platform_id")
-	private Integer platformId;
 
-	@Column(name = "platform_Name")
-	private String platformName;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "platform_id")
+    private Integer platformId;
 
-	@Column(name = "status")
-	private Boolean status;
+    @Column(name = "platform_Name")
+    private String platformName;
 
-	@Column(name = "created_by")
-	private Integer createdBy;
+    @Column(name = "status")
+    private Boolean status;
 
-	@CreationTimestamp
-	@Column(name = "created_on")
-	private Date createdOn;
+    @Column(name = "created_by")
+    private Integer createdBy;
 
-	@Column(name = "updated_by")
-	private Integer updatedBy;
+    @CreationTimestamp
+    @Column(name = "created_on")
+    private Date createdOn;
 
-	@Column(name = "updated_on")
-	@CreationTimestamp
-	private Date updatedOn;
+    @Column(name = "updated_by")
+    private Integer updatedBy;
 
-	@Lob
-	@Column
-	@JsonIgnore
-	@ToString.Exclude
-	private byte[] image;
+    @Column(name = "updated_on")
+    @CreationTimestamp
+    private Date updatedOn;
 
-	@Column(name = "icon_file_path")
-	private String filePath;
+    @Lob
+    @Column
+    @JsonIgnore
+    @ToString.Exclude
+    private byte[] image;
+
+    @Column(name = "icon_file_path")
+    private String filePath;
 
 }

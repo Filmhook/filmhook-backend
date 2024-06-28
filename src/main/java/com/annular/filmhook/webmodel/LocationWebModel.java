@@ -9,8 +9,8 @@ import lombok.Data;
 @Data
 @Builder
 public class LocationWebModel {
-	
-	private Integer locationId;
+
+    private Integer locationId;
 
     private Integer userId;
     private String latitude;

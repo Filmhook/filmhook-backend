@@ -10,12 +10,12 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.UserMediaPin;
 
 @Repository
-public interface PinMediaRepository extends JpaRepository<UserMediaPin,Integer> {
+public interface PinMediaRepository extends JpaRepository<UserMediaPin, Integer> {
 
-	@Query("select um from UserMediaPin um where um.userId=:id and um.status=true")
-	List<UserMediaPin> findByUserId(Integer id);
+    @Query("select um from UserMediaPin um where um.userId=:id and um.status=true")
+    List<UserMediaPin> findByUserId(Integer id);
 
-	@Query("select um from UserMediaPin um where um.userId = :userId and um.pinMediaId = :pinMediaId")
-	Optional<UserMediaPin> findByUserIdAndPinMediaId(Integer userId, Integer pinMediaId);
+    @Query("select um from UserMediaPin um where um.userId = :userId and um.pinMediaId = :pinMediaId")
+    Optional<UserMediaPin> findByUserIdAndPinMediaId(Integer userId, Integer pinMediaId);
 
 }

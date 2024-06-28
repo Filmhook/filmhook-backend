@@ -8,16 +8,16 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.AuditionAcceptanceDetails;
 
 @Repository
-public interface AuditionAcceptanceRepository extends JpaRepository<AuditionAcceptanceDetails, Integer>{
+public interface AuditionAcceptanceRepository extends JpaRepository<AuditionAcceptanceDetails, Integer> {
 
-	@Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = true")
-	Integer getAttendedCount(Integer auditionId);
+    @Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = true")
+    Integer getAttendedCount(Integer auditionId);
 
-	@Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = false")
-	Integer getIgnoredCount(Integer auditionId);
+    @Query("SELECT COUNT(a) FROM AuditionAcceptanceDetails a WHERE a.auditionRefId = :auditionId and a.isAuditionAccepted = false")
+    Integer getIgnoredCount(Integer auditionId);
 
-	@Modifying
+    @Modifying
     @Query("DELETE FROM AuditionAcceptanceDetails aad WHERE aad.auditionRefId = :auditionRefId")
-	void deleteByAuditionRefId(Integer auditionRefId);
+    void deleteByAuditionRefId(Integer auditionRefId);
 
 }

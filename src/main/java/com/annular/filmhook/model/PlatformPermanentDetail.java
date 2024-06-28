@@ -31,12 +31,12 @@ import lombok.ToString;
 @NoArgsConstructor
 
 public class PlatformPermanentDetail {
-  
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "platform_permanent_id")
     private Integer platformPermanentId;
-    
+
     @Column(name = "platform_name")
     private String platformName;
 
@@ -45,10 +45,10 @@ public class PlatformPermanentDetail {
 
     @Column(name = "film_count")
     private Integer filmCount;
-    
+
     @Column(name = "netWorth")
     private Integer netWorth;
-    
+
     @Column(name = "dailySalary")
     private Integer dailySalary;
 

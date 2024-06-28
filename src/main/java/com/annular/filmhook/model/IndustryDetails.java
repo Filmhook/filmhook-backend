@@ -23,19 +23,19 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class IndustryDetails {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "industry_detail_id")
-	private Integer industryDetailId;
-	
-	@Column(name = "industry_temporary_detail_id")
-	private Integer industryTemporaryDetailId;
-	
-	@Column(name = "industry_name")
-	private String industry_name;
-	
-	@Column(name = "userId")
-	private Integer userId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "industry_detail_id")
+    private Integer industryDetailId;
+
+    @Column(name = "industry_temporary_detail_id")
+    private Integer industryTemporaryDetailId;
+
+    @Column(name = "industry_name")
+    private String industry_name;
+
+    @Column(name = "userId")
+    private Integer userId;
 
 }

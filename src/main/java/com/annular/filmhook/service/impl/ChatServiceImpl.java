@@ -16,25 +16,26 @@ import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.MediaFileCategory;
-import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
+
 import com.annular.filmhook.repository.ChatRepository;
-import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
+
 import com.annular.filmhook.service.ChatService;
 import com.annular.filmhook.service.MediaFilesService;
-import com.annular.filmhook.util.FileUtil;
-import com.annular.filmhook.util.S3Util;
+
 import com.annular.filmhook.util.Utility;
+
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -48,9 +49,6 @@ public class ChatServiceImpl implements ChatService {
     @Autowired
     ChatRepository chatRepository;
 
-    @Autowired
-    FileUtil fileUtil;
-    
     @Autowired
     MediaFilesService mediaFilesService;
 
@@ -82,9 +80,8 @@ public class ChatServiceImpl implements ChatService {
                         .chatCreatedBy(userId)
                         .chatCreatedOn(new Date())
                         .build();
-
                 chatRepository.save(chat);
-                
+
                 if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
                     // Saving the chat files in the media_files table
                     FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
@@ -100,10 +97,11 @@ public class ChatServiceImpl implements ChatService {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            logger.error("Error occurred while saving message: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("Error occurred while saving message -> {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
+
     @Override
     public ResponseEntity<?> getAllUser() {
         try {
@@ -134,7 +132,6 @@ public class ChatServiceImpl implements ChatService {
                             userData.put("userName", Utility.isNullOrBlankWithTrim(user.getName()) ? "" : user.getName());
                             userData.put("profilePicUrl", userService.getProfilePicUrl(user.getUserId())); // Fetch profile pictures URLs for the user if available
                             this.getLatestChatMessage(loggedInUserId, user, userData); // To display in the chat user list
-
                             return userData;
                         })
                         .collect(Collectors.toList());
@@ -147,11 +144,11 @@ public class ChatServiceImpl implements ChatService {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            logger.error("Error occurred while retrieving users: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            logger.error("Error occurred while retrieving users -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
-
 
     public void getLatestChatMessage(Integer loggedInUserId, User user, Map<String, Object> dataMap) {
         String latestMsg = "", latestMsgTime = "";
@@ -187,7 +184,7 @@ public class ChatServiceImpl implements ChatService {
             // Fetch the user by receiver ID
             User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
             if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "User not found", ""));
+                return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
             }
 
             logger.info("Get Messages by User ID Method Start");
@@ -232,25 +229,23 @@ public class ChatServiceImpl implements ChatService {
                 }
             }
 
-         // Sort messagesWithFiles by chatId
+            // Sort messagesWithFiles by chatId
             messagesWithFiles.sort(Comparator.comparing(ChatWebModel::getChatId));
-            
+
             // Put the final response together
             response.put("userChat", messagesWithFiles);
             response.put("numberOfItems", messagesWithFiles.size());
 
+            logger.info("Get Messages by User ID Method End");
+            return ResponseEntity.ok(new Response(1, "Success", response));
         } catch (Exception e) {
-            logger.error("Error occurred while retrieving messages: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Internal Server Error", ""));
+            logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
         }
-        logger.info("Get Messages by User ID Method End");
-
-
-        return ResponseEntity.ok(new Response(0, "Success", response));
     }
 
     @Override
-    public ResponseEntity<?> getFirebaseTokenByuserId(Integer userId) {
+    public ResponseEntity<?> getFirebaseTokenByUserId(Integer userId) {
         try {
             Optional<User> userOptional = userRepository.findById(userId);
             if (userOptional.isPresent()) {
@@ -258,41 +253,35 @@ public class ChatServiceImpl implements ChatService {
                 if (firebaseToken != null) {
                     return ResponseEntity.ok(new Response(1, "Success", firebaseToken));
                 } else {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Firebase token not found for the user.");
+                    return ResponseEntity.ok().body("Firebase token not found for the user.");
                 }
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + userId);
+                return ResponseEntity.ok().body("User not found with ID: " + userId);
             }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while retrieving Firebase token: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error occurred while retrieving Firebase token: " + e.getMessage());
         }
     }
 
     @Override
     public Response getLastMessageById(ChatWebModel message) {
         try {
-            logger.info("getLastMessageById Method Start");
-
-            List<Chat> lastMessages = chatRepository.findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(
-                    message.getChatSenderId(), message.getChatReceiverId());
-System.out.println("message"+message.getChatSenderId());
-System.out.println("message1"+message.getChatReceiverId());
+            List<Chat> lastMessages = chatRepository.findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(message.getChatSenderId(), message.getChatReceiverId());
+            logger.info("message{}", message.getChatSenderId());
+            logger.info("message1{}", message.getChatReceiverId());
             if (!lastMessages.isEmpty()) {
                 Chat lastMessage = lastMessages.get(0);
-
                 Map<String, Object> response = new HashMap<>();
                 response.put("lastMessage", lastMessage);
-                logger.info("getLastMessageById Method End");
                 return new Response(1, "Success", response);
             } else {
-                logger.info("getLastMessageById Method End");
                 return new Response(-1, "No messages found between the sender and receiver", null);
             }
         } catch (Exception e) {
-            logger.error("getLastMessageById Method Exception {}", e);
+            logger.error("getLastMessageById Method Exception {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error", e.getMessage());
         }
     }
-	
 
 }

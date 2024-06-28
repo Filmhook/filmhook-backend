@@ -15,38 +15,36 @@ import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface DetailService {
 
-	ResponseEntity<?> getDetails(DetailRequest detailRequest);
+    ResponseEntity<?> getDetails(DetailRequest detailRequest);
 
-	ResponseEntity<?> addTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
+    ResponseEntity<?> addTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
-	ResponseEntity<?> getTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
+    ResponseEntity<?> getTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
-	ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId,
-			List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
+    ResponseEntity<?> addIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
 
-	List<FileOutputWebModel> saveIndustryUserFiles(IndustryFileInputWebModel inputFileData);
+    List<FileOutputWebModel> saveIndustryUserFiles(IndustryFileInputWebModel inputFileData);
 
-	ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
+    ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
-	ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
+    ResponseEntity<?> getTemporaryDuplicateDetails(IndustryTemporaryWebModel industryTemporaryWebModel);
 
-	List<FileOutputWebModel> getIndustryFiles(Integer userId);
+    List<FileOutputWebModel> getIndustryFiles(Integer userId);
 
-	Resource getIndustryFile(Integer userId, String category, String fileId);
+    Resource getIndustryFile(Integer userId, String category, String fileId);
 
-	ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId);
+    ResponseEntity<?> getIndustryUserPermanentDetails(Integer userId);
 
-	//ResponseEntity<?> updateIndustryUserPermanentDetails(List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
+    //ResponseEntity<?> updateIndustryUserPermanentDetails(List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
 
-	ResponseEntity<?> updateIndustryUserPermanentDetails(PlatformDetailDTO platformDetailDTO);
+    ResponseEntity<?> updateIndustryUserPermanentDetails(PlatformDetailDTO platformDetailDTO);
 
-	ResponseEntity<?> updateIndustryUserPermanentDetails(Integer userId,
-			List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
+    ResponseEntity<?> updateIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels);
 
-	ResponseEntity<?> verifyFilmHookCode(UserWebModel userWebModel);
+    ResponseEntity<?> verifyFilmHookCode(UserWebModel userWebModel);
 
-	ResponseEntity<?> verifyFilmHook(UserWebModel userWebModel);
+    ResponseEntity<?> verifyFilmHook(UserWebModel userWebModel);
 
-	ResponseEntity<?> getIndustryByuserId(Integer userId);
+    ResponseEntity<?> getIndustryByuserId(Integer userId);
 
 }

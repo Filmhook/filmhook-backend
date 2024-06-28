@@ -27,10 +27,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReportPost {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "report_post_id")
+    @Column(name = "report_post_id")
     private Integer reportPostId;
 
     @Column(name = "userId")
@@ -41,7 +41,7 @@ public class ReportPost {
 
     @Column(name = "reason")
     private String reason;
-    
+
     @Column(name = "status")
     private Boolean status;
 
@@ -58,7 +58,6 @@ public class ReportPost {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-
 
 }
 

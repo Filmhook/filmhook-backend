@@ -33,9 +33,10 @@ import com.annular.filmhook.security.jwt.JwtUtils;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.webmodel.UserWebModel;
 
+import com.annular.filmhook.util.Utility;
+
 @RestController
 @RequestMapping("/user")
-
 public class AuthController {
 
     public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -86,7 +87,6 @@ public class AuthController {
     public Response verifyUser(@RequestParam("code") String code) {
         try {
             logger.info("verifyUser start");
-            System.out.println(code);
             boolean verificationResult = userService.verify(code);
             if (verificationResult) {
                 logger.info("Verified successfully");
@@ -103,37 +103,42 @@ public class AuthController {
 
     @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
-//		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
-        Optional<User> checkUsername = userRepository.findByEmailAndUserType(userWebModel.getEmail());
-        if (checkUsername.isPresent()) {
-            loginConstants.setUserType(userWebModel.getUserType());
-            logger.info("In login() User type from constants -> {}", loginConstants.getUserType());
+        try {
+            Optional<User> checkUsername = userRepository.findByEmail(userWebModel.getEmail());
+            if (checkUsername.isPresent()) {
+                loginConstants.setUserType(userWebModel.getUserType());
+                logger.info("In login() User type from constants -> {}", loginConstants.getUserType());
 
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
+                Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
 
-            User user = checkUsername.get();
-            // Update device token if provided
-            if (userWebModel.getFirebaseDeviceToken() != null && !userWebModel.getFirebaseDeviceToken().isEmpty()) {
-                user.setFirebaseDeviceToken(userWebModel.getFirebaseDeviceToken());
-                userRepository.save(user);
+                User user = checkUsername.get();
+                // Update device token if provided
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirebaseDeviceToken())) {
+                    user.setFirebaseDeviceToken(userWebModel.getFirebaseDeviceToken());
+                    userRepository.save(user);
+                }
+
+                String jwt = jwtUtils.generateJwtToken(authentication);
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                logger.info("Login Controller ---- Finished");
+                return ResponseEntity.ok(new JwtResponse(jwt,
+                        userDetails.getId(),
+                        userDetails.getUsername(),
+                        userDetails.getEmail(),
+                        "Login Successful",
+                        1,
+                        refreshToken.getToken(),
+                        userDetails.getUserType(),
+                        user.getFilmHookCode(),
+                        user.getFirstName(),
+                        user.getLastName()));
             }
-
-            String jwt = jwtUtils.generateJwtToken(authentication);
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            logger.info("Login Controller ---- Finished");
-            return ResponseEntity.ok(new JwtResponse(jwt,
-                    userDetails.getId(),
-                    userDetails.getUsername(),
-                    userDetails.getEmail(),
-                    "Login Successful",
-                    1,
-                    refreshToken.getToken(),
-                    userDetails.getUserType(),
-                    user.getFilmHookCode(),
-                    user.getFirstName(),
-                    user.getLastName()));
+        } catch (Exception e) {
+            logger.error("Error at login() -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error while validating the user credentials. Please try again...", null));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
@@ -303,7 +308,7 @@ public class AuthController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
-    
+
     @PostMapping("addSecondaryEmail")
     public ResponseEntity<?> addSecondaryEmail(@RequestBody UserWebModel userWebModel) {
         try {
@@ -315,7 +320,7 @@ public class AuthController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
-    
+
     @PostMapping("verifyOldEmailOtps")
     public ResponseEntity<?> verifyOldEmailOtps(@RequestBody UserWebModel userWebModel) {
         try {
@@ -339,5 +344,5 @@ public class AuthController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
-    
+
 }

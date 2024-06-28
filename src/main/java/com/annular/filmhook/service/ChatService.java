@@ -7,13 +7,13 @@ import com.annular.filmhook.webmodel.ChatWebModel;
 
 public interface ChatService {
 
-	ResponseEntity<?> saveMessage(ChatWebModel chatWebModel);
+    ResponseEntity<?> saveMessage(ChatWebModel chatWebModel);
 
     ResponseEntity<?> getAllUser();
 
-	ResponseEntity<?> getMessageByUserId(ChatWebModel chatWebModel);
+    ResponseEntity<?> getMessageByUserId(ChatWebModel chatWebModel);
 
-	ResponseEntity<?> getFirebaseTokenByuserId(Integer userId);
+    ResponseEntity<?> getFirebaseTokenByUserId(Integer userId);
 
 	Response getLastMessageById(ChatWebModel message);
 

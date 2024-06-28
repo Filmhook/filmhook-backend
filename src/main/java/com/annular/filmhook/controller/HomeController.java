@@ -12,7 +12,7 @@ public class HomeController {
 
     @GetMapping("/printName")
     public String testEndPoint(@RequestParam("name") String name) {
-        logger.info("Hai " + name);
+        logger.info("Hai {}", name);
         return "Hai " + name;
     }
 }

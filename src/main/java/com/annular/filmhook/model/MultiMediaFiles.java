@@ -26,45 +26,46 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class MultiMediaFiles {	
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "multi_media_file_id")
-	private Integer multiMediaFileId;
+public class MultiMediaFiles {
 
-	@Column(name = "file_name")
-	private String fileName;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "multi_media_file_id")
+    private Integer multiMediaFileId;
 
-	@Column(name = "file_original_name")
-	private String fileOriginalName;
+    @Column(name = "file_name")
+    private String fileName;
 
-	@Column(name = "file_domain_id")
-	private Integer fileDomainId;
+    @Column(name = "file_original_name")
+    private String fileOriginalName;
 
-	@Column(name = "file_domain_reference_id")
-	private Integer fileDomainReferenceId;
+    @Column(name = "file_domain_id")
+    private Integer fileDomainId;
 
-	@Column(name = "file_is_active")
-	private Boolean fileIsActive;
+    @Column(name = "file_domain_reference_id")
+    private Integer fileDomainReferenceId;
 
-	@Column(name = "file_created_by")
-	private Integer fileCreatedBy;
+    @Column(name = "file_is_active")
+    private Boolean fileIsActive;
 
-	@Column(name = "file_created_on")
-	@CreationTimestamp
-	private Date fileCreatedOn;
+    @Column(name = "file_created_by")
+    private Integer fileCreatedBy;
 
-	@Column(name = "file_updated_by")
-	private Integer fileUpdatedBy;
+    @Column(name = "file_created_on")
+    @CreationTimestamp
+    private Date fileCreatedOn;
 
-	@Column(name = "file_updated_on")
-	@CreationTimestamp
-	private Date fileUpdatedOn;
+    @Column(name = "file_updated_by")
+    private Integer fileUpdatedBy;
 
-	@Column(name = "file_size")
-	private Long fileSize;
+    @Column(name = "file_updated_on")
+    @CreationTimestamp
+    private Date fileUpdatedOn;
 
-	@Column(name = "file_type")
-	private String fileType;
+    @Column(name = "file_size")
+    private Long fileSize;
+
+    @Column(name = "file_type")
+    private String fileType;
+
 }

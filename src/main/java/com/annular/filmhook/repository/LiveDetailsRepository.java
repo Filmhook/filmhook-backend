@@ -5,8 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.LiveChannel;
 
-
 @Repository
-public interface LiveDetailsRepository extends JpaRepository<LiveChannel, Integer>{
+public interface LiveDetailsRepository extends JpaRepository<LiveChannel, Integer> {
 
 }

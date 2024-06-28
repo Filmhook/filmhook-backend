@@ -6,18 +6,18 @@ import com.annular.filmhook.webmodel.UserProfilePinWebModel;
 
 public interface PinProfileService {
 
-	ResponseEntity<?> addProfile(UserProfilePinWebModel userProfilePinWebModel);
+    ResponseEntity<?> addProfile(UserProfilePinWebModel userProfilePinWebModel);
 
-	ResponseEntity<?> addMedia(UserProfilePinWebModel userProfilePinWebModel);
+    ResponseEntity<?> addMedia(UserProfilePinWebModel userProfilePinWebModel);
 
-	ResponseEntity<?> getAllProfilePin();
+    ResponseEntity<?> getAllProfilePin();
 
-	ResponseEntity<?> getAllMediaPin();
+    ResponseEntity<?> getAllMediaPin();
 
-	ResponseEntity<?> getByProfileId(UserProfilePinWebModel userProfilePinWebModel);
+    ResponseEntity<?> getByProfileId(UserProfilePinWebModel userProfilePinWebModel);
 
-	ResponseEntity<?> profilePinStatus(UserProfilePinWebModel userProfilePinWebModel);
+    ResponseEntity<?> profilePinStatus(UserProfilePinWebModel userProfilePinWebModel);
 
-	ResponseEntity<?> mediaPinStatus(UserProfilePinWebModel userProfilePinWebModel);
+    ResponseEntity<?> mediaPinStatus(UserProfilePinWebModel userProfilePinWebModel);
 
 }

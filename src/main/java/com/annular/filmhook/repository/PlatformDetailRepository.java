@@ -11,18 +11,18 @@ import org.springframework.transaction.annotation.Transactional;
 import com.annular.filmhook.model.PlatformDetails;
 
 @Repository
-public interface PlatformDetailRepository extends JpaRepository<PlatformDetails, Integer>{
+public interface PlatformDetailRepository extends JpaRepository<PlatformDetails, Integer> {
 
-	List<PlatformDetails> findByIndustryTemporaryDetailId(Integer itId);
+    List<PlatformDetails> findByIndustryTemporaryDetailId(Integer itId);
 
-	@Transactional
+    @Transactional
     @Modifying
     @Query("DELETE FROM PlatformDetails pd WHERE pd.industryTemporaryDetailId = :temporaryId")
-	void deleteByIndustryTemporaryDetailId(Integer temporaryId);
+    void deleteByIndustryTemporaryDetailId(Integer temporaryId);
 
-	@Transactional
-	@Modifying
-	@Query("DELETE FROM PlatformDetails i WHERE i.userId = :userId")
-	void deleteByUserId(Integer userId);
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM PlatformDetails i WHERE i.userId = :userId")
+    void deleteByUserId(Integer userId);
 
 }

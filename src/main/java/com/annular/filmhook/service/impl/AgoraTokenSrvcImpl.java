@@ -48,11 +48,11 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
             logger.info("timestamp {}", timestamp);
             return rtcTokenBuilder.buildTokenWithUid(
                     agoraConfig.getAppId(),
-					agoraConfig.getAppCertificate(),
+                    agoraConfig.getAppCertificate(),
                     channelName,
-					uid,
-					role,
-					timestamp
+                    uid,
+                    role,
+                    timestamp
             );
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,9 +79,9 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
             RtmTokenBuilder token = new RtmTokenBuilder();
             return token.buildToken(
                     agoraConfig.getAppId(),
-					agoraConfig.getAppCertificate(),
+                    agoraConfig.getAppCertificate(),
                     String.valueOf(agoraWebModel.getUserId()),
-					RtmTokenBuilder.Role.Rtm_User,
+                    RtmTokenBuilder.Role.Rtm_User,
                     agoraConfig.getExpirationTimeInSeconds()
             );
         } catch (Exception e) {
@@ -101,9 +101,9 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
                 ChatTokenBuilder2 builder = new ChatTokenBuilder2();
                 String token = builder.buildUserToken(
                         agoraConfig.getAppId(),
-						agoraConfig.getAppCertificate(),
+                        agoraConfig.getAppCertificate(),
                         String.valueOf(agoraWebModel.getUserId()),
-						agoraWebModel.getExpirationTimeInSeconds()
+                        agoraWebModel.getExpirationTimeInSeconds()
                 );
                 // Save the token to the user table
                 dbUser.setTempToken(token);
@@ -117,4 +117,5 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
         }
         return null;
     }
+
 }

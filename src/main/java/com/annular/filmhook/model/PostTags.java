@@ -30,10 +30,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PostTags {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
+    @Column(name = "id")
     private Integer id;
 
     @ManyToOne
@@ -44,7 +44,7 @@ public class PostTags {
 
     @Column(name = "post_id") // Post-table reference
     private Integer postId;
-   
+
     @Column(name = "status")
     private Boolean status;
 

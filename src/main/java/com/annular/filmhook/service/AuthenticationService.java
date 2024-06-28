@@ -13,49 +13,48 @@ import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface AuthenticationService {
 
-	ResponseEntity<?> register(UserWebModel userWebModel, String request);
+    ResponseEntity<?> register(UserWebModel userWebModel, String request);
 
-	Response verifyExpiration(RefreshToken refreshToken);
+    Response verifyExpiration(RefreshToken refreshToken);
 
-	RefreshToken createRefreshToken(UserWebModel userWebModel);
+    RefreshToken createRefreshToken(UserWebModel userWebModel);
 
-	ResponseEntity<?> verifyUser(UserWebModel userWebModel);
+    ResponseEntity<?> verifyUser(UserWebModel userWebModel);
 
-	ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
+    ResponseEntity<?> forgotPassword(UserWebModel userWebModel, HttpServletRequest request);
 
-	ResponseEntity<?> changingPassword(UserWebModel userWebModel);
+    ResponseEntity<?> changingPassword(UserWebModel userWebModel);
 
-	ResponseEntity<?> resendOtp(UserWebModel userWebModel);
+    ResponseEntity<?> resendOtp(UserWebModel userWebModel);
 
-	ResponseEntity<?> changePassword(UserWebModel userWebModel);
+    ResponseEntity<?> changePassword(UserWebModel userWebModel);
 
-	boolean verify(String code);
+    boolean verify(String code);
 
-	ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel);
+    ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel);
 
-	ResponseEntity<?> verifyForgotOtp(UserWebModel userWebModel);
+    ResponseEntity<?> verifyForgotOtp(UserWebModel userWebModel);
 
-	ResponseEntity<?> emailNotification(UserWebModel userWebModel, String request);
+    ResponseEntity<?> emailNotification(UserWebModel userWebModel, String request);
 
-	ResponseEntity<?> addSecondaryMobileNo(UserWebModel userWebModel);
+    ResponseEntity<?> addSecondaryMobileNo(UserWebModel userWebModel);
 
-	ResponseEntity<?> otpSendEmail(UserWebModel userWebModel);
+    ResponseEntity<?> otpSendEmail(UserWebModel userWebModel);
 
-	ResponseEntity<?> verifyMobileOtp(UserWebModel userWebModel);
+    ResponseEntity<?> verifyMobileOtp(UserWebModel userWebModel);
 
-	ResponseEntity<?> verifyEmail(UserWebModel userWebModel);
+    ResponseEntity<?> verifyEmail(UserWebModel userWebModel);
 
-	ResponseEntity<?> addSecondaryEmail(UserWebModel userWebModel);
+    ResponseEntity<?> addSecondaryEmail(UserWebModel userWebModel);
 
-	ResponseEntity<?> verifyOldEmailOtps(UserWebModel userWebModel);
+    ResponseEntity<?> verifyOldEmailOtps(UserWebModel userWebModel);
 
-	ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel);
+    ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel);
 
-	ResponseEntity<?> getSeconadryEmailId(UserWebModel userWebModel);
+    ResponseEntity<?> getSeconadryEmailId(UserWebModel userWebModel);
 
-	
 
-	// ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
-	// HttpServletRequest request);
+    // ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
+    // HttpServletRequest request);
 
 }

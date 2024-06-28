@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -28,7 +29,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
@@ -36,7 +36,6 @@ import com.annular.filmhook.repository.RefreshTokenRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.util.CalendarUtil;
-import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.configuration.TwilioConfig;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -78,8 +77,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setPhoneNumber(userWebModel.getPhoneNumber());
 
                 StringBuilder name = new StringBuilder();
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName())) name.append(userWebModel.getFirstName()).append(" ");
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName())) name.append(userWebModel.getMiddleName()).append(" ");
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName()))
+                    name.append(userWebModel.getFirstName()).append(" ");
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName()))
+                    name.append(userWebModel.getMiddleName()).append(" ");
                 if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) name.append(userWebModel.getLastName());
                 user.setName(name.toString());
 
@@ -122,7 +123,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 response.put("userDetails", user);
                 // response.put("verificationCode", user.getVerificationCode());
             } else {
-                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new Response(1, "This Account already exists", ""));
+                return ResponseEntity.unprocessableEntity().body(new Response(1, "This Account already exists", ""));
             }
             logger.info("Register method end");
         } catch (Exception e) {
@@ -193,39 +194,38 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public Response verifyExpiration(RefreshToken token) {
-//		LocalTime currentTime = LocalTime.now();
-//		if (currentTime.isBefore(token.getExpiryToken())) {
-//			return new Response(1, "Success", token.getToken());
-//		} else {
-//			refreshTokenRepository.delete(token);
-//			throw new RuntimeException(token.getToken() + " RefreshToken was expired. Please make a new signIn request");
-// 		}
+//        LocalTime currentTime = LocalTime.now();
+//        if (currentTime.isBefore(token.getExpiryToken())) {
+//            return new Response(1, "Success", token.getToken());
+//        } else {
+//            refreshTokenRepository.delete(token);
+//            throw new RuntimeException(token.getToken() + " RefreshToken was expired. Please make a new signIn request");
+//        }
         return new Response(-1, "RefreshToken expired", "");
     }
 
     @Override
     public RefreshToken createRefreshToken(UserWebModel userWebModel) {
-        HashMap<String, Object> response = new HashMap<>();
-        RefreshToken refreshToken = new RefreshToken();
         try {
             logger.info("createRefreshToken method start");
-            Optional<User> data = userRepository.findByEmailAndUserType(userWebModel.getEmail());
-//			if (data.isPresent()) {
-//				Optional<RefreshToken> refreshTokenData = refreshTokenRepository.findByUserId(data.get().getUserId());
-//				if (refreshTokenData.isPresent()) {
-//					refreshTokenRepository.delete(refreshTokenData.get());
-//				}
-            refreshToken.setUserId(data.map(User::getUserId).orElse(null));
-            refreshToken.setToken(UUID.randomUUID().toString());
-            // refreashToken.setExpiryToken(LocalTime.now().plusMinutes(45));
-            refreshToken = refreshTokenRepository.save(refreshToken);
-            response.put("refreashToken", refreshToken);
-            logger.info("createRefreshToken method end");
-            // }
+            Optional<User> data = userRepository.findByEmail(userWebModel.getEmail());
+//            if (data.isPresent()) {
+//                Optional<RefreshToken> refreshTokenData = refreshTokenRepository.findByUserId(data.get().getUserId());
+//                refreshTokenData.ifPresent(token -> refreshTokenRepository.delete(token));
+
+                RefreshToken refreshToken = RefreshToken.builder().build();
+                refreshToken.setUserId(data.map(User::getUserId).orElse(null));
+                refreshToken.setToken(UUID.randomUUID().toString());
+//                refreshToken.setExpiryToken(LocalTime.now().plusMinutes(45));
+                refreshToken = refreshTokenRepository.save(refreshToken);
+
+                logger.info("createRefreshToken method end");
+                return refreshToken;
+//            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return refreshToken;
+        return null;
     }
 
     @Override
@@ -239,7 +239,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 // user.setOtp(null);
                 userRepository.save(user);
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(1, "OTP Invalid", ""));
+                return ResponseEntity.badRequest().body(new Response(1, "OTP Invalid", ""));
             }
             logger.info("verifyUser method end");
         } catch (Exception e) {
@@ -320,7 +320,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     return ResponseEntity.badRequest().body(new Response(0, "Incorrect current password.", ""));
                 }
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "User not found.", ""));
+                return ResponseEntity.ok().body(new Response(-1, "User not found.", ""));
             }
         } catch (Exception e) {
             logger.error("Error occurred while changing password :- {}", e.getMessage());
@@ -341,18 +341,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 int otpNumber = (int) (Math.random() * (max - min + 1) + min);
                 user.setOtp(otpNumber);
                 user = userRepository.save(user);
-                /*
-                 * CompletableFuture.runAsync(() -> { String message = "Your OTP is " +
-                 * otpNumber + " for verification";
-                 * twilioConfig.smsNotification(userWebModel.getName(), message); });
-                 */
+//                CompletableFuture.runAsync(() -> {
+//                    String message = "Your OTP is " + otpNumber + " for verification";
+//                    twilioConfig.smsNotification(userWebModel.getName(), message);
+//                });
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Fail", "User not found, Register your account"));
+                return ResponseEntity.ok().body(new Response(-1, "Fail", "User not found, Register your account"));
             }
             logger.info("resendOtp method end");
         } catch (Exception e) {
-            e.printStackTrace();
             logger.error("resendOtp Method Exception {} ", e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
         }
         return ResponseEntity.ok().body(new Response(1, "Success", "OTP sent successfully"));
@@ -363,7 +362,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             logger.info("changePassword method start");
             BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
- //			Optional<User> data = userRepository.findByResetPassword(userDetails.userInfo().getId());
             Optional<User> data = userRepository.findByResetPasswords(userWebModel.getForgotOtp());
             if (data.isPresent()) {
                 User user = data.get();
@@ -372,12 +370,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setResetPassword(null);
                 user = userRepository.save(user);
             } else {
-                return ResponseEntity.status(org.springframework.http.HttpStatus.BAD_REQUEST).body(new Response(-1, "Link Expired", ""));
+                return ResponseEntity.badRequest().body(new Response(-1, "Link Expired", ""));
             }
             logger.info("changePassword method end");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
         }
         return ResponseEntity.ok().body(new Response(1, "Your password has been changed. Please login with new password.", "Password changed SuccessFully"));
     }
@@ -426,7 +424,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             for (User user : userList) {
                 if (user.getForgotOtp() != null && user.getForgotOtp().equals(userWebModel.getForgotOtp())) {
                     // Update the user if forgotOtp is verified
-					// user.setForgotOtp(null); // Clear the forgotOtp after verification
+                    // user.setForgotOtp(null); // Clear the forgotOtp after verification
                     userRepository.save(user);
                     found = true; // Set the flag to true indicating user found
                     break; // Exit the loop as soon as the user is found
@@ -454,10 +452,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             boolean sendVerificationRes = this.sendVerificationEmail(user);
-            if (sendVerificationRes) return ResponseEntity.ok().body(new Response(1, "Mail sent successfully", "success"));
-            else return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
+            if (sendVerificationRes)
+                return ResponseEntity.ok().body(new Response(1, "Mail sent successfully", "success"));
+            else
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "User not found", "error"));
+            return ResponseEntity.ok().body(new Response(-1, "User not found", "error"));
         }
     }
 
@@ -465,7 +465,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<?> addSecondaryMobileNo(UserWebModel userWebModel) {
         try {
             User user = userRepository.findById(userWebModel.getUserId()).orElse(null);
-            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            if (user == null) return ResponseEntity.ok().body("User not found");
 
             String newPhoneNumber = userWebModel.getPhoneNumber();
 
@@ -480,7 +480,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 String message = "Your OTP is " + otp + " for verification";
                 twilioConfig.smsNotification(user.getPhoneNumber(), message);
             });
-            //// Prepare response
+            // Prepare response
             Map<String, Object> response = new HashMap<>();
             response.put("message", "OTP sent to new phone number.");
             response.put("newMobile", newPhoneNumber);
@@ -495,7 +495,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<?> otpSendEmail(UserWebModel userWebModel) {
         try {
             User user = userRepository.findById(userWebModel.getUserId()).orElse(null);
-            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            if (user == null) return ResponseEntity.ok().body("User not found");
 
             String newPhoneNumber = userWebModel.getPhoneNumber();
 
@@ -534,14 +534,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<?> verifyMobileOtp(UserWebModel userWebModel) {
         try {
             User user = userRepository.findById(userWebModel.getUserId()).orElse(null);
-            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            if (user == null) return ResponseEntity.ok().body("User not found");
 
             String newPhoneNumber = userWebModel.getPhoneNumber();
             int providedOtp = userWebModel.getOtp();
 
             // Verify if the provided OTP matches the stored OTP
             if (user.getOtp() != providedOtp) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid OTP");
+                return ResponseEntity.badRequest().body("Invalid OTP");
             }
 
             // Update the user's phone number
@@ -564,14 +564,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<?> verifyEmail(UserWebModel userWebModel) {
         try {
             User user = userRepository.findById(userWebModel.getUserId()).orElse(null);
-            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            if (user == null) return ResponseEntity.ok().body("User not found");
 
             String newPhoneNumber = userWebModel.getPhoneNumber();
             int providedOtp = userWebModel.getEmailOtp();
 
             // Verify if the provided OTP matches the stored OTP
             if (user.getEmailOtp() != providedOtp) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid OTP");
+                return ResponseEntity.badRequest().body("Invalid OTP");
             }
 
             // Update the user's phone number
@@ -590,19 +590,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-	@Override
-	public ResponseEntity<?> addSecondaryEmail(UserWebModel userWebModel) {
-		try {
-	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-	        if (!userOptional.isPresent()) {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-	        }
+    @Override
+    public ResponseEntity<?> addSecondaryEmail(UserWebModel userWebModel) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+            if (!userOptional.isPresent()) {
+                return ResponseEntity.ok().body("User not found");
+            }
 
-	        User user = userOptional.get();
-	        String newEmail = userWebModel.getSecondaryEmail();
-	        user.setSecondaryEmail(newEmail);
+            User user = userOptional.get();
+            String newEmail = userWebModel.getSecondaryEmail();
+            user.setSecondaryEmail(newEmail);
             userRepository.save(user);
-	     // Generate OTP
+            // Generate OTP
             int otp = Integer.parseInt(this.generateOtp(4));
             user.setEmailOtp(otp);
             userRepository.save(user);
@@ -612,14 +612,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (!sendVerificationRes) {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
             }
-            
-         // Generate OTP
+
+            // Generate OTP
             int otps = Integer.parseInt(this.generateOtp(4));
             user.setSecondaryemailOtp(otps);
             userRepository.save(user);
-	          
-            
-            
+
+
             //send verification secondaryEmail
             boolean sendVerificationRess = this.sendVerificationSecondaryEmail(user);
             if (!sendVerificationRess) {
@@ -632,15 +631,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             response.put("oldEmailMessage", "OTP has been sent to " + user.getEmail());
 
             return ResponseEntity.ok(response);
-	       
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body("Error verifying email: " + e.getMessage());
-	    }
-		
 
-	}
-	public boolean sendVerificationSecondaryEmail(User user) {
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error verifying email: " + e.getMessage());
+        }
+    }
+
+    public boolean sendVerificationSecondaryEmail(User user) {
         boolean response = false;
         try {
             if (user.getEmail() == null) {
@@ -669,92 +666,88 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return response;
     }
 
-	@Override
-	public ResponseEntity<?> verifyOldEmailOtps(UserWebModel userWebModel) {
-	    try {
-	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-	        if (!userOptional.isPresent()) {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-	        }
+    @Override
+    public ResponseEntity<?> verifyOldEmailOtps(UserWebModel userWebModel) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+            if (!userOptional.isPresent()) {
+                return ResponseEntity.ok().body("User not found");
+            }
 
-	        User user = userOptional.get();
-	        int providedOtp = userWebModel.getEmailOtp();
+            User user = userOptional.get();
+            int providedOtp = userWebModel.getEmailOtp();
 
-	        // Verify the OTP
-	        if (user.getEmailOtp() == providedOtp) {
-	            // OTP matches
-	            return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
-	        } else {
-	            // OTP does not match, clear secondary email and OTP fields
-	            user.setSecondaryEmail(null);
-	            user.setSecondaryemailOtp(0);
-	            userRepository.save(user);
+            // Verify the OTP
+            if (user.getEmailOtp() == providedOtp) {
+                // OTP matches
+                return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
+            } else {
+                // OTP does not match, clear secondary email and OTP fields
+                user.setSecondaryEmail(null);
+                user.setSecondaryemailOtp(0);
+                userRepository.save(user);
 
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
-	        }
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body("Error verifying email OTP: " + e.getMessage());
-	    }
-	}
+                return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error verifying email OTP: " + e.getMessage());
+        }
+    }
 
-	@Override
-	public ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel) {
-	    try {
-	        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-	        if (!userOptional.isPresent()) {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-	        }
+    @Override
+    public ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+            if (!userOptional.isPresent()) {
+                return ResponseEntity.ok().body("User not found");
+            }
 
-	        User user = userOptional.get();
-	        int providedOtp = userWebModel.getSecondaryemailOtp();
+            User user = userOptional.get();
+            int providedOtp = userWebModel.getSecondaryemailOtp();
 
-	        // Verify the OTP
-	        if (user.getSecondaryemailOtp() == providedOtp) {
-	            // OTP matches, mark the secondary email as verified
-	            user.setVerified(true);
-	            userRepository.save(user);
+            // Verify the OTP
+            if (user.getSecondaryemailOtp() == providedOtp) {
+                // OTP matches, mark the secondary email as verified
+                user.setVerified(true);
+                userRepository.save(user);
 
-	            return ResponseEntity.ok(new Response(1, "Secondary email verified successfully", "success"));
-	        } else {
-	            // OTP does not match
-	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(-1, "Invalid OTP", "error"));
-	        }
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body("Error verifying secondary email OTP: " + e.getMessage());
-	    }
-	}
+                return ResponseEntity.ok(new Response(1, "Secondary email verified successfully", "success"));
+            } else {
+                // OTP does not match
+                return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP", "error"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error verifying secondary email OTP: " + e.getMessage());
+        }
+    }
 
-	@Override
-	public ResponseEntity<?> getSeconadryEmailId(UserWebModel userWebModel) {
-		    try {
-		        Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-		        if (userOptional.isPresent()) {
-		            User user = userOptional.get();
+    @Override
+    public ResponseEntity<?> getSeconadryEmailId(UserWebModel userWebModel) {
+        try {
+            Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
 
-		            // Check if the secondary email is verified
-		            if (user.getVerified() == true) {
-		                // Return the secondary email if it is verified
-		                Map<String, Object> response = new HashMap<>();
-		                response.put("status", 1);
-		                response.put("secondaryEmail", user.getSecondaryEmail());
-		                response.put("message", "Secondary email retrieved successfully");
-		                return ResponseEntity.ok(response);
-		            } else {
-		                // Return a message indicating the secondary email is not verified
-		                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Secondary email is not verified");
-		            }
-		        } else {
-		            // Return a message indicating the user is not found
-		            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-		        }
-		    } catch (Exception e) {
-		        // Handle any exceptions and return an internal server error message
-		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-		                .body("Error retrieving secondary email: " + e.getMessage());
-		    }
-		}
-
+                // Check if the secondary email is verified
+                if (user.getVerified() == true) {
+                    // Return the secondary email if it is verified
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("status", 1);
+                    response.put("secondaryEmail", user.getSecondaryEmail());
+                    response.put("message", "Secondary email retrieved successfully");
+                    return ResponseEntity.ok(response);
+                } else {
+                    // Return a message indicating the secondary email is not verified
+                    return ResponseEntity.badRequest().body("Secondary email is not verified");
+                }
+            } else {
+                // Return a message indicating the user is not found
+                return ResponseEntity.ok().body("User not found");
+            }
+        } catch (Exception e) {
+            // Handle any exceptions and return an internal server error message
+            return ResponseEntity.internalServerError().body("Error retrieving secondary email: " + e.getMessage());
+        }
+    }
 
 }

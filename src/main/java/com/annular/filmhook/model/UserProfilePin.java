@@ -28,34 +28,32 @@ import lombok.ToString;
 @NoArgsConstructor
 public class UserProfilePin {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	private Integer userProfilePinId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer userProfilePinId;
 
-	@Column(name = "user_id")
-	private Integer userId;
+    @Column(name = "user_id")
+    private Integer userId;
 
+    @Column(name = "pin_profile_id")
+    private Integer pinProfileId;
 
-	
-	@Column(name = "pin_profile_id")
-	private Integer pinProfileId;
+    @Column(name = "status")
+    private boolean status;
 
-	@Column(name = "status")
-	private boolean status;
+    @Column(name = "created_by")
+    private Integer createdBy;
 
-	@Column(name = "created_by")
-	private Integer createdBy;
+    @CreationTimestamp
+    @Column(name = "created_on")
+    private Date createdOn;
 
-	@CreationTimestamp
-	@Column(name = "created_on")
-	private Date createdOn;
+    @Column(name = "updated_by")
+    private Integer updatedBy;
 
-	@Column(name = "updated_by")
-	private Integer updatedBy;
-
-	@CreationTimestamp
-	@Column(name = "updated_on")
-	private Date updatedOn;
+    @CreationTimestamp
+    @Column(name = "updated_on")
+    private Date updatedOn;
 
 }

@@ -14,16 +14,16 @@ import com.annular.filmhook.model.FilmProfessionDetails;
 @Repository
 public interface FilmProfessionDetailRepository extends JpaRepository<FilmProfessionDetails, Integer> {
 
-	List<FilmProfessionDetails> findByProfessionTemporaryDetailId(Integer itId);
+    List<FilmProfessionDetails> findByProfessionTemporaryDetailId(Integer itId);
 
-	@Transactional
+    @Transactional
     @Modifying
     @Query("DELETE FROM FilmProfessionDetails pd WHERE pd.professionTemporaryDetailId = :temporaryId")
-	void deleteByProfessionTemporaryDetailId(Integer temporaryId);
+    void deleteByProfessionTemporaryDetailId(Integer temporaryId);
 
-	@Transactional
-	@Modifying
-	@Query("DELETE FROM FilmProfessionDetails i WHERE i.userId = :userId")
-	void deleteByUserId(Integer userId);
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM FilmProfessionDetails i WHERE i.userId = :userId")
+    void deleteByUserId(Integer userId);
 
 }

@@ -29,10 +29,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Block {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "block_id")
+    @Column(name = "block_id")
     private Integer blockId;
 
     @ManyToOne
@@ -47,7 +47,7 @@ public class Block {
 
     @Column(name = "block_status")
     private String blockStatus;
-    
+
     @Column(name = "status")
     private Boolean status;
 
@@ -64,6 +64,5 @@ public class Block {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-
 
 }

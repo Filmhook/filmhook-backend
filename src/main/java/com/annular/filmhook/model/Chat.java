@@ -27,6 +27,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Chat {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "chat_id")
@@ -67,6 +68,5 @@ public class Chat {
 
     @Column(name = "user_account_name")
     private String userAccountName;
-
 
 }

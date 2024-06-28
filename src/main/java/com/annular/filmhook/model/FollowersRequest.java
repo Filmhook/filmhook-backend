@@ -28,38 +28,38 @@ import lombok.ToString;
 @NoArgsConstructor
 public class FollowersRequest {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "followers_request_id")
-	private Integer followersRequestId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "followers_request_id")
+    private Integer followersRequestId;
 
-	@Column(name = "followers_request_senderId")
-	private Integer followersRequestSenderId; // user table userId
+    @Column(name = "followers_request_senderId")
+    private Integer followersRequestSenderId; // user table userId
 
-	@Column(name = "followers_request_receiver_id")
-	private Integer followersRequestReceiverId; // user table userId
+    @Column(name = "followers_request_receiver_id")
+    private Integer followersRequestReceiverId; // user table userId
 
-	@Column(name = "followers_request_status")
-	private String followersRequestStatus;
+    @Column(name = "followers_request_status")
+    private String followersRequestStatus;
 
-	@Column(name = "followers_request_is_active")
-	private Boolean followersRequestIsActive;
+    @Column(name = "followers_request_is_active")
+    private Boolean followersRequestIsActive;
 
-	@Column(name = "followers_request_created_by")
-	private Integer followersRequestCreatedBy;
+    @Column(name = "followers_request_created_by")
+    private Integer followersRequestCreatedBy;
 
-	@Column(name = "followers_request_updated_by")
-	private Integer followersRequestUpdatedBy;
+    @Column(name = "followers_request_updated_by")
+    private Integer followersRequestUpdatedBy;
 
-	@CreationTimestamp
-	@Column(name = "followers_request_created_on")
-	private Date followersRequestCreatedOn;
+    @CreationTimestamp
+    @Column(name = "followers_request_created_on")
+    private Date followersRequestCreatedOn;
 
-	@CreationTimestamp
-	@Column(name = "followers_request_updated_on")
-	private Date followersRequestUpdatedOn;
+    @CreationTimestamp
+    @Column(name = "followers_request_updated_on")
+    private Date followersRequestUpdatedOn;
 
-	@Column(name = "user_type")
-	private String userType;
+    @Column(name = "user_type")
+    private String userType;
 
 }

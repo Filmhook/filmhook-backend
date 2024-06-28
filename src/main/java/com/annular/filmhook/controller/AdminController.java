@@ -31,10 +31,9 @@ public class AdminController {
 	@PostMapping("adminRegister")
 	public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
 		try {
-			logger.info("User :- " + userWebModel);
 			return adminService.userRegister(userWebModel);
 		} catch (Exception e) {
-			logger.error("userRegister Method Exception...", e);
+			logger.error("userRegister Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -43,10 +42,9 @@ public class AdminController {
 	@PostMapping("updateRegister")
 	public ResponseEntity<?> updateRegister(@RequestBody UserWebModel userWebModel) {
 		try {
-			logger.info("User :- " + userWebModel);
 			return adminService.updateRegister(userWebModel);
 		} catch (Exception e) {
-			logger.error("updateRegister Method Exception...", e);
+			logger.error("updateRegister Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -55,10 +53,9 @@ public class AdminController {
 	@PostMapping("deleteRegister")
 	public ResponseEntity<?> deleteRegister(@RequestBody UserWebModel userWebModel) {
 		try {
-			logger.info("User :- " + userWebModel);
 			return adminService.deleteRegister(userWebModel);
 		} catch (Exception e) {
-			logger.error("deleteRegister Method Exception...", e);
+			logger.error("deleteRegister Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -67,10 +64,9 @@ public class AdminController {
 	@PostMapping("getRegister")
 	public ResponseEntity<?> getRegister(@RequestBody UserWebModel userWebModel) {
 		try {
-			logger.info("User :- " + userWebModel);
 			return adminService.getRegister(userWebModel);
 		} catch (Exception e) {
-			logger.error("getRegister Method Exception...", e);
+			logger.error("getRegister Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -79,10 +75,9 @@ public class AdminController {
 	@PostMapping("adminPageStatus")
 	public ResponseEntity<?> adminPageStatus(@RequestBody UserWebModel userWebModel) {
 		try {
-			logger.info("User :- " + userWebModel);
 			return adminService.adminPageStatus(userWebModel);
 		} catch (Exception e) {
-			logger.error("adminPageStatus Method Exception...", e);
+			logger.error("adminPageStatus Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -94,7 +89,7 @@ public class AdminController {
 			logger.info("getAllUnverifiedIndustrialUsers controller start");
 			return adminService.getAllUnverifiedIndustrialUsers(userWebModel);
 		} catch (Exception e) {
-			logger.info("getAllUnverifiedIndustrialUsers Method Exception" + e);
+			logger.error("getAllUnverifiedIndustrialUsers Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return new Response(-1, "Success", "");
@@ -107,7 +102,7 @@ public class AdminController {
             logger.info("getAdminIndustryUserPermanentDetails controller start");
             return adminService.getIndustryUserPermanentDetails(userWebModel);
         } catch (Exception e) {
-            logger.error("getIndustryUserPermanentDetails Method Exception -> ", e);
+            logger.error("getIndustryUserPermanentDetails Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -119,7 +114,7 @@ public class AdminController {
 			logger.info("changeStatusUnverifiedIndustrialUsers controller start");
 			return adminService.changeStatusUnverifiedIndustrialUsers(userWebModel);
 		} catch (Exception e) {
-			logger.info("changeStatusUnverifiedIndustrialUsers Method Exception" + e);
+			logger.error("changeStatusUnverifiedIndustrialUsers Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return new Response(-1, "Success", "");

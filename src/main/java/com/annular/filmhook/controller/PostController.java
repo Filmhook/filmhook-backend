@@ -157,12 +157,14 @@ public class PostController {
     }
 
     @GetMapping("/getAllUsersPosts")
-    public Response getAllUsersPosts(@RequestParam("pageNo")Integer pageNo,@RequestParam("pageSize")Integer pageSize) {
+    public Response getAllUsersPosts(@RequestParam("pageNo") Integer pageNo, @RequestParam("pageSize") Integer pageSize) {
         try {
-             List<PostWebModel> postWebModelList = postService.getAllUsersPosts(pageNo,pageSize);
+            List<PostWebModel> postWebModelList = postService.getAllUsersPosts(pageNo, pageSize);
             if (!Utility.isNullOrEmptyList(postWebModelList)) return new Response(1, "Success", postWebModelList);
         } catch (Exception e) {
             logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error at getting user posts....", e.getMessage());
         }
         return new Response(-1, "Files were not found....", null);
     }

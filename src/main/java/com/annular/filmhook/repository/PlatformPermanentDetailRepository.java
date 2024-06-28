@@ -14,26 +14,26 @@ import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.model.PlatformPermanentDetail;
 
 @Repository
-public interface PlatformPermanentDetailRepository extends JpaRepository<PlatformPermanentDetail, Integer>{
+public interface PlatformPermanentDetailRepository extends JpaRepository<PlatformPermanentDetail, Integer> {
 
-	@Query("SELECT i FROM Platform i WHERE i.platformName = :platformName")
-	Optional<Platform> findByPlatformName(String platformName);
+    @Query("SELECT i FROM Platform i WHERE i.platformName = :platformName")
+    Optional<Platform> findByPlatformName(String platformName);
 
-	@Modifying
-	@Transactional
-	@Query("select ppd.ppdPlatformId from PlatformPermanentDetail ppd where ppd.industryUserPermanentDetails.iupdId =:iupdId")
-	List<Integer> findByiupdId(Integer iupdId);
+    @Modifying
+    @Transactional
+    @Query("select ppd.ppdPlatformId from PlatformPermanentDetail ppd where ppd.industryUserPermanentDetails.iupdId =:iupdId")
+    List<Integer> findByiupdId(Integer iupdId);
 
-	@Query("select p from PlatformPermanentDetail p where p.userId = :userId")
-	List<PlatformPermanentDetail> findByUserId(Integer userId);
+    @Query("select p from PlatformPermanentDetail p where p.userId = :userId")
+    List<PlatformPermanentDetail> findByUserId(Integer userId);
 
-	@Transactional
+    @Transactional
     @Query("DELETE FROM PlatformPermanentDetail p WHERE p.industryUserPermanentDetails.id = :iupdId")
-	void deleteByIndustryUserPermanentDetailsId(Integer iupdId);
+    void deleteByIndustryUserPermanentDetailsId(Integer iupdId);
 
-	@Query("Select p From PlatformPermanentDetail p Where p.platform = :platformId")
+    @Query("Select p From PlatformPermanentDetail p Where p.platform = :platformId")
     List<PlatformPermanentDetail> getDataByPlatformId(Platform platformId);
 
-	@Query("Select distinct(p.userId) From PlatformPermanentDetail p Where p.platform = :platformId")
-	List<Integer> getUsersByPlatformId(Platform platformId);
+    @Query("Select distinct(p.userId) From PlatformPermanentDetail p Where p.platform = :platformId")
+    List<Integer> getUsersByPlatformId(Platform platformId);
 }

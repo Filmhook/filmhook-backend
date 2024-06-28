@@ -6,8 +6,8 @@ import com.annular.filmhook.webmodel.FilmWebModel;
 
 public interface FilmProfessionService {
 
-	ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel);
+    ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel);
 
-	ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel);
+    ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel);
 
 }

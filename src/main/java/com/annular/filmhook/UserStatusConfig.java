@@ -1,6 +1,12 @@
 package com.annular.filmhook;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 import org.springframework.stereotype.Component;
 
 @Component
@@ -11,7 +17,8 @@ import org.springframework.stereotype.Component;
 @Setter
 @ToString
 public class UserStatusConfig {
-	
-	private String userType;
+
+    private String userType;
+
 }
 

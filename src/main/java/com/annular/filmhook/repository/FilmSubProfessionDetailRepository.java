@@ -13,20 +13,20 @@ import com.annular.filmhook.model.FilmSubProfessionDetails;
 @Repository
 public interface FilmSubProfessionDetailRepository extends JpaRepository<FilmSubProfessionDetails, Integer> {
 
-	List<FilmSubProfessionDetails> findByIndustryTemporaryDetailId(Integer itId);
+    List<FilmSubProfessionDetails> findByIndustryTemporaryDetailId(Integer itId);
 
-	@Transactional
+    @Transactional
     @Modifying
     @Query("DELETE FROM FilmSubProfessionDetails spd WHERE spd.industryTemporaryDetailId = :temporaryId")
-	void deleteByIndustryTemporaryDetailId(Integer temporaryId);
-	
-	@Query("SELECT spd FROM FilmSubProfessionDetails spd WHERE spd.industryTemporaryDetailId = :itId ")
-	List<FilmSubProfessionDetails> findByIndustryTemporaryDetailIdAndProfessionName(Integer itId);
+    void deleteByIndustryTemporaryDetailId(Integer temporaryId);
 
-	@Transactional
-	@Modifying
-	@Query("DELETE FROM FilmSubProfessionDetails i WHERE i.userId = :userId")
-	void deleteByUserId(Integer userId);
+    @Query("SELECT spd FROM FilmSubProfessionDetails spd WHERE spd.industryTemporaryDetailId = :itId ")
+    List<FilmSubProfessionDetails> findByIndustryTemporaryDetailIdAndProfessionName(Integer itId);
 
-	
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM FilmSubProfessionDetails i WHERE i.userId = :userId")
+    void deleteByUserId(Integer userId);
+
+
 }

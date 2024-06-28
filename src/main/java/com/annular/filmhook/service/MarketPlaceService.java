@@ -9,17 +9,17 @@ import java.util.List;
 
 public interface MarketPlaceService {
 
-	ResponseEntity<?> saveMarketPlace(MarketPlaceWebModel marketPlaceWebModel);
+    ResponseEntity<?> saveMarketPlace(MarketPlaceWebModel marketPlaceWebModel);
 
-	ResponseEntity<?> getMarketPlaceByRentalOrSale(Boolean rentalOrsale);
+    ResponseEntity<?> getMarketPlaceByRentalOrSale(Boolean rentalOrsale);
 
-	ResponseEntity<?> saveShootingLocation(ShootingLocationWebModel shootingLocationWebModel);
+    ResponseEntity<?> saveShootingLocation(ShootingLocationWebModel shootingLocationWebModel);
 
-	ResponseEntity<?> getShootingLocation();
+    ResponseEntity<?> getShootingLocation();
 
-	List<MarketPlaceWebModel> getUserMarketPlaces(Integer userId);
+    List<MarketPlaceWebModel> getUserMarketPlaces(Integer userId);
 
-	ResponseEntity<?> getSearchMarketPlace(String searchKey);
+    ResponseEntity<?> getSearchMarketPlace(String searchKey);
 
-	ResponseEntity<?> getSearchShootingLocation(String searchKey);
+    ResponseEntity<?> getSearchShootingLocation(String searchKey);
 }

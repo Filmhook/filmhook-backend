@@ -6,18 +6,17 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
-import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.StoryRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.StoriesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
-import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
 
 import com.annular.filmhook.webmodel.UserWebModel;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +29,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Optional;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.UUID;
+import java.util.Date;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,19 +52,13 @@ public class StoriesServiceImpl implements StoriesService {
 
     @Autowired
     MediaFilesService mediaFilesService;
-    
-    @Autowired
-    MediaFilesRepository mediaFilesRepository;
 
     @Autowired
     UserService userService;
-    
+
     @Autowired
     FilmProfessionPermanentDetailRepository professionPermanentDetailsRepository;
     
-    @Autowired
-    S3Util s3Util;
-
     @Override
     public StoriesWebModel uploadStory(StoriesWebModel inputData) {
         try {
@@ -78,7 +78,7 @@ public class StoriesServiceImpl implements StoriesService {
                 return null;
             }
         } catch (Exception e) {
-            logger.error("Error at uploadStory()...", e);
+            logger.error("Error at uploadStory() -> {}", e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -109,38 +109,39 @@ public class StoriesServiceImpl implements StoriesService {
 //                storiesWebModelList = storyList.stream().map(this::transformData).collect(Collectors.toList());
 //            }
 //        } catch (Exception e) {
-//            logger.error("Error at getStoryByUserId()...", e);
+//            logger.error("Error at getStoryByUserId() -> {}", e.getMessage());
 //        }
 //        return storiesWebModelList;
 //    }
 
 
-@Override
-public List<StoriesWebModel> getStoryByUserId(Integer userId) {
-    List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
-    try {
-        List<Story> storyList = storyRepository.getStoryByUserId(userId);
-        if (storyList != null && !storyList.isEmpty()) {
-            // Get the current time and the time 24 hours ago
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime twentyFourHoursAgo = now.minusHours(24);
+    @Override
+    public List<StoriesWebModel> getStoryByUserId(Integer userId) {
+        List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
+        try {
+            List<Story> storyList = storyRepository.getStoryByUserId(userId);
+            if (storyList != null && !storyList.isEmpty()) {
+                // Get the current time and the time 24 hours ago
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime twentyFourHoursAgo = now.minusHours(24);
 
-            // Filter stories created within the last 24 hours
-            storiesWebModelList = storyList.stream()
-                .filter(story -> convertToLocalDateTimeViaInstant(story.getCreatedOn()).isAfter(twentyFourHoursAgo))
-                .map(this::transformData)
-                .collect(Collectors.toList());
+                // Filter stories created within the last 24 hours
+                storiesWebModelList = storyList.stream()
+                        .filter(story -> convertToLocalDateTimeViaInstant(story.getCreatedOn()).isAfter(twentyFourHoursAgo))
+                        .map(this::transformData)
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            logger.error("Error at getStoryByUserId() -> {}", e.getMessage());
         }
-    } catch (Exception e) {
-        logger.error("Error at getStoryByUserId()...", e);
+        return storiesWebModelList;
     }
-    return storiesWebModelList;
-}
-private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
-    return Instant.ofEpochMilli(dateToConvert.getTime())
-        .atZone(ZoneId.systemDefault())
-        .toLocalDateTime();
-}
+
+    private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+        return Instant.ofEpochMilli(dateToConvert.getTime())
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+    }
 
     private StoriesWebModel transformData(Story story) {
         StoriesWebModel storiesWebModel = new StoriesWebModel();
@@ -171,7 +172,8 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
                 return new ByteArrayResource(fileUtil.downloadFile(filePath));
             }
         } catch (Exception e) {
-            logger.error("Error at getStoryFile()...", e);
+            logger.error("Error at getStoryFile() -> {}", e.getMessage());
+            e.printStackTrace();
             return null;
         }
         return null;
@@ -183,7 +185,7 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
             storyToUpdate.setStatus(false);
             storyRepository.saveAndFlush(storyToUpdate);
         } catch (Exception e) {
-            logger.error("Exception at deleteStory()... ", e);
+            logger.error("Exception at deleteStory() -> {}", e.getMessage());
             e.printStackTrace();
         }
     }
@@ -213,7 +215,8 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
                 mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(userId, MediaFileCategory.Stories, storyIdsList); // Deactivating the MediaFiles table Records and S3 as well
             }
         } catch (Exception e) {
-            logger.error("Error at deleteStoryByUserId()...", e);
+            logger.error("Error at deleteStoryByUserId() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return storyList;
     }
@@ -243,7 +246,7 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
         }
     }
 
-//    @Override
+    //    @Override
 //    public List<UserIdAndNameWebModel> getUserIdAndName(Integer loginUserId) {
 //        List<Story> storyList = storyRepository.findAll(); // Fetch all stories
 //        
@@ -302,7 +305,7 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
     }
 
     private UserIdAndNameWebModel createUserIdAndNameWebModel(Integer userId, String userName) {
-        String profilePicUrl = this.getProfilePicUrl(userId); // Get profile picture URL
+        String profilePicUrl = userService.getProfilePicUrl(userId); // Get profile picture URL
         List<String> professionNames = getProfessionNames(userId); // Get profession names
         return new UserIdAndNameWebModel(userId, userName, profilePicUrl, professionNames);
     }
@@ -314,20 +317,6 @@ private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
                 .collect(Collectors.toList());
     }
 
-
-
-    private String getProfilePicUrl(Integer userId) {
-        UserWebModel userWebModel = new UserWebModel();
-        userWebModel.setUserId(userId);
-        FileOutputWebModel profilePic = getProfilePic(userWebModel);
-        return profilePic != null ? profilePic.getFilePath() : null;
-    }
-
-    public FileOutputWebModel getProfilePic(UserWebModel userWebModel) {
-        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, userWebModel.getUserId());
-        if (outputWebModelList != null && !outputWebModelList.isEmpty()) return outputWebModelList.get(0);
-        return null;
-    }
 }
 
 

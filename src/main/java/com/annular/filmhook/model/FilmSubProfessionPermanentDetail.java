@@ -1,6 +1,7 @@
 package com.annular.filmhook.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -68,14 +69,14 @@ public class FilmSubProfessionPermanentDetail {
 
     @Column(name = "userId")
     private Integer userId;
-    
-    @Column(name ="starting_year")
+
+    @Column(name = "starting_year")
     private Integer startingYear;
-    
-    @Column(name ="ending_year")
+
+    @Column(name = "ending_year")
     private Integer endingYear;
 
     @Column(name = "status")
     private Boolean status;
-    
+
 }

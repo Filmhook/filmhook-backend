@@ -16,18 +16,18 @@ import com.annular.filmhook.model.IndustryUserPermanentDetails;
 @Repository
 public interface IndustryUserPermanentDetailsRepository extends JpaRepository<IndustryUserPermanentDetails, Integer> {
 
-	@Query("SELECT iupd FROM IndustryUserPermanentDetails iupd WHERE iupd.userId = :userId")
-	Page<IndustryUserPermanentDetails> findByUserId(Integer userId,Pageable paging);
+    @Query("SELECT iupd FROM IndustryUserPermanentDetails iupd WHERE iupd.userId = :userId")
+    Page<IndustryUserPermanentDetails> findByUserId(Integer userId, Pageable paging);
 
-	@Query("SELECT iupd FROM IndustryUserPermanentDetails iupd WHERE iupd.userId = :userId and iupd.industriesName = :industriesName")
-	Optional<IndustryUserPermanentDetails> findByUserIdAndIndustriesName(Integer userId, String industriesName);
+    @Query("SELECT iupd FROM IndustryUserPermanentDetails iupd WHERE iupd.userId = :userId and iupd.industriesName = :industriesName")
+    Optional<IndustryUserPermanentDetails> findByUserIdAndIndustriesName(Integer userId, String industriesName);
 
-	@Query("Select id From IndustryUserPermanentDetails id Where id.industry in (:industryIds) ")
-	List<IndustryUserPermanentDetails> getDataByIndustryIds(List<Industry> industryIds);
+    @Query("Select id From IndustryUserPermanentDetails id Where id.industry in (:industryIds) ")
+    List<IndustryUserPermanentDetails> getDataByIndustryIds(List<Industry> industryIds);
 
-	@Query("Select distinct(id.userId) From IndustryUserPermanentDetails id Where id.industry in (:industryIds) ")
-	List<Integer> getUsersByIndustryIds(List<Industry> industryIds);
+    @Query("Select distinct(id.userId) From IndustryUserPermanentDetails id Where id.industry in (:industryIds) ")
+    List<Integer> getUsersByIndustryIds(List<Industry> industryIds);
 
-	List<IndustryUserPermanentDetails> findByUserId(Integer id);
+    List<IndustryUserPermanentDetails> findByUserId(Integer id);
 
 }

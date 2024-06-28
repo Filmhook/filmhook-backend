@@ -10,8 +10,8 @@ import com.annular.filmhook.model.AuditionRoles;
 @Repository
 public interface AuditionRolesRepository extends JpaRepository<AuditionRoles, Integer> {
 
-	@Modifying
-	@Query("DELETE FROM AuditionRoles ar WHERE ar.audition.auditionId = :auditionId")
-	void deleteByAuditionId(Integer auditionId);
+    @Modifying
+    @Query("DELETE FROM AuditionRoles ar WHERE ar.audition.auditionId = :auditionId")
+    void deleteByAuditionId(Integer auditionId);
 
 }

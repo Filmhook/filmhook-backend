@@ -44,7 +44,7 @@ public class DetailsController {
             logger.info("getDetails controller start");
             return detailService.getDetails(detailRequest);
         } catch (Exception e) {
-            logger.error("getDetails Method Exception -> ", e);
+            logger.error("getDetails Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -56,7 +56,7 @@ public class DetailsController {
             logger.info("addTemporaryDetails controller start");
             return detailService.addTemporaryDetails(industryTemporaryWebModel);
         } catch (Exception e) {
-            logger.error("industryTemporaryWebModel Method Exception -> ", e);
+            logger.error("industryTemporaryWebModel Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -68,7 +68,7 @@ public class DetailsController {
             logger.info("updateTemporaryDetails controller start");
             return detailService.updateTemporaryDetails(industryTemporaryWebModel);
         } catch (Exception e) {
-            logger.error("updateTemporaryDetails Method Exception -> ", e);
+            logger.error("updateTemporaryDetails Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -80,7 +80,7 @@ public class DetailsController {
             logger.info("getTemporaryDetails controller start");
             return detailService.getTemporaryDetails(industryTemporaryWebModel);
         } catch (Exception e) {
-            logger.error("getTemporaryWebModel Method Exception -> ", e);
+            logger.error("getTemporaryWebModel Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -93,7 +93,7 @@ public class DetailsController {
             logger.info("getTemporaryDuplicateDetails controller start");
             return detailService.getTemporaryDuplicateDetails(industryTemporaryWebModel);
         } catch (Exception e) {
-            logger.error("getTemporaryDuplicateDetails Method Exception -> ", e);
+            logger.error("getTemporaryDuplicateDetails Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -106,7 +106,7 @@ public class DetailsController {
             logger.info("addIndustryUserPermanentDetails controller start");
             return detailService.addIndustryUserPermanentDetails(userId, industryUserPermanentDetailWebModels);
         } catch (Exception e) {
-            logger.error("addIndustryUserPermanentDetails Method Exception -> ", e);
+            logger.error("addIndustryUserPermanentDetails Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -120,7 +120,7 @@ public class DetailsController {
             logger.info("updateIndustryUserPermanentDetails controller start");
             return detailService.updateIndustryUserPermanentDetails(userId, industryUserPermanentDetailWebModels);
         } catch (Exception e) {
-            logger.error("updateIndustryUserPermanentDetails Method Exception -> ", e);
+            logger.error("updateIndustryUserPermanentDetails() Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -132,7 +132,7 @@ public class DetailsController {
             logger.info("getIndustryUserPermanentDetails controller start");
             return detailService.getIndustryUserPermanentDetails(userId);
         } catch (Exception e) {
-            logger.error("getIndustryUserPermanentDetails Method Exception -> ", e);
+            logger.error("getIndustryUserPermanentDetails Method Exception -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
@@ -146,6 +146,7 @@ public class DetailsController {
             if (outputFilesList != null && !outputFilesList.isEmpty())
                 return new Response(1, "File(s) saved successfully...", outputFilesList);
         } catch (Exception e) {
+            logger.error("Error at saveIndustryUserFiles() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return new Response(-1, "Error occurred while saving files...", null);
@@ -162,7 +163,8 @@ public class DetailsController {
                 return new Response(-1, "No file(s) available for this user...", null);
             }
         } catch (Exception e) {
-            logger.error("Error at getIndustryFiles()...", e);
+            logger.error("Error at getIndustryFiles() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return new Response(-1, "Files were not found...", null);
     }
@@ -183,7 +185,8 @@ public class DetailsController {
                         .body(resource);
             }
         } catch (Exception e) {
-            logger.error("Error at downloadIndustryFile()...", e);
+            logger.error("Error at downloadIndustryFile() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return ResponseEntity.internalServerError().build();
     }
@@ -203,13 +206,13 @@ public class DetailsController {
     @PostMapping("/updateIndustryUserPermanentDetails")
     public ResponseEntity<?> updateIndustryUserPermanentDetails(@RequestBody PlatformDetailDTO platformDetailDTO) {
         try {
-            logger.info("updateIndustryUserPermanentDetails controller start");
+            logger.info("updateIndustryUserPermanentDetails start");
             return detailService.updateIndustryUserPermanentDetails(platformDetailDTO);
         } catch (Exception e) {
-            logger.error("updateIndustryUserPermanentDetails Method Exception -> ", e);
+            logger.error("updateIndustryUserPermanentDetails Method Exception -> {}", e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
     @PostMapping("/emailSendFilmHookCode")
@@ -218,10 +221,10 @@ public class DetailsController {
             logger.info("emailSendFilmHookCode controller start");
             return detailService.verifyFilmHookCode(userWebModel);
         } catch (Exception e) {
-            logger.error("emailSendFilmHookCode Method Exception -> ", e);
+            logger.error("emailSendFilmHookCode Method Exception -> {}", e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
     @PostMapping("/verifyFilmHookCode")
@@ -230,23 +233,22 @@ public class DetailsController {
             logger.info("verifyFilmHookCode controller start");
             return detailService.verifyFilmHook(userWebModel);
         } catch (Exception e) {
-            logger.error("verifyFilmHookCode Method Exception -> ", e);
+            logger.error("verifyFilmHookCode Method Exception -> {}", e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
-
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
     
     @GetMapping("/getIndustryByuserId")
-    public ResponseEntity<?> getIndustryByuserId(@RequestParam("userId")Integer userId) {
+    public ResponseEntity<?> getIndustryByUserId(@RequestParam("userId")Integer userId) {
         try {
-            logger.info("getIndustryByuserId controller start");
+            logger.info("getIndustryByUserId controller start");
             return detailService.getIndustryByuserId(userId);
         } catch (Exception e) {
-            logger.error("getIndustryByuserId Method Exception -> ", e);
+            logger.error("getIndustryByUserId Method Exception -> {}", e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
-
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+
 }

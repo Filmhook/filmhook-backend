@@ -30,56 +30,56 @@ import lombok.ToString;
 @NoArgsConstructor
 
 public class IndustryMediaFiles {
-	
-        @Id
-		@GeneratedValue(strategy = GenerationType.IDENTITY)
-		@Column(name = "industry_media_id")
-		private Integer industryMediaid;
 
-		@ToString.Exclude
-		@ManyToOne
-		@JoinColumn(name = "user_id")
-		private User user;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "industry_media_id")
+    private Integer industryMediaid;
 
-		@Column(name = "category")
-		private String category;
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
-		@Column(name = "file_id")
-		private String fileId;
+    @Column(name = "category")
+    private String category;
 
-		@Column(name = "file_name")
-		private String fileName;
-		
-		@Column(name = "file_size")
-		private Long fileSize;
+    @Column(name = "file_id")
+    private String fileId;
 
-		@Column(name = "file_type")
-		private String fileType;
+    @Column(name = "file_name")
+    private String fileName;
 
-		@Column(name = "file_path")
-		private String filePath;
+    @Column(name = "file_size")
+    private Long fileSize;
 
-		@Column(name = "expiry_time")
-		private String expiryTime;
+    @Column(name = "file_type")
+    private String fileType;
 
-		@Column(name = "status")
-		private Boolean status;
+    @Column(name = "file_path")
+    private String filePath;
 
-		@Column(name = "created_by")
-		private Integer createdBy;
+    @Column(name = "expiry_time")
+    private String expiryTime;
 
-		@Column(name = "created_on")
-		@CreationTimestamp
-		private Date createdOn;
+    @Column(name = "status")
+    private Boolean status;
 
-		@Column(name = "updated_by")
-		private Integer updatedBy;
+    @Column(name = "created_by")
+    private Integer createdBy;
 
-		@Column(name = "updated_on")
-		@CreationTimestamp
-		private Date updatedOn;
+    @Column(name = "created_on")
+    @CreationTimestamp
+    private Date createdOn;
 
-	}
+    @Column(name = "updated_by")
+    private Integer updatedBy;
+
+    @Column(name = "updated_on")
+    @CreationTimestamp
+    private Date updatedOn;
+
+}
 
 
 

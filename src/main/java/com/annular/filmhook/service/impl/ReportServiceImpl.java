@@ -11,11 +11,11 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -97,9 +97,8 @@ public class ReportServiceImpl implements ReportService {
             return ResponseEntity.ok(new Response(1, "Add ReportPost successfully", response));
         } catch (Exception e) {
             logger.error("Error setting reportPost {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Error setting reportPost", e.getMessage()));
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error setting reportPost", e.getMessage()));
         }
-
     }
 
     @Override
@@ -172,10 +171,8 @@ public class ReportServiceImpl implements ReportService {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error in getAllPostReport: {}", e.getMessage(), e);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Error retrieving post reports");
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
         }
     }
 
@@ -185,12 +182,13 @@ public class ReportServiceImpl implements ReportService {
             Optional<ReportPost> optionalReportPost = reportRepository.findById(reportPostWebModel.getReportPostId());
             if (optionalReportPost.isPresent()) {
                 ReportPost reportPost = optionalReportPost.get();
-                return new ResponseEntity<>(reportPost, HttpStatus.OK);
+                return ResponseEntity.ok(reportPost);
             } else {
-                return new ResponseEntity<>("Report with ID " + reportPostWebModel.getReportPostId() + " not found", HttpStatus.NOT_FOUND);
+                return ResponseEntity.ok().body(new Response(-1, "Report with ID " + reportPostWebModel.getReportPostId() + " not found", ""));
             }
         } catch (Exception e) {
-            return new ResponseEntity<>("Error fetching post report: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
         }
 
     }
@@ -308,14 +306,11 @@ public class ReportServiceImpl implements ReportService {
 
             response.put("pageDetails", pageDetails);
             response.put("combinedDetailsList", combinedDetailsList);
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Error in getAllPostReport: {}", e.getMessage(), e);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Error retrieving post reports");
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            logger.error("Error in getAllPostReport: {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
         }
     }
 
@@ -374,11 +369,9 @@ public class ReportServiceImpl implements ReportService {
             response.put("combinedDetailsList", combinedDetailsList);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Error in getReportsByUserId: {}", e.getMessage(), e);
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Error retrieving post reports");
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            logger.error("Error in getReportsByUserId: {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
         }
     }
 }

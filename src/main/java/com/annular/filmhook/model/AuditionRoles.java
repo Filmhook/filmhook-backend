@@ -32,37 +32,38 @@ import lombok.ToString;
 @NoArgsConstructor
 public class AuditionRoles {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "audition_role_id")
-	private Integer auditionRoleId;
-	
-	//@Column(name = "audition_role_desc")
-	@Column(name = "audition_role_desc", length = 1000)
-	private String auditionRoleDesc;
-	
-//	@Column (name = "audition_reference_Id")
-//	private Integer auditionReferenceId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "audition_role_id")
+    private Integer auditionRoleId;
+
+    //@Column(name = "audition_role_desc")
+    @Column(name = "audition_role_desc", length = 1000)
+    private String auditionRoleDesc;
+
+    //	@Column (name = "audition_reference_Id")
+	//	private Integer auditionReferenceId;
+
 	@JsonBackReference
-	@ManyToOne
+    @ManyToOne
     @JoinColumn(name = "audition_id", nullable = false)
     private Audition audition;
-	
-	@Column(name = "audition_role_isactive")
-	private boolean auditionRoleIsactive;
-	
-	@Column(name = "audition_role_created_by")
-	private Integer auditionRoleCreatedBy;
-	
-	@Column(name = "audition_role_createdon")
-	@CreationTimestamp
-	private Date auditionRoleCreatedOn;
-	
-	@Column(name = "audition_role_updated_by")
-	private Integer auditionRoleUpdatedBy;
-	
-	@Column(name = "audition_role_updatedon")
-	@CreationTimestamp
-	private Date auditionRoleUpdatedOn;
-	
+
+    @Column(name = "audition_role_isactive")
+    private boolean auditionRoleIsactive;
+
+    @Column(name = "audition_role_created_by")
+    private Integer auditionRoleCreatedBy;
+
+    @Column(name = "audition_role_createdon")
+    @CreationTimestamp
+    private Date auditionRoleCreatedOn;
+
+    @Column(name = "audition_role_updated_by")
+    private Integer auditionRoleUpdatedBy;
+
+    @Column(name = "audition_role_updatedon")
+    @CreationTimestamp
+    private Date auditionRoleUpdatedOn;
+
 }

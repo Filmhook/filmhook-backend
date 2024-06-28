@@ -6,9 +6,9 @@ import com.annular.filmhook.webmodel.BlockWebModel;
 
 public interface BlockService {
 
-	ResponseEntity<?> addBlock(BlockWebModel blockWebModel);
+    ResponseEntity<?> addBlock(BlockWebModel blockWebModel);
 
-	ResponseEntity<?> getAllBlock(Integer userId);
+    ResponseEntity<?> getAllBlock(Integer userId);
 
-	String unBlockProfile(BlockWebModel blockWebModel);
+    String unBlockProfile(BlockWebModel blockWebModel);
 }

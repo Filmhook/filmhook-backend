@@ -39,7 +39,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
     @Scheduled(cron = "${jobs.cron.expression}", zone = "${jobs.cron.timezone}")
     @Async
     public void expireStories() {
-        if(isEnabled) {
+        if (isEnabled) {
             logger.info("Executing expireStories job at {}", new Date());
             List<Story> storyList = storiesService.getMoreThanOneDayStories();
             if (!storyList.isEmpty()) storiesService.deleteExpiredStories(storyList);

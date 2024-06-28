@@ -7,12 +7,12 @@ import lombok.Data;
 @Builder
 public class CommentInputWebModel {
 
-	private Integer commentId;
-	private Integer userId; // primary key of user table
-	private Integer postId; // primary key of posts table
-	private String content;
+    private Integer commentId;
+    private Integer userId; // primary key of user table
+    private Integer postId; // primary key of posts table
+    private String content;
 
-	private String category; // 'Post' or 'Comment'
-	private Integer parentCommentId; // Comment primary key. If comment is for any parent comment.
+    private String category; // 'Post' or 'Comment'
+    private Integer parentCommentId; // Comment primary key. If comment is for any parent comment.
 
 }

@@ -13,17 +13,16 @@ import java.util.Optional;
 @Repository
 public interface PostsRepository extends JpaRepository<Posts, Integer> {
 
-	
-	List<Posts> findByUser(User userId);
+    List<Posts> findByUser(User userId);
 
-	Optional<Posts> findByPromoteFlag(Boolean promoteFlag);
+    Optional<Posts> findByPromoteFlag(Boolean promoteFlag);
 
-	Posts findByPostId(String postId);
+    Posts findByPostId(String postId);
 
-	@Query("SELECT p FROM Posts p WHERE p.user = :userId AND p.promoteStatus = true")
-	List<Posts> findByUsers(User userId);
+    @Query("SELECT p FROM Posts p WHERE p.user = :userId AND p.promoteStatus = true")
+    List<Posts> findByUsers(User userId);
 
-	List<Posts> findAllByPromoteFlag(boolean b);
+    List<Posts> findAllByPromoteFlag(boolean b);
 
-	// List<Posts> findByPromoteFlagAndUserId(boolean b, Integer id);
+    // List<Posts> findByPromoteFlagAndUserId(boolean b, Integer id);
 }

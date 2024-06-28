@@ -27,15 +27,15 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Link {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "link_id")
+    @Column(name = "link_id")
     private Integer linkId;
 
-	@Column(name = "links")
-	private String links;
-   
+    @Column(name = "links")
+    private String links;
+
     @Column(name = "status")
     private Boolean status;
 
@@ -52,10 +52,8 @@ public class Link {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
+
     @Column(name = "userId")
     private Integer userId;
-    
-    
 
 }

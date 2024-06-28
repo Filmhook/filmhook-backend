@@ -31,12 +31,12 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Location {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
+    @Column(name = "id")
     private Integer id;
-   
+
     @Column(name = "status")
     private Boolean status;
 
@@ -53,25 +53,26 @@ public class Location {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
+
     @Column(name = "latitude", columnDefinition = "double default 0.0")
     private Double latitude;
-    
+
     @Column(name = "longitude", columnDefinition = "double default 0.0")
     private Double longitude;
-    
+
     @Column(name = "address")
     private String address;
-    
+
     @Column(name = "location_name")
     private String locationName;
-    
+
     @Column(name = "landmark")
     private String landMark;
-    
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @ToString.Exclude
     @JsonIgnore
     private User user;
+
 }

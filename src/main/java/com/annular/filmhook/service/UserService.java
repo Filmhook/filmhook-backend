@@ -63,12 +63,12 @@ public interface UserService {
 
     List<UserWebModel> getUserByName(String name);
 
-	Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
+    Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
 
-	List<Map<String, Object>> findNearByUsers(Integer userId, Integer range);
+    List<Map<String, Object>> findNearByUsers(Integer userId, Integer range);
 
-	Optional<User> changePrimaryEmaiId(UserWebModel userWebModel);
+    Optional<User> changePrimaryEmaiId(UserWebModel userWebModel);
 
-	Optional<User> changePrimaryEmaiIdVerified(UserWebModel userWebModel);
+    Optional<User> changePrimaryEmaiIdVerified(UserWebModel userWebModel);
 
 }

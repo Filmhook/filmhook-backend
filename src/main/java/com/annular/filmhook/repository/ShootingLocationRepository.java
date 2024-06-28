@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.ShootingLocation;
 
 @Repository
-public interface ShootingLocationRepository extends JpaRepository<ShootingLocation, Integer>{
+public interface ShootingLocationRepository extends JpaRepository<ShootingLocation, Integer> {
 
-	@Query("select s from ShootingLocation s where s.shootingLocationName = :searchKey")
-	List<ShootingLocation> findBySearchKey(String searchKey);
+    @Query("select s from ShootingLocation s where s.shootingLocationName = :searchKey")
+    List<ShootingLocation> findBySearchKey(String searchKey);
 
 }

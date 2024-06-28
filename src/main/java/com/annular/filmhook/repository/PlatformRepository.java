@@ -10,11 +10,11 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.Platform;
 
 @Repository
-public interface PlatformRepository extends JpaRepository<Platform, Integer>{
+public interface PlatformRepository extends JpaRepository<Platform, Integer> {
 
-	@Query("SELECT p FROM Platform p WHERE p.platformName = :platformName")
-	Optional<Platform> findByPlatformName(String platformName);
+    @Query("SELECT p FROM Platform p WHERE p.platformName = :platformName")
+    Optional<Platform> findByPlatformName(String platformName);
 
-	List<Platform> findAllByPlatformName(String platformName);
+    List<Platform> findAllByPlatformName(String platformName);
 
 }

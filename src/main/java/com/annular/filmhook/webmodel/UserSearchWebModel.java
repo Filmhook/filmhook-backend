@@ -2,12 +2,16 @@ package com.annular.filmhook.webmodel;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserSearchWebModel {
 
     // Input variables

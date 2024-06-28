@@ -1,6 +1,5 @@
 package com.annular.filmhook.controller;
 
-
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Location;
 import com.annular.filmhook.model.User;
@@ -16,7 +15,14 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -181,6 +187,7 @@ public class UserController {
             return new Response(1, "Profile pic deleted successfully...", null);
         } catch (Exception e) {
             logger.error("Error at deleteProfilePic -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error at deleting profile pic...", null);
         }
     }
@@ -227,6 +234,7 @@ public class UserController {
             return new Response(1, "Cover pic(s) deleted successfully...", null);
         } catch (Exception e) {
             logger.error("Error at deleteCoverPic -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error at deleting cover pic...", null);
         }
     }
@@ -240,6 +248,7 @@ public class UserController {
                 return new Response(1, "Industry(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getIndustryByCountry -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error at industry search by country...", null);
         }
         return new Response(1, "Industry(s) not found for country id.", searchWebModel.getCountryIds());
@@ -253,6 +262,7 @@ public class UserController {
                 return new Response(1, "Profession(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getProfessionByPlatform -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error at profession search by platform...", null);
         }
         return new Response(-1, "Profession(s) not found for platform id -> [" + searchWebModel.getPlatformId() + "]", "");
@@ -266,6 +276,7 @@ public class UserController {
                 return new Response(1, "Sub Profession(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getSubProfessionByProfession -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error at sub profession search by platform...", null);
         }
         return new Response(-1, "Sub Profession(s) not found for profession ids -> [{}]", searchWebModel.getProfessionIds());
@@ -279,6 +290,7 @@ public class UserController {
                 return new Response(1, "User(s) found successfully...", outputMap);
         } catch (Exception e) {
             logger.error("Error at getUserByAllCriteria -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error at user search...", null);
         }
         return new Response(-1, "User(s) not found for the given search criteria...", null);
@@ -289,10 +301,10 @@ public class UserController {
         try {
             return userService.getAllAddressListOnSignUp();
         } catch (Exception e) {
-            logger.error("getAllAddressListOnSignUp Method Exception...", e);
+            logger.error("getAllAddressListOnSignUp Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
-        return ResponseEntity.ok(new Response(200, "Success", ""));
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
     @GetMapping("/getAddressListOnSignUp")
@@ -300,10 +312,10 @@ public class UserController {
         try {
             return userService.getAddressListOnSignUp(address);
         } catch (Exception e) {
-            logger.error("getAddressListOnSignUp Method Exception...", e);
+            logger.error("getAddressListOnSignUp Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
-        return ResponseEntity.ok(new Response(200, "Success", ""));
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
     @PutMapping("/updateUserName")
@@ -347,12 +359,15 @@ public class UserController {
     public Response getNearByUsers(@RequestParam("userId") Integer userId, @RequestParam("range") Integer range) {
         try {
             List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId, range);
-            if (!Utility.isNullOrEmptyList(nearbyUsers)) return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
+            if (!Utility.isNullOrEmptyList(nearbyUsers))
+                return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
         } catch (RuntimeException e) {
+            e.printStackTrace();
             return new Response(-1, "Error", e.getMessage());
         }
         return new Response(-1, "Nearby user(s) not found...", "");
     }
+
     @PostMapping("/changePrimaryEmaiId")
     public Response changePrimaryEmaiId(@RequestBody UserWebModel userWebModel) {
         Optional<User> updatedEmailId = userService.changePrimaryEmaiId(userWebModel);
@@ -362,7 +377,7 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
-    
+
     @PostMapping("/changePrimaryEmaiIdVerified")
     public Response changePrimaryEmaiIdVerified(@RequestBody UserWebModel userWebModel) {
         Optional<User> updatedEmailId = userService.changePrimaryEmaiIdVerified(userWebModel);

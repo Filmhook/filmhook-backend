@@ -15,7 +15,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Objects;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -51,7 +54,8 @@ public class BookingServiceImpl implements BookingService {
             } else {
                 // Checking User dates to prevent date clash
                 List<Bookings> userBookings = bookingsRepository.getPendingBookingsByUserFromAndToDates(bookingUser, bookingWebModel.getFromDate(), bookingWebModel.getToDate());
-                if(!Utility.isNullOrEmptyList(userBookings)) return BookingWebModel.builder().errorMsg("From and to dates are not available for this user...").build();
+                if (!Utility.isNullOrEmptyList(userBookings))
+                    return BookingWebModel.builder().errorMsg("From and to dates are not available for this user...").build();
 
                 bookings = Bookings.builder()
                         .project(bookingWebModel.getProjectName())
@@ -71,7 +75,8 @@ public class BookingServiceImpl implements BookingService {
 
             if (bookings != null) {
                 Bookings savedBookingRequest = bookingsRepository.saveAndFlush(bookings); // Save or Update
-                if (!isUpdate) notificationService.sendBookingRequestNotifications(savedBookingRequest); // Sending Notifications
+                if (!isUpdate)
+                    notificationService.sendBookingRequestNotifications(savedBookingRequest); // Sending Notifications
                 return this.transformBookingData(List.of(savedBookingRequest)).get(0);
             }
         } catch (Exception e) {

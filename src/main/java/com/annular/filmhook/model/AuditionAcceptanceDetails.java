@@ -40,7 +40,7 @@ public class AuditionAcceptanceDetails {
 	private Integer auditionAcceptanceUser;
 	
 	@Column(name = "audition_ref_id")
-	private  Integer auditionRefId;//Audition Id from audition table is saved, to have this loosely coupled
+	private  Integer auditionRefId; // Audition Id from audition table is saved, to have this loosely coupled
 	
 	@Column(name = "audition_acceptance_createdby")
 	private Integer auditionAcceptanceCreatedBy;

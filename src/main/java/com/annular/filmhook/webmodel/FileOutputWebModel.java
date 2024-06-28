@@ -13,26 +13,26 @@ import java.util.Date;
 @NoArgsConstructor
 public class FileOutputWebModel {
 
-	private Integer id; // MySQL Primary key field
+    private Integer id; // MySQL Primary key field
 
-	private String fileId;
-	private String fileName;
-	private long fileSize;
-	private String fileType;
-	private String filePath;
-	private String description;
+    private String fileId;
+    private String fileName;
+    private long fileSize;
+    private String fileType;
+    private String filePath;
+    private String description;
 
-	private Integer userId;
-	private String category;
-	private Integer categoryRefId;
+    private Integer userId;
+    private String category;
+    private Integer categoryRefId;
 
-	private Integer createdBy;
-	private Date createdOn;
-	private Integer updatedBy;
-	private Date updatedOn;
-	
-	private String elapsedTime;
-	private String filmHookCode;
+    private Integer createdBy;
+    private Date createdOn;
+    private Integer updatedBy;
+    private Date updatedOn;
+
+    private String elapsedTime;
+    private String filmHookCode;
 
 
 }

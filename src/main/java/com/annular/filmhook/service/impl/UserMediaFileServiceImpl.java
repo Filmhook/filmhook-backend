@@ -8,13 +8,14 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
-import com.annular.filmhook.model.MediaFileCategory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.MultiMediaFiles;
 import com.annular.filmhook.model.User;
@@ -57,10 +58,11 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
                 industryMediaFileRepository.save(mediaFile); // Save files in MySQL
                 logger.info("File saved in MySQL. File ID: {}", mediaFile.getFileId());
                 FileOutputWebModel fileOutputWebModel = this.uploadToS3(file, mediaFile);// Upload files to S3
-                if (fileOutputWebModel != null) fileOutputWebModelList.add(fileOutputWebModel); // Reading the saved file details
+                if (fileOutputWebModel != null)
+                    fileOutputWebModelList.add(fileOutputWebModel); // Reading the saved file details
             });
         } catch (Exception e) {
-            logger.error("Error at saveMediaFiles() -> ", e);
+            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return fileOutputWebModelList;
@@ -159,7 +161,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 
             return fileOutputWebModel;
         } catch (Exception e) {
-            logger.error("Error at transformData()...", e);
+            logger.error("Error at transformData() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return fileOutputWebModel;
@@ -188,7 +190,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
                 return this.transformData(mediaFile);
             }
         } catch (Exception e) {
-            logger.error("Error at uploadToS3 -> ", e);
+            logger.error("Error at uploadToS3 -> {}", e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -204,7 +206,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
                 outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
             }
         } catch (Exception e) {
-            logger.error("Error at getGalleryFilesByUser()...", e);
+            logger.error("Error at getGalleryFilesByUser() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputWebModelList;

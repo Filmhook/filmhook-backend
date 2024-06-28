@@ -37,7 +37,13 @@ public class Utility {
         return value == null || value.isEmpty();
     }
 
-    public static boolean isNullOrZero(Integer value) { return value == null || value == 0; }
+    public static boolean isNullOrZero(Integer value) {
+        return value == null || value == 0;
+    }
+
+    public static boolean isNullObject(Object obj) {
+        return obj == null;
+    }
 
     public static double parseDouble(String value) {
         if (value == null || value.trim().isEmpty()) {

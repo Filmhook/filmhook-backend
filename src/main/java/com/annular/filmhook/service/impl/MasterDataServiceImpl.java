@@ -13,6 +13,7 @@ import com.annular.filmhook.webmodel.CountryWebModel;
 import com.annular.filmhook.webmodel.IndustryWebModel;
 
 import com.annular.filmhook.webmodel.PlatformWebModel;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,4 +119,5 @@ public class MasterDataServiceImpl implements MasterDataService {
         }
         return outputList;
     }
+
 }

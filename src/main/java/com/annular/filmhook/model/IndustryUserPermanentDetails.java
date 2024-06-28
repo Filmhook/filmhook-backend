@@ -32,22 +32,21 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class IndustryUserPermanentDetails {
-	
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "iupd_id")
     private Integer iupdId;
-    
+
     @Column(name = "industries_name")
     private String industriesName;
-    
+
     @OneToMany(mappedBy = "industryUserPermanentDetails")
     private List<PlatformPermanentDetail> platformDetails;
-    
+
     @Column(name = "user_id")
     private Integer userId;
-    
+
     @Column(name = "status")
     private Boolean status;
 

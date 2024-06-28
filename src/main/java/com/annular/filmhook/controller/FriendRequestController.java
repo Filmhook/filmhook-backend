@@ -1,5 +1,8 @@
 package com.annular.filmhook.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.ResponseEntity;
@@ -13,13 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.FriendRequestService;
-import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FollowersRequestWebModel;
 
 
 @RestController
 @RequestMapping("/friendRequest")
 public class FriendRequestController {
+
+    public static final Logger logger = LoggerFactory.getLogger(FriendRequestController.class);
 
     @Autowired
     FriendRequestService friendRequestService;
@@ -29,6 +33,7 @@ public class FriendRequestController {
         try {
             return friendRequestService.saveFollowersRequest(followersRequestWebModel);
         } catch (Exception e) {
+            logger.error("saveFollowersRequest Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -39,6 +44,7 @@ public class FriendRequestController {
         try {
             return friendRequestService.getFriendRequest(userId);
         } catch (Exception e) {
+            logger.error("getFriendRequest Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -49,6 +55,7 @@ public class FriendRequestController {
         try {
             return friendRequestService.updateFriendRequest(followersRequestWebModel);
         } catch (Exception e) {
+            logger.error("updateFriendRequest Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));

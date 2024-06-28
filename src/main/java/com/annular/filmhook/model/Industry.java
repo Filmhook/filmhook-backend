@@ -32,46 +32,46 @@ import lombok.ToString;
 @NoArgsConstructor
 public class Industry {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "industry_id")
-	private Integer industryId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "industry_id")
+    private Integer industryId;
 
-	@Column(name = "industry_name")
-	private String industryName;
+    @Column(name = "industry_name")
+    private String industryName;
 
-	@Column(name = "state_code")
-	private String stateCode;
+    @Column(name = "state_code")
+    private String stateCode;
 
-	@Column(name = "status")
-	private Boolean status;
+    @Column(name = "status")
+    private Boolean status;
 
-	@Column(name = "created_by")
-	private Integer createdBy;
+    @Column(name = "created_by")
+    private Integer createdBy;
 
-	@CreationTimestamp
-	@Column(name = "created_on")
-	private Date createdOn;
+    @CreationTimestamp
+    @Column(name = "created_on")
+    private Date createdOn;
 
-	@Column(name = "updated_by")
-	private Integer updatedBy;
+    @Column(name = "updated_by")
+    private Integer updatedBy;
 
-	@Column(name = "updated_on")
-	@CreationTimestamp
-	private Date updatedOn;
+    @Column(name = "updated_on")
+    @CreationTimestamp
+    private Date updatedOn;
 
-	@Lob
-	@Column
-	@JsonIgnore
-	@ToString.Exclude
-	private byte[] image;
+    @Lob
+    @Column
+    @JsonIgnore
+    @ToString.Exclude
+    private byte[] image;
 
-	@ToString.Exclude
-	@ManyToOne
-	@JoinColumn(name = "country_id")
-	private Country country;
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "country_id")
+    private Country country;
 
-	@Column(name = "icon_file_path")
-	private String filePath;
+    @Column(name = "icon_file_path")
+    private String filePath;
 
 }

@@ -6,13 +6,11 @@ import java.util.Objects;
 
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.Utility;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +29,8 @@ import com.annular.filmhook.webmodel.BlockWebModel;
 @Service
 public class BlockServiceImpl implements BlockService {
 
-	@Autowired
-	UserDetails userDetails;
+    @Autowired
+    UserDetails userDetails;
 
     @Autowired
     BlockRepository blockRepository;
@@ -40,37 +38,36 @@ public class BlockServiceImpl implements BlockService {
     @Autowired
     private UserService userService;
 
-	private static final Logger logger = LoggerFactory.getLogger(BlockServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(BlockServiceImpl.class);
 
-	@Override
-	public ResponseEntity<?> addBlock(BlockWebModel blockWebModel) {
-		List<BlockWebModel> blockWebModels;
-		try {
-			User currentUser = User.builder().userId(blockWebModel.getBlockedBy()).build();
-			User blockedUser = User.builder().userId(blockWebModel.getBlockedUser()).build();
+    @Override
+    public ResponseEntity<?> addBlock(BlockWebModel blockWebModel) {
+        List<BlockWebModel> blockWebModels;
+        try {
+            User currentUser = User.builder().userId(blockWebModel.getBlockedBy()).build();
+            User blockedUser = User.builder().userId(blockWebModel.getBlockedUser()).build();
 
-			if(currentUser.getUserId().equals(blockedUser.getUserId()))
-				return ResponseEntity.badRequest().body("Blocked By User and Blocked User cannot be the same...");
+            if (currentUser.getUserId().equals(blockedUser.getUserId()))
+                return ResponseEntity.badRequest().body("Blocked By User and Blocked User cannot be the same...");
 
-			Block existingBlockRow = blockRepository.findByBlockedByAndBlockedUserAndBlockStatus(currentUser, blockedUser, "UnBlocked");
+            Block existingBlockRow = blockRepository.findByBlockedByAndBlockedUserAndBlockStatus(currentUser, blockedUser, "UnBlocked");
 
-			Block block = Objects.requireNonNullElseGet(existingBlockRow, Block::new);
-			block.setBlockedBy(currentUser);
-			block.setStatus(true);
-			block.setBlockedUser(blockedUser);
-			block.setBlockStatus("Blocked");
-			block.setCreatedBy(userDetails.userInfo().getId());
+            Block block = Objects.requireNonNullElseGet(existingBlockRow, Block::new);
+            block.setBlockedBy(currentUser);
+            block.setStatus(true);
+            block.setBlockedUser(blockedUser);
+            block.setBlockStatus("Blocked");
+            block.setCreatedBy(userDetails.userInfo().getId());
 
-			blockRepository.save(block);
+            blockRepository.save(block);
 
-			blockWebModels = this.transformBlockToBlockWebModel(List.of(block));
-			return ResponseEntity.ok(new Response(1, "Add block successfully", blockWebModels));
-		} catch (Exception e) {
-			logger.error("Error setting block {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Error setting block", e.getMessage()));
-		}
-
-	}
+            blockWebModels = this.transformBlockToBlockWebModel(List.of(block));
+            return ResponseEntity.ok(new Response(1, "Add block successfully", blockWebModels));
+        } catch (Exception e) {
+            logger.error("Error setting block {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error setting block", e.getMessage()));
+        }
+    }
 
     private List<BlockWebModel> transformBlockToBlockWebModel(List<Block> blockList) {
         List<BlockWebModel> blockWebModels = new ArrayList<>();
@@ -102,37 +99,38 @@ public class BlockServiceImpl implements BlockService {
         return blockWebModels;
     }
 
-	@Override
-	public ResponseEntity<?> getAllBlock(Integer userId) {
-		List<BlockWebModel> blockWebModels = new ArrayList<>();
-		try {
-			User userToSearch = User.builder().userId(userId != null ? userId : userDetails.userInfo().getId()).build();
-			List<Block> blockData = blockRepository.findByBlockedByAndBlockStatus(userToSearch, "Blocked");
-			return ResponseEntity.ok(this.transformBlockToBlockWebModel(blockData));
-		} catch (Exception e) {
-			logger.error("getAllBlock service Method Exception {} ", e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(-1, "Fail", ""));
-		}
-	}
+    @Override
+    public ResponseEntity<?> getAllBlock(Integer userId) {
+        List<BlockWebModel> blockWebModels = new ArrayList<>();
+        try {
+            User userToSearch = User.builder().userId(userId != null ? userId : userDetails.userInfo().getId()).build();
+            List<Block> blockData = blockRepository.findByBlockedByAndBlockStatus(userToSearch, "Blocked");
+			blockWebModels = this.transformBlockToBlockWebModel(blockData);
+            return ResponseEntity.ok(blockWebModels);
+        } catch (Exception e) {
+            logger.error("getAllBlock service Method Exception {} ", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
+        }
+    }
 
-	@Override
-	public String unBlockProfile(BlockWebModel blockWebModel) {
-		try {
-			User currentUser = User.builder().userId(blockWebModel.getBlockedBy()).build();
-			User blockedUser = User.builder().userId(blockWebModel.getBlockedUser()).build();
-			Block blockRowToUpdate = blockRepository.findByBlockedByAndBlockedUser(currentUser, blockedUser);
-			if (blockRowToUpdate != null) {
-				blockRowToUpdate.setBlockStatus("UnBlocked");
-				blockRepository.saveAndFlush(blockRowToUpdate);
-				return "Profile unblocked successfully...";
-			} else {
-				return "Blocked profile not found...";
-			}
-		} catch (Exception e) {
-			logger.error("Error at unBlockProfile -> {}", e.getMessage());
-			e.printStackTrace();
-		}
-		return null;
-	}
+    @Override
+    public String unBlockProfile(BlockWebModel blockWebModel) {
+        try {
+            User currentUser = User.builder().userId(blockWebModel.getBlockedBy()).build();
+            User blockedUser = User.builder().userId(blockWebModel.getBlockedUser()).build();
+            Block blockRowToUpdate = blockRepository.findByBlockedByAndBlockedUser(currentUser, blockedUser);
+            if (blockRowToUpdate != null) {
+                blockRowToUpdate.setBlockStatus("UnBlocked");
+                blockRepository.saveAndFlush(blockRowToUpdate);
+                return "Profile unblocked successfully...";
+            } else {
+                return "Blocked profile not found...";
+            }
+        } catch (Exception e) {
+            logger.error("Error at unBlockProfile -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

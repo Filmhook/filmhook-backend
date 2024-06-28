@@ -24,24 +24,24 @@ import lombok.ToString;
 @NoArgsConstructor
 public class IndustryTemporaryDetails {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "it_id")
-	private Integer itId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "it_id")
+    private Integer itId;
 
-	@Column(name = "industries_name")
-	private String industriesname;
+    @Column(name = "industries_name")
+    private String industriesname;
 
-	@Column(name = "platform_name")
-	private String platformname;
+    @Column(name = "platform_name")
+    private String platformname;
 
-	@Column(name = "profession_name")
-	private String professionname;
+    @Column(name = "profession_name")
+    private String professionname;
 
-	@Column(name = "sub_profession_name")
-	private String subProfessionname;
+    @Column(name = "sub_profession_name")
+    private String subProfessionname;
 
-	@Column(name = "user_id")
-	private Integer userId;
+    @Column(name = "user_id")
+    private Integer userId;
 
 }

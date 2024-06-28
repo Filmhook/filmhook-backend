@@ -7,14 +7,14 @@ import com.annular.filmhook.webmodel.LiveStreamCommentWebModel;
 
 public interface LiveStreamService {
 
-	ResponseEntity<?> saveLiveDetails(LiveDetailsWebModel liveDetailsWebModel);
+    ResponseEntity<?> saveLiveDetails(LiveDetailsWebModel liveDetailsWebModel);
 
-	ResponseEntity<?> getLiveDetails();
+    ResponseEntity<?> getLiveDetails();
 
-	ResponseEntity<?> saveLiveStreamComment(LiveStreamCommentWebModel liveStreamCommentWebModel);
+    ResponseEntity<?> saveLiveStreamComment(LiveStreamCommentWebModel liveStreamCommentWebModel);
 
-	ResponseEntity<?> getLiveCommentDetails(Integer liveChannelId);
+    ResponseEntity<?> getLiveCommentDetails(Integer liveChannelId);
 
-	ResponseEntity<?> getAllLiveChannelId();
+    ResponseEntity<?> getAllLiveChannelId();
 
 }

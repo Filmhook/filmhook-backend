@@ -2,8 +2,10 @@ package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.util.S3Util;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -59,9 +61,8 @@ public class AwsS3ServiceImpl implements AwsS3Service {
         s3Util.deleteObjectFromS3(bucketName, objectKey);
     }
 
-	@Override
-	public byte[] getObjectFromS3(String bucketName, List<S3Object> s3data) {
-		// TODO Auto-generated method stub
-		return s3Util.getObjectAsBytes(bucketName, s3data);
-	}
+    @Override
+    public byte[] getObjectFromS3(String bucketName, List<S3Object> s3data) {
+        return s3Util.getObjectAsBytes(bucketName, s3data);
+    }
 }

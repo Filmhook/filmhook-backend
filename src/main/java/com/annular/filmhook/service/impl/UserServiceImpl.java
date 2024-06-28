@@ -21,7 +21,6 @@ import java.util.Comparator;
 
 import java.time.LocalDate;
 
-import com.annular.filmhook.Response;
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.*;
 
@@ -35,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -81,9 +79,6 @@ public class UserServiceImpl implements UserService {
     private JavaMailSender javaMailSender;
 
     @Autowired
-    MailNotification notifications;
-
-    @Autowired
     LocationRepository locationRepository;
 
     @Override
@@ -98,13 +93,7 @@ public class UserServiceImpl implements UserService {
     IndustryUserPermanentDetailsRepository industryPermanentDetailsRepository;
 
     @Autowired
-    PlatformRepository platformRepository;
-
-    @Autowired
     PlatformPermanentDetailRepository platformPermanentDetailRepository;
-
-    @Autowired
-    FilmProfessionRepository filmProfessionRepository;
 
     @Autowired
     FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
@@ -194,8 +183,7 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUpdatedBy(user.getUpdatedBy());
         userWebModel.setUpdateOn(user.getUpdatedOn());
 
-        List<FileOutputWebModel> profilePicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.ProfilePic, user.getUserId());
-        if (!Utility.isNullOrEmptyList(profilePicList)) userWebModel.setProfilePicOutput(profilePicList.get(0));
+        userWebModel.setProfilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()));
 
         List<FileOutputWebModel> coverPicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.CoverPic, user.getUserId());
         if (!Utility.isNullOrEmptyList(coverPicList)) userWebModel.setCoverPhotoOutput(coverPicList.get(0));
@@ -233,7 +221,7 @@ public class UserServiceImpl implements UserService {
                 return user;
             }
         } catch (Exception e) {
-            logger.error("Error occurred at updateBiographyData()...", e);
+            logger.error("Error occurred at updateBiographyData() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return Optional.empty();
@@ -265,7 +253,7 @@ public class UserServiceImpl implements UserService {
                 return user;
             }
         } catch (Exception e) {
-            logger.error("Error occurred at updateBiologicalData()...", e);
+            logger.error("Error occurred at updateBiologicalData() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return Optional.empty();
@@ -296,7 +284,7 @@ public class UserServiceImpl implements UserService {
                 return user;
             }
         } catch (Exception e) {
-            logger.error("Error occurred at updateBiologicalData()...", e);
+            logger.error("Error occurred at updatePersonalInformation() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return Optional.empty();
@@ -334,7 +322,7 @@ public class UserServiceImpl implements UserService {
                 return user;
             }
         } catch (Exception e) {
-            logger.error("Error occurred at updateBiologicalData()...", e);
+            logger.error("Error occurred at updateEducationInformation() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return Optional.empty();
@@ -360,7 +348,7 @@ public class UserServiceImpl implements UserService {
                 return user;
             }
         } catch (Exception e) {
-            logger.error("Error occurred at updateBiologicalData()...", e);
+            logger.error("Error occurred at updateProfessionInformation() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return Optional.empty();

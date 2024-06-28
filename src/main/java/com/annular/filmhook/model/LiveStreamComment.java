@@ -27,24 +27,24 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LiveStreamComment {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "live_Stream_Comment")
-	private Integer liveStreamCommentId;
-	
-	@Column(name = "live_channel_id")
-	private Integer liveChannelId;//foreign key of liveChannelId
 
-	@Column(name = "user_Id")
-	private Integer userId;// foreign key for user table
-	
-	@Column(name = "live_stream_message")
-	private String liveStreamMessage;
-	
-	@Column(name = "live_stream_is_active")
-	private Boolean liveStreamCommenIsActive;
-	
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "live_Stream_Comment")
+    private Integer liveStreamCommentId;
+
+    @Column(name = "live_channel_id")
+    private Integer liveChannelId;//foreign key of liveChannelId
+
+    @Column(name = "user_Id")
+    private Integer userId;// foreign key for user table
+
+    @Column(name = "live_stream_message")
+    private String liveStreamMessage;
+
+    @Column(name = "live_stream_is_active")
+    private Boolean liveStreamCommenIsActive;
+
     @Column(name = "live_stream_created_by")
     private Integer liveStreamCommencreatedBy;
 
@@ -58,9 +58,8 @@ public class LiveStreamComment {
     @Column(name = "live_stream_updated_on")
     @CreationTimestamp
     private Date liveStreamCommenUpdatedOn;
-    
+
     @Column(name = "liveId")
     private String liveId;
-	
 
 }

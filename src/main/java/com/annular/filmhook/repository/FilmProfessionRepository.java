@@ -8,7 +8,8 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.FilmProfession;
 
 @Repository
-public interface FilmProfessionRepository  extends JpaRepository<FilmProfession,Integer> {
+public interface FilmProfessionRepository extends JpaRepository<FilmProfession, Integer> {
 
-	Optional<FilmProfession> findByProfessionName(String professionName);
+    Optional<FilmProfession> findByProfessionName(String professionName);
+
 }

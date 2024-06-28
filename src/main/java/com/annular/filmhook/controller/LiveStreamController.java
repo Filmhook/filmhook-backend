@@ -2,6 +2,7 @@ package com.annular.filmhook.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,75 +17,74 @@ import com.annular.filmhook.service.LiveStreamService;
 import com.annular.filmhook.webmodel.LiveDetailsWebModel;
 import com.annular.filmhook.webmodel.LiveStreamCommentWebModel;
 
-
 @RestController
 @RequestMapping("/live")
 public class LiveStreamController {
-	
-	public static final Logger logger = LoggerFactory.getLogger(LiveStreamController.class);
-	
-	@Autowired
-	LiveStreamService liveStreamService;
-	
-	@PostMapping("/saveLiveChannelDetails")
-	public ResponseEntity<?> saveLiveDetails(@RequestBody LiveDetailsWebModel liveDetailsWebModel) {
-		try {
-			logger.info("saveLiveDetails controller start");
-			return liveStreamService.saveLiveDetails(liveDetailsWebModel);
-		} catch (Exception e) {
-			logger.error("saveLiveDetails Method Exception {}" + e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
 
-	@PostMapping("/getLiveDetails")
-	public ResponseEntity<?> getLiveDetails() {
-		try {
-			logger.info("getLiveDetails controller start");
-			return liveStreamService.getLiveDetails();
-		} catch (Exception e) {
-			logger.error("getLiveDetails Method Exception {}" + e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
-	
-	@PostMapping("/saveLiveStreamComment")
-	public ResponseEntity<?> saveLiveStreamComment(@RequestBody LiveStreamCommentWebModel liveStreamCommentWebModel) {
-		try {
-			logger.info("saveLiveStreamComment controller start");
-			return liveStreamService.saveLiveStreamComment(liveStreamCommentWebModel);
-		} catch (Exception e) {
-			logger.error("saveLiveStreamComment Method Exception {}" + e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
-	
+    public static final Logger logger = LoggerFactory.getLogger(LiveStreamController.class);
 
-	@GetMapping("/getLiveCommentDetails")
-	public ResponseEntity<?> getLiveCommentDetails(@RequestParam("liveChannelId") Integer liveChannelId) {
-		try {
-			logger.info("getLiveCommentDetails controller start");
-			return liveStreamService.getLiveCommentDetails(liveChannelId);
-		} catch (Exception e) {
-			logger.error("getLiveCommentDetails Method Exception {}" + e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
-	
-	@GetMapping("/getAllLiveChannelId")
-	public ResponseEntity<?> getAllLiveChannelId() {
-		try {
-			logger.info("getAllLiveChannelId controller start");
-			return liveStreamService.getAllLiveChannelId();
-		} catch (Exception e) {
-			logger.error("getAllLiveChannelId Method Exception {}" + e);
-			e.printStackTrace();
-		}
-		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-	}
-	
+    @Autowired
+    LiveStreamService liveStreamService;
+
+    @PostMapping("/saveLiveChannelDetails")
+    public ResponseEntity<?> saveLiveDetails(@RequestBody LiveDetailsWebModel liveDetailsWebModel) {
+        try {
+            logger.info("saveLiveDetails controller start");
+            return liveStreamService.saveLiveDetails(liveDetailsWebModel);
+        } catch (Exception e) {
+            logger.error("saveLiveDetails Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("/getLiveDetails")
+    public ResponseEntity<?> getLiveDetails() {
+        try {
+            logger.info("getLiveDetails controller start");
+            return liveStreamService.getLiveDetails();
+        } catch (Exception e) {
+            logger.error("getLiveDetails Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("/saveLiveStreamComment")
+    public ResponseEntity<?> saveLiveStreamComment(@RequestBody LiveStreamCommentWebModel liveStreamCommentWebModel) {
+        try {
+            logger.info("saveLiveStreamComment controller start");
+            return liveStreamService.saveLiveStreamComment(liveStreamCommentWebModel);
+        } catch (Exception e) {
+            logger.error("saveLiveStreamComment Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+
+    @GetMapping("/getLiveCommentDetails")
+    public ResponseEntity<?> getLiveCommentDetails(@RequestParam("liveChannelId") Integer liveChannelId) {
+        try {
+            logger.info("getLiveCommentDetails controller start");
+            return liveStreamService.getLiveCommentDetails(liveChannelId);
+        } catch (Exception e) {
+            logger.error("getLiveCommentDetails Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+    @GetMapping("/getAllLiveChannelId")
+    public ResponseEntity<?> getAllLiveChannelId() {
+        try {
+            logger.info("getAllLiveChannelId controller start");
+            return liveStreamService.getAllLiveChannelId();
+        } catch (Exception e) {
+            logger.error("getAllLiveChannelId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
 }

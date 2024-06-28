@@ -31,26 +31,26 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LiveSubscribe {
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "live_subscribe_id")
-	private Integer liveSubscribeId;
-	
-	
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "live_subscribe_id")
+    private Integer liveSubscribeId;
+
+
 //	@ManyToOne
 //    @JoinColumn(name = "live_channel_id", referencedColumnName = "live_channel_id")
 //    private LiveChannel liveChannel;
-	
-	@Column(name = "liveChannelId")
-	private Integer liveChannelId;
-	
-	@Column(name = "userId")
-	private Integer userId;
-	
-	@Column(name = "live_subscribe_is_active")
-	private Boolean liveSubscribeIsActive;
-	
+
+    @Column(name = "liveChannelId")
+    private Integer liveChannelId;
+
+    @Column(name = "userId")
+    private Integer userId;
+
+    @Column(name = "live_subscribe_is_active")
+    private Boolean liveSubscribeIsActive;
+
     @Column(name = "created_by")
     private Integer createdBy;
 
@@ -65,7 +65,6 @@ public class LiveSubscribe {
     @CreationTimestamp
     private Date updatedOn;
 
-    
     @Column(name = "start_time")
     private String startTime;
 

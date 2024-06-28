@@ -1,6 +1,7 @@
 package com.annular.filmhook.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -104,7 +105,7 @@ public class Posts {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
+
     @Column(name = "post_link_url")
     private String postLinkUrls;
 
@@ -116,14 +117,14 @@ public class Posts {
     @ToString.Exclude
     @JsonIgnore
     private Collection<PostTags> postTagsCollection;
-    
+
     @Column(name = "latitude")
     private String latitude;
-    
+
     @Column(name = "longtitude")
     private String longitude;
-    
-    @Column(name ="address")
+
+    @Column(name = "address")
     private String address;
 
 }

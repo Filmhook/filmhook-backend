@@ -68,5 +68,4 @@ public class Comment {
     @CreationTimestamp
     private Date updatedOn;
 
-
 }

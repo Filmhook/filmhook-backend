@@ -47,21 +47,21 @@ public class User {
     @Column(name = "user_type")
     private String userType;
 
-    @Column(name ="tempToken")
+    @Column(name = "tempToken")
     private String tempToken;
-    
+
     @Column(name = "name")
     private String name;
-    
+
     @Column(name = "first_name")
     private String firstName;
-    
+
     @Column(name = "last_Name")
     private String lastName;
-    
+
     @Column(name = "middle_Name")
     private String middleName;
-    
+
     @JsonIgnore
     @Column(name = "verification_code")
     private String verificationCode;
@@ -77,7 +77,7 @@ public class User {
 
     @Column(name = "state")
     private String state;
-    
+
     @Column(name = "filmHookOtp")
     private Integer filmHookOtp;
 
@@ -175,28 +175,28 @@ public class User {
 
     @Column(name = "reset_password")
     private String resetPassword;
-    
-    @Column(name ="otp")
+
+    @Column(name = "otp")
     private Integer otp;
-    
-    @Column(name ="emailOtp")
+
+    @Column(name = "emailOtp")
     private Integer emailOtp;
-    
+
     @Column(name = "film_hook_code")
     private String filmHookCode;
-    
+
     @Column(name = "mobile_Number_status")
     private Boolean mobileNumberStatus;
-    
+
     @Column(name = "forgotOtp")
     private String forgotOtp;
-    
+
     @Column(name = "admin_Page_Status")
     private Boolean adminPageStatus;
-    
+
     @Column(name = "firebase_device_token")
     private String firebaseDeviceToken;
-    
+
     @Column(name = "admin_review")
     private String adminReview;
 
@@ -205,19 +205,19 @@ public class User {
 
     @Column(name = "birth_place")
     private String birthPlace;
-    
+
     @Column(name = "experience")
     private Integer experience;
-    
+
     @Column(name = "schedule")
     private String schedule;
-    
+
     @Column(name = "secondary_email")
     private String secondaryEmail;
-    
+
     @Column(name = "secondaryemail_otp")
     private Integer secondaryemailOtp;
-    
+
     @Column(name = "verified")
     private Boolean verified;
 

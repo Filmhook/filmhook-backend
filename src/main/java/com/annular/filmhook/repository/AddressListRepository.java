@@ -12,7 +12,7 @@ public interface AddressListRepository extends JpaRepository<AddressList, Intege
 
     AddressList save(AddressList addressList);
 
-	List<AddressList> findBySignUpAddressContainingIgnoreCase(String address);
+    List<AddressList> findBySignUpAddressContainingIgnoreCase(String address);
 
     List<AddressList> findByAuditionAddressContainingIgnoreCase(String address);
 

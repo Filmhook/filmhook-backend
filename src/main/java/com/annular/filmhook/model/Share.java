@@ -27,9 +27,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Share {
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "share_id")
+    @Column(name = "share_id")
     private Integer shareId;
 
     @Column(name = "shared_by")
@@ -54,6 +55,5 @@ public class Share {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-
 
 }

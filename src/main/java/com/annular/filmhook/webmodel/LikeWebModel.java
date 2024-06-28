@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class LikeWebModel {
-	
+
     private Integer likeId;
     private Integer userId; // primary key of user table
     private Integer postId; // primary key of posts table

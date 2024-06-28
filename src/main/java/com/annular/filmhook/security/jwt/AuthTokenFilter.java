@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,12 +31,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
-            logger.info("JWT from request :- " + jwt);
+            logger.info("JWT from request :- {}", jwt);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 logger.info("JWT available...");
 
@@ -47,22 +46,20 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 String userName = jwtUtils.getDataFromJwtToken(jwt, "userName");
                 String userType = jwtUtils.getDataFromJwtToken(jwt, "userType");
                 StringBuilder userNameWithUserType = new StringBuilder().append(userName).append("^").append(userType);
-                logger.info("Username with UserType : " + userNameWithUserType);
+                logger.info("Username with UserType : {}", userNameWithUserType);
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userNameWithUserType.toString());
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
             } else {
                 logger.info("JWT not available...");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication...", e);
         }
-
         filterChain.doFilter(request, response);
     }
 

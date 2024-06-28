@@ -30,35 +30,35 @@ import lombok.ToString;
 @NoArgsConstructor
 public class UserMediaPin {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	private Integer userMediaPinId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Integer userMediaPinId;
 
-	@Column(name = "user_id")
-	private Integer userId;
-	//map post id
-	@Column(name = "pin_Media_Id")
-	private Integer pinMediaId;//in media Table Id
+    @Column(name = "user_id")
+    private Integer userId;
+    //map post id
+    @Column(name = "pin_Media_Id")
+    private Integer pinMediaId;//in media Table Id
 
-	@Column(name = "status")
-	private boolean status;
+    @Column(name = "status")
+    private boolean status;
 
-	@Column(name = "created_by")
-	private Integer createdBy;
+    @Column(name = "created_by")
+    private Integer createdBy;
 
-	@CreationTimestamp
-	@Column(name = "created_on")
-	private Date createdOn;
+    @CreationTimestamp
+    @Column(name = "created_on")
+    private Date createdOn;
 
-	@Column(name = "updated_by")
-	private Integer updatedBy;
+    @Column(name = "updated_by")
+    private Integer updatedBy;
 
-	@CreationTimestamp
-	@Column(name = "updated_on")
-	private Date updatedOn;
+    @CreationTimestamp
+    @Column(name = "updated_on")
+    private Date updatedOn;
 
-	@Transient
-	List<String> mediaFiles;
+    @Transient
+    List<String> mediaFiles;
 
 }

@@ -11,7 +11,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-
 @Component
 public class MailNotification {
 
@@ -34,7 +33,8 @@ public class MailNotification {
             javaMailSender.send(message);
             logger.info("emailNotification method end");
         } catch (Exception e) {
-            logger.error("Error sending email", e);
+            logger.error("Error sending email -> {}", e.getMessage());
+            e.printStackTrace();
         }
     }
 

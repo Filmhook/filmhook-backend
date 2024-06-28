@@ -116,13 +116,16 @@ public class PostServiceImpl implements PostService {
     @Autowired
     FriendRequestRepository friendRequestRepository;
 
+    private static final String POST = "Post";
+    private static final String COMMENT = "Comment";
+
     @Override
     public PostWebModel savePostsWithFiles(PostWebModel postWebModel) {
         try {
             User userFromDB = userService.getUser(postWebModel.getUserId()).orElse(null);
             if (userFromDB != null) {
                 logger.info("User found: {}", userFromDB.getName());
-                
+
                 // Saving the Post details in the post-table
                 Posts posts = Posts.builder()
                         .postId(UUID.randomUUID().toString())
@@ -325,7 +328,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostWebModel> getAllUsersPosts(Integer pageNo,Integer pageSize) {
+    public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
         try {
             Pageable paging = PageRequest.of(pageNo - 1, pageSize);
             List<Posts> postList = postsRepository.findAll(paging).stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
@@ -336,7 +339,6 @@ public class PostServiceImpl implements PostService {
             return null;
         }
     }
-
 
     @Override
     public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
@@ -369,7 +371,7 @@ public class PostServiceImpl implements PostService {
 
                 Integer totalLikes = 0;
                 if (!Utility.isNullOrBlankWithTrim(likeWebModel.getCategory())) {
-                    if (likeWebModel.getCategory().equalsIgnoreCase("Post")) {
+                    if (likeWebModel.getCategory().equalsIgnoreCase(POST)) {
                         if (likeRowToSaveOrUpdate.getStatus()) {
                             post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() + 1 : 1); // Increasing Post's like count
                         } else {
@@ -377,7 +379,7 @@ public class PostServiceImpl implements PostService {
                         }
                         postsRepository.saveAndFlush(post);
                         totalLikes = post.getLikesCount();
-                    } else if (likeWebModel.getCategory().equalsIgnoreCase("Comment") && existingComment != null) {
+                    } else if (likeWebModel.getCategory().equalsIgnoreCase(COMMENT) && existingComment != null) {
                         if (likeRowToSaveOrUpdate.getStatus()) {
                             existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() + 1 : 1); // Increasing Comment's like count
                         } else {
@@ -431,7 +433,7 @@ public class PostServiceImpl implements PostService {
                         .build();
                 Comment savedComment = commentRepository.save(comment);
 
-                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Post")) {
+                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase(POST)) {
                     post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() + 1 : 1); // Increasing the comments count in post's table
                     postsRepository.saveAndFlush(post);
                 }
@@ -458,7 +460,8 @@ public class PostServiceImpl implements PostService {
 
                 List<CommentOutputWebModel> childComments = null;
                 List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
-                if (!Utility.isNullOrEmptyList(dbChildComments)) childComments = this.transformCommentData(dbChildComments, 0);
+                if (!Utility.isNullOrEmptyList(dbChildComments))
+                    childComments = this.transformCommentData(dbChildComments, 0);
 
                 CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
                         .commentId(comment.getCommentId())
@@ -492,7 +495,7 @@ public class PostServiceImpl implements PostService {
             if (post != null) {
                 List<Comment> commentData = (List<Comment>) post.getCommentCollection();
                 // Filter comments with status true
-                List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase("Post")).collect(Collectors.toList());
+                List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase(POST)).collect(Collectors.toList());
                 return this.transformCommentData(filteredComments, post.getCommentsCount());
             }
         } catch (Exception e) {
@@ -514,7 +517,7 @@ public class PostServiceImpl implements PostService {
                     comment.setUpdatedOn(new Date());
                     Comment deletedComment = commentRepository.saveAndFlush(comment);
 
-                    if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase("Post")) {
+                    if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase(POST)) {
                         post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() - 1 : 0); // Decreasing the comments count from post's table
                         postsRepository.saveAndFlush(post);
                     }
@@ -620,9 +623,7 @@ public class PostServiceImpl implements PostService {
 
                     // Save the updated comment back to the repository
                     Comment updatedComment = commentRepository.saveAndFlush(existingComment);
-
-                    Integer currentTotalCommentCount = post.getCommentCollection() != null ? (int) post.getCommentCollection().stream().filter(cmt -> cmt.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(cmt.getCategory()) && cmt.getCategory().equalsIgnoreCase("Post")).count() : 0;
-                    return this.transformCommentData(List.of(updatedComment), currentTotalCommentCount).get(0);
+                    return this.transformCommentData(List.of(updatedComment), post.getCommentsCount()).get(0);
                 } else {
                     // If the comment with the given ID is not found, log an error and return null or throw an exception
                     logger.error("Comment with ID [{}] not found", commentInputWebModel.getCommentId());

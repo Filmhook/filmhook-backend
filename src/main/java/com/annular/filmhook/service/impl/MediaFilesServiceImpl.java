@@ -4,22 +4,25 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.MultiMediaFiles;
 import com.annular.filmhook.model.User;
+
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
-import com.annular.filmhook.repository.StoryRepository;
-import com.annular.filmhook.service.AwsS3Service;
+
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
+
 import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,7 +31,15 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.Date;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,13 +51,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     MediaFilesRepository mediaFilesRepository;
 
     @Autowired
-    StoryRepository storyRepository;
-
-    @Autowired
     FileUtil fileUtil;
-
-    @Autowired
-    AwsS3Service awsS3Service;
 
     @Autowired
     UserService userService;
@@ -90,12 +95,12 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
                     }
                 } catch (IOException e) {
-                    logger.error("Error at saveMediaFiles()...", e);
+                    logger.error("Error at media file save() -> {}", e.getMessage());
                 }
             });
             fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
         } catch (Exception e) {
-            logger.error("Error at saveMediaFiles()...", e);
+            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return fileOutputWebModelList;
@@ -137,13 +142,13 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                                 multiMediaFiles = multiMediaFilesRepository.save(multiMediaFiles);
                                 logger.info("MultiMediaFiles entity saved in the database with ID: {}", multiMediaFiles.getMultiMediaFileId());
                             } catch (Exception e) {
-                                logger.error("Error saving MultiMediaFiles", e);
+                                logger.error("Error saving MultiMediaFiles -> {}", e.getMessage());
                             }
                             mediaFilesMap.put(mediaFiles, file);
                         });
             }
         } catch (Exception e) {
-            logger.error("Error occurred at prepareMultipleMediaFilesData() -> ", e);
+            logger.error("Error occurred at prepareMultipleMediaFilesData() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return mediaFilesMap;
@@ -154,11 +159,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserId(userId);
-            if (mediaFiles != null && !mediaFiles.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(mediaFiles)) {
                 outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
             }
         } catch (Exception e) {
-            logger.error("Error at getMediaFilesByUser()...", e);
+            logger.error("Error at getMediaFilesByUser() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputWebModelList;
@@ -169,11 +174,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategory(category);
-            if (mediaFiles != null && !mediaFiles.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(mediaFiles)) {
                 outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
             }
         } catch (Exception e) {
-            logger.error("Error at getMediaFilesByUser()...", e);
+            logger.error("Error at getMediaFilesByCategory() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputWebModelList;
@@ -184,11 +189,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userId, category);
-            if (mediaFiles != null && !mediaFiles.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(mediaFiles)) {
                 outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
             }
         } catch (Exception e) {
-            logger.error("Error at getMediaFilesByUserAndCategory()...", e);
+            logger.error("Error at getMediaFilesByUserAndCategory() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputWebModelList;
@@ -199,11 +204,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndRefId(category, refId);
-            if (mediaFiles != null && !mediaFiles.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(mediaFiles)) {
                 outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
             }
         } catch (Exception e) {
-            logger.error("Error at getMediaFilesByCategoryAndRefId()...", e);
+            logger.error("Error at getMediaFilesByCategoryAndRefId() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputWebModelList;
@@ -214,11 +219,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
         try {
             List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByUserIdAndCategoryAndRefId(userId, category, refId);
-            if (mediaFiles != null && !mediaFiles.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(mediaFiles)) {
                 outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
             }
         } catch (Exception e) {
-            logger.error("Error at getMediaFilesByUserIdAndCategoryAndRefId()...", e);
+            logger.error("Error at getMediaFilesByUserIdAndCategoryAndRefId() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputWebModelList;
@@ -259,7 +264,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 
             return fileOutputWebModel;
         } catch (Exception e) {
-            logger.error("Error at transformData()...", e);
+            logger.error("Error at transformData() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return fileOutputWebModel;

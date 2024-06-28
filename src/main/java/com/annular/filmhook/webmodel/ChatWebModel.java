@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.Data;
@@ -16,21 +17,21 @@ import lombok.Data;
 @NoArgsConstructor
 public class ChatWebModel {
 
-	private Integer chatId;
-	private Integer chatSenderId;
-	private Integer chatReceiverId;
-	private String message;
-	private Boolean chatIsActive;
-	private Integer chatCreatedBy;
-	private Integer chatUpdatedBy;
-	private Date chatCreatedOn;
-	private Date chatUpdatedOn;
-	private String userType;
-	private Date timeStamp;
-	private String userAccountName;
-	private Integer userId;
+    private Integer chatId;
+    private Integer chatSenderId;
+    private Integer chatReceiverId;
+    private String message;
+    private Boolean chatIsActive;
+    private Integer chatCreatedBy;
+    private Integer chatUpdatedBy;
+    private Date chatCreatedOn;
+    private Date chatUpdatedOn;
+    private String userType;
+    private Date timeStamp;
+    private String userAccountName;
+    private Integer userId;
 
-	List<MultipartFile> files;
-	List<FileOutputWebModel> chatFiles;
+    List<MultipartFile> files;
+    List<FileOutputWebModel> chatFiles;
 
 }

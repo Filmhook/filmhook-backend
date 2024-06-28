@@ -11,9 +11,9 @@ import com.annular.filmhook.model.Audition;
 @Repository
 public interface AuditionRepository extends JpaRepository<Audition, Integer> {
 
-	public List<Audition> findByAuditionCategory(Integer categoryId);
+    List<Audition> findByAuditionCategory(Integer categoryId);
 
-	@Query("SELECT a FROM Audition a WHERE a.auditionTitle = :auditionTitle")
-	public List<Audition> findByAuditionTitle(String auditionTitle);
+    @Query("SELECT a FROM Audition a WHERE a.auditionTitle = :auditionTitle")
+    List<Audition> findByAuditionTitle(String auditionTitle);
 
 }

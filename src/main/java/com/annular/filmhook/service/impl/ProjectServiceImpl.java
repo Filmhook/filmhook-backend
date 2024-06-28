@@ -52,16 +52,16 @@ public class ProjectServiceImpl implements ProjectService {
                 projectWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Project);
                 projectWebModel.getFileInputWebModel().setCategoryRefId(platformFromDB.get().getPlatformPermanentId());
                 //projectWebModel.getFileInputWebModel().setDescription(null);
-           
+
                 //return mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
                 List<FileOutputWebModel> savedFiles = mediaFilesService.saveMediaFiles(projectWebModel.getFileInputWebModel(), userFromDB.get());
-               // PlatformPermanentDetail platformPermanentDetail = platformFromDB.get();
+                // PlatformPermanentDetail platformPermanentDetail = platformFromDB.get();
                 //int currentFilmCount = platformPermanentDetail.getFilmCount();
                 //platformPermanentDetail.setFilmCount(currentFilmCount + savedFiles.size());
 
                 // Save the updated film count back to the database
-               // platformPermanentDetailRepository.save(platformPermanentDetail);
-                
+                // platformPermanentDetailRepository.save(platformPermanentDetail);
+
                 // Add saved files to the output list
                 outputList.addAll(savedFiles);
                 PlatformPermanentDetail platformPermanentDetail = platformFromDB.get();
@@ -85,7 +85,7 @@ public class ProjectServiceImpl implements ProjectService {
         try {
             outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project, platformPermanentId);
         } catch (Exception e) {
-            logger.error("Error at getProjectFiles()...", e);
+            logger.error("Error at getProjectFiles(userId, platformPermanentId) -> {}", e.getMessage());
             e.printStackTrace();
         }
         return outputWebModelList;
@@ -100,9 +100,10 @@ public class ProjectServiceImpl implements ProjectService {
                 return new ByteArrayResource(fileUtil.downloadFile(filePath));
             }
         } catch (Exception e) {
-            logger.error("Error at getProjectFiles()...", e);
+            logger.error("Error at getProjectFiles(userId, category, fileId) -> {}", e.getMessage());
             e.printStackTrace();
         }
         return null;
     }
+
 }

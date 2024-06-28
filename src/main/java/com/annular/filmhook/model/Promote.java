@@ -32,7 +32,7 @@ public class Promote {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "promote_id")
     private Integer promoteId;
-    
+
     @Column(name = "status")
     private Boolean status;
 
@@ -49,43 +49,41 @@ public class Promote {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
-	/*
-	 * @Column(name = "start_date") private LocalDate startDate;
-	 * 
-	 * @Column(name = "end_date") private LocalDate endDate;
-	 */
-	
-	@Column(name = "number_of_days")
-	private Integer numberOfDays;
-	
-	@Column(name = "amount")
-	private Integer amount;
-	
-	@Column(name = "total_cost")
-	private Integer totalCost;
-	
-	@Column(name = "tax_fee")
-	private Integer taxFee;
-	
-	@Column(name = "cgst")
-	private Integer cgst;
-	
-	@Column(name = "sgst")
-	private Integer sgst;
-	
-	@Column(name = "price")
-	private Integer price;
-	
-	@Column(name = "country")
-	private String country;
-	
-	@Column(name = "user_id")
-	private Integer userId;
-	
-	@Column(name = "post_id")
-	private Integer postId;
-	
-	@Column(name = "multimedia_Id")
-	private Integer multimediaId;
+
+    //@Column(name = "start_date") private LocalDate startDate;
+    //@Column(name = "end_date") private LocalDate endDate;
+
+    @Column(name = "number_of_days")
+    private Integer numberOfDays;
+
+    @Column(name = "amount")
+    private Integer amount;
+
+    @Column(name = "total_cost")
+    private Integer totalCost;
+
+    @Column(name = "tax_fee")
+    private Integer taxFee;
+
+    @Column(name = "cgst")
+    private Integer cgst;
+
+    @Column(name = "sgst")
+    private Integer sgst;
+
+    @Column(name = "price")
+    private Integer price;
+
+    @Column(name = "country")
+    private String country;
+
+    @Column(name = "user_id")
+    private Integer userId;
+
+    @Column(name = "post_id")
+    private Integer postId;
+
+    @Column(name = "multimedia_Id")
+    private Integer multimediaId;
+
 }

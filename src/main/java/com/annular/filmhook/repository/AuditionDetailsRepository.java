@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.AuditionDetails;
 
 @Repository
-public interface  AuditionDetailsRepository extends JpaRepository<AuditionDetails,Integer> {
+public interface AuditionDetailsRepository extends JpaRepository<AuditionDetails, Integer> {
 
 }

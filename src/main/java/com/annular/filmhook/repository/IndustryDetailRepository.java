@@ -11,14 +11,14 @@ import com.annular.filmhook.model.IndustryDetails;
 @Repository
 public interface IndustryDetailRepository extends JpaRepository<IndustryDetails, Integer> {
 
-	@Transactional
-	@Modifying
-	@Query("DELETE FROM IndustryDetails id WHERE id.industryTemporaryDetailId = :temporaryId")
-	void deleteByIndustryTemporaryDetailId(Integer temporaryId);
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM IndustryDetails id WHERE id.industryTemporaryDetailId = :temporaryId")
+    void deleteByIndustryTemporaryDetailId(Integer temporaryId);
 
-	@Transactional
-	@Modifying
-	@Query("DELETE FROM IndustryDetails i WHERE i.userId = :userId")
-	void deleteByUserId(Integer userId);
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM IndustryDetails i WHERE i.userId = :userId")
+    void deleteByUserId(Integer userId);
 
 }

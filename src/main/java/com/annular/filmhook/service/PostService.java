@@ -6,7 +6,6 @@ import com.annular.filmhook.webmodel.LikeWebModel;
 import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
-import com.annular.filmhook.webmodel.UserWebModel;
 
 import org.springframework.core.io.Resource;
 
@@ -28,7 +27,7 @@ public interface PostService {
     Resource getAllPostFilesByCategory(String category);
 
     List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize);
-    
+
     LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel);
 
     CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel);
@@ -39,11 +38,11 @@ public interface PostService {
 
     ShareWebModel addShare(ShareWebModel shareWebModel);
 
-	LinkWebModel addLink(LinkWebModel linkWebModel);
+    LinkWebModel addLink(LinkWebModel linkWebModel);
 
-	List<PostWebModel> getPostsByUserIds(Integer userId);
+    List<PostWebModel> getPostsByUserIds(Integer userId);
 
     CommentOutputWebModel updateComment(CommentInputWebModel commentInputWebModel);
 
-	
+
 }

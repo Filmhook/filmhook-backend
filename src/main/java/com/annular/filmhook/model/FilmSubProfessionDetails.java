@@ -28,18 +28,18 @@ import lombok.ToString;
 @NoArgsConstructor
 public class FilmSubProfessionDetails {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "sub_profession_detail_id")
-	private Integer subProfessionDetailId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "sub_profession_detail_id")
+    private Integer subProfessionDetailId;
 
-	@Column(name = "sub_Profession_name")
-	private String subProfessionName;
-	
-	@Column(name = "userId")
-	private Integer userId;
+    @Column(name = "sub_Profession_name")
+    private String subProfessionName;
 
-	@Column(name = "industry_temporary_detail_id")
-	private Integer industryTemporaryDetailId;
+    @Column(name = "userId")
+    private Integer userId;
+
+    @Column(name = "industry_temporary_detail_id")
+    private Integer industryTemporaryDetailId;
 
 }

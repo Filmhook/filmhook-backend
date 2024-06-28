@@ -7,12 +7,11 @@ import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.ReportPost;
 
-
 @Repository
-public interface ReportRepository extends JpaRepository<ReportPost,Integer> {
+public interface ReportRepository extends JpaRepository<ReportPost, Integer> {
 
-	List<ReportPost> findByPostId(Integer postId);
+    List<ReportPost> findByPostId(Integer postId);
 
-	List<ReportPost> findByUserId(Integer userId);
+    List<ReportPost> findByUserId(Integer userId);
 
 }

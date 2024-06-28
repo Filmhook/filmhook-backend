@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +34,6 @@ public class ChatController {
 
     
     public static final Logger logger = LoggerFactory.getLogger(ChatController.class);
-
 
     @RequestMapping(path = "/saveMessage", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> saveMessage(@ModelAttribute ChatWebModel chatWebModel) {
@@ -84,24 +82,27 @@ public class ChatController {
     }
 
     @GetMapping("/getFirebaseTokenByuserId")
-    public ResponseEntity<?> getFirebaseTokenByuserId(@RequestParam("userId") Integer userId) {
+    public ResponseEntity<?> getFirebaseTokenByUserId(@RequestParam("userId") Integer userId) {
         try {
-            logger.info("getFirebaseTokenByuserId controller start");
-            return chatService.getFirebaseTokenByuserId(userId);
+            logger.info("getFirebaseTokenByUserId controller start");
+            return chatService.getFirebaseTokenByUserId(userId);
         } catch (Exception e) {
-            logger.error("getFirebaseTokenByuserId Method Exception {}", e.getMessage());
+            logger.error("getFirebaseTokenByUserId Method Exception {}", e.getMessage());
             e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
         }
-        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
-    
+
     @PostMapping("getLastMessagebyid")
-	public ResponseEntity<Response> getLastMessageById(@RequestBody ChatWebModel message) {
-				try {
-			Response response = chatService.getLastMessageById(message);
-			return new ResponseEntity<>(response, HttpStatus.OK);
-		} catch (Exception e) {
-			return new ResponseEntity<>(new Response(-1, "Error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	}
+    public ResponseEntity<Response> getLastMessageById(@RequestBody ChatWebModel message) {
+        try {
+            Response response = chatService.getLastMessageById(message);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            logger.error("Error at getLastMessageById -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+        }
+    }
+
 }

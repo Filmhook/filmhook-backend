@@ -44,7 +44,7 @@ public class MasterDataController {
     private int getIndiaCountryPosition(List<CountryWebModel> countryList) {
         for (int i = 0; i < countryList.size(); i++) {
             CountryWebModel countryWebModel = countryList.get(i);
-            if(countryWebModel.getName().equalsIgnoreCase("INDIA")) return i;
+            if (countryWebModel.getName().equalsIgnoreCase("INDIA")) return i;
         }
         return 0;
     }

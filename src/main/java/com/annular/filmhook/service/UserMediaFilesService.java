@@ -8,8 +8,8 @@ import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 
 public interface UserMediaFilesService {
 
-	List<FileOutputWebModel> saveMediaFiles(IndustryFileInputWebModel inputFileData, User user);
+    List<FileOutputWebModel> saveMediaFiles(IndustryFileInputWebModel inputFileData, User user);
 
-	List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId);
+    List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId);
 
 }

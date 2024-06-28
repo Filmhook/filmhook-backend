@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -26,24 +25,24 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
     @Override
     public ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel) {
         try {
-			FilmProfession filmProfession = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId()).orElse(null);
-			if (filmProfession != null) {
-				List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
+            FilmProfession filmProfession = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId()).orElse(null);
+            if (filmProfession != null) {
+                List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
                         .filter(subProfession -> subProfession.getStatus().equals(true))
                         .map(FilmSubProfession::getSubProfessionName)
-						.collect(Collectors.toList());
-				// Create a map with the desired structure
-				Map<String, Object> responseMap = new HashMap<>();
-				responseMap.put("subProfessionName", subProfessionNames);
-				return ResponseEntity.ok(responseMap);
-			} else {
-				// FilmProfession entity not found for the given filmProfessionId
-				return ResponseEntity.notFound().build();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.internalServerError().body("Failed to fetch professions");
-		}
+                        .collect(Collectors.toList());
+                // Create a map with the desired structure
+                Map<String, Object> responseMap = new HashMap<>();
+                responseMap.put("subProfessionName", subProfessionNames);
+                return ResponseEntity.ok(responseMap);
+            } else {
+                // FilmProfession entity not found for the given filmProfessionId
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Failed to fetch professions");
+        }
     }
 
     public ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel) {
@@ -61,10 +60,10 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
                         professionList.add(professionMap);
                     });
             response.put("professionMapList", professionList);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to fetch professions");
+            return ResponseEntity.internalServerError().body("Failed to fetch professions");
         }
     }
 

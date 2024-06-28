@@ -10,15 +10,15 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.UserProfilePin;
 
 @Repository
-public interface PinProfileRepository extends JpaRepository<UserProfilePin,Integer> {
+public interface PinProfileRepository extends JpaRepository<UserProfilePin, Integer> {
 
-	@Query("select up from UserProfilePin up where up.userId=:id and up.status=true")
-	List<UserProfilePin> findByUserId(Integer id);
-	
+    @Query("select up from UserProfilePin up where up.userId=:id and up.status=true")
+    List<UserProfilePin> findByUserId(Integer id);
+
     @Query("select up from UserProfilePin up where up.userId=:userId and up.pinProfileId =:pinProfileId")
-	Optional<UserProfilePin> findByUserIdAndPinProfileId(Integer userId, Integer pinProfileId);
+    Optional<UserProfilePin> findByUserIdAndPinProfileId(Integer userId, Integer pinProfileId);
 
     @Query("select up from UserProfilePin up where up.userId=:userId and up.pinProfileId =:userIds")
-	Optional<UserProfilePin> findByPinProfileIdAndUserId(Integer userId, Integer userIds);
+    Optional<UserProfilePin> findByPinProfileIdAndUserId(Integer userId, Integer userIds);
 
 }

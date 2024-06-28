@@ -10,9 +10,9 @@ import com.annular.filmhook.security.UserDetailsImpl;
 @Component
 public class UserDetails {
 
-	public UserDetailsImpl userInfo() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-		return userDetails;
-	}
+    public UserDetailsImpl userInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return (UserDetailsImpl) authentication.getPrincipal();
+    }
+
 }

@@ -9,7 +9,6 @@ import com.annular.filmhook.service.NotificationService;
 
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
-import com.annular.filmhook.webmodel.BookingWebModel;
 import com.annular.filmhook.webmodel.NotificationWebModel;
 
 import org.slf4j.Logger;
@@ -70,7 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
             if (bookedBy != null && bookedUser != null) {
                 // Sending Mail Notification
                 String subject = "FilmHook - Booking Request";
-                String mailContent = "<p>Hi <b>" + bookedUser.getName() +"</b>, "
+                String mailContent = "<p>Hi <b>" + bookedUser.getName() + "</b>, "
                         + "<br><br><b>" + bookedBy.getName() + "</b> requested your dates from <b>" + savedBookingRequest.getFromDate() + "</b> to <b>" + savedBookingRequest.getToDate() + "</b>."
                         + "<br>Please check the FilmHook app notifications to confirm or reject the request"
                         + "<br><br>Thank You,<br>FilmHook IT-Support Team.</p>";

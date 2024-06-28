@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import javax.transaction.Transactional;
 
 import com.annular.filmhook.util.Utility;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +93,7 @@ public class AuditionServiceImpl implements AuditionService {
 
             Optional<User> userFromDB = userService.getUser(auditionWebModel.getAuditionCreatedBy());
             if (!userFromDB.isPresent()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(-1, "User not found", null));
+                return ResponseEntity.ok().body(new Response(-1, "User not found", null));
             }
 
             Audition audition = new Audition();
@@ -254,7 +255,7 @@ public class AuditionServiceImpl implements AuditionService {
                 ignoranceDetails = auditionIgnoranceRepository.save(ignoranceDetails);
                 response.put("Audition ignorance details", ignoranceDetails);
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Audition not found", null));
+                return ResponseEntity.ok().body(new Response(-1, "Audition not found", null));
             }
         } catch (Exception e) {
             logger.error("Save audition ignorance method exception -> {}", e.getMessage());
@@ -420,7 +421,7 @@ public class AuditionServiceImpl implements AuditionService {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Response(-1, "Unauthorized: You do not have permission to delete this audition.", null));
                 }
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Audition not found.", null));
+                return ResponseEntity.ok().body(new Response(-1, "Audition not found.", null));
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
@@ -441,7 +442,7 @@ public class AuditionServiceImpl implements AuditionService {
             // Check if the audition exists
             Optional<Audition> existingAuditionOptional = auditionRepository.findById(auditionWebModel.getAuditionId());
             if (existingAuditionOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Audition not found.", null));
+                return ResponseEntity.ok().body(new Response(-1, "Audition not found.", null));
             }
 
             Audition existingAudition = existingAuditionOptional.get();

@@ -8,8 +8,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Column;
-
 @Data
 @Builder
 @AllArgsConstructor
@@ -115,6 +113,6 @@ public class UserWebModel {
     private Double distance;
     private String professionName;
     private String changeEmailId;
-	
+
 
 }

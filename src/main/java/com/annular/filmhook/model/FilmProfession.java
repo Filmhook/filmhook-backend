@@ -1,15 +1,28 @@
-    package com.annular.filmhook.model;
+package com.annular.filmhook.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Builder;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Id;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Column;
+import javax.persistence.Lob;
+import javax.persistence.OneToMany;
+import javax.persistence.FetchType;
+import javax.persistence.CascadeType;
 
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Master data table for Film's Profession
@@ -59,7 +72,7 @@ public class FilmProfession {
     @Column(name = "icon_file_path")
     private String filePath;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval=true, mappedBy = "profession")
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "profession")
     @ToString.Exclude
     @JsonIgnore
     private Collection<FilmSubProfession> filmSubProfessionCollection;

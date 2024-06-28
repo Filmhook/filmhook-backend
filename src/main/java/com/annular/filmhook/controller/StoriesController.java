@@ -3,19 +3,25 @@ package com.annular.filmhook.controller;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.service.StoriesService;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +42,8 @@ public class StoriesController {
             StoriesWebModel story = storiesService.uploadStory(inputData);
             if (story != null) return new Response(1, "Story uploaded successfully...", story);
         } catch (Exception e) {
-            logger.error("Error at uploadStory()...", e);
+            logger.error("Error at uploadStory() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return new Response(-1, "Error occurred while uploading story...", null);
     }
@@ -48,7 +55,8 @@ public class StoriesController {
             if (storyList != null)
                 return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
         } catch (Exception e) {
-            logger.error("Error at getAllUserStories()...", e);
+            logger.error("Error at getAllUserStories() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return new Response(-1, "Story not found...", null);
     }
@@ -68,11 +76,11 @@ public class StoriesController {
                         .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
                         .body(resource);
             } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new Response(-1, "Requested file not found", ""));
+                return ResponseEntity.internalServerError().body(new Response(-1, "Requested file not found", ""));
             }
         } catch (Exception e) {
-            logger.error("Error at downloadStoryFile()...", e);
+            logger.error("Error at downloadStoryFile() -> {}", e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -87,7 +95,8 @@ public class StoriesController {
                 return new Response(-1, "Story not available to delete...", null);
             }
         } catch (Exception e) {
-            logger.error("Error at deleteUserStories()...", e);
+            logger.error("Error at deleteUserStories() -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Story not found...", null);
         }
     }
@@ -102,7 +111,8 @@ public class StoriesController {
                 return new Response(-1, "Story not available to delete...", null);
             }
         } catch (Exception e) {
-            logger.error("Error at deleteUserStoriesById()...", e);
+            logger.error("Error at deleteUserStoriesById() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return new Response(-1, "Story not found...", null);
     }
@@ -114,7 +124,8 @@ public class StoriesController {
             Optional<Story> story = storiesService.updateStoryView(userId, storyId);
             if (story.isPresent()) return new Response(1, "Story views updated successfully...", null);
         } catch (Exception e) {
-            logger.error("Error at updateStoryViews()...", e);
+            logger.error("Error at updateStoryViews() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return new Response(-1, "Story not found...", null);
     }
@@ -126,12 +137,10 @@ public class StoriesController {
             if (storyList != null)
                 return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
         } catch (Exception e) {
-            logger.error("Error at getAllUserStories()...", e);
+            logger.error("Error at getUserIdAndName() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return new Response(-1, "Story not found...", null);
     }
-    
-
-    
 
 }

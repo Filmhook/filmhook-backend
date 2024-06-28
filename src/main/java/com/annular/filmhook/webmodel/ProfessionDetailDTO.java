@@ -3,14 +3,20 @@ package com.annular.filmhook.webmodel;
 import java.util.List;
 
 import lombok.Data;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProfessionDetailDTO {
-	
-	private String professionName;
-	private byte[] image;
-	private List<String> subProfessionName;
-	private Integer professionPermanentId;
-	private Integer ppdProfessionId;
+
+    private String professionName;
+    private byte[] image;
+    private List<String> subProfessionName;
+    private Integer professionPermanentId;
+    private Integer ppdProfessionId;
 
 }

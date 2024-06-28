@@ -11,8 +11,6 @@ import java.util.Date;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
-import com.annular.filmhook.webmodel.UserWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,7 +132,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                     .filter(Objects::nonNull)
                     .forEach(request -> {
                         User user = userService.getUser(type.equalsIgnoreCase(FOLLOWERS) ? request.getFollowersRequestSenderId() : request.getFollowersRequestReceiverId()).orElse(null);
-                        if(user != null) {
+                        if (user != null) {
                             FollowersRequestWebModel followersRequestWebModel = FollowersRequestWebModel.builder()
                                     .followersRequestId(request.getFollowersRequestId())
                                     .followersRequestSenderId(request.getFollowersRequestSenderId())

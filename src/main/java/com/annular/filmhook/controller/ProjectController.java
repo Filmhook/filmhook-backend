@@ -3,6 +3,7 @@ package com.annular.filmhook.controller;
 import java.util.List;
 
 import com.annular.filmhook.service.ProjectService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,8 @@ public class ProjectController {
             List<FileOutputWebModel> outputList = projectService.saveProjectFiles(projectWebModel);
             if (outputList != null && !outputList.isEmpty()) return new Response(1, "File(s) saved successfully...", outputList);
         } catch (Exception e) {
-            logger.error("Error at saveProjectFiles()...", e);
+            logger.error("Error at saveProjectFiles() -> {}", e.getMessage());
+            e.printStackTrace();
             return new Response(-1, "Error occurred while saving saveProject Files..", e);
         }
         return new Response(-1, "Error occurred while save Project Files...", null);
@@ -55,7 +57,8 @@ public class ProjectController {
                 return new Response(-1, "No file(s) available for this user...", null);
             }
         } catch (Exception e) {
-            logger.error("Error at getProjectFilesByPlatformId()...", e);
+            logger.error("Error at getProjectFilesByPlatformId() -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return new Response(-1, "Files were not found...", null);
     }
@@ -76,7 +79,8 @@ public class ProjectController {
                         .body(resource);
             }
         } catch (Exception e) {
-            logger.error("Error at downloadProjectFile...", e);
+            logger.error("Error at downloadProjectFile -> {}", e.getMessage());
+            e.printStackTrace();
         }
         return ResponseEntity.internalServerError().build();
     }

@@ -51,7 +51,7 @@ public class Story {
     private Boolean status;
 
     @ManyToOne
-    @JoinColumn(name="user_id")
+    @JoinColumn(name = "user_id")
     @ToString.Exclude
     private User user;
 

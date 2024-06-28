@@ -27,13 +27,13 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Likes {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "like_id")
+    @Column(name = "like_id")
     private Integer likeId;
 
-    @Column(name="category")
+    @Column(name = "category")
     private String category; // 'Post' or 'Comment'
 
     @Column(name = "post_Id")
@@ -61,11 +61,8 @@ public class Likes {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
+
     @Column(name = "liveDate")
     private String liveDate;
-    
-    
-
 
 }

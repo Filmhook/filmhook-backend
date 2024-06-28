@@ -9,10 +9,10 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 
 public interface ProjectService {
 
-	List<FileOutputWebModel> saveProjectFiles(ProjectWebModel projectWebModel);
+    List<FileOutputWebModel> saveProjectFiles(ProjectWebModel projectWebModel);
 
-	List<FileOutputWebModel> getProjectFiles(Integer userId, Integer platformPermanentId);
+    List<FileOutputWebModel> getProjectFiles(Integer userId, Integer platformPermanentId);
 
-	Resource getProjectFiles(Integer userId, String category, String fileId);
+    Resource getProjectFiles(Integer userId, String category, String fileId);
 
 }

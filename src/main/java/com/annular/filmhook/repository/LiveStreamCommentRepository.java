@@ -9,10 +9,9 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.LiveStreamComment;
 
 @Repository
-public interface LiveStreamCommentRepository extends JpaRepository<LiveStreamComment, Integer>  {
+public interface LiveStreamCommentRepository extends JpaRepository<LiveStreamComment, Integer> {
 
-	@Query("SELECT l FROM LiveStreamComment l WHERE l.liveChannelId = :liveChannelId AND l.liveStreamCommenIsActive = true")
-	List<LiveStreamComment> findByLiveChannelId(Integer liveChannelId);
-
+    @Query("SELECT l FROM LiveStreamComment l WHERE l.liveChannelId = :liveChannelId AND l.liveStreamCommenIsActive = true")
+    List<LiveStreamComment> findByLiveChannelId(Integer liveChannelId);
 
 }

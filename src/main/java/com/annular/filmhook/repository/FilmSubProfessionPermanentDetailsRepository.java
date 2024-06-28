@@ -2,6 +2,7 @@ package com.annular.filmhook.repository;
 
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -20,5 +21,5 @@ public interface FilmSubProfessionPermanentDetailsRepository extends JpaReposito
     @Query("select distinct(p.userId) from FilmSubProfessionPermanentDetail p where p.filmSubProfession in (:subProfessionIds)")
     List<Integer> getUsersBySubProfessionIds(List<FilmSubProfession> subProfessionIds);
 
-	List<FilmSubProfessionPermanentDetail> findByUserId(Integer userId);
+    List<FilmSubProfessionPermanentDetail> findByUserId(Integer userId);
 }

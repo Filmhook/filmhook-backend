@@ -4,11 +4,15 @@ import com.annular.filmhook.model.NotificationTypeEnum;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class NotificationWebModel {
 
     private Integer notificationId;

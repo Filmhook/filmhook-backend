@@ -11,18 +11,18 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.IndustryMediaFiles;
 
 @Repository
-public interface IndustryMediaFileRepository extends JpaRepository<IndustryMediaFiles, Integer>{
+public interface IndustryMediaFileRepository extends JpaRepository<IndustryMediaFiles, Integer> {
 
-	@Query("Select m from IndustryMediaFiles m where m.user.userId=:userId and m.status=true")
-	List<IndustryMediaFiles> getMediaFilesByUserIdAndCategory(Integer userId);
+    @Query("Select m from IndustryMediaFiles m where m.user.userId=:userId and m.status=true")
+    List<IndustryMediaFiles> getMediaFilesByUserIdAndCategory(Integer userId);
 
-	@Query("SELECT imf FROM IndustryMediaFiles imf WHERE imf.user IS NULL OR imf.status=true")
-	Page<IndustryMediaFiles> getAllUnverifiedIndustrialUsers(Pageable paging);
-	
-	@Query("SELECT imf FROM IndustryMediaFiles imf WHERE imf.user IS NULL OR imf.status=true")
-	List<IndustryMediaFiles> getAllUnverifiedIndustrialUsers();
+    @Query("SELECT imf FROM IndustryMediaFiles imf WHERE imf.user IS NULL OR imf.status=true")
+    Page<IndustryMediaFiles> getAllUnverifiedIndustrialUsers(Pageable paging);
 
-	@Query("Select m from IndustryMediaFiles m where m.user.userId=:userId")
-	List<IndustryMediaFiles> findByUserId(Integer userId);
+    @Query("SELECT imf FROM IndustryMediaFiles imf WHERE imf.user IS NULL OR imf.status=true")
+    List<IndustryMediaFiles> getAllUnverifiedIndustrialUsers();
+
+    @Query("Select m from IndustryMediaFiles m where m.user.userId=:userId")
+    List<IndustryMediaFiles> findByUserId(Integer userId);
 
 }
