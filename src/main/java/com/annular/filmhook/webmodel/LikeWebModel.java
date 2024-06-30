@@ -23,5 +23,6 @@ public class LikeWebModel {
     private Date createdOn;
     private Integer updatedBy;
     private Date updatedOn;
+    private Integer likedBy;
 
 }

@@ -252,7 +252,14 @@ public class PostServiceImpl implements PostService {
                                     .map(postTags -> postTags.getTaggedUser().getUserId())
                                     .collect(Collectors.toList())
                             : null;
+                    // Convert Date to LocalDateTime
+                    Date createdDate = post.getCreatedOn();
+                    LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
+                 // Calculate elapsed time
+                    String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+                    
 
+                    
                     // Preparing outputList
                     PostWebModel postWebModel = PostWebModel.builder()
                             .id(post.getId())
@@ -273,6 +280,7 @@ public class PostServiceImpl implements PostService {
                             .longitude(post.getLongitude())
                             .address(post.getAddress())
                             .likeStatus(likeStatus)
+                            .elapsedTime(elapsedTime)
                             .privateOrPublic(post.getPrivateOrPublic())
                             .locationName(post.getLocationName())
                             .professionNames(professionNames)
@@ -280,6 +288,7 @@ public class PostServiceImpl implements PostService {
                             .createdOn(post.getCreatedOn())
                             .createdBy(post.getCreatedBy())
                             .taggedUsers(taggedUsers)
+                            
                             .build();
                     responseList.add(postWebModel);
                 });
