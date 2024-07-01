@@ -191,8 +191,7 @@ public class UserServiceImpl implements UserService {
         String dateString = "";
         LocalDate finalDate = LocalDate.now();
         List<BookingWebModel> userBookings = bookingService.getConfirmedBookingsByUserId(user.getUserId());
-        if (!Utility.isNullOrEmptyList(userBookings)) {
-            userBookings.sort(Comparator.comparing(BookingWebModel::getToDate).reversed());
+        if (!Utility.isNullOrEmptyList(userBookings) && !CalendarUtil.isPastDate(userBookings.get(0).getToDate())) {
             finalDate = CalendarUtil.getNextDate(userBookings.get(0).getToDate());
         }
         dateString = CalendarUtil.getFormatedDateString(finalDate, CalendarUtil.UI_DATE_FORMAT);

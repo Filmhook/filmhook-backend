@@ -99,4 +99,10 @@ public class CalendarUtil {
 
         return outputDate;
     }
+
+    public static boolean isPastDate(String toDate) {
+        LocalDate localDate = LocalDate.now(ZoneId.systemDefault());
+        LocalDate inputDate = LocalDate.parse(toDate, DD_MM_YYYY_DATETIME_FORMATTER);
+        return inputDate.isBefore(localDate);
+    }
 }

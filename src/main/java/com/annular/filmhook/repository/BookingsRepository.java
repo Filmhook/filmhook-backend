@@ -18,7 +18,7 @@ public interface BookingsRepository extends JpaRepository<Bookings, Integer> {
     @Query("Select br From Bookings br Where (br.fromDate like :fromDate or br.fromDate like :toDate) and (br.toDate like :fromDate or br.toDate like :toDate) and br.bookingStatus='Pending' and br.bookedUser=:bookedUser")
     List<Bookings> getPendingBookingsByUserFromAndToDates(User bookedUser, String fromDate, String toDate);
 
-    @Query("Select br From Bookings br Where br.bookingStatus = 'Confirm' and br.bookedUser = :bookedUser and br.status = true")
+    @Query("Select br From Bookings br Where br.bookingStatus = 'Confirm' and br.bookedUser = :bookedUser and br.status = true Order by br.toDate desc")
     List<Bookings> getConfirmedBookingsByBookedUser(User bookedUser);
 
 }
