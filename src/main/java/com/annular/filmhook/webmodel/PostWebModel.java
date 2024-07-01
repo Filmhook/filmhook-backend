@@ -41,13 +41,13 @@ public class PostWebModel {
     private String postUrl;
     private Integer followersCount;
     private Boolean likeStatus;
+    private Integer likeId;
     private Boolean pinStatus;
     private String elapsedTime;
 
     private Date createdOn;
     private Integer createdBy;
     private String postLinkUrl;
-
 
     private List<Integer> taggedUsers;
     private Integer pageNo;

@@ -201,7 +201,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostWebModel> getPostsByUserId(Integer userId) {
         try {
-            List<Posts> postList = postsRepository.findByUser(User.builder().userId(userId).build());
+            List<Posts> postList = postsRepository.getUserPosts(User.builder().userId(userId).build());
             return this.transformPostsDataToPostWebModel(postList);
         } catch (Exception e) {
             logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
@@ -238,10 +238,11 @@ public class PostServiceImpl implements PostService {
                     // Fetching the followers count for the user
                     List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
-                    // Fetching the likes details
+                    // Fetching the like actions from current logged-in user
                     Integer loggedInUser = userDetails.userInfo().getId();
                     Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), loggedInUser);
                     Boolean likeStatus = likesList.map(Likes::getStatus).orElse(false);
+                    Integer latestLikeId = likesList.map(Likes::getLikeId).orElse(null);
 
                     Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(loggedInUser, post.getUser().getUserId());
                     Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
@@ -252,14 +253,11 @@ public class PostServiceImpl implements PostService {
                                     .map(postTags -> postTags.getTaggedUser().getUserId())
                                     .collect(Collectors.toList())
                             : null;
-                    // Convert Date to LocalDateTime
-                    Date createdDate = post.getCreatedOn();
-                    LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
-                 // Calculate elapsed time
-                    String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
-                    
 
-                    
+                    Date createdDate = post.getCreatedOn(); // Convert Date to LocalDateTime
+                    LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
+                    String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
+
                     // Preparing outputList
                     PostWebModel postWebModel = PostWebModel.builder()
                             .id(post.getId())
@@ -280,6 +278,7 @@ public class PostServiceImpl implements PostService {
                             .longitude(post.getLongitude())
                             .address(post.getAddress())
                             .likeStatus(likeStatus)
+                            .likeId(latestLikeId)
                             .elapsedTime(elapsedTime)
                             .privateOrPublic(post.getPrivateOrPublic())
                             .locationName(post.getLocationName())
@@ -288,11 +287,10 @@ public class PostServiceImpl implements PostService {
                             .createdOn(post.getCreatedOn())
                             .createdBy(post.getCreatedBy())
                             .taggedUsers(taggedUsers)
-                            
                             .build();
                     responseList.add(postWebModel);
                 });
-                responseList.sort(Comparator.comparing(PostWebModel::getCreatedOn).reversed());
+                //responseList.sort(Comparator.comparing(PostWebModel::getCreatedOn).reversed());
                 responseList.sort(Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag).reversed()));
             }
         } catch (Exception e) {
@@ -340,7 +338,8 @@ public class PostServiceImpl implements PostService {
     public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
         try {
             Pageable paging = PageRequest.of(pageNo - 1, pageSize);
-            List<Posts> postList = postsRepository.findAll(paging).stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
+            //List<Posts> postList = postsRepository.findAll(paging).stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
+            List<Posts> postList = postsRepository.getAllActivePosts(paging);
             return this.transformPostsDataToPostWebModel(postList);
         } catch (Exception e) {
             logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
@@ -352,11 +351,16 @@ public class PostServiceImpl implements PostService {
     @Override
     public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
         try {
-            Likes likeRowToSaveOrUpdate = null;
+            Likes likeRowToSaveOrUpdate;
             Posts post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
             if (post != null) {
 
-                Likes existingLike = likeWebModel.getLikeId() != null ? likeRepository.findById(likeWebModel.getLikeId()).orElse(null) : null;
+                Likes existingLike;
+                if (!Utility.isNullObject(likeWebModel.getLikeId())) {
+                    existingLike = likeRepository.findById(likeWebModel.getLikeId()).orElse(null);
+                } else {
+                    existingLike = likeRepository.findByPostIdAndUserId(likeWebModel.getPostId(), likeWebModel.getUserId()).orElse(null);
+                }
                 Comment existingComment = likeWebModel.getCommentId() != null ? commentRepository.findById(likeWebModel.getCommentId()).orElse(null) : null;
 
                 if (existingLike != null) {
