@@ -81,11 +81,6 @@ public class UserServiceImpl implements UserService {
     @Autowired
     LocationRepository locationRepository;
 
-    @Override
-    public List<UserWebModel> getAllUsers() {
-        return userRepository.findAll().stream().filter(Objects::nonNull).map(this::transformUserObjToUserWebModelObj).collect(Collectors.toList());
-    }
-
     @Autowired
     IndustryRepository industryRepository;
 
@@ -109,6 +104,15 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     BookingService bookingService;
+
+    @Override
+    public List<UserWebModel> getAllUsers() {
+        return userRepository.findAll().stream()
+                .filter(Objects::nonNull)
+                .filter(user -> user.getStatus().equals(true))
+                .map(this::transformUserObjToUserWebModelObj)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public Optional<UserWebModel> getUserByUserId(Integer userId) {
@@ -158,17 +162,12 @@ public class UserServiceImpl implements UserService {
         //userWebModel.setCaste(user.getCaste());
         userWebModel.setMaritalStatus(user.getMaritalStatus());
         userWebModel.setSpouseName(user.getSpouseName());
-        if (user.getChildrenNames() != null) {
-            userWebModel.setChildrenNames(new ArrayList<>(Arrays.asList(user.getChildrenNames().split(","))));
-        }
+        if (!Utility.isNullOrBlankWithTrim(user.getChildrenNames())) userWebModel.setChildrenNames(new ArrayList<>(Arrays.asList(user.getChildrenNames().split(","))));
+
         userWebModel.setMotherName(user.getMotherName());
         userWebModel.setFatherName(user.getFatherName());
-        if (user.getChildrenNames() != null) {
-            userWebModel.setBrotherNames(new ArrayList<>(Arrays.asList(user.getBrotherNames().split(","))));
-        }
-        if (user.getChildrenNames() != null) {
-            userWebModel.setSisterNames(new ArrayList<>(Arrays.asList(user.getSisterNames().split(","))));
-        }
+        if (!Utility.isNullOrBlankWithTrim(user.getBrotherNames())) userWebModel.setBrotherNames(new ArrayList<>(Arrays.asList(user.getBrotherNames().split(","))));
+        if (!Utility.isNullOrBlankWithTrim(user.getSisterNames())) userWebModel.setSisterNames(new ArrayList<>(Arrays.asList(user.getSisterNames().split(","))));
 
         userWebModel.setSchoolName(user.getSchoolName());
         userWebModel.setCollegeName(user.getCollegeName());
@@ -227,16 +226,15 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserBiographyData(UserWebModel userInput, User userToUpdate) {
-        userToUpdate.setDob(userInput.getDob());
-        userToUpdate.setGender(userInput.getGender());
-        userToUpdate.setBirthPlace(userInput.getBirthPlace());
-        userToUpdate.setLivingPlace(userInput.getLivingPlace());
-        userToUpdate.setExperience(userInput.getExperience());
-        userToUpdate.setSchedule(userInput.getSchedule());
 
-        userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
-        userToUpdate.setHomeAddress(userInput.getHomeAddress());
-
+        if (!Utility.isNullOrBlankWithTrim(userInput.getDob())) userToUpdate.setDob(userInput.getDob());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getGender())) userToUpdate.setGender(userInput.getGender());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getBirthPlace())) userToUpdate.setBirthPlace(userInput.getBirthPlace());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getLivingPlace())) userToUpdate.setLivingPlace(userInput.getLivingPlace());
+        //if (!Utility.isNullOrBlankWithTrim(userInput.getExperience())) userToUpdate.setExperience(userInput.getExperience());
+        //if (!Utility.isNullOrBlankWithTrim(userInput.getSchedule())) userToUpdate.setSchedule(userInput.getSchedule());
+        //if (!Utility.isNullOrBlankWithTrim(userInput.getCurrentAddress())) userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
+        //if (!Utility.isNullOrBlankWithTrim(userInput.getHomeAddress())) userToUpdate.setHomeAddress(userInput.getHomeAddress());
         userToUpdate.setUpdatedBy(userToUpdate.getUserId());
         userToUpdate.setUpdatedOn(new Date());
     }
@@ -259,14 +257,15 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserBiologicalData(UserWebModel userInput, User userToUpdate) {
-        userToUpdate.setHeight(userInput.getHeight()); //+ "Cm");
-        userToUpdate.setWeight(userInput.getWeight()); //+ "Kg");
-        userToUpdate.setSkinTone(userInput.getSkinTone());
-        userToUpdate.setHairColor(userInput.getHairColor());
-        userToUpdate.setBmi(userInput.getBmi());
-        userToUpdate.setChestSize(userInput.getChestSize()); //+ "in");
-        userToUpdate.setWaistSize(userInput.getWaistSize()); //+ "in");
-        userToUpdate.setBiceps(userInput.getBicepsSize());// + "in");
+
+        if (!Utility.isNullOrBlankWithTrim(userInput.getHeight())) userToUpdate.setHeight(userInput.getHeight()); //+ "Cm");
+        if (!Utility.isNullOrBlankWithTrim(userInput.getWeight())) userToUpdate.setWeight(userInput.getWeight()); //+ "Kg");
+        if (!Utility.isNullOrBlankWithTrim(userInput.getSkinTone())) userToUpdate.setSkinTone(userInput.getSkinTone());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getHairColor())) userToUpdate.setHairColor(userInput.getHairColor());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getBmi())) userToUpdate.setBmi(userInput.getBmi());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getChestSize())) userToUpdate.setChestSize(userInput.getChestSize()); //+ "in");
+        if (!Utility.isNullOrBlankWithTrim(userInput.getWaistSize())) userToUpdate.setWaistSize(userInput.getWaistSize()); //+ "in");
+        if (!Utility.isNullOrBlankWithTrim(userInput.getBicepsSize())) userToUpdate.setBiceps(userInput.getBicepsSize());// + "in");
 
         userToUpdate.setUpdatedBy(userToUpdate.getUserId());
         userToUpdate.setUpdatedOn(new Date());
@@ -290,21 +289,16 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserPersonalInfo(UserWebModel userInput, User userToUpdate) {
-        userToUpdate.setReligion(userInput.getReligion());
-        //userToUpdate.setCaste(userInput.getCaste());
-        userToUpdate.setMaritalStatus(userInput.getMaritalStatus());
-        if (userInput.getChildrenNames() != null) {
-            userToUpdate.setChildrenNames(String.join(",", userInput.getChildrenNames()));
-        }
-        userToUpdate.setMotherName(userInput.getMotherName());
-        userToUpdate.setSpouseName(userInput.getSpouseName());
-        userToUpdate.setFatherName(userInput.getFatherName());
-        if (userInput.getBrotherNames() != null) {
-            userToUpdate.setBrotherNames(String.join(",", userInput.getBrotherNames()));
-        }
-        if (userInput.getSisterNames() != null) {
-            userToUpdate.setSisterNames(String.join(",", userInput.getSisterNames()));
-        }
+
+        if (!Utility.isNullOrBlankWithTrim(userInput.getReligion())) userToUpdate.setReligion(userInput.getReligion());
+        //if (!Utility.isNullOrBlankWithTrim(userInput.getCaste())) userToUpdate.setCaste(userInput.getCaste());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getFatherName())) userToUpdate.setFatherName(userInput.getFatherName());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getMotherName())) userToUpdate.setMotherName(userInput.getMotherName());
+        if (!Utility.isNullOrEmptyList(userInput.getBrotherNames())) userToUpdate.setBrotherNames(String.join(",", userInput.getBrotherNames()));
+        if (!Utility.isNullOrEmptyList(userInput.getSisterNames())) userToUpdate.setSisterNames(String.join(",", userInput.getSisterNames()));
+        if (!Utility.isNullOrBlankWithTrim(userInput.getMaritalStatus())) userToUpdate.setMaritalStatus(userInput.getMaritalStatus());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getSpouseName())) userToUpdate.setSpouseName(userInput.getSpouseName());
+        if (!Utility.isNullOrEmptyList(userInput.getChildrenNames())) userToUpdate.setChildrenNames(String.join(",", userInput.getChildrenNames()));
 
         userToUpdate.setUpdatedBy(userToUpdate.getUserId());
         userToUpdate.setUpdatedOn(new Date());
@@ -328,9 +322,10 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserEducationalInfo(UserWebModel userInput, User userToUpdate) {
-        userToUpdate.setSchoolName(userInput.getSchoolName());
-        userToUpdate.setCollegeName(userInput.getCollegeName());
-        userToUpdate.setQualification(userInput.getQualification());
+
+        if (!Utility.isNullOrBlankWithTrim(userInput.getSchoolName())) userToUpdate.setSchoolName(userInput.getSchoolName());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getCollegeName())) userToUpdate.setCollegeName(userInput.getCollegeName());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getQualification())) userToUpdate.setQualification(userInput.getQualification());
 
         userToUpdate.setUpdatedBy(userToUpdate.getUserId());
         userToUpdate.setUpdatedOn(new Date());
@@ -354,10 +349,11 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserProfessionInfo(UserWebModel userInput, User userToUpdate) {
-        userToUpdate.setWorkCategory(userInput.getWorkCategory());
+
+        if (!Utility.isNullOrBlankWithTrim(userInput.getWorkCategory())) userToUpdate.setWorkCategory(userInput.getWorkCategory());
+
         userToUpdate.setUpdatedBy(userToUpdate.getUserId());
         userToUpdate.setUpdatedOn(new Date());
-        // need to add profession details later.
     }
 
     @Override
@@ -378,7 +374,7 @@ public class UserServiceImpl implements UserService {
                 userWebModel.getProfilePhoto().setCategory(MediaFileCategory.ProfilePic);
                 userWebModel.getProfilePhoto().setCategoryRefId(user.get().getUserId());
                 List<FileOutputWebModel> savedFileList = mediaFilesService.saveMediaFiles(userWebModel.getProfilePhoto(), user.get());
-                return (savedFileList != null && !savedFileList.isEmpty()) ? savedFileList.get(0) : null;
+                return (!Utility.isNullOrEmptyList(savedFileList)) ? savedFileList.get(0) : null;
             }
         } catch (Exception e) {
             logger.error("Error occurred at saveProfilePhoto() -> [{}]", e.getMessage());
@@ -391,7 +387,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public FileOutputWebModel getProfilePic(UserWebModel userWebModel) {
         List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, userWebModel.getUserId());
-        if (outputWebModelList != null && !outputWebModelList.isEmpty()) return outputWebModelList.get(0);
+        if (!Utility.isNullOrEmptyList(outputWebModelList)) return outputWebModelList.get(0);
         return null;
     }
 
@@ -417,7 +413,7 @@ public class UserServiceImpl implements UserService {
             if (user.isPresent()) {
                 // Find and delete old cover pic
                 List<FileOutputWebModel> outputWebModelList = this.getCoverPic(userWebModel);
-                if (outputWebModelList != null && !outputWebModelList.isEmpty()) {
+                if (!Utility.isNullOrEmptyList(outputWebModelList)) {
                     logger.info("Existing cover pic size [{}]", outputWebModelList.size());
                     List<Integer> coverPicIdsList = outputWebModelList.stream().map(FileOutputWebModel::getCategoryRefId).collect(Collectors.toList());
                     mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.CoverPic, coverPicIdsList);
@@ -439,7 +435,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<FileOutputWebModel> getCoverPic(UserWebModel userWebModel) {
         List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.CoverPic, userWebModel.getUserId());
-        if (outputWebModelList != null && !outputWebModelList.isEmpty()) return outputWebModelList;
+        if (!Utility.isNullOrEmptyList(outputWebModelList)) return outputWebModelList;
         return null;
     }
 
@@ -447,7 +443,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUserCoverPic(UserWebModel userWebModel) {
         try {
             List<FileOutputWebModel> outputWebModelList = this.getCoverPic(userWebModel);
-            if (outputWebModelList != null && !outputWebModelList.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(outputWebModelList)) {
                 List<Integer> coverPicIdsList = outputWebModelList.stream().map(FileOutputWebModel::getCategoryRefId).collect(Collectors.toList());
                 mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.CoverPic, coverPicIdsList);
             }
@@ -837,9 +833,12 @@ public class UserServiceImpl implements UserService {
             Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
-                user.setFirstName(userWebModel.getFirstName());
-                user.setLastName(userWebModel.getLastName());
+
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName())) user.setFirstName(userWebModel.getFirstName());
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) user.setLastName(userWebModel.getLastName());
                 user.setName(user.getFirstName() + " " + user.getLastName());
+
+                user.setUpdatedBy(userWebModel.getUserId());
                 user.setUpdatedOn(new Date());
 
                 User updatedUser = userRepository.save(user);

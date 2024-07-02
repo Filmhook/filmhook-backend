@@ -156,7 +156,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     shootingLocationWebModels.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
 
                     List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
-                    if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+                    if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
                         shootingLocationWebModels.setFileOutputWebModel(fileOutputWebModelList);
                     }
                     shootingLocationWebModel.add(shootingLocationWebModels);
@@ -252,7 +252,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     shootingLocationWebModels.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
 
                     List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
-                    if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+                    if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
                         shootingLocationWebModels.setFileOutputWebModel(fileOutputWebModelList);
                     }
 

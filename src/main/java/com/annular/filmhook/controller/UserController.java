@@ -244,7 +244,7 @@ public class UserController {
     public Response getIndustryByCountry(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllIndustryByCountryIds(searchWebModel.getCountryIds());
-            if (userSearchWebModelList != null && !userSearchWebModelList.isEmpty())
+            if (!Utility.isNullOrEmptyList(userSearchWebModelList))
                 return new Response(1, "Industry(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getIndustryByCountry -> {}", e.getMessage());
@@ -258,7 +258,7 @@ public class UserController {
     public Response getProfessionByPlatform(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllProfessionByPlatformId(searchWebModel.getPlatformId());
-            if (userSearchWebModelList != null && !userSearchWebModelList.isEmpty())
+            if (!Utility.isNullOrEmptyList(userSearchWebModelList))
                 return new Response(1, "Profession(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getProfessionByPlatform -> {}", e.getMessage());
@@ -272,7 +272,7 @@ public class UserController {
     public Response getSubProfessionByProfession(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             List<UserSearchWebModel> userSearchWebModelList = userService.getAllSubProfessionByProfessionId(searchWebModel.getProfessionIds());
-            if (userSearchWebModelList != null && !userSearchWebModelList.isEmpty())
+            if (!Utility.isNullOrEmptyList(userSearchWebModelList))
                 return new Response(1, "Sub Profession(s) found successfully...", userSearchWebModelList);
         } catch (Exception e) {
             logger.error("Error at getSubProfessionByProfession -> {}", e.getMessage());
@@ -286,7 +286,7 @@ public class UserController {
     public Response getUserByAllCriteria(@RequestBody UserSearchWebModel searchWebModel) {
         try {
             Map<String, List<Map<String, Object>>> outputMap = userService.getUserByAllSearchCriteria(searchWebModel);
-            if (outputMap != null && !outputMap.isEmpty())
+            if (!Utility.isNullOrEmptyMap(outputMap))
                 return new Response(1, "User(s) found successfully...", outputMap);
         } catch (Exception e) {
             logger.error("Error at getUserByAllCriteria -> {}", e.getMessage());

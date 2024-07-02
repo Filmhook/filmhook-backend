@@ -45,6 +45,7 @@ import com.annular.filmhook.webmodel.IndustryUserResponseDTO;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 import com.annular.filmhook.webmodel.UserWebModel;
+import com.annular.filmhook.util.Utility;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -118,7 +119,7 @@ public class AdminServiceImpl implements AdminService {
                 user.setUserType(userWebModel.getUserType());
 
                 // Only update password if it's provided in the request
-                if (userWebModel.getPassword() != null && !userWebModel.getPassword().isEmpty()) {
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getPassword())) {
                     BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
                     String encryptPwd = bcrypt.encode(userWebModel.getPassword());
                     user.setPassword(encryptPwd);

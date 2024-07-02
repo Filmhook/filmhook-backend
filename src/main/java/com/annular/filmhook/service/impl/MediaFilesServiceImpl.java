@@ -287,7 +287,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 
     private void deleteMediaFiles(List<MediaFiles> mediaFiles) {
         try {
-            if (mediaFiles != null && !mediaFiles.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(mediaFiles)) {
                 mediaFiles.forEach(mediaFile -> {
                     mediaFile.setStatus(false); // 1. Deactivating the MediaFiles
                     mediaFilesRepository.saveAndFlush(mediaFile);

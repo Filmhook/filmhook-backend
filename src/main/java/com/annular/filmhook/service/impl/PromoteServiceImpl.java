@@ -21,6 +21,7 @@ import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.service.PromoteService;
 import com.annular.filmhook.webmodel.PromoteWebModel;
+import com.annular.filmhook.util.Utility;
 
 @Service
 public class PromoteServiceImpl implements PromoteService {
@@ -58,9 +59,8 @@ public class PromoteServiceImpl implements PromoteService {
                 promote.setTaxFee(promoteWebModel.getTaxFee());
                 promote.setSgst(promoteWebModel.getSgst());
                 promote.setStatus(!promote.getStatus());
-                if (promoteWebModel.getCountry() != null) {
-                    promote.setCountry(String.join(",", promoteWebModel.getCountry()));
-                }
+                if (!Utility.isNullOrEmptyList(promoteWebModel.getCountry())) promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+
                 promote.setUpdatedOn(new Date());
                 promote.setUpdatedBy(userId);
                 promote.setMultimediaId(promoteWebModel.getMultimediaId());
@@ -78,9 +78,8 @@ public class PromoteServiceImpl implements PromoteService {
                 promote.setCreatedBy(userId);
                 promote.setCreatedOn(new Date());
                 promote.setStatus(true);
-                if (promoteWebModel.getCountry() != null) {
-                    promote.setCountry(String.join(",", promoteWebModel.getCountry()));
-                }
+                if (!Utility.isNullOrEmptyList(promoteWebModel.getCountry())) promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+
                 promote.setUserId(userId);
                 promote.setMultimediaId(promoteWebModel.getMultimediaId());
             }
