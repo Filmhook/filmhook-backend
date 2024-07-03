@@ -76,21 +76,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 User user = new User();
                 user.setPhoneNumber(userWebModel.getPhoneNumber());
 
-                StringBuilder name = new StringBuilder();
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName()))
-                    name.append(userWebModel.getFirstName()).append(" ");
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName()))
-                    name.append(userWebModel.getMiddleName()).append(" ");
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) name.append(userWebModel.getLastName());
-                user.setName(name.toString());
-
+//                StringBuilder name = new StringBuilder();
+//                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName()))
+//                    name.append(userWebModel.getFirstName()).append(" ");
+//                if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName()))
+//                    name.append(userWebModel.getMiddleName()).append(" ");
+//                if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) name.append(userWebModel.getLastName());
+//                user.setName(name.toString());
+                
+                user.setFirstName(userWebModel.getFirstName());
+                user.setLastName(userWebModel.getLastName());
+                user.setMiddleName(userWebModel.getMiddleName());
+                user.setName(userWebModel.getFirstName() + " " + userWebModel.getMiddleName()+" "+ userWebModel.getLastName());
                 user.setEmail(userWebModel.getEmail());
                 user.setUserType(userWebModel.getUserType());
                 user.setMobileNumberStatus(false);
                 user.setDob(userWebModel.getDob());
                 user.setGender(userWebModel.getGender());
                 user.setBirthPlace(userWebModel.getBirthPlace());
-                user.setUserType(userWebModel.getUserType());
                 user.setLivingPlace(userWebModel.getLivingPlace());
 
                 // Generate and set FilmHook code

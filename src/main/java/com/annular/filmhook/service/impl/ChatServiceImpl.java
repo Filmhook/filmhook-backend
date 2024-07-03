@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -153,12 +155,15 @@ public class ChatServiceImpl implements ChatService {
     public void getLatestChatMessage(Integer loggedInUserId, User user, Map<String, Object> dataMap) {
         String latestMsg = "", latestMsgTime = "";
         try {
-            Optional<Chat> lastChat = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
-            if (lastChat.isPresent()) {
-                if (!Utility.isNullOrBlankWithTrim(lastChat.get().getMessage())) {
-                    latestMsg = lastChat.get().getMessage();
+            Pageable pageable = PageRequest.of(0, 1);
+            List<Chat> chatList = chatRepository.findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(loggedInUserId, user.getUserId(), pageable);
+
+            if (!chatList.isEmpty()) {
+                Chat lastChat = chatList.get(0);  // Get the latest message
+                if (!Utility.isNullOrBlankWithTrim(lastChat.getMessage())) {
+                    latestMsg = lastChat.getMessage();
                 } else {
-                    List<FileOutputWebModel> files = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.get().getChatId()).stream()
+                    List<FileOutputWebModel> files = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.getChatId()).stream()
                             .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
                             .collect(Collectors.toList());
                     if (!Utility.isNullOrEmptyList(files)) {
@@ -167,7 +172,7 @@ public class ChatServiceImpl implements ChatService {
                         else if (FileUtil.isVideoFile(fileType)) latestMsg = "Audio/Video";
                     }
                 }
-                latestMsgTime = String.valueOf(lastChat.get().getTimeStamp());
+                latestMsgTime = String.valueOf(lastChat.getTimeStamp());
             }
         } catch (Exception e) {
             logger.error("Error while getting latest chat message -> {}", e.getMessage());
@@ -176,6 +181,7 @@ public class ChatServiceImpl implements ChatService {
         dataMap.put("latestMessage", latestMsg);
         dataMap.put("latestMsgTime", latestMsgTime);
     }
+
 
     @Override
     public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
@@ -266,7 +272,7 @@ public class ChatServiceImpl implements ChatService {
     @Override
     public Response getLastMessageById(ChatWebModel message) {
         try {
-            List<Chat> lastMessages = chatRepository.findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(message.getChatSenderId(), message.getChatReceiverId());
+            List<Chat> lastMessages = chatRepository.findTopByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(message.getChatSenderId(), message.getChatReceiverId());
             logger.info("message{}", message.getChatSenderId());
             logger.info("message1{}", message.getChatReceiverId());
             if (!lastMessages.isEmpty()) {
