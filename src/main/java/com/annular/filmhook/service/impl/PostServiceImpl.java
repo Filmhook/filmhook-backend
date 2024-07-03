@@ -232,7 +232,7 @@ public class PostServiceImpl implements PostService {
                     if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
                         professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
                     } else {
-                        professionNames.add("CommonUser");
+                        professionNames.add("PublicUser");
                     }
 
                     // Fetching the followers count for the user
