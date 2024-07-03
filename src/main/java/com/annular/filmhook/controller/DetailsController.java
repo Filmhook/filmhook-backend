@@ -28,6 +28,7 @@ import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.UserWebModel;
+import com.annular.filmhook.util.Utility;
 
 @RestController
 @RequestMapping("/industryUser")
@@ -143,7 +144,7 @@ public class DetailsController {
         try {
             logger.info("Inputs for industry user file save -> {}", inputFileData);
             List<FileOutputWebModel> outputFilesList = detailService.saveIndustryUserFiles(inputFileData);
-            if (outputFilesList != null && !outputFilesList.isEmpty())
+            if (!Utility.isNullOrEmptyList(outputFilesList))
                 return new Response(1, "File(s) saved successfully...", outputFilesList);
         } catch (Exception e) {
             logger.error("Error at saveIndustryUserFiles() -> {}", e.getMessage());
@@ -156,7 +157,7 @@ public class DetailsController {
     public Response getIndustryFiles(@RequestParam("userId") Integer userId) {
         try {
             List<FileOutputWebModel> outputList = detailService.getIndustryFiles(userId);
-            if (outputList != null && !outputList.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(outputList)) {
                 logger.info("[{}] Industry files found for userId :- {}", outputList.size(), userId);
                 return new Response(1, "Industry file(s) found successfully...", outputList);
             } else {

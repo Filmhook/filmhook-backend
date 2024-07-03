@@ -11,6 +11,7 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.StoriesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
@@ -73,7 +74,7 @@ public class StoriesServiceImpl implements StoriesService {
                 inputData.getFileInputWebModel().setCategory(MediaFileCategory.Stories);
                 inputData.getFileInputWebModel().setCategoryRefId(story.getId()); // adding the story table reference in media files table
                 List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(inputData.getFileInputWebModel(), userFromDB.get());
-                return fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty() ? this.transformData(story) : null;
+                return Utility.isNullOrEmptyList(fileOutputWebModelList) ? null : this.transformData(story);
             } else {
                 return null;
             }
@@ -105,7 +106,7 @@ public class StoriesServiceImpl implements StoriesService {
 //        List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
 //        try {
 //            List<Story> storyList = storyRepository.getStoryByUserId(userId);
-//            if (storyList != null && !storyList.isEmpty()) {
+//            if (!Utility.isNullOrEmptyList(storyList)) {
 //                storiesWebModelList = storyList.stream().map(this::transformData).collect(Collectors.toList());
 //            }
 //        } catch (Exception e) {
@@ -120,7 +121,7 @@ public class StoriesServiceImpl implements StoriesService {
         List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
         try {
             List<Story> storyList = storyRepository.getStoryByUserId(userId);
-            if (storyList != null && !storyList.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(storyList)) {
                 // Get the current time and the time 24 hours ago
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime twentyFourHoursAgo = now.minusHours(24);
@@ -156,7 +157,7 @@ public class StoriesServiceImpl implements StoriesService {
         storiesWebModel.setCreatedBy(story.getCreatedBy());
 
         List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
-        if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+        if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
             storiesWebModel.setFileOutputWebModel(fileOutputWebModelList);
         }
 
@@ -209,7 +210,7 @@ public class StoriesServiceImpl implements StoriesService {
         List<Story> storyList = new ArrayList<>();
         try {
             storyList = storyRepository.getStoryByUserId(userId);
-            if (storyList != null && !storyList.isEmpty()) {
+            if (!Utility.isNullOrEmptyList(storyList)) {
                 storyList.forEach(this::deleteStory); // Deactivating the Story table Records
                 List<Integer> storyIdsList = storyList.stream().map(Story::getId).collect(Collectors.toList());
                 mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(userId, MediaFileCategory.Stories, storyIdsList); // Deactivating the MediaFiles table Records and S3 as well

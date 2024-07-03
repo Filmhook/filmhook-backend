@@ -311,7 +311,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Optional<User> userFromDB = userRepository.findByEmail(userWebModel.getEmail());
             if (userFromDB.isPresent()) {
                 User user = userFromDB.get();
-                if (userWebModel.getCurrentPassword() != null && bcrypt.matches(userWebModel.getCurrentPassword(), user.getPassword())) {
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getCurrentPassword()) && bcrypt.matches(userWebModel.getCurrentPassword(), user.getPassword())) {
                     String encryptPwd = bcrypt.encode(userWebModel.getNewPassword());
                     user.setPassword(encryptPwd);
                     user = userRepository.save(user);
@@ -422,7 +422,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             // Iterate through the list of users
             for (User user : userList) {
-                if (user.getForgotOtp() != null && user.getForgotOtp().equals(userWebModel.getForgotOtp())) {
+                if (!Utility.isNullOrBlankWithTrim(user.getForgotOtp()) && user.getForgotOtp().equals(userWebModel.getForgotOtp())) {
                     // Update the user if forgotOtp is verified
                     // user.setForgotOtp(null); // Clear the forgotOtp after verification
                     userRepository.save(user);

@@ -186,7 +186,7 @@ public class AuditionServiceImpl implements AuditionService {
                     }
 
                     List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
-                    if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+                    if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
                         auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
                     }
                     auditionWebModelsList.add(auditionWebModel);
@@ -376,7 +376,7 @@ public class AuditionServiceImpl implements AuditionService {
                     }
 
                     List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
-                    if (fileOutputWebModelList != null && !fileOutputWebModelList.isEmpty()) {
+                    if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
                         auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
                     }
 
@@ -470,7 +470,7 @@ public class AuditionServiceImpl implements AuditionService {
             List<AuditionRoles> auditionRolesList = new ArrayList<>();
 
             // Update existing roles if auditionRolesId is provided
-            if (auditionWebModel.getAuditionRolesWebModels() != null && !auditionWebModel.getAuditionRolesWebModels().isEmpty()) {
+            if (!Utility.isNullOrEmptyList(auditionWebModel.getAuditionRolesWebModels())) {
                 for (AuditionRolesWebModel role : auditionWebModel.getAuditionRolesWebModels()) {
                     if (role.getAuditionRoleId() != null) {
                         Optional<AuditionRoles> existingRoleOptional = auditionRolesRepository.findById(role.getAuditionRoleId());
