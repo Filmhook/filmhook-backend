@@ -105,4 +105,15 @@ public class ChatController {
         }
     }
 
+    @GetMapping("getAllSearchByChat")
+    public ResponseEntity<Response> getAllSearchByChat(@RequestParam("searchKey") String searchKey) {
+        try {
+            Response response = chatService.getAllSearchByChat(searchKey);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            logger.error("Error at getLastMessageById -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+        }
+    }
 }

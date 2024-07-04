@@ -17,4 +17,6 @@ public interface ChatService {
 
 	Response getLastMessageById(ChatWebModel message);
 
+	Response getAllSearchByChat(String searchKey);
+
 }

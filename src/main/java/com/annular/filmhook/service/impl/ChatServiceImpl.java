@@ -138,7 +138,8 @@ public class ChatServiceImpl implements ChatService {
                         })
                         .collect(Collectors.toList());
 
-                Comparator<Map<String, Object>> comparator = Comparator.comparing(data -> (String) data.get("latestMsgTime"));
+                // Sort userResponseList based on latestMsgTime in descending order
+                Comparator<Map<String, Object>> comparator = Comparator.comparing(data -> (Date) data.get("latestMsgTime"));
                 userResponseList.sort(comparator.reversed());
 
                 return ResponseEntity.ok(userResponseList);
@@ -153,7 +154,8 @@ public class ChatServiceImpl implements ChatService {
     }
 
     public void getLatestChatMessage(Integer loggedInUserId, User user, Map<String, Object> dataMap) {
-        String latestMsg = "", latestMsgTime = "";
+        String latestMsg = "";
+		Date latestMsgTime = null;
         try {
             Pageable pageable = PageRequest.of(0, 1);
             List<Chat> chatList = chatRepository.findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(loggedInUserId, user.getUserId(), pageable);
@@ -162,6 +164,7 @@ public class ChatServiceImpl implements ChatService {
                 Chat lastChat = chatList.get(0);  // Get the latest message
                 if (!Utility.isNullOrBlankWithTrim(lastChat.getMessage())) {
                     latestMsg = lastChat.getMessage();
+                    latestMsgTime = lastChat.getChatCreatedOn();
                 } else {
                     List<FileOutputWebModel> files = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.getChatId()).stream()
                             .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
@@ -172,7 +175,7 @@ public class ChatServiceImpl implements ChatService {
                         else if (FileUtil.isVideoFile(fileType)) latestMsg = "Audio/Video";
                     }
                 }
-                latestMsgTime = String.valueOf(lastChat.getTimeStamp());
+                latestMsgTime = lastChat.getChatCreatedOn();
             }
         } catch (Exception e) {
             logger.error("Error while getting latest chat message -> {}", e.getMessage());
@@ -289,5 +292,62 @@ public class ChatServiceImpl implements ChatService {
             return new Response(-1, "Error", e.getMessage());
         }
     }
+
+    @Override
+    public Response getAllSearchByChat(String searchKey) {
+        try {
+            List<User> users = userRepository.findBySearchName(searchKey);
+            Integer loggedInUserId = userDetails.userInfo().getId(); // Assuming userDetails provides logged-in user info
+            List<Map<String, Object>> responseList = users.stream().map(user -> {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("id", user.getUserId());
+                userMap.put("name", user.getName());
+                userMap.put("userType", user.getUserType());
+                userMap.put("profilePicUrl", userService.getProfilePicUrl(user.getUserId()));
+
+                try {
+                    List<Chat> chatList = chatRepository.findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(loggedInUserId, user.getUserId(), PageRequest.of(0, 1));
+
+                    if (!chatList.isEmpty()) {
+                        Chat lastChat = chatList.get(0);  // Get the latest message
+                        String latestMsg = "";
+                        Date latestMsgTime = null;
+
+                        if (!Utility.isNullOrBlankWithTrim(lastChat.getMessage())) {
+                            latestMsg = lastChat.getMessage();
+                            latestMsgTime = lastChat.getChatCreatedOn();
+                        } else {
+                            List<FileOutputWebModel> files = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.getChatId()).stream()
+                                    .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+                                    .collect(Collectors.toList());
+                            if (!Utility.isNullOrEmptyList(files)) {
+                                String fileType = files.get(files.size() - 1).getFileType();
+                                if (FileUtil.isImageFile(fileType)) {
+                                    latestMsg = "Photo";
+                                } else if (FileUtil.isVideoFile(fileType)) {
+                                    latestMsg = "Audio/Video";
+                                }
+                                latestMsgTime = files.get(0).getCreatedOn();
+                            }
+                        }
+                        userMap.put("latestMessage", latestMsg);
+                        userMap.put("latestMsgTime", latestMsgTime);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error while fetching latest chat for user {}", user.getUserId(), e);
+                }
+
+                return userMap;
+            }).collect(Collectors.toList());
+
+            return new Response(1, "Success", responseList);
+        } catch (Exception e) {
+            logger.error("Error while fetching users by search key {}", searchKey, e);
+            return new Response(-1, "Error", e.getMessage());
+        }
+    }
+
+
+
 
 }

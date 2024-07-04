@@ -72,6 +72,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("select u from User u where u.id!=:loggedInUserId and u.status=true")
     List<User> getAllActiveUserExceptCurrentUser(Integer loggedInUserId);
 
+    @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) AND u.status = true")
+	List<User> findBySearchName(String searchKey);
+
 //	@Query("select u from User u where u.userType='industrialUser' and u.status = false")
 //	List<User> getAllUnverifiedIndustrialUsers();
 
