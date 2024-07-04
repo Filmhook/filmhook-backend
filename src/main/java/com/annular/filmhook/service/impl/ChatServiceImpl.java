@@ -138,7 +138,7 @@ public class ChatServiceImpl implements ChatService {
                         })
                         .collect(Collectors.toList());
 
-                // Sort userResponseList based on latestMsgTime in descending order
+               //  Sort userResponseList based on latestMsgTime in descending order
                 Comparator<Map<String, Object>> comparator = Comparator.comparing(data -> (Date) data.get("latestMsgTime"));
                 userResponseList.sort(comparator.reversed());
 
@@ -165,6 +165,8 @@ public class ChatServiceImpl implements ChatService {
                 if (!Utility.isNullOrBlankWithTrim(lastChat.getMessage())) {
                     latestMsg = lastChat.getMessage();
                     latestMsgTime = lastChat.getChatCreatedOn();
+                    System.out.print("lastMessage"+lastChat.getChatCreatedOn());
+                    System.out.println("chatId"+lastChat.getChatId());
                 } else {
                     List<FileOutputWebModel> files = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.getChatId()).stream()
                             .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
@@ -173,6 +175,7 @@ public class ChatServiceImpl implements ChatService {
                         String fileType = files.get(files.size() - 1).getFileType();
                         if (FileUtil.isImageFile(fileType)) latestMsg = "Photo";
                         else if (FileUtil.isVideoFile(fileType)) latestMsg = "Audio/Video";
+                        System.out.print("audio"+files.get(0).getCreatedOn());
                     }
                 }
                 latestMsgTime = lastChat.getChatCreatedOn();
@@ -300,9 +303,9 @@ public class ChatServiceImpl implements ChatService {
             Integer loggedInUserId = userDetails.userInfo().getId(); // Assuming userDetails provides logged-in user info
             List<Map<String, Object>> responseList = users.stream().map(user -> {
                 Map<String, Object> userMap = new HashMap<>();
-                userMap.put("id", user.getUserId());
-                userMap.put("name", user.getName());
-                userMap.put("userType", user.getUserType());
+                userMap.put("userId", user.getUserId());
+                userMap.put("userName", user.getName());
+               // userMap.put("userType", user.getUserType());
                 userMap.put("profilePicUrl", userService.getProfilePicUrl(user.getUserId()));
 
                 try {
@@ -316,6 +319,7 @@ public class ChatServiceImpl implements ChatService {
                         if (!Utility.isNullOrBlankWithTrim(lastChat.getMessage())) {
                             latestMsg = lastChat.getMessage();
                             latestMsgTime = lastChat.getChatCreatedOn();
+                            System.out.print("lastMessage"+lastChat.getChatCreatedOn());
                         } else {
                             List<FileOutputWebModel> files = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.getChatId()).stream()
                                     .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
@@ -328,6 +332,7 @@ public class ChatServiceImpl implements ChatService {
                                     latestMsg = "Audio/Video";
                                 }
                                 latestMsgTime = files.get(0).getCreatedOn();
+                                System.out.print("audio"+files.get(0).getCreatedOn());
                             }
                         }
                         userMap.put("latestMessage", latestMsg);
