@@ -132,12 +132,11 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
-//        if (!Utility.isNullOrBlankWithTrim(user.getDob())) {
-//            //userWebModel.setDob(CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
-//            userWebModel.setAge(calendarUtil.getAgeFromDate(userWebModel.getDob(), CalendarUtil.UI_DATE_FORMAT));
-//        }
+        if (!Utility.isNullOrBlankWithTrim(user.getDob())) {
+            userWebModel.setDob(user.getDob());
+            userWebModel.setAge(calendarUtil.getAgeFromDate(user.getDob(), CalendarUtil.MYSQL_DATE_FORMAT));
+        }
         userWebModel.setGender(user.getGender());
-        userWebModel.setDob(user.getDob());
         userWebModel.setCountry(user.getCountry());
         userWebModel.setState(user.getState());
         userWebModel.setDistrict(user.getDistrict());
@@ -892,7 +891,7 @@ public class UserServiceImpl implements UserService {
     public List<UserWebModel> getUserByName(String name) {
         List<UserWebModel> responseList = new ArrayList<>();
         try {
-            List<User> usersList = userRepository.findByNameContainingIgnoreCase(name);
+            List<User> usersList = userRepository.findByNameContainingIgnoreCaseAndStatus(name, true);
             if (!Utility.isNullOrEmptyList(usersList)) {
                 responseList = usersList.stream()
                         .filter(Objects::nonNull)

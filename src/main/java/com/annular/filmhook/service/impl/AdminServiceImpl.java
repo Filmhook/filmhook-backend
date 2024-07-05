@@ -77,7 +77,7 @@ public class AdminServiceImpl implements AdminService {
     public ResponseEntity<?> userRegister(UserWebModel userWebModel) {
         try {
             logger.info("Admin Register method start");
-            Optional<User> userData = userRepository.findByEmailIdAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
+            Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
             BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
             if (!userData.isPresent()) {
                 User user = new User();

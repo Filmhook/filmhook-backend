@@ -21,19 +21,17 @@ import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
 
-
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
+
+    public static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
     @Autowired
     ChatService chatService;
 
     @Autowired
     FcmService fcmService;
-
-    
-    public static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
     @RequestMapping(path = "/saveMessage", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> saveMessage(@ModelAttribute ChatWebModel chatWebModel) {
@@ -111,7 +109,7 @@ public class ChatController {
             Response response = chatService.getAllSearchByChat(searchKey);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
-            logger.error("Error at getLastMessageById -> {}", e.getMessage());
+            logger.error("Error at getAllSearchByChat -> {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
         }

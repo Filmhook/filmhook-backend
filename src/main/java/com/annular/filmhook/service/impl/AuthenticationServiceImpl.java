@@ -2,7 +2,6 @@ package com.annular.filmhook.service.impl;
 
 import java.text.SimpleDateFormat;
 
-import java.time.LocalTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +34,6 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.RefreshTokenRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
-import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.configuration.TwilioConfig;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -70,24 +68,26 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         HashMap<String, Object> response = new HashMap<>();
         try {
             logger.info("Register method start");
-            // Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
-            Optional<User> userData = userRepository.findByEmailAndUserTypeAndMobile(userWebModel.getEmail(), userWebModel.getUserType());
+            Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
             if (userData.isEmpty()) {
                 User user = new User();
                 user.setPhoneNumber(userWebModel.getPhoneNumber());
 
-//                StringBuilder name = new StringBuilder();
-//                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName()))
-//                    name.append(userWebModel.getFirstName()).append(" ");
-//                if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName()))
-//                    name.append(userWebModel.getMiddleName()).append(" ");
-//                if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) name.append(userWebModel.getLastName());
-//                user.setName(name.toString());
-                
-                user.setFirstName(userWebModel.getFirstName());
-                user.setLastName(userWebModel.getLastName());
-                user.setMiddleName(userWebModel.getMiddleName());
-                user.setName(userWebModel.getFirstName() + " " + userWebModel.getMiddleName()+" "+ userWebModel.getLastName());
+                StringBuilder name = new StringBuilder();
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName())) {
+                    user.setFirstName(userWebModel.getFirstName());
+                    name.append(userWebModel.getFirstName()).append(" ");
+                }
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName())) {
+                    user.setMiddleName(userWebModel.getMiddleName());
+                    name.append(userWebModel.getMiddleName()).append(" ");
+                }
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) {
+                    user.setLastName(userWebModel.getLastName());
+                    name.append(userWebModel.getLastName());
+                }
+                user.setName(name.toString());
+
                 user.setEmail(userWebModel.getEmail());
                 user.setUserType(userWebModel.getUserType());
                 user.setMobileNumberStatus(false);
@@ -119,12 +119,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
 
                 user.setStatus(false);
-                user.setCreatedBy(user.getUserId()); // You might want to check how you're setting createdBy
+                user.setCreatedBy(user.getUserId());
                 user.setCreatedOn(new Date());
 
                 user = userRepository.save(user);
                 response.put("userDetails", user);
-                // response.put("verificationCode", user.getVerificationCode());
+                //response.put("verificationCode", user.getVerificationCode());
             } else {
                 return ResponseEntity.unprocessableEntity().body(new Response(1, "This Account already exists", ""));
             }
@@ -132,14 +132,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         } catch (Exception e) {
             logger.error("Register Method Exception -> {}", e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to create profile", e.getMessage()));
+            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
         }
-        return ResponseEntity.ok().body(new Response(1, "Profile Created Successfully", response));
+        return ResponseEntity.ok().body(new Response(1, "User was registered in FilmHook app successfully...", response));
     }
 
     private static final AtomicInteger counter = new AtomicInteger(1);
 
-    // Method to generate FilmHook code
+    /** Method to generate unique FilmHook code
+     * @return String
+     */
     private String generateFilmHookCode() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMddHHmmss");
         String timestamp = dateFormat.format(new Date());
@@ -235,7 +237,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<?> verifyUser(UserWebModel userWebModel) {
         try {
             logger.info("verifyUser method start");
-            List<User> userData = userRepository.findByOtpss(userWebModel.getOtp());
+            List<User> userData = userRepository.findByOtp(userWebModel.getOtp());
             if (!userData.isEmpty()) {
                 User user = userData.get(0); // Assuming only one user should be returned
                 user.setMobileNumberStatus(true);

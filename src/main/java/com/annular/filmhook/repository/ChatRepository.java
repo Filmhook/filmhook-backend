@@ -1,6 +1,5 @@
 package com.annular.filmhook.repository;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -21,7 +20,7 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId) OR (c.chatSenderId = :receiverId AND c.chatReceiverId = :senderId) ORDER BY c.timeStamp DESC")
     List<Chat> findTopByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(Integer senderId, Integer receiverId);
 
-    @Query(value = "SELECT * FROM chat c WHERE c.chat_sender_id=:senderId AND c.chat_receiver_id=:receiverId ORDER BY c.time_stamp DESC LIMIT 1;", nativeQuery = true)
+    @Query(value = "SELECT * FROM chat c WHERE (c.chat_sender_id=:senderId AND c.chat_receiver_id=:receiverId) OR (c.chat_sender_id=:receiverId AND c.chat_receiver_id=:senderId) ORDER BY c.time_stamp DESC LIMIT 1;", nativeQuery = true)
     Optional<Chat> getLatestMessage(Integer senderId, Integer receiverId);
 
     @Query("SELECT DISTINCT c.chatSenderId FROM Chat c WHERE c.chatReceiverId = :loggedInUserId")
@@ -30,10 +29,7 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Query("SELECT DISTINCT c.chatReceiverId FROM Chat c WHERE c.chatSenderId = :loggedInUserId")
     Set<Integer> findReceiverIdsBySenderId(Integer loggedInUserId);
 
-
-@Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :loggedInUserId AND c.chatReceiverId = :userId) OR (c.chatSenderId = :userId AND c.chatReceiverId = :loggedInUserId) ORDER BY c.timeStamp DESC")
-	List<Chat> findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(Integer loggedInUserId, Integer userId,
-			Pageable pageable);
-
+    @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :loggedInUserId AND c.chatReceiverId = :userId) OR (c.chatSenderId = :userId AND c.chatReceiverId = :loggedInUserId) ORDER BY c.timeStamp DESC")
+	List<Chat> findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(Integer loggedInUserId, Integer userId, Pageable pageable);
 
 }

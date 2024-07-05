@@ -145,8 +145,7 @@ public class AuthController {
 
     @PostMapping("logins")
     public ResponseEntity<?> logins(@RequestBody UserWebModel userWebModel) {
-//		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
-        Optional<User> checkUsername = userRepository.findByEmailAndUserTypeAndAdminStatus(userWebModel.getEmail());
+        Optional<User> checkUsername = userRepository.findByEmailAndAdminStatus(userWebModel.getEmail());
         if (checkUsername.isPresent()) {
             loginConstants.setUserType(userWebModel.getUserType());
             logger.info("In logins() User type from constants -> {}", loginConstants.getUserType());
