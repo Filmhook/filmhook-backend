@@ -29,6 +29,7 @@ public class ShootingLocationWebModel {
     private Integer shootingLocationUpdatedBy;
     private Date shootingLocationUpdatedOn;
     private Integer userId;
+    private String filmHookCode;
 
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details

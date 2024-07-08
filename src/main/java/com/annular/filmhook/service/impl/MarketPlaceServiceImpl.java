@@ -22,6 +22,7 @@ import com.annular.filmhook.model.ShootingLocation;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MarketPlaceRepository;
 import com.annular.filmhook.repository.ShootingLocationRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
@@ -45,6 +46,9 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 
     @Autowired
     UserService userService;
+    
+    @Autowired
+    UserRepository userRepository;
 
     @Override
     public ResponseEntity<?> saveMarketPlace(MarketPlaceWebModel marketPlaceWebModel) {
@@ -154,7 +158,12 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     shootingLocationWebModels.setShootingLocationCreatedBy(shootingLocations.getShootingLocationCreatedBy());
                     shootingLocationWebModels.setUserId(shootingLocations.getUserId());
                     shootingLocationWebModels.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
-
+                 // Fetch user details
+                    User user = userRepository.findById(shootingLocations.getShootingLocationCreatedBy()).orElse(null);
+                    if (user != null) {
+                        shootingLocationWebModels.setFilmHookCode(user.getFilmHookCode());
+                        
+                    }
                     List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
                     if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
                         shootingLocationWebModels.setFileOutputWebModel(fileOutputWebModelList);
@@ -250,7 +259,13 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     shootingLocationWebModels.setShootingLocationCreatedBy(shootingLocations.getShootingLocationCreatedBy());
                     shootingLocationWebModels.setUserId(shootingLocations.getUserId());
                     shootingLocationWebModels.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
-
+                 // Fetch user details
+                    User user = userRepository.findById(shootingLocations.getShootingLocationCreatedBy()).orElse(null);
+                    if (user != null) {
+                        shootingLocationWebModels.setFilmHookCode(user.getFilmHookCode());
+                        
+                    }
+                    
                     List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
                     if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
                         shootingLocationWebModels.setFileOutputWebModel(fileOutputWebModelList);
