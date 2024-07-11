@@ -9,8 +9,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.mail.internet.MimeMessage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -46,6 +41,7 @@ import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.util.MailNotification;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -60,7 +56,7 @@ public class AdminServiceImpl implements AdminService {
     MediaFilesService mediaFilesService;
 
     @Autowired
-    private JavaMailSender javaMailSender;
+    private MailNotification mailNotification;
 
     @Autowired
     private IndustryUserPermanentDetailsRepository industryUserPermanentDetailsRepository;
@@ -78,22 +74,20 @@ public class AdminServiceImpl implements AdminService {
         try {
             logger.info("Admin Register method start");
             Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
-            BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-            if (!userData.isPresent()) {
-                User user = new User();
-                user.setName(userWebModel.getName());
-                user.setEmail(userWebModel.getEmail());
-                user.setUserType(userWebModel.getUserType());
-                user.setStatus(userWebModel.isStatus());
-                user.setAdminPageStatus(true);
-                String encryptPwd = bcrypt.encode(userWebModel.getPassword());
-                user.setPassword(encryptPwd);
-
+            if (userData.isEmpty()) {
+                User user = User.builder()
+                        .name(userWebModel.getName())
+                        .email(userWebModel.getEmail())
+                        .userType(userWebModel.getUserType())
+                        .status(userWebModel.isStatus())
+                        .adminPageStatus(true)
+                        .password(new BCryptPasswordEncoder().encode(userWebModel.getPassword()))
+                        .build();
                 // Save the user entity in the database
                 userRepository.save(user);
                 return ResponseEntity.ok().body(new Response(1, "Profile Created Successfully", user));
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response(-1, "User already exists", "User with this email and userType already exists"));
+                return ResponseEntity.badRequest().body(new Response(-1, "User already exists", "User with this email and userType already exists"));
             }
         } catch (Exception e) {
             logger.error("Register Method Exception -> {}", e.getMessage());
@@ -118,12 +112,8 @@ public class AdminServiceImpl implements AdminService {
                 user.setEmail(userWebModel.getEmail());
                 user.setUserType(userWebModel.getUserType());
 
-                // Only update password if it's provided in the request
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getPassword())) {
-                    BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-                    String encryptPwd = bcrypt.encode(userWebModel.getPassword());
-                    user.setPassword(encryptPwd);
-                }
+                // Only update the password if it's provided in the request
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getPassword())) user.setPassword(new BCryptPasswordEncoder().encode(userWebModel.getPassword()));
 
                 userRepository.save(user);
                 response.put("message", "User profile updated successfully.");
@@ -164,14 +154,13 @@ public class AdminServiceImpl implements AdminService {
     public ResponseEntity<?> getRegister(UserWebModel userWebModel) {
         try {
             logger.info("Admin Get Register method start");
-
             HashMap<String, Object> response = new HashMap<>();
+
             Pageable paging = PageRequest.of(userWebModel.getPageNo() - 1, userWebModel.getPageSize());
-            Map<String, Object> pageDetails = new HashMap<>();
             Page<User> subAdminUsers = userRepository.findByUserType(userWebModel.getUserType(), paging);
+
             List<HashMap<String, Object>> responseList = new ArrayList<>();
             if (!subAdminUsers.isEmpty()) {
-
                 for (User user : subAdminUsers) {
                     HashMap<String, Object> userInfo = new HashMap<>();
                     userInfo.put("userId", user.getUserId());
@@ -179,11 +168,13 @@ public class AdminServiceImpl implements AdminService {
                     userInfo.put("email", user.getEmail());
                     userInfo.put("adminPageStaus", user.getAdminPageStatus());
                     userInfo.put("status", user.getStatus());
-
                     responseList.add(userInfo);
                 }
+
+                Map<String, Object> pageDetails = new HashMap<>();
                 pageDetails.put("totalPages", subAdminUsers.getTotalPages());
                 pageDetails.put("totalRecords", subAdminUsers.getTotalElements());
+
                 response.put("Data", responseList);
                 response.put("PageInfo", pageDetails);
                 return ResponseEntity.ok().body(new Response(1, "Sub-admin users retrieved successfully", response));
@@ -224,8 +215,6 @@ public class AdminServiceImpl implements AdminService {
         Pageable paging = PageRequest.of(userWebModel.getPageNo() - 1, userWebModel.getPageSize());
         Page<IndustryMediaFiles> unverifiedIndustrialUsers = industryMediaFileRepository.getAllUnverifiedIndustrialUsers(paging);
 
-        Map<String, Object> pageDetails = new HashMap<>();
-
         Set<Integer> userIds = new HashSet<>();
         List<Map<String, Object>> responseList = new ArrayList<>();
 
@@ -252,6 +241,7 @@ public class AdminServiceImpl implements AdminService {
         }
 
         if (!responseList.isEmpty()) {
+            Map<String, Object> pageDetails = new HashMap<>();
             pageDetails.put("totalPages", unverifiedIndustrialUsers.getTotalPages());
 //			pageDetails.put("totalRecords", unverifiedIndustrialUsers.getTotalElements());
             /*
@@ -280,9 +270,8 @@ public class AdminServiceImpl implements AdminService {
                 return ResponseEntity.ok().body("User permanent details not found for user id: " + userWebModel.getUserId());
             } else {
                 Optional<User> userOptional = userService.getUser(userWebModel.getUserId());
-                if (!userOptional.isPresent()) {
-                    return ResponseEntity.ok().body("User not found for user id: " + userWebModel.getUserId());
-                }
+                if (userOptional.isEmpty()) return ResponseEntity.ok().body("User not found for user id: " + userWebModel.getUserId());
+
                 User user = userOptional.get();
 
                 List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
@@ -341,8 +330,7 @@ public class AdminServiceImpl implements AdminService {
         }
     }
 
-
-    //	@Override
+//	@Override
 //	public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
 //	    try {
 //	        HashMap<String, Object> response = new HashMap<>();
@@ -419,12 +407,11 @@ public class AdminServiceImpl implements AdminService {
 //	        return ResponseEntity.internalServerError().body("Failed to retrieve industry user permanent details.");
 //	    }
 //	}
+
     @Override
     public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
         // Check if userId is not null
-        if (userWebModel.getUserId() == null) {
-            return new Response(-1, "User ID must not be null", null);
-        }
+        if (Utility.isNullOrZero(userWebModel.getUserId())) return new Response(-1, "User ID must not be null", null);
 
         try {
             List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
@@ -444,9 +431,7 @@ public class AdminServiceImpl implements AdminService {
             // Update the userType in the User table
             Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
             logger.info(">>>>>>>>>>>{}", userWebModel.getUserId());
-            if (!userOptional.isPresent()) {
-                return new Response(-1, "User not found", null); // Return an error response if user is not found
-            }
+            if (userOptional.isEmpty()) return new Response(-1, "User not found", null); // Return an error response if user is not found
 
             User user = userOptional.get();
             if (!status) {
@@ -483,8 +468,6 @@ public class AdminServiceImpl implements AdminService {
         }
     }
 
-
-//
 //	@Override
 //	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
 //	    List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
@@ -543,37 +526,21 @@ public class AdminServiceImpl implements AdminService {
 //	    return new Response(1, "Success", "Status updated successfully");
 //	}
 
-
     public boolean sendVerificationEmail(User user, Boolean status) {
-        Boolean response = true;
         try {
-            String subject;
-            String mailContent;
-
-			mailContent = "<p>Hello " + user.getName() + ",</p>";
+            String subject, mailContent = "";
             if (!status) { // If status is false, indicating verification
                 subject = "Your Profile Has Been Verified";
                 mailContent += "<p>Your profile on FilmHook has been successfully verified.</p>";
             } else { // If status is true, indicating rejection
                 subject = "Profile Rejected";
-                mailContent += "<p>Your profile on FilmHook has been rejected.</p>";
-                mailContent += "<p>Please contact support for further details.</p>";
+                mailContent += "<p>Your profile on FilmHook has been rejected. Please contact support for further details.</p>";
             }
-            mailContent += "<p>Thank You<br>FilmHook</p>";
-
-            MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message);
-            helper.setFrom("filmhookapps@gmail", "FilmHook");
-            helper.setTo(user.getEmail());
-            helper.setSubject(subject);
-            helper.setText(mailContent, true);
-
-            javaMailSender.send(message);
+            return mailNotification.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
         } catch (Exception e) {
             e.printStackTrace();
-            response = false;
         }
-        return response;
+        return false;
     }
 
 }

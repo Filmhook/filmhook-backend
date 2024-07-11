@@ -14,8 +14,6 @@ import java.util.Objects;
 import java.util.Date;
 import java.util.stream.Collectors;
 
-import javax.mail.internet.MimeMessage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,8 +22,6 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
@@ -69,6 +65,7 @@ import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
@@ -90,7 +87,7 @@ public class DetailServiceImpl implements DetailService {
     MediaFilesService mediaFilesService;
 
     @Autowired
-    JavaMailSender javaMailSender;
+    private MailNotification mailNotification;
 
     @Autowired
     UserMediaFilesService userMediaFilesService;
@@ -955,7 +952,7 @@ public class DetailServiceImpl implements DetailService {
             user.setFilmHookOtp(otpNumber);
             userRepository.save(user);
 
-            boolean sendVerificationRes = sendVerificationEmail(user);
+            boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
             if (sendVerificationRes) {
                 // If email sent successfully, return success response
                 return ResponseEntity.ok("Verification email sent successfully.");
@@ -967,41 +964,6 @@ public class DetailServiceImpl implements DetailService {
             // Handle case where filmHookData is not present
             return ResponseEntity.notFound().build();
         }
-    }
-
-    public boolean sendVerificationEmail(User user) {
-        boolean response = true;
-        try {
-            if (user.getFilmHookOtp() == null) {
-                throw new IllegalArgumentException("OTP is null");
-            }
-
-            String subject = "Verify Your EmailID";
-            String senderName = "FilmHook";
-            String senderEmail = "filmhookapps@gmail.com"; // Replace with your valid email address
-            String mailContent = "<p>Hello " + user.getName() + ",</p>";
-            mailContent += "<p>Please use the following OTP to verify your fimHookCode on FilmHook:</p>";
-            mailContent += "<h3>" + user.getFilmHookOtp() + "</h3>";
-            mailContent += "<p>Thank You<br>FilmHook</p>";
-
-            MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message);
-            helper.setFrom(senderEmail, senderName);
-            helper.setTo(user.getEmail());
-            helper.setSubject(subject);
-            helper.setText(mailContent, true);
-
-            javaMailSender.send(message);
-        } catch (IllegalArgumentException e) {
-            // Handle case where OTP is null
-            // log.error("OTP is null for user: {}", user.getId());
-            response = false;
-        } catch (Exception e) {
-            // Handle other exceptions
-            // log.error("Failed to send verification email for user: {}", user.getId(), e);
-            response = false;
-        }
-        return response;
     }
 
     @Override

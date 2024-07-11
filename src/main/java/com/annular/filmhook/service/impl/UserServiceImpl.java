@@ -6,10 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
-
-import javax.mail.internet.MimeMessage;
 
 import java.util.Collections;
 import java.util.Map;
@@ -29,19 +26,17 @@ import com.annular.filmhook.service.MediaFilesService;
 
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.util.CalendarUtil;
+import com.annular.filmhook.util.MailNotification;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.util.CalendarUtil;
-import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.AddressListWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -76,7 +71,7 @@ public class UserServiceImpl implements UserService {
     UserService userService;
 
     @Autowired
-    private JavaMailSender javaMailSender;
+    private MailNotification mailNotification;
 
     @Autowired
     LocationRepository locationRepository;
@@ -1021,68 +1016,21 @@ public class UserServiceImpl implements UserService {
             user.setChangeEmailId(userWebModel.getChangeEmailId());
 
             // Generate OTP
-            int otp = Integer.parseInt(this.generateOtp(4));
+            int otp = Integer.parseInt(Utility.generateOtp(4));
             user.setEmailOtp(otp);
             userRepository.save(user);
 
             // Send verification email
-            boolean sendVerificationRes = this.sendVerificationEmail(user);
-            if (!sendVerificationRes) {
-                // Handle email sending failure appropriately
-                return Optional.empty();
-            }
-
-            return Optional.of(user);
-        } else {
-            return Optional.empty();
+            boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
+            if (sendVerificationRes) return Optional.of(user);
         }
-    }
-
-    public boolean sendVerificationEmail(User user) {
-        boolean response = false;
-        try {
-            if (user.getEmailOtp() == null) {
-                throw new IllegalArgumentException("OTP is null");
-            }
-
-            String subject = "Verify Your EmailID";
-            String senderName = "FilmHook";
-            String mailContent = "<p>Hello " + user.getName() + ",</p>";
-            mailContent += "<p>Please use the following OTP to verify your email on FilmHook:</p>";
-            mailContent += "<h3>" + user.getEmailOtp() + "</h3>";
-            mailContent += "<p>Thank You<br>FilmHook</p>";
-
-            MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message);
-            helper.setFrom("filmhookapps@gmail", senderName);
-            helper.setTo(user.getChangeEmailId());
-            helper.setSubject(subject);
-            helper.setText(mailContent, true);
-
-            javaMailSender.send(message);
-            response = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return response;
-    }
-
-    // Helper method to generate OTP
-    private String generateOtp(int length) {
-        Random random = new Random();
-        StringBuilder otp = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            otp.append(random.nextInt(10));
-        }
-        return otp.toString();
+        return Optional.empty();
     }
 
     @Override
     public Optional<User> changePrimaryEmaiIdVerified(UserWebModel userWebModel) {
         Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-        if (!userOptional.isPresent()) {
-            return Optional.empty();
-        }
+        if (userOptional.isEmpty()) return Optional.empty();
 
         User user = userOptional.get();
         int providedOtp = userWebModel.getEmailOtp();

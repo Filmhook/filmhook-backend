@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Objects;
+import java.util.Date;
 
 import com.annular.filmhook.util.Utility;
 
@@ -22,7 +23,6 @@ import com.annular.filmhook.model.ShootingLocation;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MarketPlaceRepository;
 import com.annular.filmhook.repository.ShootingLocationRepository;
-import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
@@ -46,9 +46,6 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 
     @Autowired
     UserService userService;
-    
-    @Autowired
-    UserRepository userRepository;
 
     @Override
     public ResponseEntity<?> saveMarketPlace(MarketPlaceWebModel marketPlaceWebModel) {
@@ -67,6 +64,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 					.cost(marketPlaceWebModel.getCost())
 					.marketPlaceIsactive(true)
                     .marketPlaceCreatedBy(marketPlaceWebModel.getMarketPlaceCreatedBy())
+                    .marketPlaceCreatedOn(new Date())
 					.build();
 
             // Save the MarketPlace entity
@@ -110,6 +108,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
             logger.info("Terms and condition ->  {}", shootingLocationWebModel.getShootingTermsAndCondition());
 
             ShootingLocation shootingLocation = ShootingLocation.builder()
+                    .userId(shootingLocationWebModel.getUserId())
                     .shootingLocationName(shootingLocationWebModel.getShootingLocationName())
                     .shootingLocationDescription(shootingLocationWebModel.getShootingLocationDescription())
                     .shootingTermsAndCondition(shootingLocationWebModel.getShootingTermsAndCondition())
@@ -119,6 +118,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 					.hourMonthDay(shootingLocationWebModel.getHourMonthDay())
                     .shootingLocationIsactive(true)
                     .shootingLocationCreatedBy(shootingLocationWebModel.getShootingLocationCreatedBy())
+                    .shootingLocationCreatedOn(new Date())
 					.build();
 
             ShootingLocation savedShootingLocation = shootingLocationRepository.save(shootingLocation);
@@ -141,35 +141,9 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
     @Override
     public ResponseEntity<?> getShootingLocation() {
         try {
-            List<ShootingLocation> shootingLocation = shootingLocationRepository.findAll();
-            if (!shootingLocation.isEmpty()) {
-                List<ShootingLocationWebModel> shootingLocationWebModel = new ArrayList<>();
-
-                for (ShootingLocation shootingLocations : shootingLocation) {
-                    ShootingLocationWebModel shootingLocationWebModels = new ShootingLocationWebModel();
-                    shootingLocationWebModels.setShootingLocationId(shootingLocations.getShootingLocationId());
-                    shootingLocationWebModels.setCost(shootingLocations.getCost());
-                    shootingLocationWebModels.setShootingTermsAndCondition(shootingLocations.getShootingTermsAndCondition());
-                    shootingLocationWebModels.setLocationUrl(shootingLocations.getLocationUrl());
-                    shootingLocationWebModels.setIndoorOrOutdoorLocation(shootingLocations.getIndoorOrOutdoorLocation());
-                    shootingLocationWebModels.setHourMonthDay(shootingLocations.getHourMonthDay());
-                    shootingLocationWebModels.setShootingLocationName(shootingLocations.getShootingLocationName());
-                    shootingLocationWebModels.setShootingLocationUpdatedBy(shootingLocations.getShootingLocationUpdatedBy());
-                    shootingLocationWebModels.setShootingLocationCreatedBy(shootingLocations.getShootingLocationCreatedBy());
-                    shootingLocationWebModels.setUserId(shootingLocations.getUserId());
-                    shootingLocationWebModels.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
-                 // Fetch user details
-                    User user = userRepository.findById(shootingLocations.getShootingLocationCreatedBy()).orElse(null);
-                    if (user != null) {
-                        shootingLocationWebModels.setFilmHookCode(user.getFilmHookCode());
-                        
-                    }
-                    List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
-                    if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
-                        shootingLocationWebModels.setFileOutputWebModel(fileOutputWebModelList);
-                    }
-                    shootingLocationWebModel.add(shootingLocationWebModels);
-                }
+            List<ShootingLocation> shootingLocations = shootingLocationRepository.findAll();
+            if (!shootingLocations.isEmpty()) {
+                List<ShootingLocationWebModel> shootingLocationWebModel = this.transformShootingLocationData(shootingLocations);
                 return ResponseEntity.ok().body(ResponseEntity.ok(new Response(1, "Success", shootingLocationWebModel)));
             } else {
                 return ResponseEntity.notFound().build();
@@ -178,6 +152,44 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
         }
+    }
+
+    public List<ShootingLocationWebModel> transformShootingLocationData(List<ShootingLocation> shootingLocations) {
+        List<ShootingLocationWebModel> shootingLocationWebModel = new ArrayList<>();
+        try {
+            if (!shootingLocations.isEmpty()) {
+                shootingLocations.forEach(shootingLocation -> {
+
+                    ShootingLocationWebModel shootingLocWebModel = new ShootingLocationWebModel();
+
+                    shootingLocWebModel.setShootingLocationId(shootingLocation.getShootingLocationId());
+                    shootingLocWebModel.setCost(shootingLocation.getCost());
+                    shootingLocWebModel.setShootingTermsAndCondition(shootingLocation.getShootingTermsAndCondition());
+                    shootingLocWebModel.setLocationUrl(shootingLocation.getLocationUrl());
+                    shootingLocWebModel.setIndoorOrOutdoorLocation(shootingLocation.getIndoorOrOutdoorLocation());
+                    shootingLocWebModel.setHourMonthDay(shootingLocation.getHourMonthDay());
+                    shootingLocWebModel.setShootingLocationName(shootingLocation.getShootingLocationName());
+                    shootingLocWebModel.setShootingLocationUpdatedBy(shootingLocation.getShootingLocationUpdatedBy());
+                    shootingLocWebModel.setShootingLocationCreatedBy(shootingLocation.getShootingLocationCreatedBy());
+                    shootingLocWebModel.setUserId(shootingLocation.getUserId());
+                    shootingLocWebModel.setShootingLocationDescription(shootingLocation.getShootingLocationDescription());
+
+                    // Fetch user details
+                    userService.getUser(shootingLocation.getUserId()).ifPresent(user -> shootingLocWebModel.setFilmHookCode(user.getFilmHookCode()));
+
+                    List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocation.getShootingLocationId());
+                    if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
+                        shootingLocWebModel.setFileOutputWebModel(fileOutputWebModelList);
+                    }
+
+                    shootingLocationWebModel.add(shootingLocWebModel);
+                });
+            }
+        } catch (Exception e) {
+            logger.error("Error at transformShootingLocation() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return shootingLocationWebModel;
     }
 
     @Override
@@ -242,37 +254,9 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
     @Override
     public ResponseEntity<?> getSearchShootingLocation(String searchKey) {
         try {
-            List<ShootingLocation> shootingLocation = shootingLocationRepository.findBySearchKey(searchKey);
-            if (!shootingLocation.isEmpty()) {
-                List<ShootingLocationWebModel> shootingLocationWebModel = new ArrayList<>();
-
-                for (ShootingLocation shootingLocations : shootingLocation) {
-                    ShootingLocationWebModel shootingLocationWebModels = new ShootingLocationWebModel();
-                    shootingLocationWebModels.setShootingLocationId(shootingLocations.getShootingLocationId());
-                    shootingLocationWebModels.setCost(shootingLocations.getCost());
-                    shootingLocationWebModels.setShootingTermsAndCondition(shootingLocations.getShootingTermsAndCondition());
-                    shootingLocationWebModels.setLocationUrl(shootingLocations.getLocationUrl());
-                    shootingLocationWebModels.setIndoorOrOutdoorLocation(shootingLocations.getIndoorOrOutdoorLocation());
-                    shootingLocationWebModels.setHourMonthDay(shootingLocations.getHourMonthDay());
-                    shootingLocationWebModels.setShootingLocationName(shootingLocations.getShootingLocationName());
-                    shootingLocationWebModels.setShootingLocationUpdatedBy(shootingLocations.getShootingLocationUpdatedBy());
-                    shootingLocationWebModels.setShootingLocationCreatedBy(shootingLocations.getShootingLocationCreatedBy());
-                    shootingLocationWebModels.setUserId(shootingLocations.getUserId());
-                    shootingLocationWebModels.setShootingLocationDescription(shootingLocations.getShootingLocationDescription());
-                 // Fetch user details
-                    User user = userRepository.findById(shootingLocations.getShootingLocationCreatedBy()).orElse(null);
-                    if (user != null) {
-                        shootingLocationWebModels.setFilmHookCode(user.getFilmHookCode());
-                        
-                    }
-                    
-                    List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocations.getShootingLocationId());
-                    if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
-                        shootingLocationWebModels.setFileOutputWebModel(fileOutputWebModelList);
-                    }
-
-                    shootingLocationWebModel.add(shootingLocationWebModels);
-                }
+            List<ShootingLocation> shootingLocations = shootingLocationRepository.findBySearchKey(searchKey);
+            if (!shootingLocations.isEmpty()) {
+                List<ShootingLocationWebModel> shootingLocationWebModel = this.transformShootingLocationData(shootingLocations);
                 return ResponseEntity.ok().body(ResponseEntity.ok(new Response(1, "Success", shootingLocationWebModel)));
             } else {
                 return ResponseEntity.notFound().build();

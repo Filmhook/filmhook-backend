@@ -7,12 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
@@ -22,8 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -49,10 +45,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     UserRepository userRepository;
 
     @Autowired
-    private JavaMailSender javaMailSender;
-
-    @Autowired
-    MailNotification notifications;
+    private MailNotification mailNotification;
 
     @Autowired
     RefreshTokenRepository refreshTokenRepository;
@@ -106,14 +99,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 String randomCode = RandomString.make(64);
                 user.setVerificationCode(randomCode);
 
-                int otp = Integer.parseInt(this.generateOtp(4));
+                int otp = Integer.parseInt(Utility.generateOtp(4));
                 user.setOtp(otp);
                 CompletableFuture.runAsync(() -> {
                     String message = "Your OTP is " + otp + " for verification";
                     twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
                 });
 
-                int emailOtp = Integer.parseInt(this.generateOtp(4));
+                int emailOtp = Integer.parseInt(Utility.generateOtp(4));
                 user.setEmailOtp(emailOtp);
                 // boolean sendVerificationRes = this.sendVerificationEmail(user);
                 // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
@@ -150,35 +143,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return "Fh" + timestamp + uniqueId;
     }
 
-    public boolean sendVerificationEmail(User user) {
-        boolean response = false;
-        try {
-            if (user.getEmailOtp() == null) {
-                throw new IllegalArgumentException("OTP is null");
-            }
-
-            String subject = "Verify Your EmailID";
-            String senderName = "FilmHook";
-            String mailContent = "<p>Hello " + user.getName() + ",</p>";
-            mailContent += "<p>Please use the following OTP to verify your email on FilmHook:</p>";
-            mailContent += "<h3>" + user.getEmailOtp() + "</h3>";
-            mailContent += "<p>Thank You<br>FilmHook</p>";
-
-            MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message);
-            helper.setFrom("filmhookapps@gmail", senderName);
-            helper.setTo(user.getEmail());
-            helper.setSubject(subject);
-            helper.setText(mailContent, true);
-
-            javaMailSender.send(message);
-            response = true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return response;
-    }
-
     @Override
     public boolean verify(String code) {
         User user = userRepository.findByVerificationCode(code);
@@ -189,10 +153,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setStatus(true);
             userRepository.save(user);
             String subject = "FilmHook Registration Confirmation";
-            String mailContent = "<p>Hello " + user.getName() + ",</p>";
-            mailContent += "<p>You have successfully registered with the FilmHook </p>";
-            mailContent += "<p>Thank You<br>FilmHook</p>";
-            notifications.emailNotification(user.getEmail(), subject, mailContent);
+            String mailContent = "<p>You have successfully registered with the FilmHook </p>";
+            mailNotification.sendEmailAsync(user.getName(), user.getEmail(), subject, mailContent);
             return true;
         }
     }
@@ -262,50 +224,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             Optional<User> data = userRepository.findByEmail(userWebModel.getEmail());
             if (data.isPresent()) {
                 // Generate OTP
-                String otp = this.generateOtp(6); // You need to implement this method to generate OTP
+                String forgotOtp = Utility.generateOtp(6); // You need to implement this method to generate OTP
 
                 User user = data.get();
-                user.setForgotOtp(otp); // Save OTP in user's forgotOtp column
+                user.setForgotOtp(forgotOtp); // Save OTP in user's forgotOtp column
 
                 // Save the updated user object
                 userRepository.save(user);
 
-                String subject = "Forgot Password OTP";
-                String senderName = "Film-Hook";
-                String mailContent = "<p>Hello,</p>";
-                mailContent += "<p>Your OTP to reset your password is: <strong>" + otp + "</strong></p>";
-                mailContent += "<p>Please use this OTP to reset your password.</p>";
-                mailContent += "<p>If you didn't request this, you can safely ignore this email.</p>";
-                mailContent += "<p>Thank You,<br>Film-Hook</p>";
+                String subject = "Reset Password";
+                String mailContent = "<p>Your OTP to reset your password is: <b>" + forgotOtp + "</b></p>";
+                mailContent += "<p>Please use this OTP to reset your password. If you didn't request this, you can safely ignore this email.</p>";
+                mailNotification.sendEmailAsync(user.getName(), user.getEmail(), subject, mailContent);
 
-                MimeMessage message = javaMailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message);
-                helper.setFrom("filmhookapps@gmail", senderName);
-                helper.setTo(user.getEmail());
-                helper.setSubject(subject);
-                helper.setText(mailContent, true);
-
-                javaMailSender.send(message);
                 logger.info("forgotPassword method end");
             } else {
-                return ResponseEntity.badRequest().body(new Response(-1, "Please enter the Register Email", ""));
+                return ResponseEntity.badRequest().body(new Response(-1, "Please provide the registered Email", ""));
             }
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
         }
         return ResponseEntity.ok().body(new Response(1, "OTP for password change has been sent in Email. Please check your inbox.", "Email Sent Successfully"));
-    }
-
-    // Method to generate OTP
-    private String generateOtp(int otpLength) {
-        Random random = new Random();
-        StringBuilder otp = new StringBuilder();
-        for (int i = 0; i < otpLength; i++) {
-            otp.append(random.nextInt(10));
-        }
-        logger.info("Generated OTP -> {}", otp);
-        return otp.toString();
     }
 
     @Override
@@ -456,7 +396,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            boolean sendVerificationRes = this.sendVerificationEmail(user);
+            boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
             if (sendVerificationRes)
                 return ResponseEntity.ok().body(new Response(1, "Mail sent successfully", "success"));
             else
@@ -479,7 +419,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (existingUserWithPhoneNumber.isPresent()) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("Phone number is already in use");
             }
-            int otp = Integer.parseInt(this.generateOtp(4));
+            int otp = Integer.parseInt(Utility.generateOtp(4));
             user.setOtp(otp);
             CompletableFuture.runAsync(() -> {
                 String message = "Your OTP is " + otp + " for verification";
@@ -506,20 +446,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             // Check if the new phone number is already associated with another user
             Optional<User> existingUserWithPhoneNumber = userRepository.findByPhoneNumber(newPhoneNumber);
-            if (existingUserWithPhoneNumber.isPresent()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Phone number is already in use");
-            }
+            if (existingUserWithPhoneNumber.isPresent())  return ResponseEntity.status(HttpStatus.CONFLICT).body("Phone number is already in use");
 
             // Generate OTP
-            int otp = Integer.parseInt(this.generateOtp(4));
+            int otp = Integer.parseInt(Utility.generateOtp(4));
             user.setEmailOtp(otp);
             userRepository.save(user);
 
             // Send verification email
-            boolean sendVerificationRes = this.sendVerificationEmail(user);
-            if (!sendVerificationRes) {
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
-            }
+            boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
+            if (!sendVerificationRes)  return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
 
             // Prepare response
             Map<String, Object> response = new HashMap<>();
@@ -599,28 +535,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public ResponseEntity<?> addSecondaryEmail(UserWebModel userWebModel) {
         try {
             Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-            if (!userOptional.isPresent()) {
-                return ResponseEntity.ok().body("User not found");
-            }
+            if (userOptional.isEmpty()) return ResponseEntity.ok().body("User not found");
 
             User user = userOptional.get();
             String newEmail = userWebModel.getSecondaryEmail();
             user.setSecondaryEmail(newEmail);
             userRepository.save(user);
+
             // Generate OTP
-            int otp = Integer.parseInt(this.generateOtp(4));
-            user.setEmailOtp(otp);
+            int primaryMailOtp = Integer.parseInt(Utility.generateOtp(4));
+            user.setEmailOtp(primaryMailOtp);
             userRepository.save(user);
 
             // Send verification email
-            boolean sendVerificationRes = this.sendVerificationEmail(user);
-            if (!sendVerificationRes) {
-                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
-            }
+            boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
+            if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
 
             // Generate OTP
-            int otps = Integer.parseInt(this.generateOtp(4));
-            user.setSecondaryemailOtp(otps);
+            int secondaryMailOtp = Integer.parseInt(Utility.generateOtp(4));
+            user.setSecondaryemailOtp(secondaryMailOtp);
             userRepository.save(user);
 
 
@@ -643,32 +576,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     public boolean sendVerificationSecondaryEmail(User user) {
-        boolean response = false;
         try {
-            if (user.getEmail() == null) {
-                throw new IllegalArgumentException("OTP is null");
-            }
-
-            String subject = "Verify Your EmailID";
-            String senderName = "FilmHook";
-            String mailContent = "<p>Hello " + user.getName() + ",</p>";
-            mailContent += "<p>Please use the following OTP to verify your email on FilmHook:</p>";
-            mailContent += "<h3>" + user.getSecondaryemailOtp() + "</h3>";
-            mailContent += "<p>Thank You<br>FilmHook</p>";
-
-            MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message);
-            helper.setFrom("filmhookapps@gmail", senderName);
-            helper.setTo(user.getSecondaryEmail());
-            helper.setSubject(subject);
-            helper.setText(mailContent, true);
-
-            javaMailSender.send(message);
-            response = true;
+            if (Utility.isNullOrZero(user.getSecondaryemailOtp())) throw new IllegalArgumentException("OTP is null");
+            String subject = "Email Id Verification";
+            String mailContent = "<p>Please use the following OTP to verify your email on FilmHook:<b>" + user.getSecondaryemailOtp() + "</b></p>";
+            return mailNotification.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return response;
+        return false;
     }
 
     @Override
