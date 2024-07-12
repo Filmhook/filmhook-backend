@@ -259,5 +259,21 @@ public class PostController {
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
     }
+    
+    @PostMapping("/deletePostById")
+    public ResponseEntity<?> deletePostByUserId(@RequestBody PostWebModel postWebModel) {
+        try {
+            boolean isDeleted = postService.deletePostByUserId(postWebModel);
+            if (isDeleted) {
+                return ResponseEntity.ok(new Response(1, "Success","Post deleted successfully."));
+            } else {
+                return ResponseEntity.badRequest().body(new Response(-1, "fail","Failed to delete post"));
+            }
+        } catch (Exception e) {
+            logger.error("deletePostByUserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+    }
 
 }

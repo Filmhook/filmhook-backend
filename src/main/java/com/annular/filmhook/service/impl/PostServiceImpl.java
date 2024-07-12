@@ -268,6 +268,7 @@ public class PostServiceImpl implements PostService {
                             .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                             .description(post.getDescription())
                             .pinStatus(pinStatus)
+                            .userType(post.getUser().getUserType())
                             .likeCount(post.getLikesCount())
                             .shareCount(post.getSharesCount())
                             .commentCount(post.getCommentsCount())
@@ -665,5 +666,38 @@ public class PostServiceImpl implements PostService {
                 .status(comment.getStatus())
                 .build();
     }
+
+	@Override
+	public boolean deletePostByUserId(PostWebModel postWebModel) {
+		try {
+			// Find the post by its ID and user ID
+			Optional<Posts> postData = postsRepository.findByIdAndUserId(postWebModel.getMediaFilesIds(),
+					postWebModel.getUserId());
+			if (postData.isPresent()) {
+				Posts post = postData.get();
+
+				// Delete associated media files
+				mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(post.getUser().getUserId(),
+						MediaFileCategory.Post, postWebModel.getMediaFilesIds());
+
+				// Update post status to false
+	            post.setStatus(false);
+
+	            // Save the updated post
+	            postsRepository.save(post);
+
+	            return true;
+
+			} else {
+				return false; // Post not found
+			}
+		} catch (Exception e) {
+			// Log the exception
+			e.printStackTrace();
+			return false;
+		}
+
+	}
+
 
 }

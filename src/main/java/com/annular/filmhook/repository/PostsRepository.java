@@ -29,5 +29,8 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Query("SELECT p FROM Posts p WHERE p.status = true ORDER BY p.createdOn DESC")
     List<Posts> getAllActivePosts(Pageable paging);
 
+    @Query("SElECT p FROM Posts p where p.id = :list and p.user.userId = :userId")
+	Optional<Posts> findByIdAndUserId(List<Integer> list, Integer userId);
+
     // List<Posts> findByPromoteFlagAndUserId(boolean b, Integer id);
 }

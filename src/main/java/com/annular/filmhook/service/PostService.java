@@ -43,6 +43,8 @@ public interface PostService {
     List<PostWebModel> getPostsByUserIds(Integer userId);
 
     CommentOutputWebModel updateComment(CommentInputWebModel commentInputWebModel);
+    
+	boolean deletePostByUserId(PostWebModel postWebModel);
 
 
 }

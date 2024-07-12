@@ -1,7 +1,11 @@
 package com.annular.filmhook.service.impl;
 
+import java.sql.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +47,10 @@ import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PinProfileService;
+import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.S3Util;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.UserProfilePinWebModel;
 
 @Service
@@ -230,58 +236,14 @@ public class PinProfileServiceImpl implements PinProfileService {
                 Posts post = postsRepository.findById(userMediaPin.getPinMediaId()).orElse(null);
                 if (post == null) continue;
 
-                // Fetching post-files
-                List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
-
-                // Fetching the user Profession
-                Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId()).stream()
-                        .map(FilmProfessionPermanentDetail::getProfessionName)
-                        .collect(Collectors.toSet());
-
-                // Fetching the followers count for the user
-                //long followersCount = friendRequestRepository.countByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
-                List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
-
-                // Fetching the likes details
-                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
-                        .map(Likes::getStatus)
-                        .orElse(false);
-
-                // Fetching the pin status
-                boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
-                        .map(UserProfilePin::isStatus)
-                        .orElse(false);
-
-                // Preparing PostWebModel
-                PostWebModel postWebModel = PostWebModel.builder()
-                        .id(post.getId())
-                        .userId(post.getUser().getUserId())
-                        .userName(post.getUser().getName())
-                        .postId(post.getPostId())
-                        .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
-                        .description(post.getDescription())
-                        .pinStatus(pinStatus)
-                        .likeCount(post.getLikesCount())
-                        .shareCount(post.getSharesCount())
-                        .commentCount(post.getCommentsCount())
-                        .promoteFlag(post.getPromoteFlag())
-                        .postFiles(postFiles)
-                        .likeStatus(likeStatus)
-                        .privateOrPublic(post.getPrivateOrPublic())
-                        .locationName(post.getLocationName())
-                        .professionNames(professionNames)
-                        .followersCount(followersList.size())
-                        .build();
+                // Transform the post data to PostWebModel
+                PostWebModel postWebModel = transformPostDataToPostWebModel(post);
 
                 // Adding PostWebModel to the combined details list
                 Map<String, Object> combinedDetails = new HashMap<>();
                 combinedDetails.put("postWebModel", postWebModel);
 
-//	            List<String> postFileUrls = postFiles.stream()
-//	                    .map(file -> s3Util.generateS3FilePath(file.getFilePath() + file.getFileType()))
-//	                    .collect(Collectors.toList());
-//	            combinedDetails.put("postFiles", postFileUrls);
-
+                // Add the combined details to the list
                 combinedDetailsList.add(combinedDetails);
             }
             Map<String, Object> responseMap = new HashMap<>();
@@ -289,11 +251,78 @@ public class PinProfileServiceImpl implements PinProfileService {
             return ResponseEntity.ok(responseMap);
         } catch (Exception e) {
             logger.error("Error in getAllMediaPin: {}", e.getMessage());
-			e.printStackTrace();
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
         }
     }
 
+    private PostWebModel transformPostDataToPostWebModel(Posts post) {
+        List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+
+        // Fetching the user Profession
+        Set<String> professionNames = new HashSet<>();
+        List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId());
+        if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
+            professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
+        } else {
+            professionNames.add("Public User");
+        }
+
+        // Fetching the followers count for the user
+        List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+
+        // Fetching the like actions from current logged-in user
+        Integer loggedInUser = userDetails.userInfo().getId();
+        Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), loggedInUser);
+        Boolean likeStatus = likesList.map(Likes::getStatus).orElse(false);
+        Integer latestLikeId = likesList.map(Likes::getLikeId).orElse(null);
+
+        Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(loggedInUser, post.getUser().getUserId());
+        Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
+
+        List<Integer> taggedUsers = post.getPostTagsCollection() != null
+                ? post.getPostTagsCollection().stream()
+                        .filter(postTags -> postTags.getStatus().equals(true))
+                        .map(postTags -> postTags.getTaggedUser().getUserId())
+                        .collect(Collectors.toList())
+                : null;
+
+//        Date createdDate = post.getCreatedOn(); // Convert Date to LocalDateTime
+//        LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
+//        String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
+
+
+        // Preparing outputList
+        return PostWebModel.builder()
+                .id(post.getId())
+                .userId(post.getUser().getUserId())
+                .userName(post.getUser().getName())
+                .postId(post.getPostId()) // Unique id of each post
+                .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+                .description(post.getDescription())
+                .pinStatus(pinStatus)
+                .userType(post.getUser().getUserType())
+                .likeCount(post.getLikesCount())
+                .shareCount(post.getSharesCount())
+                .commentCount(post.getCommentsCount())
+                .promoteFlag(post.getPromoteFlag())
+                .postFiles(postFiles)
+                .postLinkUrl(post.getPostLinkUrls())
+                .latitude(post.getLatitude())
+                .longitude(post.getLongitude())
+                .address(post.getAddress())
+                .likeStatus(likeStatus)
+                .likeId(latestLikeId)
+               // .elapsedTime(elapsedTime)
+                .privateOrPublic(post.getPrivateOrPublic())
+                .locationName(post.getLocationName())
+                .professionNames(professionNames)
+                .followersCount(followersList.size())
+                .createdOn(post.getCreatedOn())
+                .createdBy(post.getCreatedBy())
+                .taggedUsers(taggedUsers)
+                .build();
+    }
     @Override
     public ResponseEntity<?> getByProfileId(UserProfilePinWebModel userProfilePinWebModel) {
         try {

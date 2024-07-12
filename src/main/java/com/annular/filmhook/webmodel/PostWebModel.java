@@ -55,4 +55,6 @@ public class PostWebModel {
     private String latitude;
     private String longitude;
     private String address;
+    private List<Integer> mediaFilesIds;
+    private String userType;
 }
