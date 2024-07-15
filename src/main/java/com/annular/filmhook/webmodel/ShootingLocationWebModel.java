@@ -30,6 +30,7 @@ public class ShootingLocationWebModel {
     private Date shootingLocationUpdatedOn;
     private Integer userId;
     private String filmHookCode;
+    private String name;
 
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details

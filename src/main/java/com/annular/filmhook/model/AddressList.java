@@ -38,6 +38,9 @@ public class AddressList {
 
 	@Column(name = "audition_address")
 	private String auditionAddress;
+	
+	@Column(name = "new_sign_up_address")
+	private String newSignUpAddress;
 
 	@Column(name = "status", columnDefinition = "tinyint default true")
 	private Boolean status;

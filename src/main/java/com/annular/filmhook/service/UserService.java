@@ -71,4 +71,6 @@ public interface UserService {
 
     Optional<User> changePrimaryEmaiIdVerified(UserWebModel userWebModel);
 
+	ResponseEntity<?> getNewAddressListOnSignUp(String address);
+
 }

@@ -1052,4 +1052,19 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+	@Override
+	public ResponseEntity<?> getNewAddressListOnSignUp(String address) {
+	        List<AddressList> addressLists = addressListRepository.findBynewSignUpAddressContainingIgnoreCase(address).parallelStream()
+	                .filter(addressList -> addressList.getStatus().equals(true))
+	                .collect(Collectors.toList());
+	        List<AddressListWebModel> result = addressLists.stream()
+	                .map(addr -> AddressListWebModel.builder()
+	                        .id(addr.getId())
+	                        .address(addr.getNewSignUpAddress())
+	                        .status(addr.getStatus())
+	                        .build())
+	                .collect(Collectors.toList());
+	        return ResponseEntity.ok(result);
+	    }
+
 }

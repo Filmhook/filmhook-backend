@@ -176,7 +176,8 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 
                     // Fetch user details
                     userService.getUser(shootingLocation.getUserId()).ifPresent(user -> shootingLocWebModel.setFilmHookCode(user.getFilmHookCode()));
-
+                    userService.getUser(shootingLocation.getUserId()).ifPresent(user -> shootingLocWebModel.setName(user.getName()));
+                    
                     List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, shootingLocation.getShootingLocationId());
                     if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
                         shootingLocWebModel.setFileOutputWebModel(fileOutputWebModelList);

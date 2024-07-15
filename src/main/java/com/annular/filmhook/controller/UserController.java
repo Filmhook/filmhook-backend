@@ -387,5 +387,16 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
+    
+    @GetMapping("/getNewAddressListOnSignUp")
+    public ResponseEntity<?> getNewAddressListOnSignUp(@RequestParam("address") String address) {
+        try {
+            return userService.getNewAddressListOnSignUp(address);
+        } catch (Exception e) {
+            logger.error("getNewAddressListOnSignUp Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
 }
