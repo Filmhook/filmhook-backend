@@ -72,7 +72,7 @@ public class WebSecurityConfig {
                         (authorize) -> authorize
                                 .antMatchers("/user/register", "/user/verifyEmailOtp", "/user/changePassword", "/user/getAddressListOnSignUp", "/user/emailNotification",
                                         "/user/login", "/user/logins", "/Film/getProfessionList", "/Film/getProfessionMapList", "/industryUser/getTemporaryDuplicateDetails",
-                                        "/user/refreshToken", "/user/forgotPassword", "/admin/adminRegister", "/admin/updateRegister",
+                                        "/user/refreshToken", "/user/forgotPassword", "/admin/adminRegister", "/admin/updateRegister", "/user/getNewAddressListOnSignUp",
                                         "/user/changeUserPassword", "/user/verifyUser", "/admin/deleteRegister", "/admin/getRegister",
                                         "/user/verify", "/user/resendOtp", "/user/verifyForgotOtp", "/industryUser/addIndustryUserPermanentDetails",
                                         "/api/printName", "/industryUser/getDetails", "/industryUser/addTemporaryDetails",

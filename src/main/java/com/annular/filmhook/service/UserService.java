@@ -65,7 +65,7 @@ public interface UserService {
 
     Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
 
-    List<Map<String, Object>> findNearByUsers(Integer userId, Integer range);
+    List<Map<String, Object>> findNearByUsers(Integer userId, Integer range, String profession);
 
     Optional<User> changePrimaryEmaiId(UserWebModel userWebModel);
 

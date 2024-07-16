@@ -5,7 +5,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.Location;
+import com.annular.filmhook.webmodel.UserWebModel;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,5 +24,9 @@ public interface LocationRepository extends JpaRepository<Location, Integer> {
             "   HAVING distance <= :miles " +
             "   ORDER BY distance ) AS RESULT", nativeQuery = true)
     List<Integer> getNearByUsers(Integer loggedInUser, Double miles, Double latitude, Double longitude);
+    
+    @Query("SELECT u.id FROM User u WHERE u.id <> :userId")
+    List<Integer> getAllUsersExceptLoggedIn(int userId);
 
+	
 }

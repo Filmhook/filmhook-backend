@@ -287,9 +287,9 @@ public class PinProfileServiceImpl implements PinProfileService {
                         .collect(Collectors.toList())
                 : null;
 
-//        Date createdDate = post.getCreatedOn(); // Convert Date to LocalDateTime
-//        LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
-//        String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
+       java.util.Date createdDate = post.getCreatedOn(); // Convert Date to LocalDateTime
+        LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
+       String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
 
 
         // Preparing outputList
@@ -313,7 +313,7 @@ public class PinProfileServiceImpl implements PinProfileService {
                 .address(post.getAddress())
                 .likeStatus(likeStatus)
                 .likeId(latestLikeId)
-               // .elapsedTime(elapsedTime)
+                .elapsedTime(elapsedTime)
                 .privateOrPublic(post.getPrivateOrPublic())
                 .locationName(post.getLocationName())
                 .professionNames(professionNames)

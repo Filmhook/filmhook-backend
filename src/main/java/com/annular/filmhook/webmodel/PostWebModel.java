@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Data
@@ -50,6 +51,7 @@ public class PostWebModel {
     private String postLinkUrl;
 
     private List<Integer> taggedUsers;
+    private List<Map<String, Object>> taggedUserss;
     private Integer pageNo;
     private Integer pageSize;
     private String latitude;

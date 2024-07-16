@@ -36,7 +36,7 @@ public class LiveSubscribeController {
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
-    @GetMapping("/getLiveSubcribes")
+    @PostMapping("/getLiveSubcribes")
     public ResponseEntity<?> getLiveSubscribes(@RequestBody LiveSubscribeWebModel liveSubscribeWebModel) {
         try {
             logger.info("getLiveSubscribes controller start");

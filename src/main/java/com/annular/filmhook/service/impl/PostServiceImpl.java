@@ -36,8 +36,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.List;
+import java.util.Map;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -247,12 +249,25 @@ public class PostServiceImpl implements PostService {
                     Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(loggedInUser, post.getUser().getUserId());
                     Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
 
-                    List<Integer> taggedUsers = post.getPostTagsCollection() != null
+                    List<Map<String, Object>> taggedUsers = post.getPostTagsCollection() != null
                             ? post.getPostTagsCollection().stream()
                                     .filter(postTags -> postTags.getStatus().equals(true))
-                                    .map(postTags -> postTags.getTaggedUser().getUserId())
+                                    .map(postTags -> {
+                                        Map<String, Object> taggedUserDetails = new HashMap<>();
+                                        Integer taggedUserId = postTags.getTaggedUser().getUserId();
+                                        taggedUserDetails.put("userId", taggedUserId);
+
+                                        // Fetch username and profile pic
+                                        userService.getUser(taggedUserId).ifPresent(user -> {
+                                            taggedUserDetails.put("username", user.getName());
+                                            taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
+                                        });
+
+                                        return taggedUserDetails;
+                                    })
                                     .collect(Collectors.toList())
                             : null;
+
 
                     Date createdDate = post.getCreatedOn(); // Convert Date to LocalDateTime
                     LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
@@ -287,7 +302,7 @@ public class PostServiceImpl implements PostService {
                             .followersCount(followersList.size())
                             .createdOn(post.getCreatedOn())
                             .createdBy(post.getCreatedBy())
-                            .taggedUsers(taggedUsers)
+                            .taggedUserss(taggedUsers)
                             .build();
                     responseList.add(postWebModel);
                 });

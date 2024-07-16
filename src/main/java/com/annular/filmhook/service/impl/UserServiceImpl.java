@@ -945,7 +945,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<Map<String, Object>> findNearByUsers(Integer userId, Integer range) {
+    public List<Map<String, Object>> findNearByUsers(Integer userId, Integer range, String profession) {
         try {
             if (userId != null) {
                 Optional<User> userOptional = userRepository.findById(userId);
@@ -956,56 +956,70 @@ public class UserServiceImpl implements UserService {
                     throw new RuntimeException("User location not found");
                 }
 
-                // Fetch all nearBy users except the loggedIn user
-                Double rangeInMiles = 0.6213711922 * range; // 1 Mile(s) = 0.6213711922 * [km(s)]
-                List<User> nearByUsers = locationRepository.getNearByUsers(user.getUserId(), rangeInMiles, loggedInUserLocation.getLatitude(), loggedInUserLocation.getLongitude()).stream()
-                        .map(val -> this.getUser(val).orElse(null))
-                        .collect(Collectors.toList());
+                List<User> nearByUsers;
+                if (range != null) {
+                    // Fetch nearby users within range
+                    Double rangeInMiles = 0.6213711922 * range; // 1 Mile(s) = 0.6213711922 * [km(s)]
+                    nearByUsers = locationRepository.getNearByUsers(user.getUserId(), rangeInMiles, loggedInUserLocation.getLatitude(), loggedInUserLocation.getLongitude()).stream()
+                            .map((Integer val) -> this.getUser(val).orElse(null)) // Explicit type specification
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+                } else {
+                    // Fetch all nearby users except the logged-in user
+                    nearByUsers = locationRepository.getAllUsersExceptLoggedIn(userId).stream()
+                            .map((Integer val) -> this.getUser(val).orElse(null)) // Explicit type specification
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+                }
 
                 // Create a list to store each user's location details
                 List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
-                nearByUsers.stream()
-                        .filter(Objects::nonNull)
-                        .forEach(userData -> {
-                            Location location = userData.getLocation();
-                            if (location != null) {
-                                double distance = Utility.calculateDistance(loggedInUserLocation.getLatitude(), loggedInUserLocation.getLongitude(), location.getLatitude(), location.getLongitude());
-                                logger.debug("[{}] is [{}] away from you...", userData.getName(), (Math.round(distance) + " Km"));
+                nearByUsers.forEach(userData -> {
+                    Location location = userData.getLocation();
+                    if (location != null) {
+                        double distance = Utility.calculateDistance(loggedInUserLocation.getLatitude(), loggedInUserLocation.getLongitude(), location.getLatitude(), location.getLongitude());
+                        logger.debug("[{}] is [{}] away from you...", userData.getName(), (Math.round(distance) + " Km"));
 
-                                Map<String, Object> userDetails = new LinkedHashMap<>();
-                                userDetails.put("userId", userData.getUserId());
-                                userDetails.put("latitude", userData.getLocation().getLatitude());
-                                userDetails.put("longitude", userData.getLocation().getLongitude());
-                                userDetails.put("distance", Math.round(distance));
-                                userDetails.put("distanceUnit", "Km");
-                                userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
-                                userDetails.put("userName", userData.getName());
-                                // Fetching the user Profession
-                                Set<String> professionNames = new HashSet<>();
-                                List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(userData.getUserId());
-                                if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
-                                    professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
-                                } else {
-                                    professionNames.add("CommonUser");
-                                }
+                        // Fetching the user Profession
+                        Set<String> professionNames = new HashSet<>();
+                        List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(userData.getUserId());
+                        if (!professionPermanentDataList.isEmpty()) {
+                            professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
+                        } else {
+                            professionNames.add("CommonUser");
+                        }
 
-                                userDetails.put("professionNames", professionNames);
-                                nearbyUsersList.add(userDetails);
-                            }
-                        });
+                        // Apply profession filter if specified
+                        if (profession == null || professionNames.contains(profession)) {
+                            Map<String, Object> userDetails = new LinkedHashMap<>();
+                            userDetails.put("userId", userData.getUserId());
+                            userDetails.put("latitude", location.getLatitude());
+                            userDetails.put("longitude", location.getLongitude());
+                            userDetails.put("distance", Math.round(distance));
+                            userDetails.put("distanceUnit", "Km");
+                            userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
+                            userDetails.put("userName", userData.getName());
+                            userDetails.put("professionNames", professionNames);
+
+                            nearbyUsersList.add(userDetails);
+                        }
+                    }
+                });
+
                 // Sort users by distance
-                nearbyUsersList.sort(Comparator.comparingLong(u -> (long) u.get("distance")));
+                nearbyUsersList.sort(Comparator.comparing(u -> (Long) u.get("distance")));
                 logger.info("NearBy Users count -> [{}]", nearbyUsersList.size());
                 return nearbyUsersList;
             } else {
                 throw new RuntimeException("User ID must be provided");
             }
         } catch (Exception e) {
-            logger.error("Error at getNearByUsers() -> {}", e.getMessage());
+            logger.error("Error at findNearByUsers() -> {}", e.getMessage());
             e.printStackTrace();
         }
-        return null;
+        return Collections.emptyList(); // Return empty list if any exception occurs
     }
+
 
     @Override
     public Optional<User> changePrimaryEmaiId(UserWebModel userWebModel) {
