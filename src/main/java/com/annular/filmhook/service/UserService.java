@@ -73,4 +73,6 @@ public interface UserService {
 
 	ResponseEntity<?> getNewAddressListOnSignUp(String address);
 
+	ResponseEntity<?> getLocationByuserId(Integer userId);
+
 }

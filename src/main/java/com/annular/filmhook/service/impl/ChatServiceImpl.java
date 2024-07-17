@@ -218,6 +218,11 @@ public class ChatServiceImpl implements ChatService {
             List<ChatWebModel> messagesWithFiles = new ArrayList<>();
             for (Chat chat : allMessages) {
                 Optional<User> userData = userRepository.findById(chat.getChatSenderId());
+                Optional<User> userDatas = userRepository.findById(receiverId);
+                // Fetch profile picture URLs
+                String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
+                String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
+
                 if (userData.isPresent()) {
                     List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
                     ChatWebModel chatWebModel = ChatWebModel.builder()
@@ -227,12 +232,15 @@ public class ChatServiceImpl implements ChatService {
                             .chatIsActive(chat.getChatIsActive())
                             .chatCreatedBy(chat.getChatCreatedBy())
                             .chatCreatedOn(chat.getChatCreatedOn())
+                            .senderProfilePic(senderProfilePicUrl) // Set sender profile pic URL
+                            .receiverProfilePic(receiverProfilePicUrl) // Set receiver profile pic URL
                             .chatUpdatedBy(chat.getChatUpdatedBy())
                             .chatUpdatedOn(chat.getChatUpdatedOn())
                             .chatFiles(mediaFiles)
                             .message(chat.getMessage())
                             .userType(userData.get().getUserType())
                             .userAccountName(userData.get().getName())
+                            .receiverAccountName(userDatas.get().getName())
                             .userId(userData.get().getUserId())
                             .build();
                     messagesWithFiles.add(chatWebModel);

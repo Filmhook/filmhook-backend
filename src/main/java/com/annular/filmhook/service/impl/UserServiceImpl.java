@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -1081,4 +1082,40 @@ public class UserServiceImpl implements UserService {
 	        return ResponseEntity.ok(result);
 	    }
 
-}
+	@Override
+	public ResponseEntity<?> getLocationByuserId(Integer userId) {
+	    try {
+	        // Retrieve user data to ensure the user exists
+	        Optional<User> userData = userRepository.findById(userId);
+	        
+	        if (userData.isPresent()) {
+	            // User exists, retrieve location data
+	            Optional<Location> locationData = locationRepository.findByUserId(userId);
+	            
+	            if (locationData.isPresent()) {
+	                // Location data found, construct response
+	                Location location = locationData.get();
+	                Map<String, Object> response = new HashMap<>();
+	                response.put("latitude", location.getLatitude());
+	                response.put("longitude", location.getLongitude());
+	                response.put("address", location.getAddress());
+	                response.put("locationName", location.getLocationName());
+	                response.put("landMark", location.getLandMark());
+	                response.put("profilePic", userService.getProfilePicUrl(location.getUser().getUserId()));
+	                response.put("userName", location.getUser().getName());
+	                
+	                return ResponseEntity.ok(response);
+	            } else {
+	                // No location data found for the user
+	                return ResponseEntity.notFound().build();
+	            }
+	        } else {
+	            // User not found
+	            return ResponseEntity.notFound().build();
+	        }
+	    } catch (Exception e) {
+	        // Handle exceptions
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+
+	}}

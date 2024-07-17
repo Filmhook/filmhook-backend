@@ -30,6 +30,9 @@ public class ChatWebModel {
     private Date timeStamp;
     private String userAccountName;
     private Integer userId;
+    private String senderProfilePic;
+    private String receiverProfilePic;
+    private String receiverAccountName;
 
     List<MultipartFile> files;
     List<FileOutputWebModel> chatFiles;

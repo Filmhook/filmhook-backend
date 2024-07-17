@@ -28,5 +28,8 @@ public interface LocationRepository extends JpaRepository<Location, Integer> {
     @Query("SELECT u.id FROM User u WHERE u.id <> :userId")
     List<Integer> getAllUsersExceptLoggedIn(int userId);
 
+    @Query("SELECT l FROM Location l WHERE l.user.id = :userId")
+	Optional<Location> findByUserId(Integer userId);
+
 	
 }

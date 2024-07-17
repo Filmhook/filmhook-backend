@@ -403,5 +403,17 @@ public class UserController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    
+    @GetMapping("/getLocationByuserId")
+    public ResponseEntity<?> getLocationByuserId(@RequestParam("userId") Integer userId) {
+        try {
+            return userService.getLocationByuserId(userId);
+        } catch (Exception e) {
+            logger.error("getLocationByuserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
 
 }
