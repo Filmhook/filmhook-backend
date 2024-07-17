@@ -43,6 +43,10 @@ public class AuditionWebModel {
     private String searchKey;
 
     private Integer userId;
+    
+    private String filmHookCode;
+    
+    private String name;
 
 //	private List<AuditionRolesWebModel> auditionRoles;
 

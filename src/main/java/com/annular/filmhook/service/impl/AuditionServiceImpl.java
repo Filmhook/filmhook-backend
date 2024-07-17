@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,6 +158,8 @@ public class AuditionServiceImpl implements AuditionService {
                     .collect(Collectors.toList());
 
             if (!auditions.isEmpty()) {
+            	auditions.sort(Comparator.comparing(Audition::getAuditionCreatedOn).reversed());
+
                 List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
 
                 for (Audition audition : auditions) {
@@ -173,7 +176,12 @@ public class AuditionServiceImpl implements AuditionService {
                     auditionWebModel.setAuditionLocation(audition.getAuditionLocation());
                     auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
                     auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
-
+                 // Fetch additional user details
+                    Optional<User> userOptional = userService.getUser(userId);
+                    userOptional.ifPresent(user -> {
+                        auditionWebModel.setFilmHookCode(user.getFilmHookCode());
+                        auditionWebModel.setName(user.getName());
+                    });
                     if (!audition.getAuditionRoles().isEmpty()) {
                         List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
                         for (AuditionRoles auditionRoles : audition.getAuditionRoles()) {
@@ -346,6 +354,7 @@ public class AuditionServiceImpl implements AuditionService {
             combinedAuditions.addAll(auditionsWithoutSearchKey);
 
             if (!combinedAuditions.isEmpty()) {
+            	combinedAuditions.sort(Comparator.comparing(Audition::getAuditionCreatedOn).reversed());
                 List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
 
                 for (Audition audition : combinedAuditions) {
@@ -363,6 +372,12 @@ public class AuditionServiceImpl implements AuditionService {
                     auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
                     auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
 
+                    // Fetch additional user details
+                    Optional<User> userOptional = userService.getUser(userId);
+                    userOptional.ifPresent(user -> {
+                        auditionWebModel.setFilmHookCode(user.getFilmHookCode());
+                        auditionWebModel.setName(user.getName());
+                    });
                     if (!audition.getAuditionRoles().isEmpty()) {
                         List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
                         for (AuditionRoles auditionRoles : audition.getAuditionRoles()) {

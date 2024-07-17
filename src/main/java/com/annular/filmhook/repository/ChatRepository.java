@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.Chat;
+import com.annular.filmhook.model.User;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Integer> {
@@ -31,5 +32,8 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
 
     @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :loggedInUserId AND c.chatReceiverId = :userId) OR (c.chatSenderId = :userId AND c.chatReceiverId = :loggedInUserId) ORDER BY c.timeStamp DESC")
 	List<Chat> findTop1ByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(Integer loggedInUserId, Integer userId, Pageable pageable);
+
+    @Query("SELECT DISTINCT u FROM User u JOIN Chat c ON (c.chatSenderId = u.userId OR c.chatReceiverId = u.userId) WHERE :userId IN (c.chatSenderId, c.chatReceiverId)")
+    List<User> findChatUsersByUserId(Integer userId);
 
 }

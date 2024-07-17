@@ -37,7 +37,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("select u from User u where u.userType='subAdmin' and u.status=true")
     Page<User> findByUserType(String userType, Pageable paging);
-
+    
+    @Query("select u from User u where u.otp =otp")
     List<User> findByOtp(Integer otp);
 
     @Query("select u from User u where u.forgotOtp=:forgotOtp")

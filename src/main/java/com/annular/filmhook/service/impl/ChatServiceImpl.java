@@ -294,6 +294,7 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
+    
     @Override
     public Response getAllSearchByChat(String searchKey) {
         try {
@@ -309,6 +310,8 @@ public class ChatServiceImpl implements ChatService {
             e.printStackTrace();
             return new Response(-1, "Error", e.getMessage());
         }
+   
     }
+
 
 }
