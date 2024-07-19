@@ -65,7 +65,7 @@ public interface UserService {
 
     Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
 
-    List<Map<String, Object>> findNearByUsers(Integer userId, Integer range, String profession);
+   // List<Map<String, Object>> findNearByUsers(Integer userId, Integer range, String profession);
 
     Optional<User> changePrimaryEmaiId(UserWebModel userWebModel);
 
@@ -74,5 +74,7 @@ public interface UserService {
 	ResponseEntity<?> getNewAddressListOnSignUp(String address);
 
 	ResponseEntity<?> getLocationByuserId(Integer userId);
+
+	List<Map<String, Object>> findNearByUsers(Integer userId);
 
 }

@@ -487,6 +487,8 @@ public class PostServiceImpl implements PostService {
                 LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
                 String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
 
+                Posts post = postsRepository.findByPostId(comment.getPostId()).orElse(null);
+                
                 List<CommentOutputWebModel> childComments = null;
                 List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
                 if (!Utility.isNullOrEmptyList(dbChildComments))
@@ -495,7 +497,7 @@ public class PostServiceImpl implements PostService {
                 CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
                         .commentId(comment.getCommentId())
                         .category(comment.getCategory())
-                        .postId(comment.getPostId())
+                        .postId(comment.getPostId())// I want that postId userId want in post table
                         .userId(comment.getCommentedBy())
                         .parentCommentId(comment.getParentCommentId())
                         .content(comment.getContent())
@@ -505,6 +507,7 @@ public class PostServiceImpl implements PostService {
                         .userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
                         .userName(user != null ? user.getName() : "")
                         .time(elapsedTime)
+                        .postUserId(post.getUser().getUserId())
                         .childComments(childComments)
                         .createdBy(comment.getCreatedBy())
                         .createdOn(comment.getCreatedOn())

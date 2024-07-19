@@ -355,22 +355,32 @@ public class UserController {
                 .orElseGet(() -> new Response(-1, "User not found...", null));
     }
 
+//    @GetMapping("/getNearByUsers")
+//    public Response getNearByUsers(@RequestParam("userId") Integer userId,
+//                                   @RequestParam(value = "range", required = false) Integer range,
+//                                   @RequestParam(value = "profession", required = false) String profession) {
+//        try {
+//            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId, range, profession);
+//
+//            if (!Utility.isNullOrEmptyList(nearbyUsers)) {
+//                return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
+//            } else {
+//                return new Response(-1, "Nearby user(s) not found...", "");
+//            }
+//        } catch (RuntimeException e) {
+//            e.printStackTrace();
+//            return new Response(-1, "Error", e.getMessage());
+//        }
+//    }
     @GetMapping("/getNearByUsers")
-    public Response getNearByUsers(@RequestParam("userId") Integer userId,
-                                   @RequestParam(value = "range", required = false) Integer range,
-                                   @RequestParam(value = "profession", required = false) String profession) {
+    public Response getNearByUsers(@RequestParam("userId") Integer userId) {
         try {
-            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId, range, profession);
-
-            if (!Utility.isNullOrEmptyList(nearbyUsers)) {
-                return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
-            } else {
-                return new Response(-1, "Nearby user(s) not found...", "");
-            }
+            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId);
+            if (!Utility.isNullOrEmptyList(nearbyUsers)) return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
         } catch (RuntimeException e) {
-            e.printStackTrace();
             return new Response(-1, "Error", e.getMessage());
         }
+        return new Response(-1, "Nearby user(s) not found...", "");
     }
 
     @PostMapping("/changePrimaryEmaiId")
@@ -413,6 +423,26 @@ public class UserController {
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @PostMapping(path = "/saveProfilePhotos", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response saveProfilePhotos(@ModelAttribute UserWebModel userWebModel) {
+        FileOutputWebModel profilePic = userService.saveProfilePhoto(userWebModel);
+        if (profilePic != null) {
+            return new Response(1, "Profile pic saved Successfully...", profilePic);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+    
+    @PostMapping(path = "/saveCoverPhotos", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response saveCoverPhotos(@ModelAttribute UserWebModel userWebModel) {
+        List<FileOutputWebModel> coverPicList = userService.saveCoverPhoto(userWebModel);
+        if (coverPicList != null) {
+            return new Response(1, "Cover Photo saved Successfully...", coverPicList);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
     }
     
 

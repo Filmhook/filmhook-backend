@@ -80,6 +80,8 @@ public class ChatServiceImpl implements ChatService {
                         .timeStamp(new Date())
                         .chatIsActive(true)
                         .chatCreatedBy(userId)
+                        .senderRead(true)
+                        .receiverRead(false)
                         .chatCreatedOn(new Date())
                         .build();
                 chatRepository.save(chat);
@@ -216,6 +218,7 @@ public class ChatServiceImpl implements ChatService {
 
             // Construct the response structure
             List<ChatWebModel> messagesWithFiles = new ArrayList<>();
+            int unreadCount = 0; // Initialize unread messages count
             for (Chat chat : allMessages) {
                 Optional<User> userData = userRepository.findById(chat.getChatSenderId());
                 Optional<User> userDatas = userRepository.findById(receiverId);
@@ -236,6 +239,7 @@ public class ChatServiceImpl implements ChatService {
                             .receiverProfilePic(receiverProfilePicUrl) // Set receiver profile pic URL
                             .chatUpdatedBy(chat.getChatUpdatedBy())
                             .chatUpdatedOn(chat.getChatUpdatedOn())
+                            .receiverRead(true)
                             .chatFiles(mediaFiles)
                             .message(chat.getMessage())
                             .userType(userData.get().getUserType())
@@ -243,6 +247,10 @@ public class ChatServiceImpl implements ChatService {
                             .receiverAccountName(userDatas.get().getName())
                             .userId(userData.get().getUserId())
                             .build();
+                    
+                    if (!chat.getReceiverRead()) {
+                        unreadCount++; // Increment count if receiver hasn't read the message
+                    }
                     messagesWithFiles.add(chatWebModel);
                 }
             }
@@ -253,6 +261,7 @@ public class ChatServiceImpl implements ChatService {
             // Put the final response together
             response.put("userChat", messagesWithFiles);
             response.put("numberOfItems", messagesWithFiles.size());
+            response.put("unreadCount", unreadCount); // Add the unread messages count to the response
 
             logger.info("Get Messages by User ID Method End");
             return ResponseEntity.ok(new Response(1, "Success", response));

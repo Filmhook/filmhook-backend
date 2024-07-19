@@ -196,6 +196,22 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
         }
         return null;
     }
+//    public FileOutputWebModel uploadToS3(MultipartFile file, IndustryMediaFiles mediaFile) {
+//        try {
+//            File tempFile = File.createTempFile(mediaFile.getFileId(), null);
+//            FileUtil.convertMultiPartFileToFile(file, tempFile);
+//            String response = fileUtil.uploadFile(tempFile, mediaFile.getFilePath() + mediaFile.getFileType());
+//            if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+//                tempFile.delete();// deleting temp file
+//                return this.transformData(mediaFile);
+//            }
+//        } catch (Exception e) {
+//            logger.error("Error at uploadToS3 -> ", e);
+//            e.printStackTrace();
+//            return null;
+//        }
+//        return null;
+//    }
 
     @Override
     public List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId) {

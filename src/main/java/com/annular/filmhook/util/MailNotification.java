@@ -55,7 +55,7 @@ public class MailNotification {
 
     public boolean sendVerificationEmail(User user) {
         try {
-            if (Utility.isNullOrBlankWithTrim(user.getEmail()) || Utility.isNullOrZero(user.getFilmHookOtp())) throw new IllegalArgumentException("Email or OTP is null");
+            if (Utility.isNullOrBlankWithTrim(user.getEmail()) || Utility.isNullOrZero(user.getEmailOtp())) throw new IllegalArgumentException("Email or OTP is null");
             String subject = "EmailId Verification";
             String mailContent = "<p>Please use the following OTP to verify your fimHookCode on FilmHook. OTP -> <b>" + user.getFilmHookOtp() + "</b></p>";
             return this.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);

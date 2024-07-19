@@ -32,6 +32,7 @@ public class CommentOutputWebModel {
     private Date createdOn;
     private Integer updatedBy;
     private Date updatedOn;
+    private Integer postUserId;
 
     private String userProfilePic;
     private String userName;

@@ -75,8 +75,8 @@ public class WebSecurityConfig {
                                         "/user/refreshToken", "/user/forgotPassword", "/admin/adminRegister", "/admin/updateRegister", "/user/getNewAddressListOnSignUp",
                                         "/user/changeUserPassword", "/user/verifyUser", "/admin/deleteRegister", "/admin/getRegister",
                                         "/user/verify", "/user/resendOtp", "/user/verifyForgotOtp", "/industryUser/addIndustryUserPermanentDetails",
-                                        "/api/printName", "/industryUser/getDetails", "/industryUser/addTemporaryDetails",
-                                        "/industryUser/getTemporaryDetails", "/industryUser/addIndustryUserPermanentDetails",
+                                        "/api/printName", "/industryUser/getDetails", "/industryUser/addTemporaryDetails","/user/saveCoverPhotos",
+                                        "/industryUser/getTemporaryDetails", "/industryUser/addIndustryUserPermanentDetails","/user/saveProfilePhotos",
                                         "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails")
                                 .permitAll()
                                 .anyRequest()

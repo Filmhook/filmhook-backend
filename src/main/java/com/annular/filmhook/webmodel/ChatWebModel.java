@@ -3,6 +3,8 @@ package com.annular.filmhook.webmodel;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Column;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -33,6 +35,8 @@ public class ChatWebModel {
     private String senderProfilePic;
     private String receiverProfilePic;
     private String receiverAccountName;
+    private Boolean senderRead;
+    private Boolean receiverRead;
 
     List<MultipartFile> files;
     List<FileOutputWebModel> chatFiles;

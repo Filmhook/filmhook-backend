@@ -68,5 +68,10 @@ public class Chat {
 
     @Column(name = "user_account_name")
     private String userAccountName;
-
+    
+    @Column(name = "userRead")
+    private Boolean senderRead;
+    
+    @Column(name = "receiverRead")
+    private Boolean receiverRead;
 }
