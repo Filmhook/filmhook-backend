@@ -59,4 +59,5 @@ public class PostWebModel {
     private String address;
     private List<Integer> mediaFilesIds;
     private String userType;
+    private String adminReview;
 }

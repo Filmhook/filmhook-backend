@@ -280,6 +280,7 @@ public class PostServiceImpl implements PostService {
                             .userName(post.getUser().getName())
                             .postId(post.getPostId()) // Unique id of each post
                             //.postUrl(this.generatePostUrl(post.getPostId()))
+                            .adminReview(post.getUser().getAdminReview())
                             .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                             .description(post.getDescription())
                             .pinStatus(pinStatus)

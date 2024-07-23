@@ -132,7 +132,7 @@ public class AuthController {
                         refreshToken.getToken(),
                         userDetails.getUserType(),
                         user.getFilmHookCode(),
-                        user.getFirstName(),
+                        user.getAdminReview(),
                         user.getLastName()));
             }
         } catch (Exception e) {

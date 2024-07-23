@@ -761,6 +761,8 @@ public class UserServiceImpl implements UserService {
 
                                 map.put("userId", user.getUserId());
                                 map.put("name", user.getName());
+                                map.put("userType",user.getUserType());
+                                map.put("adminReview", user.getAdminReview());
                                 map.put("dob", CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
 
                                 FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build());
