@@ -126,63 +126,63 @@ public class FileUtil {
         return VIDEO_FORMATS.contains(fileFormat);
     }
 
-    public static void compressImageFile(File inputFile, String inputFileType, File outputFile) {
-        try {
-            logger.info("Input image file size to compress -> [{}] with file format -> [{}]", inputFile.length(), inputFileType);
-
-            /*BufferedImage inputImage = ImageIO.read(inputFile);
-
-            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(inputFileType);
-            ImageWriter writer = writers.next();
-
-            ImageOutputStream outputStream = ImageIO.createImageOutputStream(outputFile);
-            writer.setOutput(outputStream);
-
-            ImageWriteParam params = writer.getDefaultWriteParam();
-            params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-            params.setCompressionQuality(0.5f);
-
-            writer.write(null, new IIOImage(inputImage, null, null), params);
-
-            outputStream.close();
-            writer.dispose();
-            logger.info("Compressed image file size -> [{}]", outputFile.length());*/
-
-            IVCompressor compressor = new IVCompressor();
-            byte[] compressedFile = compressor.resizeImageUsingFile(inputFile, ImageFormats.valueOf(inputFileType.toUpperCase()), ResizeResolution.R360P);
-            convertByteArrayToFile(outputFile, compressedFile);
-            logger.info("Compressed image file size using IVCompressor -> [{}]", compressedFile.length);
-
-        } catch (Exception e) {
-            logger.error("Error at compressImageFile() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    public static void compressVideoFile(File inputFile, String inputFileType, File outputFile) {
-        try {
-            logger.info("Input video file size to compress -> [{}] with file format -> [{}]", inputFile.length(), inputFileType);
-
-            IVCompressor compressor = new IVCompressor();
-            byte[] compressedFile = compressor.reduceVideoSize(inputFile, VideoFormats.valueOf(inputFileType.toUpperCase()), ResizeResolution.R360P);
-            convertByteArrayToFile(outputFile, compressedFile);
-
-            logger.info("Compressed video file size -> [{}]", outputFile.length());
-        } catch (Exception e) {
-            logger.error("Error at compressVideoFile() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    public static void convertByteArrayToFile(File outputFile, byte[] bytes) {
-        try {
-            OutputStream os = new FileOutputStream(outputFile);
-            os.write(bytes);
-            os.close();
-        } catch (Exception e) {
-            logger.error("Error at convertByteArrayToFile() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-    }
+//    public static void compressImageFile(File inputFile, String inputFileType, File outputFile) {
+//        try {
+//            logger.info("Input image file size to compress -> [{}] with file format -> [{}]", inputFile.length(), inputFileType);
+//
+//            /*BufferedImage inputImage = ImageIO.read(inputFile);
+//
+//            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(inputFileType);
+//            ImageWriter writer = writers.next();
+//
+//            ImageOutputStream outputStream = ImageIO.createImageOutputStream(outputFile);
+//            writer.setOutput(outputStream);
+//
+//            ImageWriteParam params = writer.getDefaultWriteParam();
+//            params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+//            params.setCompressionQuality(0.5f);
+//
+//            writer.write(null, new IIOImage(inputImage, null, null), params);
+//
+//            outputStream.close();
+//            writer.dispose();
+//            logger.info("Compressed image file size -> [{}]", outputFile.length());*/
+//
+//            IVCompressor compressor = new IVCompressor();
+//            byte[] compressedFile = compressor.resizeImageUsingFile(inputFile, ImageFormats.valueOf(inputFileType.toUpperCase()), ResizeResolution.R360P);
+//            convertByteArrayToFile(outputFile, compressedFile);
+//            logger.info("Compressed image file size using IVCompressor -> [{}]", compressedFile.length);
+//
+//        } catch (Exception e) {
+//            logger.error("Error at compressImageFile() -> {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    public static void compressVideoFile(File inputFile, String inputFileType, File outputFile) {
+//        try {
+//            logger.info("Input video file size to compress -> [{}] with file format -> [{}]", inputFile.length(), inputFileType);
+//
+//            IVCompressor compressor = new IVCompressor();
+//            byte[] compressedFile = compressor.reduceVideoSize(inputFile, VideoFormats.valueOf(inputFileType.toUpperCase()), ResizeResolution.R360P);
+//            convertByteArrayToFile(outputFile, compressedFile);
+//
+//            logger.info("Compressed video file size -> [{}]", outputFile.length());
+//        } catch (Exception e) {
+//            logger.error("Error at compressVideoFile() -> {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//    }
+//
+//    public static void convertByteArrayToFile(File outputFile, byte[] bytes) {
+//        try {
+//            OutputStream os = new FileOutputStream(outputFile);
+//            os.write(bytes);
+//            os.close();
+//        } catch (Exception e) {
+//            logger.error("Error at convertByteArrayToFile() -> {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//    }
 
 }

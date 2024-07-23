@@ -57,7 +57,7 @@ public class MailNotification {
         try {
             if (Utility.isNullOrBlankWithTrim(user.getEmail()) || Utility.isNullOrZero(user.getEmailOtp())) throw new IllegalArgumentException("Email or OTP is null");
             String subject = "EmailId Verification";
-            String mailContent = "<p>Please use the following OTP to verify your fimHookCode on FilmHook. OTP -> <b>" + user.getFilmHookOtp() + "</b></p>";
+            String mailContent = "<p>Please use the following OTP to verify your fimHookCode on FilmHook. OTP -> <b>" + user.getEmailOtp() + "</b></p>";
             return this.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
         } catch (IllegalArgumentException e) {
             logger.error("Email or OTP is null for the user -> {}", user.getUserId());

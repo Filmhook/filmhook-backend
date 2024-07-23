@@ -62,49 +62,6 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     @Autowired
     S3Util s3Util;
 
-    @Override
-    public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
-        List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
-        try {
-            // 1. Save first in MySQL
-            Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
-            logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
-
-            // 2. Upload into S3
-            mediaFilesMap.forEach((mediaFile, inputFile) -> {
-                mediaFilesRepository.saveAndFlush(mediaFile);
-                try {
-                    File orginalFile = File.createTempFile(mediaFile.getFileId(), null);
-                    File compressedFile = File.createTempFile(mediaFile.getFileId(), null);
-
-                    FileUtil.convertMultiPartFileToFile(inputFile, orginalFile); // Converting from Multipart to file
-
-                    // Compressing the files before save
-                    if (FileUtil.isImageFile(mediaFile.getFileType())) {
-                        FileUtil.compressImageFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
-                    } else if (FileUtil.isVideoFile(mediaFile.getFileType())) {
-                        FileUtil.compressVideoFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
-                    } else {
-                        compressedFile = orginalFile;
-                    }
-
-                    String response = fileUtil.uploadFile(compressedFile, mediaFile.getFilePath() + mediaFile.getFileType());
-                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-                        orginalFile.delete();
-                        compressedFile.delete(); // deleting temp file
-                        fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
-                    }
-                } catch (IOException e) {
-                    logger.error("Error at media file save() -> {}", e.getMessage());
-                }
-            });
-            fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
-        } catch (Exception e) {
-            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return fileOutputWebModelList;
-    }
 //    @Override
 //    public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
 //        List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
@@ -117,25 +74,68 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 //            mediaFilesMap.forEach((mediaFile, inputFile) -> {
 //                mediaFilesRepository.saveAndFlush(mediaFile);
 //                try {
-//                    File file = File.createTempFile(mediaFile.getFileId(), null);
-//                    FileUtil.convertMultiPartFileToFile(inputFile, file);
-//                    String response = fileUtil.uploadFile(file, mediaFile.getFilePath() + mediaFile.getFileType());
+//                    File orginalFile = File.createTempFile(mediaFile.getFileId(), null);
+//                    File compressedFile = File.createTempFile(mediaFile.getFileId(), null);
+//
+//                    FileUtil.convertMultiPartFileToFile(inputFile, orginalFile); // Converting from Multipart to file
+//
+//                    // Compressing the files before save
+//                    if (FileUtil.isImageFile(mediaFile.getFileType())) {
+//                        FileUtil.compressImageFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+//                    } else if (FileUtil.isVideoFile(mediaFile.getFileType())) {
+//                        FileUtil.compressVideoFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+//                    } else {
+//                        compressedFile = orginalFile;
+//                    }
+//
+//                    String response = fileUtil.uploadFile(compressedFile, mediaFile.getFilePath() + mediaFile.getFileType());
 //                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-//                        file.delete(); // deleting temp file
+//                        orginalFile.delete();
+//                        compressedFile.delete(); // deleting temp file
 //                        fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
 //                    }
 //                } catch (IOException e) {
-//                    logger.error("Error at saveMediaFiles()...", e);
+//                    logger.error("Error at media file save() -> {}", e.getMessage());
 //                }
 //            });
 //            fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
 //        } catch (Exception e) {
-//            logger.error("Error at saveMediaFiles()...", e);
+//            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
 //            e.printStackTrace();
 //        }
 //        return fileOutputWebModelList;
 //    }
-//
+    @Override
+    public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
+        List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
+        try {
+            // 1. Save first in MySQL
+            Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
+            logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
+
+            // 2. Upload into S3
+            mediaFilesMap.forEach((mediaFile, inputFile) -> {
+                mediaFilesRepository.saveAndFlush(mediaFile);
+                try {
+                    File file = File.createTempFile(mediaFile.getFileId(), null);
+                    FileUtil.convertMultiPartFileToFile(inputFile, file);
+                    String response = fileUtil.uploadFile(file, mediaFile.getFilePath() + mediaFile.getFileType());
+                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+                        file.delete(); // deleting temp file
+                        fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
+                    }
+                } catch (IOException e) {
+                    logger.error("Error at saveMediaFiles()...", e);
+                }
+            });
+            fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
+        } catch (Exception e) {
+            logger.error("Error at saveMediaFiles()...", e);
+            e.printStackTrace();
+        }
+        return fileOutputWebModelList;
+    }
+
 
     private Map<MediaFiles, MultipartFile> prepareMultipleMediaFilesData(FileInputWebModel fileInput, User user) {
         Map<MediaFiles, MultipartFile> mediaFilesMap = new HashMap<>();

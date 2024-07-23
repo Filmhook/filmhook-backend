@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -26,6 +27,8 @@ public class StoriesWebModel {
 
     private Boolean status;
 
+    private Set<String> professionNames; 
+    private String profileUrl;
     private Date createdOn;
     private Integer createdBy;
 

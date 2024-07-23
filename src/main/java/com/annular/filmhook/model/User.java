@@ -228,5 +228,17 @@ public class User {
 
     @Column(name = "changeEmailId")
     private String changeEmailId;
+    
+    @Column(name = "bust")
+    private String bust;
+    
+    @Column(name = "hip")
+    private String hip;
+    
+    @Column(name = "heightUnit")
+    private String heightUnit;
+    
+    @Column(name = "weightUnit")
+    private String weightUnit;
 
 }

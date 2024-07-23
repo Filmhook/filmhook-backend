@@ -143,6 +143,10 @@ public class UserServiceImpl implements UserService {
         userWebModel.setLivingPlace(user.getLivingPlace());
         userWebModel.setSchedule(user.getSchedule());
         userWebModel.setExperience(user.getExperience());
+        userWebModel.setBust(user.getBust());
+        userWebModel.setHeightUnit(user.getHeightUnit());
+        userWebModel.setWeightUnit(user.getWeightUnit());
+        userWebModel.setHip(user.getHip());
 
         userWebModel.setHeight(user.getHeight());
         userWebModel.setWeight(user.getWeight());
@@ -261,7 +265,10 @@ public class UserServiceImpl implements UserService {
         if (!Utility.isNullOrBlankWithTrim(userInput.getChestSize())) userToUpdate.setChestSize(userInput.getChestSize()); //+ "in");
         if (!Utility.isNullOrBlankWithTrim(userInput.getWaistSize())) userToUpdate.setWaistSize(userInput.getWaistSize()); //+ "in");
         if (!Utility.isNullOrBlankWithTrim(userInput.getBicepsSize())) userToUpdate.setBiceps(userInput.getBicepsSize());// + "in");
-
+        if(!Utility.isNullOrBlankWithTrim(userInput.getWeightUnit())) userToUpdate.setWeightUnit(userInput.getWeightUnit());
+        if(!Utility.isNullOrBlankWithTrim(userInput.getHeightUnit())) userToUpdate.setHeightUnit(userInput.getHeightUnit());
+        if(!Utility.isNullOrBlankWithTrim(userInput.getBust())) userToUpdate.setBust(userInput.getBust());
+        if(!Utility.isNullOrBlankWithTrim(userInput.getHip())) userToUpdate.setHip(userInput.getHip());
         userToUpdate.setUpdatedBy(userToUpdate.getUserId());
         userToUpdate.setUpdatedOn(new Date());
     }

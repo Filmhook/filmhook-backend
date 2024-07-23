@@ -167,51 +167,51 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
         return fileOutputWebModel;
     }
 
-    public FileOutputWebModel uploadToS3(MultipartFile file, IndustryMediaFiles mediaFile) {
-        try {
-            File orginalFile = File.createTempFile(mediaFile.getFileId(), null);
-            File compressedFile = File.createTempFile(mediaFile.getFileId(), null);
-
-            FileUtil.convertMultiPartFileToFile(file, orginalFile);
-
-            // Compressing the files before save
-            if (FileUtil.isImageFile(mediaFile.getFileType())) {
-                FileUtil.compressImageFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
-            } else if (FileUtil.isVideoFile(mediaFile.getFileType())) {
-                FileUtil.compressVideoFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
-            } else {
-                compressedFile = orginalFile;
-            }
-
-            String response = fileUtil.uploadFile(compressedFile, mediaFile.getFilePath() + mediaFile.getFileType());
-            if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-                orginalFile.delete();
-                compressedFile.delete();// deleting temp file
-                return this.transformData(mediaFile);
-            }
-        } catch (Exception e) {
-            logger.error("Error at uploadToS3 -> {}", e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-        return null;
-    }
 //    public FileOutputWebModel uploadToS3(MultipartFile file, IndustryMediaFiles mediaFile) {
 //        try {
-//            File tempFile = File.createTempFile(mediaFile.getFileId(), null);
-//            FileUtil.convertMultiPartFileToFile(file, tempFile);
-//            String response = fileUtil.uploadFile(tempFile, mediaFile.getFilePath() + mediaFile.getFileType());
+//            File orginalFile = File.createTempFile(mediaFile.getFileId(), null);
+//            File compressedFile = File.createTempFile(mediaFile.getFileId(), null);
+//
+//            FileUtil.convertMultiPartFileToFile(file, orginalFile);
+//
+//            // Compressing the files before save
+//            if (FileUtil.isImageFile(mediaFile.getFileType())) {
+//                FileUtil.compressImageFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+//            } else if (FileUtil.isVideoFile(mediaFile.getFileType())) {
+//                FileUtil.compressVideoFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+//            } else {
+//                compressedFile = orginalFile;
+//            }
+//
+//            String response = fileUtil.uploadFile(compressedFile, mediaFile.getFilePath() + mediaFile.getFileType());
 //            if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-//                tempFile.delete();// deleting temp file
+//                orginalFile.delete();
+//                compressedFile.delete();// deleting temp file
 //                return this.transformData(mediaFile);
 //            }
 //        } catch (Exception e) {
-//            logger.error("Error at uploadToS3 -> ", e);
+//            logger.error("Error at uploadToS3 -> {}", e.getMessage());
 //            e.printStackTrace();
 //            return null;
 //        }
 //        return null;
 //    }
+    public FileOutputWebModel uploadToS3(MultipartFile file, IndustryMediaFiles mediaFile) {
+        try {
+            File tempFile = File.createTempFile(mediaFile.getFileId(), null);
+            FileUtil.convertMultiPartFileToFile(file, tempFile);
+            String response = fileUtil.uploadFile(tempFile, mediaFile.getFilePath() + mediaFile.getFileType());
+            if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+                tempFile.delete();// deleting temp file
+                return this.transformData(mediaFile);
+            }
+        } catch (Exception e) {
+            logger.error("Error at uploadToS3 -> ", e);
+            e.printStackTrace();
+            return null;
+        }
+        return null;
+    }
 
     @Override
     public List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId) {

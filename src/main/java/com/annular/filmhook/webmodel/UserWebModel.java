@@ -3,6 +3,8 @@ package com.annular.filmhook.webmodel;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Column;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -113,6 +115,10 @@ public class UserWebModel {
     private Double distance;
     private String professionName;
     private String changeEmailId;
+    private String bust;
+    private String hip;
+    private String heightUnit;
+    private String weightUnit;
 
 
 }

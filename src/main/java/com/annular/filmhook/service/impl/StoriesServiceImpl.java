@@ -31,11 +31,16 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
+import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -60,21 +65,29 @@ public class StoriesServiceImpl implements StoriesService {
     @Autowired
     FilmProfessionPermanentDetailRepository professionPermanentDetailsRepository;
     
+
     @Override
     public StoriesWebModel uploadStory(StoriesWebModel inputData) {
         try {
             Optional<User> userFromDB = userService.getUser(inputData.getUserId());
             if (userFromDB.isPresent()) {
                 Story story = this.prepareStories(inputData, userFromDB.get());
-                // 1. Save first in Stories table MySQL
-                storyRepository.saveAndFlush(story);
-                logger.info("Story unique id saved in mysql :- {}", story.getStoryId());
 
-                // 2. Save in media files table MySQL
+                // 1. Save the story in the Stories table (MySQL)
+                storyRepository.saveAndFlush(story);
+                logger.info("Story unique id saved in MySQL: {}", story.getStoryId());
+
+                // 2. Save media files in the media_files table (MySQL)
                 inputData.getFileInputWebModel().setCategory(MediaFileCategory.Stories);
-                inputData.getFileInputWebModel().setCategoryRefId(story.getId()); // adding the story table reference in media files table
+                inputData.getFileInputWebModel().setCategoryRefId(story.getId()); // Add story table reference in media files table
                 List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.saveMediaFiles(inputData.getFileInputWebModel(), userFromDB.get());
-                return Utility.isNullOrEmptyList(fileOutputWebModelList) ? null : this.transformData(story);
+
+                // Transform story data to include fileOutputWebModel
+                StoriesWebModel storiesWebModel = this.transformData(story);
+                storiesWebModel.setFileOutputWebModel(fileOutputWebModelList); // Set fileOutputWebModel
+
+                return storiesWebModel;
+                    
             } else {
                 return null;
             }
@@ -84,6 +97,7 @@ public class StoriesServiceImpl implements StoriesService {
             return null;
         }
     }
+
 
     private Story prepareStories(StoriesWebModel inputData, User user) {
 
@@ -116,27 +130,103 @@ public class StoriesServiceImpl implements StoriesService {
 //    }
 
 
+//    @Override
+//    public List<StoriesWebModel> getStoryByUserId(Integer userId) {
+//        List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
+//        try {
+//            List<Story> storyList = storyRepository.getStoryByUserId(userId);
+//            if (!Utility.isNullOrEmptyList(storyList)) {
+//                // Get the current time and the time 24 hours ago
+//                LocalDateTime now = LocalDateTime.now();
+//                LocalDateTime twentyFourHoursAgo = now.minusHours(24);
+//
+//                // Filter stories created within the last 24 hours
+//                storiesWebModelList = storyList.stream()
+//                        .filter(story -> convertToLocalDateTimeViaInstant(story.getCreatedOn()).isAfter(twentyFourHoursAgo))
+//                        .map(this::transformData)
+//                        .collect(Collectors.toList());
+//            }
+//        } catch (Exception e) {
+//            logger.error("Error at getStoryByUserId() -> {}", e.getMessage());
+//        }
+//        return storiesWebModelList;
+//    }
+//
+//    private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+//        return Instant.ofEpochMilli(dateToConvert.getTime())
+//                .atZone(ZoneId.systemDefault())
+//                .toLocalDateTime();
+//    }
+//
+//    private StoriesWebModel transformData(Story story) {
+//        StoriesWebModel storiesWebModel = new StoriesWebModel();
+//
+//        storiesWebModel.setStoryId(story.getStoryId());
+//        storiesWebModel.setType(story.getType());
+//        storiesWebModel.setDescription(story.getDescription());
+//        storiesWebModel.setViewCount(story.getViewCount());
+//        storiesWebModel.setStatus(story.getStatus());
+//        storiesWebModel.setUserId(story.getUser().getUserId());
+//        storiesWebModel.setCreatedOn(story.getCreatedOn());
+//        storiesWebModel.setCreatedBy(story.getCreatedBy());
+//
+//        List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
+//        if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
+//            storiesWebModel.setFileOutputWebModel(fileOutputWebModelList);
+//        }
+//
+//        return storiesWebModel;
+//    }
+
     @Override
     public List<StoriesWebModel> getStoryByUserId(Integer userId) {
         List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
         try {
-            List<Story> storyList = storyRepository.getStoryByUserId(userId);
+            List<Story> storyList = storyRepository.getAllActiveStories(); // Fetch all stories
             if (!Utility.isNullOrEmptyList(storyList)) {
                 // Get the current time and the time 24 hours ago
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime twentyFourHoursAgo = now.minusHours(24);
 
-                // Filter stories created within the last 24 hours
-                storiesWebModelList = storyList.stream()
-                        .filter(story -> convertToLocalDateTimeViaInstant(story.getCreatedOn()).isAfter(twentyFourHoursAgo))
-                        .map(this::transformData)
-                        .collect(Collectors.toList());
+                // Map to aggregate stories by userId
+                Map<Integer, StoriesWebModel> userStoriesMap = new LinkedHashMap<>();
+
+                for (Story story : storyList) {
+                    Integer storyUserId = story.getUser().getUserId();
+
+                    // Check if the story was created within the last 24 hours
+                    LocalDateTime storyCreatedOn = convertToLocalDateTimeViaInstant(story.getCreatedOn());
+                    if (storyCreatedOn.isAfter(twentyFourHoursAgo)) {
+                        StoriesWebModel storiesWebModel = transformData(story);
+                        List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
+
+                        // Add or update the story in the map for the user
+                        if (!userStoriesMap.containsKey(storyUserId)) {
+                            storiesWebModel.setFileOutputWebModel(mediaFiles);
+                            userStoriesMap.put(storyUserId, storiesWebModel);
+                        } else {
+                            // Add media files to the existing story
+                            StoriesWebModel existingStoriesWebModel = userStoriesMap.get(storyUserId);
+                            existingStoriesWebModel.getFileOutputWebModel().addAll(mediaFiles);
+                        }
+                    }
+                }
+
+                // Convert the map values to a list and sort to put the specified userId first
+                storiesWebModelList = userStoriesMap.values().stream()
+                    .sorted((s1, s2) -> {
+                        if (s1.getUserId().equals(userId)) return -1; // Place specified userId stories first
+                        if (s2.getUserId().equals(userId)) return 1;  // Place specified userId stories first
+                        return 0; // No change in order for other users
+                    })
+                    .collect(Collectors.toList());
             }
         } catch (Exception e) {
             logger.error("Error at getStoryByUserId() -> {}", e.getMessage());
         }
         return storiesWebModelList;
     }
+
 
     private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
         return Instant.ofEpochMilli(dateToConvert.getTime())
@@ -149,20 +239,34 @@ public class StoriesServiceImpl implements StoriesService {
 
         storiesWebModel.setStoryId(story.getStoryId());
         storiesWebModel.setType(story.getType());
+        storiesWebModel.setProfileUrl(userService.getProfilePicUrl(story.getUser().getUserId()));
+        storiesWebModel.setUserName(story.getUser().getName());
         storiesWebModel.setDescription(story.getDescription());
         storiesWebModel.setViewCount(story.getViewCount());
         storiesWebModel.setStatus(story.getStatus());
         storiesWebModel.setUserId(story.getUser().getUserId());
         storiesWebModel.setCreatedOn(story.getCreatedOn());
         storiesWebModel.setCreatedBy(story.getCreatedBy());
+        // Fetch user professions
+        Set<String> professionNames = new HashSet<>();
+        List<FilmProfessionPermanentDetail> professionPermanentDataList = professionPermanentDetailsRepository
+            .getProfessionDataByUserId(story.getUser().getUserId());
 
-        List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
-        if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
-            storiesWebModel.setFileOutputWebModel(fileOutputWebModelList);
+        if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
+            professionNames = professionPermanentDataList.stream()
+                .map(FilmProfessionPermanentDetail::getProfessionName)
+                .collect(Collectors.toSet());
+        } else {
+            professionNames.add("Public User");
         }
+
+        // Add profession names to the StoriesWebModel
+        storiesWebModel.setProfessionNames(professionNames);
 
         return storiesWebModel;
     }
+
+
 
     @Override
     public Resource getStoryFile(Integer userId, String category, String fileId) {
