@@ -142,5 +142,16 @@ public class StoriesController {
         }
         return new Response(-1, "Story not found...", null);
     }
-
+    @GetMapping("/getUserStoriesByUserId")
+    public Response getUserStoriesByUserId(@RequestParam("userId") Integer userId) {
+        try {
+            List<StoriesWebModel> storyList = storiesService.getUserStoriesByUserId(userId);
+            if (storyList != null)
+                return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
+        } catch (Exception e) {
+            logger.error("Error at getUserStoriesByUserId() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return new Response(-1, "Story not found...", null);
+    }
 }

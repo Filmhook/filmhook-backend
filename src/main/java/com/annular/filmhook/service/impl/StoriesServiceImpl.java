@@ -262,6 +262,7 @@ public class StoriesServiceImpl implements StoriesService {
 
         // Add profession names to the StoriesWebModel
         storiesWebModel.setProfessionNames(professionNames);
+        
 
         return storiesWebModel;
     }
@@ -421,6 +422,54 @@ public class StoriesServiceImpl implements StoriesService {
                 .map(FilmProfessionPermanentDetail::getProfessionName)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<StoriesWebModel> getUserStoriesByUserId(Integer userId) {
+        List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
+        try {
+            List<Story> storyList = storyRepository.getAllActiveStories(); // Fetch all stories
+            if (!Utility.isNullOrEmptyList(storyList)) {
+                // Get the current time and the time 24 hours ago
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime twentyFourHoursAgo = now.minusHours(24);
+
+                // Map to store aggregated media files for the specific userId
+                Map<Integer, StoriesWebModel> userStoriesMap = new LinkedHashMap<>();
+
+                for (Story story : storyList) {
+                    Integer storyUserId = story.getUser().getUserId();
+
+                    // Check if the story is for the specified userId and created within the last 24 hours
+                    if (storyUserId.equals(userId)) {
+                        LocalDateTime storyCreatedOn = convertToLocalDateTimeViaInstant(story.getCreatedOn());
+                        if (storyCreatedOn.isAfter(twentyFourHoursAgo)) {
+                            // Transform the story data
+                            StoriesWebModel storiesWebModel = transformData(story);
+                            
+                            // Retrieve media files for the current story
+                            List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
+
+                            // Add or update the media files in the StoriesWebModel
+                            if (userStoriesMap.containsKey(storyUserId)) {
+                                StoriesWebModel existingStoriesWebModel = userStoriesMap.get(storyUserId);
+                                existingStoriesWebModel.getFileOutputWebModel().addAll(mediaFiles);
+                            } else {
+                                storiesWebModel.setFileOutputWebModel(mediaFiles);
+                                userStoriesMap.put(storyUserId, storiesWebModel);
+                            }
+                        }
+                    }
+                }
+
+                // Convert the map values to a list
+                storiesWebModelList = new ArrayList<>(userStoriesMap.values());
+            }
+        } catch (Exception e) {
+            logger.error("Error at getUserStoriesByUserId() -> {}", e.getMessage());
+        }
+        return storiesWebModelList;
+    }
+
 
 }
 

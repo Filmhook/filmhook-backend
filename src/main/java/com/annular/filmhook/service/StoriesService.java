@@ -30,4 +30,6 @@ public interface StoriesService {
     void deleteExpiredStories(List<Story> storyList);
 
     List<UserIdAndNameWebModel> getUserIdAndName(Integer userId);
+
+	List<StoriesWebModel> getUserStoriesByUserId(Integer userId);
 }

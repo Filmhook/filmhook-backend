@@ -198,7 +198,7 @@ public class User {
     private String firebaseDeviceToken;
 
     @Column(name = "admin_review")
-    private String adminReview;
+    private Float adminReview;
 
     @Column(name = "living_place")
     private String livingPlace;

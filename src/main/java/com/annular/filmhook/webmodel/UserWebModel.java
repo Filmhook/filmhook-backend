@@ -28,7 +28,7 @@ public class UserWebModel {
     private String lastName;
     private String middleName;
     private String firebaseDeviceToken;
-    private String adminReview;
+    private Float adminReview;
     private String livingPlace;
     private String birthPlace;
     private Integer experience;

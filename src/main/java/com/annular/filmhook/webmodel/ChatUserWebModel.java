@@ -19,6 +19,7 @@ public class ChatUserWebModel {
     private String profilePicUrl;
     private String latestMessage;
     private Date latestMsgTime;
+    private int receiverUnreadCount;
     
 
 }

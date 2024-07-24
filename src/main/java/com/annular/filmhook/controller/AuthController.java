@@ -153,6 +153,7 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
             String jwt = jwtUtils.generateJwtToken(authentication);
+            User user = checkUsername.get();
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             logger.info("Admin Login ---- Finished");
             return ResponseEntity.ok(new JwtResponse(jwt,
@@ -163,7 +164,7 @@ public class AuthController {
                     1,
                     refreshToken.getToken(),
                     userDetails.getUserType(),
-                    "", "", ""));
+                    "",user.getAdminReview(), ""));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
@@ -186,7 +187,7 @@ public class AuthController {
                     1,
                     token.getData().toString(),
                     userData.get().getUserType(),
-                    "", "", ""));
+                    "",userData.get().getAdminReview(), ""));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
     }
