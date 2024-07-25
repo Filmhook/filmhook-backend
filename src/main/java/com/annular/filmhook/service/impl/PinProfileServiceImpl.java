@@ -194,6 +194,8 @@ public class PinProfileServiceImpl implements PinProfileService {
                         pinData.put("userId", userProfilePin.getUserId());
                         pinData.put("userName", user.getName());
                         pinData.put("userGender", user.getGender());
+                        pinData.put("review", user.getAdminReview());
+                        pinData.put("userType", user.getUserType());
 
                         if (!profilePicOptional.isEmpty()) {
                             MediaFiles mediaFiles = profilePicOptional.get(0);

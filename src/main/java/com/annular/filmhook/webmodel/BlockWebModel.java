@@ -25,5 +25,7 @@ public class BlockWebModel {
     private Date createdOn;
     private Integer updatedBy;
     private Date updatedOn;
+    private String userType;
+    private Float review;
 
 }

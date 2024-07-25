@@ -20,6 +20,7 @@ import com.annular.filmhook.service.ChatService;
 import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
+import com.annular.filmhook.webmodel.InAppNotificationWebModel;
 
 @RestController
 @RequestMapping("/chat")
@@ -113,5 +114,29 @@ public class ChatController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
         }
+    }
+    
+    @GetMapping("getInAppNotification")
+    public ResponseEntity<Response> getInAppNotification() {
+        try {
+            Response response = chatService.getInAppNotification();
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            logger.error("Error at getInAppNotification -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+        }
+    }
+        
+        @PostMapping("updateInAppNotification")
+        public ResponseEntity<Response> updateInAppNotification(@RequestBody InAppNotificationWebModel inAppNotificationWebModel) {
+            try {
+                Response response = chatService.updateInAppNotification(inAppNotificationWebModel);
+                return ResponseEntity.ok().body(response);
+            } catch (Exception e) {
+                logger.error("Error at getInAppNotification -> {}", e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+            }
     }
 }

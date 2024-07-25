@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notifications, Integer> {
 
-    @Query("Select n from Notifications n where n.notificationTo = :userId and n.readFlag = false")
+    @Query("Select n from Notifications n where n.notificationTo = :userId")
     List<Notifications> getNotificationByUserId(Integer userId);
 
 }

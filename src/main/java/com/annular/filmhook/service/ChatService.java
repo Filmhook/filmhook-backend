@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.webmodel.ChatWebModel;
+import com.annular.filmhook.webmodel.InAppNotificationWebModel;
 
 public interface ChatService {
 
@@ -18,5 +19,9 @@ public interface ChatService {
 	Response getLastMessageById(ChatWebModel message);
 
 	Response getAllSearchByChat(String searchKey);
+
+	Response getInAppNotification();
+
+	Response updateInAppNotification(InAppNotificationWebModel inAppNotificationWebModel);
 
 }

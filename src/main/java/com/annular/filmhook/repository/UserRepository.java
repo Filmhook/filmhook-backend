@@ -59,4 +59,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT u FROM User u WHERE LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) AND u.status = true")
 	List<User> getActiveUserByName(String searchKey);
 
+    @Query("SELECT u FROM User u WHERE u.status=true")
+	List<User> findAllActiveUsers();
+
 }

@@ -35,5 +35,8 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
 
     @Query("SELECT DISTINCT u FROM User u JOIN Chat c ON (c.chatSenderId = u.userId OR c.chatReceiverId = u.userId) WHERE :userId IN (c.chatSenderId, c.chatReceiverId)")
     List<User> findChatUsersByUserId(Integer userId);
+    
+    @Query("SELECT COUNT(c) FROM Chat c WHERE c.chatReceiverId = :receiverId AND c.chatSenderId = :senderId AND c.receiverRead = false")
+    Integer countUnreadMessages(Integer receiverId, Integer senderId);
 
 }

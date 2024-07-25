@@ -1251,6 +1251,8 @@ public class UserServiceImpl implements UserService {
 	            loggedInUserDetails.put("profilePic", userService.getProfilePicUrl(user.getUserId()));
 	            loggedInUserDetails.put("userName", user.getName());
 	            loggedInUserDetails.put("professionNames", getProfessionNames(user.getUserId()));
+	            loggedInUserDetails.put("userType", user.getUserType());
+	            loggedInUserDetails.put("review", user.getAdminReview());
 	            nearbyUsersList.add(loggedInUserDetails);
 
 	            // Process nearby users

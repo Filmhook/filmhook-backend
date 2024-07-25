@@ -50,19 +50,38 @@ public class BlockServiceImpl implements BlockService {
             if (currentUser.getUserId().equals(blockedUser.getUserId()))
                 return ResponseEntity.badRequest().body("Blocked By User and Blocked User cannot be the same...");
 
-            Block existingBlockRow = blockRepository.findByBlockedByAndBlockedUserAndBlockStatus(currentUser, blockedUser, "UnBlocked");
+            // Check if the block already exists
+            Block existingBlockRow = blockRepository.findByBlockedByAndBlockedUser(currentUser, blockedUser);
 
-            Block block = Objects.requireNonNullElseGet(existingBlockRow, Block::new);
-            block.setBlockedBy(currentUser);
-            block.setStatus(true);
-            block.setBlockedUser(blockedUser);
-            block.setBlockStatus("Blocked");
-            block.setCreatedBy(userDetails.userInfo().getId());
+            if (existingBlockRow != null) {
+                // Toggle the block status
+                if (existingBlockRow.getBlockStatus().equals("Blocked")) {
+                    existingBlockRow.setBlockStatus("UnBlocked");
+                    existingBlockRow.setStatus(false);
+                } else {
+                    existingBlockRow.setBlockStatus("Blocked");
+                    existingBlockRow.setStatus(true);
+                }
+                existingBlockRow.setCreatedBy(userDetails.userInfo().getId());
+                blockRepository.save(existingBlockRow);
 
-            blockRepository.save(block);
+                blockWebModels = this.transformBlockToBlockWebModel(List.of(existingBlockRow));
+                return ResponseEntity.ok(new Response(1, "Block status toggled successfully", blockWebModels));
+            } else {
+                // Create a new block entry
+                Block newBlock = Block.builder()
+                        .blockedBy(currentUser)
+                        .blockedUser(blockedUser)
+                        .blockStatus("Blocked")
+                        .status(true)
+                        .createdBy(userDetails.userInfo().getId())
+                        .build();
 
-            blockWebModels = this.transformBlockToBlockWebModel(List.of(block));
-            return ResponseEntity.ok(new Response(1, "Add block successfully", blockWebModels));
+                blockRepository.save(newBlock);
+
+                blockWebModels = this.transformBlockToBlockWebModel(List.of(newBlock));
+                return ResponseEntity.ok(new Response(1, "Add block successfully", blockWebModels));
+            }
         } catch (Exception e) {
             logger.error("Error setting block {}", e.getMessage());
             return ResponseEntity.internalServerError().body(new Response(-1, "Error setting block", e.getMessage()));
@@ -89,6 +108,8 @@ public class BlockServiceImpl implements BlockService {
                                     .createdOn(block.getCreatedOn())
                                     .updatedBy(block.getUpdatedBy())
                                     .updatedOn(block.getUpdatedOn())
+                                    .userType(block.getBlockedUser().getUserType())
+                                    .review(block.getBlockedUser().getAdminReview())
                                     .build();
                             blockWebModels.add(blockWebModel);
                         });
