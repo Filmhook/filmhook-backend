@@ -874,7 +874,7 @@ public class UserServiceImpl implements UserService {
                         .map(FilmProfessionPermanentDetail::getProfessionName)
                         .collect(Collectors.toSet());
             } else {
-                professionNames.add("CommonUser");
+                professionNames.add("Public User");
             }
 
             // Convert the professionNames set to a comma-separated string
@@ -1117,7 +1117,7 @@ public class UserServiceImpl implements UserService {
         if (!professionPermanentDataList.isEmpty()) {
             return professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
         } else {
-            return Collections.singleton("CommonUser");
+            return Collections.singleton("Public User");
         }
     }
 

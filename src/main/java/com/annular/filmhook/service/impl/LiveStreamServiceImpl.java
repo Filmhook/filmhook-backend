@@ -71,8 +71,8 @@ public class LiveStreamServiceImpl implements LiveStreamService {
             // Send notifications to all active users
             for (User user : activeUsers) {
                 // Check if the user is the one who started the live stream
-              //  if (!user.getUserId().equals(liveDetails.getUserId()) && user.getStatus() && user.getFirebaseDeviceToken() != null) {
-                    if(user.getUserId() == 10) {
+                if (!user.getUserId().equals(liveDetails.getUserId()) && user.getStatus() && user.getFirebaseDeviceToken() != null) {
+                   // if(user.getUserId() == 10) {
             	// Save in-app notification
                     InAppNotification inAppNotification = InAppNotification.builder()
                             .senderId(liveDetails.getUserId())

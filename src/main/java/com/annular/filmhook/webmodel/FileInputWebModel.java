@@ -27,5 +27,6 @@ public class FileInputWebModel {
 	private String fileId;
 	private String fileType;
 	private String filePath;
+	private String type;
 
 }

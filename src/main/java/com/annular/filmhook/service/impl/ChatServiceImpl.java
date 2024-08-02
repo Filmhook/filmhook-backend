@@ -29,10 +29,12 @@ import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 
 import com.annular.filmhook.repository.ChatRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
 
 import com.annular.filmhook.service.ChatService;
@@ -73,6 +75,9 @@ public class ChatServiceImpl implements ChatService {
 
 	@Autowired
 	FirebaseConfig firebaseConfig;
+	
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
 
 	public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
@@ -525,23 +530,41 @@ public class ChatServiceImpl implements ChatService {
 
 	@Override
 	public Response getInAppNotification() {
+	    try {
+	        Integer userId = userDetails.userInfo().getId();
+	        // Fetch notifications for the given userId
+	        List<InAppNotification> notifications = inAppNotificationRepository
+	                .findByReceiverIdOrderByCreatedOnDesc(userId);
 
-		try {
-			Integer userId = userDetails.userInfo().getId();
-			// Fetch notifications for the given userId
-			List<InAppNotification> notifications = inAppNotificationRepository
-					.findByReceiverIdOrderByCreatedOnDesc(userId);
+	        if (notifications.isEmpty()) {
+	            return new Response(0, "No Notifications", "No notifications found for the given user ID");
+	        }
 
-			if (notifications.isEmpty()) {
-				return new Response(0, "No Notifications", "No notifications found for the given user ID");
-			}
+	       
+	        List<InAppNotificationWebModel> notificationDtos = notifications.stream().map(notification -> {
+	        	InAppNotificationWebModel dto = new InAppNotificationWebModel();
+	            dto.setInAppNotificationId(notification.getInAppNotificationId());
+	            dto.setSenderId(notification.getSenderId());
+	            dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId())); // Fetch profile picture URL
+	            dto.setReceiverId(notification.getReceiverId());
+	            dto.setTitle(notification.getTitle());
+	            dto.setMessage(notification.getMessage());
+	            dto.setCreatedOn(notification.getCreatedOn());
+	            dto.setIsRead(notification.getIsRead());
+	            dto.setCreatedBy(notification.getCreatedBy());
+	            dto.setUpdatedBy(notification.getUpdatedBy());
+	            dto.setUpdatedOn(notification.getUpdatedOn());
+	            dto.setUserType(notification.getUserType());
+	            return dto;
+	        }).collect(Collectors.toList());
 
-			return new Response(1, "Success", notifications);
-		} catch (Exception e) {
-			logger.error("Error occurred while fetching notifications -> {}", e.getMessage());
-			return new Response(0, "Error", "An error occurred while fetching notifications");
-		}
+	        return new Response(1, "Success", notificationDtos);
+	    } catch (Exception e) {
+	        logger.error("Error occurred while fetching notifications -> {}", e.getMessage());
+	        return new Response(0, "Error", "An error occurred while fetching notifications");
+	    }
 	}
+
 
 	@Override
 	public Response updateInAppNotification(InAppNotificationWebModel inAppNotificationWebModel) {
@@ -566,5 +589,28 @@ public class ChatServiceImpl implements ChatService {
 	    }
 	}
 
+	@Override
+	public Response deleteByChatId(ChatWebModel chatWebModel) {
+	    try {
+	        Optional<Chat> chatData = chatRepository.findById(chatWebModel.getChatId());
+	        if (chatData.isPresent()) {
+	            Chat data = chatData.get();
+	            data.setChatIsActive(false);
+	            chatRepository.save(data); // Save the updated chat object
+	            // Update mediaFiles status where refId matches chatId
+	            List<MediaFiles> mediaFiles = mediaFilesRepository.findByCategoryRefId(chatWebModel.getChatId());
+	            for (MediaFiles mediaFile : mediaFiles) {
+	                mediaFile.setStatus(false);
+	                mediaFilesRepository.save(mediaFile); // Save the updated media file object
+	            }
+	            return new Response(1,"success","Chat deactivated successfully");
+	        } else {
+	            return new Response(0,"Not Found","Chat not found");
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace(); // Log the exception for debugging
+	        return new Response(0, "Error","An error occurred while deactivating the chat");
+	    }
+	}
 
 }

@@ -3,11 +3,12 @@ package com.annular.filmhook.service.impl;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.MultiMediaFiles;
+import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.User;
 
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
-
+import com.annular.filmhook.repository.StoryRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 
@@ -49,6 +50,9 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 
     @Autowired
     MediaFilesRepository mediaFilesRepository;
+    
+    @Autowired
+    StoryRepository storiesrRepository;
 
     @Autowired
     FileUtil fileUtil;
@@ -284,6 +288,12 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
             fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
             fileOutputWebModel.setFilmHookCode(mediaFile.getUser().getFilmHookCode());
+         // Handle category type STORY
+            if (mediaFile.getCategory() == MediaFileCategory.Stories) {
+                Story story = storiesrRepository.findById(mediaFile.getCategoryRefId())
+                        .orElseThrow(() -> new RuntimeException("Story not found for id: " + mediaFile.getCategoryRefId()));
+                fileOutputWebModel.setType(story.getType());
+            }
 
             // Convert Date to LocalDateTime
             Date createdDate = mediaFile.getCreatedOn();

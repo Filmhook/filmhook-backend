@@ -85,6 +85,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setUserType(userWebModel.getUserType());
                 user.setMobileNumberStatus(false);
                 user.setDob(userWebModel.getDob());
+                user.setAdminReview((float) 0.1);
                 user.setGender(userWebModel.getGender());
                 user.setBirthPlace(userWebModel.getBirthPlace());
                 user.setLivingPlace(userWebModel.getLivingPlace());

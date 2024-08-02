@@ -239,7 +239,6 @@ public class StoriesServiceImpl implements StoriesService {
         StoriesWebModel storiesWebModel = new StoriesWebModel();
 
         storiesWebModel.setStoryId(story.getStoryId());
-        storiesWebModel.setType(story.getType());
         storiesWebModel.setProfileUrl(userService.getProfilePicUrl(story.getUser().getUserId()));
         storiesWebModel.setUserName(story.getUser().getName());
         storiesWebModel.setDescription(story.getDescription());

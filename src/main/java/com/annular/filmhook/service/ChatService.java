@@ -24,4 +24,6 @@ public interface ChatService {
 
 	Response updateInAppNotification(InAppNotificationWebModel inAppNotificationWebModel);
 
+	Response deleteByChatId(ChatWebModel chatWebModel);
+
 }

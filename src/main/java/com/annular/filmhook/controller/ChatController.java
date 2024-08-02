@@ -26,117 +26,132 @@ import com.annular.filmhook.webmodel.InAppNotificationWebModel;
 @RequestMapping("/chat")
 public class ChatController {
 
-    public static final Logger logger = LoggerFactory.getLogger(ChatController.class);
+	public static final Logger logger = LoggerFactory.getLogger(ChatController.class);
 
-    @Autowired
-    ChatService chatService;
+	@Autowired
+	ChatService chatService;
 
-    @Autowired
-    FcmService fcmService;
+	@Autowired
+	FcmService fcmService;
 
-    @RequestMapping(path = "/saveMessage", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<?> saveMessage(@ModelAttribute ChatWebModel chatWebModel) {
-        try {
-            logger.info("saveMessage controller start");
-            return chatService.saveMessage(chatWebModel);
-        } catch (Exception e) {
-            logger.error("saveMessage Method Exception {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return ResponseEntity.ok(new Response(-1, "Fail", ""));
-    }
+	@RequestMapping(path = "/saveMessage", method = RequestMethod.POST, consumes = {
+			MediaType.MULTIPART_FORM_DATA_VALUE })
+	public ResponseEntity<?> saveMessage(@ModelAttribute ChatWebModel chatWebModel) {
+		try {
+			logger.info("saveMessage controller start");
+			return chatService.saveMessage(chatWebModel);
+		} catch (Exception e) {
+			logger.error("saveMessage Method Exception {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
-    @GetMapping("/getAllUser")
-    public ResponseEntity<?> getAllUser() {
-        try {
-            logger.info("getAllUser controller start");
-            return chatService.getAllUser();
-        } catch (Exception e) {
-            logger.error("getAllUser Method Exception {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return ResponseEntity.ok(new Response(-1, "Fail", ""));
-    }
+	@GetMapping("/getAllUser")
+	public ResponseEntity<?> getAllUser() {
+		try {
+			logger.info("getAllUser controller start");
+			return chatService.getAllUser();
+		} catch (Exception e) {
+			logger.error("getAllUser Method Exception {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
-    @PostMapping("/getMessageByUserId")
-    public ResponseEntity<?> getMessageByUserId(@RequestBody ChatWebModel chatWebModel) {
-        try {
-            logger.info("getMessageByUserIde controller start");
-            return chatService.getMessageByUserId(chatWebModel);
-        } catch (Exception e) {
-            logger.error("getMessageByUserId Method Exception {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return ResponseEntity.ok(new Response(-1, "Fail", ""));
-    }
+	@PostMapping("/getMessageByUserId")
+	public ResponseEntity<?> getMessageByUserId(@RequestBody ChatWebModel chatWebModel) {
+		try {
+			logger.info("getMessageByUserIde controller start");
+			return chatService.getMessageByUserId(chatWebModel);
+		} catch (Exception e) {
+			logger.error("getMessageByUserId Method Exception {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
-    @PostMapping("/send-fcm-message")
-    public ResponseEntity<?> sendFCMMessage(@RequestBody FCMRequestWebModel request) {
-        try {
-            fcmService.sendFCMMessage(request);
-            return ResponseEntity.ok("FCM message sent successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
-        }
-    }
+	@PostMapping("/send-fcm-message")
+	public ResponseEntity<?> sendFCMMessage(@RequestBody FCMRequestWebModel request) {
+		try {
+			fcmService.sendFCMMessage(request);
+			return ResponseEntity.ok("FCM message sent successfully.");
+		} catch (Exception e) {
+			return ResponseEntity.ok(new Response(-1, "Fail", ""));
+		}
+	}
 
-    @GetMapping("/getFirebaseTokenByuserId")
-    public ResponseEntity<?> getFirebaseTokenByUserId(@RequestParam("userId") Integer userId) {
-        try {
-            logger.info("getFirebaseTokenByUserId controller start");
-            return chatService.getFirebaseTokenByUserId(userId);
-        } catch (Exception e) {
-            logger.error("getFirebaseTokenByUserId Method Exception {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
-        }
-    }
+	@GetMapping("/getFirebaseTokenByuserId")
+	public ResponseEntity<?> getFirebaseTokenByUserId(@RequestParam("userId") Integer userId) {
+		try {
+			logger.info("getFirebaseTokenByUserId controller start");
+			return chatService.getFirebaseTokenByUserId(userId);
+		} catch (Exception e) {
+			logger.error("getFirebaseTokenByUserId Method Exception {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Fail", ""));
+		}
+	}
 
-    @PostMapping("getLastMessagebyid")
-    public ResponseEntity<Response> getLastMessageById(@RequestBody ChatWebModel message) {
-        try {
-            Response response = chatService.getLastMessageById(message);
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            logger.error("Error at getLastMessageById -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
-        }
-    }
+	@PostMapping("getLastMessagebyid")
+	public ResponseEntity<Response> getLastMessageById(@RequestBody ChatWebModel message) {
+		try {
+			Response response = chatService.getLastMessageById(message);
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			logger.error("Error at getLastMessageById -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+		}
+	}
 
-    @GetMapping("getAllSearchByChat")
-    public ResponseEntity<Response> getAllSearchByChat(@RequestParam("searchKey") String searchKey) {
-        try {
-            Response response = chatService.getAllSearchByChat(searchKey);
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            logger.error("Error at getAllSearchByChat -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
-        }
-    }
-    
-    @GetMapping("getInAppNotification")
-    public ResponseEntity<Response> getInAppNotification() {
-        try {
-            Response response = chatService.getInAppNotification();
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            logger.error("Error at getInAppNotification -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
-        }
-    }
-        
-        @PostMapping("updateInAppNotification")
-        public ResponseEntity<Response> updateInAppNotification(@RequestBody InAppNotificationWebModel inAppNotificationWebModel) {
-            try {
-                Response response = chatService.updateInAppNotification(inAppNotificationWebModel);
-                return ResponseEntity.ok().body(response);
-            } catch (Exception e) {
-                logger.error("Error at getInAppNotification -> {}", e.getMessage());
-                e.printStackTrace();
-                return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
-            }
-    }
+	@GetMapping("getAllSearchByChat")
+	public ResponseEntity<Response> getAllSearchByChat(@RequestParam("searchKey") String searchKey) {
+		try {
+			Response response = chatService.getAllSearchByChat(searchKey);
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			logger.error("Error at getAllSearchByChat -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+		}
+	}
+
+	@GetMapping("getInAppNotification")
+	public ResponseEntity<Response> getInAppNotification() {
+		try {
+			Response response = chatService.getInAppNotification();
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			logger.error("Error at getInAppNotification -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+		}
+	}
+
+	@PostMapping("updateInAppNotification")
+	public ResponseEntity<Response> updateInAppNotification(
+			@RequestBody InAppNotificationWebModel inAppNotificationWebModel) {
+		try {
+			Response response = chatService.updateInAppNotification(inAppNotificationWebModel);
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			logger.error("Error at getInAppNotification -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+		}
+	}
+
+	@PostMapping("deleteByChatId")
+	public ResponseEntity<Response> deleteByChatId(
+			@RequestBody ChatWebModel ChatWebModel) {
+		try {
+			Response response = chatService.deleteByChatId(ChatWebModel);
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			logger.error("Error at ChatWebModel -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+		}
+	}
 }
