@@ -35,6 +35,7 @@ import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
@@ -128,7 +129,6 @@ public class PostServiceImpl implements PostService {
             if (userFromDB != null) {
                 logger.info("User found: {}", userFromDB.getName());
 
-                // Saving the Post details in the post-table
                 Posts posts = Posts.builder()
                         .postId(UUID.randomUUID().toString())
                         .description(postWebModel.getDescription())
@@ -150,18 +150,20 @@ public class PostServiceImpl implements PostService {
                         .build();
                 Posts savedPost = postsRepository.saveAndFlush(posts);
 
-                if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
-                    // Saving the Post files in the media_files table
-                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-                            .userId(postWebModel.getUserId())
-                            .category(MediaFileCategory.Post)
-                            .categoryRefId(savedPost.getId())
-                            .files(postWebModel.getFiles())
-                            .build();
-                    mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
-                }
+                // Handle media file saving asynchronously
+                CompletableFuture.runAsync(() -> {
+                    if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
+                        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                                .userId(postWebModel.getUserId())
+                                .category(MediaFileCategory.Post)
+                                .categoryRefId(savedPost.getId())
+                                .files(postWebModel.getFiles())
+                                .build();
+                        mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+                    }
+                });
 
-                // Saving Tagged users (if anything with post)
+                // Saving Tagged users
                 if (!Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())) {
                     List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
                             .map(taggedUserId -> PostTags.builder()
@@ -185,6 +187,8 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+    
+    
     @Override
     public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
         try {

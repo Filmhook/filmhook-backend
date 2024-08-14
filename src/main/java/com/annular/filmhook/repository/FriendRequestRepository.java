@@ -21,4 +21,6 @@ public interface FriendRequestRepository extends JpaRepository<FollowersRequest,
     @Query("SELECT COUNT(f) FROM FollowersRequest f WHERE f.followersRequestSenderId = :userId AND f.followersRequestStatus = 'followed'")
     int countByFollowersRequestReceiverId(Integer userId);
 
+	int countByFollowersRequestReceiverIdAndFollowersRequestIsActive(Integer userId, boolean b);
+
 }

@@ -8,9 +8,14 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 
 @Service
@@ -65,4 +70,6 @@ public class AwsS3ServiceImpl implements AwsS3Service {
     public byte[] getObjectFromS3(String bucketName, List<S3Object> s3data) {
         return s3Util.getObjectAsBytes(bucketName, s3data);
     }
+
+
 }

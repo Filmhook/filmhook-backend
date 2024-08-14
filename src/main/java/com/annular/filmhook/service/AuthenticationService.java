@@ -9,6 +9,7 @@ import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface AuthenticationService {
@@ -52,6 +53,8 @@ public interface AuthenticationService {
     ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel);
 
     ResponseEntity<?> getSeconadryEmailId(UserWebModel userWebModel);
+
+	ResponseEntity<?> saveQueries(HelpAndSupportWebModel helpAndSupportWebModel);
 
 
     // ResponseEntity<?> forgotPassword(UserWebModel userWebModel,

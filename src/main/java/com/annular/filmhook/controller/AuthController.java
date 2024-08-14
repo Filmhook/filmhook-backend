@@ -31,6 +31,7 @@ import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.security.jwt.JwtResponse;
 import com.annular.filmhook.security.jwt.JwtUtils;
 import com.annular.filmhook.service.AuthenticationService;
+import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 import com.annular.filmhook.util.Utility;
@@ -343,6 +344,21 @@ public class AuthController {
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @PostMapping("saveQueries")
+    public ResponseEntity<?> saveQueries(@RequestBody HelpAndSupportWebModel helpAndSupportWebModel)
+    {
+    	try {
+    		logger.info("saveQueries :- {}",helpAndSupportWebModel);
+    		return userService.saveQueries(helpAndSupportWebModel);
+    	}
+    	catch(Exception e)
+    	{
+    		logger.error("saveQueries Method Exception -->{}",e.getMessage());
+    		e.printStackTrace();
+    	}
+    	return ResponseEntity.ok(new Response(-1,"Fail",""));
     }
 
 }

@@ -126,6 +126,7 @@ public class FileUtil {
         return VIDEO_FORMATS.contains(fileFormat);
     }
 
+
 //    public static void compressImageFile(File inputFile, String inputFileType, File outputFile) {
 //        try {
 //            logger.info("Input image file size to compress -> [{}] with file format -> [{}]", inputFile.length(), inputFileType);

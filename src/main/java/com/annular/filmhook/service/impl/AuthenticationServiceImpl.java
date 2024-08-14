@@ -24,14 +24,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.model.HelpAndSupport;
 import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.HelpAndSupportRepository;
 import com.annular.filmhook.repository.RefreshTokenRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.configuration.TwilioConfig;
+import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 import net.bytebuddy.utility.RandomString;
@@ -52,6 +56,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Autowired
     TwilioConfig twilioConfig;
+    
+    @Autowired
+    UserDetails userDetails;
+    
+    @Autowired
+    HelpAndSupportRepository helpAndSupportRepository;
 
     @Value("${annular.app.url}")
     private String url;
@@ -671,5 +681,31 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return ResponseEntity.internalServerError().body("Error retrieving secondary email: " + e.getMessage());
         }
     }
+
+	@Override
+	public ResponseEntity<?> saveQueries(HelpAndSupportWebModel helpAndSupportWebModel) {
+		  try {
+	            HelpAndSupport dbData = new HelpAndSupport();
+	            dbData.setUserId(userDetails.userInfo().getId());
+	            dbData.setHelpAndSupportIsActive(true);
+	            dbData.setHelpAndSupportCreatedBy(userDetails.userInfo().getId());
+	            dbData.setMessage(helpAndSupportWebModel.getMessage());
+	            dbData.setSubject(helpAndSupportWebModel.getSubject());
+	            dbData.setReceipentEmail(helpAndSupportWebModel.getReceipentEmail());
+
+	            helpAndSupportRepository.save(dbData);
+
+	            // Send email
+	            boolean emailSent = mailNotification.sendFilmHookQueries(dbData);
+	            if (emailSent) {
+	                return ResponseEntity.ok("Query saved and email sent successfully.");
+	            } else {
+	                return ResponseEntity.status(500).body("Query saved, but failed to send email.");
+	            }
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return ResponseEntity.status(500).body("An error occurred while saving the query.");
+	        }
+	    }
 
 }

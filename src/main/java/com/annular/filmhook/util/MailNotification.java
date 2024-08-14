@@ -6,11 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import com.annular.filmhook.model.HelpAndSupport;
 import com.annular.filmhook.model.User;
 
 @Component
@@ -20,7 +23,10 @@ public class MailNotification {
 
     @Autowired
     private JavaMailSender javaMailSender;
-
+    
+    @Value("${spring.mail.username}")
+    private String senderEmail;
+    
     public boolean sendEmail(String userName, String mailId, String subject, String mailContent) {
         try {
             String senderName = "Film-hook IT-Support";
@@ -67,6 +73,29 @@ public class MailNotification {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public boolean sendFilmHookQueries(HelpAndSupport dbData) {
+    	try {
+            String senderName = "Film-hook IT-Support";
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            // Use the recipient email from dbData as the sender email
+            helper.setFrom(dbData.getReceipentEmail());
+
+            // Use the injected sender email from configuration as the recipient email
+            helper.setTo(senderEmail);
+
+            helper.setSubject(dbData.getSubject());
+            helper.setText(dbData.getMessage());
+
+            javaMailSender.send(message);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

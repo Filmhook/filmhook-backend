@@ -3,6 +3,7 @@ package com.annular.filmhook.service;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 
 public interface AwsS3Service {
