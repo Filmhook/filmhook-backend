@@ -40,5 +40,9 @@ public class ChatWebModel {
 
     List<MultipartFile> files;
     List<FileOutputWebModel> chatFiles;
+    
+    //Pagination details
+    private Integer pageNo;
+    private Integer pageSize;
 
 }
