@@ -466,6 +466,8 @@ public class UserServiceImpl implements UserService {
 
             List<Industry> industryList = industryRepository.getIndustryByCountryIds(countryList);
             if (!Utility.isNullOrEmptyList(industryList)) {
+            	 // Sort the industryList in ascending order by industry name
+                industryList.sort(Comparator.comparing(Industry::getIndustryName));
                 UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
                         .industryList(this.transformIndustryData(industryList))
                         .build();

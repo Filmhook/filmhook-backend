@@ -26,5 +26,6 @@ public class JwtResponse {
     private String filmHookCode;
     private float review;
     private String lastName;
+    private String profilePic;
 
 }

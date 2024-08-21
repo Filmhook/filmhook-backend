@@ -150,18 +150,16 @@ public class PostServiceImpl implements PostService {
                         .build();
                 Posts savedPost = postsRepository.saveAndFlush(posts);
 
-                // Handle media file saving asynchronously
-                CompletableFuture.runAsync(() -> {
-                    if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
-                        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-                                .userId(postWebModel.getUserId())
-                                .category(MediaFileCategory.Post)
-                                .categoryRefId(savedPost.getId())
-                                .files(postWebModel.getFiles())
-                                .build();
-                        mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
-                    }
-                });
+                if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
+                    // Saving the Post files in the media_files table
+                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                            .userId(postWebModel.getUserId())
+                            .category(MediaFileCategory.Post)
+                            .categoryRefId(savedPost.getId())
+                            .files(postWebModel.getFiles())
+                            .build();
+                    mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+                }
 
                 // Saving Tagged users
                 if (!Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())) {

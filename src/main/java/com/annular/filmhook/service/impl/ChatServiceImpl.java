@@ -404,11 +404,21 @@ public class ChatServiceImpl implements ChatService {
 	        allMessages.addAll(receiverMessages);
 
 	        // Sort combined messages by chatCreatedOn in descending order
-	      //  allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn).reversed());
+	        allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn).reversed());
+
+	        // Use a Set to track seen chatIds and filter duplicates
+	        Set<Integer> seenChatIds = new HashSet<>();
+	        List<Chat> uniqueMessages = new ArrayList<>();
+	        for (Chat chat : allMessages) {
+	            if (!seenChatIds.contains(chat.getChatId())) {
+	                seenChatIds.add(chat.getChatId());
+	                uniqueMessages.add(chat);
+	            }
+	        }
 
 	        // Adjust pagination to accumulate messages from page 1 to the current page
-	        int end = Math.min(message.getPageNo() * message.getPageSize(), allMessages.size());
-	        List<Chat> paginatedMessages = allMessages.subList(0, end);
+	        int end = Math.min(message.getPageNo() * message.getPageSize(), uniqueMessages.size());
+	        List<Chat> paginatedMessages = uniqueMessages.subList(0, end);
 
 	        // Construct the response structure
 	        List<ChatWebModel> messagesWithFiles = new ArrayList<>();
@@ -454,7 +464,7 @@ public class ChatServiceImpl implements ChatService {
 	        response.put("userChat", messagesWithFiles);
 	        response.put("numberOfItems", messagesWithFiles.size());
 	        response.put("currentPage", message.getPageNo());
-	        response.put("totalPages", (int) Math.ceil((double) allMessages.size() / message.getPageSize()));
+	        response.put("totalPages", (int) Math.ceil((double) uniqueMessages.size() / message.getPageSize()));
 
 	        logger.info("Get Messages by User ID Method End");
 	        return ResponseEntity.ok(new Response(1, "Success", response));
@@ -463,6 +473,7 @@ public class ChatServiceImpl implements ChatService {
 	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
 	    }
 	}
+
 
 
 //    @Override
@@ -630,7 +641,10 @@ public class ChatServiceImpl implements ChatService {
 	        if (notifications.isEmpty()) {
 	            return new Response(0, "No Notifications", "No notifications found for the given user ID");
 	        }
-
+	        // Initialize a counter for unread notifications
+	        long unreadCount = notifications.stream()
+	                                        .filter(notification -> notification.getIsRead() == true)
+	                                        .count();
 	       
 	        List<InAppNotificationWebModel> notificationDtos = notifications.stream().map(notification -> {
 	        	InAppNotificationWebModel dto = new InAppNotificationWebModel();
@@ -648,8 +662,14 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setUserType(notification.getUserType());
 	            return dto;
 	        }).collect(Collectors.toList());
+	        
+	        // Include the unread count in the response
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("notifications", notificationDtos);
+	        response.put("unreadCount", unreadCount);
+	        return new Response(1, "Success", response);
 
-	        return new Response(1, "Success", notificationDtos);
+	       // return new Response(1, "Success", notificationDtos);
 	    } catch (Exception e) {
 	        logger.error("Error occurred while fetching notifications -> {}", e.getMessage());
 	        return new Response(0, "Error", "An error occurred while fetching notifications");

@@ -31,6 +31,7 @@ import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.security.jwt.JwtResponse;
 import com.annular.filmhook.security.jwt.JwtUtils;
 import com.annular.filmhook.service.AuthenticationService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -59,6 +60,9 @@ public class AuthController {
 
     @Autowired
     JwtUtils jwtUtils;
+    
+    @Autowired
+    UserService userServices;
 
     @PostMapping("register")
     public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel, String request) {
@@ -134,7 +138,7 @@ public class AuthController {
                         userDetails.getUserType(),
                         user.getFilmHookCode(),
                         user.getAdminReview(),
-                        user.getLastName()));
+                        user.getLastName(),userServices.getProfilePicUrl(user.getUserId())));
             }
         } catch (Exception e) {
             logger.error("Error at login() -> {}", e.getMessage());
@@ -165,7 +169,7 @@ public class AuthController {
                     1,
                     refreshToken.getToken(),
                     userDetails.getUserType(),
-                    "",user.getAdminReview(), ""));
+                    "",user.getAdminReview(), "",""));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
@@ -188,7 +192,7 @@ public class AuthController {
                     1,
                     token.getData().toString(),
                     userData.get().getUserType(),
-                    "",userData.get().getAdminReview(), ""));
+                    "",userData.get().getAdminReview(), "",""));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
     }
