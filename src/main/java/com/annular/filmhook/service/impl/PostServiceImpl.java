@@ -11,6 +11,7 @@ import com.annular.filmhook.model.PostTags;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
+import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
@@ -63,7 +64,7 @@ import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.PostTagsRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
-
+import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.util.FileUtil;
 
@@ -115,6 +116,9 @@ public class PostServiceImpl implements PostService {
 
     @Value("${annular.app.url}")
     private String appUrl;
+    
+    @Autowired
+    InAppNotificationRepository inAppNotificationRepository;
 
     @Autowired
     FriendRequestRepository friendRequestRepository;
@@ -128,6 +132,10 @@ public class PostServiceImpl implements PostService {
             User userFromDB = userService.getUser(postWebModel.getUserId()).orElse(null);
             if (userFromDB != null) {
                 logger.info("User found: {}", userFromDB.getName());
+                // Saving Tagged Users' IDs as a comma-separated string
+                String taggedUserIds = !Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())
+                        ? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
+                        : null;
 
                 Posts posts = Posts.builder()
                         .postId(UUID.randomUUID().toString())
@@ -147,6 +155,7 @@ public class PostServiceImpl implements PostService {
                         .sharesCount(0)
                         .createdBy(postWebModel.getUserId())
                         .createdOn(new Date())
+                        .tagUsers(taggedUserIds)
                         .build();
                 Posts savedPost = postsRepository.saveAndFlush(posts);
 
@@ -173,6 +182,23 @@ public class PostServiceImpl implements PostService {
                                     .build())
                             .collect(Collectors.toList());
                     postTagsRepository.saveAllAndFlush(tagsList);
+                    
+                    
+                    for (Integer taggedUserId : postWebModel.getTaggedUsers()) {
+                        InAppNotification notification = InAppNotification.builder()
+                                .senderId(postWebModel.getUserId())
+                                .receiverId(taggedUserId)
+                                .title("You've been tagged in a post")
+                                .message("You have been tagged in a post by " + userFromDB.getName())
+                                .createdOn(new Date())
+                                .isRead(false)
+                                .createdBy(postWebModel.getUserId())
+                                .id(savedPost.getId())
+                                .userType("Tagged") // Adjust as per your userType logic
+                                .build();
+                        inAppNotificationRepository.save(notification);
+                    }
+                
                 }
 
                 List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
@@ -202,17 +228,47 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+//    @Override
+//    public List<PostWebModel> getPostsByUserId(Integer userId) {
+//        try {
+//            List<Posts> postList = postsRepository.getUserPosts(User.builder().userId(userId).build());
+//            return this.transformPostsDataToPostWebModel(postList);
+//        } catch (Exception e) {
+//            logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
     @Override
     public List<PostWebModel> getPostsByUserId(Integer userId) {
         try {
-            List<Posts> postList = postsRepository.getUserPosts(User.builder().userId(userId).build());
-            return this.transformPostsDataToPostWebModel(postList);
+            // Fetch posts created by the user
+            List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
+
+            // Convert userId to String for querying tagged posts
+            String userIdString = userId.toString();
+
+            // Fetch posts where the user is tagged
+            List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
+
+            // Combine both lists and remove duplicates
+            Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
+            combinedPostsSet.addAll(taggedPosts);
+
+            // Transform the combined list of posts to PostWebModel
+            List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
+         // Sort the posts by creation date (or any other attribute)
+            combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+
+            return this.transformPostsDataToPostWebModel(combinedPostsList);
         } catch (Exception e) {
             logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
+
+
 
     @Override
     public PostWebModel getPostByPostId(String postId) {

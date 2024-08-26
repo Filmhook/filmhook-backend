@@ -27,4 +27,5 @@ public class InAppNotificationWebModel {
     private Date updatedOn;
     private String userType;
     private String profilePicUrl;
+    private Integer id;
 }

@@ -126,5 +126,8 @@ public class Posts {
 
     @Column(name = "address")
     private String address;
+    
+    @Column(name = "tagUsers")
+    private String tagUsers;
 
 }

@@ -35,4 +35,8 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     // List<Posts> findByPromoteFlagAndUserId(boolean b, Integer id);
     @Query("SELECT p FROM Posts p where p.id = :postId")
    	Optional<Posts> findByPostId(Integer postId);
+
+    @Query("SELECT p FROM Posts p WHERE p.tagUsers LIKE %:userId%")
+    List<Posts> getPostsByTaggedUserId(String userId);
+
 }

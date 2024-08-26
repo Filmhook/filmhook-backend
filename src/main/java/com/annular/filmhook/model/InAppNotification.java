@@ -61,5 +61,8 @@ public class InAppNotification {
 
     @Column(name = "userType")
     private String userType;
+    
+    @Column(name = "id")
+    private Integer id;
 
 }

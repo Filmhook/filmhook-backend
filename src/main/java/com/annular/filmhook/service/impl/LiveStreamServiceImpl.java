@@ -82,6 +82,7 @@ public class LiveStreamServiceImpl implements LiveStreamService {
                             .message(notificationMessage)
                             .createdOn(new Date())
                             .isRead(false)
+                            .id(liveDetails.getLiveChannelId())
                             .createdBy(liveDetails.getUserId())
                             .build();
                     inAppNotificationRepository.save(inAppNotification);

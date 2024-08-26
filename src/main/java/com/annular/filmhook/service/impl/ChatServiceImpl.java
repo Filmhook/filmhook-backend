@@ -164,6 +164,7 @@ public class ChatServiceImpl implements ChatService {
 						InAppNotification inAppNotification = InAppNotification.builder().senderId(userId)
 								.receiverId(receiver.getUserId()).title(notificationTitle)
 								.userType("chat")
+								.id(chat.getChatId())
 								.message(notificationMessage).createdOn(new Date()).isRead(true).createdBy(userId)
 								.build();
 						inAppNotificationRepository.save(inAppNotification);
@@ -660,6 +661,7 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setUpdatedBy(notification.getUpdatedBy());
 	            dto.setUpdatedOn(notification.getUpdatedOn());
 	            dto.setUserType(notification.getUserType());
+	            dto.setId(notification.getId());
 	            return dto;
 	        }).collect(Collectors.toList());
 	        
