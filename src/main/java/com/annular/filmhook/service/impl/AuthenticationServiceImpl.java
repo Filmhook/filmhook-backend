@@ -99,6 +99,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setGender(userWebModel.getGender());
                 user.setBirthPlace(userWebModel.getBirthPlace());
                 user.setLivingPlace(userWebModel.getLivingPlace());
+                user.setDistrict(userWebModel.getDistrict());
 
                 // Generate and set FilmHook code
                 String filmHookCode = this.generateFilmHookCode();

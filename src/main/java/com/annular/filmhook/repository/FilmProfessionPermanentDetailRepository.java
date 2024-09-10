@@ -30,4 +30,9 @@ public interface FilmProfessionPermanentDetailRepository extends JpaRepository<F
     List<FilmProfessionPermanentDetail> getProfessionDataByUserId(Integer userId);
 
     List<FilmProfessionPermanentDetail> findByUserId(Integer userId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM FilmProfessionPermanentDetail f WHERE f.platformPermanentDetail.platformPermanentId = :platformPermanentId")
+	void deleteByPlatformPermanentDetailId(Integer platformPermanentId);
 }

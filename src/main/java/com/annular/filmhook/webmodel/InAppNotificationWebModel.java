@@ -28,4 +28,5 @@ public class InAppNotificationWebModel {
     private String userType;
     private String profilePicUrl;
     private Integer id;
+    private String postId;
 }

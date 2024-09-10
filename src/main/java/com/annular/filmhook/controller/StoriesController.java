@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -39,8 +40,9 @@ public class StoriesController {
     public Response uploadStory(@ModelAttribute StoriesWebModel inputData) {
         try {
             logger.info("uploadStory Inputs :- {}", inputData);
-            StoriesWebModel story = storiesService.uploadStory(inputData);
-            if (story != null) return new Response(1, "Story uploaded successfully...", story);
+            // Simply return the response from the service without wrapping it again
+            return storiesService.uploadStory(inputData);
+           // if (story != null) return new Response(1, "Story uploaded successfully...", story);
         } catch (Exception e) {
             logger.error("Error at uploadStory() -> {}", e.getMessage());
             e.printStackTrace();
@@ -51,7 +53,7 @@ public class StoriesController {
     @GetMapping("/getUserStories")
     public Response getAllUserStories(@RequestParam("userId") Integer userId) {
         try {
-            List<StoriesWebModel> storyList = storiesService.getStoryByUserId(userId);
+            List<Map<String, Object>> storyList = storiesService.getStoryByUserId(userId);
             if (storyList != null)
                 return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
         } catch (Exception e) {

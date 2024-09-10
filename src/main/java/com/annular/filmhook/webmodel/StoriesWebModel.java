@@ -31,5 +31,8 @@ public class StoriesWebModel {
     private String profileUrl;
     private Date createdOn;
     private Integer createdBy;
+    private String filePath;
+    private Boolean seen;
+    private String link;
 
 }

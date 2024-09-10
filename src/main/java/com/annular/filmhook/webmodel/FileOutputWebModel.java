@@ -34,6 +34,7 @@ public class FileOutputWebModel {
 
     private String elapsedTime;
     private String filmHookCode;
+    private Long duration;
 
 
 }

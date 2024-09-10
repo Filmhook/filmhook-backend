@@ -81,7 +81,7 @@ public class AdminServiceImpl implements AdminService {
                         .userType(userWebModel.getUserType())
                         .status(userWebModel.isStatus())
                         .adminPageStatus(true)
-                        .adminReview((float) 0.1)
+                        .adminReview((float) 0.0)
                         .password(new BCryptPasswordEncoder().encode(userWebModel.getPassword()))
                         .build();
                 // Save the user entity in the database

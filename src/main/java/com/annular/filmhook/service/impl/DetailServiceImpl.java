@@ -2,21 +2,19 @@ package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.Comparator;
-import java.util.Objects;
-import java.util.Date;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -26,6 +24,13 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.Country;
+import com.annular.filmhook.model.FilmProfession;
+import com.annular.filmhook.model.FilmProfessionDetails;
+import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+import com.annular.filmhook.model.FilmSubProfession;
+import com.annular.filmhook.model.FilmSubProfessionDetails;
+import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryDetails;
 import com.annular.filmhook.model.IndustryTemporaryDetails;
@@ -34,15 +39,14 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.model.PlatformDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
-import com.annular.filmhook.model.FilmProfession;
-import com.annular.filmhook.model.FilmProfessionDetails;
-import com.annular.filmhook.model.FilmProfessionPermanentDetail;
-import com.annular.filmhook.model.FilmSubProfession;
-import com.annular.filmhook.model.FilmSubProfessionDetails;
-import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
 import com.annular.filmhook.model.User;
-
+import com.annular.filmhook.repository.CountryRepository;
+import com.annular.filmhook.repository.FilmProfessionDetailRepository;
+import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.FilmProfessionRepository;
+import com.annular.filmhook.repository.FilmSubProfessionDetailRepository;
+import com.annular.filmhook.repository.FilmSubProfessionPermanentDetailsRepository;
+import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryDetailRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
@@ -51,31 +55,24 @@ import com.annular.filmhook.repository.PlatformDetailRepository;
 import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
 import com.annular.filmhook.repository.PlatformRepository;
 import com.annular.filmhook.repository.UserRepository;
-import com.annular.filmhook.repository.FilmProfessionDetailRepository;
-import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
-import com.annular.filmhook.repository.FilmSubProfessionDetailRepository;
-import com.annular.filmhook.repository.FilmSubProfessionRepository;
-import com.annular.filmhook.repository.FilmSubProfessionPermanentDetailsRepository;
-
 import com.annular.filmhook.service.DetailService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.service.UserService;
-
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
-import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
+import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 import com.annular.filmhook.webmodel.SubProfessionsWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
-import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 
 @Service
 public class DetailServiceImpl implements DetailService {
@@ -139,6 +136,9 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     S3Util s3Util;
+    
+    @Autowired
+    CountryRepository countryRepository;
 
     @Autowired
     FilmSubProfessionRepository filmSubProfessionRepository;
@@ -152,7 +152,6 @@ public class DetailServiceImpl implements DetailService {
     public ResponseEntity<?> getDetails(DetailRequest detailRequest) {
         try {
             Map<String, List<?>> details = new HashMap<>();
-
             if (detailRequest.isIndustries()) {
                 List<Map<String, Object>> industryDetails = new ArrayList<>();
                 List<Industry> industries = industryRepository.findAll();
@@ -160,8 +159,21 @@ public class DetailServiceImpl implements DetailService {
                     Map<String, Object> industryMap = new HashMap<>();
                     industryMap.put("industryId", industry.getIndustryId());
                     industryMap.put("industryName", industry.getIndustryName());
+                    industryMap.put("code", industry.getStateCode());
                     // industryMap.put("industryImage", industry.getImage());
-                    industryMap.put("logo_file_path", industry.getFilePath());
+                    industryMap.put("logo_file_path", s3Util.generateS3FilePath(industry.getFilePath()));
+                    
+                    // Retrieve the country for the industry
+                    Country country = countryRepository.findById(industry.getCountry().getId())
+                            .orElse(null);  // Handle case where countryId doesn't exist
+
+                    if (country != null) {
+                        // Take the filePath from the Country table
+                        industryMap.put("country_logo_file_path", s3Util.generateS3FilePath(country.getFilePath()));
+                    } else {
+                        // Fall back to industry filePath if no matching country is found
+                        industryMap.put("country_logo_file_path", s3Util.generateS3FilePath(industry.getFilePath()));
+                    }
                     industryDetails.add(industryMap);
                 }
                 details.put("industries", industryDetails);
@@ -174,7 +186,7 @@ public class DetailServiceImpl implements DetailService {
                     Map<String, Object> platformMap = new HashMap<>();
                     platformMap.put("platformId", platform.getPlatformId());
                     platformMap.put("platformName", platform.getPlatformName());
-                    platformMap.put("logo_file_path", platform.getFilePath());
+                    platformMap.put("logo_file_path", s3Util.generateS3FilePath(platform.getFilePath()));
                     platformDetails.add(platformMap);
                 }
                 details.put("platform", platformDetails);
@@ -187,7 +199,7 @@ public class DetailServiceImpl implements DetailService {
                     Map<String, Object> professionMap = new HashMap<>();
                     professionMap.put("professionId", profession.getFilmProfessionId());
                     professionMap.put("professionName", profession.getProfessionName());
-                    professionMap.put("logo_file_path", profession.getFilePath());
+                    professionMap.put("logo_file_path", s3Util.generateS3FilePath(profession.getFilePath()));
                     professionDetails.add(professionMap);
                 }
                 details.put("professions", professionDetails);
@@ -831,47 +843,80 @@ public class DetailServiceImpl implements DetailService {
     @Override
     public ResponseEntity<?> updateIndustryUserPermanentDetails(Integer userId, List<IndustryUserPermanentDetailWebModel> industryUserPermanentDetailWebModels) {
         try {
-            // Iterate through the provided industry user permanent detail web models
             for (IndustryUserPermanentDetailWebModel industryUserPermanentDetailWebModel : industryUserPermanentDetailWebModels) {
-                // Check if an industry with the same name already exists for the user
                 Optional<IndustryUserPermanentDetails> existingIndustryOptional = industryUserPermanentDetailsRepository.findByUserIdAndIndustriesName(userId, industryUserPermanentDetailWebModel.getIndustriesName());
+
                 if (existingIndustryOptional.isPresent()) {
                     IndustryUserPermanentDetails existingIndustry = existingIndustryOptional.get();
-                    // Check if platform details are different
+
                     List<PlatformPermanentDetail> existingPlatformDetails = existingIndustry.getPlatformDetails();
                     List<PlatformDetailsWebModel> newPlatformDetails = industryUserPermanentDetailWebModel.getPlatformDetails();
+
                     if (!arePlatformDetailsEqual(existingPlatformDetails, newPlatformDetails)) {
-                        // Delete existing platform and profession details associated with the existing industry
+                        // Delete existing sub-professions and professions
+                        for (PlatformPermanentDetail platformPermanentDetail : existingPlatformDetails) {
+                            filmSubProfessionPermanentDetailsRepository.deleteByPlatformPermanentDetailId(platformPermanentDetail.getPlatformPermanentId());
+                            filmProfessionPermanentDetailRepository.deleteByPlatformPermanentDetailId(platformPermanentDetail.getPlatformPermanentId());
+                        }
+
+                        // Delete existing platform details
                         platformPermanentDetailRepository.deleteByIndustryUserPermanentDetailsId(existingIndustry.getIupdId());
-                        // Update industry user permanent details with the new platform and profession details
-                        existingIndustry.getPlatformDetails().clear(); // Clear existing platform details
+                        existingIndustry.getPlatformDetails().clear();
+
+                        // Add new platform details
                         for (PlatformDetailsWebModel platformDetail : newPlatformDetails) {
+                            Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElseThrow(() -> new IllegalArgumentException("Platform not found"));
+
                             PlatformPermanentDetail platformPermanentDetail = new PlatformPermanentDetail();
                             platformPermanentDetail.setPlatformName(platformDetail.getPlatformName().toUpperCase());
                             platformPermanentDetail.setIndustryUserPermanentDetails(existingIndustry);
                             platformPermanentDetail.setUserId(userId);
+                            platformPermanentDetail.setPlatform(platform); // Ensure the platform is set
+
                             PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.save(platformPermanentDetail);
+
+                            // Process professions and sub-professions
                             for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
+                                FilmProfession filmProfession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
+
                                 FilmProfessionPermanentDetail savedProfession = new FilmProfessionPermanentDetail();
                                 savedProfession.setProfessionName(professionDetail.getProfessionName().toUpperCase());
                                 savedProfession.setIndustryUserPermanentDetails(existingIndustry);
                                 savedProfession.setPlatformPermanentDetail(savedPlatformPermanentDetail);
-                                filmProfessionPermanentDetailRepository.save(savedProfession);
+                                savedProfession.setFilmProfession(filmProfession);
+                                FilmProfessionPermanentDetail savedFilmProfessionPermanentDetail = filmProfessionPermanentDetailRepository.save(savedProfession);
+
+                                // Handle sub-professions
+                                for (String subProfessionName : professionDetail.getSubProfessionName()) {
+                                    if (subProfessionName != null) {
+                                        FilmSubProfession filmSubProfession = filmSubProfessionRepository.findBySubProfessionName(subProfessionName).orElse(null);
+                                        FilmSubProfessionPermanentDetail subProfessionPermanentDetails = FilmSubProfessionPermanentDetail.builder()
+                                                .industryUserPermanentDetails(existingIndustry)
+                                                .platformPermanentDetail(savedPlatformPermanentDetail)
+                                                .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
+                                                .filmSubProfession(filmSubProfession)
+                                                .status(true)
+                                                .build();
+                                        filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
+                                    }
+                                }
                             }
                         }
-                        // Update existing industry user permanent details
+
                         existingIndustry.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                         industryUserPermanentDetailsRepository.save(existingIndustry);
                     }
+
+                    // Clear temporary and related details
                     industryTemporaryDetailsRepository.deleteByUserId(userId);
                     industryDetailsRepository.deleteByUserId(userId);
                     platformDetailsRepository.deleteByUserId(userId);
                     filmProfessionDetailRepository.deleteByUserId(userId);
                     filmSubProfessionDetailRepository.deleteByUserId(userId);
+
                 } else {
                     Industry industry = industryRepository.findByIndustryName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase()).orElse(null);
 
-                    // Create new industry user permanent details if it doesn't exist
                     IndustryUserPermanentDetails newIndustryPermanentDetails = new IndustryUserPermanentDetails();
                     newIndustryPermanentDetails.setIndustriesName(industryUserPermanentDetailWebModel.getIndustriesName().toUpperCase());
                     newIndustryPermanentDetails.setUserId(userId);
@@ -879,16 +924,20 @@ public class DetailServiceImpl implements DetailService {
                     IndustryUserPermanentDetails savedIndustryUserPermanentDetails = industryUserPermanentDetailsRepository.save(newIndustryPermanentDetails);
 
                     for (PlatformDetailsWebModel platformDetail : industryUserPermanentDetailWebModel.getPlatformDetails()) {
-                        Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElse(null);
+                        Platform platform = platformRepository.findByPlatformName(platformDetail.getPlatformName().toUpperCase()).orElseThrow(() -> new IllegalArgumentException("Platform not found"));
+
                         PlatformPermanentDetail platformPermanentDetails = new PlatformPermanentDetail();
                         platformPermanentDetails.setPlatformName(platformDetail.getPlatformName().toUpperCase());
                         platformPermanentDetails.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
                         platformPermanentDetails.setUserId(userId);
-                        platformPermanentDetails.setPlatform(platform);
+                        platformPermanentDetails.setPlatform(platform); // Ensure the platform is set
+
                         PlatformPermanentDetail savedPlatformPermanentDetail = platformPermanentDetailRepository.save(platformPermanentDetails);
 
+                        // Process professions and sub-professions
                         for (ProfessionDetailDTO professionDetail : platformDetail.getProfessionDetails()) {
                             FilmProfession filmProfession = filmProfessionRepository.findByProfessionName(professionDetail.getProfessionName().toUpperCase()).orElse(null);
+
                             FilmProfessionPermanentDetail filmProfessionPermanentDetail = new FilmProfessionPermanentDetail();
                             filmProfessionPermanentDetail.setProfessionName(professionDetail.getProfessionName().toUpperCase());
                             filmProfessionPermanentDetail.setIndustryUserPermanentDetails(savedIndustryUserPermanentDetails);
@@ -906,11 +955,14 @@ public class DetailServiceImpl implements DetailService {
                                                 .platformPermanentDetail(savedPlatformPermanentDetail)
                                                 .filmProfessionPermanentDetail(savedFilmProfessionPermanentDetail)
                                                 .filmSubProfession(filmSubProfession)
+                                                .status(true)
                                                 .build();
                                         filmSubProfessionPermanentDetailsRepository.saveAndFlush(subProfessionPermanentDetails);
                                     });
                         }
                     }
+
+                    // Clear temporary and related details
                     industryTemporaryDetailsRepository.deleteByUserId(userId);
                     industryDetailsRepository.deleteByUserId(userId);
                     platformDetailsRepository.deleteByUserId(userId);
@@ -919,22 +971,18 @@ public class DetailServiceImpl implements DetailService {
                 }
             }
 
-            // Return a success response
             return ResponseEntity.ok().body("Industry user permanent details updated successfully.");
-
         } catch (Exception e) {
-            // Return an error response if an exception occurs
+            logger.error("Failed to update industry user permanent details for userId: {}", userId, e);
             return ResponseEntity.internalServerError().body("Failed to update industry user permanent details.");
         }
     }
 
     // Helper method to check if platform details are equal
     private boolean arePlatformDetailsEqual(List<PlatformPermanentDetail> existingPlatformDetails, List<PlatformDetailsWebModel> newPlatformDetails) {
-        // Compare sizes
         if (existingPlatformDetails.size() != newPlatformDetails.size()) {
             return false;
         }
-        // Compare each platform detail
         for (PlatformPermanentDetail existingPlatform : existingPlatformDetails) {
             return newPlatformDetails.stream().filter(Objects::nonNull).anyMatch(data -> !data.getPlatformName().equalsIgnoreCase(existingPlatform.getPlatformName()));
         }

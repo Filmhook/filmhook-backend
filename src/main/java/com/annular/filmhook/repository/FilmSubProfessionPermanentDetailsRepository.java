@@ -4,8 +4,10 @@ import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,4 +24,9 @@ public interface FilmSubProfessionPermanentDetailsRepository extends JpaReposito
     List<Integer> getUsersBySubProfessionIds(List<FilmSubProfession> subProfessionIds);
 
     List<FilmSubProfessionPermanentDetail> findByUserId(Integer userId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM FilmSubProfessionPermanentDetail f WHERE f.platformPermanentDetail.platformPermanentId = :platformPermanentId")
+	void deleteByPlatformPermanentDetailId(Integer platformPermanentId);
 }

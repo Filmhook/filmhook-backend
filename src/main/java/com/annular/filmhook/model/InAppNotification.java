@@ -65,4 +65,6 @@ public class InAppNotification {
     @Column(name = "id")
     private Integer id;
 
+    @Column(name = "postId")
+    private String postId;
 }

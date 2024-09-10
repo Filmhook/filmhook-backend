@@ -116,7 +116,7 @@ public class PostServiceImpl implements PostService {
 
     @Value("${annular.app.url}")
     private String appUrl;
-    
+
     @Autowired
     InAppNotificationRepository inAppNotificationRepository;
 
@@ -182,8 +182,7 @@ public class PostServiceImpl implements PostService {
                                     .build())
                             .collect(Collectors.toList());
                     postTagsRepository.saveAllAndFlush(tagsList);
-                    
-                    
+
                     for (Integer taggedUserId : postWebModel.getTaggedUsers()) {
                         InAppNotification notification = InAppNotification.builder()
                                 .senderId(postWebModel.getUserId())
@@ -195,10 +194,11 @@ public class PostServiceImpl implements PostService {
                                 .createdBy(postWebModel.getUserId())
                                 .id(savedPost.getId())
                                 .userType("Tagged") // Adjust as per your userType logic
+                                .postId(savedPost.getPostId())
                                 .build();
                         inAppNotificationRepository.save(notification);
                     }
-                
+
                 }
 
                 List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
@@ -211,8 +211,6 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
-    
-    
     @Override
     public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
         try {
@@ -257,8 +255,13 @@ public class PostServiceImpl implements PostService {
 
             // Transform the combined list of posts to PostWebModel
             List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
-         // Sort the posts by creation date (or any other attribute)
-            combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+            // Sort the posts by creation date (or any other attribute)
+            //combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+            // Sort the posts first by promote flag, then by creation date
+            combinedPostsList.sort(Comparator
+                    .comparing(Posts::getPromoteFlag, Comparator.nullsLast(Comparator.reverseOrder())) // Sort by PromoteFlag, handling nulls last
+                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by CreatedOn, handling nulls last
+
 
             return this.transformPostsDataToPostWebModel(combinedPostsList);
         } catch (Exception e) {
@@ -267,8 +270,6 @@ public class PostServiceImpl implements PostService {
             return null;
         }
     }
-
-
 
     @Override
     public PostWebModel getPostByPostId(String postId) {
@@ -309,21 +310,21 @@ public class PostServiceImpl implements PostService {
 
                     List<Map<String, Object>> taggedUsers = post.getPostTagsCollection() != null
                             ? post.getPostTagsCollection().stream()
-                                    .filter(postTags -> postTags.getStatus().equals(true))
-                                    .map(postTags -> {
-                                        Map<String, Object> taggedUserDetails = new HashMap<>();
-                                        Integer taggedUserId = postTags.getTaggedUser().getUserId();
-                                        taggedUserDetails.put("userId", taggedUserId);
+                            .filter(postTags -> postTags.getStatus().equals(true))
+                            .map(postTags -> {
+                                Map<String, Object> taggedUserDetails = new HashMap<>();
+                                Integer taggedUserId = postTags.getTaggedUser().getUserId();
+                                taggedUserDetails.put("userId", taggedUserId);
 
-                                        // Fetch username and profile pic
-                                        userService.getUser(taggedUserId).ifPresent(user -> {
-                                            taggedUserDetails.put("username", user.getName());
-                                            taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
-                                        });
+                                // Fetch username and profile pic
+                                userService.getUser(taggedUserId).ifPresent(user -> {
+                                    taggedUserDetails.put("username", user.getName());
+                                    taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
+                                });
 
-                                        return taggedUserDetails;
-                                    })
-                                    .collect(Collectors.toList())
+                                return taggedUserDetails;
+                            })
+                            .collect(Collectors.toList())
                             : null;
 
 
@@ -547,7 +548,7 @@ public class PostServiceImpl implements PostService {
                 String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
 
                 Posts post = postsRepository.findByPostId(comment.getPostId()).orElse(null);
-                
+
                 List<CommentOutputWebModel> childComments = null;
                 List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
                 if (!Utility.isNullOrEmptyList(dbChildComments))
@@ -744,37 +745,32 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-	@Override
-	public boolean deletePostByUserId(PostWebModel postWebModel) {
-		try {
-			// Find the post by its ID and user ID
-			Optional<Posts> postData = postsRepository.findByIdAndUserId(postWebModel.getMediaFilesIds(),
-					postWebModel.getUserId());
-			if (postData.isPresent()) {
-				Posts post = postData.get();
+    @Override
+    public boolean deletePostByUserId(PostWebModel postWebModel) {
+        try {
+            // Find the post by its ID and user ID
+            Optional<Posts> postData = postsRepository.findByIdAndUserId(postWebModel.getMediaFilesIds(), postWebModel.getUserId());
+            if (postData.isPresent()) {
+                Posts post = postData.get();
 
-				// Delete associated media files
-				mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(post.getUser().getUserId(),
-						MediaFileCategory.Post, postWebModel.getMediaFilesIds());
+                // Delete associated media files
+                mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(post.getUser().getUserId(), MediaFileCategory.Post, postWebModel.getMediaFilesIds());
 
-				// Update post status to false
-	            post.setStatus(false);
+                // Update post status to false
+                post.setStatus(false);
 
-	            // Save the updated post
-	            postsRepository.save(post);
+                // Save the updated post
+                postsRepository.save(post);
+                return true;
+            } else {
+                return false; // Post not found
+            }
+        } catch (Exception e) {
+            // Log the exception
+            e.printStackTrace();
+            return false;
+        }
 
-	            return true;
-
-			} else {
-				return false; // Post not found
-			}
-		} catch (Exception e) {
-			// Log the exception
-			e.printStackTrace();
-			return false;
-		}
-
-	}
-
+    }
 
 }

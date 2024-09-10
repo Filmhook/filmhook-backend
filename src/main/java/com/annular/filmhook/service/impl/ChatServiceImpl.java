@@ -251,6 +251,7 @@ public class ChatServiceImpl implements ChatService {
 			chatUserWebModel.setUserId(user.getUserId());
 			chatUserWebModel.setUserName(user.getName());
 			chatUserWebModel.setUserType(user.getUserType());
+			chatUserWebModel.setAdminReview(user.getAdminReview());
 			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
 			this.getLatestChatMessage(user, chatUserWebModel); // To display in the chat user list
 			int unreadCount = chatRepository.countUnreadMessages(user.getUserId(), loggedInUserId);
@@ -662,6 +663,7 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setUpdatedOn(notification.getUpdatedOn());
 	            dto.setUserType(notification.getUserType());
 	            dto.setId(notification.getId());
+	            dto.setPostId(notification.getPostId());
 	            return dto;
 	        }).collect(Collectors.toList());
 	        
