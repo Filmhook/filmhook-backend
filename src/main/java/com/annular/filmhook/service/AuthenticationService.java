@@ -56,6 +56,8 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> saveQueries(HelpAndSupportWebModel helpAndSupportWebModel);
 
+	Response updateUserFlag(UserWebModel userWebModel);
+
 
     // ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
     // HttpServletRequest request);

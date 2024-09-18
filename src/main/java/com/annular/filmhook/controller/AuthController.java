@@ -364,5 +364,15 @@ public class AuthController {
     	}
     	return ResponseEntity.ok(new Response(-1,"Fail",""));
     }
-
+    @PostMapping("updateUserFlag")
+	public ResponseEntity<Response> updateUserFlag(@RequestBody UserWebModel userWebModel) {
+		try {
+			Response response = userService.updateUserFlag(userWebModel);
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			logger.error("Error at userWebModel -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+		}
+    }
 }

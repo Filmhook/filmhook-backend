@@ -50,6 +50,7 @@ import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.InAppNotificationWebModel;
+import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.ChatUserWebModel;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -253,6 +254,7 @@ public class ChatServiceImpl implements ChatService {
 			chatUserWebModel.setUserType(user.getUserType());
 			chatUserWebModel.setAdminReview(user.getAdminReview());
 			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
 			this.getLatestChatMessage(user, chatUserWebModel); // To display in the chat user list
 			int unreadCount = chatRepository.countUnreadMessages(user.getUserId(), loggedInUserId);
 			chatUserWebModel.setReceiverUnreadCount(unreadCount);
@@ -725,6 +727,20 @@ public class ChatServiceImpl implements ChatService {
 	    } catch (Exception e) {
 	        e.printStackTrace(); // Log the exception for debugging
 	        return new Response(0, "Error","An error occurred while deactivating the chat");
+	    }
+	}
+
+	@Override
+	public Response updateOnlineStatus(UserWebModel userWebModel) {
+	    Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+	    
+	    if (userData.isPresent()) {
+	        User user = userData.get();
+	        user.setOnlineStatus(userWebModel.getOnlineStatus());
+	        userRepository.save(user);
+	        return new Response(1,"Success", "Online status updated successfully"); // Success response
+	    } else {
+	        return new Response(0,"fail", "User not found"); // Failure response
 	    }
 	}
 

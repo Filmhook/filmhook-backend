@@ -21,6 +21,7 @@ public class ChatUserWebModel {
     private Date latestMsgTime;
     private int receiverUnreadCount;
     private Float adminReview;
+    private Boolean onlineStatus;
     
 
 }

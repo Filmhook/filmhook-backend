@@ -240,5 +240,11 @@ public class User {
     
     @Column(name = "weightUnit")
     private String weightUnit;
+    
+    @Column(name = "onlineStatus")
+    private Boolean onlineStatus;
+    
+    @Column(name = "userFlag")
+    private Boolean userFlag;
 
 }

@@ -119,6 +119,11 @@ public class UserWebModel {
     private String hip;
     private String heightUnit;
     private String weightUnit;
+    
+    //onlineStatus
+    private Boolean onlineStatus;
+    //optional set userType
+    private Boolean userFlag;
 
 
 }

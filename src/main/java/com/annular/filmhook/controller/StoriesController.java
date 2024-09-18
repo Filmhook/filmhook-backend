@@ -36,24 +36,48 @@ public class StoriesController {
     @Autowired
     StoriesService storiesService;
 
+//    @RequestMapping(path = "/uploadStory", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+//    public Response uploadStory(@ModelAttribute StoriesWebModel inputData) {
+//        try {
+//            logger.info("uploadStory Inputs :- {}", inputData);
+//            // Simply return the response from the service without wrapping it again
+//            return storiesService.uploadStory(inputData);
+//           // if (story != null) return new Response(1, "Story uploaded successfully...", story);
+//        } catch (Exception e) {
+//            logger.error("Error at uploadStory() -> {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//        return new Response(-1, "Error occurred while uploading story...", null);
+//    }
     @RequestMapping(path = "/uploadStory", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public Response uploadStory(@ModelAttribute StoriesWebModel inputData) {
         try {
             logger.info("uploadStory Inputs :- {}", inputData);
-            // Simply return the response from the service without wrapping it again
-            return storiesService.uploadStory(inputData);
-           // if (story != null) return new Response(1, "Story uploaded successfully...", story);
+            StoriesWebModel story = storiesService.uploadStory(inputData);
+            if (story != null) return new Response(1, "Story uploaded successfully...", story);
         } catch (Exception e) {
             logger.error("Error at uploadStory() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return new Response(-1, "Error occurred while uploading story...", null);
     }
-
+//    @GetMapping("/getUserStories")
+//    public Response getAllUserStories(@RequestParam("userId") Integer userId) {
+//        try {
+//            List<Map<String, Object>> storyList = storiesService.getStoryByUserId(userId);
+//            if (storyList != null)
+//                return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
+//        } catch (Exception e) {
+//            logger.error("Error at getAllUserStories() -> {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//        return new Response(-1, "Story not found...", null);
+//    }
+    
     @GetMapping("/getUserStories")
     public Response getAllUserStories(@RequestParam("userId") Integer userId) {
         try {
-            List<Map<String, Object>> storyList = storiesService.getStoryByUserId(userId);
+            List<StoriesWebModel> storyList = storiesService.getStoryByUserId(userId);
             if (storyList != null)
                 return new Response(1, storyList.size() + " Stories retrieved successfully...", storyList);
         } catch (Exception e) {

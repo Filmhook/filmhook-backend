@@ -21,6 +21,7 @@ import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
 import com.annular.filmhook.webmodel.InAppNotificationWebModel;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 @RestController
 @RequestMapping("/chat")
@@ -143,8 +144,7 @@ public class ChatController {
 	}
 
 	@PostMapping("deleteByChatId")
-	public ResponseEntity<Response> deleteByChatId(
-			@RequestBody ChatWebModel ChatWebModel) {
+	public ResponseEntity<Response> deleteByChatId(@RequestBody ChatWebModel ChatWebModel) {
 		try {
 			Response response = chatService.deleteByChatId(ChatWebModel);
 			return ResponseEntity.ok().body(response);
@@ -153,5 +153,18 @@ public class ChatController {
 			e.printStackTrace();
 			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
 		}
+	}
+
+	@PostMapping("updateOnlineStatus")
+	public ResponseEntity<Response> updateOnlineStatus(@RequestBody UserWebModel userWebModel) {
+		try {
+			Response response = chatService.updateOnlineStatus(userWebModel);
+			return ResponseEntity.ok().body(response);
+		} catch (Exception e) {
+			logger.error("Error at userWebModel -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+		}
+
 	}
 }

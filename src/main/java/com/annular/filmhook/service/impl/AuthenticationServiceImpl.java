@@ -337,11 +337,43 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return ResponseEntity.ok().body(new Response(1, "Your password has been changed. Please login with new password.", "Password changed SuccessFully"));
     }
 
+//    @Override
+//    public ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel) {
+//        try {
+//            List<User> userList = userRepository.findAll();
+//            boolean emailOtpVerified = false; // Flag to track if email OTP is verified
+//
+//            for (User user : userList) {
+//                if (user.getEmailOtp() != null && user.getEmailOtp().equals(userWebModel.getEmailOtp())) {
+//                    // Email OTP matches, set the status of this user to true
+//                    user.setStatus(true);
+//                    userRepository.save(user);
+//                    emailOtpVerified = true; // Set flag to true since email OTP is verified
+//                    break; // Exit loop once OTP is verified
+//                }
+//            }
+//
+//            if (emailOtpVerified) {
+//                // Return a success response if email OTP is verified
+//                return ResponseEntity.ok(new Response(1, "Email OTP verified successfully", ""));
+//            } else {
+//                // Return an error response if email OTP is not verified
+//                return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP", ""));
+//            }
+//
+//        } catch (Exception e) {
+//            // Handle any unexpected exceptions and return an error response
+//            logger.error("Error verifying email OTP: {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to verify email OTP", ""));
+//        }
+//    }
     @Override
     public ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel) {
         try {
             List<User> userList = userRepository.findAll();
             boolean emailOtpVerified = false; // Flag to track if email OTP is verified
+            User verifiedUser = null; // Hold the user object once OTP is verified
 
             for (User user : userList) {
                 if (user.getEmailOtp() != null && user.getEmailOtp().equals(userWebModel.getEmailOtp())) {
@@ -349,16 +381,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     user.setStatus(true);
                     userRepository.save(user);
                     emailOtpVerified = true; // Set flag to true since email OTP is verified
+                    verifiedUser = user; // Store the verified user
                     break; // Exit loop once OTP is verified
                 }
             }
 
             if (emailOtpVerified) {
+                // Check the user's flag (assuming this is a field in the User entity)
+                if (verifiedUser != null ) {
+                    // If the userFlag is true, send the success email
+                    if (verifiedUser.getUserFlag()) {
+                        String mailContent = "<p>Congratulations! Your public user account on FilmHook has been successfully created.</p>";
+                        mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "FilmHook Account Created", mailContent);
+                    }
+                }
                 // Return a success response if email OTP is verified
-                return ResponseEntity.ok(new Response(1, "Email OTP verified successfully", ""));
+                return ResponseEntity.ok(new Response(1, "Email OTP verified successfully. Public user account created in FilmHook.", ""));
             } else {
                 // Return an error response if email OTP is not verified
-                return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP", ""));
+                return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP. Unable to create a public user account.", ""));
             }
 
         } catch (Exception e) {
@@ -368,6 +409,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return ResponseEntity.internalServerError().body(new Response(-1, "Failed to verify email OTP", ""));
         }
     }
+
+
 
     @Override
     public ResponseEntity<?> verifyForgotOtp(UserWebModel userWebModel) {
@@ -708,5 +751,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	            return ResponseEntity.status(500).body("An error occurred while saving the query.");
 	        }
 	    }
+
+	@Override
+	public Response updateUserFlag(UserWebModel userWebModel) {
+		 Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+		    
+		    if (userData.isPresent()) {
+		        User user = userData.get();
+		        user.setUserFlag(userWebModel.getUserFlag());
+		        userRepository.save(user);
+		        return new Response(1,"Success", "user flag updated successfully"); // Success response
+		    } else {
+		        return new Response(0,"fail", "User not found"); // Failure response
+		    }
+	}
 
 }

@@ -13,9 +13,9 @@ import java.util.Optional;
 
 public interface StoriesService {
 
-    Response uploadStory(StoriesWebModel inputData);
+    StoriesWebModel uploadStory(StoriesWebModel inputData);
 
-    List<Map<String, Object>> getStoryByUserId(Integer userId);
+    List<StoriesWebModel> getStoryByUserId(Integer userId);
 
     Resource getStoryFile(Integer userId, String category, String fileId);
 

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.InAppNotificationWebModel;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface ChatService {
 
@@ -25,5 +26,7 @@ public interface ChatService {
 	Response updateInAppNotification(InAppNotificationWebModel inAppNotificationWebModel);
 
 	Response deleteByChatId(ChatWebModel chatWebModel);
+
+	Response updateOnlineStatus(UserWebModel userWebModel);
 
 }
