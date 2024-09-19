@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.DetailService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
@@ -28,6 +31,7 @@ import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.UserWebModel;
+import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.util.Utility;
 
 @RestController
@@ -38,6 +42,12 @@ public class DetailsController {
 
     @Autowired
     DetailService detailService;
+    
+    @Autowired
+    MailNotification mailNotification;
+    
+	@Autowired
+	private UserService userService;
 
     @PostMapping("/getDetails")
     public ResponseEntity<?> getDetails(@RequestBody DetailRequest detailRequest) {
@@ -139,13 +149,49 @@ public class DetailsController {
         }
     }
 
+//    @RequestMapping(path = "/saveIndustryUserFiles", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public Response saveIndustryUserFiles(@ModelAttribute IndustryFileInputWebModel inputFileData) {
+//        try {
+//            logger.info("Inputs for industry user file save -> {}", inputFileData);
+//            List<FileOutputWebModel> outputFilesList = detailService.saveIndustryUserFiles(inputFileData);
+//            if (!Utility.isNullOrEmptyList(outputFilesList))
+//                return new Response(1, "File(s) saved successfully...", outputFilesList);
+//        } catch (Exception e) {
+//            logger.error("Error at saveIndustryUserFiles() -> {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//        return new Response(-1, "Error occurred while saving files...", null);
+//    }
     @RequestMapping(path = "/saveIndustryUserFiles", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Response saveIndustryUserFiles(@ModelAttribute IndustryFileInputWebModel inputFileData) {
         try {
             logger.info("Inputs for industry user file save -> {}", inputFileData);
             List<FileOutputWebModel> outputFilesList = detailService.saveIndustryUserFiles(inputFileData);
-            if (!Utility.isNullOrEmptyList(outputFilesList))
+            
+            if (!Utility.isNullOrEmptyList(outputFilesList)) {
+                Optional<User> verifiedUser = userService.getUser(inputFileData.getUserId());
+                
+                if (verifiedUser.isPresent()) {
+                    String mailContent = "<p>Dear " + verifiedUser.get().getName() + ",</p>" +
+                            "<p>Thank you for signing up with Film-hook Media Apps! We are currently reviewing your profile. Please note that our verification process can take up to 24 hours.</p>" +
+                            "<p>If your profile does not meet the industry criteria and appears to match a public user profile, we will notify you with the necessary steps to complete your registration. We appreciate your patience and understanding as we ensure the best experience for all our users.</p>" +
+                            "<p>If you have any questions or need assistance, feel free to reach out to our support team.</p>";
+
+                    // Send success email
+                    mailNotification.sendEmail(
+                        verifiedUser.get().getName(),
+                        verifiedUser.get().getEmail(),
+                        "Profile Verification Update",
+                        mailContent
+                    );
+                    
+                    logger.info("Verification email sent successfully to {}", verifiedUser.get().getEmail());
+                } else {
+                    logger.warn("User not found or flag not set for ID: {}", inputFileData.getUserId());
+                }
+
                 return new Response(1, "File(s) saved successfully...", outputFilesList);
+            }
         } catch (Exception e) {
             logger.error("Error at saveIndustryUserFiles() -> {}", e.getMessage());
             e.printStackTrace();

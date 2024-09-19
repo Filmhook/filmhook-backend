@@ -391,8 +391,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 if (verifiedUser != null ) {
                     // If the userFlag is true, send the success email
                     if (verifiedUser.getUserFlag()) {
-                        String mailContent = "<p>Congratulations! Your public user account on FilmHook has been successfully created.</p>";
-                        mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "FilmHook Account Created", mailContent);
+                    	String mailContent ="<p>Thank you for joining the Film-hook community! We're thrilled to have you on board as a Public User.</p>" +
+                                "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";                        mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "Welcome to Film-hook  Media Apps", mailContent);
+                                mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "Welcome to Film-hook Media Apps", mailContent);
                     }
                 }
                 // Return a success response if email OTP is verified

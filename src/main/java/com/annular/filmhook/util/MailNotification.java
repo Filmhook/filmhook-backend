@@ -31,9 +31,9 @@ public class MailNotification {
         try {
             String senderName = "Film-hook IT-Support";
             String finalMailContent = "<div style='font-family:Verdana;font-size:12px;'>";
-            finalMailContent += "<p>Hello <b>" + userName + "</b>,</p>";
+            finalMailContent += "<p>Dear <b>" + userName + "</b>,</p>";
             finalMailContent += mailContent;
-            finalMailContent += "<p>Thank You,<br>Film-hook IT-Support.</p></div>";
+            finalMailContent += "<p>Best Regards,<br>The Film-hook Team.</p></div>";
 
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message);

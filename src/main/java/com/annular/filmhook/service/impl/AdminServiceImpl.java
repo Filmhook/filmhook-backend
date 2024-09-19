@@ -531,8 +531,13 @@ public class AdminServiceImpl implements AdminService {
         try {
             String subject, mailContent = "";
             if (!status) { // If status is false, indicating verification
-                subject = "Your Profile Has Been Verified";
-                mailContent += "<p>Your profile on FilmHook has been successfully verified.</p>";
+                subject = "Welcome to Film-hook Media Apps";
+               // mailContent += "<p>Dear " + user.getName() + ",</p>";
+                mailContent += "<p>As a valued member of the entertainment industry, you now have access to a world of opportunities. "
+                            + "Whether you're here to connect, collaborate, or showcase your work, Film-Hook is your best platform to elevate your professional journey.</p>";
+                mailContent += "<p>Let’s create something great together!</p>";
+                mailContent += "<p>Lights, Camera, Action! 🎥</p>";
+                //mailContent += "<p>Best Regards,<br/>The Film-hook Team</p>";
             } else { // If status is true, indicating rejection
                 subject = "Profile Rejected";
                 mailContent += "<p>Your profile on FilmHook has been rejected. Please contact support for further details.</p>";
@@ -543,5 +548,6 @@ public class AdminServiceImpl implements AdminService {
         }
         return false;
     }
+
 
 }
