@@ -62,4 +62,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("SELECT u FROM User u WHERE u.status=true")
 	List<User> findAllActiveUsers();
 
+	Optional<User> getByUserId(Integer senderId);
+
 }

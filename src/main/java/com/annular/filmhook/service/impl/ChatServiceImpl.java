@@ -660,6 +660,11 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setMessage(notification.getMessage());
 	            dto.setCreatedOn(notification.getCreatedOn());
 	            dto.setIsRead(notification.getIsRead());
+	            
+	            // Fetch user details using senderId
+	            Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
+	            dto.setSenderName(sender.get().getName());
+
 	            dto.setCreatedBy(notification.getCreatedBy());
 	            dto.setUpdatedBy(notification.getUpdatedBy());
 	            dto.setUpdatedOn(notification.getUpdatedOn());

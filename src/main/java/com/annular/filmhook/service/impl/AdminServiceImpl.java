@@ -437,7 +437,7 @@ public class AdminServiceImpl implements AdminService {
             User user = userOptional.get();
             if (!status) {
                 logger.info("User id -> {}", userWebModel.getUserId());
-                user.setUserType("IndustryUser");
+                user.setUserType("Industry User");
                 user.setAdminReview(userWebModel.getAdminReview());
                 userRepository.save(user);
 
@@ -449,7 +449,7 @@ public class AdminServiceImpl implements AdminService {
                 }
             } else {
                 // status true means userType change to Industry user and send mail notification
-                user.setUserType("commonUser");
+                user.setUserType("Public User");
                 userRepository.save(user);
 
                 // Send notification email
