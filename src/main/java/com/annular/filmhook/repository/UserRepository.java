@@ -64,4 +64,31 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	Optional<User> getByUserId(Integer senderId);
 
+	@Query("SELECT u FROM User u WHERE " +
+		       "(u.userType = :publicUserType OR " +
+		       "(u.userType = :industryUserType AND u.adminReview IN :adminReviewRange)) " +
+		       "AND LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) " +
+		       "AND u.status = :status")
+		List<User> findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
+		   String searchKey,boolean status,String publicUserType, String industryUserType, List<Float> adminReviewRange
+		);
+
+	@Query("SELECT u FROM User u WHERE " +
+		       "((u.userType = :publicUserType) OR " +
+		       "(u.userType = :industryUserType AND u.adminReview IN :adminReviewRange)) " +
+		       "OR (:loggedInUserType = :industryUserType AND u.adminReview BETWEEN 5.1 AND 9.9) " +
+		       "AND LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) " +
+		       "AND u.status = :status")
+		List<User> findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
+		    String searchKey,
+		     boolean status,
+		   String publicUserType,
+		   String industryUserType,
+	 List<Float> adminReviewRange,
+ String loggedInUserType
+		);
+
+
+
+
 }

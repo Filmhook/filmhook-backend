@@ -1,7 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
-
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -604,24 +604,74 @@ public class ChatServiceImpl implements ChatService {
 		}
 	}
 
+//	@Override
+//	public Response getAllSearchByChat(String searchKey) {
+//		try {
+//			List<User> users = userRepository.findByNameContainingIgnoreCaseAndStatus(searchKey, true);
+//			if (!Utility.isNullOrEmptyList(users)) {
+//				List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users);
+//				return new Response(1, "Success", responseList);
+//			} else {
+//				return new Response(-1, "User not found...", null);
+//			}
+//		} catch (Exception e) {
+//			logger.error("Error while fetching users by search key -> {}", e.getMessage());
+//			e.printStackTrace();
+//			return new Response(-1, "Error", e.getMessage());
+//		}
+//
+//	}
 	@Override
 	public Response getAllSearchByChat(String searchKey) {
-		try {
-			List<User> users = userRepository.findByNameContainingIgnoreCaseAndStatus(searchKey, true);
-			if (!Utility.isNullOrEmptyList(users)) {
-				List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users);
-				return new Response(1, "Success", responseList);
-			} else {
-				return new Response(-1, "User not found...", null);
-			}
-		} catch (Exception e) {
-			logger.error("Error while fetching users by search key -> {}", e.getMessage());
-			e.printStackTrace();
-			return new Response(-1, "Error", e.getMessage());
-		}
 
+	    String loggedInUserType = userDetails.userInfo().getUserType(); // Get logged-in user's type
+	    Float loggedInAdminReview = userDetails.userInfo().getAdminReview(); // Get logged-in user's admin review
+
+	    try {
+	        List<User> users;
+
+	        if ("publicUser".equalsIgnoreCase(loggedInUserType)) {
+	            // If logged-in user is publicUser, allow:
+	            // 1. Users with userType = "publicUser"
+	            // 2. Users with userType = "Industry User" and adminReview in [1, 2, 3, 4, 5]
+	            users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
+	                searchKey,
+	                true,
+	                "public User",
+	                "Industry User",
+	                Arrays.asList(1f, 2f, 3f, 4f, 5f),
+	                loggedInUserType
+	            );
+	        } else if ("Industry User".equalsIgnoreCase(loggedInUserType)) {
+	            // If logged-in user is Industry User, allow all users and filter Industry User by adminReview between 5.1 to 9.9
+	            users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
+	                searchKey,
+	                true,
+	                "public User",
+	                "Industry User",
+	                Arrays.asList(5.1f, 9.9f), // Admin reviews for logged-in Industry User
+	                loggedInUserType
+	            );
+	        } else {
+	            return new Response(-1, "Invalid userType", null);
+	        }
+
+	        // Check if users list is not empty and transform it
+	        if (!Utility.isNullOrEmptyList(users)) {
+	            List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users);
+	            return new Response(1, "Success", responseList);
+	        } else {
+	            return new Response(-1, "User not found...", null);
+	        }
+
+	    } catch (Exception e) {
+	        logger.error("Error while fetching users by search key -> {}", e.getMessage());
+	        e.printStackTrace();
+	        return new Response(-1, "Error", e.getMessage());
+	    }
 	}
 
+	
 	private List<ChatUserWebModel> transformsUserDetailsForChat(List<User> users) {
 		return users.stream().map(user -> {
 			ChatUserWebModel chatUserWebModel = new ChatUserWebModel();

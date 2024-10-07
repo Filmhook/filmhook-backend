@@ -16,18 +16,20 @@ public class UserDetailsImpl implements UserDetails {
     private final String userName;
     private final String email;
     private final String userType;
+    private final Float adminReview;
     @JsonIgnore
     private final String password;
 
     Set<GrantedAuthority> authorities = null;
 
-    public UserDetailsImpl(Integer id, String userName, String email, String userType, String password) {
+    public UserDetailsImpl(Integer id, String userName, String email, String userType, String password,Float adminReview) {
         super();
         this.id = id;
         this.userName = userName;
         this.email = email;
         this.userType = userType;
         this.password = password;
+        this.adminReview = adminReview;
     }
 
     public static UserDetailsImpl build(User user) {
@@ -36,7 +38,8 @@ public class UserDetailsImpl implements UserDetails {
                 user.getName(),
                 user.getEmail(),
                 user.getUserType(),
-                user.getPassword()
+                user.getPassword(),
+                user.getAdminReview()
         );
     }
 
@@ -57,7 +60,11 @@ public class UserDetailsImpl implements UserDetails {
         return userType;
     }
 
-    @Override
+    public Float getAdminReview() {
+		return adminReview;
+	}
+
+	@Override
     public String getPassword() {
         return password;
     }
@@ -87,13 +94,11 @@ public class UserDetailsImpl implements UserDetails {
         return true;
     }
 
-    @Override
-    public String toString() {
-        return "UserDetailsImpl{" +
-                "id=" + id +
-                ", userName='" + userName + '\'' +
-                ", email='" + email + '\'' +
-                ", userType='" + userType + '\'' +
-                '}';
-    }
+	@Override
+	public String toString() {
+		return "UserDetailsImpl [id=" + id + ", userName=" + userName + ", email=" + email + ", userType=" + userType
+				+ ", adminReview=" + adminReview + ", password=" + password + ", authorities=" + authorities + "]";
+	}
+
+   
 }
