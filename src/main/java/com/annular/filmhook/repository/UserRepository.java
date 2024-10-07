@@ -70,8 +70,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 		       "AND LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) " +
 		       "AND u.status = :status")
 		List<User> findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
-		   String searchKey,boolean status,String publicUserType, String industryUserType, List<Float> adminReviewRange
-		);
+		       String searchKey,
+		       boolean status,
+		       String publicUserType,
+		       String industryUserType,
+		       List<Float> adminReviewRange);
+
 
 	@Query("SELECT u FROM User u WHERE " +
 		       "((u.userType = :publicUserType) OR " +
@@ -80,12 +84,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 		       "AND LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) " +
 		       "AND u.status = :status")
 		List<User> findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
-		    String searchKey,
-		     boolean status,
-		   String publicUserType,
-		   String industryUserType,
-	 List<Float> adminReviewRange,
- String loggedInUserType
+		    String searchKey,boolean status,String publicUserType,String industryUserType,List<Float> adminReviewRange,String loggedInUserType
 		);
 
 

@@ -630,27 +630,24 @@ public class ChatServiceImpl implements ChatService {
 	    try {
 	        List<User> users;
 
-	        if ("publicUser".equalsIgnoreCase(loggedInUserType)) {
-	            // If logged-in user is publicUser, allow:
-	            // 1. Users with userType = "publicUser"
-	            // 2. Users with userType = "Industry User" and adminReview in [1, 2, 3, 4, 5]
+	        // Define the base query to find users by name
+	        if ("public User".equalsIgnoreCase(loggedInUserType)) {
+	            // For public users: fetch public users and industry users with valid admin reviews
 	            users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
 	                searchKey,
 	                true,
 	                "public User",
 	                "Industry User",
-	                Arrays.asList(1f, 2f, 3f, 4f, 5f),
-	                loggedInUserType
+	                Arrays.asList(1f, 2f, 3f, 4f, 5f)
 	            );
 	        } else if ("Industry User".equalsIgnoreCase(loggedInUserType)) {
-	            // If logged-in user is Industry User, allow all users and filter Industry User by adminReview between 5.1 to 9.9
+	            // For industry users: fetch all users but filter based on admin reviews
 	            users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
 	                searchKey,
 	                true,
 	                "public User",
 	                "Industry User",
-	                Arrays.asList(5.1f, 9.9f), // Admin reviews for logged-in Industry User
-	                loggedInUserType
+	                Arrays.asList(5.1f, 9.9f)
 	            );
 	        } else {
 	            return new Response(-1, "Invalid userType", null);
@@ -671,7 +668,6 @@ public class ChatServiceImpl implements ChatService {
 	    }
 	}
 
-	
 	private List<ChatUserWebModel> transformsUserDetailsForChat(List<User> users) {
 		return users.stream().map(user -> {
 			ChatUserWebModel chatUserWebModel = new ChatUserWebModel();
