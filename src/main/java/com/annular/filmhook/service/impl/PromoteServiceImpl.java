@@ -47,6 +47,9 @@ public class PromoteServiceImpl implements PromoteService {
     UserDetails userDetails;
     
     @Autowired
+    PostsRepository postRepository;
+    
+    @Autowired
     VisitPageRepository  visitPageRepository;
 
     @Autowired
@@ -62,76 +65,54 @@ public class PromoteServiceImpl implements PromoteService {
     public ResponseEntity<?> addPromote(PromoteWebModel promoteWebModel) {
         HashMap<String, Object> response = new HashMap<>();
         try {
-            logger.info("addPromote method start");
+            logger.info("updatePromote method start");
 
-            Promote promote = null;
+            // Retrieve the existing promotion using promoteId
+            Optional<Promote> optionalPromote = promoteRepository.findByPromoteId(promoteWebModel.getPromoteId());
+            if (!optionalPromote.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(-1, "Promotion not found", null));
+            }
+
+            Promote promote = optionalPromote.get();
             Integer userId = userDetails.userInfo().getId();
 
-            // Check if a Promote already exists with the same postId and userId
-            Promote existingPromote = promoteRepository.findByPostIdAndUserId(promoteWebModel.getPostId(), userId);
-            if (existingPromote != null) {
-                // Update the existing promote instead of creating a new one
-                promote = existingPromote;
-                promote.setAmount(promoteWebModel.getAmount());
-                promote.setCgst(promoteWebModel.getCgst());
-                promote.setPrice(promoteWebModel.getPrice());
-                promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
-                promote.setTotalCost(promoteWebModel.getTotalCost());
-                promote.setTaxFee(promoteWebModel.getTaxFee());
-                promote.setSgst(promoteWebModel.getSgst());
-                promote.setStatus(!promote.getStatus());
-                if (!Utility.isNullOrEmptyList(promoteWebModel.getCountry())) promote.setCountry(String.join(",", promoteWebModel.getCountry()));
+            // Update fields with values from the request
+            promote.setAmount(promoteWebModel.getAmount());
+            promote.setCgst(promoteWebModel.getCgst());
+            promote.setPrice(promoteWebModel.getPrice());
+            promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
+            promote.setTotalCost(promoteWebModel.getTotalCost());
+            promote.setTaxFee(promoteWebModel.getTaxFee());
+            promote.setSgst(promoteWebModel.getSgst());
+            promote.setStatus(promoteWebModel.getStatus()); // Set the status from the request
+            promote.setUpdatedOn(new Date());
+            promote.setUpdatedBy(userId);
+            promote.setMultimediaId(promoteWebModel.getMultimediaId());
 
-                promote.setUpdatedOn(new Date());
-                promote.setUpdatedBy(userId);
-                promote.setMultimediaId(promoteWebModel.getMultimediaId());
-            } else {
-                // Create a new Promote if none exists
-                promote = new Promote();
-                promote.setAmount(promoteWebModel.getAmount());
-                promote.setCgst(promoteWebModel.getCgst());
-                promote.setPrice(promoteWebModel.getPrice());
-                promote.setPostId(promoteWebModel.getPostId());
-                promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
-                promote.setTotalCost(promoteWebModel.getTotalCost());
-                promote.setTaxFee(promoteWebModel.getTaxFee());
-                promote.setSgst(promoteWebModel.getSgst());
-                promote.setCreatedBy(userId);
-                promote.setCreatedOn(new Date());
-                promote.setStatus(true);
-                if (!Utility.isNullOrEmptyList(promoteWebModel.getCountry())) promote.setCountry(String.join(",", promoteWebModel.getCountry()));
-
-                promote.setUserId(userId);
-                promote.setMultimediaId(promoteWebModel.getMultimediaId());
+            if (!Utility.isNullOrEmptyList(promoteWebModel.getCountry())) {
+                promote.setCountry(String.join(",", promoteWebModel.getCountry()));
             }
 
-            promote = promoteRepository.save(promote);
+            // Save the updated promotion back to the repository
+            promoteRepository.save(promote);
             response.put("promoteInfo", promote);
 
-            // Updating the promote flag in post-table
+            // Updating the promote flag in the post-table
             Posts promotedPost = postsRepository.findById(promote.getPostId()).orElse(null);
             if (promotedPost != null) {
-                promotedPost.setPromoteFlag(promote.getStatus());
-                promotedPost.setPromoteStatus(promote.getStatus()); // Assuming there's a promoteStatus field
+                promotedPost.setPromoteFlag(true);
+                promotedPost.setPromoteStatus(true); // Assuming there's a promoteStatus field
                 postsRepository.save(promotedPost);
-
-                // Find and update all posts with promoteFlag set to true, except the current promoted post
-                List<Posts> promotedPosts = postsRepository.findAllByPromoteFlag(true);
-                for (Posts post : promotedPosts) {
-                    if (!post.getId().equals(promotedPost.getId())) {
-                        post.setPromoteFlag(false);
-                        post.setPromoteStatus(false); // Assuming there's a promoteStatus field
-                        postsRepository.save(post);
-                    }
-                }
             }
 
-            return ResponseEntity.ok(new Response(1, "Add promote successfully", response));
+            return ResponseEntity.ok(new Response(1, "Update promote successfully", response));
         } catch (Exception e) {
-            logger.error("Error setting Promote: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error setting promote", e.getMessage()));
+            logger.error("Error updating Promote: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error updating promote", e.getMessage()));
         }
     }
+
 
     @Override
     public ResponseEntity<?> updatePromote(PromoteWebModel promoteWebModel) {
@@ -450,7 +431,7 @@ public class PromoteServiceImpl implements PromoteService {
                 // Include postId in the response
                 response.put("message", "Promotion updated successfully");
                 response.put("postId", promotion.getPostId()); // Add postId to the response
-
+                response.put("promoteId", promotion.getPromoteId());
                 return ResponseEntity.ok(response);
             } else {
                 response.put("error", "Promotion not found");
@@ -460,6 +441,64 @@ public class PromoteServiceImpl implements PromoteService {
         } catch (Exception e) {
             logger.error("Error updating promotion: ", e);
             response.put("error", "Failed to update promotion due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getDescriptionByPostId(PostWebModel postWebModel) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Retrieve the post using postId from the PostWebModel
+            Optional<Posts> optionalPost = postRepository.findByIds(postWebModel.getId());
+
+            if (optionalPost.isPresent()) {
+                Posts post = optionalPost.get();
+                String description = post.getDescription(); // Assuming 'getDescription()' method exists
+
+                response.put("description", description); // Return the description in the response
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("error", "Post not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+        } catch (Exception e) {
+            logger.error("Error retrieving description by postId: ", e);
+            response.put("error", "Failed to retrieve description due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> updateDescriptionByPostId(PostWebModel postWebModel) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Retrieve the existing post using postId from the PostWebModel
+            Optional<Posts> optionalPost = postRepository.findByIds(postWebModel.getId());
+
+            if (optionalPost.isPresent()) {
+                Posts post = optionalPost.get();
+                
+                // Update the description
+                post.setDescription(postWebModel.getDescription()); // Assuming 'setDescription()' method exists
+
+                // Save the updated post back to the repository
+                postRepository.save(post);
+                
+                response.put("message", "Post description updated successfully");
+                response.put("postId", post.getId()); // Include the updated postId in the response
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("error", "Post not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+        } catch (Exception e) {
+            logger.error("Error updating description by postId: ", e);
+            response.put("error", "Failed to update description due to server error");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

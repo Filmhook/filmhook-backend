@@ -181,5 +181,28 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    
+    @PostMapping("/getDescriptionByPostId")
+    public ResponseEntity<?> getDescriptionByPostId(@RequestBody PostWebModel postWebModel) {
+        try {
+            logger.info("getDescriptionByPostId controller start");
+            return promoteService.getDescriptionByPostId(postWebModel);
+        } catch (Exception e) {
+            logger.error("updatePromotepostWebModel  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
+    @PostMapping("/updateDescriptionByPostId")
+    public ResponseEntity<?> updateDescriptionByPostId(@RequestBody PostWebModel postWebModel) {
+        try {
+            logger.info("updateDescriptionByPostId controller start");
+            return promoteService.updateDescriptionByPostId(postWebModel);
+        } catch (Exception e) {
+            logger.error("updateDescriptionByPostId  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
 }
 

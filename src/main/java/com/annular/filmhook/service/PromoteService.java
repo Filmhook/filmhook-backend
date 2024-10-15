@@ -30,4 +30,8 @@ public interface PromoteService {
 
 	ResponseEntity<?> selectPromoteOption(PromoteWebModel promoteWebModel);
 
+	ResponseEntity<?> getDescriptionByPostId(PostWebModel postWebModel);
+
+	ResponseEntity<?> updateDescriptionByPostId(PostWebModel postWebModel);
+
 }

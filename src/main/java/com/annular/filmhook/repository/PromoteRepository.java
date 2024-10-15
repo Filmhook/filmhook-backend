@@ -1,6 +1,7 @@
 package com.annular.filmhook.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,5 +19,8 @@ public interface PromoteRepository extends JpaRepository<Promote, Integer> {
     Promote findByPostIdAndUserId(Integer postId, Integer id);
 
 	Promote findByPostId(Integer postId);
+
+	@Query("select p from Promote p where p.promoteId=:promoteId")
+	Optional<Promote> findByPromoteId(Integer promoteId);
 
 }

@@ -5,6 +5,7 @@ import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -38,5 +39,12 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
 
     @Query("SELECT p FROM Posts p WHERE p.tagUsers LIKE %:userId%")
     List<Posts> getPostsByTaggedUserId(String userId);
+
+    @Query("SELECT p FROM Posts p where p.id = :postId")
+	Optional<Posts> findByIds(Integer postId);
+
+    @Modifying
+    @Query("UPDATE Posts p SET p.promoteStatus = :b WHERE p.id = :postId")
+	void updatePromoteStatus(Integer postId, boolean b);
 
 }
