@@ -3,6 +3,10 @@ package com.annular.filmhook.webmodel;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Column;
+
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -32,5 +36,15 @@ public class PromoteWebModel {
     private Integer userId;
     private Integer multimediaId;
     private List<String> country;
+    List<MultipartFile> files;
+    private String visitPage;    
+    private Boolean learnMore;
+    private Boolean shopMore;
+    private Boolean watchMe;
+    private Boolean contactUs;
+    private Boolean bookNow;
+    private Boolean signUp;
+    private String webSiteLink;
+    private String whatsAppNumber;
 
 }

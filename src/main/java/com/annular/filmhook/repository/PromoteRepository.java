@@ -17,4 +17,6 @@ public interface PromoteRepository extends JpaRepository<Promote, Integer> {
     @Query("select um from Promote um where um.userId = :id and um.postId = :postId")
     Promote findByPostIdAndUserId(Integer postId, Integer id);
 
+	Promote findByPostId(Integer postId);
+
 }

@@ -3,8 +3,12 @@ package com.annular.filmhook.service.impl;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
+import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.repository.PostsRepository;
 
@@ -12,14 +16,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Promote;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.VisitPage;
 import com.annular.filmhook.repository.PromoteRepository;
+import com.annular.filmhook.repository.VisitPageRepository;
+import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PromoteService;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.webmodel.FileInputWebModel;
+import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.PromoteWebModel;
 import com.annular.filmhook.util.Utility;
 
@@ -33,9 +45,18 @@ public class PromoteServiceImpl implements PromoteService {
 
     @Autowired
     UserDetails userDetails;
+    
+    @Autowired
+    VisitPageRepository  visitPageRepository;
 
     @Autowired
     PostsRepository postsRepository;
+    
+    @Autowired
+    UserService userService;
+    
+    @Autowired
+    MediaFilesService mediaFilesService;
 
     @Override
     public ResponseEntity<?> addPromote(PromoteWebModel promoteWebModel) {
@@ -244,5 +265,204 @@ public class PromoteServiceImpl implements PromoteService {
             return ResponseEntity.ok().body("Promotion not found");
         }
     }
+
+    @Override
+    public ResponseEntity<HashMap<String, Object>> addPromotes(PromoteWebModel promoteWebModel) {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            logger.info("addPromote method start");
+
+            // Retrieve user details
+            Integer userId = userDetails.userInfo().getId();
+            User userFromDB = userService.getUser(promoteWebModel.getUserId()).orElse(null);
+
+            if (userFromDB != null) {
+                // Build and save the Post entity
+                Posts posts = Posts.builder()
+                        .postId(UUID.randomUUID().toString()) // Unique post ID
+                        .user(userFromDB)
+                        .status(false) // Default status to false
+                        .likesCount(0)
+                        .promoteFlag(true) // Set promoteFlag to true for promotion
+                        .promoteStatus(true) // Set promoteStatus to true for a new promotion
+                        .createdOn(new Date())
+                        .sharesCount(0)
+                        .commentsCount(0) // Initialize comments count
+                        .build();
+
+                // Save the post to the database
+                Posts savedPost = postsRepository.saveAndFlush(posts);
+
+                // If the PromoteWebModel contains files, save them in the media_files table
+                if (!Utility.isNullOrEmptyList(promoteWebModel.getFiles())) {
+                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                            .userId(promoteWebModel.getUserId()) // Set the user ID
+                            .category(MediaFileCategory.Post) // Post category
+                            .categoryRefId(savedPost.getId()) // Link media to the saved post
+                            .files(promoteWebModel.getFiles()) // File list from PromoteWebModel
+                            .build();
+
+                    // Save media files in the database
+                    mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+                }
+
+                // Create a response HashMap with only postId, id, and userId
+                response.put("postId", savedPost.getPostId());
+                response.put("id", savedPost.getId());
+                response.put("userId", savedPost.getUser().getUserId());
+
+                // Return the response HashMap
+                return ResponseEntity.ok(response);
+            } else {
+                // Handle user not found scenario by returning a bad request
+                response.put("error", "User not found");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            // Log the error for debugging
+            logger.error("Error in addPromote method: ", e);
+            response.put("error", "Failed to add promote due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> addVisitPage(PromoteWebModel promoteWebModel) {
+        HashMap<String, Object> response = new HashMap<>();
+        HashMap<String, Object> responseData = new HashMap<>(); // Additional response data
+
+        try {
+            logger.info("addVisitPage method start");
+
+            // Retrieve user ID from the context
+            Integer userId = userDetails.userInfo().getId();
+            
+            // Check if a promotion already exists for the given postId
+            Promote existingPromotion = promoteRepository.findByPostId(promoteWebModel.getPostId());
+            
+            if (existingPromotion != null) {
+                // Update the existing promotion with new values from promoteWebModel
+                existingPromotion.setUserId(userId);
+                existingPromotion.setVisitPage(promoteWebModel.getVisitPage());
+                existingPromotion.setUpdatedBy(userId); // Set the user who updated
+                existingPromotion.setUpdatedOn(new Date());
+                
+                // Save the updated promotion
+                promoteRepository.save(existingPromotion);
+                
+                responseData.put("promotionId", existingPromotion.getPromoteId());
+                responseData.put("postId", existingPromotion.getPostId());
+                responseData.put("userId", existingPromotion.getUserId());
+                response.put("message", "Promotion record updated successfully");
+            } else {
+                // Create a new Promote entity
+                Promote promote = Promote.builder()
+                        .status(true) // Set to true or as needed
+                        .createdBy(userId) // Set the user who created the promotion
+                        .userId(userId)
+                        .postId(promoteWebModel.getPostId())
+                        .visitPage(promoteWebModel.getVisitPage())
+                        // Set other necessary fields from promoteWebModel if needed
+                        .build();
+
+                // Save the new Promote entity to the database
+                promoteRepository.save(promote);
+                
+                responseData.put("promotionId", promote.getPromoteId());
+                responseData.put("postId", promote.getPostId());
+                responseData.put("userId", promote.getUserId());
+                responseData.put("visitPage", promote.getVisitPage());
+                response.put("message", "New promotion record created successfully");
+            }
+
+            // Add status and response data to the final response
+            response.put("status", "success");
+            response.put("response", responseData); // Include detailed response data
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            // Log the error for debugging
+            logger.error("Error in addVisitPage method: ", e);
+            response.put("status", "error");
+            response.put("message", "Failed to add/update promotion due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getVisitType() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Fetch all VisitPage entries
+            List<VisitPage> allVisitPages = visitPageRepository.findAll();
+
+            // Filter entries where visitType is 'website'
+            List<Map<String, Object>> websiteVisitPages = allVisitPages.stream()
+                    .filter(visitPage -> "website".equals(visitPage.getVisitType()))
+                    .map(visitPage -> {
+                        // Create a map to store visitPageId and data only
+                        Map<String, Object> filteredData = new HashMap<>();
+                        filteredData.put("visitPageId", visitPage.getVisitPageId());
+                        filteredData.put("data", visitPage.getData());
+                        return filteredData;
+                    })
+                    .collect(Collectors.toList());
+
+            // Return the filtered list
+            response.put("websiteVisitPages", websiteVisitPages);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            // Log and handle errors
+            e.printStackTrace();
+            response.put("error", "Failed to retrieve visit types due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> selectPromoteOption(PromoteWebModel request) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Retrieve the existing promotion using promoteId
+            Optional<Promote> optionalPromotion = promoteRepository.findById(request.getPromoteId());
+
+            if (optionalPromotion.isPresent()) {
+                Promote promotion = optionalPromotion.get();
+
+                // Update the fields with values from the request
+                promotion.setLearnMore(request.getLearnMore());
+                promotion.setShopMore(request.getShopMore());
+                promotion.setWatchMe(request.getWatchMe());
+                promotion.setContactUs(request.getContactUs());
+                promotion.setBookNow(request.getBookNow());
+                promotion.setSignUp(request.getSignUp());
+                promotion.setWhatsAppNumber(request.getWhatsAppNumber());
+                promotion.setWebSiteLink(request.getWebSiteLink()); // Assuming this field exists in the Promote entity
+
+                // Save the updated promotion back to the repository
+                promoteRepository.save(promotion);
+
+                // Include postId in the response
+                response.put("message", "Promotion updated successfully");
+                response.put("postId", promotion.getPostId()); // Add postId to the response
+
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("error", "Promotion not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+        } catch (Exception e) {
+            logger.error("Error updating promotion: ", e);
+            response.put("error", "Failed to update promotion due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 
 }

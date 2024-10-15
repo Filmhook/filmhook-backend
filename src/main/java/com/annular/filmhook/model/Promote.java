@@ -85,5 +85,37 @@ public class Promote {
 
     @Column(name = "multimedia_Id")
     private Integer multimediaId;
-
+    
+    @Column(name = "visitPage")
+    private String visitPage;
+    
+    @Column(name = "learnMore")
+    private Boolean learnMore;
+    
+    @Column(name = "shopMore")
+    private Boolean shopMore;
+    
+    @Column(name = "watchMe")
+    private Boolean watchMe;
+    
+    @Column(name = "contactUs")
+    private Boolean contactUs;
+    
+    @Column(name = "bookNow")
+    private Boolean bookNow;
+    
+    @Column(name = "signUp")
+    private Boolean signUp;
+    
+    @Column(name = "webSiteLink")
+    private String webSiteLink;
+    
+    @Column(name = "whatsappNumber")
+    private String whatsAppNumber;
+    
 }
+
+
+
+
+

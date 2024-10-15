@@ -1,20 +1,28 @@
 package com.annular.filmhook.controller;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.VisitPage;
+import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.PromoteService;
 import com.annular.filmhook.webmodel.PostWebModel;
@@ -31,7 +39,7 @@ public class PromoteController {
 
     @Autowired
     PostService postService;
-
+    
     @PostMapping("/addPromote")
     public ResponseEntity<?> addPromote(@RequestBody PromoteWebModel promoteWebModel) {
         try {
@@ -43,6 +51,25 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    
+    @RequestMapping(value = "/addPromoteApi", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> addPromotes(@ModelAttribute PromoteWebModel promoteWebModel) {
+        try {
+            logger.info("addPromotes controller start");
+            
+            // Assuming promoteService.addPromote() handles the logic of saving the promotion.
+            ResponseEntity<HashMap<String, Object>> response = promoteService.addPromotes(promoteWebModel);
+            
+            // Handle the response from the service as needed.
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            logger.error("addPromote Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
+
 
     @PostMapping("/updatePromote")
     public ResponseEntity<?> updatePromote(@RequestBody PromoteWebModel promoteWebModel) {
@@ -118,6 +145,41 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    
+    @PostMapping("/addVisitPage")
+    public ResponseEntity<?> addVisitPage(@RequestBody PromoteWebModel promoteWebModel) {
+        try {
+            logger.info("addVisitPage controller start");
+            return promoteService.addVisitPage(promoteWebModel);
+        } catch (Exception e) {
+            logger.error("addVisitPage  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
+    
+    @GetMapping("/getVisitType")
+    public ResponseEntity<?> getVisitType() {
+        try {
+            logger.info("getVisitType controller start");
+            return promoteService.getVisitType();
+        } catch (Exception e) {
+            logger.error("getVisitType  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
 
+    @PostMapping("/selectPromoteOption")
+    public ResponseEntity<?> selectPromoteOption(@RequestBody PromoteWebModel promoteWebModel) {
+        try {
+            logger.info("selectPromoteOption controller start");
+            return promoteService.selectPromoteOption(promoteWebModel);
+        } catch (Exception e) {
+            logger.error("updatePromote  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
 }
 
