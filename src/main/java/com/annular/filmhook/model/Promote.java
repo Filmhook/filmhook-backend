@@ -28,94 +28,74 @@ import lombok.ToString;
 @NoArgsConstructor
 public class Promote {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "promote_id")
-    private Integer promoteId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "promote_id")
+	private Integer promoteId;
 
-    @Column(name = "status")
-    private Boolean status;
+	@Column(name = "status")
+	private Boolean status;
 
-    @Column(name = "created_by")
-    private Integer createdBy;
+	@Column(name = "created_by")
+	private Integer createdBy;
 
-    @CreationTimestamp
-    @Column(name = "created_on")
-    private Date createdOn;
+	@CreationTimestamp
+	@Column(name = "created_on")
+	private Date createdOn;
 
-    @Column(name = "updated_by")
-    private Integer updatedBy;
+	@Column(name = "updated_by")
+	private Integer updatedBy;
 
-    @Column(name = "updated_on")
-    @CreationTimestamp
-    private Date updatedOn;
+	@Column(name = "updated_on")
+	@CreationTimestamp
+	private Date updatedOn;
 
-    //@Column(name = "start_date") private LocalDate startDate;
-    //@Column(name = "end_date") private LocalDate endDate;
+	// @Column(name = "start_date") private LocalDate startDate;
+	// @Column(name = "end_date") private LocalDate endDate;
 
-    @Column(name = "number_of_days")
-    private Integer numberOfDays;
+	@Column(name = "number_of_days")
+	private Integer numberOfDays;
 
-    @Column(name = "amount")
-    private Integer amount;
+	@Column(name = "amount")
+	private Integer amount;
 
-    @Column(name = "total_cost")
-    private Integer totalCost;
+	@Column(name = "total_cost")
+	private Integer totalCost;
 
-    @Column(name = "tax_fee")
-    private Integer taxFee;
+	@Column(name = "tax_fee")
+	private Integer taxFee;
 
-    @Column(name = "cgst")
-    private Integer cgst;
+	@Column(name = "cgst")
+	private Integer cgst;
 
-    @Column(name = "sgst")
-    private Integer sgst;
+	@Column(name = "sgst")
+	private Integer sgst;
 
-    @Column(name = "price")
-    private Integer price;
+	@Column(name = "price")
+	private Integer price;
 
-    @Column(name = "country")
-    private String country;
+	@Column(name = "country")
+	private String country;
 
-    @Column(name = "user_id")
-    private Integer userId;
+	@Column(name = "user_id")
+	private Integer userId;
 
-    @Column(name = "post_id")
-    private Integer postId;
+	@Column(name = "post_id")
+	private Integer postId;
 
-    @Column(name = "multimedia_Id")
-    private Integer multimediaId;
-    
-    @Column(name = "visitPage")
-    private String visitPage;
-    
-    @Column(name = "learnMore")
-    private Boolean learnMore;
-    
-    @Column(name = "shopMore")
-    private Boolean shopMore;
-    
-    @Column(name = "watchMe")
-    private Boolean watchMe;
-    
-    @Column(name = "contactUs")
-    private Boolean contactUs;
-    
-    @Column(name = "bookNow")
-    private Boolean bookNow;
-    
-    @Column(name = "signUp")
-    private Boolean signUp;
-    
-    @Column(name = "webSiteLink")
-    private String webSiteLink;
-    
-    @Column(name = "whatsappNumber")
-    private String whatsAppNumber;
-    
+	@Column(name = "multimedia_Id")
+	private Integer multimediaId;
+
+	@Column(name = "visitPage")
+	private String visitPage;
+
+	@Column(name = "selectOption")
+	private Integer selectOption;
+
+	@Column(name = "whatsappNumber")
+	private String whatsAppNumber;
+	
+	@Column(name = "websiteLink")
+	private String webSiteLink;
+
 }
-
-
-
-
-

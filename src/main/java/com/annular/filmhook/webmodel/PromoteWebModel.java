@@ -38,13 +38,8 @@ public class PromoteWebModel {
     private List<String> country;
     List<MultipartFile> files;
     private String visitPage;    
-    private Boolean learnMore;
-    private Boolean shopMore;
-    private Boolean watchMe;
-    private Boolean contactUs;
-    private Boolean bookNow;
-    private Boolean signUp;
     private String webSiteLink;
     private String whatsAppNumber;
+    private Integer selectOption;
 
 }

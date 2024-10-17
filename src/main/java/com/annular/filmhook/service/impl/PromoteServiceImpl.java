@@ -335,6 +335,7 @@ public class PromoteServiceImpl implements PromoteService {
                 responseData.put("promotionId", existingPromotion.getPromoteId());
                 responseData.put("postId", existingPromotion.getPostId());
                 responseData.put("userId", existingPromotion.getUserId());
+                responseData.put("visitPage", existingPromotion.getVisitPage());
                 response.put("message", "Promotion record updated successfully");
             } else {
                 // Create a new Promote entity
@@ -416,12 +417,8 @@ public class PromoteServiceImpl implements PromoteService {
                 Promote promotion = optionalPromotion.get();
 
                 // Update the fields with values from the request
-                promotion.setLearnMore(request.getLearnMore());
-                promotion.setShopMore(request.getShopMore());
-                promotion.setWatchMe(request.getWatchMe());
-                promotion.setContactUs(request.getContactUs());
-                promotion.setBookNow(request.getBookNow());
-                promotion.setSignUp(request.getSignUp());
+ ;
+                promotion.setSelectOption(request.getSelectOption());
                 promotion.setWhatsAppNumber(request.getWhatsAppNumber());
                 promotion.setWebSiteLink(request.getWebSiteLink()); // Assuming this field exists in the Promote entity
 
