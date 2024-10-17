@@ -34,4 +34,6 @@ public interface PromoteService {
 
 	ResponseEntity<?> updateDescriptionByPostId(PostWebModel postWebModel);
 
+	ResponseEntity<?> getVisitTypeByWhatsApp();
+
 }

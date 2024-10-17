@@ -501,4 +501,39 @@ public class PromoteServiceImpl implements PromoteService {
     }
 
 
+	@Override
+	public ResponseEntity<?> getVisitTypeByWhatsApp() {
+		
+	        Map<String, Object> response = new HashMap<>();
+
+	        try {
+	            // Fetch all VisitPage entries
+	            List<VisitPage> allVisitPages = visitPageRepository.findAll();
+
+	            // Filter entries where visitType is 'website'
+	            List<Map<String, Object>> websiteVisitPages = allVisitPages.stream()
+	                    .filter(visitPage -> "Whatsapp".equals(visitPage.getVisitType()))
+	                    .map(visitPage -> {
+	                        // Create a map to store visitPageId and data only
+	                        Map<String, Object> filteredData = new HashMap<>();
+	                        filteredData.put("visitPageId", visitPage.getVisitPageId());
+	                        filteredData.put("data", visitPage.getData());
+	                        return filteredData;
+	                    })
+	                    .collect(Collectors.toList());
+
+	            // Return the filtered list
+	            response.put("websiteVisitPages", websiteVisitPages);
+	            return ResponseEntity.ok(response);
+
+	        } catch (Exception e) {
+	            // Log and handle errors
+	            e.printStackTrace();
+	            response.put("error", "Failed to retrieve visit types due to server error");
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	        }
+	    }
+
+
+
 }

@@ -204,5 +204,16 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    @GetMapping("/getVisitTypeByWhatsApp")
+    public ResponseEntity<?> getVisitTypeByWhatsApp() {
+        try {
+            logger.info("getVisitTypeByWhatsApp controller start");
+            return promoteService.getVisitTypeByWhatsApp();
+        } catch (Exception e) {
+            logger.error("getVisitTypeByWhatsApp  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
 }
 
