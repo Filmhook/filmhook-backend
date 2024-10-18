@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.Promote;
@@ -22,5 +23,13 @@ public interface PromoteRepository extends JpaRepository<Promote, Integer> {
 
 	@Query("select p from Promote p where p.promoteId=:promoteId")
 	Optional<Promote> findByPromoteId(Integer promoteId);
+
+	@Query("SELECT COUNT(p) > 0 FROM Promote p WHERE p.postId = :postId AND p.status = :status")
+	boolean existsByPostIdAndStatus(@Param("postId") Integer postId, @Param("status") boolean status);
+
+
+	@Query("SELECT p FROM Promote p WHERE p.postId = :postId AND p.status = true")
+	Optional<Promote> findByPostIds(@Param("postId") Integer postId);
+
 
 }

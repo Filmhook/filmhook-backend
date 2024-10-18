@@ -3,6 +3,7 @@ package com.annular.filmhook.service.impl;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserProfilePin;
 import com.annular.filmhook.model.Posts;
+import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Comment;
@@ -56,6 +57,7 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 
 import com.annular.filmhook.repository.PostsRepository;
+import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.LinkRepository;
@@ -110,6 +112,9 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     ShareRepository shareRepository;
+    
+    @Autowired
+    PromoteRepository promoteRepository;
 
     @Autowired
     PostTagsRepository postTagsRepository;
@@ -308,6 +313,14 @@ public class PostServiceImpl implements PostService {
                     Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(loggedInUser, post.getUser().getUserId());
                     Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
 
+                    // Check if the post is promoted
+                    boolean isPromoted = promoteRepository.existsByPostIdAndStatus(post.getId(), true);
+
+
+                    // Check if the post is promoted and fetch promote details if it exists
+                    Optional<Promote> promoteDetailsOpt = promoteRepository.findByPostIds(post.getId());
+                    Promote promoteDetails = promoteDetailsOpt.orElse(null);
+                    
                     List<Map<String, Object>> taggedUsers = post.getPostTagsCollection() != null
                             ? post.getPostTagsCollection().stream()
                             .filter(postTags -> postTags.getStatus().equals(true))
@@ -363,6 +376,14 @@ public class PostServiceImpl implements PostService {
                             .createdOn(post.getCreatedOn())
                             .createdBy(post.getCreatedBy())
                             .taggedUserss(taggedUsers)
+                         // Include promoted details if available
+                            .promoteStatus(promoteDetails != null)
+                            .promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
+                            .numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
+                            .amount(promoteDetails != null ? promoteDetails.getAmount() : null)
+                            .whatsAppNumber(promoteDetails != null ? promoteDetails.getWhatsAppNumber() : null)
+                            .webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
+                            .selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
                             .build();
                     responseList.add(postWebModel);
                 });

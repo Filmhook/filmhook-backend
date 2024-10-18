@@ -60,4 +60,11 @@ public class PostWebModel {
     private List<Integer> mediaFilesIds;
     private String userType;
     private Float adminReview;
+    private Boolean promoteStatus;
+    private Integer promoteId;
+    private Integer numberOfDays;
+    private Integer amount;
+    private String whatsAppNumber;
+    private String webSiteLink;
+    private Integer selectOption;
 }
