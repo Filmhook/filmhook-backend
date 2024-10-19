@@ -32,8 +32,14 @@ public class Cron {
 
             if (diffInDays >= promote.getNumberOfDays()) {
                 // Update post status
-                postRepository.updatePromoteStatus(promote.getPostId(), false);
+               // postRepository.updatePromoteStatus(promote.getPostId(), false);
                 // Optionally, you can also update the promote flag here if necessary
+            	 // Update post's promoteFlag and promoteStatus to false in the Post table
+                postRepository.updatePromoteStatusAndFlag(promote.getPostId(), false, false);
+
+                // Update the Promote row to set status as false
+                promote.setStatus(false); // Assuming there's a 'status' field in Promote to track the active state
+                promoteRepository.save(promote); 
             }
         }
     }

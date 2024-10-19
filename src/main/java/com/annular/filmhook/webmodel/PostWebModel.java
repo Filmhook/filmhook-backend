@@ -67,4 +67,7 @@ public class PostWebModel {
     private String whatsAppNumber;
     private String webSiteLink;
     private Integer selectOption;
+    private String visitPage;
+    // Add visitPageData field
+    private String visitPageData;
 }

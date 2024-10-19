@@ -2,6 +2,7 @@ package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserProfilePin;
+import com.annular.filmhook.model.VisitPage;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.Likes;
@@ -46,6 +47,7 @@ import java.util.Map;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.HashSet;
@@ -64,6 +66,7 @@ import com.annular.filmhook.repository.LinkRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
+import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.repository.PostTagsRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
@@ -103,6 +106,9 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     LikeRepository likeRepository;
+    
+    @Autowired
+    VisitPageRepository visitPageRepository;
 
     @Autowired
     LinkRepository linkRepository;
@@ -264,8 +270,8 @@ public class PostServiceImpl implements PostService {
             //combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
             // Sort the posts first by promote flag, then by creation date
             combinedPostsList.sort(Comparator
-                    .comparing(Posts::getPromoteFlag, Comparator.nullsLast(Comparator.reverseOrder())) // Sort by PromoteFlag, handling nulls last
-                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by CreatedOn, handling nulls last
+                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
+                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
 
 
             return this.transformPostsDataToPostWebModel(combinedPostsList);
@@ -384,11 +390,15 @@ public class PostServiceImpl implements PostService {
                             .whatsAppNumber(promoteDetails != null ? promoteDetails.getWhatsAppNumber() : null)
                             .webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
                             .selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
+                            .visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
+                         // Fetch VisitPage status based on selectedOption
+                         // Fetch VisitPage data based on selectedOption
+                            .visitPageData(fetchVisitPageData(promoteDetails))
                             .build();
                     responseList.add(postWebModel);
                 });
                 //responseList.sort(Comparator.comparing(PostWebModel::getCreatedOn).reversed());
-                responseList.sort(Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag).reversed()));
+               // responseList.sort(Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag).reversed()));
             }
         } catch (Exception e) {
             logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage());
@@ -398,7 +408,17 @@ public class PostServiceImpl implements PostService {
         return responseList;
     }
 
-    private String generatePostUrl(String postId) {
+    private String fetchVisitPageData(Promote promoteDetails) {
+        if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
+            // Assuming selectedOption is a foreign key that refers to VisitPage
+            Optional<VisitPage> visitPageOpt = visitPageRepository.findById(promoteDetails.getSelectOption());
+            return visitPageOpt.map(VisitPage::getData).orElse(null); // Fetching the data field
+        }
+        return null; // Return null if no data is available
+    }
+
+
+	private String generatePostUrl(String postId) {
         return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";
     }
 
@@ -431,16 +451,57 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+//    @Override
+//    public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
+//        try {
+//            Pageable paging = PageRequest.of(pageNo - 1, pageSize);
+//
+//            // Fetch all active posts with pagination
+//            List<Posts> postList = postsRepository.getAllActivePosts(paging);
+//
+//            // Sort the posts: false (or null) promoteFlag first, true last, then by creation date (newest first)
+//            postList.sort(Comparator
+//                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // false/null first, true last
+//                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
+//
+//            // Transform the sorted posts into PostWebModel and return the result
+//            return this.transformPostsDataToPostWebModel(postList);
+//        } catch (Exception e) {
+//            logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
+
     @Override
     public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
         try {
-            Pageable paging = PageRequest.of(pageNo - 1, pageSize);
-            //List<Posts> postList = postsRepository.findAll(paging).stream().filter(post -> post.getStatus().equals(true)).collect(Collectors.toList());
-            List<Posts> postList = postsRepository.getAllActivePosts(paging);
-            return this.transformPostsDataToPostWebModel(postList);
+            // Fetch all active posts (you might want to consider using pagination at the repository level)
+            List<Posts> postList = postsRepository.getAllActivePosts();
+            
+            if (postList == null || postList.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            // Sort the posts based on creation date and promoteFlag, nulls last for promoteFlag
+            postList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+            postList.sort(Comparator.nullsLast(Comparator.comparing(Posts::getPromoteFlag).reversed()));
+
+            // Apply manual pagination
+            int start = (pageNo - 1) * pageSize;
+            int end = Math.min(start + pageSize, postList.size());
+
+            // If the start index exceeds the size of the list, return an empty list
+            if (start > postList.size()) {
+                return Collections.emptyList();
+            }
+
+            List<Posts> paginatedPosts = postList.subList(start, end);
+
+            // Transform the paginated posts into PostWebModel and return
+            return this.transformPostsDataToPostWebModel(paginatedPosts);
         } catch (Exception e) {
-            logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
-            e.printStackTrace();
+            logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
             return null;
         }
     }

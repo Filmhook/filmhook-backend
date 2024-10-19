@@ -85,7 +85,7 @@ public class PromoteServiceImpl implements PromoteService {
             promote.setTotalCost(promoteWebModel.getTotalCost());
             promote.setTaxFee(promoteWebModel.getTaxFee());
             promote.setSgst(promoteWebModel.getSgst());
-            promote.setStatus(promoteWebModel.getStatus()); // Set the status from the request
+            promote.setStatus(true); // Set the status from the request
             promote.setUpdatedOn(new Date());
             promote.setUpdatedBy(userId);
             promote.setMultimediaId(promoteWebModel.getMultimediaId());
@@ -328,8 +328,7 @@ public class PromoteServiceImpl implements PromoteService {
                 existingPromotion.setVisitPage(promoteWebModel.getVisitPage());
                 existingPromotion.setUpdatedBy(userId); // Set the user who updated
                 existingPromotion.setUpdatedOn(new Date());
-                
-                // Save the updated promotion
+                //existingPromotion.setStatus(true);                // Save the updated promotion
                 promoteRepository.save(existingPromotion);
                 
                 responseData.put("promotionId", existingPromotion.getPromoteId());
@@ -340,7 +339,7 @@ public class PromoteServiceImpl implements PromoteService {
             } else {
                 // Create a new Promote entity
                 Promote promote = Promote.builder()
-                        .status(true) // Set to true or as needed
+                        //.status(true) // Set to true or as needed
                         .createdBy(userId) // Set the user who created the promotion
                         .userId(userId)
                         .postId(promoteWebModel.getPostId())
