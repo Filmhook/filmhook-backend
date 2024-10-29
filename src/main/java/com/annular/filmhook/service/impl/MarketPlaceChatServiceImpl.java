@@ -1,7 +1,14 @@
 package com.annular.filmhook.service.impl;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +30,11 @@ import com.annular.filmhook.repository.MarketPlaceChatRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceChatService;
 import com.annular.filmhook.service.MediaFilesService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -39,6 +49,9 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	
 	@Autowired
 	UserRepository userRepository;
+
+	@Autowired
+	private UserService userService;
 	
 	@Autowired
 	MediaFilesService mediaFilesService;
@@ -99,6 +112,10 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 
 	                    // Check conditions for not saving in-app notifications
 	                    boolean skipNotification = false;
+	                 // Additional check for existing notifications
+	                    if (marketPlaceChatRepository.existsByMarketPlaceSenderIdAndMarketPlaceReceiverIdAndAcceptTrue(userId, receiver.getUserId())) {
+	                        skipNotification = true; // Existing notification with accept = true
+	                    }
 
 	                    // Condition checks based on requirements
 	                    if ("Public User".equals(senderUserType) && "Public User".equals(receiverUserType)) {
@@ -190,5 +207,97 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	    }
 	}
 
+
+	@Override
+	public ResponseEntity<?> getMessageByUserIdAndMarketType(MarketPlaceChatWebModel message) {
+	    Map<String, Object> response = new HashMap<>();
+	    try {
+	        // Fetch the user by receiver ID
+	        User user = userRepository.findById(message.getMarketPlaceReceiverId()).orElse(null);
+	        if (user == null) {
+	            return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
+	        }
+
+	        logger.info("Get Messages by User ID and Market Type Method Start");
+
+	        Integer senderId = message.getMarketPlaceSenderId(); // Using senderId from the incoming message
+	        Integer receiverId = message.getMarketPlaceReceiverId();
+	        String marketType = message.getMarketType(); // Using marketType from the incoming message
+
+	        // Fetch messages sent by the sender to the receiver for the specified marketType
+	        List<MarketPlaceChat> senderMessages = marketPlaceChatRepository
+	            .getMessageListByMarketPlaceSenderIdAndMarketPlaceReceiverIdAndMarketType(senderId, receiverId, marketType);
+
+	        // Fetch messages received by the receiver from the sender for the specified marketType
+	        List<MarketPlaceChat> receiverMessages = marketPlaceChatRepository
+	            .getMessageListByMarketPlaceSenderIdAndMarketPlaceReceiverIdAndMarketType(receiverId, senderId, marketType);
+
+	        // Combine both lists of messages and filter duplicates
+	        List<MarketPlaceChat> allMessages = new ArrayList<>();
+	        allMessages.addAll(senderMessages);
+	        allMessages.addAll(receiverMessages);
+
+	        // Use a Set to track seen chatIds and filter duplicates
+	        Set<Integer> seenChatIds = new HashSet<>();
+	        List<MarketPlaceChat> uniqueMessages = new ArrayList<>();
+
+	        for (MarketPlaceChat chat : allMessages) {
+	            if (seenChatIds.add(chat.getMarketPlaceChatId())) {
+	                uniqueMessages.add(chat);
+	            }
+	        }
+
+	        // Sort unique messages by marketPlaceCreatedOn in descending order
+	        uniqueMessages.sort(Comparator.comparing(MarketPlaceChat::getMarketPlaceCreatedOn).reversed());
+
+	        // Construct the response structure
+	        List<MarketPlaceChatWebModel> messagesWithFiles = new ArrayList<>();
+	        int senderUnreadCount = 0;
+	        int receiverUnreadCount = 0;
+
+	        for (MarketPlaceChat chat : uniqueMessages) {
+	            Optional<User> userData = userRepository.findById(chat.getMarketPlaceSenderId());
+	            Optional<User> receiverData = userRepository.findById(receiverId); // Fetch receiver data once
+
+	            // Fetch profile picture URLs
+	            String senderProfilePicUrl = userService.getProfilePicUrl(chat.getMarketPlaceSenderId());
+	            String receiverProfilePicUrl = userService.getProfilePicUrl(receiverId); // Use receiverId
+
+	            if (userData.isPresent() && receiverData.isPresent()) {
+	                List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getMarketPlaceChatId());
+
+	                MarketPlaceChatWebModel chatWebModel = MarketPlaceChatWebModel.builder()
+	                        .marketPlaceChatId(chat.getMarketPlaceChatId())
+	                        .marketPlaceSenderId(chat.getMarketPlaceSenderId())
+	                        .marketPlaceReceiverId(chat.getMarketPlaceReceiverId())
+	                        .marketPlaceIsActive(chat.getMarketPlaceIsActive())
+	                        .marketPlaceCreatedBy(chat.getMarketPlaceCreatedBy())
+	                        .marketPlaceCreatedOn(chat.getMarketPlaceCreatedOn())
+	                        .marketPlaceUpdatedBy(chat.getMarketPlaceUpdatedBy())
+	                        .marketPlaceUpdatedOn(chat.getMarketPlaceUpdatedOn())
+	                        .message(chat.getMessage())
+	                        .chatFiles(mediaFiles) // Use files for chat files
+	                        .userId(userData.get().getUserId())
+	                        .userAccountName(userData.get().getName())
+	                        .receiverAccountName(receiverData.get().getName())
+	                        .senderProfilePic(senderProfilePicUrl)
+	                        .receiverProfilePic(receiverProfilePicUrl)
+	                        .build();
+
+	                messagesWithFiles.add(chatWebModel);
+	            }
+	        }
+
+	        response.put("messages", messagesWithFiles);
+	        response.put("senderUnreadCount", senderUnreadCount);
+	        response.put("receiverUnreadCount", receiverUnreadCount);
+
+	        logger.info("Get Messages by User ID and Market Type Method End");
+	        return ResponseEntity.ok(new Response(1, "Success", response));
+	    } catch (Exception e) {
+	        logger.error("Error occurred while retrieving messages", e);
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
+	    }
+	}
 
 }

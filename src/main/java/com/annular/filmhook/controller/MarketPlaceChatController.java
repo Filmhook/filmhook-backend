@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.MarketPlaceChatService;
+import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.LiveSubscribeWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
 
@@ -48,6 +49,16 @@ public class MarketPlaceChatController {
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
-	
+	@PostMapping("/getMessageByUserIdAndMarketType")
+	public ResponseEntity<?> getMessageByUserIdAndMarketType(@RequestBody MarketPlaceChatWebModel marketPlaceChatWebModel) {
+		try {
+			logger.info("getMessageByUserIde controller start");
+			return marketPlaceChatService.getMessageByUserIdAndMarketType(marketPlaceChatWebModel);
+		} catch (Exception e) {
+			logger.error("getMessageByUserIdAndMarketType Method Exception {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
 }

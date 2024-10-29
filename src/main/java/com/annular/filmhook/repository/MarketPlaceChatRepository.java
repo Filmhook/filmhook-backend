@@ -1,5 +1,6 @@
 package com.annular.filmhook.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,11 @@ public interface MarketPlaceChatRepository extends JpaRepository<MarketPlaceChat
 
 
 	boolean existsByMarketPlaceSenderIdAndMarketPlaceReceiverId(Integer marketPlaceSenderId, Integer marketPlaceReceiverId);
+
+	boolean existsByMarketPlaceSenderIdAndMarketPlaceReceiverIdAndAcceptTrue(Integer marketPlaceSenderId, Integer marketPlaceReceiverId);
+
+	List<MarketPlaceChat> getMessageListByMarketPlaceSenderIdAndMarketPlaceReceiverIdAndMarketType(Integer senderId,
+			Integer receiverId, String marketType);
 
 
 }

@@ -28,6 +28,12 @@ public class MarketPlaceChatWebModel {
 	    List<FileOutputWebModel> chatFiles;
 	    private Integer userId;
 	    private Boolean accept;
+	    private String senderProfilePic;
+	    private String receiverProfilePic;
+	    private String userType;
+	    private String userAccountName;
+	    private String receiverAccountName;
+	    
 	}
 
 

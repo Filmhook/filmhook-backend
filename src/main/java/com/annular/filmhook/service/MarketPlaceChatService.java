@@ -10,5 +10,7 @@ public interface MarketPlaceChatService {
 
 	ResponseEntity<?> updateMarketPlaceChat(MarketPlaceChatWebModel marketPlaceChatWebModel);
 
+	ResponseEntity<?> getMessageByUserIdAndMarketType(MarketPlaceChatWebModel marketPlaceChatWebModel);
+
 	
 }
