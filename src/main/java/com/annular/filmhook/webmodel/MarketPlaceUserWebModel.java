@@ -19,8 +19,7 @@ public class MarketPlaceUserWebModel {
 	    private String profilePicUrl;
 	    private String latestMessage;
 	    private Date latestMsgTime;
-	    private int receiverUnreadCount;
-	    private Float adminReview;
-	    private Boolean onlineStatus;
+        private String marketTypes;
+        private Float adminReview;
 
 }

@@ -23,6 +23,7 @@ import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.controller.MarketPlaceChatController;
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.InAppNotification;
+import com.annular.filmhook.model.MarketPlace;
 import com.annular.filmhook.model.MarketPlaceChat;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.User;
@@ -32,6 +33,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceChatService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.ChatUserWebModel;
 import com.annular.filmhook.webmodel.ChatWebModel;
@@ -321,6 +323,17 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        Integer loggedInUserId = userDetails.userInfo().getId();
 	        Integer senderId = marketPlaceChatWebModel.getMarketPlaceSenderId();
 	        String marketType = marketPlaceChatWebModel.getMarketType();
+	        // Validate the input data
+	        if (marketPlaceChatWebModel == null || 
+	            marketPlaceChatWebModel.getMarketPlaceSenderId() == null || 
+	            marketPlaceChatWebModel.getMarketType() == null) {
+	            return ResponseEntity.badRequest().body("Error: marketPlaceSenderId and marketType are required.");
+	        }
+
+	        // Check if the marketType exists in the database
+	        if (!marketPlaceChatRepository.marketTypeExists(marketType)) {
+	            return ResponseEntity.badRequest().body("Error: The specified marketType does not exist.");
+	        }
 
 	        // Fetch all distinct user IDs associated with the logged-in user for the specified senderId, marketType
 	        Set<Integer> chatUserIds = new HashSet<>();
@@ -346,7 +359,12 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	         // Sort userResponseList based on latestMsgTime in descending order, treating nulls as the lowest values
 	            userResponseList.sort(Comparator.comparing(MarketPlaceUserWebModel::getLatestMsgTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
 
-	            return ResponseEntity.ok(userResponseList);
+	         // Create the response structure
+	            Map<String, List<MarketPlaceUserWebModel>> response = new HashMap<>();
+	            response.put("marketPlace", userResponseList);  // Wrap the list in a map with the key "marketPlace"
+
+	            
+	            return ResponseEntity.ok(response);
 	        } else {
 	            return ResponseEntity.notFound().build();
 	        }
@@ -363,7 +381,16 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        MarketPlaceUserWebModel chatUserWebModel = new MarketPlaceUserWebModel();
 	        chatUserWebModel.setUserId(user.getUserId());
 	        chatUserWebModel.setUserName(user.getName());
+	        chatUserWebModel.setUserType(user.getUserType());
 	        chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+	        chatUserWebModel.setMarketTypes("marketPlace");
+	        
+	        // Set adminReview only if userType is "Industry User"; otherwise, set it to null
+	        if ("Industry User".equals(user.getUserType())) {
+	            chatUserWebModel.setAdminReview(user.getAdminReview());
+	        } else {
+	            chatUserWebModel.setAdminReview(null);
+	        }
 
 	        // Retrieve the latest chat message based on senderId, user ID (as receiverId), and marketType
 	        getLatestChatMessageFiltered(user, chatUserWebModel, senderId, loggedInUserId, marketType);
@@ -372,12 +399,46 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	    }).collect(Collectors.toList());
 	}
 
-	// Get the latest chat message filtered by the user
-	private void getLatestChatMessageFiltered(User user, MarketPlaceUserWebModel chatUserWebModel, Integer senderId, Integer receiverId, String marketType) {
-	    List<MarketPlaceChat> latestMessages = marketPlaceChatRepository.findLatestMessages(senderId, user.getUserId(), marketType);
+	// Retrieve the latest chat message based on senderId, receiverId, and marketType
+	private void getLatestChatMessageFiltered(User user, MarketPlaceUserWebModel chatUserWebModel, Integer senderId, Integer loggedInUserId, String marketType) {
+	    // Attempt to get the latest message for the specific user combination and marketType
+	    List<MarketPlaceChat> latestMessages = marketPlaceChatRepository.getLatestMessage(loggedInUserId, user.getUserId(), marketType);
+
 	    if (!latestMessages.isEmpty()) {
-	        chatUserWebModel.setLatestMsgTime(latestMessages.get(0).getTimeStamp());
+	        MarketPlaceChat chat = latestMessages.get(0);
+	        chatUserWebModel.setLatestMsgTime(chat.getTimeStamp());
+	        getLatestChatMessageContent(chat, chatUserWebModel);
+	    } else {
+	        chatUserWebModel.setLatestMessage("");
+	        chatUserWebModel.setLatestMsgTime(null);
 	    }
+	
+	}
+
+	// Extract message content or media type for the latest message
+	private void getLatestChatMessageContent(MarketPlaceChat chat, MarketPlaceUserWebModel chatUserWebModel) {
+	    String latestMsg = "";
+	    Date latestMsgTime = chat.getTimeStamp();
+
+	    if (!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
+	        latestMsg = chat.getMessage();
+	    } else {
+	        List<FileOutputWebModel> files = mediaFilesService
+	                .getMediaFilesByCategoryAndRefId(MediaFileCategory.MarketPlaceChat, chat.getMarketPlaceChatId())
+	                .stream().sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+	                .collect(Collectors.toList());
+	                
+	        if (!Utility.isNullOrEmptyList(files)) {
+	            String fileType = files.get(files.size() - 1).getFileType();
+	            if (FileUtil.isImageFile(fileType))
+	                latestMsg = "Photo";
+	            else if (FileUtil.isVideoFile(fileType))
+	                latestMsg = "Audio/Video";
+	        }
+	    }
+
+	    chatUserWebModel.setLatestMessage(latestMsg);
+	    chatUserWebModel.setLatestMsgTime(latestMsgTime);
 	}
 
 }

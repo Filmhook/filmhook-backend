@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.annular.filmhook.model.Chat;
+import com.annular.filmhook.model.MarketPlace;
 import com.annular.filmhook.model.MarketPlaceChat;
 
 @Repository
@@ -45,6 +47,12 @@ public interface MarketPlaceChatRepository extends JpaRepository<MarketPlaceChat
 
 	@Query("SELECT c FROM MarketPlaceChat c WHERE ((c.marketPlaceSenderId = :receiverId AND c.marketPlaceReceiverId = :senderId) OR (c.marketPlaceSenderId = :senderId AND c.marketPlaceReceiverId = :receiverId)) AND c.marketType = :marketType ORDER BY c.timeStamp DESC")
 	List<MarketPlaceChat> findLatestMessages(@Param("senderId") Integer senderId, @Param("receiverId") Integer receiverId, @Param("marketType") String marketType);
+
+	@Query(value = "SELECT c FROM MarketPlaceChat c WHERE ((c.marketPlaceSenderId = :loggedInUserId AND c.marketPlaceReceiverId = :userId) OR (c.marketPlaceSenderId = :userId AND c.marketPlaceReceiverId = :loggedInUserId)) AND c.marketType = :marketType ORDER BY c.timeStamp DESC")
+	List<MarketPlaceChat> getLatestMessage(@Param("loggedInUserId") Integer loggedInUserId, @Param("userId") Integer userId, @Param("marketType") String marketType);
+
+	@Query("SELECT COUNT(m) > 0 FROM MarketPlaceChat m WHERE m.marketType = :marketType")
+	boolean marketTypeExists(String marketType);
 
 
 
