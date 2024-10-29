@@ -26,6 +26,13 @@ public class MarketPlaceWebModel {
     private Integer marketPlaceCreatedBy;
     private Date marketPlaceCreatedOn;
     private Integer userId;
+    private Boolean terms;
+    private String location;
+    private String url;
+    private String conditionData;
+    private String userName;  // Add userName field
+    private String userPic;
+    private String day;
 
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details

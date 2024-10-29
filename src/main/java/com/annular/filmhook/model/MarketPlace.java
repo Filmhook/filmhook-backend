@@ -63,6 +63,9 @@ public class MarketPlace {
     @Column(name = "market_place_createdon")
     @CreationTimestamp
     private Date marketPlaceCreatedOn;
+    
+    @Column(name = "terms")
+    private Boolean terms;
 
     @Column(name = "market_place_updated_by")
     private Integer marketPlaceUpdatedBy;
@@ -73,5 +76,17 @@ public class MarketPlace {
 
     @Column(name = "userId")
     private Integer userId;
+    
+    @Column(name = "location")
+    private String location;
+    
+    @Column(name = "url")
+    private String url;
+    
+    @Column(name = "conditionData")
+    private String conditionData;
+    
+    @Column(name = "day")
+    private String day;
 
 }

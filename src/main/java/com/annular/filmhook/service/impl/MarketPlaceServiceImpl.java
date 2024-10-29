@@ -3,6 +3,7 @@ package com.annular.filmhook.service.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Objects;
 import java.util.Date;
@@ -23,6 +24,7 @@ import com.annular.filmhook.model.ShootingLocation;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MarketPlaceRepository;
 import com.annular.filmhook.repository.ShootingLocationRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
@@ -46,6 +48,9 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 
     @Autowired
     UserService userService;
+    
+    @Autowired
+    UserRepository userRepository;
 
     @Override
     public ResponseEntity<?> saveMarketPlace(MarketPlaceWebModel marketPlaceWebModel) {
@@ -61,10 +66,15 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     .newProduct(marketPlaceWebModel.getNewProduct())
 					.rentalOrsale(marketPlaceWebModel.getRentalOrsale())
                     .count(marketPlaceWebModel.getCount())
+                    .conditionData(marketPlaceWebModel.getConditionData())
 					.cost(marketPlaceWebModel.getCost())
 					.marketPlaceIsactive(true)
                     .marketPlaceCreatedBy(marketPlaceWebModel.getMarketPlaceCreatedBy())
                     .marketPlaceCreatedOn(new Date())
+                    .terms(marketPlaceWebModel.getTerms())
+                    .location(marketPlaceWebModel.getLocation())
+                    .url(marketPlaceWebModel.getUrl())
+                    .day(marketPlaceWebModel.getDay())
 					.build();
 
             // Save the MarketPlace entity
@@ -208,25 +218,50 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 
     private List<MarketPlaceWebModel> transformMarketPlaceData(List<MarketPlace> marketPlaces) {
         List<MarketPlaceWebModel> outputList = new ArrayList<>();
+        Map<Integer, Map<String, String>> userCache = new HashMap<>();
+
         try {
             if (!Utility.isNullOrEmptyList(marketPlaces)) {
                 marketPlaces.stream().filter(Objects::nonNull).forEach(marketPlace -> {
-                    List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.MarketPlace, marketPlace.getMarketPlaceId());
+                    // Retrieve media files
+                    List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
+                            .getMediaFilesByCategoryAndRefId(MediaFileCategory.MarketPlace, marketPlace.getMarketPlaceId());
+                    logger.info("Files retrieved for MarketPlace ID {}: {}", marketPlace.getMarketPlaceId(), fileOutputWebModelList.size());
+
+                    // Check if user details are cached
+                    Map<String, String> userDetails = userCache.computeIfAbsent(marketPlace.getUserId(), userId -> {
+                        Optional<User> userOptional = userRepository.findById(userId);
+                        User user = userOptional.orElse(null);
+                        Map<String, String> details = new HashMap<>();
+                        if (user != null) {
+                            details.put("userName", user.getName());
+                            details.put("userPic", userService.getProfilePicUrl(user.getUserId()));
+                        } else {
+                            details.put("userName", null);
+                            details.put("userPic", null);
+                        }
+                        return details;
+                    });
+
+                    // Build MarketPlaceWebModel
                     MarketPlaceWebModel marketPlaceWebModel = MarketPlaceWebModel.builder()
                             .marketPlaceId(marketPlace.getMarketPlaceId())
-							.companyName(marketPlace.getCompanyName())
+                            .companyName(marketPlace.getCompanyName())
                             .cost(marketPlace.getCost())
-							.count(marketPlace.getCount())
+                            .count(marketPlace.getCount())
                             .newProduct(marketPlace.getNewProduct())
-							.productName(marketPlace.getProductName())
+                            .productName(marketPlace.getProductName())
                             .productDescription(marketPlace.getProductDescription())
                             .rentalOrsale(marketPlace.getRentalOrsale())
-							.userId(marketPlace.getUserId())
+                            .userId(marketPlace.getUserId())
                             .marketPlaceCreatedOn(marketPlace.getMarketPlaceCreatedOn())
                             .marketPlaceCreatedBy(marketPlace.getMarketPlaceCreatedBy())
                             .marketPlaceIsactive(marketPlace.isMarketPlaceIsactive())
                             .fileOutputWebModel(fileOutputWebModelList)
-							.build();
+                            .userName(userDetails.get("userName"))   // Set userName
+                            .userPic(userDetails.get("userPic"))     // Set userPic
+                            .build();
+
                     outputList.add(marketPlaceWebModel);
                 });
             }

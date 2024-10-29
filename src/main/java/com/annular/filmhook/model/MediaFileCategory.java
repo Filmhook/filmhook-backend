@@ -15,6 +15,7 @@ public enum MediaFileCategory {
     CoverPic,
     MarketPlace,
     ShootingLocation,
-    Chat
+    Chat,
+    MarketPlaceChat
 
 }

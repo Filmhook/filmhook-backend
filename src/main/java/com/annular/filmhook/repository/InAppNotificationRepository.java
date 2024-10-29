@@ -12,4 +12,7 @@ public interface InAppNotificationRepository extends JpaRepository<InAppNotifica
 
 	List<InAppNotification> findByReceiverIdOrderByCreatedOnDesc(Integer userId);
 
+	
+	
+
 }
