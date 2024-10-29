@@ -143,7 +143,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                                .senderId(userId)
 	                                .receiverId(receiver.getUserId())
 	                                .title(notificationTitle)
-	                                .userType("chat")
+	                                .userType("marketType")
 	                                .id(chat.getMarketPlaceChatId())
 	                                .message(notificationMessage)
 	                                .createdOn(new Date())
