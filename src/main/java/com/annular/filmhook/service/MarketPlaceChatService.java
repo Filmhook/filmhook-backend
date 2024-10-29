@@ -12,5 +12,7 @@ public interface MarketPlaceChatService {
 
 	ResponseEntity<?> getMessageByUserIdAndMarketType(MarketPlaceChatWebModel marketPlaceChatWebModel);
 
+	ResponseEntity<?> getAllUserByMarketType(MarketPlaceChatWebModel marketPlaceChatWebModel);
+
 	
 }

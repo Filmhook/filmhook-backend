@@ -68,4 +68,8 @@ public class MarketPlaceChat {
     
     @Column(name = "accept")
     private Boolean accept;
+
+
+    
+    
 }

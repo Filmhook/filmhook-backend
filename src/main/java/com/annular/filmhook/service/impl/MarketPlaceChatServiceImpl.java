@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +33,12 @@ import com.annular.filmhook.service.MarketPlaceChatService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.webmodel.ChatUserWebModel;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
+import com.annular.filmhook.webmodel.MarketPlaceUserWebModel;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -297,6 +300,83 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	    } catch (Exception e) {
 	        logger.error("Error occurred while retrieving messages", e);
 	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
+	    }
+	}
+
+
+
+//	@Override
+//	public ResponseEntity<?> getAllUserByMarketType(MarketPlaceChatWebModel marketPlaceChatWebModel) {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+
+
+
+	@Override
+	public ResponseEntity<?> getAllUserByMarketType(MarketPlaceChatWebModel marketPlaceChatWebModel) {
+	    try {
+	        logger.info("Get All Users Method Start");
+
+	        Integer loggedInUserId = userDetails.userInfo().getId();
+	        Integer senderId = marketPlaceChatWebModel.getMarketPlaceSenderId();
+	        String marketType = marketPlaceChatWebModel.getMarketType();
+
+	        // Fetch all distinct user IDs associated with the logged-in user for the specified senderId, marketType
+	        Set<Integer> chatUserIds = new HashSet<>();
+	        chatUserIds.addAll(marketPlaceChatRepository.findSenderIdsByReceiverIdAndMarketType(loggedInUserId, marketType));
+	        chatUserIds.addAll(marketPlaceChatRepository.findReceiverIdsBySenderIdAndMarketType(loggedInUserId, marketType));
+
+	        // Remove the logged-in user's ID from the set to avoid self-inclusion
+	        chatUserIds.remove(loggedInUserId);
+
+	        if (chatUserIds.isEmpty()) {
+	            return ResponseEntity.notFound().build();
+	        }
+
+	        // Fetch user details for the filtered user IDs
+	        List<User> users = userRepository.findAllById(chatUserIds);
+
+	        if (!users.isEmpty()) {
+	            // Transform and sort the user details
+	            List<MarketPlaceUserWebModel> userResponseList = this.transformUserDetailsForChat(users, senderId, loggedInUserId, marketType);
+	            
+	            // Sort userResponseList based on latestMsgTime in descending order
+	            //userResponseList.sort(Comparator.comparing(MarketPlaceUserWebModel::getLatestMsgTime).reversed());
+	         // Sort userResponseList based on latestMsgTime in descending order, treating nulls as the lowest values
+	            userResponseList.sort(Comparator.comparing(MarketPlaceUserWebModel::getLatestMsgTime, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+
+	            return ResponseEntity.ok(userResponseList);
+	        } else {
+	            return ResponseEntity.notFound().build();
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error occurred while retrieving users -> {}", e.getMessage());
+	        e.printStackTrace();
+	        return ResponseEntity.internalServerError().build();
+	    }
+	}
+
+	// Transform user details for chat response
+	private List<MarketPlaceUserWebModel> transformUserDetailsForChat(List<User> users, Integer senderId, Integer loggedInUserId, String marketType) {
+	    return users.stream().map(user -> {
+	        MarketPlaceUserWebModel chatUserWebModel = new MarketPlaceUserWebModel();
+	        chatUserWebModel.setUserId(user.getUserId());
+	        chatUserWebModel.setUserName(user.getName());
+	        chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+
+	        // Retrieve the latest chat message based on senderId, user ID (as receiverId), and marketType
+	        getLatestChatMessageFiltered(user, chatUserWebModel, senderId, loggedInUserId, marketType);
+
+	        return chatUserWebModel;
+	    }).collect(Collectors.toList());
+	}
+
+	// Get the latest chat message filtered by the user
+	private void getLatestChatMessageFiltered(User user, MarketPlaceUserWebModel chatUserWebModel, Integer senderId, Integer receiverId, String marketType) {
+	    List<MarketPlaceChat> latestMessages = marketPlaceChatRepository.findLatestMessages(senderId, user.getUserId(), marketType);
+	    if (!latestMessages.isEmpty()) {
+	        chatUserWebModel.setLatestMsgTime(latestMessages.get(0).getTimeStamp());
 	    }
 	}
 

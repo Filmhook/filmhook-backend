@@ -260,7 +260,16 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                             .fileOutputWebModel(fileOutputWebModelList)
                             .userName(userDetails.get("userName"))   // Set userName
                             .userPic(userDetails.get("userPic"))     // Set userPic
+                            .terms(marketPlace.getTerms())
+                            .conditionData(marketPlace.getConditionData())
+                            .location(marketPlace.getLocation())
+                            .url(marketPlace.getUrl())
+                            .day(marketPlace.getDay())
                             .build();
+                    
+
+      
+
 
                     outputList.add(marketPlaceWebModel);
                 });
