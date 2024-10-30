@@ -191,18 +191,42 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	    try {
 	        // Retrieve the chat by marketPlaceChatId
 	        Optional<MarketPlaceChat> chatOptional = marketPlaceChatRepository.findById(marketPlaceChatWebModel.getMarketPlaceChatId());
-	        
+
 	        if (chatOptional.isPresent()) {
 	            MarketPlaceChat chat = chatOptional.get();
-	            
+
 	            // Update the accept status and any other fields from MarketPlaceChatWebModel
 	            chat.setAccept(marketPlaceChatWebModel.getAccept());
 	            chat.setMarketPlaceUpdatedBy(userDetails.userInfo().getId()); // Set the updater ID
 	            chat.setMarketPlaceUpdatedOn(new Date()); // Update timestamp
+
+	            // Prepare the notification based on accept status
+	            InAppNotification notification = new InAppNotification();
+	            notification.setSenderId(userDetails.userInfo().getId()); // or the appropriate sender ID
+	            notification.setReceiverId(chat.getMarketPlaceReceiverId()); // Assuming chat has a method to get the receiver ID
+	            notification.setCreatedOn(new Date());
+	            notification.setCreatedBy(userDetails.userInfo().getId());
+	            notification.setUpdatedBy(userDetails.userInfo().getId());
+	            notification.setUpdatedOn(new Date());
+	            notification.setUserType("maeketPlace"); // or whatever user type is appropriate
+	            notification.setId(chat.getMarketPlaceChatId()); // Assuming this refers to the chat's ID
+	           // notification.setPostId(chat.getPostId()); // Assuming chat has a postId property
 	            
+	            // Check the accept status and set the notification message accordingly
+	            if (marketPlaceChatWebModel.getAccept() != null && marketPlaceChatWebModel.getAccept()) {
+	                notification.setTitle("Accepted");
+	                notification.setMessage("Welcome! Your chat request has been accepted. You may now start your conversation with " + userDetails.userInfo().getUsername() + "."); // Assuming `getIndustryUsername()` returns the username
+	            } else {
+	                notification.setTitle("Declined");
+	                notification.setMessage("The industry user has chosen not to accept the chat request at this time. But don’t hesitate to connect with others.");
+	            }
+
+	            // Save the notification
+	            inAppNotificationRepository.save(notification);
+
 	            // Save the updated chat entity
 	            marketPlaceChatRepository.save(chat);
-	            
+
 	            return ResponseEntity.ok(new Response(1, "Success", "MarketPlaceChat updated successfully"));
 	        } else {
 	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Error", "MarketPlaceChat not found"));
@@ -213,6 +237,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	    }
 	}
 
+	
 
 	@Override
 	public ResponseEntity<?> getMessageByUserIdAndMarketType(MarketPlaceChatWebModel message) {
