@@ -32,12 +32,14 @@ import com.annular.filmhook.UserDetails;
 
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.InAppNotification;
+import com.annular.filmhook.model.MarketPlaceChat;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.User;
 
 import com.annular.filmhook.repository.ChatRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
+import com.annular.filmhook.repository.MarketPlaceChatRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
 
@@ -75,6 +77,9 @@ public class ChatServiceImpl implements ChatService {
 	@Autowired
 	private UserService userService;
 
+	@Autowired
+	MarketPlaceChatRepository marketPlaceChatRepository;
+	
 	@Autowired
 	InAppNotificationRepository inAppNotificationRepository;
 
@@ -717,9 +722,31 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setUserType(notification.getUserType());
 	            dto.setId(notification.getId());
 	            dto.setPostId(notification.getPostId());
+
+	            // Check if userType is MarketPlace to fetch and set accept field
+	            if ("marketType".equals(notification.getUserType())) {
+	                // Fetch the MarketPlaceChat record based on the ID from notification
+	                Optional<MarketPlaceChat> marketPlaceChat = marketPlaceChatRepository.findByIds(notification.getId());
+	             // Set accept value
+	                boolean isAccepted = marketPlaceChat.map(MarketPlaceChat::getAccept).orElse(false);
+	                dto.setAccept(isAccepted); // Set accept value in DTO
+
+	                if(isAccepted)
+	                {
+	                	dto.setAdditionalData("Accepted");
+	                }
+	                else
+	                {
+	                	dto.setAdditionalData("Declined");
+	                }
+	            } else {
+	                dto.setAccept(null);
+	                dto.setAdditionalData("null");// Default to false if not MarketPlace
+	            }
+
 	            return dto;
 	        }).collect(Collectors.toList());
-	        
+	      
 	        // Include the unread count in the response
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("notifications", notificationDtos);

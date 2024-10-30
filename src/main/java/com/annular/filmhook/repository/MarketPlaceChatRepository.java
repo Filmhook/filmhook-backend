@@ -54,6 +54,9 @@ public interface MarketPlaceChatRepository extends JpaRepository<MarketPlaceChat
 	@Query("SELECT COUNT(m) > 0 FROM MarketPlaceChat m WHERE m.marketType = :marketType")
 	boolean marketTypeExists(String marketType);
 
+    @Query("SELECT c FROM MarketPlaceChat c WHERE c.marketPlaceChatId = :id")
+	Optional<MarketPlaceChat> findByIds(Integer id);
+
 
 
 	

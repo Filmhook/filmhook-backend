@@ -1,6 +1,7 @@
 package com.annular.filmhook.webmodel;
 
 import java.util.Date;
+import java.util.Map;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,4 +31,6 @@ public class InAppNotificationWebModel {
     private Integer id;
     private String postId;
     private String senderName;
+	private Boolean accept;
+	 private String additionalData; 
 }

@@ -196,7 +196,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            MarketPlaceChat chat = chatOptional.get();
 	            
 	            // Update the accept status and any other fields from MarketPlaceChatWebModel
-	            chat.setAccept(true);
+	            chat.setAccept(marketPlaceChatWebModel.getAccept());
 	            chat.setMarketPlaceUpdatedBy(userDetails.userInfo().getId()); // Set the updater ID
 	            chat.setMarketPlaceUpdatedOn(new Date()); // Update timestamp
 	            
