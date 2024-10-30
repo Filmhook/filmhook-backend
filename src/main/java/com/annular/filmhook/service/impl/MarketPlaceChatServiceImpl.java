@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -139,7 +140,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                    // Proceed with notification if conditions are not met
 	                    if (!skipNotification) {
 	                        String notificationTitle = "filmHook";
-	                        String notificationMessage = "You’ve received a message request from a " + user.getName()+"You may review their profile and response";
+	                        String notificationMessage = "You’ve received a message request from a " + user.getName()+ " .You may review their profile and response";
 
 	                        InAppNotification inAppNotification = InAppNotification.builder()
 	                                .senderId(userId)
@@ -332,7 +333,8 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 
 	        // Check if the marketType exists in the database
 	        if (!marketPlaceChatRepository.marketTypeExists(marketType)) {
-	            return ResponseEntity.badRequest().body("Error: The specified marketType does not exist.");
+	          //  return ResponseEntity.ok("The specified marketType does not exist.");
+	            return ResponseEntity.ok(new Response(0, "Fail",Collections.EMPTY_LIST));
 	        }
 
 	        // Fetch all distinct user IDs associated with the logged-in user for the specified senderId, marketType

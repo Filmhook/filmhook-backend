@@ -63,7 +63,7 @@ public class MarketPlaceChatController {
 	}
 
 
-	@GetMapping("/getAllUserByMarketType")
+	@PostMapping("/getAllUserByMarketType")
 	public ResponseEntity<?> getAllUserByMarketType(@RequestBody MarketPlaceChatWebModel marketPlaceChatWebModel) {
 		try {
 			logger.info("getAllUserByMarketType controller start");

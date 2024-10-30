@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -97,18 +98,24 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
 
     @Override
     public ResponseEntity<?> getMarketPlaceByRentalOrSale(Boolean rentalOrsale) {
+        if (rentalOrsale == null) {
+            return ResponseEntity.badRequest().body(new Response(400, "Invalid request parameters", ""));
+        }
+        
         List<MarketPlaceWebModel> marketPlaceWebModelList = new ArrayList<>();
         try {
             List<MarketPlace> marketPlaces = marketPlaceRepository.findByRentalOrSale(rentalOrsale);
             if (!marketPlaces.isEmpty()) {
                 marketPlaceWebModelList = this.transformMarketPlaceData(marketPlaces);
             }
-            return ResponseEntity.ok().body(ResponseEntity.ok(new Response(1, "Success", marketPlaceWebModelList)));
+            return ResponseEntity.ok(new Response(1, "Success", marketPlaceWebModelList));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body(new Response(-1, "Failed to retrieve MarketPlaces", e.getMessage()));
         }
     }
+
 
     @Override
     public ResponseEntity<?> saveShootingLocation(ShootingLocationWebModel shootingLocationWebModel) {
@@ -236,9 +243,18 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                         if (user != null) {
                             details.put("userName", user.getName());
                             details.put("userPic", userService.getProfilePicUrl(user.getUserId()));
+                            details.put("userType", user.getUserType());
+                            // Set adminReview based on userType
+                            if ("Industry User".equals(user.getUserType())) {
+                                // Assume getAdminReview() is a method that fetches the admin review for the user
+                                details.put("adminReview", String.valueOf(user.getAdminReview())); 
+                            } else {
+                                details.put("adminReview", null);
+                            }
                         } else {
                             details.put("userName", null);
                             details.put("userPic", null);
+                            details.put("userType",null);
                         }
                         return details;
                     });
@@ -265,6 +281,8 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                             .location(marketPlace.getLocation())
                             .url(marketPlace.getUrl())
                             .day(marketPlace.getDay())
+                            .userType(userDetails.get("userType"))
+                            .adminReview(userDetails.get("adminReview"))
                             .build();
                     
 

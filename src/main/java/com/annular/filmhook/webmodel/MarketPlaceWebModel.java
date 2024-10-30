@@ -33,6 +33,8 @@ public class MarketPlaceWebModel {
     private String userName;  // Add userName field
     private String userPic;
     private String day;
+    private String userType;
+    private String adminReview;
 
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details
