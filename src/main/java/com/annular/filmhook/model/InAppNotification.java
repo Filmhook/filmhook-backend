@@ -67,4 +67,7 @@ public class InAppNotification {
 
     @Column(name = "postId")
     private String postId;
+    
+    @Column(name = "currentStatus")
+    private Boolean currentStatus;
 }

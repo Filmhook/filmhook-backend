@@ -32,5 +32,6 @@ public class InAppNotificationWebModel {
     private String postId;
     private String senderName;
 	private Boolean accept;
-	 private String additionalData; 
+	 private String additionalData;
+	 private Boolean currentStatus;
 }

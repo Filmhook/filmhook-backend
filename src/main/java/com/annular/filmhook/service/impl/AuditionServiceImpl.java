@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 
 import com.annular.filmhook.util.Utility;
@@ -16,8 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
@@ -38,7 +42,7 @@ import com.annular.filmhook.repository.AuditionDetailsRepository;
 import com.annular.filmhook.repository.AuditionIgnoranceRepository;
 import com.annular.filmhook.repository.AuditionRepository;
 import com.annular.filmhook.repository.AuditionRolesRepository;
-
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
@@ -82,6 +86,15 @@ public class AuditionServiceImpl implements AuditionService {
 
     @Autowired
     UserDetails userDetails;
+    
+    @Autowired
+    UserRepository userRepository;
+    
+    @Autowired
+    private JavaMailSender javaMailSender;
+    
+    @Value("${spring.mail.username}")
+    private String senderEmail;
 
     // @Autowired
     // KafkaProducer kafkaProducer;
@@ -108,6 +121,10 @@ public class AuditionServiceImpl implements AuditionService {
             audition.setAuditionAddress(auditionWebModel.getAuditionAddress());
             audition.setAuditionMessage(auditionWebModel.getAuditionMessage());
             audition.setAuditionLocation(auditionWebModel.getAuditionLocation());
+            audition.setUrl(auditionWebModel.getUrl());
+            audition.setTermsAndCondition(auditionWebModel.getTermsAndCondition());
+            audition.setStartDate(auditionWebModel.getStartDate());
+            audition.setEndDate(auditionWebModel.getEndDate());
             audition.setAuditionIsactive(true);
 
             Audition savedAudition = auditionRepository.save(audition);
@@ -211,13 +228,39 @@ public class AuditionServiceImpl implements AuditionService {
         return ResponseEntity.ok().body(new Response(1, "Audition details fetched successfully", response));
     }
 
-    @Override
+//    @Override
+//    public ResponseEntity<?> auditionAcceptance(AuditionAcceptanceWebModel acceptanceWebModel) {
+//        HashMap<String, Object> response = new HashMap<>();
+//        try {
+//            logger.info("Save audition acceptance method start");
+//            Optional<Audition> audition = auditionRepository.findById(acceptanceWebModel.getAuditionRefId());
+//            if (audition.isPresent()) {
+//                AuditionAcceptanceDetails acceptanceDetails = new AuditionAcceptanceDetails();
+//                acceptanceDetails.setAuditionAccepted(acceptanceWebModel.isAuditionAccepted());
+//                acceptanceDetails.setAuditionAcceptanceUser(acceptanceWebModel.getAuditionAcceptanceUser());
+//                acceptanceDetails.setAuditionRefId(acceptanceWebModel.getAuditionRefId());
+//                acceptanceDetails.setAuditionAcceptanceCreatedBy(acceptanceWebModel.getAuditionAcceptanceUser());
+//                acceptanceDetails = acceptanceRepository.save(acceptanceDetails);
+//                response.put("Audition acceptance", acceptanceDetails);
+//            }
+//        } catch (Exception e) {
+//            logger.error("Save audition acceptance Method Exception -> {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+//        }
+//        return ResponseEntity.ok().body(new Response(1, "Audition acceptance details saved successfully", response));
+//    }
+    
+    // Main method for audition acceptance
     public ResponseEntity<?> auditionAcceptance(AuditionAcceptanceWebModel acceptanceWebModel) {
         HashMap<String, Object> response = new HashMap<>();
         try {
             logger.info("Save audition acceptance method start");
+            
+            // Fetch the audition using the auditionRefId
             Optional<Audition> audition = auditionRepository.findById(acceptanceWebModel.getAuditionRefId());
             if (audition.isPresent()) {
+                // Save audition acceptance details
                 AuditionAcceptanceDetails acceptanceDetails = new AuditionAcceptanceDetails();
                 acceptanceDetails.setAuditionAccepted(acceptanceWebModel.isAuditionAccepted());
                 acceptanceDetails.setAuditionAcceptanceUser(acceptanceWebModel.getAuditionAcceptanceUser());
@@ -225,6 +268,39 @@ public class AuditionServiceImpl implements AuditionService {
                 acceptanceDetails.setAuditionAcceptanceCreatedBy(acceptanceWebModel.getAuditionAcceptanceUser());
                 acceptanceDetails = acceptanceRepository.save(acceptanceDetails);
                 response.put("Audition acceptance", acceptanceDetails);
+
+                // Send email if audition is accepted
+                if (acceptanceWebModel.isAuditionAccepted()) {
+                    // Retrieve email details of the post's owner
+                    Optional<User> user = userRepository.findByUserId(audition.get().getUser().getUserId());
+                    if (user.isPresent()) {
+                        String recipientEmail = user.get().getEmail();
+                        String userName = user.get().getName();
+                        
+                        // Retrieve the email address of the user accepting the audition
+                        Optional<User> acceptingUser = userRepository.findById(acceptanceWebModel.getAuditionAcceptanceUser());
+                        if (acceptingUser.isPresent()) {
+                            String replyToEmail = acceptingUser.get().getEmail();
+
+                            // Prepare email content
+                            String subject = "Audition Acceptance Notification";
+                            String mailContent = "<p>Your audition has been accepted. Congratulations!</p>";
+                            
+                            // Send email notification
+                            boolean emailSent = sendEmail(userName, recipientEmail, replyToEmail, subject, mailContent);
+                            if (!emailSent) {
+                                logger.warn("Failed to send email notification to {}", recipientEmail);
+                            }
+                        } else {
+                            logger.warn("Audition acceptance user not found for userId {}", acceptanceWebModel.getAuditionAcceptanceUser());
+                        }
+                    } else {
+                        logger.warn("User not found for auditionRefId {}", acceptanceWebModel.getAuditionRefId());
+                    }
+                }
+            } else {
+                logger.warn("Audition not found for auditionRefId {}", acceptanceWebModel.getAuditionRefId());
+                return ResponseEntity.badRequest().body(new Response(-1, "Audition not found",""));
             }
         } catch (Exception e) {
             logger.error("Save audition acceptance Method Exception -> {}", e.getMessage());
@@ -233,6 +309,32 @@ public class AuditionServiceImpl implements AuditionService {
         }
         return ResponseEntity.ok().body(new Response(1, "Audition acceptance details saved successfully", response));
     }
+
+    // Email sending helper method
+    public boolean sendEmail(String userName, String mailId, String replyToEmail, String subject, String mailContent) {
+        try {
+            String senderName = "Film-hook IT-Support";
+            String finalMailContent = "<div style='font-family:Verdana;font-size:12px;'>";
+            finalMailContent += "<p>Dear <b>" + userName + "</b>,</p>";
+            finalMailContent += mailContent;
+            finalMailContent += "<p>Best Regards,<br>The Film-hook Team.</p></div>";
+
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message);
+            helper.setFrom("${spring.mail.username}", senderName);  // replace with actual email or property placeholder
+            helper.setTo(mailId);
+            helper.setReplyTo(replyToEmail); // Set the Reply-To address
+            helper.setSubject(subject);
+            helper.setText(finalMailContent, true);
+            javaMailSender.send(message);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error sending email -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 
     @Override
     public ResponseEntity<?> auditionIgnorance(AuditionIgnoranceWebModel auditionIgnoranceWebModel) {
@@ -470,7 +572,13 @@ public class AuditionServiceImpl implements AuditionService {
             existingAudition.setAuditionAddress(auditionWebModel.getAuditionAddress());
             existingAudition.setAuditionMessage(auditionWebModel.getAuditionMessage());
             existingAudition.setAuditionLocation(auditionWebModel.getAuditionLocation());
-
+            existingAudition.setUrl(auditionWebModel.getUrl());
+            existingAudition.setTermsAndCondition(auditionWebModel.getTermsAndCondition());
+            existingAudition.setStartDate(auditionWebModel.getStartDate());
+            existingAudition.setEndDate(auditionWebModel.getEndDate());
+            existingAudition.setAuditionIsactive(true);
+            
+            
             // Update the audition
             Audition savedAudition = auditionRepository.save(existingAudition);
 

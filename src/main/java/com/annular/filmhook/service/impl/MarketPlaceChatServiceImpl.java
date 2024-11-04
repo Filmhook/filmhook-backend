@@ -160,6 +160,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                                .message(notificationMessage)
 	                                .createdOn(new Date())
 	                                .isRead(true)
+	                                .currentStatus(false)
 	                                .createdBy(userId)
 	                                .build();
 	                        inAppNotificationRepository.save(inAppNotification);
@@ -217,6 +218,9 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            notification.setCreatedBy(userDetails.userInfo().getId());
 	            notification.setUpdatedBy(userDetails.userInfo().getId());
 	            notification.setUpdatedOn(new Date());
+	            notification.setIsRead(true);
+	            notification.setCurrentStatus(false);
+	         
 	            notification.setUserType("maeketPlace"); // or whatever user type is appropriate
 	            notification.setId(chat.getMarketPlaceChatId()); // Assuming this refers to the chat's ID
 	           // notification.setPostId(chat.getPostId()); // Assuming chat has a postId property
@@ -224,9 +228,12 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            // Check the accept status and set the notification message accordingly
 	            if (marketPlaceChatWebModel.getAccept() != null && marketPlaceChatWebModel.getAccept()) {
 	                notification.setTitle("Accepted");
+	                notification.setCurrentStatus(true);
+	                
 	                notification.setMessage("Welcome! Your chat request has been accepted. You may now start your conversation with " + userDetails.userInfo().getUsername() + "."); // Assuming `getIndustryUsername()` returns the username
 	            } else {
 	                notification.setTitle("Declined");
+	                notification.setCurrentStatus(true);
 	                notification.setMessage("The industry user has chosen not to accept the chat request at this time. But don’t hesitate to connect with others.");
 	            }
 

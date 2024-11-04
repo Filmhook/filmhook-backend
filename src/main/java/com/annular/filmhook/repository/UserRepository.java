@@ -89,5 +89,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 
 
+	@Query("SELECT u FROM User u WHERE u.userId = :auditionAcceptanceUser")
+	Optional<User> findByIdss(Integer auditionAcceptanceUser);
+
+	Optional<User> findByUserId(Integer userId);
+
+
+
 
 }

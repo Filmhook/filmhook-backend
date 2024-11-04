@@ -1,6 +1,7 @@
 package com.annular.filmhook.model;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -14,6 +15,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
 
 import org.hibernate.annotations.CreationTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -85,5 +88,17 @@ public class Audition {
 	@ManyToOne
 	@JoinColumn(name = "user_id")
 	private User user;
+	
+	@Column(name = "startDate")
+	private String startDate;
+	
+	@Column(name = "endDate")
+	private String endDate;
+	
+	@Column(name = "url")
+	private String url;
+	
+	@Column(name = "termsAndCondition")
+	private Boolean termsAndCondition;
 
 }

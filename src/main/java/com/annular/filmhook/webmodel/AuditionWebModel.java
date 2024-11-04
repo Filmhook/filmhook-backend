@@ -1,7 +1,10 @@
 package com.annular.filmhook.webmodel;
 
 import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
+
+import javax.persistence.Column;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -58,5 +61,9 @@ public class AuditionWebModel {
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details
 
     private List<Integer> mediaFilesIds; // FOr Delete purpose
+	private String startDate;
+	private String endDate;
+	private String url;
+	private Boolean termsAndCondition;
 
 }
