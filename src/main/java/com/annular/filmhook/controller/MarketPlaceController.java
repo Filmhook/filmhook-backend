@@ -8,6 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.MarketPlaceService;
+import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.MarketPlaceLikeWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationWebModel;
 
@@ -100,4 +104,31 @@ public class MarketPlaceController {
             return ResponseEntity.internalServerError().body(new Response(-1, "Error while reading shooting locations", ""));
         }
     }
+    @GetMapping("/getMarketPlaceByMarketTypeByUserId")
+    public ResponseEntity<?> getSearchMarketPlace(@RequestParam("marketType") String marketType) {
+        try {
+            
+                return marketPlaceService.getMarketPlaceByMarketTypeByUserId(marketType);
+          
+        } catch (Exception e) {
+            logger.error("getMarketPlaceByMarketTypeByUserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error while reading market places", ""));
+        }
+    }
+    
+    @PostMapping("/addMarketPlaceLike")
+    public ResponseEntity<?> addMarketPlaceLike(@RequestBody MarketPlaceLikeWebModel marketPlaceLikeWebModel) {
+        try {
+            MarketPlaceLikeWebModel likeWebModelOutput = marketPlaceService.addMarketPlaceLike(marketPlaceLikeWebModel);
+            if (likeWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Likes add/updated for the post successfully...", likeWebModelOutput));
+        } catch (Exception e) {
+            logger.error("marketPlaceLikeWebModel Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+        return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
+    }
+
+
 }

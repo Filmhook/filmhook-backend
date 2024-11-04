@@ -35,6 +35,8 @@ public class MarketPlaceWebModel {
     private String day;
     private String userType;
     private String adminReview;
+    private long likeCount;
+    private Boolean likeStatus;
 
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details

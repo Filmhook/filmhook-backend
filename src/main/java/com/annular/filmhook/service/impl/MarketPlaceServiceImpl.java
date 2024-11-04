@@ -1,10 +1,14 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
+
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.Objects;
 import java.util.Date;
 
@@ -19,10 +23,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.Comment;
+import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.MarketPlace;
+import com.annular.filmhook.model.MarketPlaceChat;
+import com.annular.filmhook.model.MarketPlaceLike;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.ShootingLocation;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.MarketPlaceChatRepository;
+import com.annular.filmhook.repository.MarketPlaceLikeRepository;
 import com.annular.filmhook.repository.MarketPlaceRepository;
 import com.annular.filmhook.repository.ShootingLocationRepository;
 import com.annular.filmhook.repository.UserRepository;
@@ -30,8 +42,11 @@ import com.annular.filmhook.service.MarketPlaceService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.MarketPlaceLikeWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationWebModel;
+
 
 @Service
 public class MarketPlaceServiceImpl implements MarketPlaceService {
@@ -52,7 +67,17 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
     
     @Autowired
     UserRepository userRepository;
-
+    
+    @Autowired
+    UserDetails userDetails;
+    
+    @Autowired
+    MarketPlaceLikeRepository marketPlaceLikeRepository;
+    
+	@Autowired
+	MarketPlaceChatRepository marketPlaceChatRepository;
+    
+    
     @Override
     public ResponseEntity<?> saveMarketPlace(MarketPlaceWebModel marketPlaceWebModel) {
         try {
@@ -134,6 +159,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     .cost(shootingLocationWebModel.getCost())
 					.hourMonthDay(shootingLocationWebModel.getHourMonthDay())
                     .shootingLocationIsactive(true)
+                    .termsAndConditions(shootingLocationWebModel.getTermsAndConditions())
                     .shootingLocationCreatedBy(shootingLocationWebModel.getShootingLocationCreatedBy())
                     .shootingLocationCreatedOn(new Date())
 					.build();
@@ -190,7 +216,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     shootingLocWebModel.setShootingLocationCreatedBy(shootingLocation.getShootingLocationCreatedBy());
                     shootingLocWebModel.setUserId(shootingLocation.getUserId());
                     shootingLocWebModel.setShootingLocationDescription(shootingLocation.getShootingLocationDescription());
-
+                    shootingLocWebModel.setTermsAndConditions(shootingLocation.getTermsAndConditions());
                     // Fetch user details
                     userService.getUser(shootingLocation.getUserId()).ifPresent(user -> shootingLocWebModel.setFilmHookCode(user.getFilmHookCode()));
                     userService.getUser(shootingLocation.getUserId()).ifPresent(user -> shootingLocWebModel.setName(user.getName()));
@@ -235,6 +261,14 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                             .getMediaFilesByCategoryAndRefId(MediaFileCategory.MarketPlace, marketPlace.getMarketPlaceId());
                     logger.info("Files retrieved for MarketPlace ID {}: {}", marketPlace.getMarketPlaceId(), fileOutputWebModelList.size());
 
+                    // Count likes for this market place
+                    Long likeCount = marketPlaceLikeRepository.countByMarketPlaceIdAndStatus(marketPlace.getMarketPlaceId());
+
+
+                    
+                    // Check if the logged-in user liked this market place
+                    Boolean likeStatus = marketPlaceLikeRepository.existsByMarketPlaceIdAndMarketPlacelikedByAndStatus(
+                            marketPlace.getMarketPlaceId(),userDetails.userInfo().getId(), true);
                     // Check if user details are cached
                     Map<String, String> userDetails = userCache.computeIfAbsent(marketPlace.getUserId(), userId -> {
                         Optional<User> userOptional = userRepository.findById(userId);
@@ -283,6 +317,8 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                             .day(marketPlace.getDay())
                             .userType(userDetails.get("userType"))
                             .adminReview(userDetails.get("adminReview"))
+                            .likeCount(likeCount)
+                            .likeStatus(likeStatus)
                             .build();
                     
 
@@ -329,5 +365,104 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
             return ResponseEntity.internalServerError().body(new Response(-1, "Failed to retrieve MarketPlaces", ""));
         }
     }
+    @Override
+    public ResponseEntity<?> getMarketPlaceByMarketTypeByUserId(String marketType) {
+        try {
+            Integer userId = userDetails.userInfo().getId();
+            
+            // Retrieve all chats where the user is the sender and matches the market type
+            List<MarketPlaceChat> userChats = marketPlaceChatRepository.findByMarketPlaceSenderIdAndMarketType(userId, marketType);
+
+            // Collect receiver IDs to whom the messages were sent
+            Set<Integer> receiverIds = userChats.stream()
+                                                 .map(MarketPlaceChat::getMarketPlaceReceiverId)
+                                                 .collect(Collectors.toSet());
+
+            // Fetch user details for the receiver IDs
+            List<User> receivers = userRepository.findAllById(receiverIds);
+
+            // Create a list to hold the unique receiver details, including accept status
+            List<Map<String, Object>> uniqueReceiverData = new ArrayList<>();
+            for (User receiver : receivers) {
+                // Get the latest chat between the sender and this receiver with non-null accept status
+                Optional<MarketPlaceChat> chatWithAcceptStatus = userChats.stream()
+                    .filter(chat -> chat.getMarketPlaceReceiverId().equals(receiver.getUserId()) && chat.getAccept() != null)
+                    .findFirst();
+
+                // If a chat with an accept status is found, use that; otherwise, use the first chat found
+                MarketPlaceChat chat = chatWithAcceptStatus.orElse(userChats.stream()
+                    .filter(c -> c.getMarketPlaceReceiverId().equals(receiver.getUserId()))
+                    .findFirst().orElse(null));
+                
+
+                if (chat != null) {
+                    Map<String, Object> receiverData = new HashMap<>();
+                    receiverData.put("id", receiver.getUserId());
+                    receiverData.put("name", receiver.getName());
+                    receiverData.put("profilePic", userService.getProfilePicUrl(receiver.getUserId()));
+                    //receiverData.put("accept", (chat != null) ? chat.getAccept() : true);  // Add the accept status (true, false, or null)
+                 // Determine the accept status
+                    Boolean acceptStatus = (chat != null && chat.getAccept() != null) ? chat.getAccept() : true; // Default to true if chat is null or accept is null
+
+                    receiverData.put("accept", acceptStatus);  // Add the accept status (true if no chat is found or if accept is null)
+
+                    uniqueReceiverData.add(receiverData);
+                }
+            }
+
+            // Create a response object to include the user details
+            Map<String, Object> response = new HashMap<>();
+            response.put("receivers", uniqueReceiverData);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            // Log the exception (this could be with a logger or printStackTrace for debugging)
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+
+    }
+
+    @Override
+    public MarketPlaceLikeWebModel addMarketPlaceLike(MarketPlaceLikeWebModel marketPlaceLikeWebModel) {
+        Integer marketPlaceId = marketPlaceLikeWebModel.getMarketPlaceId();
+        Integer likedById = marketPlaceLikeWebModel.getMarketPlacelikedBy();
+        
+        MarketPlaceLike existingLike = marketPlaceLikeRepository.findByMarketPlaceIdAndMarketPlacelikedBy(marketPlaceId, likedById);
+        
+        if (existingLike != null) {
+            // Toggle the status
+            existingLike.setStatus(!existingLike.getStatus());
+            existingLike.setUpdatedBy(likedById);
+            existingLike.setUpdatedOn(new Date());
+            
+            marketPlaceLikeRepository.save(existingLike);
+            return convertToWebModel(existingLike);
+        } else {
+            MarketPlaceLike newLike = MarketPlaceLike.builder()
+                .marketPlaceId(marketPlaceId)
+                .marketPlacelikedBy(likedById)
+                .status(true)
+                .createdBy(likedById)
+                .build();
+            
+            marketPlaceLikeRepository.save(newLike);
+            return convertToWebModel(newLike);
+        }
+    }
+
+    private MarketPlaceLikeWebModel convertToWebModel(MarketPlaceLike marketPlaceLike) {
+        MarketPlaceLikeWebModel webModel = new MarketPlaceLikeWebModel();
+        webModel.setMarketPlaceId(marketPlaceLike.getMarketPlaceId());
+        webModel.setMarketPlaceLikeId(marketPlaceLike.getMarketPlaceLikeId());
+        webModel.setMarketPlacelikedBy(marketPlaceLike.getMarketPlacelikedBy());
+        webModel.setStatus(marketPlaceLike.getStatus());
+        webModel.setCreatedOn(marketPlaceLike.getCreatedOn());
+        webModel.setUpdatedOn(marketPlaceLike.getUpdatedOn());
+        // Set other fields if necessary
+        return webModel;
+    }
+    
 
 }

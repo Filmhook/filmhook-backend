@@ -3,6 +3,8 @@ package com.annular.filmhook.webmodel;
 import java.sql.Date;
 import java.util.List;
 
+import javax.persistence.Column;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -31,6 +33,7 @@ public class ShootingLocationWebModel {
     private Integer userId;
     private String filmHookCode;
     private String name;
+    private Boolean termsAndConditions;
 
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details

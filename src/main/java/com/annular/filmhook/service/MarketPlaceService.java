@@ -2,6 +2,8 @@ package com.annular.filmhook.service;
 
 import org.springframework.http.ResponseEntity;
 
+import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.MarketPlaceLikeWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationWebModel;
 
@@ -22,4 +24,8 @@ public interface MarketPlaceService {
     ResponseEntity<?> getSearchMarketPlace(String searchKey);
 
     ResponseEntity<?> getSearchShootingLocation(String searchKey);
+
+	ResponseEntity<?> getMarketPlaceByMarketTypeByUserId(String marketType);
+
+	MarketPlaceLikeWebModel addMarketPlaceLike(MarketPlaceLikeWebModel marketPlaceLikeWebModel);
 }

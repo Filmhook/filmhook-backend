@@ -73,5 +73,8 @@ public class ShootingLocation {
 
     @Column(name = "userId")
     private Integer userId;
+    
+    @Column(name = "termsAndCondition")
+    private Boolean termsAndConditions;
 
 }

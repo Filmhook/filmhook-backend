@@ -58,6 +58,9 @@ public interface MarketPlaceChatRepository extends JpaRepository<MarketPlaceChat
 	Optional<MarketPlaceChat> findByIds(Integer id);
 
 
+	List<MarketPlaceChat> findByMarketPlaceSenderIdAndMarketType(Integer userId, String marketType);
+
+
 
 	
 
