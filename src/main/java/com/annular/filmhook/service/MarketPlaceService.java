@@ -28,4 +28,6 @@ public interface MarketPlaceService {
 	ResponseEntity<?> getMarketPlaceByMarketTypeByUserId(String marketType);
 
 	MarketPlaceLikeWebModel addMarketPlaceLike(MarketPlaceLikeWebModel marketPlaceLikeWebModel);
+
+	ResponseEntity<?> getShootingLocationUserId();
 }

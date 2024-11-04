@@ -32,10 +32,12 @@ import com.annular.filmhook.model.MarketPlaceLike;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.ShootingLocation;
+import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MarketPlaceChatRepository;
 import com.annular.filmhook.repository.MarketPlaceLikeRepository;
 import com.annular.filmhook.repository.MarketPlaceRepository;
+import com.annular.filmhook.repository.ShootingLocationChatRepository;
 import com.annular.filmhook.repository.ShootingLocationRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceService;
@@ -76,6 +78,9 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
     
 	@Autowired
 	MarketPlaceChatRepository marketPlaceChatRepository;
+	
+	@Autowired
+	ShootingLocationChatRepository shootingLocationChatRepository;
     
     
     @Override
@@ -463,6 +468,64 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
         // Set other fields if necessary
         return webModel;
     }
+
+	@Override
+	public ResponseEntity<?> getShootingLocationUserId() {
+		try {
+            Integer userId = userDetails.userInfo().getId();
+            
+            // Retrieve all chats where the user is the sender and matches the market type
+            List<ShootingLocationChat> userChats = shootingLocationChatRepository.findByUserIdInSenderOrReceiver(userId);
+
+            // Collect receiver IDs to whom the messages were sent
+            Set<Integer> receiverIds = userChats.stream()
+                                                 .map(ShootingLocationChat::getShootingLocationReceiverId)
+                                                 .collect(Collectors.toSet());
+
+            // Fetch user details for the receiver IDs
+            List<User> receivers = userRepository.findAllById(receiverIds);
+
+            // Create a list to hold the unique receiver details, including accept status
+            List<Map<String, Object>> uniqueReceiverData = new ArrayList<>();
+            for (User receiver : receivers) {
+                // Get the latest chat between the sender and this receiver with non-null accept status
+                Optional<ShootingLocationChat> chatWithAcceptStatus = userChats.stream()
+                    .filter(chat -> chat.getShootingLocationReceiverId().equals(receiver.getUserId()) && chat.getAccept() != null)
+                    .findFirst();
+
+                // If a chat with an accept status is found, use that; otherwise, use the first chat found
+                ShootingLocationChat chat = chatWithAcceptStatus.orElse(userChats.stream()
+                    .filter(c -> c.getShootingLocationReceiverId().equals(receiver.getUserId()))
+                    .findFirst().orElse(null));
+                
+
+                if (chat != null) {
+                    Map<String, Object> receiverData = new HashMap<>();
+                    receiverData.put("id", receiver.getUserId());
+                    receiverData.put("name", receiver.getName());
+                    receiverData.put("profilePic", userService.getProfilePicUrl(receiver.getUserId()));
+                    //receiverData.put("accept", (chat != null) ? chat.getAccept() : true);  // Add the accept status (true, false, or null)
+                 // Determine the accept status
+                    Boolean acceptStatus = (chat != null && chat.getAccept() != null) ? chat.getAccept() : true; // Default to true if chat is null or accept is null
+
+                    receiverData.put("accept", acceptStatus);  // Add the accept status (true if no chat is found or if accept is null)
+
+                    uniqueReceiverData.add(receiverData);
+                }
+            }
+
+            // Create a response object to include the user details
+            Map<String, Object> response = new HashMap<>();
+            response.put("receivers", uniqueReceiverData);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            // Log the exception (this could be with a logger or printStackTrace for debugging)
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+	}
     
 
 }

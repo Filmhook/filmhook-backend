@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,9 +28,11 @@ import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.MarketPlace;
 import com.annular.filmhook.model.MarketPlaceChat;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.MarketPlaceChatRepository;
+import com.annular.filmhook.repository.ShootingLocationChatRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceChatService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -42,6 +45,9 @@ import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceUserWebModel;
+import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
+import com.annular.filmhook.webmodel.ShootingLocationChatWebModel;
+import com.annular.filmhook.webmodel.UserDetailsDTO;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -64,6 +70,9 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	
 	@Autowired
 	InAppNotificationRepository inAppNotificationRepository;
+	
+	@Autowired
+	ShootingLocationChatRepository shootingLocationChatRepository;
 	
 	@Autowired
 	MarketPlaceChatRepository marketPlaceChatRepository;
@@ -467,5 +476,183 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	    chatUserWebModel.setLatestMessage(latestMsg);
 	    chatUserWebModel.setLatestMsgTime(latestMsgTime);
 	}
+
+
+
+	@Override
+	public ResponseEntity<?> saveShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel) {
+	    try {
+	        logger.info("Save Message Method Start");
+
+	        Integer userId = userDetails.userInfo().getId();
+	        Optional<User> userOptional = userRepository.findById(userId);
+
+	        if (userOptional.isPresent()) {
+	            User user = userOptional.get();
+	            ShootingLocationChat chat = ShootingLocationChat.builder()
+	                    .message(shootingLocationChatWebModel.getMessage())
+	                    .shootingLocationReceiverId(shootingLocationChatWebModel.getShootingLocationReceiverId())
+	                    .shootingLocationSenderId(userId)
+	                    .timeStamp(new Date())
+	                    .shootingLocationIsActive(true)
+	                    .shootingLocationCreatedBy(userId)
+	                    .shootingLocationEndTime(shootingLocationChatWebModel.getShootingLocationEndTime())
+	                    .shootingLocationStartTime(shootingLocationChatWebModel.getShootingLocationStartTime())
+	                    .shootingLocationCreatedOn(new Date())
+	                    .build();
+	            shootingLocationChatRepository.save(chat);
+
+	            // Saving chat files if they exist
+	            if (!Utility.isNullOrEmptyList(shootingLocationChatWebModel.getFiles())) {
+	                FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                        .userId(shootingLocationChatWebModel.getUserId())
+	                        .category(MediaFileCategory.ShootingLocationChat)
+	                        .categoryRefId(chat.getShootingLocationChatId())
+	                        .files(shootingLocationChatWebModel.getFiles())
+	                        .build();
+	                mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	            }
+
+	            // Sending push notification if the receiver exists
+	            if (shootingLocationChatWebModel.getShootingLocationReceiverId() != null) {
+	                Optional<User> receiverOptional = userRepository.findById(shootingLocationChatWebModel.getShootingLocationReceiverId());
+
+	                if (receiverOptional.isPresent()) {
+	                    User receiver = receiverOptional.get();
+
+	                    // Retrieve sender's and receiver's userType and review
+	                    String senderUserType = user.getUserType();
+	                    Float senderReview = user.getAdminReview();
+	                    String receiverUserType = receiver.getUserType();
+	                    Float receiverReview = receiver.getAdminReview();
+
+	                    // Check conditions for not saving in-app notifications
+	                    boolean skipNotification = false;
+	                 // Additional check for existing notifications
+	                    if (shootingLocationChatRepository.existsByShootingLocationSenderIdAndShootingLocationReceiverIdAndAcceptTrue(userId, receiver.getUserId())) {
+	                        skipNotification = true; // Existing notification with accept = true
+	                    }
+
+	                    // Condition checks based on requirements
+	                    if ("Public User".equals(senderUserType) && "Public User".equals(receiverUserType)) {
+	                        skipNotification = true; // both public users
+	                    } else if ("Public User".equals(senderUserType) && "Industry User".equals(receiverUserType)
+	                            && (receiverReview >= 1 && receiverReview <= 5)) {
+	                        skipNotification = true; // sender is Public, receiver is IndustryUser with review 1-5
+	                    } else if ("Industry User".equals(senderUserType) && senderReview >= 1 && senderReview <= 5
+	                            && "Public User".equals(receiverUserType)) {
+	                        skipNotification = true; // both are IndustryUsers with sender review 5.1-10
+	                    } else if ("Industry User".equals(senderUserType) && senderReview >= 5.1 && senderReview <= 10
+	                            && "Public User".equals(receiverUserType)) {
+	                        skipNotification = true; // sender is IndustryUser with review 5.1-10 to PublicUser
+	                    }
+
+	                    // Proceed with notification if conditions are not met
+	                    if (!skipNotification) {
+	                        String notificationTitle = "filmHook";
+	                        String notificationMessage = "You’ve received a message request from a " + user.getName()+ " .You may review their profile and response";
+
+	                        InAppNotification inAppNotification = InAppNotification.builder()
+	                                .senderId(userId)
+	                                .receiverId(receiver.getUserId())
+	                                .title(notificationTitle)
+	                                .userType("shootingLocation")
+	                                .id(chat.getShootingLocationChatId())
+	                                .message(notificationMessage)
+	                                .createdOn(new Date())
+	                                .isRead(true)
+	                                .createdBy(userId)
+	                                .build();
+	                        inAppNotificationRepository.save(inAppNotification);
+
+	                        Message message = Message.builder()
+	                                .setNotification(Notification.builder().setTitle(notificationTitle)
+	                                        .setBody(notificationMessage).build())
+	                                .putData("chatId", Integer.toString(chat.getShootingLocationChatId()))
+	                                .setToken(receiver.getFirebaseDeviceToken())
+	                                .build();
+
+	                        try {
+	                            String response = FirebaseMessaging.getInstance().send(message);
+	                            logger.info("Successfully sent message: " + response);
+	                        } catch (FirebaseMessagingException e) {
+	                            logger.error("Failed to send push notification: " + e.getMessage());
+	                        }
+	                    }
+	                } else {
+	                    logger.warn("Receiver user not found for id: " + shootingLocationChatWebModel.getShootingLocationReceiverId());
+	                }
+	            }
+
+	            return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
+	        } else {
+	            return ResponseEntity.notFound().build();
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error occurred while saving message -> {}", e.getMessage());
+	        return ResponseEntity.internalServerError().build();
+	    }
+	}
+
+	public ResponseEntity<?> getAllUserByShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel) {
+	    try {
+	        Integer currentSenderId = shootingLocationChatWebModel.getShootingLocationSenderId();
+
+	        // Fetch all unique participant IDs where sender or receiver has communicated with the given senderId
+	        Set<Integer> participantIds = new HashSet<>();
+	        participantIds.addAll(shootingLocationChatRepository.findDistinctReceiverIdsBySenderId(currentSenderId)); // IDs of users the sender has messaged
+	        participantIds.addAll(shootingLocationChatRepository.findDistinctSenderIdsByReceiverId(currentSenderId)); // IDs of users who have messaged the sender
+
+	        // Fetch user details based on participant IDs
+	        List<UserDetailsDTO> userDetailsList = participantIds.stream()
+	                .map(participantId -> userRepository.findById(participantId)
+	                        .map(user -> new UserDetailsDTO(
+	                                user.getUserId(),
+	                                user.getName(),
+	                                userService.getProfilePicUrl(user.getUserId())
+	                        ))
+	                        .orElse(null))
+	                .filter(Objects::nonNull)
+	                .collect(Collectors.toList());
+
+	        return ResponseEntity.ok(userDetailsList);
+	    } catch (Exception e) {
+	        logger.error("Error retrieving users from shooting location chat: {}", e.getMessage());
+	        return ResponseEntity.internalServerError().body("Error retrieving users");
+	    }
+	}
+
+
+
+	@Override
+	public ResponseEntity<?> getShootingLocationChatByUserId(ShootingLocationChatWebModel shootingLocationChatWebModel) {
+	    try {
+	        Integer senderId = shootingLocationChatWebModel.getShootingLocationSenderId();
+	        Integer receiverId = shootingLocationChatWebModel.getShootingLocationReceiverId();
+
+	        // Fetch all chat messages where sender and receiver match in either direction
+	        List<ShootingLocationChat> chatMessages = shootingLocationChatRepository
+	                .findByShootingLocationSenderIdAndShootingLocationReceiverIdOrViceVersa(senderId, receiverId);
+
+	        // Transform chat messages to DTO or response model if needed
+	        List<ShootingLocationChatDTO> chatDTOList = chatMessages.stream()
+	                .map(chat -> new ShootingLocationChatDTO(
+	                        chat.getShootingLocationChatId(),
+	                        chat.getShootingLocationSenderId(),
+	                        chat.getShootingLocationReceiverId(),
+	                        chat.getMessage(),
+	                        chat.getTimeStamp(),
+	                        chat.getShootingLocationStartTime(),
+	                        chat.getShootingLocationEndTime()
+	                ))
+	                .collect(Collectors.toList());
+
+	        return ResponseEntity.ok(chatDTOList);
+	    } catch (Exception e) {
+	        logger.error("Error retrieving shooting location chat by user ID: {}", e.getMessage());
+	        return ResponseEntity.internalServerError().body("Error retrieving chat messages");
+	    }
+	}
+
 
 }

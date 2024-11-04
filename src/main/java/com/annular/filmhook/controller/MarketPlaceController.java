@@ -129,6 +129,19 @@ public class MarketPlaceController {
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
     }
+    @GetMapping("/getShootingLocationUserId")
+    public ResponseEntity<?> getShootingLocationUserId() {
+        try {
+            
+                return marketPlaceService.getShootingLocationUserId();
+          
+        } catch (Exception e) {
+            logger.error("getShootingLocationUserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Error while reading market places", ""));
+        }
+    }
+    
 
 
 }

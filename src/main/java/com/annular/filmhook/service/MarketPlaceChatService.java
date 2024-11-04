@@ -3,6 +3,7 @@ package com.annular.filmhook.service;
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
+import com.annular.filmhook.webmodel.ShootingLocationChatWebModel;
 
 public interface MarketPlaceChatService {
 
@@ -13,6 +14,12 @@ public interface MarketPlaceChatService {
 	ResponseEntity<?> getMessageByUserIdAndMarketType(MarketPlaceChatWebModel marketPlaceChatWebModel);
 
 	ResponseEntity<?> getAllUserByMarketType(MarketPlaceChatWebModel marketPlaceChatWebModel);
+
+	ResponseEntity<?> saveShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel);
+
+	ResponseEntity<?> getAllUserByShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel);
+
+	ResponseEntity<?> getShootingLocationChatByUserId(ShootingLocationChatWebModel shootingLocationChatWebModel);
 
 	
 }

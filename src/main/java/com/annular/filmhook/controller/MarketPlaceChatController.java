@@ -15,6 +15,7 @@ import com.annular.filmhook.service.MarketPlaceChatService;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.LiveSubscribeWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
+import com.annular.filmhook.webmodel.ShootingLocationChatWebModel;
 
 @RestController
 @RequestMapping("/marketPlaceChat")
@@ -70,6 +71,42 @@ public class MarketPlaceChatController {
 			return marketPlaceChatService.getAllUserByMarketType(marketPlaceChatWebModel);
 		} catch (Exception e) {
 			logger.error("getAllUserByMarketType Method Exception {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+	
+	@PostMapping("/saveShootingLocationChat")
+    public ResponseEntity<?> saveShootingLocationChat(@RequestBody ShootingLocationChatWebModel shootingLocationChatWebModel) {
+        try {
+            logger.info("saveShootingLocationChat controller start");
+            return marketPlaceChatService.saveShootingLocationChat(shootingLocationChatWebModel);
+        } catch (Exception e) {
+            logger.error("saveMarketPlaceChat Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+	
+	@PostMapping("/getAllUserByShootingLocationChat")
+	public ResponseEntity<?> getAllUserByShootingLocationChat(@RequestBody ShootingLocationChatWebModel shootingLocationChatWebModel) {
+		try {
+			logger.info("getAllUserByShootingLocationChat controller start");
+			return marketPlaceChatService.getAllUserByShootingLocationChat(shootingLocationChatWebModel);
+		} catch (Exception e) {
+			logger.error("getAllUserByShootingLocationChat Method Exception {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
+	
+	@PostMapping("/getShootingLocationChatByUserId")
+	public ResponseEntity<?> getShootingLocationChatByUserId(@RequestBody ShootingLocationChatWebModel shootingLocationChatWebModel) {
+		try {
+			logger.info("getShootingLocationChatByUserId controller start");
+			return marketPlaceChatService.getShootingLocationChatByUserId(shootingLocationChatWebModel);
+		} catch (Exception e) {
+			logger.error("getAllUserByShootingLocationChat Method Exception {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
