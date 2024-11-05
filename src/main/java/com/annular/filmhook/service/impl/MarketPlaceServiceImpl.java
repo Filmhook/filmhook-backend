@@ -45,6 +45,7 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceLikeWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationWebModel;
@@ -164,6 +165,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     .cost(shootingLocationWebModel.getCost())
 					.hourMonthDay(shootingLocationWebModel.getHourMonthDay())
                     .shootingLocationIsactive(true)
+                    .placeName(shootingLocationWebModel.getPlaceName())
                     .termsAndConditions(shootingLocationWebModel.getTermsAndConditions())
                     .shootingLocationCreatedBy(shootingLocationWebModel.getShootingLocationCreatedBy())
                     .shootingLocationCreatedOn(new Date())
@@ -216,6 +218,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     shootingLocWebModel.setLocationUrl(shootingLocation.getLocationUrl());
                     shootingLocWebModel.setIndoorOrOutdoorLocation(shootingLocation.getIndoorOrOutdoorLocation());
                     shootingLocWebModel.setHourMonthDay(shootingLocation.getHourMonthDay());
+                    shootingLocWebModel.setPlaceName(shootingLocation.getPlaceName());
                     shootingLocWebModel.setShootingLocationName(shootingLocation.getShootingLocationName());
                     shootingLocWebModel.setShootingLocationUpdatedBy(shootingLocation.getShootingLocationUpdatedBy());
                     shootingLocWebModel.setShootingLocationCreatedBy(shootingLocation.getShootingLocationCreatedBy());
@@ -371,12 +374,12 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
         }
     }
     @Override
-    public ResponseEntity<?> getMarketPlaceByMarketTypeByUserId(String marketType) {
+    public ResponseEntity<?> getMarketPlaceByMarketTypeByUserId(MarketPlaceChatWebModel request) {
         try {
             Integer userId = userDetails.userInfo().getId();
             
             // Retrieve all chats where the user is the sender and matches the market type
-            List<MarketPlaceChat> userChats = marketPlaceChatRepository.findByMarketPlaceSenderIdAndMarketType(userId, marketType);
+            List<MarketPlaceChat> userChats = marketPlaceChatRepository.findByMarketPlaceSenderIdAndMarketType(userId, request.getMarketType());
 
             // Collect receiver IDs to whom the messages were sent
             Set<Integer> receiverIds = userChats.stream()

@@ -64,11 +64,11 @@ public class ShootingLocationChat {
 	private Date timeStamp;
 
 	@Column(name = "shootingLocationStartTime")
-	private Date shootingLocationStartTime;
+	private String shootingLocationStartTime;
 	
 
 	@Column(name = "shootingLocationEndTime")
-	private Date shootingLocationEndTime;
+	private String shootingLocationEndTime;
 	
 	
     @Column(name = "accept")

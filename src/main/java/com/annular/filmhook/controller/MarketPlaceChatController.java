@@ -3,11 +3,14 @@ package com.annular.filmhook.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
@@ -27,8 +30,9 @@ public class MarketPlaceChatController {
 	
 	public static final Logger logger = LoggerFactory.getLogger(MarketPlaceChatController.class);
 	
-	@PostMapping("/saveMarketPlaceChat")
-    public ResponseEntity<?> saveMarketPlaceChat(@RequestBody MarketPlaceChatWebModel marketPlaceChatWebModel) {
+
+	@RequestMapping(path = "/saveMarketPlaceChat", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> saveMarketPlaceChat(@ModelAttribute MarketPlaceChatWebModel marketPlaceChatWebModel) {
         try {
             logger.info("saveMarketPlaceChat controller start");
             return marketPlaceChatService.saveMarketPlaceChat(marketPlaceChatWebModel);
@@ -46,6 +50,17 @@ public class MarketPlaceChatController {
             return marketPlaceChatService.updateMarketPlaceChat(marketPlaceChatWebModel);
         } catch (Exception e) {
             logger.error("updateMarketPlaceChat Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+	@PostMapping("/updateShootingLocationChat")
+    public ResponseEntity<?> updateShootingLocationChat(@RequestBody ShootingLocationChatWebModel shootingLocationChatWebModel) {
+        try {
+            logger.info("updateShootingLocationChat controller start");
+            return marketPlaceChatService.updateShootingLocationChat(shootingLocationChatWebModel);
+        } catch (Exception e) {
+            logger.error("updateShootingLocationChat Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
@@ -76,8 +91,8 @@ public class MarketPlaceChatController {
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
 	
-	@PostMapping("/saveShootingLocationChat")
-    public ResponseEntity<?> saveShootingLocationChat(@RequestBody ShootingLocationChatWebModel shootingLocationChatWebModel) {
+	@RequestMapping(path = "/saveShootingLocationChat", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> saveShootingLocationChat(@ModelAttribute ShootingLocationChatWebModel shootingLocationChatWebModel) {
         try {
             logger.info("saveShootingLocationChat controller start");
             return marketPlaceChatService.saveShootingLocationChat(shootingLocationChatWebModel);

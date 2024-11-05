@@ -34,6 +34,7 @@ public class ShootingLocationWebModel {
     private String filmHookCode;
     private String name;
     private Boolean termsAndConditions;
+    private String placeName;
 
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details

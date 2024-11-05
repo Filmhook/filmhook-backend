@@ -265,23 +265,22 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
 	        }
 
-	        logger.info("Get Messages by User ID and Market Type Method Start");
+	        logger.info("Starting 'Get Messages by User ID and Market Type' method");
 
-	        Integer senderId = message.getMarketPlaceSenderId(); // Using senderId from the incoming message
+	        Integer senderId = message.getMarketPlaceSenderId();
 	        Integer receiverId = message.getMarketPlaceReceiverId();
-	        String marketType = message.getMarketType(); // Using marketType from the incoming message
+	        String marketType = message.getMarketType();
 
-	        // Fetch messages sent by the sender to the receiver for the specified marketType
+	        // Fetch messages sent by the sender to the receiver for the specified market type
 	        List<MarketPlaceChat> senderMessages = marketPlaceChatRepository
 	            .getMessageListByMarketPlaceSenderIdAndMarketPlaceReceiverIdAndMarketType(senderId, receiverId, marketType);
 
-	        // Fetch messages received by the receiver from the sender for the specified marketType
+	        // Fetch messages received by the receiver from the sender for the specified market type
 	        List<MarketPlaceChat> receiverMessages = marketPlaceChatRepository
 	            .getMessageListByMarketPlaceSenderIdAndMarketPlaceReceiverIdAndMarketType(receiverId, senderId, marketType);
 
-	        // Combine both lists of messages and filter duplicates
-	        List<MarketPlaceChat> allMessages = new ArrayList<>();
-	        allMessages.addAll(senderMessages);
+	        // Combine both lists and filter duplicates
+	        List<MarketPlaceChat> allMessages = new ArrayList<>(senderMessages);
 	        allMessages.addAll(receiverMessages);
 
 	        // Use a Set to track seen chatIds and filter duplicates
@@ -297,39 +296,41 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        // Sort unique messages by marketPlaceCreatedOn in descending order
 	        uniqueMessages.sort(Comparator.comparing(MarketPlaceChat::getMarketPlaceCreatedOn).reversed());
 
-	        // Construct the response structure
+	        // Prepare the response structure
 	        List<MarketPlaceChatWebModel> messagesWithFiles = new ArrayList<>();
 	        int senderUnreadCount = 0;
 	        int receiverUnreadCount = 0;
 
 	        for (MarketPlaceChat chat : uniqueMessages) {
 	            Optional<User> userData = userRepository.findById(chat.getMarketPlaceSenderId());
-	            Optional<User> receiverData = userRepository.findById(receiverId); // Fetch receiver data once
+	            Optional<User> receiverData = userRepository.findById(receiverId);
 
 	            // Fetch profile picture URLs
 	            String senderProfilePicUrl = userService.getProfilePicUrl(chat.getMarketPlaceSenderId());
-	            String receiverProfilePicUrl = userService.getProfilePicUrl(receiverId); // Use receiverId
+	            String receiverProfilePicUrl = userService.getProfilePicUrl(receiverId);
 
 	            if (userData.isPresent() && receiverData.isPresent()) {
-	                List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getMarketPlaceChatId());
+	                // Retrieve media files associated with the chat
+	                List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+	                    MediaFileCategory.MarketPlaceChat, chat.getMarketPlaceChatId());
 
 	                MarketPlaceChatWebModel chatWebModel = MarketPlaceChatWebModel.builder()
-	                        .marketPlaceChatId(chat.getMarketPlaceChatId())
-	                        .marketPlaceSenderId(chat.getMarketPlaceSenderId())
-	                        .marketPlaceReceiverId(chat.getMarketPlaceReceiverId())
-	                        .marketPlaceIsActive(chat.getMarketPlaceIsActive())
-	                        .marketPlaceCreatedBy(chat.getMarketPlaceCreatedBy())
-	                        .marketPlaceCreatedOn(chat.getMarketPlaceCreatedOn())
-	                        .marketPlaceUpdatedBy(chat.getMarketPlaceUpdatedBy())
-	                        .marketPlaceUpdatedOn(chat.getMarketPlaceUpdatedOn())
-	                        .message(chat.getMessage())
-	                        .chatFiles(mediaFiles) // Use files for chat files
-	                        .userId(userData.get().getUserId())
-	                        .userAccountName(userData.get().getName())
-	                        .receiverAccountName(receiverData.get().getName())
-	                        .senderProfilePic(senderProfilePicUrl)
-	                        .receiverProfilePic(receiverProfilePicUrl)
-	                        .build();
+	                    .marketPlaceChatId(chat.getMarketPlaceChatId())
+	                    .marketPlaceSenderId(chat.getMarketPlaceSenderId())
+	                    .marketPlaceReceiverId(chat.getMarketPlaceReceiverId())
+	                    .marketPlaceIsActive(chat.getMarketPlaceIsActive())
+	                    .marketPlaceCreatedBy(chat.getMarketPlaceCreatedBy())
+	                    .marketPlaceCreatedOn(chat.getMarketPlaceCreatedOn())
+	                    .marketPlaceUpdatedBy(chat.getMarketPlaceUpdatedBy())
+	                    .marketPlaceUpdatedOn(chat.getMarketPlaceUpdatedOn())
+	                    .message(chat.getMessage())
+	                    .chatFiles(mediaFiles)
+	                    .userId(userData.get().getUserId())
+	                    .userAccountName(userData.get().getName())
+	                    .receiverAccountName(receiverData.get().getName())
+	                    .senderProfilePic(senderProfilePicUrl)
+	                    .receiverProfilePic(receiverProfilePicUrl)
+	                    .build();
 
 	                messagesWithFiles.add(chatWebModel);
 	            }
@@ -339,14 +340,13 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        response.put("senderUnreadCount", senderUnreadCount);
 	        response.put("receiverUnreadCount", receiverUnreadCount);
 
-	        logger.info("Get Messages by User ID and Market Type Method End");
+	        logger.info("Completed 'Get Messages by User ID and Market Type' method");
 	        return ResponseEntity.ok(new Response(1, "Success", response));
 	    } catch (Exception e) {
-	        logger.error("Error occurred while retrieving messages", e);
+	        logger.error("Error occurred while retrieving messages: {}", e.getMessage());
 	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
 	    }
 	}
-
 
 
 //	@Override
@@ -601,35 +601,90 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	    }
 	}
 
-	public ResponseEntity<?> getAllUserByShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel) {
-	    try {
-	        Integer currentSenderId = shootingLocationChatWebModel.getShootingLocationSenderId();
+	 public ResponseEntity<?> getAllUserByShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel) {
+	        try {
+	            Integer currentSenderId = shootingLocationChatWebModel.getShootingLocationSenderId();
 
-	        // Fetch all unique participant IDs where sender or receiver has communicated with the given senderId
-	        Set<Integer> participantIds = new HashSet<>();
-	        participantIds.addAll(shootingLocationChatRepository.findDistinctReceiverIdsBySenderId(currentSenderId)); // IDs of users the sender has messaged
-	        participantIds.addAll(shootingLocationChatRepository.findDistinctSenderIdsByReceiverId(currentSenderId)); // IDs of users who have messaged the sender
+	            // Fetch all unique participant IDs where sender or receiver has communicated with the given senderId
+	            Set<Integer> participantIds = new HashSet<>();
+	            participantIds.addAll(shootingLocationChatRepository.findDistinctReceiverIdsBySenderId(currentSenderId)); // IDs of users the sender has messaged
+	            participantIds.addAll(shootingLocationChatRepository.findDistinctSenderIdsByReceiverId(currentSenderId)); // IDs of users who have messaged the sender
 
-	        // Fetch user details based on participant IDs
-	        List<UserDetailsDTO> userDetailsList = participantIds.stream()
-	                .map(participantId -> userRepository.findById(participantId)
-	                        .map(user -> new UserDetailsDTO(
-	                                user.getUserId(),
-	                                user.getName(),
-	                                userService.getProfilePicUrl(user.getUserId())
-	                        ))
-	                        .orElse(null))
-	                .filter(Objects::nonNull)
-	                .collect(Collectors.toList());
+	            // Fetch user details and latest chat messages based on participant IDs
+	            List<MarketPlaceUserWebModel> userDetailsList = new ArrayList<>();
+	            for (Integer participantId : participantIds) {
+	                Optional<User> userOptional = userRepository.findById(participantId);
+	                if (userOptional.isPresent()) {
+	                    User user = userOptional.get();
+	                    MarketPlaceUserWebModel chatUserWebModel = new MarketPlaceUserWebModel();
+	                    chatUserWebModel.setUserId(user.getUserId());
+	                    chatUserWebModel.setUserName(user.getName());
+	                    chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+	                    chatUserWebModel.setUserType(user.getUserType()); // Set userType
 
-	        return ResponseEntity.ok(userDetailsList);
-	    } catch (Exception e) {
-	        logger.error("Error retrieving users from shooting location chat: {}", e.getMessage());
-	        return ResponseEntity.internalServerError().body("Error retrieving users");
+	                    // Set adminReview based on userType
+	                    if ("Industry User".equals(user.getUserType())) {
+	                        chatUserWebModel.setAdminReview(user.getAdminReview());
+	                    } else {
+	                        chatUserWebModel.setAdminReview(null);
+	                    }
+
+
+	                    // Retrieve the latest chat message for this user
+	                    getLatestChatMessageFiltered1(user, chatUserWebModel, currentSenderId, currentSenderId);
+	                    userDetailsList.add(chatUserWebModel);
+	                }
+	            }
+
+	            return ResponseEntity.ok(userDetailsList);
+	        } catch (Exception e) {
+	            logger.error("Error retrieving users from shooting location chat: {}", e.getMessage());
+	            return ResponseEntity.internalServerError().body("Error retrieving users");
+	        }
 	    }
-	}
 
+	    // Method to retrieve the latest chat message for ShootingLocationChat
+	    private void getLatestChatMessageFiltered1(User user, MarketPlaceUserWebModel chatUserWebModel, Integer senderId, Integer loggedInUserId) {
+	        // Attempt to get the latest message for the specific user combination and marketType
+	        List<ShootingLocationChat> latestMessages = shootingLocationChatRepository.getLatestMessage(loggedInUserId, user.getUserId());
 
+	        if (!latestMessages.isEmpty()) {
+	            ShootingLocationChat chat = latestMessages.get(0);
+	            chatUserWebModel.setLatestMsgTime(chat.getTimeStamp());
+	            getLatestChatMessageContent(chat, chatUserWebModel);
+	        } else {
+	            chatUserWebModel.setLatestMessage("");
+	            chatUserWebModel.setLatestMsgTime(null);
+	        }
+	    }
+
+	    // Method to extract the latest message content or media type for ShootingLocationChat
+	    private void getLatestChatMessageContent(ShootingLocationChat chat, MarketPlaceUserWebModel chatUserWebModel) {
+	        String latestMsg = "";
+	        Date latestMsgTime = chat.getTimeStamp();
+
+	        if (!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
+	            latestMsg = chat.getMessage();
+	        } else {
+	            List<FileOutputWebModel> files = mediaFilesService
+	                    .getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocationChat, chat.getShootingLocationChatId())
+	                    .stream()
+	                    .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+	                    .collect(Collectors.toList());
+
+	            if (!Utility.isNullOrEmptyList(files)) {
+	                String fileType = files.get(files.size() - 1).getFileType();
+	                if (FileUtil.isImageFile(fileType)) {
+	                    latestMsg = "Photo";
+	                } else if (FileUtil.isVideoFile(fileType)) {
+	                    latestMsg = "Audio/Video";
+	                }
+	            }
+	        }
+
+	        chatUserWebModel.setLatestMessage(latestMsg);
+	        chatUserWebModel.setLatestMsgTime(latestMsgTime);
+	    }
 
 	@Override
 	public ResponseEntity<?> getShootingLocationChatByUserId(ShootingLocationChatWebModel shootingLocationChatWebModel) {
@@ -641,17 +696,38 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        List<ShootingLocationChat> chatMessages = shootingLocationChatRepository
 	                .findByShootingLocationSenderIdAndShootingLocationReceiverIdOrViceVersa(senderId, receiverId);
 
-	        // Transform chat messages to DTO or response model if needed
+	        // Get profile picture URLs for sender and receiver
+	        String senderProfilePicUrl = userService.getProfilePicUrl(senderId);
+	        String receiverProfilePicUrl = userService.getProfilePicUrl(receiverId);
+	        
+	        Optional<User> userData = userRepository.findById(senderId);
+            Optional<User> receiverData = userRepository.findById(receiverId);
+
+
+	        // Transform chat messages to DTO, including media files and profile pictures
 	        List<ShootingLocationChatDTO> chatDTOList = chatMessages.stream()
-	                .map(chat -> new ShootingLocationChatDTO(
-	                        chat.getShootingLocationChatId(),
-	                        chat.getShootingLocationSenderId(),
-	                        chat.getShootingLocationReceiverId(),
-	                        chat.getMessage(),
-	                        chat.getTimeStamp(),
-	                        chat.getShootingLocationStartTime(),
-	                        chat.getShootingLocationEndTime()
-	                ))
+	                .map(chat -> {
+	                    // Retrieve media files for the current chat message
+	                    List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+	                            MediaFileCategory.ShootingLocationChat, chat.getShootingLocationChatId());
+
+	                    // Create DTO with media files and profile pictures
+	                    return new ShootingLocationChatDTO(
+	                            chat.getShootingLocationChatId(),
+	                            chat.getShootingLocationSenderId(),
+	                            chat.getShootingLocationReceiverId(),
+	                            chat.getMessage(),
+	                            chat.getTimeStamp(),
+	                            chat.getShootingLocationStartTime(),
+	                            chat.getShootingLocationEndTime(),
+	                            mediaFiles,              // Include media files in the DTO
+	                            senderProfilePicUrl,     // Sender profile picture URL
+	                            receiverProfilePicUrl,
+	                            userData.get().getName(),       // Sender account name
+	                            receiverData.get().getName()
+	                            // Receiver profile picture URL
+	                    );
+	                })
 	                .collect(Collectors.toList());
 
 	        return ResponseEntity.ok(chatDTOList);
@@ -662,4 +738,66 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	}
 
 
-}
+
+	@Override
+	public ResponseEntity<?> updateShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel) {
+		try {
+	        // Retrieve the chat by marketPlaceChatId
+	        Optional<ShootingLocationChat> chatOptional = shootingLocationChatRepository.findById(shootingLocationChatWebModel.getShootingLocationChatId());
+
+	        if (chatOptional.isPresent()) {
+	        	ShootingLocationChat chat = chatOptional.get();
+
+	            // Update the accept status and any other fields from MarketPlaceChatWebModel
+	            chat.setAccept(shootingLocationChatWebModel.getAccept());
+	            chat.setShootingLocationCreatedBy(userDetails.userInfo().getId()); // Set the updater ID
+	            chat.setShootingLocationUpdatedOn(new Date()); // Update timestamp
+
+	            // Prepare the notification based on accept status
+	            InAppNotification notification = new InAppNotification();
+	            notification.setSenderId(userDetails.userInfo().getId()); // or the appropriate sender ID
+	            notification.setReceiverId(chat.getShootingLocationReceiverId()); // Assuming chat has a method to get the receiver ID
+	            notification.setCreatedOn(new Date());
+	            notification.setCreatedBy(userDetails.userInfo().getId());
+	            notification.setUpdatedBy(userDetails.userInfo().getId());
+	            notification.setUpdatedOn(new Date());
+	            notification.setIsRead(true);
+	            notification.setCurrentStatus(false);
+	         
+	            notification.setUserType("maeketPlace"); // or whatever user type is appropriate
+	            notification.setId(chat.getShootingLocationChatId()); // Assuming this refers to the chat's ID
+	           // notification.setPostId(chat.getPostId()); // Assuming chat has a postId property
+	            
+	            // Check the accept status and set the notification message accordingly
+	            if (shootingLocationChatWebModel.getAccept() != null && shootingLocationChatWebModel.getAccept()) {
+	                notification.setTitle("Accepted");
+	                notification.setCurrentStatus(true);
+	                
+	                notification.setMessage("Welcome! Your chat request has been accepted. You may now start your conversation with " + userDetails.userInfo().getUsername() + "."); // Assuming `getIndustryUsername()` returns the username
+	            } else {
+	                notification.setTitle("Declined");
+	                notification.setCurrentStatus(true);
+	                notification.setMessage("The industry user has chosen not to accept the chat request at this time. But don’t hesitate to connect with others.");
+	            }
+
+	            // Save the notification
+	            inAppNotificationRepository.save(notification);
+
+	            // Save the updated chat entity
+	            shootingLocationChatRepository.save(chat);
+
+	            return ResponseEntity.ok(new Response(1, "Success", "ShootingLocation updated successfully"));
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Error", "ShootingLocation not found"));
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error occurred while updating ShootingLocation -> {}", e.getMessage());
+	        return ResponseEntity.internalServerError().build();
+	    }
+	}
+
+
+	}
+
+
+

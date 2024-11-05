@@ -21,5 +21,7 @@ public interface MarketPlaceChatService {
 
 	ResponseEntity<?> getShootingLocationChatByUserId(ShootingLocationChatWebModel shootingLocationChatWebModel);
 
+	ResponseEntity<?> updateShootingLocationChat(ShootingLocationChatWebModel shootingLocationChatWebModel);
+
 	
 }

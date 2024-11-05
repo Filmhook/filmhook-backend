@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.MarketPlaceService;
 import com.annular.filmhook.webmodel.LikeWebModel;
+import com.annular.filmhook.webmodel.MarketPlaceChatWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceLikeWebModel;
 import com.annular.filmhook.webmodel.MarketPlaceWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationWebModel;
@@ -104,11 +105,11 @@ public class MarketPlaceController {
             return ResponseEntity.internalServerError().body(new Response(-1, "Error while reading shooting locations", ""));
         }
     }
-    @GetMapping("/getMarketPlaceByMarketTypeByUserId")
-    public ResponseEntity<?> getSearchMarketPlace(@RequestParam("marketType") String marketType) {
+    @PostMapping("/getMarketPlaceByMarketTypeByUserId")
+    public ResponseEntity<?> getSearchMarketPlace(@RequestBody MarketPlaceChatWebModel request) {
         try {
             
-                return marketPlaceService.getMarketPlaceByMarketTypeByUserId(marketType);
+                return marketPlaceService.getMarketPlaceByMarketTypeByUserId(request);
           
         } catch (Exception e) {
             logger.error("getMarketPlaceByMarketTypeByUserId Method Exception -> {}", e.getMessage());

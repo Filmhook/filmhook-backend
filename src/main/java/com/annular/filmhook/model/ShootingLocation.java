@@ -76,5 +76,8 @@ public class ShootingLocation {
     
     @Column(name = "termsAndCondition")
     private Boolean termsAndConditions;
+    
+    @Column(name = "placeName")
+    private String placeName;
 
 }

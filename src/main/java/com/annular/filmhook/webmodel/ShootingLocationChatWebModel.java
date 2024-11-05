@@ -38,7 +38,9 @@ public class ShootingLocationChatWebModel {
     List<MultipartFile> files;
     List<FileOutputWebModel> chatFiles;
     private Integer userId;
-	private Date shootingLocationStartTime;
-	private Date shootingLocationEndTime;
+	private String shootingLocationStartTime;
+	private String shootingLocationEndTime;
+	private Boolean accept;
+	
 
 }

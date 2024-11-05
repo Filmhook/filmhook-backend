@@ -22,7 +22,12 @@ public class ShootingLocationChatDTO {
     private Integer receiverId;
     private String message;
     private Date timeStamp;
-    private Date startTime;
-    private Date endTime;
+    private String startTime;
+    private String endTime;
+    private List<FileOutputWebModel> mediaFiles;
+    private String senderProfilePic;
+    private String receiverProfilePic;
+    private String senderAccountName;            // Sender account name
+    private String receiverAccountName;
 
 }
