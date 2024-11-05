@@ -1,5 +1,7 @@
 package com.annular.filmhook.service.impl;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -22,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
@@ -68,6 +71,10 @@ public class AuditionServiceImpl implements AuditionService {
 
     @Autowired
     AuditionRepository auditionRepository;
+    
+
+    // Define the date formatter for parsing endDate as "yyyy-MM-dd"
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     @Autowired
     AuditionRolesRepository auditionRolesRepository;
@@ -193,7 +200,12 @@ public class AuditionServiceImpl implements AuditionService {
                     auditionWebModel.setAuditionLocation(audition.getAuditionLocation());
                     auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
                     auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
-                 // Fetch additional user details
+                    // Check if the current user has accepted this audition
+                 // Check if the current user has accepted this audition
+                    boolean isAccepted = acceptanceRepository.existsByAuditionAcceptanceUserAndAuditionRefId(userId, audition.getAuditionId());
+                    auditionWebModel.setAuditionAttendanceStatus(isAccepted); // true if exists, false otherwise
+
+                    // Fetch additional user details
                     Optional<User> userOptional = userService.getUser(userId);
                     userOptional.ifPresent(user -> {
                         auditionWebModel.setFilmHookCode(user.getFilmHookCode());
@@ -473,6 +485,8 @@ public class AuditionServiceImpl implements AuditionService {
                     auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
                     auditionWebModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
                     auditionWebModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
+                    boolean isAccepted = acceptanceRepository.existsByAuditionAcceptanceUserAndAuditionRefId(userId, audition.getAuditionId());
+                    auditionWebModel.setAuditionAttendanceStatus(isAccepted); // true if exists, false otherwise
 
                     // Fetch additional user details
                     Optional<User> userOptional = userService.getUser(userId);
@@ -626,5 +640,66 @@ public class AuditionServiceImpl implements AuditionService {
         }
         return ResponseEntity.ok().body(new Response(1, "Audition details updated successfully", response));
     }
+    
+    @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
+    public void deactivateExpiredAuditions() {
+        LocalDate today = LocalDate.now();
+
+        // Fetch all active auditions to check for expiration
+        List<Audition> activeAuditions = auditionRepository.findByAuditionIsactiveTrue();
+
+        for (Audition audition : activeAuditions) {
+            try {
+                LocalDate endDate = LocalDate.parse(audition.getEndDate(), DATE_FORMATTER);
+                if (endDate.isBefore(today) || endDate.isEqual(today)) {
+                    audition.setAuditionIsactive(false);
+                }
+            } catch (Exception e) {
+                // Handle any parsing errors (e.g., log the error if date format is incorrect)
+                System.err.println("Invalid date format for audition ID " + audition.getAuditionId());
+            }
+        }
+
+        // Save all updated auditions in batch
+        auditionRepository.saveAll(activeAuditions);
+    }
+
+    @Override
+    public ResponseEntity<?> getAcceptanceDetailsByUserId(AuditionWebModel auditionWebModel) {
+        // Fetch acceptance user list based on AuditionRefId
+        List<AuditionAcceptanceDetails> acceptanceUserList = acceptanceRepository.findByAuditionRefId(auditionWebModel.getAuditionRefId());
+
+        // Check if the list is empty
+        if (acceptanceUserList.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No acceptance details found for the provided AuditionRefId.");
+        }
+
+        // Create a List to store acceptance details (acceptanceId, username, profilePic)
+        List<Map<String, Object>> acceptanceDetailsList = new ArrayList<>();
+
+        // Iterate over the acceptance user list and populate the details
+        for (AuditionAcceptanceDetails acceptance : acceptanceUserList) {
+            Integer acceptanceId = acceptance.getAuditionAcceptanceUser();
+
+            // Fetch the user details based on the user ID associated with the acceptance
+            Optional<User> userOptional = userRepository.findById(acceptance.getAuditionAcceptanceUser());
+
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                Map<String, Object> userDetails = new HashMap<>();
+                userDetails.put("acceptanceId", acceptanceId);
+                userDetails.put("username", user.getName());
+                userDetails.put("userProfilePic", userService.getProfilePicUrl(user.getUserId())); // Assuming you have a method to get the profile pic URL
+
+                // Add the user details map to the list
+                acceptanceDetailsList.add(userDetails);
+            }
+        }
+
+        // Return the list of acceptance details
+        return ResponseEntity.ok(acceptanceDetailsList);
+    }
+
 
 }

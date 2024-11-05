@@ -157,5 +157,14 @@ public class AuditionController {
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
         }
     }
-
+    @PostMapping("/getAcceptanceDetailsByUserId")
+    public ResponseEntity<?> getAcceptanceDetailsByUserId(@RequestBody AuditionWebModel auditionWebModel) {
+        try {
+            if (auditionWebModel.getAuditionRefId() == null)
+                return ResponseEntity.badRequest().body(new Response(-1, "getAcceptanceDetailsByUserId is required .", null));
+            return auditionService.getAcceptanceDetailsByUserId(auditionWebModel);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+    }
 }

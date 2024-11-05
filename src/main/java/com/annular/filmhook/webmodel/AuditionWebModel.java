@@ -65,5 +65,7 @@ public class AuditionWebModel {
 	private String endDate;
 	private String url;
 	private Boolean termsAndCondition;
+	private Boolean auditionAttendanceStatus;
+	private Integer auditionRefId;
 
 }

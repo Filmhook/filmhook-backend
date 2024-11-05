@@ -29,4 +29,6 @@ public interface AuditionService {
 
     ResponseEntity<?> updateAudition(AuditionWebModel auditionWebModel);
 
+	ResponseEntity<?> getAcceptanceDetailsByUserId(AuditionWebModel auditionWebModel);
+
 }
