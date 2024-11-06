@@ -155,7 +155,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                                .senderId(userId)
 	                                .receiverId(receiver.getUserId())
 	                                .title(notificationTitle)
-	                                .userType("marketType")
+	                                .userType("marketPlace")
 	                                .id(chat.getMarketPlaceChatId())
 	                                .message(notificationMessage)
 	                                .createdOn(new Date())
@@ -202,6 +202,21 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        // Retrieve the chat by marketPlaceChatId
 	        Optional<MarketPlaceChat> chatOptional = marketPlaceChatRepository.findById(marketPlaceChatWebModel.getMarketPlaceChatId());
 
+	        List<InAppNotification> existingNotificationOptional = inAppNotificationRepository.findByChatIds(marketPlaceChatWebModel.getMarketPlaceChatId());
+	        if (existingNotificationOptional != null && !existingNotificationOptional.isEmpty()) {
+	            // Loop through each notification and update it
+	            for (InAppNotification notification : existingNotificationOptional) {
+	                // You can modify fields here as required
+	                notification.setCurrentStatus(true);  // Update currentStatus
+	                notification.setUpdatedOn(new Date()); // Update the timestamp
+
+	                // Optionally, other fields can be updated, depending on your logic
+	            }
+
+	            // Save all updated notifications back to the database
+	            inAppNotificationRepository.saveAll(existingNotificationOptional);
+	        }
+	        
 	        if (chatOptional.isPresent()) {
 	            MarketPlaceChat chat = chatOptional.get();
 
@@ -213,15 +228,15 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            // Prepare the notification based on accept status
 	            InAppNotification notification = new InAppNotification();
 	            notification.setSenderId(userDetails.userInfo().getId()); // or the appropriate sender ID
-	            notification.setReceiverId(chat.getMarketPlaceReceiverId()); // Assuming chat has a method to get the receiver ID
+	            notification.setReceiverId(chat.getMarketPlaceSenderId()); // Assuming chat has a method to get the receiver ID
 	            notification.setCreatedOn(new Date());
 	            notification.setCreatedBy(userDetails.userInfo().getId());
 	            notification.setUpdatedBy(userDetails.userInfo().getId());
 	            notification.setUpdatedOn(new Date());
 	            notification.setIsRead(true);
-	            notification.setCurrentStatus(false);
+	            notification.setCurrentStatus(true);
 	         
-	            notification.setUserType("maeketPlace"); // or whatever user type is appropriate
+	            notification.setUserType("marketPlace"); // or whatever user type is appropriate
 	            notification.setId(chat.getMarketPlaceChatId()); // Assuming this refers to the chat's ID
 	           // notification.setPostId(chat.getPostId()); // Assuming chat has a postId property
 	            
@@ -506,6 +521,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                    .shootingLocationEndTime(shootingLocationChatWebModel.getShootingLocationEndTime())
 	                    .shootingLocationStartTime(shootingLocationChatWebModel.getShootingLocationStartTime())
 	                    .shootingLocationCreatedOn(new Date())
+	                  
 	                    .build();
 	            shootingLocationChatRepository.save(chat);
 
@@ -569,6 +585,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                                .createdOn(new Date())
 	                                .isRead(true)
 	                                .createdBy(userId)
+	                                .currentStatus(false)
 	                                .build();
 	                        inAppNotificationRepository.save(inAppNotification);
 
@@ -745,6 +762,21 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        // Retrieve the chat by marketPlaceChatId
 	        Optional<ShootingLocationChat> chatOptional = shootingLocationChatRepository.findById(shootingLocationChatWebModel.getShootingLocationChatId());
 
+	        List<InAppNotification> existingNotificationOptional = inAppNotificationRepository.findByChatId(shootingLocationChatWebModel.getShootingLocationChatId());
+	        if (existingNotificationOptional != null && !existingNotificationOptional.isEmpty()) {
+	            // Loop through each notification and update it
+	            for (InAppNotification notification : existingNotificationOptional) {
+	                // You can modify fields here as required
+	                notification.setCurrentStatus(true);  // Update currentStatus
+	                notification.setUpdatedOn(new Date()); // Update the timestamp
+
+	                // Optionally, other fields can be updated, depending on your logic
+	            }
+
+	            // Save all updated notifications back to the database
+	            inAppNotificationRepository.saveAll(existingNotificationOptional);
+	        }
+	        
 	        if (chatOptional.isPresent()) {
 	        	ShootingLocationChat chat = chatOptional.get();
 
@@ -752,21 +784,21 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            chat.setAccept(shootingLocationChatWebModel.getAccept());
 	            chat.setShootingLocationCreatedBy(userDetails.userInfo().getId()); // Set the updater ID
 	            chat.setShootingLocationUpdatedOn(new Date()); // Update timestamp
-
-	            // Prepare the notification based on accept status
+	         // Prepare the notification based on accept status
 	            InAppNotification notification = new InAppNotification();
 	            notification.setSenderId(userDetails.userInfo().getId()); // or the appropriate sender ID
-	            notification.setReceiverId(chat.getShootingLocationReceiverId()); // Assuming chat has a method to get the receiver ID
+	            notification.setReceiverId(chat.getShootingLocationSenderId()); // Assuming chat has a method to get the receiver ID
 	            notification.setCreatedOn(new Date());
 	            notification.setCreatedBy(userDetails.userInfo().getId());
 	            notification.setUpdatedBy(userDetails.userInfo().getId());
 	            notification.setUpdatedOn(new Date());
 	            notification.setIsRead(true);
 	            notification.setCurrentStatus(false);
-	         
-	            notification.setUserType("maeketPlace"); // or whatever user type is appropriate
-	            notification.setId(chat.getShootingLocationChatId()); // Assuming this refers to the chat's ID
-	           // notification.setPostId(chat.getPostId()); // Assuming chat has a postId property
+	            notification.setUserType("shootingLocation");
+	            
+	           
+	            
+
 	            
 	            // Check the accept status and set the notification message accordingly
 	            if (shootingLocationChatWebModel.getAccept() != null && shootingLocationChatWebModel.getAccept()) {

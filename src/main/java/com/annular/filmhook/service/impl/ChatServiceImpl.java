@@ -35,12 +35,14 @@ import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.MarketPlaceChat;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
+import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.model.User;
 
 import com.annular.filmhook.repository.ChatRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.MarketPlaceChatRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
+import com.annular.filmhook.repository.ShootingLocationChatRepository;
 import com.annular.filmhook.repository.UserRepository;
 
 import com.annular.filmhook.service.ChatService;
@@ -85,6 +87,9 @@ public class ChatServiceImpl implements ChatService {
 
 	@Autowired
 	FirebaseConfig firebaseConfig;
+	
+	@Autowired
+	ShootingLocationChatRepository shootingLocationChatRepository;
 	
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
@@ -696,13 +701,14 @@ public class ChatServiceImpl implements ChatService {
 	        if (notifications.isEmpty()) {
 	            return new Response(0, "No Notifications", "No notifications found for the given user ID");
 	        }
+
 	        // Initialize a counter for unread notifications
 	        long unreadCount = notifications.stream()
-	                                        .filter(notification -> notification.getIsRead() == true)
+	                                        .filter(notification -> notification.getIsRead())
 	                                        .count();
-	       
+
 	        List<InAppNotificationWebModel> notificationDtos = notifications.stream().map(notification -> {
-	        	InAppNotificationWebModel dto = new InAppNotificationWebModel();
+	            InAppNotificationWebModel dto = new InAppNotificationWebModel();
 	            dto.setInAppNotificationId(notification.getInAppNotificationId());
 	            dto.setSenderId(notification.getSenderId());
 	            dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId())); // Fetch profile picture URL
@@ -711,10 +717,11 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setMessage(notification.getMessage());
 	            dto.setCreatedOn(notification.getCreatedOn());
 	            dto.setIsRead(notification.getIsRead());
-	            
+	            dto.setCurrentStatus(notification.getCurrentStatus());
+
 	            // Fetch user details using senderId
 	            Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
-	            dto.setSenderName(sender.get().getName());
+	            dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
 
 	            dto.setCreatedBy(notification.getCreatedBy());
 	            dto.setUpdatedBy(notification.getUpdatedBy());
@@ -723,37 +730,42 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setId(notification.getId());
 	            dto.setPostId(notification.getPostId());
 
-	            // Check if userType is MarketPlace to fetch and set accept field
-	            if ("marketType".equals(notification.getUserType())) {
-	                // Fetch the MarketPlaceChat record based on the ID from notification
+	            // Handle userType specific accept and additionalData fields
+	            if ("marketPlace".equals(notification.getUserType())) {
 	                Optional<MarketPlaceChat> marketPlaceChat = marketPlaceChatRepository.findByIds(notification.getId());
-	             // Set accept value
-	                boolean isAccepted = marketPlaceChat.map(MarketPlaceChat::getAccept).orElse(false);
-	                dto.setAccept(isAccepted); // Set accept value in DTO
-
-	                if(isAccepted)
-	                {
-	                	dto.setAdditionalData("Accepted");
+	                if (marketPlaceChat.isPresent()) {
+	                    Boolean isAccepted = marketPlaceChat.get().getAccept();
+	                    dto.setAccept(isAccepted);
+	                    dto.setAdditionalData(isAccepted != null ? (isAccepted ? "Accepted" : "Declined") : "null");
+	                } else {
+	                    dto.setAccept(null);
+	                    dto.setAdditionalData("null");
 	                }
-	                else
-	                {
-	                	dto.setAdditionalData("Declined");
+	            } else if ("shootingLocation".equals(notification.getUserType())) {
+	                Optional<ShootingLocationChat> shootingChat = shootingLocationChatRepository.findByIds(notification.getId());
+	                if (shootingChat.isPresent()) {
+	                    Boolean isAccepted = shootingChat.get().getAccept();
+	                    dto.setAccept(isAccepted);
+	                    dto.setAdditionalData(isAccepted != null ? (isAccepted ? "Accepted" : "Declined") : "null");
+	                } else {
+	                    dto.setAccept(null);
+	                    dto.setAdditionalData("null");
 	                }
 	            } else {
+	                // Default values for userType other than "marketType" or "shootingLocation"
 	                dto.setAccept(null);
-	                dto.setAdditionalData("null");// Default to false if not MarketPlace
+	                dto.setAdditionalData("null");
 	            }
 
 	            return dto;
 	        }).collect(Collectors.toList());
-	      
+
 	        // Include the unread count in the response
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("notifications", notificationDtos);
 	        response.put("unreadCount", unreadCount);
-	        return new Response(1, "Success", response);
 
-	       // return new Response(1, "Success", notificationDtos);
+	        return new Response(1, "Success", response);
 	    } catch (Exception e) {
 	        logger.error("Error occurred while fetching notifications -> {}", e.getMessage());
 	        return new Response(0, "Error", "An error occurred while fetching notifications");

@@ -31,4 +31,6 @@ public interface MarketPlaceService {
 	MarketPlaceLikeWebModel addMarketPlaceLike(MarketPlaceLikeWebModel marketPlaceLikeWebModel);
 
 	ResponseEntity<?> getShootingLocationUserId();
+
+	ResponseEntity<?> getUserIdByShootingLocation();
 }

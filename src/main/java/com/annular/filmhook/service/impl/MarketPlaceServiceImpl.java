@@ -529,6 +529,68 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
 	}
-    
 
-}
+	public ResponseEntity<?> getUserIdByShootingLocation() {
+	    try {
+	        // Retrieve distinct user IDs for active shooting locations, and filter users who have an active request
+	        List<ShootingLocation> shootingLocations = shootingLocationRepository.findbyUserId(userDetails.userInfo().getId()); // Assuming a boolean flag for active requests
+	        
+	        if (shootingLocations.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+	                                 .body(new Response(0, "No active shooting location requests found", null));
+	        }
+
+	        // Create a map to store shooting locations by userId
+	        Map<Integer, List<ShootingLocation>> userIdToShootingLocations = new HashMap<>();
+	        for (ShootingLocation location : shootingLocations) {
+	            userIdToShootingLocations
+	                .computeIfAbsent(location.getUserId(), k -> new ArrayList<>())
+	                .add(location);
+	        }
+
+	        // Create a map to store media files by userId
+	        Map<Integer, List<FileOutputWebModel>> userIdToMediaFiles = new HashMap<>();
+	        for (Integer userId : userIdToShootingLocations.keySet()) {
+	            // Get media files for the shooting location
+	            List<FileOutputWebModel> fileOutputWebModels = mediaFilesService
+	                    .getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocation, userId);
+	            
+	            // Ensure media files are included for each user, even if no media files exist (empty list)
+	            userIdToMediaFiles.put(userId, fileOutputWebModels != null ? fileOutputWebModels : new ArrayList<>());
+	        }
+
+	        // Prepare response
+	        List<Map<String, Object>> responseList = new ArrayList<>();
+	        for (Integer userId : userIdToShootingLocations.keySet()) {
+	            Map<String, Object> userResponse = new HashMap<>();
+	            userResponse.put("userId", userId);
+	            
+	            // Combine shooting locations and media files into one key
+	            List<Map<String, Object>> shootingLocationsWithMedia = new ArrayList<>();
+	            for (ShootingLocation location : userIdToShootingLocations.get(userId)) {
+	                Map<String, Object> shootingLocationResponse = new HashMap<>();
+	                shootingLocationResponse.put("shootingLocation", location);
+	                shootingLocationResponse.put("mediaFiles", userIdToMediaFiles.get(userId));  // Add media files to the shooting location
+	                shootingLocationsWithMedia.add(shootingLocationResponse);
+	            }
+	            
+	            userResponse.put("shootingLocations", shootingLocationsWithMedia);
+	            responseList.add(userResponse);
+	        }
+
+	        // Return the response entity with success message
+	        return ResponseEntity.ok(new Response(1, "Success", responseList));
+
+	    } catch (Exception e) {
+	        // Log the error and return an error response
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                             .body(new Response(0, "Error retrieving user IDs and media files", null));
+	    }
+	}
+
+
+	}
+
+
+
