@@ -31,4 +31,8 @@ public interface AuditionService {
 
 	ResponseEntity<?> getAcceptanceDetailsByUserId(AuditionWebModel auditionWebModel);
 
+	ResponseEntity<?> getAuditionByUserId(AuditionWebModel auditionWebModel);
+
+	ResponseEntity<?> getAuditionAcceptanceListByUserId(AuditionWebModel auditionWebModel);
+
 }

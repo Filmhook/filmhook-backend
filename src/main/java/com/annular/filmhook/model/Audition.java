@@ -100,5 +100,8 @@ public class Audition {
 	
 	@Column(name = "termsAndCondition")
 	private Boolean termsAndCondition;
+	
+	@Column(name = "companyName")
+	private String companyName;
 
 }

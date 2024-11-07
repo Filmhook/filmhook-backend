@@ -25,4 +25,7 @@ public interface AuditionRepository extends JpaRepository<Audition, Integer> {
     @Query("SELECT a FROM Audition a WHERE a.auditionIsactive = true AND a.endDate <= CURRENT_DATE")
 	List<Audition> findByAuditionIsactiveTrue();
 
+    @Query("SELECT a FROM Audition a WHERE a.user.userId = :userId AND a.auditionIsactive = true")
+	List<Audition> findByUserId(Integer userId);
+
 }

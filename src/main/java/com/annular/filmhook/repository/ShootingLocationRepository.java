@@ -15,8 +15,10 @@ public interface ShootingLocationRepository extends JpaRepository<ShootingLocati
     @Query("select s from ShootingLocation s where s.shootingLocationName = :searchKey")
     List<ShootingLocation> findBySearchKey(String searchKey);
    
-    @Query("SELECT s FROM ShootingLocation s WHERE s.shootingLocationIsactive = true AND s.userId = :id")
+    @Query("SELECT s FROM ShootingLocation s WHERE s.shootingLocationIsactive = true AND s.userId = :id ORDER BY s.shootingLocationCreatedOn DESC")
 	List<ShootingLocation> findbyUserId(Integer id);
+
+	
 
 
 }

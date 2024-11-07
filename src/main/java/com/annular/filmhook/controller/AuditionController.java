@@ -167,4 +167,23 @@ public class AuditionController {
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
         }
     }
+    
+    @PostMapping("/getAuditionByUserId")
+    public ResponseEntity<?> getAuditionByUserId(@RequestBody AuditionWebModel auditionWebModel) {
+        try {
+            
+            return auditionService.getAuditionByUserId(auditionWebModel);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+    }
+    @PostMapping("/getAuditionAcceptanceListByUserId")
+    public ResponseEntity<?> getAuditionAcceptanceListByUserId(@RequestBody AuditionWebModel auditionWebModel) {
+        try {
+            
+            return auditionService.getAuditionAcceptanceListByUserId(auditionWebModel);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+    }
 }

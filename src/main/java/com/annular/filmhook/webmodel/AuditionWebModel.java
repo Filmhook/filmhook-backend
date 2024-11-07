@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 public class AuditionWebModel {
 
     private Integer auditionId;
+    
+    private String companyName;
 
     private String auditionTitle;
 
@@ -27,6 +29,13 @@ public class AuditionWebModel {
 
     private String auditionAddress;
 
+    private Date auditionCreatedOn;
+    
+    private Float adminReview;
+    
+    private String profilePic;
+    
+    private String userType;
     private String auditionMessage;
 
     private Date auditionExpireOn;
