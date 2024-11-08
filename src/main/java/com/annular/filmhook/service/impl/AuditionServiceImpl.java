@@ -205,6 +205,7 @@ public class AuditionServiceImpl implements AuditionService {
 					auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
 					auditionWebModel.setStartDate(audition.getStartDate());
 					auditionWebModel.setEndDate(audition.getEndDate());
+					auditionWebModel.setCompanyName(audition.getCompanyName());
     
 					auditionWebModel.setUrl(audition.getUrl());
 					auditionWebModel.setTermsAndCondition(audition.getTermsAndCondition());
@@ -293,6 +294,9 @@ public class AuditionServiceImpl implements AuditionService {
 			Optional<Audition> audition = auditionRepository.findById(acceptanceWebModel.getAuditionRefId());
 			if (audition.isPresent()) {
 				// Save audition acceptance details
+				
+	            // Fetch associated audition roles
+	            //List<AuditionRoles> auditionRoles = foundAudition.getAuditionRoles();
 				AuditionAcceptanceDetails acceptanceDetails = new AuditionAcceptanceDetails();
 				acceptanceDetails.setAuditionAccepted(acceptanceWebModel.isAuditionAccepted());
 				acceptanceDetails.setAuditionAcceptanceUser(acceptanceWebModel.getAuditionAcceptanceUser());
@@ -300,6 +304,8 @@ public class AuditionServiceImpl implements AuditionService {
 				acceptanceDetails.setAuditionAcceptanceCreatedBy(acceptanceWebModel.getAuditionAcceptanceUser());
 				acceptanceDetails = acceptanceRepository.save(acceptanceDetails);
 				response.put("Audition acceptance", acceptanceDetails);
+				
+				
 
 				// Send email if audition is accepted
 				if (acceptanceWebModel.isAuditionAccepted()) {
@@ -318,11 +324,11 @@ public class AuditionServiceImpl implements AuditionService {
 
 							// Prepare email content
 							String subject = "Interest in Audition Post";
-							String mailContent = " \"<p>I hope this message finds you well.</p>\" +\r\n"
-									+ "                     \"<p>I am writing to express my interest in the audition opportunity for the role of [Role Name] as posted on Film-hook app. After reviewing the details of the audition, I believe my experience and skills align well with the requirements of the role. I would be thrilled to be considered for this opportunity.</p>\" +\r\n"
-									+ "                     \"<p>Please let me know if there are any further steps I need to take in the process or if additional information is required. I look forward to the possibility of working with your team.</p>\" +\r\n"
-									+ "                     \"<p>Thank you for your time and consideration.</p>\"</p>";
-
+							String mailContent = "<p>I hope this message finds you well.</p>"
+							        + "<p>I am writing to express my interest in the audition opportunity for the role of " + audition.get().getAuditionTitle() 
+							        + " as posted on the Film-hook app. After reviewing the details of the audition, I believe my experience and skills align well with the requirements of the role. I would be thrilled to be considered for this opportunity.</p>"
+							        + "<p>Please let me know if there are any further steps I need to take in the process or if additional information is required. I look forward to the possibility of working with your team.</p>"
+							        + "<p>Thank you for your time and consideration.</p>";
 							// Send email notification
 							boolean emailSent = sendEmail(userName, recipientEmail, replyToEmail, subject, mailContent,
 									userName2);
@@ -823,69 +829,80 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Override
 	public ResponseEntity<?> getAuditionAcceptanceListByUserId(AuditionWebModel auditionWebModel) {
-		HashMap<String, Object> response = new HashMap<>();
-		try {
-			Integer currentUserId = userDetails.userInfo().getId();
-			Optional<User> userData = userRepository.findById(currentUserId);
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        Integer currentUserId = userDetails.userInfo().getId();
+	        Optional<User> userData = userRepository.findById(currentUserId);
 
-			// Fetch the acceptance data for the current user
-			List<AuditionAcceptanceDetails> acceptanceData = acceptanceRepository.findByUserId(currentUserId);
+	        // Fetch the acceptance data for the current user
+	        List<AuditionAcceptanceDetails> acceptanceData = acceptanceRepository.findByUserId(currentUserId);
 
-			// List to store audition response data
-			List<AuditionWebModel> acceptedAuditions = new ArrayList<>();
+	        // List to store audition response data
+	        List<AuditionWebModel> acceptedAuditions = new ArrayList<>();
 
-			for (AuditionAcceptanceDetails acceptanceDetail : acceptanceData) {
-				Integer auditionRefId = acceptanceDetail.getAuditionRefId(); // Get the reference ID of the audition
-				Audition audition = auditionRepository.findById(auditionRefId).orElse(null);
+	        for (AuditionAcceptanceDetails acceptanceDetail : acceptanceData) {
+	            Integer auditionRefId = acceptanceDetail.getAuditionRefId(); // Get the reference ID of the audition
+	            Audition audition = auditionRepository.findById(auditionRefId).orElse(null);
 
-				if (audition != null) {
-					AuditionWebModel webModel = new AuditionWebModel();
+	            if (audition != null) {
+	                AuditionWebModel webModel = new AuditionWebModel();
 
-					// Set basic audition details
-					webModel.setAuditionId(audition.getAuditionId());
+	                // Set basic audition details
+	                webModel.setAuditionId(audition.getAuditionId());
+	                webModel.setCompanyName(audition.getCompanyName());
+	                webModel.setAuditionTitle(audition.getAuditionTitle());
+	                webModel.setAuditionExperience(audition.getAuditionExperience());
+	                webModel.setAuditionCategory(audition.getAuditionCategory());
+	                webModel.setAuditionExpireOn(audition.getAuditionExpireOn());
+	                webModel.setAuditionCreatedBy(audition.getAuditionCreatedBy());
+	                webModel.setAuditionCreatedOn(audition.getAuditionCreatedOn());
+	                webModel.setAuditionPostedBy(audition.getAuditionPostedBy());
+	                webModel.setAuditionAddress(audition.getAuditionAddress());
+	                webModel.setAuditionMessage(audition.getAuditionMessage());
+	                webModel.setAuditionLocation(audition.getAuditionLocation());
+	                webModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
+	                webModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
+	                webModel.setAuditionAttendanceStatus(true); // Already accepted
+	                webModel.setStartDate(audition.getStartDate());
+	                webModel.setEndDate(audition.getEndDate());
+	                webModel.setUserId(audition.getUser().getUserId());
+	                webModel.setName(audition.getUser().getName());
 
-					webModel.setCompanyName(audition.getCompanyName());
+	                // Get the list of roles and convert to String[]
+	                List<AuditionRoles> auditionRolesList = audition.getAuditionRoles(); // Fetch audition roles list here
+	                String[] rolesArray = new String[auditionRolesList.size()];
+	                for (int i = 0; i < auditionRolesList.size(); i++) {
+	                    rolesArray[i] = auditionRolesList.get(i).toString(); // Adjust if a different method is needed
+	                }
+	                webModel.setAuditionRoles(rolesArray);
 
-					webModel.setAuditionTitle(audition.getAuditionTitle());
-					webModel.setAuditionExperience(audition.getAuditionExperience());
-					webModel.setAuditionCategory(audition.getAuditionCategory());
-					webModel.setAuditionExpireOn(audition.getAuditionExpireOn());
-					webModel.setAuditionPostedBy(audition.getAuditionPostedBy());
-					webModel.setAuditionAddress(audition.getAuditionAddress());
-					webModel.setAuditionMessage(audition.getAuditionMessage());
-					webModel.setAuditionLocation(audition.getAuditionLocation());
-					webModel.setAuditionAttendedCount(acceptanceRepository.getAttendedCount(audition.getAuditionId()));
-					webModel.setAuditionIgnoredCount(acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
-					webModel.setAuditionAttendanceStatus(true); // Already accepted
-					webModel.setStartDate(audition.getStartDate());
-					webModel.setEndDate(audition.getEndDate());
-					webModel.setUserId(audition.getUser().getUserId());
-					webModel.setAdminReview(audition.getUser().getAdminReview());
-					webModel.setUserType(audition.getUser().getUserType());
-					webModel.setProfilePic(userService.getProfilePicUrl(audition.getUser().getUserId()));
-					webModel.setUrl(audition.getUrl());
-					webModel.setTermsAndCondition(audition.getTermsAndCondition());
+	                webModel.setAdminReview(audition.getUser().getAdminReview());
+	                webModel.setUserType(audition.getUser().getUserType());
+	                webModel.setProfilePic(userService.getProfilePicUrl(audition.getUser().getUserId()));
+	                webModel.setUrl(audition.getUrl());
+	                webModel.setTermsAndCondition(audition.getTermsAndCondition());
 
-					// Attach media files
-					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
-							.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
-					if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
-						webModel.setFileOutputWebModel(fileOutputWebModelList);
-					}
+	                // Attach media files
+	                List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
+	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
+	                if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
+	                    webModel.setFileOutputWebModel(fileOutputWebModelList);
+	                }
 
-					acceptedAuditions.add(webModel);
-				}
-			}
+	                acceptedAuditions.add(webModel);
+	            }
+	        }
 
-			response.put("Accepted Audition List", acceptedAuditions);
+	        response.put("Accepted Audition List", acceptedAuditions);
 
-		} catch (Exception e) {
-			logger.error("Exception in getAuditionAcceptanceListByUserId -> {}", e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
-		}
+	    } catch (Exception e) {
+	        logger.error("Exception in getAuditionAcceptanceListByUserId -> {}", e.getMessage());
+	        e.printStackTrace();
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+	    }
 
-		return ResponseEntity.ok().body(new Response(1, "Accepted audition details fetched successfully", response));
+	    return ResponseEntity.ok().body(new Response(1, "Accepted audition details fetched successfully", response));
 	}
+
 
 }

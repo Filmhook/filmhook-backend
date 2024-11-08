@@ -25,6 +25,8 @@ public class FilmWebModel {
     private Integer updatedBy;
 
     private List<String> subProfessionsName;
+    
+    private Integer platformId;
 
 
 }

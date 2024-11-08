@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.FilmProfession;
 import com.annular.filmhook.model.FilmSubProfession;
+import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.repository.FilmProfessionRepository;
+import com.annular.filmhook.repository.PlatformFilmProfessionMapRepository;
 import com.annular.filmhook.service.FilmProfessionService;
 import com.annular.filmhook.webmodel.FilmWebModel;
 
@@ -21,6 +23,9 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 
     @Autowired
     FilmProfessionRepository filmProfessionRepository;
+    
+    @Autowired
+    PlatformFilmProfessionMapRepository platformFilmProfessionMapRepository;
 
     @Override
     public ResponseEntity<?> getProfessionList(FilmWebModel filmWebModel) {
@@ -47,24 +52,32 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
 
     public ResponseEntity<?> getProfessionMapList(FilmWebModel filmWebModel) {
         Map<String, Object> response = new HashMap<>();
-        List<Map<String, Object>> professionList = new ArrayList<>();
+        List<Map<String, Object>> professionMapList = new ArrayList<>();
+        
         try {
-            List<FilmProfession> professions = filmProfessionRepository.findAll();
+            Integer platformId = filmWebModel.getPlatformId(); // Assuming `platformId` is in `filmWebModel`
+            
+            // Fetch professions based on the platform ID
+            List<FilmProfession> professions = platformFilmProfessionMapRepository.getFilmProfessionsByPlatform(Platform.builder().platformId(platformId).build());
+
+            // Filter active professions and populate profession map list
             professions.stream()
-                    .filter(profession -> profession.getStatus().equals(true))
-                    .forEach(profession -> {
-                        Map<String, Object> professionMap = new HashMap<>();
-                        professionMap.put("filmProfessionId", profession.getFilmProfessionId());
-                        professionMap.put("professionName", profession.getProfessionName());
-                        //professionMap.put("professionImage", Base64.getEncoder().encode(profession.getImage()));
-                        professionList.add(professionMap);
-                    });
-            response.put("professionMapList", professionList);
+                .filter(FilmProfession::getStatus) // Checks if `status` is true
+                .forEach(profession -> {
+                    Map<String, Object> professionMap = new HashMap<>();
+                    professionMap.put("filmProfessionId", profession.getFilmProfessionId());
+                    professionMap.put("professionName", profession.getProfessionName());
+                    // professionMap.put("professionImage", Base64.getEncoder().encodeToString(profession.getImage())); // Uncomment if image encoding is needed
+                    professionMapList.add(professionMap);
+                });
+
+            response.put("professionMapList", professionMapList);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to fetch professions");
         }
     }
+
 
 }

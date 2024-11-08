@@ -61,8 +61,18 @@ public class Audition {
 	@Column(name = "audition_posted_by")
 	private String auditionPostedBy;
 	
+//	@OneToMany(mappedBy = "audition")
+//    private List<AuditionRoles> auditionRoles;
+	
 	@OneToMany(mappedBy = "audition")
-    private List<AuditionRoles> auditionRoles;
+	@ToString.Exclude
+	private List<AuditionRoles> auditionRoles;
+
+	@ManyToOne
+	@JoinColumn(name = "user_id")
+	@ToString.Exclude
+	private User user;
+
 	
 	@Column(name = "audition_isactive")
 	private boolean auditionIsactive;
@@ -84,11 +94,11 @@ public class Audition {
 	@CreationTimestamp
 	private Date auditionUpdatedOn;
 
-	@ToString.Exclude
-	@ManyToOne
-	@JoinColumn(name = "user_id")
-	private User user;
-	
+//	@ToString.Exclude
+//	@ManyToOne
+//	@JoinColumn(name = "user_id")
+//	private User user;
+//	
 	@Column(name = "startDate")
 	private String startDate;
 	
