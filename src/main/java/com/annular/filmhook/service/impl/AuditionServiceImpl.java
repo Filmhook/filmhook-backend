@@ -229,6 +229,7 @@ public class AuditionServiceImpl implements AuditionService {
 						auditionWebModel.setName(user.getName());
 						auditionWebModel.setAdminReview(user.getAdminReview());
 						auditionWebModel.setUserType(user.getUserType());
+						auditionWebModel.setUserId(user.getUserId());
 						auditionWebModel.setProfilePic(userService.getProfilePicUrl(userId));
 					});
 					if (!audition.getAuditionRoles().isEmpty()) {
