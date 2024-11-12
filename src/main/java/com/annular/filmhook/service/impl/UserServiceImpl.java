@@ -501,9 +501,12 @@ public class UserServiceImpl implements UserService {
     public List<UserSearchWebModel> getAllProfessionByPlatformId(Integer platformId) {
         List<UserSearchWebModel> outputList = new ArrayList<>();
         try {
-            List<FilmProfession> professionList = platformFilmProfessionMapRepository.getFilmProfessionsByPlatform(Platform.builder().platformId(platformId).build());
+            List<FilmProfession> professionList = platformFilmProfessionMapRepository.getFilmProfessionsByPlatform(
+                    Platform.builder().platformId(platformId).build());
+            
             if (!Utility.isNullOrEmptyList(professionList)) {
                 UserSearchWebModel userSearchWebModel = UserSearchWebModel.builder()
+                        .platformId(platformId) // Set the platformId here
                         .professionList(this.transformProfessionData(professionList))
                         .build();
                 outputList.add(userSearchWebModel);
@@ -514,6 +517,7 @@ public class UserServiceImpl implements UserService {
         }
         return outputList;
     }
+
 
     private List<ProfessionWebModel> transformProfessionData(List<FilmProfession> professionList) {
         List<ProfessionWebModel> professionWebModelList = new ArrayList<>();

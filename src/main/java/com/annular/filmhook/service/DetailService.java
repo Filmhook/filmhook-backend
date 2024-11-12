@@ -47,4 +47,6 @@ public interface DetailService {
 
     ResponseEntity<?> getIndustryByuserId(Integer userId);
 
+	ResponseEntity<?> deleteTemporaryDetails(Integer userId);
+
 }

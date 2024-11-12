@@ -1070,6 +1070,37 @@ public class DetailServiceImpl implements DetailService {
             return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving industry names", e.getMessage()));
         }
     }
+
+    @Override
+    public ResponseEntity<?> deleteTemporaryDetails(Integer userId) {
+        try {
+            // Delete records from FilmSubProfessionDetails by userId
+            filmSubProfessionDetailRepository.deleteByUserId(userId);
+
+            // Delete records from FilmProfessionDetails by userId
+            filmProfessionDetailRepository.deleteByUserId(userId);
+
+            // Delete records from IndustryDetails by userId
+            industryDetailsRepository.deleteByUserId(userId);
+
+            // Delete records from PlatformDetails by userId
+            platformDetailsRepository.deleteByUserId(userId);
+
+            // Delete the main IndustryTemporaryDetails record by userId
+            industryTemporaryDetailsRepository.deleteByUserId(userId);
+
+            // Log deletion success
+            logger.info("Temporary details deleted successfully for userId: {}", userId);
+
+            return ResponseEntity.ok("Temporary details deleted successfully");
+        } catch (Exception e) {
+            // Handle any exceptions that occur during deletion
+            logger.error("deleteTemporaryDetails Service Method Exception: {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", "Could not delete temporary details"));
+        }
+    }
+
 }
 
 	

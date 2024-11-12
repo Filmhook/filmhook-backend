@@ -11,6 +11,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -298,4 +299,15 @@ public class DetailsController {
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
+    @PostMapping("/deleteTemporaryDetails")
+    public ResponseEntity<?> deleteTemporaryDetails(@RequestBody UserWebModel userWebModel) {
+        try {
+            logger.info("deleteTemporaryDetails controller start");
+            return detailService.deleteTemporaryDetails(userWebModel.getUserId());
+        } catch (Exception e) {
+            logger.error("deleteTemporaryDetails Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 }
