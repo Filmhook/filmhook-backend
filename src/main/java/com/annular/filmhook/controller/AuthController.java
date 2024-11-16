@@ -243,6 +243,17 @@ public class AuthController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    
+    @PostMapping("updateSecondaryMobileNumber")
+    public ResponseEntity<?> updateSecondaryMobileNumber(@RequestBody UserWebModel userWebModel) {
+        try {
+            return userService.updateSecondaryMobileNumber(userWebModel);
+        } catch (Exception e) {
+            logger.info("updateSecondaryMobileNumber Method Exception {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
     @PostMapping("changeUserPassword")
     public ResponseEntity<?> changingPassword(@RequestBody UserWebModel userWebModel) {

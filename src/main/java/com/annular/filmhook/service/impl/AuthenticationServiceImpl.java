@@ -766,5 +766,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		        return new Response(0,"fail", "User not found"); // Failure response
 		    }
 	}
+	@Override
+	public ResponseEntity<?> updateSecondaryMobileNumber(UserWebModel userWebModel) {
+	    try {
+	        Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+	        if (userData.isPresent()) {
+	            User user = userData.get();
+	            user.setPhoneNumber(userWebModel.getPhoneNumber());
+	            userRepository.save(user);
+	            return ResponseEntity.ok(new Response(1, "Success", "User phone number updated successfully"));
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Fail", "User not found"));
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(0, "Fail", "An error occurred"));
+	    }
+	}
+
+
 
 }

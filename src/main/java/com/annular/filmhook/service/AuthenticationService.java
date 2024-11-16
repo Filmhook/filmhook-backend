@@ -58,6 +58,8 @@ public interface AuthenticationService {
 
 	Response updateUserFlag(UserWebModel userWebModel);
 
+	ResponseEntity<?> updateSecondaryMobileNumber(UserWebModel userWebModel);
+
 
     // ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
     // HttpServletRequest request);
