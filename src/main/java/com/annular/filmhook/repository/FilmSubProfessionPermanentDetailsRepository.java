@@ -2,14 +2,17 @@ package com.annular.filmhook.repository;
 
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
+import com.annular.filmhook.webmodel.ExperienceDTO;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FilmSubProfessionPermanentDetailsRepository extends JpaRepository<FilmSubProfessionPermanentDetail, Integer> {
@@ -29,4 +32,13 @@ public interface FilmSubProfessionPermanentDetailsRepository extends JpaReposito
     @Transactional
     @Query("DELETE FROM FilmSubProfessionPermanentDetail f WHERE f.platformPermanentDetail.platformPermanentId = :platformPermanentId")
 	void deleteByPlatformPermanentDetailId(Integer platformPermanentId);
+
+    @Query("SELECT new com.annular.filmhook.webmodel.ExperienceDTO(u.userId, MIN(u.startingYear), MAX(u.endingYear), " +
+    	       "(MAX(u.endingYear) - MIN(u.startingYear))) " +
+    	       "FROM FilmSubProfessionPermanentDetail u " +
+    	       "WHERE u.userId = :userId " +
+    	       "GROUP BY u.userId")
+    	Optional<ExperienceDTO> calculateExperienceForUser(@Param("userId") Integer userId);
+
+
 }

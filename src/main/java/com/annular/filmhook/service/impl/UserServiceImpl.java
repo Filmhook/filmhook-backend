@@ -47,6 +47,7 @@ import com.annular.filmhook.webmodel.LocationWebModel;
 import com.annular.filmhook.webmodel.ProfessionWebModel;
 import com.annular.filmhook.webmodel.SubProfessionWebModel;
 import com.annular.filmhook.webmodel.BookingWebModel;
+import com.annular.filmhook.webmodel.ExperienceDTO;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -120,7 +121,11 @@ public class UserServiceImpl implements UserService {
     }
 
     public UserWebModel transformUserObjToUserWebModelObj(User user) {
-        UserWebModel userWebModel = new UserWebModel();
+    	// Assuming `FilmSubProfessionRepository` has a method to fetch experience for a user
+    	Optional<ExperienceDTO> experience = filmSubProfessionPermanentDetailsRepository.calculateExperienceForUser(user.getUserId());
+
+
+    	UserWebModel userWebModel = new UserWebModel();
 
         userWebModel.setUserId(user.getUserId());
 
@@ -142,7 +147,11 @@ public class UserServiceImpl implements UserService {
         userWebModel.setBirthPlace(user.getBirthPlace());
         userWebModel.setLivingPlace(user.getLivingPlace());
         userWebModel.setSchedule(user.getSchedule());
-        userWebModel.setExperience(user.getExperience());
+        //userWebModel.setExperience(user.getExperience());
+
+     // Set experience based on calculated experience, defaulting to 0 if null
+     userWebModel.setExperience(experience.isPresent() ? experience.get().getTotalExperienceYears() : 0);
+ // Set experience
         userWebModel.setBust(user.getBust());
         userWebModel.setHeightUnit(user.getHeightUnit());
         userWebModel.setWeightUnit(user.getWeightUnit());

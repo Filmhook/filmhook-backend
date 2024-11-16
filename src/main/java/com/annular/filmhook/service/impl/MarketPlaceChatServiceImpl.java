@@ -795,6 +795,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            notification.setIsRead(true);
 	            notification.setCurrentStatus(false);
 	            notification.setUserType("shootingLocation");
+	            notification.setId(chat.getShootingLocationChatId());
 	            
 	           
 	            
