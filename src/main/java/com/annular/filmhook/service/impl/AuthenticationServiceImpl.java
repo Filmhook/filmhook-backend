@@ -94,12 +94,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setEmail(userWebModel.getEmail());
                 user.setUserType(userWebModel.getUserType());
                 user.setMobileNumberStatus(false);
+                user.setIndustryUserVerified(false);
                 user.setDob(userWebModel.getDob());
                 user.setAdminReview((float) 0.1);
                 user.setGender(userWebModel.getGender());
                 user.setBirthPlace(userWebModel.getBirthPlace());
                 user.setLivingPlace(userWebModel.getLivingPlace());
                 user.setDistrict(userWebModel.getDistrict());
+                user.setCountryCode(userWebModel.getCountryCode());
 
                 // Generate and set FilmHook code
                 String filmHookCode = this.generateFilmHookCode();
@@ -773,6 +775,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	        if (userData.isPresent()) {
 	            User user = userData.get();
 	            user.setPhoneNumber(userWebModel.getPhoneNumber());
+	            user.setCountryCode(userWebModel.getCountryCode());
 	            userRepository.save(user);
 	            return ResponseEntity.ok(new Response(1, "Success", "User phone number updated successfully"));
 	        } else {

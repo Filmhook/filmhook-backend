@@ -65,6 +65,7 @@ public class UserWebModel {
     private String fatherName;
     private List<String> brotherNames;
     private List<String> sisterNames;
+    private Boolean industryUserVerified;
 
     // Education Section
     private String schoolName;
@@ -92,6 +93,8 @@ public class UserWebModel {
     private Integer emailOtp;
     private String forgotOtp;
     private Boolean adminPageStatus;
+    private String countryCode;
+    
 
     // Profile & Cover Photo
     // Input fields for save

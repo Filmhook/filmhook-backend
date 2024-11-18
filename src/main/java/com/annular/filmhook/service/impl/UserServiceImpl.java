@@ -147,11 +147,20 @@ public class UserServiceImpl implements UserService {
         userWebModel.setBirthPlace(user.getBirthPlace());
         userWebModel.setLivingPlace(user.getLivingPlace());
         userWebModel.setSchedule(user.getSchedule());
+        userWebModel.setCountryCode(user.getCountryCode());
         //userWebModel.setExperience(user.getExperience());
-
+        
      // Set experience based on calculated experience, defaulting to 0 if null
-     userWebModel.setExperience(experience.isPresent() ? experience.get().getTotalExperienceYears() : 0);
- // Set experience
+        if (experience.isPresent() && experience.get().getTotalExperienceYears() != null) {
+            userWebModel.setExperience(experience.get().getTotalExperienceYears());
+        } else {
+            userWebModel.setExperience(0); // Default to 0 if experience or years are null
+        }
+
+
+//     // Set experience based on calculated experience, defaulting to 0 if null
+//     userWebModel.setExperience(experience.isPresent() ? experience.get().getTotalExperienceYears() : 0);
+// // Set experience
         userWebModel.setBust(user.getBust());
         userWebModel.setHeightUnit(user.getHeightUnit());
         userWebModel.setWeightUnit(user.getWeightUnit());
@@ -770,7 +779,8 @@ public class UserServiceImpl implements UserService {
                         .filter(filter4 -> searchWebModel.getSubProfessionIds().contains(filter4.getFilmSubProfession().getSubProfessionId()))
                         .forEach(professionData -> {
                             User user = this.getUser(professionData.getUserId()).orElse(null);
-                            if (user != null) {
+                            System.out.print("user"+user);
+                            if (user != null  && Boolean.TRUE.equals(user.getIndustryUserVerified())) { // Check for industryUserVerified
                                 logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
                                 Map<String, Object> map = new LinkedHashMap<>();
 

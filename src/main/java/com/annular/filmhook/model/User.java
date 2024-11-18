@@ -246,5 +246,12 @@ public class User {
     
     @Column(name = "userFlag")
     private Boolean userFlag;
+    
+    @Column(name = "industryUserVerified")
+    private Boolean industryUserVerified;
+    
+    
+    @Column(name = "country_code")
+    private String countryCode;
 
 }

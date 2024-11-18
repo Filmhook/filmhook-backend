@@ -33,12 +33,20 @@ public interface FilmSubProfessionPermanentDetailsRepository extends JpaReposito
     @Query("DELETE FROM FilmSubProfessionPermanentDetail f WHERE f.platformPermanentDetail.platformPermanentId = :platformPermanentId")
 	void deleteByPlatformPermanentDetailId(Integer platformPermanentId);
 
+//    @Query("SELECT new com.annular.filmhook.webmodel.ExperienceDTO(u.userId, MIN(u.startingYear), MAX(u.endingYear), " +
+//    	       "(MAX(u.endingYear) - MIN(u.startingYear))) " +
+//    	       "FROM FilmSubProfessionPermanentDetail u " +
+//    	       "WHERE u.userId = :userId " +
+//    	       "GROUP BY u.userId")
+//    	Optional<ExperienceDTO> calculateExperienceForUser(@Param("userId") Integer userId);
+    
     @Query("SELECT new com.annular.filmhook.webmodel.ExperienceDTO(u.userId, MIN(u.startingYear), MAX(u.endingYear), " +
-    	       "(MAX(u.endingYear) - MIN(u.startingYear))) " +
+    	       "COALESCE(MAX(u.endingYear) - MIN(u.startingYear), 0)) " + // Default to 0 if null
     	       "FROM FilmSubProfessionPermanentDetail u " +
     	       "WHERE u.userId = :userId " +
     	       "GROUP BY u.userId")
     	Optional<ExperienceDTO> calculateExperienceForUser(@Param("userId") Integer userId);
+
 
 
 }
