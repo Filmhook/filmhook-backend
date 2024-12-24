@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Comparator;
 
 import java.time.LocalDate;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.*;
 
@@ -35,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.service.UserService;
@@ -1320,6 +1323,64 @@ public class UserServiceImpl implements UserService {
 	    }
 	    return Collections.emptyList(); // Return empty list if any exception occurs
 	}
+	 @Override
+	    public ResponseEntity<?> deactivateUserId(Integer userId, String password) {
+	        // Validate input parameters
+	        if (userId == null || password == null || password.isEmpty()) {
+	            return ResponseEntity.badRequest().body(new Response(0, "fail", "User ID and password must be provided."));
+	        }
+
+	        // Retrieve the user from the database
+	        Optional<User> userOptional = userRepository.findById(userId);
+	        if (!userOptional.isPresent()) {
+	            return ResponseEntity.badRequest().body(new Response(0, "fail", "User not found."));
+	        }
+
+	        User user = userOptional.get();
+
+	        // Verify the password (compare the provided password with the stored hashed password)
+	        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+	        if (!passwordEncoder.matches(password, user.getPassword())) {
+	            return ResponseEntity.badRequest().body(new Response(0, "fail", "Incorrect password."));
+	        }
+
+	        // Deactivate the user account (set 'status' flag to false)
+	        if (!user.getStatus()) {
+	        	return ResponseEntity.badRequest().body(new Response(0, "fail", "User is already deactivated."));
+	        }
+	        user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
+	        userRepository.save(user); // Save changes to the database
+
+	        // Send deactivation email
+	        boolean emailSent = sendVerificationEmail(user, false);
+	        if (!emailSent) {
+	            // Log the failure, but do not block the response
+	            System.err.println("Failed to send deactivation email to user: " + user.getEmail());
+	        }
+
+	        return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
+	    }
+
+	    public boolean sendVerificationEmail(User user, Boolean status) {
+	        try {
+	            String subject, mailContent = "";
+	            if (!status) { // If status is false, indicating deactivation
+	                subject = "Account Deactivation Notice";
+	               // mailContent += "<p>Dear " + user.getName() + ",</p>";
+	                mailContent += "<p>Your account has been deactivated. If this was a mistake, please contact our support team for assistance.</p>";
+	               // mailContent += "<p>Best Regards,<br/>The Film-Hook Team</p>";
+	            } else { // Other scenarios (e.g., profile rejection)
+	                subject = "Profile Rejected";
+	                mailContent += "<p>Your profile on FilmHook has been rejected. Please contact support for further details.</p>";
+	            }
+	            return mailNotification.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	        return false;
+	    }
+
+
 
 
 	}

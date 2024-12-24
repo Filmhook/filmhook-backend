@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -444,6 +445,15 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
-    
+    @DeleteMapping("/deactivateUserId")
+    public ResponseEntity<?> deactivateUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password) {
+        try {
+            return userService.deactivateUserId(userId,password);
+        } catch (Exception e) {
+            logger.error("deactivateUserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
 }

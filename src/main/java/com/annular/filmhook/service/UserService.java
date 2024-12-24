@@ -77,4 +77,6 @@ public interface UserService {
 
 	List<Map<String, Object>> findNearByUsers(Integer userId);
 
+	ResponseEntity<?> deactivateUserId(Integer userId, String password);
+
 }
