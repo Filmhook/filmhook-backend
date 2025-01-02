@@ -77,6 +77,12 @@ public interface UserService {
 
 	List<Map<String, Object>> findNearByUsers(Integer userId);
 
-	ResponseEntity<?> deactivateUserId(Integer userId, String password, String deleteReason);
+	ResponseEntity<?> deactivateUserId(Integer userId, String password);
+
+	ResponseEntity<?> saveDeleteReason(UserWebModel userWebModel);
+
+	ResponseEntity<?> getDeleteStatus(UserWebModel userWebModel);
+
+	ResponseEntity<?> confirmdeleteUserId(Integer userId, String password);
 
 }

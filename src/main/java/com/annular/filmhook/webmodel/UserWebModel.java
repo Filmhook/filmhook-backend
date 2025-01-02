@@ -44,6 +44,7 @@ public class UserWebModel {
     private String phoneNumber;
     private String currentAddress;
     private String homeAddress;
+    private Boolean deniedAccessRead;
 
     // Body Measurement Section
     private String height;

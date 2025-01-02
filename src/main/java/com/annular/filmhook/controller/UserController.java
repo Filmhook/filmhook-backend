@@ -446,14 +446,45 @@ public class UserController {
         }
     }
     @DeleteMapping("/deactivateUserId")
-    public ResponseEntity<?> deactivateUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password,@RequestParam("deleteReason") String deleteReason) {
+    public ResponseEntity<?> deactivateUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password) {
         try {
-            return userService.deactivateUserId(userId,password,deleteReason);
+            return userService.deactivateUserId(userId,password);
         } catch (Exception e) {
             logger.error("deactivateUserId Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    @DeleteMapping("/confirmdeleteUserId")
+    public ResponseEntity<?> confirmdeleteUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password) {
+        try {
+            return userService.confirmdeleteUserId(userId,password);
+        } catch (Exception e) {
+            logger.error("confirmdeleteUserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
+    @PostMapping("/saveDeleteReason")
+    public ResponseEntity<?> saveDeleteReason(@RequestBody UserWebModel userWebModel) {
+        try {
+            return userService.saveDeleteReason(userWebModel);
+        } catch (Exception e) {
+            logger.error("saveDeleteReason Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @PostMapping("/getDeleteStatus")
+    public ResponseEntity<?> getDeleteStatus(@RequestBody UserWebModel userWebModel) {
+        try {
+            return userService.getDeleteStatus(userWebModel);
+        } catch (Exception e) {
+            logger.error("getDeleteStatus Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 }

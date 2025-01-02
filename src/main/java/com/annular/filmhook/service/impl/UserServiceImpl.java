@@ -1324,7 +1324,7 @@ public class UserServiceImpl implements UserService {
 	    return Collections.emptyList(); // Return empty list if any exception occurs
 	}
 	 @Override
-	    public ResponseEntity<?> deactivateUserId(Integer userId, String password ,String deleteReason) {
+	    public ResponseEntity<?> deactivateUserId(Integer userId, String password) {
 	        // Validate input parameters
 	        if (userId == null || password == null || password.isEmpty()) {
 	            return ResponseEntity.badRequest().body(new Response(0, "fail", "User ID and password must be provided."));
@@ -1349,37 +1349,126 @@ public class UserServiceImpl implements UserService {
 	        	return ResponseEntity.badRequest().body(new Response(0, "fail", "User is already deactivated."));
 	        }
 	        //user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
-	       user.setDeleteReason(deleteReason);
 	        userRepository.save(user); // Save changes to the database
 
-	        // Send deactivation email
-	        boolean emailSent = sendVerificationEmail(user, false);
-	        if (!emailSent) {
-	            // Log the failure, but do not block the response
-	            System.err.println("Failed to send deactivation email to user: " + user.getEmail());
-	        }
+//	        // Send deactivation email
+//	        boolean emailSent = sendVerificationEmail(user, false);
+//	        if (!emailSent) {
+//	            // Log the failure, but do not block the response
+//	            System.err.println("Failed to send deactivation email to user: " + user.getEmail());
+//	        }
 
 	        return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
 	    }
 
-	    public boolean sendVerificationEmail(User user, Boolean status) {
-	        try {
-	            String subject, mailContent = "";
-	            if (!status) { // If status is false, indicating deactivation
-	                subject = "Account Deactivation Notice";
-	               // mailContent += "<p>Dear " + user.getName() + ",</p>";
-	                mailContent += "<p>Your account has been deactivated. If this was a mistake, please contact our support team for assistance.</p>";
-	               // mailContent += "<p>Best Regards,<br/>The Film-Hook Team</p>";
-	            } else { // Other scenarios (e.g., profile rejection)
-	                subject = "Profile Rejected";
-	                mailContent += "<p>Your profile on FilmHook has been rejected. Please contact support for further details.</p>";
-	            }
-	            return mailNotification.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
-	        return false;
-	    }
+	 @Override
+	 public ResponseEntity<?> saveDeleteReason(UserWebModel userWebModel) {
+	     try {
+	         // Fetch user by ID
+	         Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+
+	         if (userOptional.isPresent()) {
+	             User user = userOptional.get();
+
+	             // Update the deleteReason field
+	             user.setDeleteReason(userWebModel.getDeleteReason());
+
+	             // Save the updated user back to the database
+	             userRepository.save(user);
+
+	             return ResponseEntity.ok("Delete reason saved successfully for user with ID: " + userWebModel.getUserId());
+	         } else {
+	             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + userWebModel.getUserId());
+	         }
+	     } catch (Exception e) {
+	         e.printStackTrace();
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while saving the delete reason.");
+	     }
+	 }
+
+	 @Override
+	 public ResponseEntity<?> getDeleteStatus(UserWebModel userWebModel) {
+	     try {
+	         // Fetch user by ID
+	         Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+
+	         if (userOptional.isPresent()) {
+	             User user = userOptional.get();
+
+	             // Create a HashMap to store the response
+	             Map<String, Object> response = new HashMap<>();
+	             response.put("userId", user.getUserId());
+	             response.put("deleteReason", user.getDeleteReason());
+	             response.put("accessOrDeniedStatus", user.getDeactivateAccessOrdeny());
+	             response.put("deniedAccessRead", user.getDeniedAccessRead());
+
+	             return ResponseEntity.ok(response);
+	         } else {
+	             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + userWebModel.getUserId());
+	         }
+	     } catch (Exception e) {
+	         e.printStackTrace();
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while retrieving the delete status.");
+	     }
+	 }
+
+	@Override
+	public ResponseEntity<?> confirmdeleteUserId(Integer userId, String password) {
+        // Validate input parameters
+        if (userId == null || password == null || password.isEmpty()) {
+            return ResponseEntity.badRequest().body(new Response(0, "fail", "User ID and password must be provided."));
+        }
+
+        // Retrieve the user from the database
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (!userOptional.isPresent()) {
+            return ResponseEntity.badRequest().body(new Response(0, "fail", "User not found."));
+        }
+
+        User user = userOptional.get();
+
+        // Verify the password (compare the provided password with the stored hashed password)
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            return ResponseEntity.badRequest().body(new Response(0, "fail", "Incorrect password."));
+        }
+
+        // Deactivate the user account (set 'status' flag to false)
+        if (!user.getStatus()) {
+        	return ResponseEntity.badRequest().body(new Response(0, "fail", "User is already deactivated."));
+        }
+        user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
+        userRepository.save(user); // Save changes to the database
+
+//        // Send deactivation email
+//        boolean emailSent = sendVerificationEmail(user, false);
+//        if (!emailSent) {
+//            // Log the failure, but do not block the response
+//            System.err.println("Failed to send deactivation email to user: " + user.getEmail());
+//        }
+
+        return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
+	}
+
+
+//	    public boolean sendVerificationEmail(User user, Boolean status) {
+//	        try {
+//	            String subject, mailContent = "";
+//	            if (!status) { // If status is false, indicating deactivation
+//	                subject = "Account Deactivation Notice";
+//	               // mailContent += "<p>Dear " + user.getName() + ",</p>";
+//	                mailContent += "<p>Your account has been deactivated. If this was a mistake, please contact our support team for assistance.</p>";
+//	               // mailContent += "<p>Best Regards,<br/>The Film-Hook Team</p>";
+//	            } else { // Other scenarios (e.g., profile rejection)
+//	                subject = "Profile Rejected";
+//	                mailContent += "<p>Your profile on FilmHook has been rejected. Please contact support for further details.</p>";
+//	            }
+//	            return mailNotification.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
+//	        } catch (Exception e) {
+//	            e.printStackTrace();
+//	        }
+//	        return false;
+//	    }
 
 
 

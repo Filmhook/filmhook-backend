@@ -259,5 +259,8 @@ public class User {
     
     @Column(name = "deactivateAccessOrdeny")
     private Boolean deactivateAccessOrdeny;
+    
+    @Column(name = "deniedAccessRead")
+    private Boolean deniedAccessRead;
 
 }
