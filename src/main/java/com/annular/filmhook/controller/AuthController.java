@@ -386,4 +386,27 @@ public class AuthController {
 			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
 		}
     }
+    
+    @PostMapping("updateUserDeactivateFlag")
+   	public ResponseEntity<Response> updateUserDeactivateFlag(@RequestBody UserWebModel userWebModel) {
+   		try {
+   			Response response = userService.updateUserDeactivateFlag(userWebModel);
+   			return ResponseEntity.ok().body(response);
+   		} catch (Exception e) {
+   			logger.error("Error at userWebModel -> {}", e.getMessage());
+   			e.printStackTrace();
+   			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
+   		}
+       }
+    
+    @GetMapping("getDeactivateList")
+    public ResponseEntity<?> getDeactivateList() {
+        try {
+            return userService.getDeactivateList();
+        } catch (Exception e) {
+            logger.info("getDeactivateList Method Exception {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 }

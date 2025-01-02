@@ -66,6 +66,8 @@ public class UserWebModel {
     private List<String> brotherNames;
     private List<String> sisterNames;
     private Boolean industryUserVerified;
+    private String deleteReason;
+    private Boolean deactivateAccessOrdeny;
 
     // Education Section
     private String schoolName;

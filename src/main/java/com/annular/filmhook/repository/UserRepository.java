@@ -94,6 +94,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	Optional<User> findByUserId(Integer userId);
 
+    @Query("SELECT u FROM User u WHERE u.deleteReason IS NOT NULL AND u.status=true")
+	List<User> findByDeleteReasonIsNotNull();
+
 
 
 

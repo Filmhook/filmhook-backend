@@ -1324,7 +1324,7 @@ public class UserServiceImpl implements UserService {
 	    return Collections.emptyList(); // Return empty list if any exception occurs
 	}
 	 @Override
-	    public ResponseEntity<?> deactivateUserId(Integer userId, String password) {
+	    public ResponseEntity<?> deactivateUserId(Integer userId, String password ,String deleteReason) {
 	        // Validate input parameters
 	        if (userId == null || password == null || password.isEmpty()) {
 	            return ResponseEntity.badRequest().body(new Response(0, "fail", "User ID and password must be provided."));
@@ -1348,7 +1348,8 @@ public class UserServiceImpl implements UserService {
 	        if (!user.getStatus()) {
 	        	return ResponseEntity.badRequest().body(new Response(0, "fail", "User is already deactivated."));
 	        }
-	        user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
+	        //user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
+	       user.setDeleteReason(deleteReason);
 	        userRepository.save(user); // Save changes to the database
 
 	        // Send deactivation email

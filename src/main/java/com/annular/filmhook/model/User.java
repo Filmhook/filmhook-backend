@@ -253,5 +253,11 @@ public class User {
     
     @Column(name = "country_code")
     private String countryCode;
+    
+    @Column(name = "deleteReason")
+    private String deleteReason;
+    
+    @Column(name = "deactivateAccessOrdeny")
+    private Boolean deactivateAccessOrdeny;
 
 }

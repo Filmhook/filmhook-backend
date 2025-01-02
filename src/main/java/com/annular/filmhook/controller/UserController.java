@@ -446,9 +446,9 @@ public class UserController {
         }
     }
     @DeleteMapping("/deactivateUserId")
-    public ResponseEntity<?> deactivateUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password) {
+    public ResponseEntity<?> deactivateUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password,@RequestParam("deleteReason") String deleteReason) {
         try {
-            return userService.deactivateUserId(userId,password);
+            return userService.deactivateUserId(userId,password,deleteReason);
         } catch (Exception e) {
             logger.error("deactivateUserId Method Exception -> {}", e.getMessage());
             e.printStackTrace();

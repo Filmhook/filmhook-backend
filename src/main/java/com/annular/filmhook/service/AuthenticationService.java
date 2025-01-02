@@ -60,6 +60,10 @@ public interface AuthenticationService {
 
 	ResponseEntity<?> updateSecondaryMobileNumber(UserWebModel userWebModel);
 
+	Response updateUserDeactivateFlag(UserWebModel userWebModel);
+
+	ResponseEntity<?> getDeactivateList();
+
 
     // ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
     // HttpServletRequest request);

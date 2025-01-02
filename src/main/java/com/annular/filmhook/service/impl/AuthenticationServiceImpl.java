@@ -785,7 +785,52 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(0, "Fail", "An error occurred"));
 	    }
 	}
+	@Override
+	public Response updateUserDeactivateFlag(UserWebModel userWebModel) {
+	    try {
+	        // Fetch the user by ID
+	        Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+	        
+	        if (userData.isPresent()) {
+	            User user = userData.get();
 
+	            // Update the deactivateAccessOrdeny field
+	            user.setDeactivateAccessOrdeny(userWebModel.getDeactivateAccessOrdeny());
 
+	            // Save the updated user entity
+	            userRepository.save(user);
+
+	            return new Response(1, "User deactivateAccessOrdeny updated successfully.", true);
+	        } else {
+	            return new Response(0, "User not found.", false);
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return new Response(-1, "An error occurred while updating the user.", false);
+	    }
+	}
+
+	@Override
+	public ResponseEntity<?> getDeactivateList() {
+	    try {
+	        // Fetch users with deleteReason not null
+	        List<User> deactivateList = userRepository.findByDeleteReasonIsNotNull();
+
+	        // Check if the list is empty
+	        if (deactivateList.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No users with deleteReason found.");
+	        }
+
+	        // Return the list
+	        return ResponseEntity.ok(deactivateList);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the deactivate list.");
+	    }
+	}
 
 }
+
+
+
+
