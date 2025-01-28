@@ -932,6 +932,7 @@ public class UserServiceImpl implements UserService {
                         .map(user -> UserWebModel.builder()
                                 .userId(user.getUserId())
                                 .name(user.getName())
+                                .adminReview(user.getAdminReview())
                                 .profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
                                 .profilePicUrl(this.getProfilePicUrl(user.getUserId()))
                                 .build())
