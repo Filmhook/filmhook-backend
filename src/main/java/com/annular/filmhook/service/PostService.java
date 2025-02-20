@@ -16,7 +16,7 @@ public interface PostService {
 
     PostWebModel savePostsWithFiles(PostWebModel postWebModel);
 
-    List<PostWebModel> getPostsByUserId(Integer userId) throws IOException;
+    List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) throws IOException;
 
     PostWebModel getPostByPostId(String postId);
 

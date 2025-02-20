@@ -249,7 +249,7 @@ public class PostServiceImpl implements PostService {
 //        }
 //    }
     @Override
-    public List<PostWebModel> getPostsByUserId(Integer userId) {
+    public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) {
         try {
             // Fetch posts created by the user
             List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
@@ -264,23 +264,33 @@ public class PostServiceImpl implements PostService {
             Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
             combinedPostsSet.addAll(taggedPosts);
 
-            // Transform the combined list of posts to PostWebModel
+            // Convert Set to List for sorting and pagination
             List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
-            // Sort the posts by creation date (or any other attribute)
-            //combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+
             // Sort the posts first by promote flag, then by creation date
             combinedPostsList.sort(Comparator
                     .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
                     .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
 
+            // Apply pagination
+            int totalRecords = combinedPostsList.size();
+            int fromIndex = pageNo * pageSize;
+            int toIndex = Math.min(fromIndex + pageSize, totalRecords);
 
-            return this.transformPostsDataToPostWebModel(combinedPostsList);
+            // Return paginated results
+            if (fromIndex < totalRecords) {
+                return this.transformPostsDataToPostWebModel(combinedPostsList.subList(fromIndex, toIndex));
+            } else {
+                return Collections.emptyList(); // Return empty list if pageNo is out of range
+            }
+
         } catch (Exception e) {
             logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
             e.printStackTrace();
-            return null;
+            return Collections.emptyList();
         }
     }
+
 
     @Override
     public PostWebModel getPostByPostId(String postId) {
@@ -472,39 +482,7 @@ public class PostServiceImpl implements PostService {
 //            return null;
 //        }
 //    }
-//
-//    @Override
-//    public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
-//        try {
-//            // Fetch all active posts (you might want to consider using pagination at the repository level)
-//            List<Posts> postList = postsRepository.getAllActivePosts();
-//            
-//            if (postList == null || postList.isEmpty()) {
-//                return Collections.emptyList();
-//            }
-//
-//            // Sort the posts based on creation date and promoteFlag, nulls last for promoteFlag
-//            postList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());//response come like first 1
-//            postList.sort(Comparator.nullsLast(Comparator.comparing(Posts::getPromoteFlag).reversed()));//response come like first promote flag then next 5 withoutPromotote flag tehn next 1 pr
-//
-//            // Apply manual pagination
-//            int start = (pageNo - 1) * pageSize;
-//            int end = Math.min(start + pageSize, postList.size());
-//
-//            // If the start index exceeds the size of the list, return an empty list
-//            if (start > postList.size()) {
-//                return Collections.emptyList();
-//            }
-//
-//            List<Posts> paginatedPosts = postList.subList(start, end);
-//
-//            // Transform the paginated posts into PostWebModel and return
-//            return this.transformPostsDataToPostWebModel(paginatedPosts);
-//        } catch (Exception e) {
-//            logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
-//            return null;
-//        }
-//    }
+
     @Override
     public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
         try {
