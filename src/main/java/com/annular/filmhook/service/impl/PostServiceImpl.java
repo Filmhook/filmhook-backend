@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -248,50 +249,42 @@ public class PostServiceImpl implements PostService {
 //            return null;
 //        }
 //    }
-    @Override
-    public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) {
+    public List<PostWebModel> getPostsByUserId(Integer userId, Integer page, Integer size) throws IOException {
         try {
             // Fetch posts created by the user
             List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
-
             // Convert userId to String for querying tagged posts
             String userIdString = userId.toString();
-
             // Fetch posts where the user is tagged
             List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
-
             // Combine both lists and remove duplicates
             Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
             combinedPostsSet.addAll(taggedPosts);
-
-            // Convert Set to List for sorting and pagination
+            // Transform the combined list of posts to a list
             List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
-
             // Sort the posts first by promote flag, then by creation date
             combinedPostsList.sort(Comparator
-                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
-                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
-
+                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder()))
+                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
+            
             // Apply pagination
-            int totalRecords = combinedPostsList.size();
-            int fromIndex = pageNo * pageSize;
-            int toIndex = Math.min(fromIndex + pageSize, totalRecords);
-
-            // Return paginated results
-            if (fromIndex < totalRecords) {
-                return this.transformPostsDataToPostWebModel(combinedPostsList.subList(fromIndex, toIndex));
+            int startIndex = page * size;
+            int endIndex = Math.min(startIndex + size, combinedPostsList.size());
+            
+            // Check if startIndex is valid
+            if (startIndex < combinedPostsList.size()) {
+                List<Posts> paginatedPosts = combinedPostsList.subList(startIndex, endIndex);
+                return this.transformPostsDataToPostWebModel(paginatedPosts);
             } else {
-                return Collections.emptyList(); // Return empty list if pageNo is out of range
+                // Return empty list if page is out of bounds
+                return new ArrayList<>();
             }
-
         } catch (Exception e) {
             logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
             e.printStackTrace();
-            return Collections.emptyList();
+            return null;
         }
     }
-
-
     @Override
     public PostWebModel getPostByPostId(String postId) {
         Posts post = postsRepository.findByPostId(postId);
@@ -892,5 +885,6 @@ public class PostServiceImpl implements PostService {
         }
 
     }
+
 
 }
