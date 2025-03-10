@@ -78,12 +78,9 @@ public class PostController {
     }
 
     @GetMapping("/getPostsByUserId")
-    public Response getPostsByUserId(@RequestParam("userId") Integer userId,
-                                @RequestParam("pageNo") Integer pageNo,
-                                     @RequestParam("pageSize") Integer pageSize)
-{
+    public Response getPostsByUserId(@RequestParam("userId") Integer userId) {
         try {
-            List<PostWebModel> outputList = postService.getPostsByUserId(userId,pageNo,pageSize);
+            List<PostWebModel> outputList = postService.getPostsByUserId(userId);
             if (!Utility.isNullOrEmptyList(outputList)) return new Response(1, "Post(s) found successfully...", outputList);
             else return new Response(-1, "No file(s) available for this user...", null);
         } catch (Exception e) {
