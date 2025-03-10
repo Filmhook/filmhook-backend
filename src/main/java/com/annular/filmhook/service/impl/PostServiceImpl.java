@@ -250,7 +250,7 @@ public class PostServiceImpl implements PostService {
 //        }
 //    }
     @Override
-    public List<PostWebModel> getPostsByUserId(Integer userId) {
+    public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) {
         try {
             // Fetch posts created by the user
             List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
@@ -274,14 +274,23 @@ public class PostServiceImpl implements PostService {
                     .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
                     .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
 
+            // Apply pagination
+            int totalPosts = combinedPostsList.size();
+            int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
+            int toIndex = Math.min(fromIndex + pageSize, totalPosts);
 
-            return this.transformPostsDataToPostWebModel(combinedPostsList);
+            List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
+
+            return this.transformPostsDataToPostWebModel(paginatedPosts);
+
+          // return this.transformPostsDataToPostWebModel(combinedPostsList);
         } catch (Exception e) {
             logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
+
     @Override
     public PostWebModel getPostByPostId(String postId) {
         Posts post = postsRepository.findByPostId(postId);
@@ -882,6 +891,7 @@ public class PostServiceImpl implements PostService {
         }
 
     }
+
 
 
 }
