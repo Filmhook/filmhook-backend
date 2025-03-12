@@ -801,8 +801,7 @@ public class UserServiceImpl implements UserService {
                                 map.put("experience", user.getExperience());
                                 map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
                                 map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
-
-                                map.put("industryId", professionData.getIndustryUserPermanentDetails().getIndustry().getIndustryId());
+                                map.put("dailySalary", professionData.getPlatformPermanentDetail().getDailySalary());                                map.put("industryId", professionData.getIndustryUserPermanentDetails().getIndustry().getIndustryId());
                                 map.put("industry", professionData.getIndustryUserPermanentDetails().getIndustriesName());
 
                                 map.put("platformId", professionData.getPlatformPermanentDetail().getPlatform().getPlatformId());
