@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.PaymentDetails;
 import com.annular.filmhook.repository.PaymentDetailsRepository;
 import com.annular.filmhook.service.PaymentDetailsService;
@@ -46,7 +47,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 
         paymentDetailsRepository.save(details);
 
-        return ResponseEntity.ok("Payment saved successfully with hash.");
+        return ResponseEntity.ok(new Response(1,"success",details));
     }
 
 }
