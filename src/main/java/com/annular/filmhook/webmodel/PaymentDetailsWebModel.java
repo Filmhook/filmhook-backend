@@ -27,5 +27,6 @@ public class PaymentDetailsWebModel {
     private Integer updatedBy;
     private Date updatedOn;
     private Boolean status;
+    private Integer promoteId;
 
 }

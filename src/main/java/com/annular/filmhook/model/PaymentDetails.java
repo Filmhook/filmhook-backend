@@ -69,5 +69,8 @@ public class PaymentDetails {
     
     @Column(name = "payment_hash")
     private String paymentHash;
+    
+    @Column(name = "promoteId")
+    private Integer promoteId;
 
 }

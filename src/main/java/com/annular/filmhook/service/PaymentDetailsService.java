@@ -8,4 +8,6 @@ public interface PaymentDetailsService {
 
 	ResponseEntity<?> savePayment(PaymentDetailsWebModel paymentDetailsWebModel);
 
+	ResponseEntity<?> emailSend(PaymentDetailsWebModel paymentDetailsWebModel);
+
 }

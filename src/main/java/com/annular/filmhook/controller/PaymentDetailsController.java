@@ -34,5 +34,18 @@ public class PaymentDetailsController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    
+    @PostMapping("/emailSend")
+    public ResponseEntity<?> emailSend(@RequestBody PaymentDetailsWebModel paymentDetailsWebModel) {
+        try {
+            logger.info("emailSend controller start");
+            return paymentDetailsService.emailSend(paymentDetailsWebModel);
+        } catch (Exception e) {
+            logger.error("emailSend Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
 
 }
