@@ -61,6 +61,8 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                 .userId(webModel.getUserId())
                 .postId(webModel.getPostId())
                 .paymentHash(hash)
+                .key("oXregF")
+                .salt("fGiczQ8QDLit7B5iEHGQ2glKXv4wKPqe")
                 .build();
 
         paymentDetailsRepository.save(details);
