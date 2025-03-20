@@ -73,8 +73,8 @@ public class PaymentDetails {
     @Column(name = "promoteId")
     private Integer promoteId;
     
-    @Column(name = "key")
-    private String key;
+    @Column(name = "paymentkey")
+    private String paymentkey;
     
     @Column(name = "salt")
     private String salt;
