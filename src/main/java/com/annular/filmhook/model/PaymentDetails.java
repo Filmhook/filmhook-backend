@@ -78,5 +78,11 @@ public class PaymentDetails {
     
     @Column(name = "salt")
     private String salt;
+    
+    @Column(name = "reason")
+    private String reason;
+    
+    @Column(name = "promotonStatus")
+    private String promotionStatus;
 
 }

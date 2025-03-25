@@ -10,4 +10,10 @@ public interface PaymentDetailsService {
 
 	ResponseEntity<?> emailSend(PaymentDetailsWebModel paymentDetailsWebModel);
 
+	ResponseEntity<?> promotionPending(PaymentDetailsWebModel paymentDetailsWebModel);
+
+	ResponseEntity<?> promotionFailed(PaymentDetailsWebModel paymentDetailsWebModel);
+
+	ResponseEntity<?> promotionForCron(PaymentDetailsWebModel paymentDetailsWebModel);
+
 }

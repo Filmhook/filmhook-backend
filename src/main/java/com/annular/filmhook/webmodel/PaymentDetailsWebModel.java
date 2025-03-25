@@ -2,6 +2,8 @@ package com.annular.filmhook.webmodel;
 
 import java.util.Date;
 
+import javax.persistence.Column;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,5 +30,7 @@ public class PaymentDetailsWebModel {
     private Date updatedOn;
     private Boolean status;
     private Integer promoteId;
+    private String reason;
+    private String promotionStatus;
 
 }

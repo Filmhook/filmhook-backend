@@ -47,5 +47,41 @@ public class PaymentDetailsController {
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
     
+    @PostMapping("/promotionPending")
+    public ResponseEntity<?> promotionPending(@RequestBody PaymentDetailsWebModel paymentDetailsWebModel) {
+        try {
+            logger.info("promotionPending controller start");
+            return paymentDetailsService.promotionPending(paymentDetailsWebModel);
+        } catch (Exception e) {
+            logger.error("promotionPending Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    
+    @PostMapping("/promotionFailed")
+    public ResponseEntity<?> promotionFailed(@RequestBody PaymentDetailsWebModel paymentDetailsWebModel) {
+        try {
+            logger.info("promotionFailed controller start");
+            return paymentDetailsService.promotionFailed(paymentDetailsWebModel);
+        } catch (Exception e) {
+            logger.error("promotionFailed Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("/promotionForCron")
+    public ResponseEntity<?> promotionForCron(@RequestBody PaymentDetailsWebModel paymentDetailsWebModel) {
+        try {
+            logger.info("promotionForCron controller start");
+            return paymentDetailsService.promotionForCron(paymentDetailsWebModel);
+        } catch (Exception e) {
+            logger.error("promotionForCron Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 
 }
