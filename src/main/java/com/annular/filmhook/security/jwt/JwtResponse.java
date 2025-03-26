@@ -27,5 +27,6 @@ public class JwtResponse {
     private float review;
     private String lastName;
     private String profilePic;
+    private String mobileNo;
 
 }
