@@ -215,5 +215,17 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+    
+    @PostMapping("/updatePromoteStatus")
+    public ResponseEntity<?> updatePromoteStatus(@RequestBody PromoteWebModel promoteWebModel) {
+        try {
+            logger.info("updatePromoteStatus controller start");
+            return promoteService.updatePromoteStatus(promoteWebModel);
+        } catch (Exception e) {
+            logger.error("updatePromoteStatus  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
 }
 

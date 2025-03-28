@@ -101,8 +101,8 @@ public class PromoteServiceImpl implements PromoteService {
             // Updating the promote flag in the post-table
             Posts promotedPost = postsRepository.findById(promote.getPostId()).orElse(null);
             if (promotedPost != null) {
-                promotedPost.setPromoteFlag(true);
-                promotedPost.setPromoteStatus(true); // Assuming there's a promoteStatus field
+                promotedPost.setPromoteFlag(false);
+                promotedPost.setPromoteStatus(false); // Assuming there's a promoteStatus field
                 postsRepository.save(promotedPost);
             }
 
@@ -532,6 +532,27 @@ public class PromoteServiceImpl implements PromoteService {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 	        }
 	    }
+
+
+	@Override
+	public ResponseEntity<?> updatePromoteStatus(PromoteWebModel promoteWebModel) {
+	    // Fetching the post from the database
+	    Posts promotedPost = postsRepository.findById(promoteWebModel.getPostId()).orElse(null);
+
+	    if (promotedPost != null) {
+	        // Updating the promote flag and promote status
+	        promotedPost.setPromoteFlag(promoteWebModel.getPromoteFlag());
+	        promotedPost.setPromoteStatus(promoteWebModel.getPromoteStatus()); // Assuming there's a promoteStatus field
+	        
+	        // Saving the updated post
+	        postsRepository.save(promotedPost);
+	        
+	        return ResponseEntity.ok("Promote status updated successfully.");
+	    }
+
+	    // Returning a response if post not found
+	    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found.");
+	}
 
 
 

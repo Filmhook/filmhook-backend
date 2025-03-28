@@ -138,7 +138,7 @@ public class AuthController {
                         userDetails.getUserType(),
                         user.getFilmHookCode(),
                         user.getAdminReview(),
-                        user.getLastName(),userServices.getProfilePicUrl(user.getUserId()),user.getPhoneNumber()));
+                        user.getLastName(),userServices.getProfilePicUrl(user.getUserId()),user.getPhoneNumber(),user.getLivingPlace()));
             }
         } catch (Exception e) {
             logger.error("Error at login() -> {}", e.getMessage());
@@ -169,7 +169,7 @@ public class AuthController {
                     1,
                     refreshToken.getToken(),
                     userDetails.getUserType(),
-                    "",user.getAdminReview(), "","",user.getPhoneNumber()));
+                    "",user.getAdminReview(), "","",user.getPhoneNumber(),""));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
@@ -192,7 +192,7 @@ public class AuthController {
                     1,
                     token.getData().toString(),
                     userData.get().getUserType(),
-                    "",userData.get().getAdminReview(), "","",""));
+                    "",userData.get().getAdminReview(), "","","",""));
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
     }

@@ -28,5 +28,6 @@ public class JwtResponse {
     private String lastName;
     private String profilePic;
     private String mobileNo;
+    private String livingPlace;
 
 }
