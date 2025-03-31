@@ -536,24 +536,39 @@ public class PromoteServiceImpl implements PromoteService {
 
 	@Override
 	public ResponseEntity<?> updatePromoteStatus(PromoteWebModel promoteWebModel) {
-	    // Fetching the post from the database
-	    Posts promotedPost = postsRepository.findById(promoteWebModel.getPostId()).orElse(null);
+	    if (promoteWebModel == null || promoteWebModel.getPostId() == null) {
+	        return ResponseEntity.badRequest().body("Invalid request: Post ID is required.");
+	    }
 
-	    if (promotedPost != null) {
-	        // Updating the promote flag and promote status
-	        promotedPost.setPromoteFlag(promoteWebModel.getPromoteFlag());
-	        promotedPost.setPromoteStatus(promoteWebModel.getPromoteStatus()); // Assuming there's a promoteStatus field
-	        
+	    // Fetching the post from the database
+	    Optional<Posts> optionalPost = postsRepository.findById(promoteWebModel.getPostId());
+
+	    if (optionalPost.isPresent()) {
+	        Posts promotedPost = optionalPost.get();
+
+	        // Validate and update promoteFlag
+	        if (promoteWebModel.getPromoteFlag() != null) {
+	            promotedPost.setPromoteFlag(promoteWebModel.getPromoteFlag());
+	        } else {
+	            return ResponseEntity.badRequest().body("Invalid request: Promote flag cannot be null.");
+	        }
+
+	        // Validate and update promoteStatus
+	        if (promoteWebModel.getPromoteStatus() != null) {
+	            promotedPost.setPromoteStatus(promoteWebModel.getPromoteStatus());
+	        } else {
+	            return ResponseEntity.badRequest().body("Invalid request: Promote status cannot be null or empty.");
+	        }
+
 	        // Saving the updated post
 	        postsRepository.save(promotedPost);
 	        
 	        return ResponseEntity.ok("Promote status updated successfully.");
 	    }
 
-	    // Returning a response if post not found
+	    // Returning a response if the post is not found
 	    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found.");
 	}
-
 
 
 }
