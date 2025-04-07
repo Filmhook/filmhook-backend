@@ -68,7 +68,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 
         paymentDetailsRepository.save(details);
 
-        return ResponseEntity.ok(new Response(1,"success",details.getPaymentId()));
+        return ResponseEntity.ok(new Response(1,"success",details));
     }
     
     @Override
