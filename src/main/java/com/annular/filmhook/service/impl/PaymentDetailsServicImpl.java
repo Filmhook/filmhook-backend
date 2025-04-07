@@ -75,6 +75,15 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
         try {
             // Fetch user details
             Integer userId = paymentDetailsWebModel.getUserId();
+            Integer paymentId = paymentDetailsWebModel.getPaymentId();
+            
+         // Step 2: Fetch promotion details using paymentId
+            PaymentDetails promote = paymentDetailsRepository.findByPaymentId(paymentId)
+                    .orElseThrow(() -> new RuntimeException("Promotion not found for payment ID: " + paymentId));
+
+            // Step 3: Update promotion status
+            promote.setPromotionStatus("SUCCESS"); // or "ACTIVE", "SUCCESS" etc. depending on your logic
+            paymentDetailsRepository.save(promote);
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
@@ -147,6 +156,15 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             Integer userId = paymentDetailsWebModel.getUserId();
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
+            Integer paymentId = paymentDetailsWebModel.getPaymentId();
+            
+         // Step 2: Fetch promotion details using paymentId
+            PaymentDetails promote = paymentDetailsRepository.findByPaymentId(paymentId)
+                    .orElseThrow(() -> new RuntimeException("Promotion not found for payment ID: " + paymentId));
+
+            // Step 3: Update promotion status
+            promote.setPromotionStatus("PENDING"); // or "ACTIVE", "SUCCESS" etc. depending on your logic
+            paymentDetailsRepository.save(promote);
 
             Integer promoteId = paymentDetailsWebModel.getPromoteId();
             Promote promoteData = promoteRepository.findById(promoteId)
@@ -223,6 +241,16 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             Integer userId = paymentDetailsWebModel.getUserId();
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
+            Integer paymentId = paymentDetailsWebModel.getPaymentId();
+            
+            // Step 2: Fetch promotion details using paymentId
+               PaymentDetails promote = paymentDetailsRepository.findByPaymentId(paymentId)
+                       .orElseThrow(() -> new RuntimeException("Promotion not found for payment ID: " + paymentId));
+
+               // Step 3: Update promotion status
+               promote.setPromotionStatus("FAILED"); // or "ACTIVE", "SUCCESS" etc. depending on your logic
+               paymentDetailsRepository.save(promote);
+
 
             Integer promoteId = paymentDetailsWebModel.getPromoteId();
             Promote promoteData = promoteRepository.findById(promoteId)
@@ -298,6 +326,16 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             Integer userId = paymentDetailsWebModel.getUserId();
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
+            Integer paymentId = paymentDetailsWebModel.getPaymentId();
+            
+            // Step 2: Fetch promotion details using paymentId
+               PaymentDetails promote = paymentDetailsRepository.findByPaymentId(paymentId)
+                       .orElseThrow(() -> new RuntimeException("Promotion not found for payment ID: " + paymentId));
+
+               // Step 3: Update promotion status
+               promote.setPromotionStatus("EXPIRE"); // or "ACTIVE", "SUCCESS" etc. depending on your logic
+               paymentDetailsRepository.save(promote);
+
 
             // Fetch promotion details
             Integer promoteId = paymentDetailsWebModel.getPromoteId();
