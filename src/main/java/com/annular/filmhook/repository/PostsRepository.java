@@ -53,6 +53,10 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Modifying
     @Query("UPDATE Posts p SET p.promoteStatus = :promoteStatus, p.promoteFlag = :promoteFlag WHERE p.id = :postId")
     void updatePromoteStatusAndFlag(Integer postId,boolean promoteStatus, boolean promoteFlag);
+    
+    @Query("SELECT COUNT(p) FROM Posts p")
+    int getTotalPostCount();
+
 
 
 }

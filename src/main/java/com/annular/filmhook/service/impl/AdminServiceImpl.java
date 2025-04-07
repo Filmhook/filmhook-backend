@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,8 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
+import com.annular.filmhook.repository.PostsRepository;
+import com.annular.filmhook.repository.ReportRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -57,6 +60,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private MailNotification mailNotification;
+    
+    @Autowired
+    private PostsRepository postRepository;
+
+    @Autowired
+    private ReportRepository reportPostRepository;
 
     @Autowired
     private IndustryUserPermanentDetailsRepository industryUserPermanentDetailsRepository;
@@ -549,6 +558,108 @@ public class AdminServiceImpl implements AdminService {
             e.printStackTrace();
         }
         return false;
+    }
+
+    @Override
+    public Response getAllUsers(Integer pageNo, Integer pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("userId").descending());
+        Page<User> userPage = userRepository.findByStatusTrue(pageable); // Only active users
+
+        List<Map<String, Object>> responseList = new ArrayList<>();
+
+        for (User user : userPage.getContent()) {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("userId", user.getUserId());
+            userMap.put("name", user.getName());
+            userMap.put("email", user.getEmail());
+            userMap.put("userType", user.getUserType());
+            userMap.put("phoneNumber", user.getPhoneNumber());
+            userMap.put("gender", user.getGender());
+            userMap.put("dob", user.getDob());
+            userMap.put("country", user.getCountry());
+            userMap.put("state", user.getState());
+            userMap.put("verified", user.getVerified());
+            userMap.put("onlineStatus", user.getOnlineStatus());
+
+            responseList.add(userMap);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("users", responseList);
+        result.put("currentPage", userPage.getNumber());
+        result.put("totalPages", userPage.getTotalPages());
+        result.put("totalUsers", userPage.getTotalElements());
+
+        return new Response(1, "Success", result);
+    }
+
+    @Override
+    public Response getAllUsersByUserType(String userType, Integer pageNo, Integer pageSize) {
+        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("userId").descending());
+        Page<User> userPage = userRepository.findByUserTypeAndStatusTrue(userType, pageable);
+
+        List<Map<String, Object>> responseList = new ArrayList<>();
+
+        for (User user : userPage.getContent()) {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("userId", user.getUserId());
+            userMap.put("name", user.getName());
+            userMap.put("email", user.getEmail());
+            userMap.put("userType", user.getUserType());
+            userMap.put("phoneNumber", user.getPhoneNumber());
+            userMap.put("gender", user.getGender());
+            userMap.put("dob", user.getDob());
+            userMap.put("country", user.getCountry());
+            userMap.put("state", user.getState());
+            userMap.put("verified", user.getVerified());
+            userMap.put("onlineStatus", user.getOnlineStatus());
+
+            responseList.add(userMap);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("users", responseList);
+        result.put("currentPage", userPage.getNumber());
+        result.put("totalPages", userPage.getTotalPages());
+        result.put("totalUsers", userPage.getTotalElements());
+
+        return new Response(1, "Success", result);
+    }
+
+
+    @Override
+    public Response getAllUsersManagerCount() {
+        int totalUserCount = userRepository.getTotalActiveUserCount();
+        int publicUserCount = userRepository.getActivePublicUserCount();
+        int industryUserCount = userRepository.getActiveIndustryUserCount();
+
+        Map<String, Object> countMap = new HashMap<>();
+        countMap.put("totalUserCount", totalUserCount);
+        countMap.put("publicUserCount", publicUserCount);
+        countMap.put("industryUserCount", industryUserCount);
+
+        return new Response(1, "User counts fetched successfully", countMap);
+    }
+
+
+    @Override
+    public Response getAllReportPostCount() {
+        // Get counts from Post table
+        int totalPostCount = postRepository.getTotalPostCount();
+
+
+        // Get counts from ReportPost table
+        int totalReportCount = reportPostRepository.getTotalCount();
+        int activeReportCount = reportPostRepository.getActiveCount();
+        int inactiveReportCount = reportPostRepository.getInactiveCount();
+
+        Map<String, Object> countMap = new HashMap<>();
+        countMap.put("totalPostCount", totalPostCount);
+        countMap.put("totalReportCount", totalReportCount);
+        countMap.put("activeReportCount", activeReportCount);
+        countMap.put("inactiveReportCount", inactiveReportCount);
+
+        return new Response(1, "Post and report post counts fetched successfully", countMap);
     }
 
 

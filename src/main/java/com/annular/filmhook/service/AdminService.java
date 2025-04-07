@@ -23,4 +23,12 @@ public interface AdminService {
 
     Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel);
 
+	Response getAllUsers(Integer page, Integer size);
+
+	Response getAllUsersByUserType(String userType, Integer page, Integer size);
+
+	Response getAllUsersManagerCount();
+
+	Response getAllReportPostCount();
+
 }

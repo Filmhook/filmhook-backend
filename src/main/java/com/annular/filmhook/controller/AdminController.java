@@ -119,6 +119,54 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+    @GetMapping("getAllUsers")
+    public Response getAllUsers(
+            @RequestParam("pageNo") Integer page,
+            @RequestParam("pageSize") Integer size) {
+        try {
+            logger.info("getAllUsers controller start - Page: {}, Size: {}", page, size);
+            return adminService.getAllUsers(page, size);
+        } catch (Exception e) {
+            logger.error("getAllUsers Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error occurred", "");
+        }
+    }
 
+    @GetMapping("getAllUsersByUserType")
+	public Response getAllUsersByUserType(@RequestParam("userType") String userType,@RequestParam("pageNo") Integer page,
+            @RequestParam("pageSize") Integer size) {
+		try {
+			logger.info("getAllUsersByUserType controller start");
+			return adminService.getAllUsersByUserType(userType,page,size);
+		} catch (Exception e) {
+			logger.error("getAllUsersByUserType Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
+    @GetMapping("getAllUsersManagerCount")
+	public Response getAllUsersManagerCount() {
+		try {
+			logger.info("getAllUsersManagerCount controller start");
+			return adminService.getAllUsersManagerCount();
+		} catch (Exception e) {
+			logger.error("getAllUsersManagerCount Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
+
+    @GetMapping("getAllReportPostCount")
+	public Response getAllReportPostCount() {
+		try {
+			logger.info("getAllReportPostCount controller start");
+			return adminService.getAllReportPostCount();
+		} catch (Exception e) {
+			logger.error("getAllReportPostCount Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
 
 }
