@@ -168,5 +168,31 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+    
+    @GetMapping("getAllPaymentUserData")
+	public Response getAllPaymentUserData(@RequestParam("pageNo") Integer page,
+            @RequestParam("pageSize") Integer size) {
+		try {
+			logger.info("getAllPaymentUserData controller start");
+			return adminService.getAllPaymentUserData(page,size);
+		} catch (Exception e) {
+			logger.error("getAllPaymentUserData Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
+    
+    @GetMapping("getAllPaymentStatusCount")
+	public Response getAllPaymentStatusCount() {
+		try {
+			logger.info("getAllPaymentStatusCount controller start");
+			return adminService.getAllPaymentStatusCount();
+		} catch (Exception e) {
+			logger.error("getAllPaymentStatusCount Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
+
 
 }

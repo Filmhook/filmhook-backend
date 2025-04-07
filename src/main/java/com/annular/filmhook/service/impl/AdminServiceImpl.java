@@ -27,11 +27,13 @@ import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.PaymentDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
+import com.annular.filmhook.repository.PaymentDetailsRepository;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.ReportRepository;
 import com.annular.filmhook.repository.UserRepository;
@@ -66,6 +68,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private ReportRepository reportPostRepository;
+    
+    @Autowired
+    PaymentDetailsRepository paymentDetailsRepository;
 
     @Autowired
     private IndustryUserPermanentDetailsRepository industryUserPermanentDetailsRepository;
@@ -660,6 +665,57 @@ public class AdminServiceImpl implements AdminService {
         countMap.put("inactiveReportCount", inactiveReportCount);
 
         return new Response(1, "Post and report post counts fetched successfully", countMap);
+    }
+
+    @Override
+    public Response getAllPaymentUserData(Integer page, Integer size) {
+        Page<PaymentDetails> paymentPage = paymentDetailsRepository.findAll(PageRequest.of(page, size));
+        List<PaymentDetails> payments = paymentPage.getContent();
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (PaymentDetails payment : payments) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("paymentId", payment.getPaymentId());
+            map.put("userId", payment.getUserId());
+            map.put("firstname", payment.getFirstname());
+            map.put("email", payment.getEmail());
+            map.put("amount", payment.getAmount());
+            map.put("postId", payment.getPostId());
+            map.put("promoteId", payment.getPromoteId());
+            map.put("status", payment.getStatus());
+            map.put("createdOn", payment.getCreatedOn());
+            map.put("promotionStatus", payment.getPromotionStatus());
+            result.add(map);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("currentPage", paymentPage.getNumber());
+        response.put("totalPages", paymentPage.getTotalPages());
+        response.put("totalItems", paymentPage.getTotalElements());
+        response.put("data", result);
+
+        return new Response(1,"success",response);
+        		
+    }
+
+    @Override
+    public Response getAllPaymentStatusCount() {
+        Integer total = paymentDetailsRepository.getTotalCount();
+
+        Integer success = paymentDetailsRepository.getCountByPromotionStatus("SUCCESS");
+        Integer pending = paymentDetailsRepository.getCountByPromotionStatus("PENDING");
+        Integer failed = paymentDetailsRepository.getCountByPromotionStatus("FAILED");
+        Integer expired = paymentDetailsRepository.getCountByPromotionStatus("EXPIRED");
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("total", total);
+        map.put("SUCCESS", success);
+        map.put("PENDING", pending);
+        map.put("FAILED", failed);
+        map.put("EXPIRED", expired);
+
+        return new Response(1,"success",map);
     }
 
 

@@ -31,4 +31,8 @@ public interface AdminService {
 
 	Response getAllReportPostCount();
 
+	Response getAllPaymentUserData(Integer page, Integer size);
+
+	Response getAllPaymentStatusCount();
+
 }
