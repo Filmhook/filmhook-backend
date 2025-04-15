@@ -42,6 +42,7 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryUserResponseDTO;
+import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -717,6 +718,28 @@ public class AdminServiceImpl implements AdminService {
 
         return new Response(1,"success",map);
     }
+
+    @Override
+    public Response getAllPaymentStatus(String status) {
+        List<PaymentDetails> payments = paymentDetailsRepository.findByPromotionStatus(status);
+
+        List<PaymentDetailsWebModel> responseList = payments.stream().map(payment -> 
+            PaymentDetailsWebModel.builder()
+                .paymentId(payment.getPaymentId())
+                .txnid(payment.getTxnid())
+                .amount(payment.getAmount())
+                .productinfo(payment.getProductinfo())
+                .firstname(payment.getFirstname())
+                .email(payment.getEmail())
+                .postId(payment.getPostId())
+                .promotionStatus(payment.getPromotionStatus())
+                .reason(payment.getReason())
+                .build()
+        ).collect(Collectors.toList());
+
+        return new Response(1,"Payment status fetched successfully", responseList);
+    }
+
 
 
 }

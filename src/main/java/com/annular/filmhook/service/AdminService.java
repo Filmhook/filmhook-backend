@@ -35,4 +35,6 @@ public interface AdminService {
 
 	Response getAllPaymentStatusCount();
 
+	Response getAllPaymentStatus(String status);
+
 }

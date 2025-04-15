@@ -1,5 +1,6 @@
 package com.annular.filmhook.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,5 +21,8 @@ public interface PaymentDetailsRepository extends JpaRepository<PaymentDetails,I
 
     @Query("SELECT COUNT(p) FROM PaymentDetails p WHERE p.promotionStatus = :status")
     Integer getCountByPromotionStatus(@Param("status") String status);
+
+    @Query("SELECT p FROM PaymentDetails p WHERE p.promotionStatus = :status")
+    List<PaymentDetails> findByPromotionStatus(@Param("status") String status);
 
 }

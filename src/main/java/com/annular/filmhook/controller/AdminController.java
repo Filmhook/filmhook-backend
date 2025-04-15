@@ -193,6 +193,19 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+    
+    
+    @GetMapping("getAllPaymentStatus")
+	public Response getAllPaymentStatus(@RequestParam("status")String status) {
+		try {
+			logger.info("getAllPaymentStatusCount controller start");
+			return adminService.getAllPaymentStatus(status);
+		} catch (Exception e) {
+			logger.error("getAllPaymentStatusCount Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
 
 
 }
