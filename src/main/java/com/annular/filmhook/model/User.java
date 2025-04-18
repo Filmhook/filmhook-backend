@@ -262,5 +262,8 @@ public class User {
     
     @Column(name = "deniedAccessRead")
     private Boolean deniedAccessRead;
+    
+    @Column(name = "referralCode")
+    private String referralCode;
 
 }

@@ -85,4 +85,8 @@ public interface UserService {
 
 	ResponseEntity<?> confirmdeleteUserId(Integer userId, String password);
 
+	ResponseEntity<?> updateRerferrralcode(UserWebModel userWebModel);
+
+	ResponseEntity<?> getReferralCodeByUserId(Integer userId);
+
 }

@@ -228,4 +228,39 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
         return outputWebModelList;
     }
 
+    @Override
+    public List<FileOutputWebModel> saveMediaFiless(IndustryFileInputWebModel inputFileData, User user) {
+        List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
+        try {
+            Map<IndustryMediaFiles, MultipartFile> mediaFilesMap = this.prepareMediaFileDatas(inputFileData, user);
+            mediaFilesMap.forEach((mediaFile, file) -> {
+                industryMediaFileRepository.save(mediaFile); // Save files in MySQL
+                logger.info("File saved in MySQL. File ID: {}", mediaFile.getFileId());
+                FileOutputWebModel fileOutputWebModel = this.uploadToS3(file, mediaFile);// Upload files to S3
+                if (fileOutputWebModel != null)
+                    fileOutputWebModelList.add(fileOutputWebModel); // Reading the saved file details
+            });
+        } catch (Exception e) {
+            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return fileOutputWebModelList;
+    }
+
+    private Map<IndustryMediaFiles, MultipartFile> prepareMediaFileDatas(IndustryFileInputWebModel inputFileData, User user) {
+        Map<IndustryMediaFiles, MultipartFile> mediaFilesMap = new HashMap<>();
+
+        // Process videos
+        if (inputFileData.getOneMinuteVideos() != null) {
+            for (MultipartFile video : inputFileData.getOneMinuteVideos()) {
+                IndustryMediaFiles mediaFiles = this.createMediaFiles(video, user, MediaFileCategory.oneMinuteVideo.toString(), inputFileData.getUserId());
+                if (mediaFiles != null) mediaFilesMap.put(mediaFiles, video);
+            }
+        }
+
+      
+
+        return mediaFilesMap;
+    }
+
 }

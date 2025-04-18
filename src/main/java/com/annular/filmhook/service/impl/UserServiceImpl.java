@@ -18,6 +18,8 @@ import java.util.HashSet;
 import java.util.Comparator;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.*;
@@ -1449,6 +1451,54 @@ public class UserServiceImpl implements UserService {
 
         return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
 	}
+
+	@Override
+	public ResponseEntity<?> updateRerferrralcode(UserWebModel userWebModel) {
+	    try {
+	        Optional<User> db = userRepository.findById(userWebModel.getUserId());
+	        if (db.isPresent()) {
+	            User user = db.get();
+
+	            // Get current time (like 16:00)
+	            LocalTime currentTime = LocalTime.now();
+	            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HHmm");
+	            String referralCode = currentTime.format(formatter); // append 1 => 16001
+
+	            user.setReferralCode(referralCode);
+	            userRepository.save(user);
+
+	            return ResponseEntity.ok("Referral code updated successfully: " + referralCode);
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+	    }
+	}
+
+	@Override
+	public ResponseEntity<?> getReferralCodeByUserId(Integer userId) {
+	    try {
+	        Optional<User> userOptional = userRepository.findById(userId);
+	        if (userOptional.isPresent()) {
+	            User user = userOptional.get();
+	           // String referralCode = user.getReferralCode();
+
+	            Map<String, Object> response = new HashMap<>();
+	            response.put("userId", user.getUserId());
+	            response.put("referralCode", user.getReferralCode());
+
+	            return ResponseEntity.ok(response);
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                                 .body(new Response(-1, "User not found", ""));
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                             .body(new Response(-1, "Error: " + e.getMessage(), ""));
+	    }
+	}
+
 
 
 //	    public boolean sendVerificationEmail(User user, Boolean status) {

@@ -49,4 +49,6 @@ public interface DetailService {
 
 	ResponseEntity<?> deleteTemporaryDetails(Integer userId);
 
+	List<FileOutputWebModel> saveIndustryUserFiless(IndustryFileInputWebModel inputFileData);
+
 }

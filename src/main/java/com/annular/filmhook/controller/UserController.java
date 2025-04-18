@@ -486,5 +486,27 @@ public class UserController {
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }  
+    @PostMapping("/updateRerferrralcode")
+    public ResponseEntity<?> updateRerferrralcode(@RequestBody UserWebModel userWebModel) {
+        try {
+            return userService.updateRerferrralcode(userWebModel);
+        } catch (Exception e) {
+            logger.error("updateRerferrralcode Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    
+    @GetMapping("/getReferralCodeByUserId")
+    public ResponseEntity<?> getReferralCodeByUserId(@RequestParam("userId") Integer userId) {
+        try {
+            return userService.getReferralCodeByUserId(userId);
+        } catch (Exception e) {
+            logger.error("getReferralCodeByUserId Method Exception -> {}", e.getMessage(), e);
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+
 }

@@ -130,6 +130,7 @@ public class UserWebModel {
     private Boolean onlineStatus;
     //optional set userType
     private Boolean userFlag;
+    private String referralCode;
 
 
 }

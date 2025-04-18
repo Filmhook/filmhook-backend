@@ -463,6 +463,23 @@ public class DetailServiceImpl implements DetailService {
         }
         return fileOutputWebModelList;
     }
+    @Override
+    public List<FileOutputWebModel> saveIndustryUserFiless(IndustryFileInputWebModel inputFileData) {
+        List<FileOutputWebModel> fileOutputWebModelList = null;
+        try {
+            Optional<User> userFromDB = userService.getUser(inputFileData.getUserId());
+            if (userFromDB.isPresent()) {
+                logger.info("User found: {}", userFromDB.get().getName());
+                fileOutputWebModelList = userMediaFileService.saveMediaFiless(inputFileData, userFromDB.get()); // Save
+                // media files in MySQL
+                fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
+            }
+        } catch (Exception e) {
+            logger.error("Error at saveIndustryUserFiles(): ", e);
+            e.printStackTrace();
+        }
+        return fileOutputWebModelList;
+    }
 
     @Override
     public ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {

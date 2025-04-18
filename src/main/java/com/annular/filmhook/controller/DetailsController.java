@@ -199,6 +199,22 @@ public class DetailsController {
         }
         return new Response(-1, "Error occurred while saving files...", null);
     }
+    
+    @RequestMapping(path = "/saveOneMinuteVideo", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Response saveOneMinuteVideo(@ModelAttribute IndustryFileInputWebModel inputFileData) {
+        try {
+            logger.info("Inputs for industry user file save -> {}", inputFileData);
+            
+            List<FileOutputWebModel> outputFilesList = detailService.saveIndustryUserFiless(inputFileData);
+
+  
+            return new Response(1, "File(s) saved successfully...", outputFilesList);
+            
+        } catch (Exception e) {
+            logger.error("Error at saveIndustryUserFiles() -> {}", e.getMessage(), e);
+        }
+        return new Response(-1, "Error occurred while saving files...", null);
+    }
 
     @GetMapping("/getIndustryFilesByUserId")
     public Response getIndustryFiles(@RequestParam("userId") Integer userId) {
