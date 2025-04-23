@@ -77,7 +77,7 @@ public class WebSecurityConfig {
                                         "/user/verify", "/user/resendOtp", "/user/verifyForgotOtp", "/industryUser/addIndustryUserPermanentDetails",
                                         "/api/printName", "/industryUser/getDetails", "/industryUser/addTemporaryDetails","/user/saveCoverPhotos",
                                         "/industryUser/getTemporaryDetails", "/industryUser/addIndustryUserPermanentDetails","/user/saveProfilePhotos",
-                                        "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag")
+                                        "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag","/industryUser/saveOneMinuteVideo")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
