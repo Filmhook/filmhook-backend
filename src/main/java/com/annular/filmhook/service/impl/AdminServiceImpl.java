@@ -1,6 +1,10 @@
 package com.annular.filmhook.service.impl;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -565,179 +569,281 @@ public class AdminServiceImpl implements AdminService {
         }
         return false;
     }
-
     @Override
-    public Response getAllUsers(Integer pageNo, Integer pageSize) {
-        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("userId").descending());
-        Page<User> userPage = userRepository.findByStatusTrue(pageable); // Only active users
+    public Response getAllUsers(Integer pageNo, Integer pageSize, String startDate, String endDate) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
 
-        List<Map<String, Object>> responseList = new ArrayList<>();
+            ZoneId zoneId = ZoneId.systemDefault();
+            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
+            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
 
-        for (User user : userPage.getContent()) {
-            Map<String, Object> userMap = new HashMap<>();
-            userMap.put("userId", user.getUserId());
-            userMap.put("name", user.getName());
-            userMap.put("email", user.getEmail());
-            userMap.put("userType", user.getUserType());
-            userMap.put("phoneNumber", user.getPhoneNumber());
-            userMap.put("gender", user.getGender());
-            userMap.put("dob", user.getDob());
-            userMap.put("country", user.getCountry());
-            userMap.put("state", user.getState());
-            userMap.put("verified", user.getVerified());
-            userMap.put("onlineStatus", user.getOnlineStatus());
+            Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("userId").descending());
 
-            responseList.add(userMap);
+            Page<User> userPage = userRepository.findByStatusTrueAndCreatedOnBetween(startDateTime, endDateTime, pageable);
+
+            List<Map<String, Object>> responseList = new ArrayList<>();
+            for (User user : userPage.getContent()) {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("userId", user.getUserId());
+                userMap.put("name", user.getName());
+                userMap.put("email", user.getEmail());
+                userMap.put("userType", user.getUserType());
+                userMap.put("phoneNumber", user.getPhoneNumber());
+                userMap.put("gender", user.getGender());
+                userMap.put("dob", user.getDob());
+                userMap.put("country", user.getCountry());
+                userMap.put("state", user.getState());
+                userMap.put("verified", user.getVerified());
+                userMap.put("onlineStatus", user.getOnlineStatus());
+                responseList.add(userMap);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("users", responseList);
+            result.put("currentPage", userPage.getNumber());
+            result.put("totalPages", userPage.getTotalPages());
+            result.put("totalUsers", userPage.getTotalElements());
+
+            return new Response(1, "Success", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Error fetching users", null);
         }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("users", responseList);
-        result.put("currentPage", userPage.getNumber());
-        result.put("totalPages", userPage.getTotalPages());
-        result.put("totalUsers", userPage.getTotalElements());
-
-        return new Response(1, "Success", result);
     }
 
+
     @Override
-    public Response getAllUsersByUserType(String userType, Integer pageNo, Integer pageSize) {
-        Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("userId").descending());
-        Page<User> userPage = userRepository.findByUserTypeAndStatusTrue(userType, pageable);
+    public Response getAllUsersByUserType(String userType, Integer pageNo, Integer pageSize, String startDate, String endDate) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
 
-        List<Map<String, Object>> responseList = new ArrayList<>();
+            ZoneId zoneId = ZoneId.systemDefault();
+            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
+            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
 
-        for (User user : userPage.getContent()) {
-            Map<String, Object> userMap = new HashMap<>();
-            userMap.put("userId", user.getUserId());
-            userMap.put("name", user.getName());
-            userMap.put("email", user.getEmail());
-            userMap.put("userType", user.getUserType());
-            userMap.put("phoneNumber", user.getPhoneNumber());
-            userMap.put("gender", user.getGender());
-            userMap.put("dob", user.getDob());
-            userMap.put("country", user.getCountry());
-            userMap.put("state", user.getState());
-            userMap.put("verified", user.getVerified());
-            userMap.put("onlineStatus", user.getOnlineStatus());
+            Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("userId").descending());
+            Page<User> userPage = userRepository.findByUserTypeAndStatusTrueAndCreatedOnBetween(
+                    userType, startDateTime, endDateTime, pageable);
 
-            responseList.add(userMap);
+            List<Map<String, Object>> responseList = new ArrayList<>();
+            for (User user : userPage.getContent()) {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("userId", user.getUserId());
+                userMap.put("name", user.getName());
+                userMap.put("email", user.getEmail());
+                userMap.put("userType", user.getUserType());
+                userMap.put("phoneNumber", user.getPhoneNumber());
+                userMap.put("gender", user.getGender());
+                userMap.put("dob", user.getDob());
+                userMap.put("country", user.getCountry());
+                userMap.put("state", user.getState());
+                userMap.put("verified", user.getVerified());
+                userMap.put("onlineStatus", user.getOnlineStatus());
+                responseList.add(userMap);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("users", responseList);
+            result.put("currentPage", userPage.getNumber());
+            result.put("totalPages", userPage.getTotalPages());
+            result.put("totalUsers", userPage.getTotalElements());
+
+            return new Response(1, "Success", result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Error fetching users by userType", null);
         }
+    }
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("users", responseList);
-        result.put("currentPage", userPage.getNumber());
-        result.put("totalPages", userPage.getTotalPages());
-        result.put("totalUsers", userPage.getTotalElements());
+    @Override
+    public Response getAllUsersManagerCount(String startDate, String endDate) {
+        try {
+            // Parse input strings to LocalDate
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
 
-        return new Response(1, "Success", result);
+            // Convert to Date (via LocalDateTime)
+            ZoneId zoneId = ZoneId.systemDefault();
+            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
+            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
+
+            // Call repository methods with correct types
+            int totalUserCount = userRepository.getTotalActiveUserCount(startDateTime, endDateTime);
+            int publicUserCount = userRepository.getActivePublicUserCount(startDateTime, endDateTime);
+            int industryUserCount = userRepository.getActiveIndustryUserCount(startDateTime, endDateTime);
+
+            Map<String, Object> countMap = new HashMap<>();
+            countMap.put("totalUserCount", totalUserCount);
+            countMap.put("publicUserCount", publicUserCount);
+            countMap.put("industryUserCount", industryUserCount);
+
+            return new Response(1, "User counts fetched successfully", countMap);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Date parsing or database error", null);
+        }
+    }
+
+    @Override
+    public Response getAllReportPostCount(String startDate, String endDate) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
+
+            ZoneId zoneId = ZoneId.systemDefault();
+            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
+            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
+
+            // Filtered counts using date range
+            int totalPostCount = postRepository.getTotalPostCount(startDateTime, endDateTime);
+            int totalReportCount = reportPostRepository.getTotalCount(startDateTime, endDateTime);
+            int activeReportCount = reportPostRepository.getActiveCount(startDateTime, endDateTime);
+            int inactiveReportCount = reportPostRepository.getInactiveCount(startDateTime, endDateTime);
+
+            Map<String, Object> countMap = new HashMap<>();
+            countMap.put("totalPostCount", totalPostCount);
+            countMap.put("totalReportCount", totalReportCount);
+            countMap.put("activeReportCount", activeReportCount);
+            countMap.put("inactiveReportCount", inactiveReportCount);
+
+            return new Response(1, "Post and report post counts fetched successfully", countMap);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Error while fetching report/post counts", null);
+        }
     }
 
 
     @Override
-    public Response getAllUsersManagerCount() {
-        int totalUserCount = userRepository.getTotalActiveUserCount();
-        int publicUserCount = userRepository.getActivePublicUserCount();
-        int industryUserCount = userRepository.getActiveIndustryUserCount();
+    public Response getAllPaymentUserData(Integer page, Integer size, String startDate, String endDate) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
 
-        Map<String, Object> countMap = new HashMap<>();
-        countMap.put("totalUserCount", totalUserCount);
-        countMap.put("publicUserCount", publicUserCount);
-        countMap.put("industryUserCount", industryUserCount);
+            ZoneId zoneId = ZoneId.systemDefault();
+            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
+            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
 
-        return new Response(1, "User counts fetched successfully", countMap);
+            Pageable pageable = PageRequest.of(page, size, Sort.by("paymentId").descending());
+            Page<PaymentDetails> paymentPage = paymentDetailsRepository.findByCreatedOnBetween(startDateTime, endDateTime, pageable);
+            List<PaymentDetails> payments = paymentPage.getContent();
+
+            List<Map<String, Object>> result = new ArrayList<>();
+
+            for (PaymentDetails payment : payments) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("paymentId", payment.getPaymentId());
+                map.put("userId", payment.getUserId());
+                map.put("firstname", payment.getFirstname());
+                map.put("email", payment.getEmail());
+                map.put("amount", payment.getAmount());
+                map.put("postId", payment.getPostId());
+                map.put("promoteId", payment.getPromoteId());
+                map.put("status", payment.getStatus());
+                map.put("createdOn", payment.getCreatedOn());
+                map.put("promotionStatus", payment.getPromotionStatus());
+                result.add(map);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("currentPage", paymentPage.getNumber());
+            response.put("totalPages", paymentPage.getTotalPages());
+            response.put("totalItems", paymentPage.getTotalElements());
+            response.put("data", result);
+
+            return new Response(1, "success", response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Error fetching payment user data", null);
+        }
     }
 
-
     @Override
-    public Response getAllReportPostCount() {
-        // Get counts from Post table
-        int totalPostCount = postRepository.getTotalPostCount();
+    public Response getAllPaymentStatusCount(String startDate, String endDate) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
 
+            ZoneId zoneId = ZoneId.systemDefault();
+            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
+            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
 
-        // Get counts from ReportPost table
-        int totalReportCount = reportPostRepository.getTotalCount();
-        int activeReportCount = reportPostRepository.getActiveCount();
-        int inactiveReportCount = reportPostRepository.getInactiveCount();
+            Integer total = paymentDetailsRepository.getTotalCount(startDateTime, endDateTime);
+            Integer success = paymentDetailsRepository.getCountByPromotionStatus("SUCCESS", startDateTime, endDateTime);
+            Integer pending = paymentDetailsRepository.getCountByPromotionStatus("PENDING", startDateTime, endDateTime);
+            Integer failed = paymentDetailsRepository.getCountByPromotionStatus("FAILED", startDateTime, endDateTime);
+            Integer expired = paymentDetailsRepository.getCountByPromotionStatus("EXPIRED", startDateTime, endDateTime);
 
-        Map<String, Object> countMap = new HashMap<>();
-        countMap.put("totalPostCount", totalPostCount);
-        countMap.put("totalReportCount", totalReportCount);
-        countMap.put("activeReportCount", activeReportCount);
-        countMap.put("inactiveReportCount", inactiveReportCount);
-
-        return new Response(1, "Post and report post counts fetched successfully", countMap);
-    }
-
-    @Override
-    public Response getAllPaymentUserData(Integer page, Integer size) {
-        Page<PaymentDetails> paymentPage = paymentDetailsRepository.findAll(PageRequest.of(page, size));
-        List<PaymentDetails> payments = paymentPage.getContent();
-
-        List<Map<String, Object>> result = new ArrayList<>();
-
-        for (PaymentDetails payment : payments) {
             Map<String, Object> map = new HashMap<>();
-            map.put("paymentId", payment.getPaymentId());
-            map.put("userId", payment.getUserId());
-            map.put("firstname", payment.getFirstname());
-            map.put("email", payment.getEmail());
-            map.put("amount", payment.getAmount());
-            map.put("postId", payment.getPostId());
-            map.put("promoteId", payment.getPromoteId());
-            map.put("status", payment.getStatus());
-            map.put("createdOn", payment.getCreatedOn());
-            map.put("promotionStatus", payment.getPromotionStatus());
-            result.add(map);
+            map.put("total", total);
+            map.put("SUCCESS", success);
+            map.put("PENDING", pending);
+            map.put("FAILED", failed);
+            map.put("EXPIRED", expired);
+
+            return new Response(1, "Payment status counts fetched successfully", map);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Error while fetching payment status counts", null);
         }
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("currentPage", paymentPage.getNumber());
-        response.put("totalPages", paymentPage.getTotalPages());
-        response.put("totalItems", paymentPage.getTotalElements());
-        response.put("data", result);
-
-        return new Response(1,"success",response);
-        		
     }
 
-    @Override
-    public Response getAllPaymentStatusCount() {
-        Integer total = paymentDetailsRepository.getTotalCount();
-
-        Integer success = paymentDetailsRepository.getCountByPromotionStatus("SUCCESS");
-        Integer pending = paymentDetailsRepository.getCountByPromotionStatus("PENDING");
-        Integer failed = paymentDetailsRepository.getCountByPromotionStatus("FAILED");
-        Integer expired = paymentDetailsRepository.getCountByPromotionStatus("EXPIRED");
-
-        Map<String, Object> map = new HashMap<>();
-        map.put("total", total);
-        map.put("SUCCESS", success);
-        map.put("PENDING", pending);
-        map.put("FAILED", failed);
-        map.put("EXPIRED", expired);
-
-        return new Response(1,"success",map);
-    }
 
     @Override
-    public Response getAllPaymentStatus(String status) {
-        List<PaymentDetails> payments = paymentDetailsRepository.findByPromotionStatus(status);
+    public Response getAllPaymentStatus(String status, Integer page, Integer size, String startDate, String endDate) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate start = LocalDate.parse(startDate, formatter);
+            LocalDate end = LocalDate.parse(endDate, formatter);
 
-        List<PaymentDetailsWebModel> responseList = payments.stream().map(payment -> 
-            PaymentDetailsWebModel.builder()
-                .paymentId(payment.getPaymentId())
-                .txnid(payment.getTxnid())
-                .amount(payment.getAmount())
-                .productinfo(payment.getProductinfo())
-                .firstname(payment.getFirstname())
-                .email(payment.getEmail())
-                .postId(payment.getPostId())
-                .promotionStatus(payment.getPromotionStatus())
-                .reason(payment.getReason())
-                .build()
-        ).collect(Collectors.toList());
+            ZoneId zoneId = ZoneId.systemDefault();
+            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
+            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
 
-        return new Response(1,"Payment status fetched successfully", responseList);
+            Pageable pageable = PageRequest.of(page, size, Sort.by("paymentId").descending());
+            Page<PaymentDetails> paymentPage = paymentDetailsRepository.findByPromotionStatusAndCreatedOnBetween(
+                    status, startDateTime, endDateTime, pageable);
+
+            List<PaymentDetailsWebModel> responseList = paymentPage.getContent().stream().map(payment ->
+                PaymentDetailsWebModel.builder()
+                    .paymentId(payment.getPaymentId())
+                    .txnid(payment.getTxnid())
+                    .amount(payment.getAmount())
+                    .productinfo(payment.getProductinfo())
+                    .firstname(payment.getFirstname())
+                    .email(payment.getEmail())
+                    .postId(payment.getPostId())
+                    .promotionStatus(payment.getPromotionStatus())
+                    .reason(payment.getReason())
+                    .build()
+            ).collect(Collectors.toList());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("currentPage", paymentPage.getNumber());
+            result.put("totalPages", paymentPage.getTotalPages());
+            result.put("totalItems", paymentPage.getTotalElements());
+            result.put("data", responseList);
+
+            return new Response(1, "Payment status fetched successfully", result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Error fetching payment status data", null);
+        }
     }
 
 

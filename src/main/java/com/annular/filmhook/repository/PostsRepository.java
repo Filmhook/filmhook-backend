@@ -7,8 +7,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,8 +56,10 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Query("UPDATE Posts p SET p.promoteStatus = :promoteStatus, p.promoteFlag = :promoteFlag WHERE p.id = :postId")
     void updatePromoteStatusAndFlag(Integer postId,boolean promoteStatus, boolean promoteFlag);
     
-    @Query("SELECT COUNT(p) FROM Posts p")
-    int getTotalPostCount();
+    
+    @Query("SELECT COUNT(p) FROM Posts p WHERE p.createdOn BETWEEN :startDate AND :endDate")
+    int getTotalPostCount(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
 
 
 

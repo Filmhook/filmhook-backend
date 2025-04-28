@@ -23,18 +23,18 @@ public interface AdminService {
 
     Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel);
 
-	Response getAllUsers(Integer page, Integer size);
+	Response getAllUsers(Integer page, Integer size, String startDate, String endDate);
 
-	Response getAllUsersByUserType(String userType, Integer page, Integer size);
+	Response getAllUsersByUserType(String userType, Integer page, Integer size, String startDate, String endDate);
 
-	Response getAllUsersManagerCount();
+	Response getAllUsersManagerCount(String startDate, String endDate);
 
-	Response getAllReportPostCount();
+	Response getAllReportPostCount(String startDate, String endDate);
 
-	Response getAllPaymentUserData(Integer page, Integer size);
+	Response getAllPaymentUserData(Integer page, Integer size, String startDate, String endDate);
 
-	Response getAllPaymentStatusCount();
+	Response getAllPaymentStatusCount(String startDate, String endDate);
 
-	Response getAllPaymentStatus(String status);
+	Response getAllPaymentStatus(String status, Integer page, Integer size, String startDate, String endDate);
 
 }

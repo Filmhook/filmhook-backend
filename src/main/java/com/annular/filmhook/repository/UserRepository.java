@@ -1,5 +1,7 @@
 package com.annular.filmhook.repository;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -101,19 +103,37 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("select u from User u where u.userType=:userType")
 	List<User> findByUserType(String userType);
 
-	Page<User> findByStatusTrue(Pageable pageable);
+
 
 	@Query("SELECT u FROM User u WHERE u.userType = :userType AND u.status = true")
 	Page<User> findByUserTypeAndStatusTrue(@Param("userType") String userType, Pageable pageable);
 	
-	@Query("SELECT COUNT(u) FROM User u WHERE u.status = true")
-	int getTotalActiveUserCount();
+	@Query("SELECT COUNT(u) FROM User u WHERE u.status = true AND u.userType IN ('Public User', 'Industry User') AND u.createdOn BETWEEN :startDate AND :endDate")
+	int getTotalActiveUserCount(Date startDate, Date endDate);
 
-	@Query("SELECT COUNT(u) FROM User u WHERE u.status = true AND u.userType = 'Public User'")
-	int getActivePublicUserCount();
 
-	@Query("SELECT COUNT(u) FROM User u WHERE u.status = true AND u.userType = 'Industry User'")
-	int getActiveIndustryUserCount();
+	@Query("SELECT COUNT(u) FROM User u WHERE u.status = true AND u.userType = 'Public User' AND u.createdOn BETWEEN :startDate AND :endDate")
+	int getActivePublicUserCount(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
+	@Query("SELECT COUNT(u) FROM User u WHERE u.status = true AND u.userType = 'Industry User' AND u.createdOn BETWEEN :startDate AND :endDate")
+	int getActiveIndustryUserCount(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+
+	@Query("SELECT u FROM User u WHERE u.status = true AND u.createdOn BETWEEN :startDate AND :endDate")
+	Page<User> findByStatusTrueAndCreatedOnBetween(@Param("startDate") Date startDate,
+	                                               @Param("endDate") Date endDate,
+	                                               Pageable pageable);
+
+	@Query("SELECT u FROM User u WHERE u.status = true AND u.userType = :userType AND u.createdOn BETWEEN :startDate AND :endDate")
+	Page<User> findByUserTypeAndStatusTrueAndCreatedOnBetween(@Param("userType") String userType,
+	                                                           @Param("startDate") Date startDate,
+	                                                           @Param("endDate") Date endDate,
+	                                                           Pageable pageable);
+
+
+
+
+	
+	
 
 
 

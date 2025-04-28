@@ -122,10 +122,11 @@ public class AdminController {
     @GetMapping("getAllUsers")
     public Response getAllUsers(
             @RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size) {
+            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
         try {
             logger.info("getAllUsers controller start - Page: {}, Size: {}", page, size);
-            return adminService.getAllUsers(page, size);
+            return adminService.getAllUsers(page, size, startDate,endDate);
         } catch (Exception e) {
             logger.error("getAllUsers Method Exception -> {}", e.getMessage());
             e.printStackTrace();
@@ -135,10 +136,11 @@ public class AdminController {
 
     @GetMapping("getAllUsersByUserType")
 	public Response getAllUsersByUserType(@RequestParam("userType") String userType,@RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size) {
+            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllUsersByUserType controller start");
-			return adminService.getAllUsersByUserType(userType,page,size);
+			return adminService.getAllUsersByUserType(userType,page,size,startDate,endDate);
 		} catch (Exception e) {
 			logger.error("getAllUsersByUserType Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
@@ -146,10 +148,11 @@ public class AdminController {
 		return new Response(-1, "Success", "");
 	}
     @GetMapping("getAllUsersManagerCount")
-	public Response getAllUsersManagerCount() {
+    public Response getAllUsersManagerCount(@RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllUsersManagerCount controller start");
-			return adminService.getAllUsersManagerCount();
+			return adminService.getAllUsersManagerCount(startDate,endDate);
 		} catch (Exception e) {
 			logger.error("getAllUsersManagerCount Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
@@ -158,10 +161,11 @@ public class AdminController {
 	}
 
     @GetMapping("getAllReportPostCount")
-	public Response getAllReportPostCount() {
+	public Response getAllReportPostCount(@RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllReportPostCount controller start");
-			return adminService.getAllReportPostCount();
+			return adminService.getAllReportPostCount(startDate,endDate);
 		} catch (Exception e) {
 			logger.error("getAllReportPostCount Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
@@ -171,10 +175,11 @@ public class AdminController {
     
     @GetMapping("getAllPaymentUserData")
 	public Response getAllPaymentUserData(@RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size) {
+            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllPaymentUserData controller start");
-			return adminService.getAllPaymentUserData(page,size);
+			return adminService.getAllPaymentUserData(page,size,startDate,endDate);
 		} catch (Exception e) {
 			logger.error("getAllPaymentUserData Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
@@ -183,10 +188,11 @@ public class AdminController {
 	}
     
     @GetMapping("getAllPaymentStatusCount")
-	public Response getAllPaymentStatusCount() {
+	public Response getAllPaymentStatusCount(@RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllPaymentStatusCount controller start");
-			return adminService.getAllPaymentStatusCount();
+			return adminService.getAllPaymentStatusCount(startDate,endDate);
 		} catch (Exception e) {
 			logger.error("getAllPaymentStatusCount Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
@@ -196,10 +202,12 @@ public class AdminController {
     
     
     @GetMapping("getAllPaymentStatus")
-	public Response getAllPaymentStatus(@RequestParam("status")String status) {
+	public Response getAllPaymentStatus(@RequestParam("status")String status,@RequestParam("pageNo") Integer page,
+            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllPaymentStatusCount controller start");
-			return adminService.getAllPaymentStatus(status);
+			return adminService.getAllPaymentStatus(status,page,size,startDate,endDate);
 		} catch (Exception e) {
 			logger.error("getAllPaymentStatusCount Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
