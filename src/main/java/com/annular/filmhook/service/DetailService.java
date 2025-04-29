@@ -51,4 +51,6 @@ public interface DetailService {
 
 	List<FileOutputWebModel> saveIndustryUserFiless(IndustryFileInputWebModel inputFileData);
 
+	List<FileOutputWebModel> saveIndustryUserFilesss(IndustryFileInputWebModel inputFileData);
+
 }

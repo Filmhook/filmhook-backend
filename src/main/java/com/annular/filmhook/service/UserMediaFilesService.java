@@ -14,4 +14,6 @@ public interface UserMediaFilesService {
 
 	List<FileOutputWebModel> saveMediaFiless(IndustryFileInputWebModel inputFileData, User user);
 
+	List<FileOutputWebModel> saveMediaFilesss(IndustryFileInputWebModel inputFileData, User user);
+
 }
