@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import software.amazon.awssdk.auth.credentials.*;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
+import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -41,17 +42,23 @@ public class S3Util {
 
     public static final String S3_PATH_DELIMITER = "/";
 
-    public AwsCredentialsProvider getAwsCredentialsProvider() {
-        return AwsCredentialsProviderChain.builder()
-                .addCredentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
-                .addCredentialsProvider(DefaultCredentialsProvider.create())
-                .addCredentialsProvider(EnvironmentVariableCredentialsProvider.create())
-                .addCredentialsProvider(SystemPropertyCredentialsProvider.create())
-                .addCredentialsProvider(ProfileCredentialsProvider.create())
-                .addCredentialsProvider(InstanceProfileCredentialsProvider.create())
-                .build();
-    }
-
+	public AwsCredentialsProvider getAwsCredentialsProvider() {
+	    ProfileCredentialsProvider customProfileProvider = ProfileCredentialsProvider.builder()
+	            .profileFile(ProfileFile.builder()
+	                    .type(ProfileFile.Type.CREDENTIALS)  // Specify the type!
+	                   // .content(Paths.get("C:\\.aws\\credentials.txt")) // Your custom credentials file path
+	                    .content(Paths.get("/home/ubuntu/.aws/credentials.txt"))
+	                    .build())
+	            .build();
+    return AwsCredentialsProviderChain.builder()
+            .addCredentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
+            .addCredentialsProvider(DefaultCredentialsProvider.create())
+            .addCredentialsProvider(EnvironmentVariableCredentialsProvider.create())
+            .addCredentialsProvider(SystemPropertyCredentialsProvider.create())
+            .addCredentialsProvider(customProfileProvider)
+            .addCredentialsProvider(InstanceProfileCredentialsProvider.create())
+            .build();
+}
     public S3AsyncClient buildS3ClientAsync() {
         return S3AsyncClient.builder()
                 .credentialsProvider(getAwsCredentialsProvider())
