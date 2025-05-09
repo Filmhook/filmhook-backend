@@ -38,7 +38,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query("select u from User u where u.phoneNumber=:phoneNumber and u.userType=:userType")
     Optional<User> findByPhoneNumberAndUserType(String phoneNumber, String userType);
 
-    @Query("select u from User u where u.userType='subAdmin' and u.status=true")
+    @Query("select u from User u where u.userType='sub Admin' and u.status=true")
     Page<User> findByUserType(String userType, Pageable paging);
     
     @Query("select u from User u where u.otp =otp")
@@ -128,6 +128,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	                                                           @Param("startDate") Date startDate,
 	                                                           @Param("endDate") Date endDate,
 	                                                           Pageable pageable);
+
 
 
 
