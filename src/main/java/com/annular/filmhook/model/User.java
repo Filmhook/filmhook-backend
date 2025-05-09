@@ -265,5 +265,8 @@ public class User {
     
     @Column(name = "referralCode")
     private String referralCode;
+    
+    @Column(name = "empId")
+    private String empId;
 
 }

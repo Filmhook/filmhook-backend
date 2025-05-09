@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -100,6 +101,7 @@ public class AdminServiceImpl implements AdminService {
                         .userType(userWebModel.getUserType())
                         .status(userWebModel.isStatus())
                         .adminPageStatus(true)
+                        .empId(userWebModel.getEmpId())
                         .adminReview((float) 0.0)
                         .password(new BCryptPasswordEncoder().encode(userWebModel.getPassword()))
                         .build();
@@ -118,35 +120,48 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public ResponseEntity<?> updateRegister(UserWebModel userWebModel) {
-        HashMap<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         try {
-            logger.info("Admin Update Register method start");
+            logger.info("Admin Update Register method start for userId: {}", userWebModel.getUserId());
 
-            // Fetch user data by userId
             Optional<User> userData = userRepository.findById(userWebModel.getUserId());
 
-            // Check if the user exists
             if (userData.isPresent()) {
                 User user = userData.get();
-                user.setName(userWebModel.getName());
-                user.setEmail(userWebModel.getEmail());
-                user.setUserType(userWebModel.getUserType());
 
-                // Only update the password if it's provided in the request
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getPassword())) user.setPassword(new BCryptPasswordEncoder().encode(userWebModel.getPassword()));
+                // Only update fields that are not null or blank
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getName())) {
+                    user.setName(userWebModel.getName());
+                }
+
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getEmail())) {
+                    user.setEmail(userWebModel.getEmail());
+                }
+
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getUserType())) {
+                    user.setUserType(userWebModel.getUserType());
+                }
+
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getEmpId())) {
+                    user.setEmpId(userWebModel.getEmpId());
+                }
+
+                if (!Utility.isNullOrBlankWithTrim(userWebModel.getPassword())) {
+                    user.setPassword(new BCryptPasswordEncoder().encode(userWebModel.getPassword()));
+                }
 
                 userRepository.save(user);
+                response.put("status", 1);
                 response.put("message", "User profile updated successfully.");
-
-                return ResponseEntity.ok().body(response);
+                return ResponseEntity.ok(response);
             } else {
-                // User with provided userId not found
-                return ResponseEntity.ok().body(new Response(-1, "User not found", "User with provided userId does not exist."));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(-1, "User not found", "User with provided userId does not exist."));
             }
         } catch (Exception e) {
-            logger.error("Update Register Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to update profile", e.getMessage()));
+            logger.error("Update Register Exception", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new Response(-1, "Failed to update profile", e.getMessage()));
         }
     }
 
@@ -186,6 +201,7 @@ public class AdminServiceImpl implements AdminService {
                     userInfo.put("userId", user.getUserId());
                     userInfo.put("name", user.getName());
                     userInfo.put("email", user.getEmail());
+                    userInfo.put("empId", user.getEmpId());
                     userInfo.put("adminPageStaus", user.getAdminPageStatus());
                     userInfo.put("status", user.getStatus());
                     responseList.add(userInfo);

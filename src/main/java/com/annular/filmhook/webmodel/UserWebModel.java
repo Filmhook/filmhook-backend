@@ -55,6 +55,7 @@ public class UserWebModel {
     private String chestSize;
     private String waistSize;
     private String bicepsSize;
+    private String empId;
 
     // Personal Info section
     private String religion;
