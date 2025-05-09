@@ -84,5 +84,8 @@ public class PaymentDetails {
     
     @Column(name = "promotonStatus")
     private String promotionStatus;
+    
+    @Column(name = "notificationCount")
+    private Boolean notificationCount;
 
 }

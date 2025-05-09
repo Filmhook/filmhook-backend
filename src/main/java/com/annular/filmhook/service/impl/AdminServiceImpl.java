@@ -3,6 +3,7 @@ package com.annular.filmhook.service.impl;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import com.annular.filmhook.model.IndustryUserPermanentDetails;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.PaymentDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
+import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
@@ -820,8 +822,6 @@ public class AdminServiceImpl implements AdminService {
             return new Response(-1, "Error while fetching report/post counts", null);
         }
     }
-
-
     @Override
     public Response getAllPaymentUserData(Integer page, Integer size, String startDate, String endDate) {
         try {
@@ -833,12 +833,13 @@ public class AdminServiceImpl implements AdminService {
             Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
             Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("paymentId").descending());
+            // Cumulative pagination: calculate total items to fetch
+            int effectiveSize = page * size;
+            Pageable pageable = PageRequest.of(0, effectiveSize, Sort.by("paymentId").descending());
             Page<PaymentDetails> paymentPage = paymentDetailsRepository.findByCreatedOnBetween(startDateTime, endDateTime, pageable);
             List<PaymentDetails> payments = paymentPage.getContent();
 
             List<Map<String, Object>> result = new ArrayList<>();
-
             for (PaymentDetails payment : payments) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("paymentId", payment.getPaymentId());
@@ -855,7 +856,7 @@ public class AdminServiceImpl implements AdminService {
             }
 
             Map<String, Object> response = new HashMap<>();
-            response.put("currentPage", paymentPage.getNumber());
+            response.put("currentPage", page);
             response.put("totalPages", paymentPage.getTotalPages());
             response.put("totalItems", paymentPage.getTotalElements());
             response.put("data", result);
@@ -975,6 +976,66 @@ public class AdminServiceImpl implements AdminService {
         } catch (Exception e) {
             e.printStackTrace();
             return new Response(-1, "Failed to fetch unverified/rejected users", e.getMessage());
+        }
+    }
+
+    @Override
+    public Response changeNotificationStatus() {
+        try {
+            // 1. Update notificationCount in User table
+            List<User> users = userRepository.findAll();
+            for (User user : users) {
+                user.setNotificationCount(true);
+            }
+            userRepository.saveAll(users);
+
+            // 2. Update notificationCount in PaymentDetails table
+            List<PaymentDetails> payments = paymentDetailsRepository.findAll();
+            for (PaymentDetails payment : payments) {
+                payment.setNotificationCount(true);
+            }
+            paymentDetailsRepository.saveAll(payments);
+
+            // 3. Update notificationCount in Report table
+            List<ReportPost> reports = reportPostRepository.findAll();
+            for (ReportPost report : reports) {
+                report.setNotificationCount(true);
+            }
+            reportPostRepository.saveAll(reports);
+
+            return new Response(1, "Notification status updated to true for all entries", null);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Failed to update notification status", null);
+        }
+    }
+
+    @Override
+    public Response getTotalNotificationCount() {
+        try {
+            // 1. Count from User table
+            Integer userCount = userRepository.countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
+
+            // 2. Count from ReportPost table
+            Integer reportCount = reportPostRepository.countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
+
+            // 3. Count from PaymentDetails table
+            Integer paymentCount = paymentDetailsRepository.countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
+
+            // 4. Total sum
+            Integer totalCount = userCount + reportCount + paymentCount;
+
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("userCount", userCount);
+            responseMap.put("reportCount", reportCount);
+            responseMap.put("paymentCount", paymentCount);
+            responseMap.put("totalNotificationCount", totalCount);
+
+            return new Response(1, "Total notification count fetched successfully", responseMap);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Failed to fetch notification counts", null);
         }
     }
 

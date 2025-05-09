@@ -58,6 +58,9 @@ public class ReportPost {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
+    
+    @Column(name = "notificationCount")
+    private Boolean notificationCount;
 
 }
 

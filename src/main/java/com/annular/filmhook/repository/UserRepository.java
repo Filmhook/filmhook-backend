@@ -135,6 +135,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("SELECT u FROM User u WHERE (u.industryUserVerified = :status OR (:status IS NULL AND u.industryUserVerified IS NULL)) AND u.status = true")
 	Page<User> findUnverifiedOrRejectedUsers(@Param("status") Boolean status, Pageable pageable);
 
+	
+	@Query("SELECT COUNT(u) FROM User u WHERE (u.notificationCount IS NULL OR u.notificationCount = false) AND u.status = true")
+	Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
+
+
+
 
 
 

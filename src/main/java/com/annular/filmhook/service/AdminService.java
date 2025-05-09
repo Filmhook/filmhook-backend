@@ -39,4 +39,8 @@ public interface AdminService {
 
 	Response getAllUnVerifiedRejectedList(Integer pageNo, Integer pageSize, Boolean status);
 
+	Response changeNotificationStatus();
+
+	Response getTotalNotificationCount();
+
 }

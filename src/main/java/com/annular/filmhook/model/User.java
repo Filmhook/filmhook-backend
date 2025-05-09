@@ -273,5 +273,8 @@ public class User {
     
     @Column(name = "unVerifiedList")
     private Boolean unVerifiedList;
+    
+    @Column(name = "notificationCount")
+    private Boolean notificationCount;
 
 }

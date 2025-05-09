@@ -227,6 +227,29 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+    
+    @PostMapping("changeNotificationStatus")
+	public Response changeNotificationStatus() {
+		try {
+			logger.info("changeNotificationStatus controller start");
+			return adminService.changeNotificationStatus();
+		} catch (Exception e) {
+			logger.error("changeNotificationStatus Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
 
+    @GetMapping("getTotalNotificationCount")
+	public Response getTotalNotificationCount() {
+		try {
+			logger.info("getTotalNotificationCount controller start");
+			return adminService.getTotalNotificationCount();
+		} catch (Exception e) {
+			logger.error("getTotalNotificationCount Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
 
 }
