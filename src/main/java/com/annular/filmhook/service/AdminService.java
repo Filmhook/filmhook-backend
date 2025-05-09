@@ -37,4 +37,6 @@ public interface AdminService {
 
 	Response getAllPaymentStatus(String status, Integer page, Integer size, String startDate, String endDate);
 
+	Response getAllUnVerifiedRejectedList(Integer pageNo, Integer pageSize, Boolean status);
+
 }

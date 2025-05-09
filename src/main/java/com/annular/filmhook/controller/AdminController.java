@@ -214,6 +214,19 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+    
+    @GetMapping("getAllUnVerifiedRejectedList")
+	public Response getAllUnVerifiedRejectedList(@RequestParam("pageNo") Integer pageNo,
+            @RequestParam("pageSize") Integer pageSize,@RequestParam("status")Boolean status) {
+		try {
+			logger.info("getAllUnVerifiedRejectedList controller start");
+			return adminService.getAllUnVerifiedRejectedList(pageNo,pageSize,status);
+		} catch (Exception e) {
+			logger.error("getAllUnVerifiedRejectedList Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
 
 
 }

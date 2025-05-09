@@ -269,6 +269,7 @@ public class AdminServiceImpl implements AdminService {
                 Map<String, Object> userMap = new HashMap<>();
                 userMap.put("userId", userId);
                 userMap.put("name", user.getName()); // Assuming 'name' is a field in the User entity
+                userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
                 // Add other fields you want to include in the response
                 // userMap.put("email", user.getEmail());
                 // Add other fields as needed
@@ -293,7 +294,78 @@ public class AdminServiceImpl implements AdminService {
             return new Response(-1, "There are no unverified users found.", responseList);
         }
     }
-
+//
+//    @Override
+//    public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
+//        try {
+//            HashMap<String, Object> response = new HashMap<>();
+//
+//            // Fetch all user permanent details by userId without pagination
+//            List<IndustryUserPermanentDetails> userPermanentDetailsList = industryUserPermanentDetailsRepository.findByUserId(userWebModel.getUserId());
+//
+//            if (userPermanentDetailsList.isEmpty()) {
+//                return ResponseEntity.ok().body("User permanent details not found for user id: " + userWebModel.getUserId());
+//            } else {
+//                Optional<User> userOptional = userService.getUser(userWebModel.getUserId());
+//                if (userOptional.isEmpty()) return ResponseEntity.ok().body("User not found for user id: " + userWebModel.getUserId());
+//
+//                User user = userOptional.get();
+//
+//                List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
+//                for (IndustryUserPermanentDetails details : userPermanentDetailsList) {
+//                    IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
+//                    responseDTO.setIndustriesName(details.getIndustriesName());
+//                    responseDTO.setIupdId(details.getIupdId());
+//
+//                    List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
+//                    List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();
+//                    for (PlatformPermanentDetail platformDetail : platformDetails) {
+//                        PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
+//                        platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
+//                        platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
+//
+//                        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userWebModel.getUserId(), MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+//                        platformDetailDTO.setOutputWebModelList(outputWebModelList);
+//
+//                        platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
+//                        platformDetailDTO.setDailySalary(platformDetail.getDailySalary());
+//                        platformDetailDTO.setFilmCount(platformDetail.getFilmCount());
+//                        platformDetailDTO.setNetWorth(platformDetail.getNetWorth());
+//
+//                        List<ProfessionDetailDTO> professionDetailDTOList = new ArrayList<>();
+//                        for (FilmProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
+//                            ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
+//                            professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
+//
+//                            List<String> filmSubProfessionNames = filmSubProfessionRepository.findBySubProfessionName(professionDetail.getProfessionName().toUpperCase())
+//                                    .stream()
+//                                    .map(FilmSubProfession::getSubProfessionName)
+//                                    .collect(Collectors.toList());
+//                            professionDetailDTO.setSubProfessionName(filmSubProfessionNames);
+//
+//                            professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
+//                            professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
+//
+//                            professionDetailDTOList.add(professionDetailDTO);
+//                        }
+//                        platformDetailDTO.setProfessionDetails(professionDetailDTOList);
+//                        platformDetailDTOList.add(platformDetailDTO);
+//                    }
+//                    responseDTO.setPlatformDetails(platformDetailDTOList);
+//                    responseDTOList.add(responseDTO);
+//                }
+//                response.put("Data", responseDTOList);
+//                response.put("userInfo", user);
+//                response.put("profilePicturePath", userService.getProfilePicUrl(user.getUserId()));
+//
+//                return ResponseEntity.ok(response);
+//            }
+//        } catch (Exception e) {
+//            logger.error("Error occurred while retrieving industry user permanent details: {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.internalServerError().body("Failed to retrieve industry user permanent details.");
+//        }
+//    }
     @Override
     public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
         try {
@@ -309,8 +381,8 @@ public class AdminServiceImpl implements AdminService {
                 if (userOptional.isEmpty()) return ResponseEntity.ok().body("User not found for user id: " + userWebModel.getUserId());
 
                 User user = userOptional.get();
-
                 List<IndustryUserResponseDTO> responseDTOList = new ArrayList<>();
+
                 for (IndustryUserPermanentDetails details : userPermanentDetailsList) {
                     IndustryUserResponseDTO responseDTO = new IndustryUserResponseDTO();
                     responseDTO.setIndustriesName(details.getIndustriesName());
@@ -318,12 +390,14 @@ public class AdminServiceImpl implements AdminService {
 
                     List<PlatformPermanentDetail> platformDetails = details.getPlatformDetails();
                     List<PlatformDetailDTO> platformDetailDTOList = new ArrayList<>();
+
                     for (PlatformPermanentDetail platformDetail : platformDetails) {
                         PlatformDetailDTO platformDetailDTO = new PlatformDetailDTO();
                         platformDetailDTO.setPlatformName(platformDetail.getPlatformName());
                         platformDetailDTO.setPlatformPermanentId(platformDetail.getPlatformPermanentId());
 
-                        List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userWebModel.getUserId(), MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
+                        List<FileOutputWebModel> outputWebModelList = mediaFilesService
+                            .getMediaFilesByUserIdAndCategoryAndRefId(userWebModel.getUserId(), MediaFileCategory.Project, platformDetail.getPlatformPermanentId());
                         platformDetailDTO.setOutputWebModelList(outputWebModelList);
 
                         platformDetailDTO.setPdPlatformId(platformDetail.getPpdPlatformId());
@@ -335,24 +409,27 @@ public class AdminServiceImpl implements AdminService {
                         for (FilmProfessionPermanentDetail professionDetail : platformDetail.getProfessionDetails()) {
                             ProfessionDetailDTO professionDetailDTO = new ProfessionDetailDTO();
                             professionDetailDTO.setProfessionName(professionDetail.getProfessionName());
-
-                            List<String> filmSubProfessionNames = filmSubProfessionRepository.findBySubProfessionName(professionDetail.getProfessionName().toUpperCase())
-                                    .stream()
-                                    .map(FilmSubProfession::getSubProfessionName)
-                                    .collect(Collectors.toList());
-                            professionDetailDTO.setSubProfessionName(filmSubProfessionNames);
-
                             professionDetailDTO.setProfessionPermanentId(professionDetail.getProfessionPermanentId());
                             professionDetailDTO.setPpdProfessionId(professionDetail.getPpdProfessionId());
 
+                            // ✅ Get sub-profession names from associated FilmSubProfessionPermanentDetail
+                            List<String> subProfessionNames = professionDetail.getFilmSubProfessionPermanentDetails()
+                                .stream()
+                                .map(f -> f.getFilmSubProfession().getSubProfessionName())
+                                .collect(Collectors.toList());
+
+                            professionDetailDTO.setSubProfessionName(subProfessionNames);
                             professionDetailDTOList.add(professionDetailDTO);
                         }
+
                         platformDetailDTO.setProfessionDetails(professionDetailDTOList);
                         platformDetailDTOList.add(platformDetailDTO);
                     }
+
                     responseDTO.setPlatformDetails(platformDetailDTOList);
                     responseDTOList.add(responseDTO);
                 }
+
                 response.put("Data", responseDTOList);
                 response.put("userInfo", user);
                 response.put("profilePicturePath", userService.getProfilePicUrl(user.getUserId()));
@@ -365,6 +442,7 @@ public class AdminServiceImpl implements AdminService {
             return ResponseEntity.internalServerError().body("Failed to retrieve industry user permanent details.");
         }
     }
+
 
 //	@Override
 //	public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
@@ -474,7 +552,9 @@ public class AdminServiceImpl implements AdminService {
                 logger.info("User id -> {}", userWebModel.getUserId());
                 user.setUserType("Industry User");
                 user.setAdminReview(userWebModel.getAdminReview());
+                user.setRejectReason(userWebModel.getRejectReason());
                 user.setIndustryUserVerified(true);
+                user.setUnVerifiedList(true);
                 userRepository.save(user);
 
                 // Send verification email
@@ -487,6 +567,8 @@ public class AdminServiceImpl implements AdminService {
                 // status true means userType change to Industry user and send mail notification
                 user.setUserType("Public User");
                 user.setIndustryUserVerified(false);
+                user.setUnVerifiedList(true);
+                user.setRejectReason(userWebModel.getRejectReason());
                 userRepository.save(user);
 
                 // Send notification email
@@ -861,6 +943,41 @@ public class AdminServiceImpl implements AdminService {
             return new Response(-1, "Error fetching payment status data", null);
         }
     }
+
+    @Override
+    public Response getAllUnVerifiedRejectedList(Integer pageNo, Integer pageSize,Boolean status) {
+        try {
+            Pageable paging = PageRequest.of(pageNo - 1, pageSize, Sort.by(Sort.Direction.DESC, "userId"));
+
+            Page<User> usersPage = userRepository.findUnverifiedOrRejectedUsers(status,paging);
+           
+
+            List<Map<String, Object>> userList = new ArrayList<>();
+            for (User user : usersPage.getContent()) {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("userId", user.getUserId());
+                userMap.put("name", user.getName());
+                userMap.put("email", user.getEmail());
+                userMap.put("rejectReason", user.getRejectReason());
+                userMap.put("industryUserVerified", user.getIndustryUserVerified());
+                userMap.put("status", user.getStatus());
+                userList.add(userMap);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("Data", userList);
+            result.put("PageInfo", Map.of(
+                "totalPages", usersPage.getTotalPages(),
+                "totalRecords", usersPage.getTotalElements()
+            ));
+
+            return new Response(1, "Unverified or rejected users fetched successfully", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Failed to fetch unverified/rejected users", e.getMessage());
+        }
+    }
+
 
 
 

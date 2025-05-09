@@ -250,6 +250,8 @@ public class User {
     @Column(name = "industryUserVerified")
     private Boolean industryUserVerified;
     
+    @Column(name = "rejectReason")
+    private String rejectReason;
     
     @Column(name = "country_code")
     private String countryCode;
@@ -268,5 +270,8 @@ public class User {
     
     @Column(name = "empId")
     private String empId;
+    
+    @Column(name = "unVerifiedList")
+    private Boolean unVerifiedList;
 
 }

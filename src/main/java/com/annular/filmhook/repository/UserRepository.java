@@ -129,6 +129,17 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	                                                           @Param("endDate") Date endDate,
 	                                                           Pageable pageable);
 
+//	@Query("SELECT u FROM User u WHERE u.industryUserVerified = :status OR (u.industryUserVerified IS NOT NULL AND u.status = true)")
+//	Page<User> findUnverifiedOrRejectedUsers(Boolean status,Pageable pageable);
+	
+	@Query("SELECT u FROM User u WHERE (u.industryUserVerified = :status OR (:status IS NULL AND u.industryUserVerified IS NULL)) AND u.status = true")
+	Page<User> findUnverifiedOrRejectedUsers(@Param("status") Boolean status, Pageable pageable);
+
+
+
+
+
+
 
 
 

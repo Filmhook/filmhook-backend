@@ -70,6 +70,7 @@ public class UserWebModel {
     private Boolean industryUserVerified;
     private String deleteReason;
     private Boolean deactivateAccessOrdeny;
+    private String rejectReason;
 
     // Education Section
     private String schoolName;
