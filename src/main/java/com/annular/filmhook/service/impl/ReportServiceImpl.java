@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.mail.internet.MimeMessage;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +20,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
@@ -52,6 +56,9 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     UserDetails userDetails;
+    
+	@Autowired
+	private JavaMailSender javaMailSender;
 
     @Autowired
     UserService userService;
@@ -93,6 +100,62 @@ public class ReportServiceImpl implements ReportService {
             reportPost.setStatus(false); // Assuming initially report status is false
             reportPost.setCreatedBy(userDetails.userInfo().getId()); // Assuming user who reports is the creator
             reportRepository.save(reportPost);
+
+            // Step 1: Get Post details
+            Optional<Posts> optionalPost = postsRepository.findById(reportPostWebModel.getPostId());
+            if (optionalPost.isPresent()) {
+                Posts post = optionalPost.get();
+
+            Integer postOwnerId = post.getUser().getUserId();
+            Optional<User> optionalUser = userRepository.findById(postOwnerId);
+
+            if (optionalUser.isPresent()) {
+                User postOwner = optionalUser.get();
+                String userEmail = postOwner.getEmail();
+                String subject = "Important: Your Post Has Been Reported on Film-Hook";
+
+                // Step 3: Email Content
+                StringBuilder content = new StringBuilder();
+                content.append("<html><body>")
+                        .append("<div style='text-align: center;'>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' width='200' alt='FilmHook Logo'>")
+                        .append("</div>")
+                        .append("<p>Dear ").append(postOwner.getName()).append(",</p>")
+                        .append("<p>We have received a report against your post on <strong>Film-Hook Apps</strong>.</p>")
+                        .append("<p><strong>Reported Reason:</strong> ").append(reportPostWebModel.getReason()).append("</p>")
+                        .append("<p>Please note that if your post is found to be violating our community guidelines, it will be <strong>automatically deleted within 24 hours</strong>.</p>")
+                        .append("<p>If you believe this was a mistake, please contact our support team immediately.</p>")
+                        .append("<br><p>Best Regards,</p>")
+                        .append("<p><b>Film-Hook Apps Team</b></p>")
+                        .append("<p>📧 <a href='mailto:support@film-hookapps.com'>support@film-hookapps.com</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Website</a></p>")
+                        .append("<p>📲 Get the App:</p>")
+                        .append("<p><a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30'></a> ")
+                        .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
+                        .append("<p>📢 Follow Us:</p>")
+                        .append("<p>")
+                        .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg' target='_blank'>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='30'></a> ")
+                        .append("<a href='https://x.com/Filmhook_Apps?t=KQJkjwuvBzTPOaL4FzDtIA&s=08/' target='_blank'>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='30'></a> ")
+                        .append("<a href='https://www.threads.net/@filmhookapps/' target='_blank'>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='30'></a> ")
+                        .append("<a href='https://www.instagram.com/filmhookapps?igsh=dXdvNnB0ZGg5b2tx' target='_blank'>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='30'></a> ")
+                        .append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP' target='_blank'>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30'></a>")
+                        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353' target='_blank'>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linedIn.jpeg' width='30'></a>")
+                        .append("</p>")
+                        .append("</body></html>");
+                // Step 4: Send Email
+                MimeMessage message = javaMailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(message, true);
+                helper.setTo(userEmail);
+                helper.setSubject(subject);
+                helper.setText(content.toString(), true);
+                javaMailSender.send(message);
+            }
+        }
             response.put("reportInfo", reportPost);
             logger.info("addMethod method end");
             return ResponseEntity.ok(new Response(1, "Add ReportPost successfully", response));
