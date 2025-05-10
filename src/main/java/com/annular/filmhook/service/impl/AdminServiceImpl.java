@@ -914,7 +914,10 @@ public class AdminServiceImpl implements AdminService {
             Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
             Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("paymentId").descending());
+            // Adjust page index to be 0-based (Spring Data uses 0-based paging)
+            int pageIndex = (page != null && page > 0) ? page - 1 : 0;
+            Pageable pageable = PageRequest.of(pageIndex, size, Sort.by("paymentId").descending());
+
             Page<PaymentDetails> paymentPage = paymentDetailsRepository.findByPromotionStatusAndCreatedOnBetween(
                     status, startDateTime, endDateTime, pageable);
 
@@ -933,7 +936,7 @@ public class AdminServiceImpl implements AdminService {
             ).collect(Collectors.toList());
 
             Map<String, Object> result = new HashMap<>();
-            result.put("currentPage", paymentPage.getNumber());
+            result.put("currentPage", paymentPage.getNumber() + 1); // Return to 1-based index for response
             result.put("totalPages", paymentPage.getTotalPages());
             result.put("totalItems", paymentPage.getTotalElements());
             result.put("data", responseList);
