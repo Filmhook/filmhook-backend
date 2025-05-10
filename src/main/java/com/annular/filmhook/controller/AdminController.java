@@ -251,5 +251,29 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+    
+    @PostMapping("changeNotificationStatusByIndustryUsers")
+   	public Response changeNotificationStatusByIndustryUsers() {
+   		try {
+   			logger.info("changeNotificationStatusByIndustryUsers controller start");
+   			return adminService.changeNotificationStatusByIndustryUsers();
+   		} catch (Exception e) {
+   			logger.error("changeNotificationStatusByIndustryUsers Method Exception -> {}", e.getMessage());
+   			e.printStackTrace();
+   		}
+   		return new Response(-1, "Success", "");
+   	}
 
+    @GetMapping("getIndustryUserCount")
+   	public Response getIndustryUserCount() {
+   		try {
+   			logger.info("getIndustryUserCount controller start");
+   			return adminService.getIndustryUserCount();
+   		} catch (Exception e) {
+   			logger.error("getIndustryUserCount Method Exception -> {}", e.getMessage());
+   			e.printStackTrace();
+   		}
+   		return new Response(-1, "Success", "");
+   	}
+       
 }

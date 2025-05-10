@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
@@ -1036,6 +1037,35 @@ public class AdminServiceImpl implements AdminService {
         } catch (Exception e) {
             e.printStackTrace();
             return new Response(-1, "Failed to fetch notification counts", null);
+        }
+    }
+
+    @Override
+    @Transactional
+    public Response changeNotificationStatusByIndustryUsers() {
+        try {
+            List<IndustryMediaFiles> mediaFilesList = industryMediaFileRepository.findAll();
+            for (IndustryMediaFiles file : mediaFilesList) {
+                file.setNotificationCount(1);
+            }
+
+            industryMediaFileRepository.saveAll(mediaFilesList);
+
+            return new Response(1, "Updated " + mediaFilesList.size() + " records", null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Failed to update notificationCount", null);
+        }
+    }
+
+    @Override
+    public Response getIndustryUserCount() {
+        try {
+            Integer count = industryMediaFileRepository.countDistinctUsersByNotificationCountNullOrZero();
+            return new Response(1, "Success", count);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Failed to fetch count", null);
         }
     }
 

@@ -26,7 +26,7 @@ public interface ReportRepository extends JpaRepository<ReportPost, Integer> {
     @Query("SELECT COUNT(r) FROM ReportPost r WHERE r.status = false AND r.createdOn BETWEEN :startDate AND :endDate")
     int getInactiveCount(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
 
-    @Query("SELECT COUNT(r) FROM ReportPost r WHERE (r.notificationCount IS NULL OR r.notificationCount = false) AND r.status = true")
+    @Query("SELECT COUNT(r) FROM ReportPost r WHERE (r.notificationCount IS NULL OR r.notificationCount = false) AND r.status = false")
     Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
 
 

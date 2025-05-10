@@ -43,7 +43,7 @@ public interface PaymentDetailsRepository extends JpaRepository<PaymentDetails,I
                                                                   @Param("endDate") Date endDate,
                                                                   Pageable pageable);
 
-    @Query("SELECT COUNT(p) FROM PaymentDetails p WHERE (p.notificationCount IS NULL OR p.notificationCount = false) AND p.status = true")
+    @Query("SELECT COUNT(p) FROM PaymentDetails p WHERE (p.notificationCount IS NULL OR p.notificationCount = false)")
     Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
 
 

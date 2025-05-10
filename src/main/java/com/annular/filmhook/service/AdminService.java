@@ -43,4 +43,8 @@ public interface AdminService {
 
 	Response getTotalNotificationCount();
 
+	Response changeNotificationStatusByIndustryUsers();
+
+	Response getIndustryUserCount();
+
 }

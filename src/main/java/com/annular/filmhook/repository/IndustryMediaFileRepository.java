@@ -27,4 +27,8 @@ public interface IndustryMediaFileRepository extends JpaRepository<IndustryMedia
     @Query("Select m from IndustryMediaFiles m where m.user.userId=:userId")
     List<IndustryMediaFiles> findByUserId(Integer userId);
 
+    @Query("SELECT COUNT(DISTINCT imf.user.id) FROM IndustryMediaFiles imf WHERE imf.notificationCount IS NULL OR imf.notificationCount = 0")
+    Integer countDistinctUsersByNotificationCountNullOrZero();
+
+
 }
