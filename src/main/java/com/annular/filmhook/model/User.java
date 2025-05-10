@@ -276,5 +276,8 @@ public class User {
     
     @Column(name = "notificationCount")
     private Boolean notificationCount;
+    
+    @Column(name = "refCode")
+    private String refCode;
 
 }

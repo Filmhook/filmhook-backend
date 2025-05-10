@@ -1063,6 +1063,13 @@ public class DetailServiceImpl implements DetailService {
             }
 
             if (emailOtpVerified) {
+            	Integer userId = userWebModel.getUserId();
+            	Optional<User> user = userRepository.findById(userId);
+            	if (user.isPresent()) {
+                    User users = user.get();
+                    users.setRefCode(userWebModel.getRefCode());
+                    userRepository.save(users);
+                }
                 return ResponseEntity.ok(new Response(1, "Email OTP verified successfully", ""));
             } else {
                 return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP", ""));

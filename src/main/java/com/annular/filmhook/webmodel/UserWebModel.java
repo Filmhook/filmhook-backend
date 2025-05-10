@@ -99,6 +99,7 @@ public class UserWebModel {
     private String forgotOtp;
     private Boolean adminPageStatus;
     private String countryCode;
+    private String refCode;
     
 
     // Profile & Cover Photo
