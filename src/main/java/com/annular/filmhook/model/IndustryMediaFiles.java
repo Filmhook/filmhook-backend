@@ -81,6 +81,9 @@ public class IndustryMediaFiles {
     
     @Column(name = "notificationCount")
     private Integer notificationCount;
+    
+    @Column(name = "unverifiedList")
+    private Boolean unverifiedList;
 
 }
 

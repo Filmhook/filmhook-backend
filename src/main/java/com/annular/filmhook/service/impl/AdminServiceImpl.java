@@ -539,6 +539,7 @@ public class AdminServiceImpl implements AdminService {
             // Iterate over the list and set status to false
             for (IndustryMediaFiles industryMediaFile : industryDbData) {
                 industryMediaFile.setStatus(status);
+                
                 // You may perform additional operations if needed
             }
 
