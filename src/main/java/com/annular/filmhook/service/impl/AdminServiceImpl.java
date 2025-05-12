@@ -538,7 +538,9 @@ public class AdminServiceImpl implements AdminService {
 
             // Iterate over the list and set status to false
             for (IndustryMediaFiles industryMediaFile : industryDbData) {
-                industryMediaFile.setStatus(status);
+                industryMediaFile.setStatus(true);
+                industryMediaFile.setUnverifiedList(status);
+                
                 
                 // You may perform additional operations if needed
             }
