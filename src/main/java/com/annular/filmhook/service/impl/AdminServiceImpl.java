@@ -265,38 +265,29 @@ public class AdminServiceImpl implements AdminService {
             }
         }
 
-        // Fetch user details for each user ID
-        for (int userId : userIds) {
-            User user = userRepository.findById(userId).orElse(null);
-            if (user != null) {
-                Map<String, Object> userMap = new HashMap<>();
-                userMap.put("userId", userId);
-                userMap.put("name", user.getName()); // Assuming 'name' is a field in the User entity
-                userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
-                // Add other fields you want to include in the response
-                // userMap.put("email", user.getEmail());
-                // Add other fields as needed
-                responseList.add(userMap);
-            }
+        // Batch fetch user details for performance
+        List<User> users = userRepository.findAllById(userIds);
+        for (User user : users) {
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("userId", user.getUserId());
+            userMap.put("name", user.getName());
+            userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
+            responseList.add(userMap);
         }
 
         if (!responseList.isEmpty()) {
             Map<String, Object> pageDetails = new HashMap<>();
             pageDetails.put("totalPages", unverifiedIndustrialUsers.getTotalPages());
-//			pageDetails.put("totalRecords", unverifiedIndustrialUsers.getTotalElements());
-            /*
-             * To get total number of records the above line is actual procedure, since we
-             * have 3 documents for single user count may differ, so I used count of unique
-             * userId for total no. of records
-             */
-            pageDetails.put("totalRecords", userIds.size());
+            pageDetails.put("totalRecords", userIds.size()); // Count of unique users
+
             response.put("UserDetails", responseList);
             response.put("PageInfo", pageDetails);
-            return new Response(-1, "Success", response);
+            return new Response(1, "Success", response); // ✅ Fixed status code
         } else {
-            return new Response(-1, "There are no unverified users found.", responseList);
+            return new Response(0, "There are no unverified users found.", responseList);
         }
     }
+
 //
 //    @Override
 //    public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
