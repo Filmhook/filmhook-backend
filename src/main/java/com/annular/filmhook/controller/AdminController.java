@@ -147,6 +147,21 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
+    
+
+    @GetMapping("getAllAdminUsersByUserType")
+	public Response getAllAdminUsersByUserType(@RequestParam("userType") String userType,@RequestParam("pageNo") Integer page,
+            @RequestParam("pageSize") Integer size) {
+		try {
+			
+			logger.info("getAllAdminUsersByUserType controller start");
+			return adminService.getAllAdminUsersByUserType(userType,page,size);
+		} catch (Exception e) {
+			logger.error("getAllAdminUsersByUserType Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
     @GetMapping("getAllUsersManagerCount")
     public Response getAllUsersManagerCount(@RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate) {

@@ -47,4 +47,6 @@ public interface AdminService {
 
 	Response getIndustryUserCount();
 
+	Response getAllAdminUsersByUserType(String userType, Integer page, Integer size);
+
 }

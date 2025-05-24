@@ -710,51 +710,48 @@ public class AdminServiceImpl implements AdminService {
     }
 
 
-//    @Override
-//    public Response getAllUsersByUserType(String userType, Integer pageNo, Integer pageSize, String startDate, String endDate) {
-//        try {
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//            LocalDate start = LocalDate.parse(startDate, formatter);
-//            LocalDate end = LocalDate.parse(endDate, formatter);
-//
-//            ZoneId zoneId = ZoneId.systemDefault();
-//            Date startDateTime = Date.from(start.atStartOfDay(zoneId).toInstant());
-//            Date endDateTime = Date.from(end.atTime(23, 59, 59).atZone(zoneId).toInstant());
-//
-//            Pageable pageable = PageRequest.of(pageNo, pageSize, Sort.by("userId").descending());
-//            Page<User> userPage = userRepository.findByUserTypeAndStatusTrueAndCreatedOnBetween(
-//                    userType, startDateTime, endDateTime, pageable);
-//
-//            List<Map<String, Object>> responseList = new ArrayList<>();
-//            for (User user : userPage.getContent()) {
-//                Map<String, Object> userMap = new HashMap<>();
-//                userMap.put("userId", user.getUserId());
-//                userMap.put("name", user.getName());
-//                userMap.put("email", user.getEmail());
-//                userMap.put("userType", user.getUserType());
-//                userMap.put("phoneNumber", user.getPhoneNumber());
-//                userMap.put("gender", user.getGender());
-//                userMap.put("dob", user.getDob());
-//                userMap.put("country", user.getCountry());
-//                userMap.put("state", user.getState());
-//                userMap.put("verified", user.getVerified());
-//                userMap.put("onlineStatus", user.getOnlineStatus());
-//                responseList.add(userMap);
-//            }
-//
-//            Map<String, Object> result = new HashMap<>();
-//            result.put("users", responseList);
-//            result.put("currentPage", userPage.getNumber());
-//            result.put("totalPages", userPage.getTotalPages());
-//            result.put("totalUsers", userPage.getTotalElements());
-//
-//            return new Response(1, "Success", result);
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return new Response(-1, "Error fetching users by userType", null);
-//        }
-//    }
+    @Override
+    public Response getAllAdminUsersByUserType(String userType, Integer page, Integer size) {
+        try {
+            // Create Pageable object
+            Pageable pageable = PageRequest.of(page - 1, size); // Convert to 0-based index
+            
+            // Get paginated users
+            Page<User> userPage = userRepository.findByUserTypeAndStatusTrue(userType, pageable);
+            
+            // Build response list
+            List<Map<String, Object>> responseList = new ArrayList<>();
+            for (User user : userPage.getContent()) {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("userId", user.getUserId());
+                userMap.put("name", user.getName());
+                userMap.put("email", user.getEmail());
+                userMap.put("userType", user.getUserType());
+                userMap.put("phoneNumber", user.getPhoneNumber());
+                userMap.put("gender", user.getGender());
+                userMap.put("dob", user.getDob());
+                userMap.put("country", user.getCountry());
+                userMap.put("state", user.getState());
+                userMap.put("verified", user.getVerified());
+                userMap.put("onlineStatus", user.getOnlineStatus());
+                responseList.add(userMap);
+            }
+            
+            // Build final result
+            Map<String, Object> result = new HashMap<>();
+            result.put("users", responseList);
+            result.put("currentPage", userPage.getNumber() + 1); // Convert back to 1-based
+            result.put("totalPages", userPage.getTotalPages());
+            result.put("totalUsers", userPage.getTotalElements());
+            
+            return new Response(1, "Success", result);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(-1, "Error fetching users by userType", null);
+        }
+    }
+    
     @Override
     public Response getAllUsersByUserType(String userType, Integer pageNo, Integer pageSize, String startDate, String endDate) {
         try {
@@ -1111,6 +1108,8 @@ public class AdminServiceImpl implements AdminService {
             return new Response(-1, "Failed to fetch count", null);
         }
     }
+
+	
 
 
 
