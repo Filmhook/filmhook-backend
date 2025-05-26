@@ -508,5 +508,16 @@ public class UserController {
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
+    @PostMapping("addLocation")
+	public ResponseEntity<?> addLocation(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("add Location controller start");
+			return userService.addLocation(userWebModel);
+		} catch (Exception e) {
+			logger.error("add LocationMethod Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
 }

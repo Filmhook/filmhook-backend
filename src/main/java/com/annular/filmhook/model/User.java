@@ -279,5 +279,20 @@ public class User {
     
     @Column(name = "refCode")
     private String refCode;
+    
+    @Column(name = "locationName")
+	private String locationName;
+    
+	@Column(name = "locationAddress")
+	private String locationAddress;
+	
+	@Column(name = "locationLandMark")
+	private String locationLandMark;
+	
+	@Column(name = "locationLatitude")
+	private String locationLatitude;
+	
+	@Column(name = "locationLongitude")
+	private String locationLongitude;
 
 }

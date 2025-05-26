@@ -1499,6 +1499,68 @@ public class UserServiceImpl implements UserService {
 	    }
 	}
 
+	@Override
+	public ResponseEntity<?> addLocation(UserWebModel locationWebModel) {
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        logger.info("addLocation method start");
+	        
+	        // Validate that userId is provided
+	        if (locationWebModel.getUserId() == null) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new Response(-1, "Error", "User ID is required"));
+	        }
+	        
+	        // Find the user by userId
+	        Optional<User> userOptional = userRepository.findById(locationWebModel.getUserId());
+	        
+	        if (!userOptional.isPresent()) {
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new Response(-1, "Error", "User not found with ID: " + locationWebModel.getUserId()));
+	        }
+	        
+	        // Get the user and update location details
+	        User user = userOptional.get();
+	        
+	        // Update user's location information (direct fields in User entity)
+	        user.setLocationName(locationWebModel.getLocationName());
+	        user.setLocationAddress(locationWebModel.getLocationAddress());
+	        user.setLocationLandMark(locationWebModel.getLocationLandMark());
+	        user.setLocationLatitude(locationWebModel.getLocationLatitude());
+	        user.setLocationLongitude(locationWebModel.getLocationLongitude());
+	        
+	        // Note: apartment, blockNumber, building, floor, street fields are not present in User entity
+	        // These would be in the separate Location entity if needed
+	        
+	       
+	        user.setUpdatedOn(new Date());
+	        
+	        // Save the updated user
+	        user = userRepository.save(user);
+	        
+	        logger.info("addLocation method end");
+	        
+	        // Prepare response with updated user location details
+	        Map<String, Object> locationDetails = new HashMap<>();
+	        locationDetails.put("userId", user.getUserId());
+	        locationDetails.put("locationName", user.getLocationName());
+	        locationDetails.put("locationAddress", user.getLocationAddress());
+	        locationDetails.put("locationLandMark", user.getLocationLandMark());
+	        locationDetails.put("locationLatitude", user.getLocationLatitude());
+	        locationDetails.put("locationLongitude", user.getLocationLongitude());
+	        
+	        response.put("LocationDetails", locationDetails);
+	        
+	        return ResponseEntity.status(HttpStatus.OK)
+	            .body(new Response(1, "Success", response));
+	            
+	    } catch (Exception e) {
+	        logger.error("addLocation Method Exception: ", e);
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	            .body(new Response(-1, "Fail", e.getMessage()));
+	    }
+	}
 
 
 //	    public boolean sendVerificationEmail(User user, Boolean status) {

@@ -134,6 +134,11 @@ public class UserWebModel {
     //optional set userType
     private Boolean userFlag;
     private String referralCode;
+   	private String locationName;
+   	private String locationAddress;
+   	private String locationLandMark;
+   	private String locationLatitude;
+   	private String locationLongitude;
 
 
 }
