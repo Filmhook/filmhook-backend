@@ -9,7 +9,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
@@ -18,7 +17,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name="refreshToken")
+@Table(name = "refreshToken")
 @Builder
 @Getter
 @Setter
@@ -26,20 +25,19 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RefreshToken {
-	
-	
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "refresh_token_id")
-	private Integer refreshTokenId;
-	
-	@Column(name = "token")
-	private String token;
-	
-	@Column(name = "expiry_token")
-	private LocalTime expiryToken;
-	
-	@Column(name = "user_id")
-	private Integer userId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "refresh_token_id")
+    private Integer refreshTokenId;
+
+    @Column(name = "token")
+    private String token;
+
+    @Column(name = "expiry_token")
+    private LocalTime expiryToken;
+
+    @Column(name = "user_id")
+    private Integer userId;
 
 }

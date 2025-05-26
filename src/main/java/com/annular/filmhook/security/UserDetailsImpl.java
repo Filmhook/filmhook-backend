@@ -12,81 +12,93 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class UserDetailsImpl implements UserDetails {
 
-	private static final long serialVersionUID = 1L;
+    private final Integer id;
+    private final String userName;
+    private final String email;
+    private final String userType;
+    private final Float adminReview;
+    @JsonIgnore
+    private final String password;
 
-	private Integer id;
-	private String userName;
-	private String email;
-	private String userType;
-	@JsonIgnore
-	private String password;
+    Set<GrantedAuthority> authorities = null;
 
-	Set<GrantedAuthority> authorities = null;
+    public UserDetailsImpl(Integer id, String userName, String email, String userType, String password,Float adminReview) {
+        super();
+        this.id = id;
+        this.userName = userName;
+        this.email = email;
+        this.userType = userType;
+        this.password = password;
+        this.adminReview = adminReview;
+    }
 
-	public UserDetailsImpl(Integer id, String userName, String email, String userType, String password) {
-		super();
-		this.id = id;
-		this.userName = userName;
-		this.email = email;
-		this.userType = userType;
-		this.password = password;
-	}
+    public static UserDetailsImpl build(User user) {
+        return new UserDetailsImpl(
+                user.getUserId(),
+                user.getName(),
+                user.getEmail(),
+                user.getUserType(),
+                user.getPassword(),
+                user.getAdminReview()
+        );
+    }
 
-	public static UserDetailsImpl build(User user) {
-		return new UserDetailsImpl(
-				user.getUserId(),
-				user.getName(),
-				user.getEmail(),
-				user.getUserType(),
-				user.getPassword()
-		);
-	}
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
+    }
 
-	@Override
-	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return authorities;
-	}
+    public Integer getId() {
+        return id;
+    }
 
-	public Integer getId() {
-		return id;
-	}
+    public String getEmail() {
+        return email;
+    }
 
-	public String getEmail() {
-		return email;
-	}
+    public String getUserType() {
+        return userType;
+    }
 
-	public String getUserType() {
-		return userType;
-	}
-
-	@Override
-	public String getPassword() {
-		return password;
-	}
-
-	@Override
-	public String getUsername() {
-		return userName;
+    public Float getAdminReview() {
+		return adminReview;
 	}
 
 	@Override
-	public boolean isAccountNonExpired() {
-		return true;
-	}
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return userName;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 
 	@Override
-	public boolean isAccountNonLocked() {
-		return true;
+	public String toString() {
+		return "UserDetailsImpl [id=" + id + ", userName=" + userName + ", email=" + email + ", userType=" + userType
+				+ ", adminReview=" + adminReview + ", password=" + password + ", authorities=" + authorities + "]";
 	}
 
-	@Override
-	public boolean isCredentialsNonExpired() {
-		return true;
-	}
-
-	@Override
-	public boolean isEnabled() {
-		return true;
-	}
-
+   
 }

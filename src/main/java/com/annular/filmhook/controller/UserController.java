@@ -1,139 +1,523 @@
 package com.annular.filmhook.controller;
 
-import java.time.LocalTime;
-
-import java.util.Optional;
+import com.annular.filmhook.Response;
+import com.annular.filmhook.model.Location;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.LocationWebModel;
+import com.annular.filmhook.webmodel.UserSearchWebModel;
+import com.annular.filmhook.webmodel.UserWebModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-import com.annular.filmhook.Response;
-import com.annular.filmhook.UserStatusConfig;
-import com.annular.filmhook.model.RefreshToken;
-import com.annular.filmhook.model.User;
-import com.annular.filmhook.repository.RefreshTokenRepository;
-import com.annular.filmhook.repository.UserRepository;
-import com.annular.filmhook.security.UserDetailsImpl;
-import com.annular.filmhook.security.jwt.JwtResponse;
-import com.annular.filmhook.security.jwt.JwtUtils;
-import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.webmodel.UserWebModel;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
 
-    public static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     UserService userService;
 
-    @Autowired
-    UserRepository userRepository;
+    @GetMapping("/getAllUsers")
+    public Response getAllUsers() {
+        List<UserWebModel> userList = userService.getAllUsers();
+        return new Response(1, "User list", userList);
+    }
 
-    @Autowired
-    UserStatusConfig loginConstants;
+    @GetMapping("/getUserByUserId")
+    public Response getUserByUserId(@RequestParam("userId") Integer userId) {
+        Optional<UserWebModel> user = userService.getUserByUserId(userId);
+        if (user.isPresent()) {
+            return new Response(1, "User found...", user);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+    // Biography Section
 
-    @Autowired
-    RefreshTokenRepository refreshTokenRepository;
+    /**
+     * Method to update biography data
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PutMapping("/updateBiographyDetails")
+    public Response updateBiography(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.updateBiographyData(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "Updated Successfully...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
 
-    @Autowired
-    JwtUtils jwtUtils;
+    // Body Measurements
 
-    @PostMapping("register")
-    public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
+    /**
+     * Method to update biological data
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PutMapping("/updateBiologicalDetails")
+    public Response updateBiologicalDetails(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.updateBiologicalData(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "Updated Successfully...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    // Personal Information
+
+    /**
+     * Method to update personal information
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PutMapping("/updatePersonalInfo")
+    public Response updatePersonalInfo(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.updatePersonalInformation(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "Updated Successfully...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    // Education Information
+
+    /**
+     * Method to update education information
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PutMapping("/updateEducationInfo")
+    public Response updateEducationInfo(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.updateEducationInformation(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "Updated Successfully...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+
+    // Work category and profession information
+
+    /**
+     * Method to update Work category and profession information
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PutMapping("/updateProfessionInfo")
+    public Response updateProfessionInfo(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.updateProfessionInformation(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "Updated Successfully...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    /**
+     * Method to save or update user's profile pic
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PostMapping(path = "/saveProfilePhoto", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response saveProfilePhoto(@ModelAttribute UserWebModel userWebModel) {
+        FileOutputWebModel profilePic = userService.saveProfilePhoto(userWebModel);
+        if (profilePic != null) {
+            return new Response(1, "Profile pic saved Successfully...", profilePic);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    /**
+     * Method to get user's profile pic...
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PostMapping("/getProfilePic")
+    public Response getProfilePic(@RequestBody UserWebModel userWebModel) {
+        FileOutputWebModel profilePic = userService.getProfilePic(userWebModel);
+        if (profilePic != null) return new Response(1, "Profile pic found successfully...", profilePic);
+        return new Response(-1, "User profile pic not found...", null);
+    }
+
+    /**
+     * Method to delete the user's profile pic
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PostMapping("/deleteProfilePic")
+    public Response deleteProfilePic(@RequestBody UserWebModel userWebModel) {
         try {
-            logger.info("User register controller start");
-            System.out.println("Username -> " + userWebModel.getName() + ", User Password -> " + userWebModel.getPassword());
-            return userService.register(userWebModel);
+            userService.deleteUserProfilePic(userWebModel);
+            return new Response(1, "Profile pic deleted successfully...", null);
         } catch (Exception e) {
-            logger.error("userRegister Method Exception {}" + e);
+            logger.error("Error at deleteProfilePic -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error at deleting profile pic...", null);
+        }
+    }
+
+    /**
+     * Method to save or update user's cover pic
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PostMapping(path = "/saveCoverPhoto", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response saveCoverPhoto(@ModelAttribute UserWebModel userWebModel) {
+        List<FileOutputWebModel> coverPicList = userService.saveCoverPhoto(userWebModel);
+        if (coverPicList != null) {
+            return new Response(1, "Cover Photo saved Successfully...", coverPicList);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    /**
+     * Method to get user's cover pic...
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PostMapping("/getCoverPic")
+    public Response getCoverPic(@RequestBody UserWebModel userWebModel) {
+        List<FileOutputWebModel> coverPic = userService.getCoverPic(userWebModel);
+        if (coverPic != null) return new Response(1, "User Cover pic(s) found successfully...", coverPic);
+        return new Response(-1, "User cover pic not found...", null);
+    }
+
+    /**
+     * Method to delete the user's cover pic
+     *
+     * @param userWebModel
+     * @return Response
+     */
+    @PostMapping("/deleteCoverPic")
+    public Response deleteCoverPic(@RequestBody UserWebModel userWebModel) {
+        try {
+            userService.deleteUserCoverPic(userWebModel);
+            return new Response(1, "Cover pic(s) deleted successfully...", null);
+        } catch (Exception e) {
+            logger.error("Error at deleteCoverPic -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error at deleting cover pic...", null);
+        }
+    }
+
+    // User search based on multiple criteria [Country > Industry > Platform > Profession > SubProfession]
+    @PostMapping("/getIndustryByCountry")
+    public Response getIndustryByCountry(@RequestBody UserSearchWebModel searchWebModel) {
+        try {
+            List<UserSearchWebModel> userSearchWebModelList = userService.getAllIndustryByCountryIds(searchWebModel.getCountryIds());
+            if (!Utility.isNullOrEmptyList(userSearchWebModelList))
+                return new Response(1, "Industry(s) found successfully...", userSearchWebModelList);
+        } catch (Exception e) {
+            logger.error("Error at getIndustryByCountry -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error at industry search by country...", null);
+        }
+        return new Response(1, "Industry(s) not found for country id.", searchWebModel.getCountryIds());
+    }
+
+    @PostMapping("/getProfessionByPlatform")
+    public Response getProfessionByPlatform(@RequestBody UserSearchWebModel searchWebModel) {
+        try {
+            List<UserSearchWebModel> userSearchWebModelList = userService.getAllProfessionByPlatformId(searchWebModel.getPlatformId());
+            if (!Utility.isNullOrEmptyList(userSearchWebModelList))
+                return new Response(1, "Profession(s) found successfully...", userSearchWebModelList);
+        } catch (Exception e) {
+            logger.error("Error at getProfessionByPlatform -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error at profession search by platform...", null);
+        }
+        return new Response(-1, "Profession(s) not found for platform id -> [" + searchWebModel.getPlatformId() + "]", "");
+    }
+
+    @PostMapping("/getSubProfessionByProfession")
+    public Response getSubProfessionByProfession(@RequestBody UserSearchWebModel searchWebModel) {
+        try {
+            List<UserSearchWebModel> userSearchWebModelList = userService.getAllSubProfessionByProfessionId(searchWebModel.getProfessionIds());
+            if (!Utility.isNullOrEmptyList(userSearchWebModelList))
+                return new Response(1, "Sub Profession(s) found successfully...", userSearchWebModelList);
+        } catch (Exception e) {
+            logger.error("Error at getSubProfessionByProfession -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error at sub profession search by platform...", null);
+        }
+        return new Response(-1, "Sub Profession(s) not found for profession ids -> [{}]", searchWebModel.getProfessionIds());
+    }
+
+    @PostMapping("/getFinalUserList")
+    public Response getUserByAllCriteria(@RequestBody UserSearchWebModel searchWebModel) {
+        try {
+            Map<String, List<Map<String, Object>>> outputMap = userService.getUserByAllSearchCriteria(searchWebModel);
+            if (!Utility.isNullOrEmptyMap(outputMap))
+                return new Response(1, "User(s) found successfully...", outputMap);
+        } catch (Exception e) {
+            logger.error("Error at getUserByAllCriteria -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error at user search...", null);
+        }
+        return new Response(-1, "User(s) not found for the given search criteria...", null);
+    }
+
+    @GetMapping("/getAllAddressListOnSignUp")
+    public ResponseEntity<?> getAllAddressListOnSignUp() {
+        try {
+            return userService.getAllAddressListOnSignUp();
+        } catch (Exception e) {
+            logger.error("getAllAddressListOnSignUp Method Exception -> {}", e.getMessage());
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
-    @PostMapping("login")
-    public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
-//		Optional<User> checkUser = userRepo.findByUserName(userWebModel.getUserName());
-        System.out.println("" + userWebModel.getEmail());
-        Optional<User> checkUsername = userRepository.findByEmail(userWebModel.getEmail(), userWebModel.getUserType());
-        System.out.println("------->" + userWebModel.getEmail());
-        System.out.println("HHHHHHH" + checkUsername);
-        if (checkUsername.isPresent()) {
-//			 logger.info("Checking Controller----> " + userWebModel.getUserEmailId());
-//			jwtUtils.setAdmin(userWebModel.isUserIsAdmin());
-//			jwtUtils.setDriver(userWebModel.isUserIsDriver());
-//			loginConstants.setAdmin(userWebModel.isUserIsAdmin());
-//			loginConstants.setDriver(userWebModel.isUserIsDriver());
-            loginConstants.setUserType(userWebModel.getUserType());
-            System.out.println("User type ---> " + loginConstants.getUserType());
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
-            String jwt = jwtUtils.generateJwtToken(authentication);
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            logger.info("Login Controller ---- Finished");
-            return ResponseEntity.ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), "Login Successful", 1, ""));
-        }
-        return (ResponseEntity<?>) ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
-    }
-
-    @GetMapping("verify")
-    public Response verifyUser(@Param("code") String code) {
+    @GetMapping("/getAddressListOnSignUp")
+    public ResponseEntity<?> getAddressListOnSignUp(@RequestParam("address") String address) {
         try {
-            if (userService.verify(code)) {
-                logger.info("User credentials verified successfully");
-            } else {
-                logger.info("User verification failed");
-                return new Response(-1, "Verify Failed", "");
-            }
+            return userService.getAddressListOnSignUp(address);
         } catch (Exception e) {
-            logger.info("verifyUser method Exception " + e);
+            logger.error("getAddressListOnSignUp Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
         }
-        return new Response(1, "Verify Success", "");
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
-    @PostMapping("refreshToken")
-    public ResponseEntity<?> refreshToken(@RequestBody UserWebModel userWebModel) {
-        Optional<RefreshToken> data = refreshTokenRepository.findByToken(userWebModel.getToken());
-        if (data.isPresent()) {
-            Response token = userService.verifyExpiration(data.get());
-            Optional<User> userData = userRepository.findById(data.get().getUserId());
-            String jwt = jwtUtils.generateJwtTokenForRefreshToken(userData.get());
-            RefreshToken refreshToken = data.get();
-            refreshToken.setExpiryToken(LocalTime.now().plusMinutes(17));
-            refreshTokenRepository.save(refreshToken);
-            return ResponseEntity.ok(new JwtResponse(jwt, userData.get().getUserId(), userData.get().getName(), userData.get().getEmail(), "Success", 1, token.getData().toString()));
+    @PutMapping("/updateUserName")
+    public Response updateUserName(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.updateUserName(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "Updated Successfully...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
         }
-        return (ResponseEntity<?>) ResponseEntity.badRequest().body(new Response(-1, "Refresh Token Failed", ""));
     }
 
-//	@PostMapping("forgotPassword")
-//	public ResponseEntity<?> forgotPassword(@RequestBody UserWebModel userWebModel, HttpServletRequest request) {
-//		try {
-//			logger.info("getUser controller start");
-//			return userService.forgotPassword(userWebModel, request);
-//		} catch (Exception e) {
-//			logger.info("getUser Method Exception" + e);
-//			e.printStackTrace();
-//		}
-//		return ResponseEntity.ok(new Response(-1, "Fail", ""));
-//	}
+    @PostMapping("/getUserId")
+    public Response getUserId(@RequestBody UserWebModel userWebModel) {
+        Optional<?> updatedUser = userService.getUserId(userWebModel);
+        if (updatedUser.isPresent()) {
+            return new Response(1, "getUserId...", updatedUser);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    @GetMapping("/getUserByName")
+    public Response getUserId(@RequestParam("name") String name) {
+        List<UserWebModel> users = userService.getUserByName(name);
+        if (!Utility.isNullOrEmptyList(users)) {
+            return new Response(1, "User(s) found successfully...", users);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    @PostMapping("/saveUserLocation")
+    public Response saveUserLocation(@RequestBody LocationWebModel locationWebModel) {
+        Optional<Location> updatedLocation = userService.saveUserLocation(locationWebModel);
+        return updatedLocation.map(location -> new Response(1, "Location saved/updated successfully...", location))
+                .orElseGet(() -> new Response(-1, "User not found...", null));
+    }
+
+//    @GetMapping("/getNearByUsers")
+//    public Response getNearByUsers(@RequestParam("userId") Integer userId,
+//                                   @RequestParam(value = "range", required = false) Integer range,
+//                                   @RequestParam(value = "profession", required = false) String profession) {
+//        try {
+//            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId, range, profession);
+//
+//            if (!Utility.isNullOrEmptyList(nearbyUsers)) {
+//                return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
+//            } else {
+//                return new Response(-1, "Nearby user(s) not found...", "");
+//            }
+//        } catch (RuntimeException e) {
+//            e.printStackTrace();
+//            return new Response(-1, "Error", e.getMessage());
+//        }
+//    }
+    @GetMapping("/getNearByUsers")
+    public Response getNearByUsers(@RequestParam("userId") Integer userId) {
+        try {
+            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId);
+            if (!Utility.isNullOrEmptyList(nearbyUsers)) return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
+        } catch (RuntimeException e) {
+            return new Response(-1, "Error", e.getMessage());
+        }
+        return new Response(-1, "Nearby user(s) not found...", "");
+    }
+
+    @PostMapping("/changePrimaryEmaiId")
+    public Response changePrimaryEmaiId(@RequestBody UserWebModel userWebModel) {
+        Optional<User> updatedEmailId = userService.changePrimaryEmaiId(userWebModel);
+        if (updatedEmailId.isPresent()) {
+            return new Response(1, "otp send successfully...", updatedEmailId.get());
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+
+    @PostMapping("/changePrimaryEmaiIdVerified")
+    public Response changePrimaryEmaiIdVerified(@RequestBody UserWebModel userWebModel) {
+        Optional<User> updatedEmailId = userService.changePrimaryEmaiIdVerified(userWebModel);
+        if (updatedEmailId.isPresent()) {
+            return new Response(1, "verified and primay EmailId updated successfully...", updatedEmailId.get());
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+    
+    @GetMapping("/getNewAddressListOnSignUp")
+    public ResponseEntity<?> getNewAddressListOnSignUp(@RequestParam("address") String address) {
+        try {
+            return userService.getNewAddressListOnSignUp(address);
+        } catch (Exception e) {
+            logger.error("getNewAddressListOnSignUp Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @GetMapping("/getLocationByuserId")
+    public ResponseEntity<?> getLocationByuserId(@RequestParam("userId") Integer userId) {
+        try {
+            return userService.getLocationByuserId(userId);
+        } catch (Exception e) {
+            logger.error("getLocationByuserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @PostMapping(path = "/saveProfilePhotos", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response saveProfilePhotos(@ModelAttribute UserWebModel userWebModel) {
+        FileOutputWebModel profilePic = userService.saveProfilePhoto(userWebModel);
+        if (profilePic != null) {
+            return new Response(1, "Profile pic saved Successfully...", profilePic);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+    
+    @PostMapping(path = "/saveCoverPhotos", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response saveCoverPhotos(@ModelAttribute UserWebModel userWebModel) {
+        List<FileOutputWebModel> coverPicList = userService.saveCoverPhoto(userWebModel);
+        if (coverPicList != null) {
+            return new Response(1, "Cover Photo saved Successfully...", coverPicList);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
+    @DeleteMapping("/deactivateUserId")
+    public ResponseEntity<?> deactivateUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password) {
+        try {
+            return userService.deactivateUserId(userId,password);
+        } catch (Exception e) {
+            logger.error("deactivateUserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    @DeleteMapping("/confirmdeleteUserId")
+    public ResponseEntity<?> confirmdeleteUserId(@RequestParam("userId") Integer userId,@RequestParam("password") String password) {
+        try {
+            return userService.confirmdeleteUserId(userId,password);
+        } catch (Exception e) {
+            logger.error("confirmdeleteUserId Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("/saveDeleteReason")
+    public ResponseEntity<?> saveDeleteReason(@RequestBody UserWebModel userWebModel) {
+        try {
+            return userService.saveDeleteReason(userWebModel);
+        } catch (Exception e) {
+            logger.error("saveDeleteReason Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @PostMapping("/getDeleteStatus")
+    public ResponseEntity<?> getDeleteStatus(@RequestBody UserWebModel userWebModel) {
+        try {
+            return userService.getDeleteStatus(userWebModel);
+        } catch (Exception e) {
+            logger.error("getDeleteStatus Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }  
+    @PostMapping("/updateRerferrralcode")
+    public ResponseEntity<?> updateRerferrralcode(@RequestBody UserWebModel userWebModel) {
+        try {
+            return userService.updateRerferrralcode(userWebModel);
+        } catch (Exception e) {
+            logger.error("updateRerferrralcode Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    @GetMapping("/getReferralCodeByUserId")
+    public ResponseEntity<?> getReferralCodeByUserId(@RequestParam("userId") Integer userId) {
+        try {
+            return userService.getReferralCodeByUserId(userId);
+        } catch (Exception e) {
+            logger.error("getReferralCodeByUserId Method Exception -> {}", e.getMessage(), e);
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+
+    @PostMapping("addLocation")
+	public ResponseEntity<?> addLocation(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("add Location controller start");
+			return userService.addLocation(userWebModel);
+		} catch (Exception e) {
+			logger.error("add LocationMethod Exception {}" + e);
+			e.printStackTrace();
+		}
+		return ResponseEntity.ok(new Response(-1, "Fail", ""));
+	}
 
 }
