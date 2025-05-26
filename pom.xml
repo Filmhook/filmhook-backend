@@ -19,7 +19,7 @@
     <description>Film-Hook project</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <aws.sdk.version>2.25.7</aws.sdk.version>
     </properties>
 
@@ -91,7 +91,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.26</version>
+            <version>1.18.38</version>
         </dependency>
 
         <dependency>
