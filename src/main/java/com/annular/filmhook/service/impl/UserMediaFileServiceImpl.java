@@ -18,9 +18,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.MultiMediaFiles;
+import com.annular.filmhook.model.ShootingLocationImages;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
+import com.annular.filmhook.repository.ShootingLocationImagesRepository;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.util.FileUtil;
@@ -28,6 +30,7 @@ import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
+import com.annular.filmhook.webmodel.ShootingLocationWebModal;
 
 @Service
 public class UserMediaFileServiceImpl implements UserMediaFilesService {
@@ -48,6 +51,9 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 
     @Autowired
     S3Util s3Util;
+    
+    @Autowired
+    ShootingLocationImagesRepository shootingLocationImagesRepository;
 
     @Override
     public List<FileOutputWebModel> saveMediaFiles(IndustryFileInputWebModel inputFileData, User user) {
@@ -298,5 +304,120 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 
         return mediaFilesMap;
 	}
+
+	@Override
+	public List<FileOutputWebModel> saveShootingLocation(ShootingLocationWebModal inputFileData, User user) {
+		 List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
+	        try {
+	            Map<ShootingLocationImages, MultipartFile> mediaFilesMap = this.prepareMediaFileDatassss(inputFileData, user);
+	            mediaFilesMap.forEach((mediaFile, file) -> {
+	            	shootingLocationImagesRepository.save(mediaFile); // Save files in MySQL
+	                logger.info("File saved in MySQL. File ID: {}", mediaFile.getFileId());
+	                FileOutputWebModel fileOutputWebModel = this.uploadToS3S(file, mediaFile);// Upload files to S3
+	                if (fileOutputWebModel != null)
+	                    fileOutputWebModelList.add(fileOutputWebModel); // Reading the saved file details
+	            });
+	        } catch (Exception e) {
+	            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
+	            e.printStackTrace();
+	        }
+	        return fileOutputWebModelList;
+	}
+	
+	private Map<ShootingLocationImages, MultipartFile> prepareMediaFileDatassss(ShootingLocationWebModal inputFileData,User user){
+		  Map<ShootingLocationImages, MultipartFile> mediaFilesMap = new HashMap<>();
+
+  // Process videos
+  if (inputFileData.getShootingImages() != null) {
+      for (MultipartFile video : inputFileData.getShootingImages()) {
+          ShootingLocationImages mediaFiles = this.createMediaFiless(video, user, MediaFileCategory.shootingLocationImage.toString(), inputFileData.getUserId());
+          if (mediaFiles != null) mediaFilesMap.put(mediaFiles, video);
+      }
+  }
+
+
+
+  return mediaFilesMap;
+}
+	 private ShootingLocationImages createMediaFiless(MultipartFile file, User user, String category, Integer createdBy) {
+	        ShootingLocationImages mediaFiles = null;
+	        try {
+	            mediaFiles = new ShootingLocationImages();
+	            mediaFiles.setUser(user);
+	            mediaFiles.setCategory(category);
+	            mediaFiles.setFileId(UUID.randomUUID().toString());
+	            mediaFiles.setFileName(file.getOriginalFilename());
+	            mediaFiles.setFilePath(FileUtil.generateFilePath(user, category, mediaFiles.getFileId()));
+	            mediaFiles.setFileType(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")));
+	            mediaFiles.setFileSize(file.getSize());
+	            mediaFiles.setStatus(true);
+	            mediaFiles.setCreatedBy(createdBy);
+	            shootingLocationImagesRepository.save(mediaFiles);
+	            logger.info("Industry MediaFiles details to save in MySQL: {}", mediaFiles);
+
+	            MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
+	            multiMediaFiles.setFileName(mediaFiles.getFileName());
+	            multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
+	            multiMediaFiles.setFileDomainId(FilmHookConstants.INDUSTRYFILES);
+	            multiMediaFiles.setFileDomainReferenceId(mediaFiles.getIndustryMediaid());
+	            multiMediaFiles.setFileIsActive(true);
+	            multiMediaFiles.setFileCreatedBy(user.getUserId());
+	            multiMediaFiles.setFileSize(mediaFiles.getFileSize());
+	            multiMediaFiles.setFileType(mediaFiles.getFileType());
+	            multiMediaFiles = multiMediaFilesRepository.save(multiMediaFiles);
+	            logger.info("MultiMediaFiles entity saved in the database with ID: {}", multiMediaFiles.getMultiMediaFileId());
+	        } catch (Exception e) {
+	            logger.error("Error saving MultiMediaFiles", e);
+	        }
+
+	        return mediaFiles;
+	    }
+	 
+	 public FileOutputWebModel uploadToS3S(MultipartFile file, ShootingLocationImages mediaFile) {
+	        try {
+	            File tempFile = File.createTempFile(mediaFile.getFileId(), null);
+	            FileUtil.convertMultiPartFileToFile(file, tempFile);
+	            String response = fileUtil.uploadFile(tempFile, mediaFile.getFilePath() + mediaFile.getFileType());
+	            if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+	                tempFile.delete();// deleting temp file
+	                return this.transformDatas(mediaFile);
+	            }
+	        } catch (Exception e) {
+	            logger.error("Error at uploadToS3 -> ", e);
+	            e.printStackTrace();
+	            return null;
+	        }
+	        return null;
+	    }
+	 
+	  private FileOutputWebModel transformDatas(ShootingLocationImages mediaFile) {
+	        FileOutputWebModel fileOutputWebModel = null;
+	        try {
+	            fileOutputWebModel = new FileOutputWebModel();
+
+	            fileOutputWebModel.setUserId(mediaFile.getUser().getUserId());
+	            fileOutputWebModel.setCategory(mediaFile.getCategory());
+	            fileOutputWebModel.setId(mediaFile.getIndustryMediaid());
+	            fileOutputWebModel.setFileId(mediaFile.getFileId());
+	            fileOutputWebModel.setFileName(mediaFile.getFileName());
+	            fileOutputWebModel.setFileType(mediaFile.getFileType());
+	            fileOutputWebModel.setFileSize(mediaFile.getFileSize());
+	            fileOutputWebModel.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
+
+	            fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());
+	            fileOutputWebModel.setCreatedOn(mediaFile.getCreatedOn());
+	            fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
+	            fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
+
+	            return fileOutputWebModel;
+	        } catch (Exception e) {
+	            logger.error("Error at transformData() -> {}", e.getMessage());
+	            e.printStackTrace();
+	        }
+	        return fileOutputWebModel;
+	    }
+
+
+	
 
 }

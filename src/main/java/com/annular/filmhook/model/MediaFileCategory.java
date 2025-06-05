@@ -19,6 +19,7 @@ public enum MediaFileCategory {
     MarketPlaceChat,
     ShootingLocationChat,
     oneMinuteVideo,
-    govermentId
+    govermentId,
+    shootingLocationImage
 
 }
