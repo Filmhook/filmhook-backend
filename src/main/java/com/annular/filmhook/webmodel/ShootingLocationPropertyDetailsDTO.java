@@ -97,13 +97,14 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String description;
 	private double priceCustomerPay;
 	private boolean discount20Percent;
-	private boolean BusinessOwner;
+	private boolean businessOwner;
 	private List<String> highQualityPhotos;
 	private List<String> videoWalkthrough;
 
 	private BusinessInformationDTO businessInformation;
 	private BankDetailsDTO bankDetailsDTO;
 
+	private List<String> imageUrls;
 
 	private Long categoryId;
 	private Long subCategoryId;

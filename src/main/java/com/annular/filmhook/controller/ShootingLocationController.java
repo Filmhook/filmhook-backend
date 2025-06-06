@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -120,28 +121,28 @@ public class ShootingLocationController {
 	 }
 
 
-	  @PostMapping("/savePropertyDetails")
-	  public ResponseEntity<?> savePropertyDetails(@RequestBody ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
-	      logger.info("POST /save - Received request to save property with n: {}", propertyDetailsDTO.getPropertyName());
-	      logger.info("POST /save - Received request to save property with name: {}", propertyDetailsDTO.getSubcategorySelectionDTO());
-	      try {
-	    	  service.savePropertyDetails(propertyDetailsDTO);
-	          logger.info("Property '{}' saved successfully", propertyDetailsDTO.getPropertyName());
-
-	          Map<String, String> response = new HashMap<>();
-	          response.put("status", "success");
-	          response.put("message", "Property details saved successfully");
-	          return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
-	      } catch (Exception e) {
-	          logger.error("Error saving property '{}': {}", propertyDetailsDTO.getPropertyName(), e.getMessage(), e);
-
-	          Map<String, String> response = new HashMap<>();
-	          response.put("status", "error");
-	          response.put("message", "Failed to save property details: " + e.getMessage());
-	          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	      }
-	  }
+//	  @PostMapping("/savePropertyDetails")
+//	  public ResponseEntity<?> savePropertyDetails(@RequestBody ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
+//	      logger.info("POST /save - Received request to save property with n: {}", propertyDetailsDTO.getPropertyName());
+//	      logger.info("POST /save - Received request to save property with name: {}", propertyDetailsDTO.getSubcategorySelectionDTO());
+//	      try {
+//	    	  service.savePropertyDetails(propertyDetailsDTO);
+//	          logger.info("Property '{}' saved successfully", propertyDetailsDTO.getPropertyName());
+//
+//	          Map<String, String> response = new HashMap<>();
+//	          response.put("status", "success");
+//	          response.put("message", "Property details saved successfully");
+//	          return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//
+//	      } catch (Exception e) {
+//	          logger.error("Error saving property '{}': {}", propertyDetailsDTO.getPropertyName(), e.getMessage(), e);
+//
+//	          Map<String, String> response = new HashMap<>();
+//	          response.put("status", "error");
+//	          response.put("message", "Failed to save property details: " + e.getMessage());
+//	          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//	      }
+//	  }
 
 		  @GetMapping("/getAllProperty")
 		  public ResponseEntity<?> getAllProperties() {
@@ -237,15 +238,31 @@ public class ShootingLocationController {
 		      }
 		  }
 		  
-		  @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-		    public ResponseEntity<?> uploadPropertyWithFiles(
-		            @ModelAttribute ShootingLocationPropertyDetailsDTO inputFileData,
-		            @AuthenticationPrincipal User user) {
 
-		        // Save property details & upload files in service method
-		        List<FileOutputWebModel> result = userMediaService.saveShootingLocation(inputFileData, user);
+		  @PostMapping("/savePropertyDetails")
+		  public ResponseEntity<?> savePropertyDetails(@RequestParam(value ="shootingImages", required = false) List<MultipartFile> shootingImages,
+				  @RequestPart(value ="propertyDetails", required = false) ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
+		      logger.info("POST /save - Received request to save property with n: {}", propertyDetailsDTO.getPropertyName());
+		      logger.info("POST /save - Received request to save property with name: {}", propertyDetailsDTO.getSubcategorySelectionDTO());
+		      try {
+		    	  service.savePropertyDetails(propertyDetailsDTO, shootingImages);
+		          logger.info("Property '{}' saved successfully", propertyDetailsDTO.getPropertyName());
 
-		        return ResponseEntity.ok(result);
-		    }
+		          Map<String, String> response = new HashMap<>();
+		          response.put("status", "success");
+		          response.put("message", "Property details saved successfully");
+		          return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
+		      } catch (Exception e) {
+		          logger.error("Error saving property '{}': {}", propertyDetailsDTO.getPropertyName(), e.getMessage(), e);
+
+		          Map<String, String> response = new HashMap<>();
+		          response.put("status", "error");
+		          response.put("message", "Failed to save property details: " + e.getMessage());
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		      }
+		  }
+		  
 }
+		
+

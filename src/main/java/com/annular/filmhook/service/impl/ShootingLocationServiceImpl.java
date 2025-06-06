@@ -5,17 +5,20 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +26,8 @@ import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.controller.StoriesController;
 import com.annular.filmhook.model.BankDetails;
 import com.annular.filmhook.model.BusinessInformation;
+import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MultiMediaFiles;
 import com.annular.filmhook.model.ShootingLocationCategory;
 import com.annular.filmhook.model.ShootingLocationImages;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
@@ -32,6 +37,7 @@ import com.annular.filmhook.model.ShootingLocationTypes;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BankDetailsRepository;
 import com.annular.filmhook.repository.BusinessInformationRepository;
+import com.annular.filmhook.repository.MultiMediaFileRepository;
 import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationImageRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
@@ -41,6 +47,9 @@ import com.annular.filmhook.repository.ShootingLocationTypesRepository;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.FilmHookConstants;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
 import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -64,23 +73,32 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	private final ShootingLocationSubcategorySelectionRepository selectionRepo;
 	@Autowired
 	private ShootingLocationPropertyDetailsRepository propertyDetailsRepository;
+	@Autowired
+	MultiMediaFileRepository multiMediaFilesRepository;
+
+	@Autowired
+	AwsS3Service awsS3Service;
+
+	@Autowired
+	S3Util s3Util;
+
+	@Autowired
+	private FileUtil fileUtil;
+
+	@Autowired
+	ShootingLocationImageRepository shootingLocationImagesRepository;
+
 
 	@Autowired
 	private UserService userService;
+
 	@Autowired
 	private BusinessInformationRepository businessInformationRepository;
 
 	@Autowired
 	private BankDetailsRepository bankDetailsRepository;
-	  
 
-	    @Autowired
-	    private ShootingLocationImageRepository shootingLocationImagesRepository;
 
-	  
-
-	    @Autowired
-	    private AwsS3Service s3Service;
 
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
 
@@ -192,7 +210,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 	@Override
-	public ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO dto) {
+	public ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO dto, List<MultipartFile> shootingImages) {
 		try {
 			logger.info("Saving property", dto.getPropertyName());
 
@@ -344,26 +362,142 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			}
 
+			// Save shooting images & upload files to S3
+			List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
+			if (shootingImages != null && !shootingImages.isEmpty()) {
+				Map<ShootingLocationImages, MultipartFile> mediaFilesMap = prepareMediaFileData(dto, shootingImages, user, savedProperty);
+
+				mediaFilesMap.forEach((mediaFile, file) -> {
+					shootingLocationImagesRepository.save(mediaFile);
+					logger.info("File saved in MySQL. File ID: {}", mediaFile.getFileId());
+
+					FileOutputWebModel uploadedFile = uploadToS3(file, mediaFile);
+					if (uploadedFile != null) {
+						fileOutputWebModelList.add(uploadedFile);
+					}
+				});
+			}
+
 			logger.info("Property saved with ID: {}", savedProperty.getId());
 			propertyDetailsRepository.save(savedProperty);
-			// Optionally return the full object (you can also map back to DTO)
+
+			// Return updated DTO (you can implement a mapping from entity to DTO here)
 			return dto;
 
 		} catch (Exception e) {
-			logger.error("Error at savePropertyDetails() -> {}", e.getMessage());
-			e.printStackTrace();
-			throw new RuntimeException("Failed to save property details");
+			logger.error("Error in savePropertyDetails -> ", e);
+			throw new RuntimeException("Failed to save property details", e);
 		}
-
 	}
-	private ShootingLocationSubcategorySelection mapToEntity(ShootingLocationSubcategorySelectionDTO dto) {
-		if (dto == null) {
+	private Map<ShootingLocationImages, MultipartFile> prepareMediaFileData(ShootingLocationPropertyDetailsDTO dto, List<MultipartFile> shootingImages, User user, ShootingLocationPropertyDetails savedProperty) {
+		Map<ShootingLocationImages, MultipartFile> mediaFilesMap = new HashMap<>();
+
+		for (MultipartFile file : shootingImages) {
+			ShootingLocationImages mediaFile = createMediaFile(file, user, MediaFileCategory.shootingLocationImage.toString(), dto.getUserId(), savedProperty);
+			if (mediaFile != null) {
+				mediaFilesMap.put(mediaFile, file);
+			}
+		}
+		return mediaFilesMap;
+	}
+
+	private ShootingLocationImages createMediaFile(MultipartFile file, User user, String category, Integer createdBy, ShootingLocationPropertyDetails propertyDetails) {
+		try {
+			ShootingLocationImages mediaFile = new ShootingLocationImages();
+			mediaFile.setUser(user);
+			mediaFile.setCategory(category);
+			mediaFile.setFileId(UUID.randomUUID().toString());
+			mediaFile.setFileName(file.getOriginalFilename());
+			mediaFile.setFilePath(FileUtil.generateFilePath(user, category, mediaFile.getFileId()));
+			mediaFile.setFileType(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")));
+			mediaFile.setFileSize(file.getSize());
+			mediaFile.setStatus(true);
+			mediaFile.setCreatedBy(createdBy);
+			mediaFile.setProperty(propertyDetails);
+			logger.info("Preparing media file entity: {}", mediaFile);
+
+			// Save MultiMediaFiles entity related to this file
+			MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
+			multiMediaFiles.setFileName(mediaFile.getFileName());
+			multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
+			multiMediaFiles.setFileDomainId(FilmHookConstants.INDUSTRYFILES);
+			multiMediaFiles.setFileDomainReferenceId(mediaFile.getShootingmediaId());
+			multiMediaFiles.setFileIsActive(true);
+			multiMediaFiles.setFileCreatedBy(user.getUserId());
+			multiMediaFiles.setFileSize(mediaFile.getFileSize());
+			multiMediaFiles.setFileType(mediaFile.getFileType());
+
+			multiMediaFilesRepository.save(multiMediaFiles);
+			logger.info("MultiMediaFiles saved with ID: {}", multiMediaFiles.getMultiMediaFileId());
+
+			return mediaFile;
+
+		} catch (Exception e) {
+			logger.error("Error creating media file entity", e);
 			return null;
 		}
+	}
+
+	public FileOutputWebModel uploadToS3(MultipartFile file, ShootingLocationImages mediaFile) {
+		try {
+			File tempFile = File.createTempFile(mediaFile.getFileId(), null);
+			FileUtil.convertMultiPartFileToFile(file, tempFile);
+
+			String relativePath = mediaFile.getFilePath() + mediaFile.getFileType();
+			String response = fileUtil.uploadFile(tempFile, relativePath);
+
+			if ("File Uploaded".equalsIgnoreCase(response)) {
+				tempFile.delete();
+
+				// Set the full S3 URL into filePath
+				String s3FullPath = s3Util.getS3BaseURL() + "/" + relativePath;
+				mediaFile.setFilePath(s3FullPath); // <-- OVERWRITE filePath with full URL
+
+				shootingLocationImagesRepository.save(mediaFile);
+
+				return transformToFileOutput(mediaFile);
+			}
+		} catch (Exception e) {
+			logger.error("Error uploading to S3", e);
+		}
+		return null;
+	}
+
+
+	private FileOutputWebModel transformToFileOutput(ShootingLocationImages mediaFile) {
+		try {
+			FileOutputWebModel output = new FileOutputWebModel();
+
+			User user = mediaFile.getUser();
+			if (user == null) {
+				throw new IllegalArgumentException("User not found or not authenticated.");
+			}
+
+			output.setCategory(mediaFile.getCategory());
+			output.setId(mediaFile.getShootingmediaId());
+			output.setFileId(mediaFile.getFileId());
+			output.setFileName(mediaFile.getFileName());
+			output.setFileType(mediaFile.getFileType());
+			output.setFileSize(mediaFile.getFileSize());
+			output.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
+
+			output.setCreatedBy(mediaFile.getCreatedBy());
+			output.setCreatedOn(mediaFile.getCreatedOn());
+			output.setUpdatedBy(mediaFile.getUpdatedBy());
+			output.setUpdatedOn(mediaFile.getUpdatedOn());
+
+			return output;
+		} catch (Exception e) {
+			logger.error("Error transforming media file to output model", e);
+			return null;
+		}
+	}
+
+	private ShootingLocationSubcategorySelection mapToEntity(ShootingLocationSubcategorySelectionDTO dto) {
+		if (dto == null) return null;
 
 		ShootingLocationSubcategory subcategory = subcategoryRepo.findById(dto.getSubcategoryId().intValue())
 				.orElseThrow(() -> new RuntimeException("Subcategory not found with ID: " + dto.getSubcategoryId()));
-
 
 		return ShootingLocationSubcategorySelection.builder()
 				.subcategory(subcategory)
@@ -371,198 +505,212 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.singleProperty(dto.getSingleProperty())
 				.build();
 	}
-
 	@Override
 	public List<ShootingLocationPropertyDetailsDTO> getAllProperties() {
-		logger.info("Starting getAllProperties() - fetching all properties from database");
+	    logger.info("Starting getAllProperties() - fetching all properties from database");
 
-		try {
-			List<ShootingLocationPropertyDetails> properties = propertyDetailsRepository.findAll();
-			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList <>();
-			logger.info("Starting getAllProperties() - fetching all properties from database", properties);
-			for (ShootingLocationPropertyDetails property : properties) {
+	    try {
+	        List<ShootingLocationPropertyDetails> properties = propertyDetailsRepository.findAllWithMediaFiles();
 
+	        List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
 
-				BusinessInformationDTO businessInfoDTO = null;
-				if (property.getBusinessInformation() != null) {
-					var b = property.getBusinessInformation();
-					businessInfoDTO = BusinessInformationDTO.builder()
-							.id(property.getBusinessInformation().getId())
-							.businessName(b.getBusinessName())
-							.businessType(b.getBusinessType())
-							.businessLocation(b.getBusinessLocation())
-							.panOrGSTNumber(b.getPanOrGSTNumber())
-							.location(b.getLocation())
-							.addressLine1(b.getAddressLine1())
-							.addressLine2(b.getAddressLine2())
-							.addressLine3(b.getAddressLine3())
-							.state(b.getState())
-							.postalCode(b.getPostalCode())
-							.build();
-				}
+	        for (ShootingLocationPropertyDetails property : properties) {
 
-				BankDetailsDTO bankDetailsDTO = null;
-				if (property.getBankDetails() != null) {
-					var bank = property.getBankDetails();
-					bankDetailsDTO = BankDetailsDTO.builder()
+	            List<String> imageUrls = new ArrayList<>();
+	            if (property.getMediaFiles() != null && !property.getMediaFiles().isEmpty()) {
+	                imageUrls = property.getMediaFiles().stream()
+	                        .map(img -> img.getFilePath())
+	                        .collect(Collectors.toList());
+	                logger.info("Fetched {} image(s) for property {}: {}", imageUrls.size(), property.getId(), imageUrls);
+	            }
 
-							.beneficiaryName(bank.getBeneficiaryName())
-							.mobileNumber(bank.getMobileNumber())
-							.accountNumber(bank.getAccountNumber())
-							.confirmAccountNumber(bank.getConfirmAccountNumber())
-							.ifscCode(bank.getIfscCode()) 
-							.build();
-				}
+	            // Business Info Mapping
+	            BusinessInformationDTO businessInfoDTO = null;
+	            if (property.getBusinessInformation() != null) {
+	                var b = property.getBusinessInformation();
+	                businessInfoDTO = BusinessInformationDTO.builder()
+	                        .id(b.getId())
+	                        .businessName(b.getBusinessName())
+	                        .businessType(b.getBusinessType())
+	                        .businessLocation(b.getBusinessLocation())
+	                        .panOrGSTNumber(b.getPanOrGSTNumber())
+	                        .location(b.getLocation())
+	                        .addressLine1(b.getAddressLine1())
+	                        .addressLine2(b.getAddressLine2())
+	                        .addressLine3(b.getAddressLine3())
+	                        .state(b.getState())
+	                        .postalCode(b.getPostalCode())
+	                        .build();
+	            }
 
-				ShootingLocationCategoryDTO categoryDTO = null;
-				if (property.getCategory() != null) {
-					ShootingLocationCategory category = categoryRepo.findById(property.getCategory().getId())
-							.orElse(null);
-					if (category != null) {
-						categoryDTO = ShootingLocationCategoryDTO.builder()
-								.id(category.getId())
-								.name(category.getName())
-								.build();
-					}
-				}
+	            // Bank Details Mapping
+	            BankDetailsDTO bankDetailsDTO = null;
+	            if (property.getBankDetails() != null) {
+	                var bank = property.getBankDetails();
+	                bankDetailsDTO = BankDetailsDTO.builder()
+	                        .beneficiaryName(bank.getBeneficiaryName())
+	                        .mobileNumber(bank.getMobileNumber())
+	                        .accountNumber(bank.getAccountNumber())
+	                        .confirmAccountNumber(bank.getConfirmAccountNumber())
+	                        .ifscCode(bank.getIfscCode())
+	                        .build();
+	            }
 
+	            // Category Mapping
+	            ShootingLocationCategoryDTO categoryDTO = null;
+	            if (property.getCategory() != null) {
+	                var category = categoryRepo.findById(property.getCategory().getId()).orElse(null);
+	                if (category != null) {
+	                    categoryDTO = ShootingLocationCategoryDTO.builder()
+	                            .id(category.getId())
+	                            .name(category.getName())
+	                            .build();
+	                }
+	            }
 
-				ShootingLocationSubcategoryDTO subcategoryDTO = null;
-				if (property.getSubCategory() != null) {
-					ShootingLocationSubcategory subCategory = subcategoryRepo.findById(property.getSubCategory().getId())
-							.orElse(null);
-					if (subCategory != null) {
-						subcategoryDTO = ShootingLocationSubcategoryDTO.builder()
-								.id(subCategory.getId())
-								.name(subCategory.getName())
-								.description(subCategory.getDescription())
-								.build();
-					}
-				}
-				ShootingLocationTypeDTO typeDTO=null;
-				if(property.getTypes()!=null) {
-					ShootingLocationTypes types= typesRepo.findById(property.getTypes().getId())
-							.orElse(null);
-					if(types!=null) {
-						typeDTO=ShootingLocationTypeDTO.builder()
-								.id(types.getId())
-								.name(types.getName())
-								.description(types.getDescription())
-								.build();
-					}
-				}
+	            // SubCategory Mapping
+	            ShootingLocationSubcategoryDTO subcategoryDTO = null;
+	            if (property.getSubCategory() != null) {
+	                var subCategory = subcategoryRepo.findById(property.getSubCategory().getId()).orElse(null);
+	                if (subCategory != null) {
+	                    subcategoryDTO = ShootingLocationSubcategoryDTO.builder()
+	                            .id(subCategory.getId())
+	                            .name(subCategory.getName())
+	                            .description(subCategory.getDescription())
+	                            .build();
+	                }
+	            }
 
-				ShootingLocationSubcategorySelectionDTO shootingLocationSubcategorySelectionDTO = null;
-				if (property.getSubcategorySelection() != null) {
-					var shooting = property.getSubcategorySelection();
-					shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
+	            // Type Mapping
+	            ShootingLocationTypeDTO typeDTO = null;
+	            if (property.getTypes() != null) {
+	                var types = typesRepo.findById(property.getTypes().getId()).orElse(null);
+	                if (types != null) {
+	                    typeDTO = ShootingLocationTypeDTO.builder()
+	                            .id(types.getId())
+	                            .name(types.getName())
+	                            .description(types.getDescription())
+	                            .build();
+	                }
+	            }
 
-							.entireProperty(shooting.getEntireProperty())
-							.singleProperty(shooting.getSingleProperty())
-							.build();
-				}
+	            // Subcategory Selection Mapping
+	            ShootingLocationSubcategorySelectionDTO shootingLocationSubcategorySelectionDTO = null;
+	            if (property.getSubcategorySelection() != null) {
+	                var shooting = property.getSubcategorySelection();
+	                shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
+	                        .entireProperty(shooting.getEntireProperty())
+	                        .singleProperty(shooting.getSingleProperty())
+	                        .build();
+	            }
 
+	            // Build the DTO
+	            ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
+	                    // Owner & Identity
+	                    .id(property.getId())
+	                    .firstName(property.getFirstName())
+	                    .middleName(property.getMiddleName())
+	                    .lastName(property.getLastName())
+	                    .citizenship(property.getCitizenship())
+	                    .placeOfBirth(property.getPlaceOfBirth())
+	                    .propertyName(property.getPropertyName())
+	                    .location(property.getLocation())
+	                    .dateOfBirth(property.getDateOfBirth())
+	                    .proofOfIdentity(property.getProofOfIdentity())
+	                    .countryOfIssued(property.getCountryOfIssued())
 
-				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
-						// 1. Owner & Property Identity
-						.id(property.getId())
-						.firstName(property.getFirstName())
-						.middleName(property.getMiddleName())
-						.lastName(property.getLastName())
-						.citizenship(property.getCitizenship())
-						.placeOfBirth(property.getPlaceOfBirth())
-						.propertyName(property.getPropertyName())
-						.location(property.getLocation())
-						.dateOfBirth(property.getDateOfBirth())
-						.proofOfIdentity(property.getProofOfIdentity())
-						.countryOfIssued(property.getCountryOfIssued())
+	                    // Listing Summary
+	                    .numberOfPeopleAllowed(property.getNumberOfPeopleAllowed())
+	                    .totalArea(property.getTotalArea())
+	                    .selectedUnit(property.getSelectedUnit())
+	                    .numberOfRooms(property.getNumberOfRooms())
+	                    .numberOfFloor(property.getNumberOfFloor())
+	                    .ceilingHeight(property.getCeilingHeight())
+	                    .outdoorFeatures(defaultList(property.getOutdoorFeatures()))
+	                    .architecturalStyle(defaultList(property.getArchitecturalStyle()))
+	                    .vintage(defaultList(property.getVintage()))
+	                    .industrial(defaultList(property.getIndustrial()))
+	                    .traditional(defaultList(property.getTraditional()))
 
-						// 2. Listing Summary
-						.numberOfPeopleAllowed(property.getNumberOfPeopleAllowed())
-						.totalArea(property.getTotalArea())
-						.selectedUnit(property.getSelectedUnit())
-						.numberOfRooms(property.getNumberOfRooms())
-						.numberOfFloor(property.getNumberOfFloor())
-						.ceilingHeight(property.getCeilingHeight())
-						.outdoorFeatures(property.getOutdoorFeatures() != null ? property.getOutdoorFeatures() : Collections.emptyList())
-						.architecturalStyle(property.getArchitecturalStyle() != null ? property.getArchitecturalStyle() : Collections.emptyList())
-						.vintage(property.getVintage() != null ? property.getVintage() : Collections.emptyList())
-						.industrial(property.getIndustrial() != null ? property.getIndustrial() : Collections.emptyList())
-						.traditional(property.getTraditional() != null ? property.getTraditional() : Collections.emptyList())
+	                    // Facilities & Amenities
+	                    .powerSupply(property.getPowerSupply())
+	                    .bakupGeneratorsAndVoltage(defaultList(property.getBakupGeneratorsAndVoltage()))
+	                    .wifi(property.getWifi())
+	                    .airConditionAndHeating(property.getAirConditionAndHeating())
+	                    .numberOfWashrooms(property.getNumberOfWashrooms())
+	                    .restrooms(defaultList(property.getRestrooms()))
+	                    .waterSupply(defaultList(property.getWaterSupply()))
+	                    .changingRooms(defaultList(property.getChangingRooms()))
+	                    .kitchen(defaultList(property.getKitchen()))
+	                    .furnitureAndProps(defaultList(property.getFurnitureAndProps()))
+	                    .neutralLightingConditions(defaultList(property.getNeutralLightingConditions()))
+	                    .artificialLightingAvailability(defaultList(property.getArtificialLightingAvailability()))
+	                    .parkingCapacity(defaultList(property.getParkingCapacity()))
 
-						// 3. Facilities & Amenities
-						.powerSupply(property.getPowerSupply())
-						.bakupGeneratorsAndVoltage(property.getBakupGeneratorsAndVoltage() != null ? property.getBakupGeneratorsAndVoltage() : Collections.emptyList())
-						.wifi(property.getWifi())
-						.airConditionAndHeating(property.getAirConditionAndHeating())
-						.numberOfWashrooms(property.getNumberOfWashrooms())
-						.restrooms(property.getRestrooms() != null ? property.getRestrooms() : Collections.emptyList())
-						.waterSupply(property.getWaterSupply() != null ? property.getWaterSupply() : Collections.emptyList())
-						.changingRooms(property.getChangingRooms() != null ? property.getChangingRooms() : Collections.emptyList())
-						.kitchen(property.getKitchen() != null ? property.getKitchen() : Collections.emptyList())
-						.furnitureAndProps(property.getFurnitureAndProps() != null ? property.getFurnitureAndProps() : Collections.emptyList())
-						.neutralLightingConditions(property.getNeutralLightingConditions() != null ? property.getNeutralLightingConditions() : Collections.emptyList())
-						.artificialLightingAvailability(property.getArtificialLightingAvailability() != null ? property.getArtificialLightingAvailability() : Collections.emptyList())
-						.parkingCapacity(property.getParkingCapacity() != null ? property.getParkingCapacity() : Collections.emptyList())
+	                    // Filming Restrictions
+	                    .droneUsage(property.getDroneUsage())
+	                    .firearms(property.getFirearms())
+	                    .actionScenes(property.getActionScenes())
+	                    .security(property.getSecurity())
+	                    .structuralModification(defaultList(property.getStructuralModification()))
+	                    .temporary(property.getTemporary())
+	                    .dressing(property.getDressing())
+	                    .permissions(defaultList(property.getPermissions()))
+	                    .noiseRestrictions(defaultList(property.getNoiseRestrictions()))
+	                    .shootingTiming(defaultList(property.getShootingTiming()))
+	                    .insuranceRequired(defaultList(property.getInsuranceRequired()))
+	                    .legalAgreements(defaultList(property.getLegalAgreements()))
 
-						// 4. Filming Requirements & Restrictions
-						.droneUsage(property.getDroneUsage())
-						.firearms(property.getFirearms())
-						.actionScenes(property.getActionScenes())
-						.security(property.getSecurity())
-						.structuralModification(property.getStructuralModification() != null ? property.getStructuralModification() : Collections.emptyList())
-						.temporary(property.getTemporary())
-						.dressing(property.getDressing())
-						.permissions(property.getPermissions() != null ? property.getPermissions() : Collections.emptyList())
-						.noiseRestrictions(property.getNoiseRestrictions() != null ? property.getNoiseRestrictions() : Collections.emptyList())
-						.shootingTiming(property.getShootingTiming() != null ? property.getShootingTiming() : Collections.emptyList())
-						.insuranceRequired(property.getInsuranceRequired() != null ? property.getInsuranceRequired() : Collections.emptyList())
-						.legalAgreements(property.getLegalAgreements() != null ? property.getLegalAgreements() : Collections.emptyList())
+	                    // Accessibility & Transport
+	                    .roadAccessAndCondition(defaultList(property.getRoadAccessAndCondition()))
+	                    .publicTransport(defaultList(property.getPublicTransport()))
+	                    .nearestAirportOrRailway(defaultList(property.getNearestAirportOrRailway()))
+	                    .accommodationNearby(defaultList(property.getAccommodationNearby()))
+	                    .foodAndCatering(defaultList(property.getFoodAndCatering()))
+	                    .emergencyServicesNearby(defaultList(property.getEmergencyServicesNearby()))
 
-						// 5. Accessibility & Transportation
-						.roadAccessAndCondition(property.getRoadAccessAndCondition() != null ? property.getRoadAccessAndCondition() : Collections.emptyList())
-						.publicTransport(property.getPublicTransport() != null ? property.getPublicTransport() : Collections.emptyList())
-						.nearestAirportOrRailway(property.getNearestAirportOrRailway() != null ? property.getNearestAirportOrRailway() : Collections.emptyList())
-						.accommodationNearby(property.getAccommodationNearby() != null ? property.getAccommodationNearby() : Collections.emptyList())
-						.foodAndCatering(property.getFoodAndCatering() != null ? property.getFoodAndCatering() : Collections.emptyList())
-						.emergencyServicesNearby(property.getEmergencyServicesNearby() != null ? property.getEmergencyServicesNearby() : Collections.emptyList())
+	                    // Pricing
+	                    .rentalCost(defaultList(property.getRentalCost()))
+	                    .securityDeposit(defaultList(property.getSecurityDeposit()))
+	                    .additionalCharges(defaultList(property.getAdditionalCharges()))
+	                    .paymentModelsAccepted(defaultList(property.getPaymentModelsAccepted()))
+	                    .cancellationPolicy(defaultList(property.getCancellationPolicy()))
 
-						// 6. Pricing & Payment Terms
-						.rentalCost(property.getRentalCost() != null ? property.getRentalCost() : Collections.emptyList())
-						.securityDeposit(property.getSecurityDeposit() != null ? property.getSecurityDeposit() : Collections.emptyList())
-						.additionalCharges(property.getAdditionalCharges() != null ? property.getAdditionalCharges() : Collections.emptyList())
-						.paymentModelsAccepted(property.getPaymentModelsAccepted() != null ? property.getPaymentModelsAccepted() : Collections.emptyList())
-						.cancellationPolicy(property.getCancellationPolicy() != null ? property.getCancellationPolicy() : Collections.emptyList())
+	                    // Optional Fields
+	                    .description(property.getDescription())
+	                    .priceCustomerPay(property.getPriceCustomerPay())
+	                    .discount20Percent(property.isDiscount20Percent())
+	                    .businessOwner(property.isBusinessOwner())  // <-- fixed casing here
+	                    .highQualityPhotos(defaultList(property.getHighQualityPhotos())) 
+	                    .videoWalkthrough(defaultList(property.getVideoWalkthrough()))
 
+	                    // Nested DTOs
+	                    .businessInformation(businessInfoDTO)
+	                    .bankDetailsDTO(bankDetailsDTO)
+	                    .subcategorySelectionDTO(shootingLocationSubcategorySelectionDTO)
+	                    .category(categoryDTO)
+	                    .subCategory(subcategoryDTO)
+	                    .type(typeDTO)
+	                    .imageUrls(imageUrls)
+	                    .build();
 
-						// Optional fields
-						.description(property.getDescription())
-						.priceCustomerPay(property.getPriceCustomerPay())
-						.discount20Percent(property.isDiscount20Percent())
-						.BusinessOwner(property.isBusinessOwner())
-						.highQualityPhotos(property.getHighQualityPhotos())
-						.videoWalkthrough(property.getVideoWalkthrough())
+	            propertyDTOs.add(dto);
+	        }
 
-						// Nested DTOs
-						.businessInformation(businessInfoDTO)
-						.bankDetailsDTO(bankDetailsDTO)
-						.subcategorySelectionDTO(shootingLocationSubcategorySelectionDTO)
-						.category(categoryDTO)
-						.subCategory(subcategoryDTO)
-						.type(typeDTO)
-						.build();
+	        logger.info("Completed getAllProperties() - total properties fetched: {}", propertyDTOs.size());
+	        return propertyDTOs;
 
-				propertyDTOs.add(dto);
-			}
-
-			logger.info("Completed getAllProperties() - total properties fetched: {}", propertyDTOs.size());
-			return propertyDTOs;
-
-		} catch (Exception e) {
-			logger.error("Exception occurred in getAllProperties(): ", e);
-			return Collections.emptyList();
-		}
+	    } catch (Exception e) {
+	        logger.error("Exception occurred in getAllProperties(): ", e);
+	        return Collections.emptyList();
+	    }
 	}
+
+	// Helper method to avoid null lists in DTOs
+	private <T> List<T> defaultList(List<T> list) {
+	    return list == null ? Collections.emptyList() : list;
+	}
+
 
 	@Override
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId) {
@@ -592,7 +740,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.filter(Objects::nonNull)
 					.collect(Collectors.toSet());
 
-			
+
 			Map<Integer, ShootingLocationCategory> categoryMap = categoryRepo.findAllById(categoryIdInts)
 					.stream()
 					.collect(Collectors.toMap(
@@ -617,7 +765,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
-				
+
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
 					var b = property.getBusinessInformation();
@@ -772,7 +920,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.description(property.getDescription())
 						.priceCustomerPay(property.getPriceCustomerPay())
 						.discount20Percent(property.isDiscount20Percent())
-						.BusinessOwner(property.isBusinessOwner())
+						.businessOwner(property.isBusinessOwner())
 						.highQualityPhotos(property.getHighQualityPhotos())
 						.videoWalkthrough(property.getVideoWalkthrough())
 
@@ -945,196 +1093,5 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			throw new RuntimeException("Error updating property with ID: " + id + " - " + e.getMessage());
 		}
 	}
-	@Override
-	public List<FileOutputWebModel> saveShootingLocation(ShootingLocationPropertyDetailsDTO dto, MultipartFile[] files) {
-	    List<FileOutputWebModel> fileOutputList = new ArrayList<>();
-	    try {
-			logger.info("Saving property", dto.getPropertyName());
-
-			ShootingLocationCategory category = null;
-			if (dto.getCategoryId() != null) {
-				category = new ShootingLocationCategory();
-				category.setId(dto.getCategoryId().intValue());  
-			}
-
-			ShootingLocationSubcategory subCategory = null;
-			if (dto.getSubCategoryId() != null) {
-				subCategory = new ShootingLocationSubcategory();
-				subCategory.setId(dto.getSubCategoryId().intValue());
-			}
-			ShootingLocationTypes type=null;
-			if(dto.getTypesId()!=null) {
-				type= new ShootingLocationTypes();
-				type.setId(dto.getTypesId().intValue());
-			}
-			User user=null;
-			if(dto.getUserId()!=null) {
-				user= new User();
-				user.setUserId(dto.getUserId().intValue());
-			}
-
-
-			ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.builder()
-					// 1. Owner & Property Identity
-					.industryName(dto.getIndustryName())
-					.firstName(dto.getFirstName())
-					.middleName(dto.getMiddleName())
-					.lastName(dto.getLastName())
-					.citizenship(dto.getCitizenship())
-					.placeOfBirth(dto.getPlaceOfBirth())
-					.propertyName(dto.getPropertyName())
-					.location(dto.getLocation())
-					.dateOfBirth(dto.getDateOfBirth())
-					.proofOfIdentity(dto.getProofOfIdentity())
-					.countryOfIssued(dto.getCountryOfIssued())
-
-					// 2. Listing Summary
-					.numberOfPeopleAllowed(dto.getNumberOfPeopleAllowed())
-					.totalArea(dto.getTotalArea())
-					.selectedUnit(dto.getSelectedUnit())
-					.numberOfRooms(dto.getNumberOfRooms())
-					.numberOfFloor(dto.getNumberOfFloor())
-					.ceilingHeight(dto.getCeilingHeight())
-					.outdoorFeatures(dto.getOutdoorFeatures())
-					.architecturalStyle(dto.getArchitecturalStyle())
-					.vintage(dto.getVintage())
-					.industrial(dto.getIndustrial())
-					.traditional(dto.getTraditional())
-
-					// 3. Facilities & Amenities
-					.powerSupply(dto.getPowerSupply())
-					.bakupGeneratorsAndVoltage(dto.getBakupGeneratorsAndVoltage())
-					.wifi(dto.getWifi())
-					.airConditionAndHeating(dto.getAirConditionAndHeating())
-					.numberOfWashrooms(dto.getNumberOfWashrooms())
-					.restrooms(dto.getRestrooms())
-					.waterSupply(dto.getWaterSupply())
-					.changingRooms(dto.getChangingRooms())
-					.kitchen(dto.getKitchen())
-					.furnitureAndProps(dto.getFurnitureAndProps())
-					.neutralLightingConditions(dto.getNeutralLightingConditions())
-					.artificialLightingAvailability(dto.getArtificialLightingAvailability())
-					.parkingCapacity(dto.getParkingCapacity())
-
-					// 4. Filming Requirements & Restrictions
-					.droneUsage(dto.getDroneUsage())
-					.firearms(dto.getFirearms())
-					.actionScenes(dto.getActionScenes())
-					.security(dto.getSecurity())
-					.structuralModification(dto.getStructuralModification())
-					.temporary(dto.getTemporary())
-					.dressing(dto.getDressing())
-					.permissions(dto.getPermissions())
-					.noiseRestrictions(dto.getNoiseRestrictions())
-					.shootingTiming(dto.getShootingTiming())
-					.insuranceRequired(dto.getInsuranceRequired())
-					.legalAgreements(dto.getLegalAgreements())
-
-					// 5. Accessibility & Transportation
-					.roadAccessAndCondition(dto.getRoadAccessAndCondition())
-					.publicTransport(dto.getPublicTransport())
-					.nearestAirportOrRailway(dto.getNearestAirportOrRailway())
-					.accommodationNearby(dto.getAccommodationNearby())
-					.foodAndCatering(dto.getFoodAndCatering())
-					.emergencyServicesNearby(dto.getEmergencyServicesNearby())
-
-					// 6. Pricing & Payment Terms
-					.rentalCost(dto.getRentalCost())
-					.securityDeposit(dto.getSecurityDeposit())
-					.additionalCharges(dto.getAdditionalCharges())
-					.paymentModelsAccepted(dto.getPaymentModelsAccepted())
-					.cancellationPolicy(dto.getCancellationPolicy())
-
-					// Optional fields if you’ve added:
-					.description(dto.getDescription())
-					.priceCustomerPay(dto.getPriceCustomerPay())
-					.discount20Percent(dto.isDiscount20Percent())
-					.businessOwner(dto.isBusinessOwner())
-					.highQualityPhotos(dto.getHighQualityPhotos())
-					.videoWalkthrough(dto.getVideoWalkthrough())
-					.category(category)
-					.subCategory(subCategory)
-					.types(type)
-					.user(user)
-					.subcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()))
-
-					.build();
-
-			ShootingLocationPropertyDetails savedProperty = propertyDetailsRepository.saveAndFlush(property);
-
-			if (dto.getBusinessInformation() != null) {
-
-				BusinessInformation business = BusinessInformation.builder()
-						.propertyDetails(savedProperty)
-						.businessName(dto.getBusinessInformation().getBusinessName())
-						.businessType(dto.getBusinessInformation().getBusinessType())
-						.businessLocation(dto.getBusinessInformation().getBusinessLocation())
-						.panOrGSTNumber(dto.getBusinessInformation().getPanOrGSTNumber())
-						.location(dto.getBusinessInformation().getLocation())
-						.addressLine1(dto.getBusinessInformation().getAddressLine1())
-						.addressLine2(dto.getBusinessInformation().getAddressLine2())
-						.addressLine3(dto.getBusinessInformation().getAddressLine3())
-						.state(dto.getBusinessInformation().getState())
-						.postalCode(dto.getBusinessInformation().getPostalCode())
-						.build();
-
-				businessInformationRepository.save(business);
-				savedProperty.setBusinessInformation(business);
-			}
-
-			if (dto.getBankDetailsDTO() != null) {
-
-				BankDetailsDTO bankDto = dto.getBankDetailsDTO();
-
-				BankDetails bank = BankDetails.builder()
-						.propertyDetails(savedProperty)
-						.beneficiaryName(dto.getBankDetailsDTO().getBeneficiaryName())
-						.mobileNumber(dto.getBankDetailsDTO().getMobileNumber())
-						.accountNumber(dto.getBankDetailsDTO().getAccountNumber())
-						.confirmAccountNumber(dto.getBankDetailsDTO().getConfirmAccountNumber())
-						.ifscCode(dto.getBankDetailsDTO().getIfscCode())
-						.build();
-				bankDetailsRepository.save(bank);
-				savedProperty.setBankDetails(bank);
-			}
-
-			for (MultipartFile file : files) {
-			    File convertedFile = convertMultiPartToFile(file);
-
-			    // Assuming bucket name is passed via config or hardcoded
-			    String s3Url = s3Service.putObjectIntoS3("your-bucket-name", "shooting-location-images/", convertedFile);
-
-			    ShootingLocationImages image = ShootingLocationImages.builder()
-			            .user(user)
-			            .category("shooting")
-			            .fileName(file.getOriginalFilename())
-			            .fileSize(file.getSize())
-			            .fileType(file.getContentType())
-			            .filePath(s3Url)
-			            .status(true)
-			            .createdBy(user.getUserId().intValue())
-			            .build();
-
-			    shootingLocationImagesRepository.save(image);
-
-			    fileOutputList.add(FileOutputWebModel.builder()
-			            .id(image.getShootingmediaId())
-			            .fileName(image.getFileName())
-			            .filePath(image.getFilePath())
-			            .fileType(image.getFileType())
-			            .build());
-			}
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        throw new RuntimeException("Failed to save shooting location and files", e);
-	    }
-
-	    return fileOutputList;
-	}
-	private File convertMultiPartToFile(MultipartFile file) throws IOException {
-	    File convFile = File.createTempFile("temp", file.getOriginalFilename());
-	    file.transferTo(convFile);
-	    return convFile;
-	}
+	
 }

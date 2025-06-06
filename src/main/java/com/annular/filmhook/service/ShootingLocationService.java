@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.model.ShootingLocationCategory;
+import com.annular.filmhook.model.ShootingLocationImages;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 import com.annular.filmhook.model.ShootingLocationSubcategory;
 import com.annular.filmhook.model.ShootingLocationTypes;
@@ -22,11 +23,11 @@ public interface ShootingLocationService {
     List<ShootingLocationCategoryDTO> getCategoriesByTypeId(Integer typeId);
     List<ShootingLocationSubcategoryDTO> getSubcategoriesByCategoryId(Integer categoryId);
     void saveSelection(Long subcategoryId, Boolean entire, Boolean single);
-    ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO propertyDetailsDTO);
+    ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO propertyDetailsDTO, List<MultipartFile> shootingImages);
     List<ShootingLocationPropertyDetailsDTO> getAllProperties();
     List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId);
     void deletePropertyById(Long id);
     ShootingLocationPropertyDetailsDTO updateProperty(Long id, ShootingLocationPropertyDetailsDTO dto) ;
-    List<FileOutputWebModel> saveShootingLocation(ShootingLocationPropertyDetailsDTO dto, MultipartFile[] files);
+// List<FileOutputWebModel> saveShootingLocation(ShootingLocationPropertyDetailsDTO dto, MultipartFile[] files);
    
 }

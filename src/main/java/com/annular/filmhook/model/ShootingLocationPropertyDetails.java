@@ -183,8 +183,8 @@ public class ShootingLocationPropertyDetails {
     @JoinColumn(name = "user_id")
     private User user;
 	
-	   @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
-	    private List<ShootingLocationImages> mediaFiles;
+    @OneToMany(mappedBy = "property", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<ShootingLocationImages> mediaFiles;
 	
 
 }

@@ -391,35 +391,40 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 		}
 		return null;
 	}
-
 	private FileOutputWebModel transformDatas(ShootingLocationImages mediaFile) {
-		FileOutputWebModel fileOutputWebModel = null;
-		try {
-			fileOutputWebModel = new FileOutputWebModel();
+	    FileOutputWebModel fileOutputWebModel = null;
+	    try {
+	        fileOutputWebModel = new FileOutputWebModel();
 
-			fileOutputWebModel.setUserId(mediaFile.getUser().getUserId());
-			fileOutputWebModel.setCategory(mediaFile.getCategory());
-			fileOutputWebModel.setId(mediaFile.getShootingmediaId());
-			fileOutputWebModel.setFileId(mediaFile.getFileId());
-			fileOutputWebModel.setFileName(mediaFile.getFileName());
-			fileOutputWebModel.setFileType(mediaFile.getFileType());
-			fileOutputWebModel.setFileSize(mediaFile.getFileSize());
-			fileOutputWebModel.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
+	        User user = mediaFile.getUser();  
+	        if (user != null) {
+	            Integer userId = user.getUserId();
+	          
+	        } else {
+	        	
+	        	    throw new IllegalArgumentException("User not found or not authenticated.");
+	        	
+	        }
 
-			fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());
-			fileOutputWebModel.setCreatedOn(mediaFile.getCreatedOn());
-			fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
-			fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
+	        fileOutputWebModel.setCategory(mediaFile.getCategory());
+	        fileOutputWebModel.setId(mediaFile.getShootingmediaId());
+	        fileOutputWebModel.setFileId(mediaFile.getFileId());
+	        fileOutputWebModel.setFileName(mediaFile.getFileName());
+	        fileOutputWebModel.setFileType(mediaFile.getFileType());
+	        fileOutputWebModel.setFileSize(mediaFile.getFileSize());
+	        fileOutputWebModel.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
 
-			return fileOutputWebModel;
-		} catch (Exception e) {
-			logger.error("Error at transformData() -> {}", e.getMessage());
-			e.printStackTrace();
-		}
-		return fileOutputWebModel;
+	        fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());
+	        fileOutputWebModel.setCreatedOn(mediaFile.getCreatedOn());
+	        fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
+	        fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
+
+	        return fileOutputWebModel;
+	    } catch (Exception e) {
+	        logger.error("Error at transformData() -> {}", e.getMessage());
+	        e.printStackTrace();
+	    }
+	    return fileOutputWebModel;
 	}
-
-
-
 
 }
