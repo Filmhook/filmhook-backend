@@ -19,6 +19,6 @@ public class BusinessInformationDTO {
 	    private String addressLine3;
 	    private String state;
 	    private String postalCode;
-	    @OneToOne(mappedBy = "businessInformation")
-	    private ShootingLocationPropertyDetailsDTO propertyDetails;
+//	    @OneToOne(mappedBy = "businessInformation")
+//	    private ShootingLocationPropertyDetailsDTO propertyDetails;
 }

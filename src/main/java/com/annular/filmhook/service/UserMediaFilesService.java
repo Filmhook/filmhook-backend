@@ -17,7 +17,6 @@ public interface UserMediaFilesService {
 
 	List<FileOutputWebModel> saveMediaFilesss(IndustryFileInputWebModel inputFileData, User user);
 	
-	List<FileOutputWebModel> saveShootingLocation(ShootingLocationPropertyDetailsDTO inputFileData, User user);
 
 
 }

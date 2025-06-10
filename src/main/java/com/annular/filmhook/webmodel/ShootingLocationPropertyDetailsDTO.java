@@ -1,6 +1,7 @@
 package com.annular.filmhook.webmodel;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -90,16 +91,16 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<String> paymentModelsAccepted;
 	private List<String> cancellationPolicy;
 
-	// 7. Photo & Video References
-	  private List<MultipartFile> shootingImages;
-
-
 	private String description;
 	private double priceCustomerPay;
 	private boolean discount20Percent;
 	private boolean businessOwner;
 	private List<String> highQualityPhotos;
 	private List<String> videoWalkthrough;
+
+	private Date createdOn;
+	private Integer createdBy;
+	private Boolean status;
 
 	private BusinessInformationDTO businessInformation;
 	private BankDetailsDTO bankDetailsDTO;

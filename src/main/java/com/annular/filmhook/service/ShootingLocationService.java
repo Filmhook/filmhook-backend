@@ -20,14 +20,14 @@ import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 public interface ShootingLocationService {
 
 	List<ShootingLocationTypeDTO> getAllTypes();
-    List<ShootingLocationCategoryDTO> getCategoriesByTypeId(Integer typeId);
-    List<ShootingLocationSubcategoryDTO> getSubcategoriesByCategoryId(Integer categoryId);
-    void saveSelection(Long subcategoryId, Boolean entire, Boolean single);
-    ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO propertyDetailsDTO, List<MultipartFile> shootingImages);
-    List<ShootingLocationPropertyDetailsDTO> getAllProperties();
-    List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId);
-    void deletePropertyById(Long id);
-    ShootingLocationPropertyDetailsDTO updateProperty(Long id, ShootingLocationPropertyDetailsDTO dto) ;
-// List<FileOutputWebModel> saveShootingLocation(ShootingLocationPropertyDetailsDTO dto, MultipartFile[] files);
-   
+	List<ShootingLocationCategoryDTO> getCategoriesByTypeId(Integer typeId);
+	List<ShootingLocationSubcategoryDTO> getSubcategoriesByCategoryId(Integer categoryId);
+	void saveSelection(Long subcategoryId, Boolean entire, Boolean single);
+	ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO propertyDetailsDTO, List<MultipartFile> shootingImages);
+	List<ShootingLocationPropertyDetailsDTO> getAllProperties();
+	List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId);
+	void deletePropertyById(Long id);
+	ShootingLocationPropertyDetailsDTO updateProperty(Long id, ShootingLocationPropertyDetailsDTO dto) ;
+
+
 }

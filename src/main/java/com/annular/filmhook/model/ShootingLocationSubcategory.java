@@ -39,6 +39,9 @@ public class ShootingLocationSubcategory {
 
 	@Column(name="subcategory_description")
 	private String description;
+	
+	@Column(name="imageUrl")
+	private String imageUrl;
 
 	@ManyToOne
 	@JoinColumn(name = "category_id")

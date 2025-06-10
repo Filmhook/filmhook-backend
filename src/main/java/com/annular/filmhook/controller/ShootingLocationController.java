@@ -5,58 +5,54 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
+
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.model.User;
-import com.annular.filmhook.service.DetailService;
+
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
-import com.annular.filmhook.webmodel.FileOutputWebModel;
+
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
-
-
-
 @RestController
 @RequestMapping("/api/shooting-location")
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class ShootingLocationController {
 	@Autowired
 	private ShootingLocationService service;
 	
-	 @Autowired
-	    private UserMediaFilesService userMediaService;
+	
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
 	
 	
-	@PostMapping("/types")
+	@GetMapping("/types")
 	public ResponseEntity<?> getTypes() {
 	    try {
 	        List<ShootingLocationTypeDTO> types = service.getAllTypes();
@@ -108,8 +104,7 @@ public class ShootingLocationController {
 	         logger.info("Received selection save request for subcategoryId: {}, entire: {}, single: {}",
 	                 dto.getSubcategoryId(), dto.getEntireProperty(), dto.getSingleProperty());
 
-	     //    service.saveSelection(dto.getSubcategoryId(), dto.getEntireProperty(), dto.getSingleProperty());
-
+	   
 	         logger.info("Selection saved successfully for subcategoryId: {}", dto.getSubcategoryId());
 	         return ResponseEntity.ok(new Response(1, "Selection saved successfully", null));
 
@@ -121,28 +116,6 @@ public class ShootingLocationController {
 	 }
 
 
-//	  @PostMapping("/savePropertyDetails")
-//	  public ResponseEntity<?> savePropertyDetails(@RequestBody ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
-//	      logger.info("POST /save - Received request to save property with n: {}", propertyDetailsDTO.getPropertyName());
-//	      logger.info("POST /save - Received request to save property with name: {}", propertyDetailsDTO.getSubcategorySelectionDTO());
-//	      try {
-//	    	  service.savePropertyDetails(propertyDetailsDTO);
-//	          logger.info("Property '{}' saved successfully", propertyDetailsDTO.getPropertyName());
-//
-//	          Map<String, String> response = new HashMap<>();
-//	          response.put("status", "success");
-//	          response.put("message", "Property details saved successfully");
-//	          return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//
-//	      } catch (Exception e) {
-//	          logger.error("Error saving property '{}': {}", propertyDetailsDTO.getPropertyName(), e.getMessage(), e);
-//
-//	          Map<String, String> response = new HashMap<>();
-//	          response.put("status", "error");
-//	          response.put("message", "Failed to save property details: " + e.getMessage());
-//	          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//	      }
-//	  }
 
 		  @GetMapping("/getAllProperty")
 		  public ResponseEntity<?> getAllProperties() {
@@ -263,6 +236,7 @@ public class ShootingLocationController {
 		      }
 		  }
 		  
+
 }
 		
 

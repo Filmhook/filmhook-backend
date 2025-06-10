@@ -1,9 +1,12 @@
 package com.annular.filmhook.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -15,6 +18,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import com.annular.filmhook.util.StringListConverter;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
@@ -142,10 +149,7 @@ public class ShootingLocationPropertyDetails {
 	@Convert(converter = StringListConverter.class)
 	private List<String> cancellationPolicy;
 
-//	// 7. Photo & Video References
-//	@OneToMany(cascade = CascadeType.ALL, mappedBy = "propertyDetails")
-//
-//	private List<MediaReference> mediaReferences;
+
 	private String description;
 	private double priceCustomerPay;
 	private boolean discount20Percent;
@@ -154,6 +158,20 @@ public class ShootingLocationPropertyDetails {
 	private List<String> highQualityPhotos;
 	@Convert(converter = StringListConverter.class)
 	private List<String> videoWalkthrough;
+	
+
+    private Integer createdBy;
+
+    @CreationTimestamp
+ 
+    private LocalDateTime createdOn;
+
+    private Integer updatedBy;
+
+    @CreationTimestamp
+    private LocalDateTime updatedOn;
+    
+	private Boolean status;
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "bank_details_id")
