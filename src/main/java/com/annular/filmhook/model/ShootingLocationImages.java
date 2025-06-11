@@ -22,7 +22,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 @Entity
-@Table(name = "shootingLocationImages")
+@Table(name = "shooting_location_images")
 @Builder
 @Getter
 @Setter
@@ -33,7 +33,8 @@ public class ShootingLocationImages {
 	  @Id
 	    @GeneratedValue(strategy = GenerationType.IDENTITY)
 	    @Column(name = "shooting_media_id")
-	    private Integer industryMediaid;
+
+	    private Integer shootingmediaId;
 
 	    @ToString.Exclude
 	    @ManyToOne
@@ -83,4 +84,9 @@ public class ShootingLocationImages {
 	    
 	    @Column(name = "unverifiedList")
 	    private Boolean unverifiedList;
+
+	    @ManyToOne
+	    @JoinColumn(name = "property_id")
+	    private ShootingLocationPropertyDetails property;
+
 }

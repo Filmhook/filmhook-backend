@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -54,10 +55,9 @@ public interface DetailService {
 
 	List<FileOutputWebModel> saveIndustryUserFilesss(IndustryFileInputWebModel inputFileData);
 	
-	List<FileOutputWebModel> saveShootingLocation(ShootingLocationWebModal inputFileData);
+	
+	
 	
 
-
-	FileOutputWebModel getShootingLocationImageById(Integer id);
 
 }

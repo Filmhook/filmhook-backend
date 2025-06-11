@@ -6,10 +6,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
+
 public class FilmHookApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(FilmHookApplication.class, args);
+   
     }
 
 }

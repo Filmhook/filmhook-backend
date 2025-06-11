@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.DetailService;
-import com.annular.filmhook.service.ShootingLocationImageService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -54,8 +53,7 @@ public class DetailsController {
 	@Autowired
 	private UserService userService;
 	
-	 @Autowired
-	    private ShootingLocationImageService imageService;
+	
 
     @PostMapping("/getDetails")
     public ResponseEntity<?> getDetails(@RequestBody DetailRequest detailRequest) {
@@ -239,38 +237,7 @@ public class DetailsController {
         return new Response(-1, "Error occurred while saving files...", null);
     }
 
-    //=======================================
-    
-    @RequestMapping(path = "/saveShootingLocation", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Response saveShootingLocation(@ModelAttribute ShootingLocationWebModal inputFileData) {
-        try {
-            logger.info("Inputs for industry user file save -> {}", inputFileData);
-            
-            List<FileOutputWebModel> outputFilesList = detailService.saveShootingLocation(inputFileData);
-
-  
-            return new Response(1, "File(s) saved successfully...", outputFilesList);
-            
-        } catch (Exception e) {
-            logger.error("Error at saveIndustryUserFiles() -> {}", e.getMessage(), e);
-        }
-        return new Response(-1, "Error occurred while saving files...", null);
-    }
-
-    
    
-
-    @GetMapping("/image/{id}")
-    public ResponseEntity<FileOutputWebModel> getImageById(@PathVariable("id") Integer id) {
-        FileOutputWebModel file = imageService.getShootingLocationImageById(id);
-        if (file != null) {
-            return ResponseEntity.ok(file);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
-    //================================================================
     
     @GetMapping("/getIndustryFilesByUserId")
     public Response getIndustryFiles(@RequestParam("userId") Integer userId) {

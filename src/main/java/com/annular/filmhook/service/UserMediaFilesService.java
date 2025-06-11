@@ -6,6 +6,8 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationWebModal;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+
 
 public interface UserMediaFilesService {
 
@@ -16,7 +18,5 @@ public interface UserMediaFilesService {
 	List<FileOutputWebModel> saveMediaFiless(IndustryFileInputWebModel inputFileData, User user);
 
 	List<FileOutputWebModel> saveMediaFilesss(IndustryFileInputWebModel inputFileData, User user);
-	
-	List<FileOutputWebModel> saveShootingLocation(ShootingLocationWebModal inputFileData, User user);
 
 }

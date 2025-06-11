@@ -55,7 +55,6 @@ import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
 import com.annular.filmhook.repository.PlatformDetailRepository;
 import com.annular.filmhook.repository.PlatformPermanentDetailRepository;
 import com.annular.filmhook.repository.PlatformRepository;
-import com.annular.filmhook.repository.ShootingLocationImagesRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.DetailService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -74,6 +73,7 @@ import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 import com.annular.filmhook.webmodel.ShootingLocationWebModal;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.SubProfessionsWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -148,9 +148,7 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     FilmSubProfessionPermanentDetailsRepository filmSubProfessionPermanentDetailsRepository;
-    @Autowired
-    ShootingLocationImagesRepository shootingLocationImagesRepository;
-    
+  
 
     public static final Logger logger = LoggerFactory.getLogger(DetailServiceImpl.class);
 
@@ -504,55 +502,6 @@ public class DetailServiceImpl implements DetailService {
         return fileOutputWebModelList;
     }
     
-    //======================================================
-    
-	@Override
-	public List<FileOutputWebModel> saveShootingLocation(ShootingLocationWebModal inputFileData) {
-		List<FileOutputWebModel> fileOutputWebModelList = null;
-        try {
-            Optional<User> userFromDB = userService.getUser(inputFileData.getUserId());
-            if (userFromDB.isPresent()) {
-                logger.info("User found: {}", userFromDB.get().getName());
-                fileOutputWebModelList = userMediaFileService.saveShootingLocation(inputFileData, userFromDB.get()); // Save
-                // media files in MySQL
-                fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
-            }
-        } catch (Exception e) {
-            logger.error("Error at saveIndustryUserFiles(): ", e);
-            e.printStackTrace();
-        }
-        return fileOutputWebModelList;
-	}
-	
-	public FileOutputWebModel getShootingLocationImageById(Integer shootingMediaId) {
-	    Optional<ShootingLocationImages> optionalImage = shootingLocationImagesRepository.findByIndustryMediaid(shootingMediaId);
-
-	    if (optionalImage.isPresent()) {
-	        ShootingLocationImages image = optionalImage.get();
-	        FileOutputWebModel file = new FileOutputWebModel();
-
-	        file.setId(image.getIndustryMediaid()); // shooting_media_id
-	        file.setUserId(image.getUser() != null ? image.getUser().getUserId() : null);
-	        file.setCategory(image.getCategory());
-	        file.setFileId(image.getFileId());
-	        file.setFileName(image.getFileName());
-	        file.setFileSize(image.getFileSize());
-	        file.setFileType(image.getFileType());
-	        file.setFilePath(s3Util.getS3BaseURL() + "/" + image.getFilePath() + image.getFileType());
-
-	        file.setCreatedBy(image.getCreatedBy());
-	        file.setCreatedOn(image.getCreatedOn());
-	        file.setUpdatedBy(image.getUpdatedBy());
-	        file.setUpdatedOn(image.getUpdatedOn());
-
-	        return file;
-	    } else {
-	        return null; // or throw an exception if preferred
-	    }
-	}
-
-	
-	//===================================================
 
     @Override
     public ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
@@ -1197,6 +1146,8 @@ public class DetailServiceImpl implements DetailService {
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", "Could not delete temporary details"));
         }
     }
+
+
 
 
 
