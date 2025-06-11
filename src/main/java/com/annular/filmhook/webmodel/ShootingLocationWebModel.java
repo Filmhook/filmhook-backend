@@ -36,7 +36,7 @@ public class ShootingLocationWebModel {
     private Boolean termsAndConditions;
     private String placeName;
 
-    private FileInputWebModel fileInputWebModel; // for file input details
-    private List<FileOutputWebModel> fileOutputWebModel; // for file output details
+    private FileInputWebModel fileInputWebModel; 
+    private List<FileOutputWebModel> fileOutputWebModel; 
 
 }

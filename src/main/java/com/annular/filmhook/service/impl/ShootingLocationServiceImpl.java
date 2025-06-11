@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import java.awt.PageAttributes.MediaType;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -55,14 +56,12 @@ import com.annular.filmhook.webmodel.BankDetailsDTO;
 import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
-import com.annular.filmhook.webmodel.ShootingLocationFullDataDTO;
+import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 public class ShootingLocationServiceImpl implements ShootingLocationService {
@@ -210,7 +209,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 	@Override
-	public ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO dto, List<MultipartFile> shootingImages) {
+	public ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile) {
 		try {
 			logger.info("Saving property", dto.getPropertyName());
 
@@ -368,9 +367,9 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 
 			// Save shooting images & upload files to S3
 			List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
-			if (shootingImages != null && !shootingImages.isEmpty()) {
-				Map<ShootingLocationImages, MultipartFile> mediaFilesMap = prepareMediaFileData(dto, shootingImages, user, savedProperty);
 
+			if(inputFile !=null) {
+				Map<ShootingLocationImages, MultipartFile> mediaFilesMap = prepareMediaFileData(dto, inputFile, user, savedProperty);
 				mediaFilesMap.forEach((mediaFile, file) -> {
 					shootingLocationImagesRepository.save(mediaFile);
 					logger.info("File saved in MySQL. File ID: {}", mediaFile.getFileId());
@@ -385,7 +384,6 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 			logger.info("Property saved with ID: {}", savedProperty.getId());
 			propertyDetailsRepository.save(savedProperty);
 
-			// Return updated DTO (you can implement a mapping from entity to DTO here)
 			return dto;
 
 		} catch (Exception e) {
@@ -393,19 +391,44 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 			throw new RuntimeException("Failed to save property details", e);
 		}
 	}
-	private Map<ShootingLocationImages, MultipartFile> prepareMediaFileData(ShootingLocationPropertyDetailsDTO dto, List<MultipartFile> shootingImages, User user, ShootingLocationPropertyDetails savedProperty) {
-		Map<ShootingLocationImages, MultipartFile> mediaFilesMap = new HashMap<>();
+	private Map<ShootingLocationImages, MultipartFile> prepareMediaFileData(
+	        ShootingLocationPropertyDetailsDTO dto,
+	        ShootingLocationFileInputModel inputFile,
+	        User user,
+	        ShootingLocationPropertyDetails savedProperty) {
 
-		for (MultipartFile file : shootingImages) {
-			ShootingLocationImages mediaFile = createMediaFile(file, user, MediaFileCategory.shootingLocationImage.toString(), dto.getUserId(), savedProperty);
-			if (mediaFile != null) {
-				mediaFilesMap.put(mediaFile, file);
-			}
-		}
-		return mediaFilesMap;
+	    Map<ShootingLocationImages, MultipartFile> mediaFilesMap = new HashMap<>();
+
+	    if (inputFile.getImages() != null) {
+	        for (MultipartFile file : inputFile.getImages()) {
+	            mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.shootingLocationImage.toString(), dto.getId(), savedProperty), file);
+	        }
+	    }
+
+//	    if (inputFile.getAdharCard() != null) {
+//	        mediaFilesMap.put(createMediaFile(inputFile.getAdharCard(), user, MediaFileCategory.AadhaarCard.toString(), dto.getId(), savedProperty), inputFile.getAdharCard());
+//	    }
+//
+//	    if (inputFile.getPanCard() != null) {
+//	        mediaFilesMap.put(createMediaFile(inputFile.getPanCard(), user, MediaFileCategory.PanCard.toString(), dto.getId(), savedProperty), inputFile.getPanCard());
+//	    }
+
+	    if (inputFile.getGovermentId() != null) {
+	        for (MultipartFile file : inputFile.getGovermentId()) {
+	            mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.govermentId.toString(), dto.getId(), savedProperty), file);
+	        }
+	    }
+	    if (inputFile.getVideos() != null) {
+	        for (MultipartFile file : inputFile.getVideos()) {
+	            mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.Video.toString(), dto.getId(), savedProperty), file);
+	        }
+	    }
+
+	    return mediaFilesMap;
 	}
 
-	private ShootingLocationImages createMediaFile(MultipartFile file, User user, String category, Integer createdBy, ShootingLocationPropertyDetails propertyDetails) {
+
+	private ShootingLocationImages createMediaFile(MultipartFile file, User user, String category,Integer id, ShootingLocationPropertyDetails propertyDetails) {
 		try {
 			ShootingLocationImages mediaFile = new ShootingLocationImages();
 			mediaFile.setUser(user);
@@ -416,7 +439,7 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 			mediaFile.setFileType(file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")));
 			mediaFile.setFileSize(file.getSize());
 			mediaFile.setStatus(true);
-			mediaFile.setCreatedBy(createdBy);
+			mediaFile.setCreatedBy(id);
 			mediaFile.setProperty(propertyDetails);
 			logger.info("Preparing media file entity: {}", mediaFile);
 
@@ -424,7 +447,7 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 			MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
 			multiMediaFiles.setFileName(mediaFile.getFileName());
 			multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
-			multiMediaFiles.setFileDomainId(FilmHookConstants.INDUSTRYFILES);
+			multiMediaFiles.setFileDomainId(FilmHookConstants.SHOOTINGLOCATION);
 			multiMediaFiles.setFileDomainReferenceId(mediaFile.getShootingmediaId());
 			multiMediaFiles.setFileIsActive(true);
 			multiMediaFiles.setFileCreatedBy(user.getUserId());
@@ -453,9 +476,9 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 			if ("File Uploaded".equalsIgnoreCase(response)) {
 				tempFile.delete();
 
-				// Set the full S3 URL into filePath
+				
 				String s3FullPath = s3Util.getS3BaseURL() + "/" + relativePath;
-				mediaFile.setFilePath(s3FullPath); // <-- OVERWRITE filePath with full URL
+				mediaFile.setFilePath(s3FullPath); 
 
 				shootingLocationImagesRepository.save(mediaFile);
 
@@ -520,12 +543,33 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
+//				List<String> imageUrls = new ArrayList<>();
+//				if (property.getMediaFiles() != null && !property.getMediaFiles().isEmpty()) {
+//					imageUrls = property.getMediaFiles().stream()
+//							.map(img -> img.getFilePath())
+//							.collect(Collectors.toList());
+//					logger.info("Fetched {} image(s) for property {}: {}", imageUrls.size(), property.getId(), imageUrls);
+//				}
 				List<String> imageUrls = new ArrayList<>();
+				List<String> videoUrls = new ArrayList<>();
+				List<String> governmentIdUrls = new ArrayList<>();
+
 				if (property.getMediaFiles() != null && !property.getMediaFiles().isEmpty()) {
-					imageUrls = property.getMediaFiles().stream()
-							.map(img -> img.getFilePath())
-							.collect(Collectors.toList());
-					logger.info("Fetched {} image(s) for property {}: {}", imageUrls.size(), property.getId(), imageUrls);
+				    for (ShootingLocationImages file : property.getMediaFiles()) {
+				    	if (file.getCategory() != null) {
+				    	    if (file.getCategory().equals(MediaFileCategory.shootingLocationImage.toString())) {
+				    	        imageUrls.add(file.getFilePath());
+				    	    } else if (file.getCategory().equals(MediaFileCategory.Video.toString())) {
+				    	        videoUrls.add(file.getFilePath());
+				    	    } else if (file.getCategory().equals(MediaFileCategory.govermentId.toString())) {
+				    	        governmentIdUrls.add(file.getFilePath());
+				    	    }
+				    	}
+				    }
+
+				    logger.info("Images: {}", imageUrls);
+				    logger.info("Videos: {}", videoUrls);
+				    logger.info("Govt IDs: {}", governmentIdUrls);
 				}
 
 				// Business Info Mapping
@@ -697,6 +741,8 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 						.subCategory(subcategoryDTO)
 						.type(typeDTO)
 						.imageUrls(imageUrls)
+						.videoUrls(videoUrls)
+						.governmentIdUrls(governmentIdUrls)
 						.build();
 
 				propertyDTOs.add(dto);
@@ -851,12 +897,27 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 				}
 
 				List<String> imageUrls = new ArrayList<>();
+				List<String> videoUrls = new ArrayList<>();
+				List<String> governmentIdUrls = new ArrayList<>();
+
 				if (property.getMediaFiles() != null && !property.getMediaFiles().isEmpty()) {
-					imageUrls = property.getMediaFiles().stream()
-							.map(img -> img.getFilePath())
-							.collect(Collectors.toList());
-					logger.info("Fetched {} image(s) for property {}: {}", imageUrls.size(), property.getId(), imageUrls);
+				    for (ShootingLocationImages file : property.getMediaFiles()) {
+				     	if (file.getCategory() != null) {
+				    	    if (file.getCategory().equals(MediaFileCategory.shootingLocationImage.toString())) {
+				    	        imageUrls.add(file.getFilePath());
+				    	    } else if (file.getCategory().equals(MediaFileCategory.Video.toString())) {
+				    	        videoUrls.add(file.getFilePath());
+				    	    } else if (file.getCategory().equals(MediaFileCategory.govermentId.toString())) {
+				    	        governmentIdUrls.add(file.getFilePath());
+				    	    }
+				    	}
+				    }
+
+				    logger.info("Images: {}", imageUrls);
+				    logger.info("Videos: {}", videoUrls);
+				    logger.info("Govt IDs: {}", governmentIdUrls);
 				}
+
 
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
 						// 1. Owner & Property Identity
@@ -945,6 +1006,8 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 						.subCategory(subcategoryDTO)
 						.type(typeDTO)
 						.imageUrls(imageUrls)
+						.videoUrls(videoUrls)
+						.governmentIdUrls(governmentIdUrls)
 						.build();
 
 				propertyDTOs.add(dto);

@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ShootingLocationPropertyDetailsDTO {
 	// Property Information
-	private Long id;
+	private Integer id;
 	private String industryName;
 	private String firstName;
 	private String middleName;
@@ -106,6 +106,8 @@ public class ShootingLocationPropertyDetailsDTO {
 	private BankDetailsDTO bankDetailsDTO;
 
 	private List<String> imageUrls;
+    private List<String> governmentIdUrls;
+    private List<String> videoUrls;
 
 	private Long categoryId;
 	private Long subCategoryId;
