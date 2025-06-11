@@ -44,7 +44,7 @@ import lombok.ToString;
 public class ShootingLocationPropertyDetails {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Integer id;
     private String industryName;
 
 	// 1. Property Information
@@ -203,6 +203,9 @@ public class ShootingLocationPropertyDetails {
 	
     @OneToMany(mappedBy = "property", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ShootingLocationImages> mediaFiles;
+    
+ 
+    
 	
 
 }

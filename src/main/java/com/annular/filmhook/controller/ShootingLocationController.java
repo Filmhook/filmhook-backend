@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -34,6 +34,7 @@ import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
 
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
+import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
@@ -213,12 +214,12 @@ public class ShootingLocationController {
 		  
 
 		  @PostMapping("/savePropertyDetails")
-		  public ResponseEntity<?> savePropertyDetails(@RequestParam(value ="shootingImages", required = false) List<MultipartFile> shootingImages,
+		  public ResponseEntity<?> savePropertyDetails(@ModelAttribute ShootingLocationFileInputModel inputFile,
 				  @RequestPart(value ="propertyDetails", required = false) ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
 		      logger.info("POST /save - Received request to save property with n: {}", propertyDetailsDTO.getPropertyName());
 		      logger.info("POST /save - Received request to save property with name: {}", propertyDetailsDTO.getSubcategorySelectionDTO());
 		      try {
-		    	  service.savePropertyDetails(propertyDetailsDTO, shootingImages);
+		    	  service.savePropertyDetails(propertyDetailsDTO, inputFile);
 		          logger.info("Property '{}' saved successfully", propertyDetailsDTO.getPropertyName());
 
 		          Map<String, String> response = new HashMap<>();

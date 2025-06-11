@@ -53,8 +53,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 	@Autowired
 	S3Util s3Util;
 	
-	@Autowired
-	ShootingLocationImageRepository shootingLocationImagesRepository;
+	
 	
 	@Override
 	public List<FileOutputWebModel> saveMediaFiles(IndustryFileInputWebModel inputFileData, User user) {
@@ -66,7 +65,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 				logger.info("File saved in MySQL. File ID: {}", mediaFile.getFileId());
 				FileOutputWebModel fileOutputWebModel = this.uploadToS3(file, mediaFile);// Upload files to S3
 				if (fileOutputWebModel != null)
-					fileOutputWebModelList.add(fileOutputWebModel); // Reading the saved file details
+					fileOutputWebModelList.add(fileOutputWebModel); 
 			});
 		} catch (Exception e) {
 			logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
