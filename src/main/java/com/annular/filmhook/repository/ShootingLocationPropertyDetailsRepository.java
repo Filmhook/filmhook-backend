@@ -12,13 +12,16 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 
 @Repository
-public interface ShootingLocationPropertyDetailsRepository extends JpaRepository<ShootingLocationPropertyDetails, Long>{
+public interface ShootingLocationPropertyDetailsRepository extends JpaRepository<ShootingLocationPropertyDetails, Integer>{
 	
 	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.user.id = :userId")
 	List<ShootingLocationPropertyDetails> findAllByUserId(@Param("userId") Integer userId);
 
 	@Query("SELECT p FROM ShootingLocationPropertyDetails p LEFT JOIN FETCH p.mediaFiles")
 	List<ShootingLocationPropertyDetails> findAllWithMediaFiles();
-
+ 
+//	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.industry.id = :industryId")
+//	List<ShootingLocationPropertyDetails> findAllByIndustryId(@Param("industryId") Integer industryId);
+	
 }
 	

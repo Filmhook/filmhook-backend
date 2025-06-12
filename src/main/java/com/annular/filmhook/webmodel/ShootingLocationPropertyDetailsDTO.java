@@ -117,4 +117,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private ShootingLocationCategoryDTO category;
 	private ShootingLocationSubcategoryDTO subCategory;
 	private ShootingLocationSubcategorySelectionDTO subcategorySelectionDTO;
+	
+	//Like status 
+	private boolean likedByUser;
 }
