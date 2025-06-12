@@ -73,5 +73,7 @@ public class Industry {
 
     @Column(name = "icon_file_path")
     private String filePath;
+    
+    
 
 }

@@ -1,9 +1,8 @@
 package com.annular.filmhook.service.impl;
 
-import java.awt.PageAttributes.MediaType;
+
 import java.io.File;
-import java.io.IOException;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,21 +14,22 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.function.Function;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.EntityGraph;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.controller.ShootingLocationController;
-import com.annular.filmhook.controller.StoriesController;
+
 import com.annular.filmhook.model.BankDetails;
 import com.annular.filmhook.model.BusinessInformation;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MultiMediaFiles;
+import com.annular.filmhook.model.PropertyLike;
 import com.annular.filmhook.model.ShootingLocationCategory;
 import com.annular.filmhook.model.ShootingLocationImages;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
@@ -40,15 +40,17 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BankDetailsRepository;
 import com.annular.filmhook.repository.BusinessInformationRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
+import com.annular.filmhook.repository.PropertyLikeRepository;
 import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationImageRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepository;
 import com.annular.filmhook.repository.ShootingLocationTypesRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.ShootingLocationService;
-import com.annular.filmhook.service.UserService;
+
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
@@ -70,6 +72,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	
 	@Autowired
 	private ShootingLocationTypesRepository typesRepo;
+	
+	@Autowired
+	private PropertyLikeRepository likeRepository;
 	
 	@Autowired
 	private ShootingLocationCategoryRepository categoryRepo;
@@ -99,14 +104,16 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	ShootingLocationImageRepository shootingLocationImagesRepository;
 
 
-	@Autowired
-	private UserService userService;
 
 	@Autowired
 	private BusinessInformationRepository businessInformationRepository;
 
 	@Autowired
 	private BankDetailsRepository bankDetailsRepository;
+	
+	@Autowired
+	private UserRepository userRepository;
+	
 	@Override
 	public List<ShootingLocationTypeDTO> getAllTypes() {
 		try {
@@ -405,14 +412,6 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 	        }
 	    }
 
-//	    if (inputFile.getAdharCard() != null) {
-//	        mediaFilesMap.put(createMediaFile(inputFile.getAdharCard(), user, MediaFileCategory.AadhaarCard.toString(), dto.getId(), savedProperty), inputFile.getAdharCard());
-//	    }
-//
-//	    if (inputFile.getPanCard() != null) {
-//	        mediaFilesMap.put(createMediaFile(inputFile.getPanCard(), user, MediaFileCategory.PanCard.toString(), dto.getId(), savedProperty), inputFile.getPanCard());
-//	    }
-
 	    if (inputFile.getGovermentId() != null) {
 	        for (MultipartFile file : inputFile.getGovermentId()) {
 	            mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.govermentId.toString(), dto.getId(), savedProperty), file);
@@ -543,13 +542,6 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
-//				List<String> imageUrls = new ArrayList<>();
-//				if (property.getMediaFiles() != null && !property.getMediaFiles().isEmpty()) {
-//					imageUrls = property.getMediaFiles().stream()
-//							.map(img -> img.getFilePath())
-//							.collect(Collectors.toList());
-//					logger.info("Fetched {} image(s) for property {}: {}", imageUrls.size(), property.getId(), imageUrls);
-//				}
 				List<String> imageUrls = new ArrayList<>();
 				List<String> videoUrls = new ArrayList<>();
 				List<String> governmentIdUrls = new ArrayList<>();
@@ -1022,7 +1014,7 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 		}
 	}
 	@Override
-	public void deletePropertyById(Long id) {
+	public void deletePropertyById(Integer id) {
 		try {
 			Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
 
@@ -1040,7 +1032,7 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 	}
 
 	@Override
-	public ShootingLocationPropertyDetailsDTO updateProperty(Long id, ShootingLocationPropertyDetailsDTO dto) {
+	public ShootingLocationPropertyDetailsDTO updateProperty(Integer id, ShootingLocationPropertyDetailsDTO dto) {
 		logger.info("Attempting to update property with ID: {}", id);
 
 		try {
@@ -1170,5 +1162,40 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 			throw new RuntimeException("Error updating property with ID: " + id + " - " + e.getMessage());
 		}
 	}
+	
+	public String toggleLike(Integer propertyId, Integer userId) {
+        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Optional<PropertyLike> existingLike = likeRepository.findByPropertyAndLikedBy(property, user);
+
+        if (existingLike.isPresent()) {
+            likeRepository.delete(existingLike.get());
+            return "Unliked successfully";
+        } else {
+            PropertyLike like = PropertyLike.builder()
+                    .property(property)
+                    .likedBy(user)
+                    .status(true)
+                    .createdBy(userId)
+                    .build();
+            likeRepository.save(like);
+            return "Liked successfully";
+        }
+    }
+
+    public Long countLikes(Integer propertyId) {
+        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        return likeRepository.countByProperty(property);
+    }
+    
 }
+
+
+
+
+

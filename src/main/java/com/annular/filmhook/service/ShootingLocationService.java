@@ -20,8 +20,9 @@ public interface ShootingLocationService {
     ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile);
     List<ShootingLocationPropertyDetailsDTO> getAllProperties();
     List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId);
-    void deletePropertyById(Long id);
-    ShootingLocationPropertyDetailsDTO updateProperty(Long id, ShootingLocationPropertyDetailsDTO dto) ;
-
-   
+    void deletePropertyById(Integer id);
+    ShootingLocationPropertyDetailsDTO updateProperty(Integer id, ShootingLocationPropertyDetailsDTO dto) ;
+    String toggleLike(Integer propertyId, Integer userId);
+    Long countLikes(Integer propertyId);
+    
 }

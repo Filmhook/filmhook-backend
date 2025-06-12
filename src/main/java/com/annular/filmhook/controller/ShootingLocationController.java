@@ -1,3 +1,4 @@
+
 package com.annular.filmhook.controller;
 
 
@@ -154,7 +155,7 @@ public class ShootingLocationController {
 		        return ResponseEntity.ok(properties);
 		    }
 		  @DeleteMapping("deleteProperty/{id}")
-		    public ResponseEntity<Map<String, Object>> deleteProperty(@PathVariable Long id) {
+		    public ResponseEntity<Map<String, Object>> deleteProperty(@PathVariable Integer id) {
 		        Map<String, Object> response = new HashMap<>();
 		        try {
 		            logger.info("Attempting to delete property with ID: {}", id);
@@ -182,7 +183,7 @@ public class ShootingLocationController {
 
 		  @PutMapping("update/{id}")
 		  public ResponseEntity<Map<String, String>> updateProperty(
-		          @PathVariable Long id,
+		          @PathVariable Integer id,
 		          @RequestBody ShootingLocationPropertyDetailsDTO dto) {
 
 		      Map<String, String> response = new HashMap<>();
@@ -237,7 +238,67 @@ public class ShootingLocationController {
 		      }
 		  }
 		  
+		  @PostMapping("/toggle")
+		  public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer propertyId, @RequestParam Integer userId) {
+		      Logger logger = LoggerFactory.getLogger(this.getClass());
+		      Map<String, String> response = new HashMap<>();
+
+		      try {
+		          logger.info("Toggling like for propertyId: {}, userId: {}", propertyId, userId);
+		          String message = service.toggleLike(propertyId, userId);
+		          response.put("message", message);
+		          return ResponseEntity.ok(response);
+
+		      } catch (RuntimeException ex) {
+		          logger.error("Error: {}", ex.getMessage());
+		          response.put("message", "Error: " + ex.getMessage());
+		          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+
+		      } catch (Exception ex) {
+		          logger.error("Unexpected error: {}", ex.getMessage());
+		          response.put("message", "Something went wrong.");
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		      }
+		  }
+
+		  @GetMapping("/count")
+		  public ResponseEntity<?> countLikes(@RequestParam Integer propertyId) {
+		      Logger logger = LoggerFactory.getLogger(this.getClass());
+		      try {
+		          logger.info("Received request to count likes for property ID: {}", propertyId);
+		          
+		          Long count = service.countLikes(propertyId);
+		          
+		          logger.info("Like count for property ID {} is {}", propertyId, count);
+		          return ResponseEntity.ok(count);
+
+		      } catch (RuntimeException ex) {
+		          logger.error("Failed to count likes for property ID {}: {}", propertyId, ex.getMessage(), ex);
+		          return ResponseEntity
+		                  .status(HttpStatus.NOT_FOUND)
+		                  .body("Error: " + ex.getMessage());
+
+		      } catch (Exception ex) {
+		          logger.error("Unexpected error occurred while counting likes for property ID {}: {}", propertyId, ex.getMessage(), ex);
+		          return ResponseEntity
+		                  .status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                  .body("An unexpected error occurred. Please try again later.");
+		      }
+		  
+		  }
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+		  
 
 }
 		
-
