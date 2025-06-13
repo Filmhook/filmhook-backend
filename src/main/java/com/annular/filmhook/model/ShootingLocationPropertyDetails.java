@@ -213,6 +213,8 @@ public class ShootingLocationPropertyDetails {
     @JoinColumn(name = "industry_id")
     private Industry industry;
     
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ShootingLocationPropertyReview> reviews;
     
 	
 

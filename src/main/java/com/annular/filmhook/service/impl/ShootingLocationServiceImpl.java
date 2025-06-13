@@ -35,6 +35,7 @@ import com.annular.filmhook.model.PropertyLike;
 import com.annular.filmhook.model.ShootingLocationCategory;
 import com.annular.filmhook.model.ShootingLocationImages;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
+import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.model.ShootingLocationSubcategory;
 import com.annular.filmhook.model.ShootingLocationSubcategorySelection;
 import com.annular.filmhook.model.ShootingLocationTypes;
@@ -47,6 +48,7 @@ import com.annular.filmhook.repository.PropertyLikeRepository;
 import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationImageRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
+import com.annular.filmhook.repository.ShootingLocationPropertyReviewRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepository;
 import com.annular.filmhook.repository.ShootingLocationTypesRepository;
@@ -63,6 +65,7 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
@@ -93,6 +96,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	MultiMediaFileRepository multiMediaFilesRepository;
+	
+	@Autowired 
+	ShootingLocationPropertyReviewRepository propertyReviewRepository;
 
 	@Autowired
 	AwsS3Service awsS3Service;
@@ -1032,7 +1038,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 	//===========================================
 
-	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds) {
+	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId) {
 		logger.info("Fetching properties for industries: {}", industryIds);
 
 		try {
@@ -1148,6 +1154,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.singleProperty(shooting.getSingleProperty())
 							.build();
 				}
+				// Fetch like status
+				Optional<PropertyLike> likeOpt = likeRepository.findByPropertyIdAndLikedById(property.getId(), userId);
+				boolean likeStatus = likeOpt.map(PropertyLike::getStatus).orElse(false);
 
 
 				List<String> imageUrls = new ArrayList<>();
@@ -1248,6 +1257,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
+						.likedByUser(likeStatus)
+
 						.build();
 
 				dtoList.add(dto);
@@ -1441,5 +1452,47 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.orElseThrow(() -> new RuntimeException("Property not found"));
 		return likeRepository.countByProperty(property);
 	}
+
+	public void saveReview(Integer propertyId, Integer userId, int rating, String reviewText) {
+		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+				.orElseThrow(() -> new RuntimeException("Property not found"));
+
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		ShootingLocationPropertyReview review = ShootingLocationPropertyReview.builder()
+				.property(property)
+				.user(user)
+				.rating(rating)
+				.reviewText(reviewText)
+				.build();
+
+		propertyReviewRepository.save(review);
+	}
+		
+	   public double getAverageRating(Integer propertyId) {
+	        List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
+	        return reviews.stream()
+	                .mapToInt(ShootingLocationPropertyReview::getRating)
+	                .average()
+	                .orElse(0.0);
+	    }
+	   
+	   public List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId) {
+		    List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
+
+		    return reviews.stream()
+		        .map(review -> ShootingLocationPropertyReviewDTO.builder()
+		            .propertyId(review.getProperty().getId().intValue())
+		            .userId(review.getUser().getUserId())
+		            .rating(review.getRating())
+		            .reviewText(review.getReviewText())
+		            .userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
+		            .build())
+		        .collect(Collectors.toList());
+		}
+
+
+	
 
 }

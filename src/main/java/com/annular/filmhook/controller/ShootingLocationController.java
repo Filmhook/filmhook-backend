@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,13 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
-
+import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
 
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
@@ -290,30 +292,88 @@ public class ShootingLocationController {
 		  //============================================================
 		  
 		  @PostMapping("/getPropertiesByIndustry")
-		    public ResponseEntity<?> getAllPropertiesByIndustryIds(@RequestBody List<Integer> industryIds) {
-		        logger.info("Received request to fetch properties for industry IDs: {}", industryIds);
+		  public ResponseEntity<List<ShootingLocationPropertyDetailsDTO>> getAllPropertiesByIndustryIds(
+		          @RequestBody Map<String, Object> payload) {
+		      
+		      logger.info("Received request to fetch properties for industry IDs with payload: {}", payload);
 
+		      try {
+		          // Extract industryIds
+		          List<Integer> industryIds = (List<Integer>) payload.get("industryIds");
+		          Integer userId = (payload.get("userId") instanceof Integer)
+		                  ? (Integer) payload.get("userId")
+		                  : null;
+
+		          // Validate input
+		          if (industryIds == null || industryIds.isEmpty()) {
+		              logger.warn("Industry ID list is null or empty.");
+		              return ResponseEntity.badRequest().body(Collections.emptyList());
+		          }
+
+		          if (userId == null) {
+		              logger.warn("User ID is missing or invalid in the payload.");
+		              return ResponseEntity.badRequest().body(Collections.emptyList());
+		          }
+
+		          // Service call
+		          List<ShootingLocationPropertyDetailsDTO> result = service.getPropertiesByIndustryIds(industryIds, userId);
+		          logger.info("Returning {} properties for industryIds: {}", result.size(), industryIds);
+		          return ResponseEntity.ok(result);
+
+		      } catch (ClassCastException e) {
+		          logger.error("Invalid data types in request payload: {}", e.getMessage());
+		          return ResponseEntity.badRequest().body(Collections.emptyList());
+		      } catch (Exception e) {
+		          logger.error("Error occurred while fetching properties by industry IDs: ", e);
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+		      }
+		  }
+
+		  @PostMapping("/review")
+		  public ResponseEntity<String> addReview(@RequestBody ShootingLocationPropertyReviewDTO propertyReviewDTO) {
+		      try {
+		          service.saveReview(
+		              propertyReviewDTO.getPropertyId(),
+		              propertyReviewDTO.getUserId(),
+		              propertyReviewDTO.getRating(),
+		              propertyReviewDTO.getReviewText()
+		          );
+		          return ResponseEntity.ok("Review saved");
+		      } catch (RuntimeException e) {
+		      
+		          logger.warn("Validation failed: {}", e.getMessage());
+		          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		      } catch (Exception e) {
+		          logger.error("Error saving review", e);
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save review");
+		      }
+		  }
+
+		  @GetMapping("/average-rating/{propertyId}")
+		    public ResponseEntity<?> getAverageRating(@PathVariable Integer propertyId) {
+		        logger.info("Fetching average rating for property ID: {}", propertyId);
 		        try {
-		            if (industryIds == null || industryIds.isEmpty()) {
-		                logger.warn("Industry ID list is null or empty.");
-		                return ResponseEntity.badRequest().body("Industry ID list cannot be null or empty.");
-		            }
-
-		            List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByIndustryIds(industryIds);
-
-		            if (properties.isEmpty()) {
-		                logger.info("No properties found for the given industry IDs: {}", industryIds);
-		                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No properties found for the provided industry IDs.");
-		            }
-
-		            logger.info("Returning {} properties for industries: {}", properties.size(), industryIds);
-		            return ResponseEntity.ok(properties);
-
-		        } catch (Exception ex) {
-		            logger.error("Error while fetching properties for industry IDs: {}", industryIds, ex);
-		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+		            double averageRating = service.getAverageRating(propertyId);
+		            logger.info("Average rating for property {} is {}", propertyId, averageRating);
+		            return ResponseEntity.ok(new Response(1, "Success", averageRating));
+		        } catch (Exception e) {
+		            logger.error("Failed to fetch average rating for property ID: {}", propertyId, e);
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                                 .body(new Response(-1, "Failed to get average rating", null));
 		        }
 		    }
-		
+		  @GetMapping("/property/{propertyId}")
+		    public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId) {
+		        logger.info("Fetching reviews for property ID: {}", propertyId);
+		        try {
+		            List<ShootingLocationPropertyReviewDTO> reviews = service.getReviewsByPropertyId(propertyId);
+		            logger.info("Fetched {} reviews for property ID: {}", reviews.size(), propertyId);
+		            return ResponseEntity.ok(new Response(1, "Success", reviews));
+		        } catch (Exception e) {
+		            logger.error("Failed to fetch reviews for property ID: {}", propertyId, e);
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                                 .body(new Response(-1, "Failed to get property reviews", null));
+		        }
+		    }
 
 }

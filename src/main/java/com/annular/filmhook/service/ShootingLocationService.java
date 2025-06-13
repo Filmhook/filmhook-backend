@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 
@@ -25,6 +26,9 @@ public interface ShootingLocationService {
     ShootingLocationPropertyDetailsDTO updateProperty(Integer id, ShootingLocationPropertyDetailsDTO dto) ;
     String toggleLike(Integer propertyId, Integer userId);
     Long countLikes(Integer propertyId);
-    List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds);
+    List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId);
+    void saveReview(Integer propertyId, Integer userId, int rating, String reviewText);
+    double getAverageRating(Integer propertyId);
+    List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
     
 }
