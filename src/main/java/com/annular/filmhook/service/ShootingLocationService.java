@@ -24,5 +24,6 @@ public interface ShootingLocationService {
     ShootingLocationPropertyDetailsDTO updateProperty(Integer id, ShootingLocationPropertyDetailsDTO dto) ;
     String toggleLike(Integer propertyId, Integer userId);
     Long countLikes(Integer propertyId);
+    List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds);
     
 }

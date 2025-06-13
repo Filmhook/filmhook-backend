@@ -19,9 +19,11 @@ public interface ShootingLocationPropertyDetailsRepository extends JpaRepository
 
 	@Query("SELECT p FROM ShootingLocationPropertyDetails p LEFT JOIN FETCH p.mediaFiles")
 	List<ShootingLocationPropertyDetails> findAllWithMediaFiles();
- 
-//	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.industry.id = :industryId")
-//	List<ShootingLocationPropertyDetails> findAllByIndustryId(@Param("industryId") Integer industryId);
+
+	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.industry.industryId IN :industryIds")
+	List<ShootingLocationPropertyDetails> findAllByIndustryIndustryId(@Param("industryIds") List<Integer> industryIds);
+	
+	
 	
 }
 	

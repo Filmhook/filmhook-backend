@@ -288,6 +288,34 @@ public class ShootingLocationController {
 		  
 		  }
 		  
+		  //============================================================
+		  
+		  @PostMapping("/getPropertiesByIndustry")
+		    public ResponseEntity<?> getAllPropertiesByIndustryIds(@RequestBody List<Integer> industryIds) {
+		        logger.info("Received request to fetch properties for industry IDs: {}", industryIds);
+
+		        try {
+		            if (industryIds == null || industryIds.isEmpty()) {
+		                logger.warn("Industry ID list is null or empty.");
+		                return ResponseEntity.badRequest().body("Industry ID list cannot be null or empty.");
+		            }
+
+		            List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByIndustryIds(industryIds);
+
+		            if (properties.isEmpty()) {
+		                logger.info("No properties found for the given industry IDs: {}", industryIds);
+		                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No properties found for the provided industry IDs.");
+		            }
+
+		            logger.info("Returning {} properties for industries: {}", properties.size(), industryIds);
+		            return ResponseEntity.ok(properties);
+
+		        } catch (Exception ex) {
+		            logger.error("Error while fetching properties for industry IDs: {}", industryIds, ex);
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+		        }
+		    }
+		  
 		  		  
 
 }

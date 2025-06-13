@@ -20,7 +20,6 @@ import lombok.NoArgsConstructor;
 public class ShootingLocationPropertyDetailsDTO {
 	// Property Information
 	private Integer id;
-	private String industryName;
 	private String firstName;
 	private String middleName;
 	private String lastName;
@@ -120,4 +119,8 @@ public class ShootingLocationPropertyDetailsDTO {
 	
 	//Like status 
 	private boolean likedByUser;
+	
+	private List<Integer> industryIds;
+    private Integer industryId;
+	
 }
