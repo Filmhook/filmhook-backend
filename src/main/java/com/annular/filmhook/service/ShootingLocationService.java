@@ -1,3 +1,4 @@
+
 package com.annular.filmhook.service;
 
 import java.util.List;
@@ -18,11 +19,12 @@ public interface ShootingLocationService {
     List<ShootingLocationSubcategoryDTO> getSubcategoriesByCategoryId(Integer categoryId);
     void saveSelection(Long subcategoryId, Boolean entire, Boolean single);
     ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile);
-    List<ShootingLocationPropertyDetailsDTO> getAllProperties();
+    List<ShootingLocationPropertyDetailsDTO> getAllProperties(Integer userId);
     List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId);
     void deletePropertyById(Integer id);
     ShootingLocationPropertyDetailsDTO updateProperty(Integer id, ShootingLocationPropertyDetailsDTO dto) ;
     String toggleLike(Integer propertyId, Integer userId);
     Long countLikes(Integer propertyId);
+    List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds);
     
 }

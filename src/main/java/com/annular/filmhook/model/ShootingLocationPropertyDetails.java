@@ -209,6 +209,11 @@ public class ShootingLocationPropertyDetails {
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<PropertyLike> likes;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "industry_id")
+    private Industry industry;
+    
+    
 	
 
 }

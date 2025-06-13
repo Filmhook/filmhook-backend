@@ -26,13 +26,13 @@ import lombok.ToString;
 @Builder
 @Getter
 @Setter
-@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class ShootingLocationImages {
 	  @Id
 	    @GeneratedValue(strategy = GenerationType.IDENTITY)
 	    @Column(name = "shooting_media_id")
+
 	    private Integer shootingmediaId;
 
 	    @ToString.Exclude
@@ -83,8 +83,9 @@ public class ShootingLocationImages {
 	    
 	    @Column(name = "unverifiedList")
 	    private Boolean unverifiedList;
-	    
+
 	    @ManyToOne
 	    @JoinColumn(name = "property_id")
 	    private ShootingLocationPropertyDetails property;
+
 }

@@ -1,4 +1,3 @@
-
 package com.annular.filmhook.controller;
 
 
@@ -49,11 +48,11 @@ import lombok.RequiredArgsConstructor;
 public class ShootingLocationController {
 	@Autowired
 	private ShootingLocationService service;
-	
-	
+
+
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
-	
-	
+
+
 	@GetMapping("/types")
 	public ResponseEntity<?> getTypes() {
 	    try {
@@ -106,7 +105,7 @@ public class ShootingLocationController {
 	         logger.info("Received selection save request for subcategoryId: {}, entire: {}, single: {}",
 	                 dto.getSubcategoryId(), dto.getEntireProperty(), dto.getSingleProperty());
 
-	   
+
 	         logger.info("Selection saved successfully for subcategoryId: {}", dto.getSubcategoryId());
 	         return ResponseEntity.ok(new Response(1, "Selection saved successfully", null));
 
@@ -119,32 +118,33 @@ public class ShootingLocationController {
 
 
 
-		  @GetMapping("/getAllProperty")
-		  public ResponseEntity<?> getAllProperties() {
-		      logger.info("GET /getAll - Fetching all property details");
+	 @GetMapping("/getAllProperty")
+	 public ResponseEntity<?> getAllProperties(@RequestParam Integer userId) {
+	     logger.info("GET /getAllProperty - Fetching all property details for userId: {}", userId);
 
-		      try {
-		          List<ShootingLocationPropertyDetailsDTO> properties = service.getAllProperties();
+	     try {
+	         List<ShootingLocationPropertyDetailsDTO> properties = service.getAllProperties(userId);
 
-		          if (properties.isEmpty()) {
-		              logger.warn("No properties found in the database");
-		              Map<String, String> response = new HashMap<>();
-		              response.put("status", "empty");
-		              response.put("message", "No property records found");
-		              return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
-		          }
+	         if (properties.isEmpty()) {
+	             logger.warn("No properties found in the database");
+	             Map<String, String> response = new HashMap<>();
+	             response.put("status", "empty");
+	             response.put("message", "No property records found");
+	             return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
+	         }
 
-		          logger.info("Successfully fetched {} properties", properties.size());
-		          return ResponseEntity.ok(properties);
+	         logger.info("Successfully fetched {} properties", properties.size());
+	         return ResponseEntity.ok(properties);
 
-		      } catch (Exception e) {
-		          logger.error("Error occurred while fetching property details: {}", e.getMessage(), e);
-		          Map<String, String> response = new HashMap<>();
-		          response.put("status", "error");
-		          response.put("message", "Internal Server Error: " + e.getMessage());
-		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-		      }
-		  }
+	     } catch (Exception e) {
+	         logger.error("Error occurred while fetching property details: {}", e.getMessage(), e);
+	         Map<String, String> response = new HashMap<>();
+	         response.put("status", "error");
+	         response.put("message", "Internal Server Error: " + e.getMessage());
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	     }
+	 }
+
 
 		  @GetMapping("/user/{userId}")
 		    public ResponseEntity<List<ShootingLocationPropertyDetailsDTO>> getPropertiesByUserId(@PathVariable Integer userId) {
@@ -159,13 +159,13 @@ public class ShootingLocationController {
 		        Map<String, Object> response = new HashMap<>();
 		        try {
 		            logger.info("Attempting to delete property with ID: {}", id);
-		            
+
 		            service.deletePropertyById(id);
-		            
+
 		            response.put("status", "success");
 		            response.put("message", "Property deleted successfully");
 		            response.put("propertyId", id);
-		            
+
 		            logger.info("Successfully deleted property with ID: {}", id);
 		            return ResponseEntity.ok(response); 
 		        } catch (RuntimeException e) {
@@ -212,7 +212,7 @@ public class ShootingLocationController {
 		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); 
 		      }
 		  }
-		  
+
 
 		  @PostMapping("/savePropertyDetails")
 		  public ResponseEntity<?> savePropertyDetails(@ModelAttribute ShootingLocationFileInputModel inputFile,
@@ -237,8 +237,8 @@ public class ShootingLocationController {
 		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		      }
 		  }
-		  
-		  @PostMapping("/toggle")
+
+		  @PostMapping("/addLike")
 		  public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer propertyId, @RequestParam Integer userId) {
 		      Logger logger = LoggerFactory.getLogger(this.getClass());
 		      Map<String, String> response = new HashMap<>();
@@ -261,14 +261,14 @@ public class ShootingLocationController {
 		      }
 		  }
 
-		  @GetMapping("/count")
+		  @GetMapping("/countLikes")
 		  public ResponseEntity<?> countLikes(@RequestParam Integer propertyId) {
 		      Logger logger = LoggerFactory.getLogger(this.getClass());
 		      try {
 		          logger.info("Received request to count likes for property ID: {}", propertyId);
-		          
+
 		          Long count = service.countLikes(propertyId);
-		          
+
 		          logger.info("Like count for property ID {} is {}", propertyId, count);
 		          return ResponseEntity.ok(count);
 
@@ -284,21 +284,36 @@ public class ShootingLocationController {
 		                  .status(HttpStatus.INTERNAL_SERVER_ERROR)
 		                  .body("An unexpected error occurred. Please try again later.");
 		      }
-		  
+
 		  }
+
+		  //============================================================
 		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
-		  
+		  @PostMapping("/getPropertiesByIndustry")
+		    public ResponseEntity<?> getAllPropertiesByIndustryIds(@RequestBody List<Integer> industryIds) {
+		        logger.info("Received request to fetch properties for industry IDs: {}", industryIds);
+
+		        try {
+		            if (industryIds == null || industryIds.isEmpty()) {
+		                logger.warn("Industry ID list is null or empty.");
+		                return ResponseEntity.badRequest().body("Industry ID list cannot be null or empty.");
+		            }
+
+		            List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByIndustryIds(industryIds);
+
+		            if (properties.isEmpty()) {
+		                logger.info("No properties found for the given industry IDs: {}", industryIds);
+		                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No properties found for the provided industry IDs.");
+		            }
+
+		            logger.info("Returning {} properties for industries: {}", properties.size(), industryIds);
+		            return ResponseEntity.ok(properties);
+
+		        } catch (Exception ex) {
+		            logger.error("Error while fetching properties for industry IDs: {}", industryIds, ex);
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+		        }
+		    }
+		
 
 }
-		
