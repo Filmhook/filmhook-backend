@@ -119,7 +119,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	
 	//Like status 
 	private boolean likedByUser;
-	
+	private String industryName;
 	private List<Integer> industryIds;
     private Integer industryId;
 	

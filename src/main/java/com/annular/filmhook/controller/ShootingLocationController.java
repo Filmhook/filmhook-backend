@@ -2,6 +2,7 @@
 package com.annular.filmhook.controller;
 
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -239,7 +240,7 @@ public class ShootingLocationController {
 		      }
 		  }
 		  
-		  @PostMapping("/toggle")
+		  @PostMapping("/addLike")
 		  public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer propertyId, @RequestParam Integer userId) {
 		      Logger logger = LoggerFactory.getLogger(this.getClass());
 		      Map<String, String> response = new HashMap<>();
@@ -262,7 +263,7 @@ public class ShootingLocationController {
 		      }
 		  }
 
-		  @GetMapping("/count")
+		  @GetMapping("/countLikes")
 		  public ResponseEntity<?> countLikes(@RequestParam Integer propertyId) {
 		      Logger logger = LoggerFactory.getLogger(this.getClass());
 		      try {
@@ -290,31 +291,70 @@ public class ShootingLocationController {
 		  
 		  //============================================================
 		  
+//		  @PostMapping("/getPropertiesByIndustry")
+//		    public ResponseEntity<?> getAllPropertiesByIndustryIds(@RequestBody List<Integer> industryIds) {
+//		        logger.info("Received request to fetch properties for industry IDs: {}", industryIds);
+//
+//		        try {
+//		            if (industryIds == null || industryIds.isEmpty()) {
+//		                logger.warn("Industry ID list is null or empty.");
+//		                return ResponseEntity.badRequest().body("Industry ID list cannot be null or empty.");
+//		            }
+//
+//		            List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByIndustryIds(industryIds);
+//
+//		            if (properties.isEmpty()) {
+//		                logger.info("No properties found for the given industry IDs: {}", industryIds);
+//		                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No properties found for the provided industry IDs.");
+//		            }
+//
+//		            logger.info("Returning {} properties for industries: {}", properties.size(), industryIds);
+//		            return ResponseEntity.ok(properties);
+//
+//		        } catch (Exception ex) {
+//		            logger.error("Error while fetching properties for industry IDs: {}", industryIds, ex);
+//		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+//		        }
+//		    }
+		  
 		  @PostMapping("/getPropertiesByIndustry")
-		    public ResponseEntity<?> getAllPropertiesByIndustryIds(@RequestBody List<Integer> industryIds) {
-		        logger.info("Received request to fetch properties for industry IDs: {}", industryIds);
+		  public ResponseEntity<List<ShootingLocationPropertyDetailsDTO>> getAllPropertiesByIndustryIds(
+		          @RequestBody Map<String, Object> payload) {
+		      
+		      logger.info("Received request to fetch properties for industry IDs with payload: {}", payload);
 
-		        try {
-		            if (industryIds == null || industryIds.isEmpty()) {
-		                logger.warn("Industry ID list is null or empty.");
-		                return ResponseEntity.badRequest().body("Industry ID list cannot be null or empty.");
-		            }
+		      try {
+		          // Extract industryIds
+		          List<Integer> industryIds = (List<Integer>) payload.get("industryIds");
+		          Integer userId = (payload.get("userId") instanceof Integer)
+		                  ? (Integer) payload.get("userId")
+		                  : null;
 
-		            List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByIndustryIds(industryIds);
+		          // Validate input
+		          if (industryIds == null || industryIds.isEmpty()) {
+		              logger.warn("Industry ID list is null or empty.");
+		              return ResponseEntity.badRequest().body(Collections.emptyList());
+		          }
 
-		            if (properties.isEmpty()) {
-		                logger.info("No properties found for the given industry IDs: {}", industryIds);
-		                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No properties found for the provided industry IDs.");
-		            }
+		          if (userId == null) {
+		              logger.warn("User ID is missing or invalid in the payload.");
+		              return ResponseEntity.badRequest().body(Collections.emptyList());
+		          }
 
-		            logger.info("Returning {} properties for industries: {}", properties.size(), industryIds);
-		            return ResponseEntity.ok(properties);
+		          // Service call
+		          List<ShootingLocationPropertyDetailsDTO> result = service.getPropertiesByIndustryIds(industryIds, userId);
+		          logger.info("Returning {} properties for industryIds: {}", result.size(), industryIds);
+		          return ResponseEntity.ok(result);
 
-		        } catch (Exception ex) {
-		            logger.error("Error while fetching properties for industry IDs: {}", industryIds, ex);
-		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
-		        }
-		    }
+		      } catch (ClassCastException e) {
+		          logger.error("Invalid data types in request payload: {}", e.getMessage());
+		          return ResponseEntity.badRequest().body(Collections.emptyList());
+		      } catch (Exception e) {
+		          logger.error("Error occurred while fetching properties by industry IDs: ", e);
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+		      }
+		  }
+
 		  
 		  		  
 

@@ -821,12 +821,22 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 							ShootingLocationTypes::getId,
 							c -> c
 							));
+			
+			List<PropertyLike> allLikes = likeRepository.findByLikedById(userId);
+			Set<Integer> likedPropertyIds = allLikes.stream()
+			    .filter(PropertyLike::getStatus)
+			    .map(like -> like.getProperty().getId())
+			    .collect(Collectors.toSet());
+			
+		
 
 			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
-
+				 boolean likeStatus = likedPropertyIds.contains(property.getId());
+				 
+				
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
 					var b = property.getBusinessInformation();
@@ -1018,6 +1028,8 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
+						 .likedByUser(likeStatus)
+						
 						.build();
 
 				propertyDTOs.add(dto);
@@ -1033,7 +1045,7 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 	}
 	//===========================================
 	
-	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds) {
+	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId) {
 		logger.info("Fetching properties for industries: {}", industryIds);
 
 		try {
@@ -1071,8 +1083,25 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 					.stream().collect(Collectors.toMap(c -> c.getId(), c -> c));
 
 			List<ShootingLocationPropertyDetailsDTO> dtoList = new ArrayList<>();
+			
+			List<PropertyLike> allLikes = likeRepository.findByLikedById(userId);
+			Set<Integer> likedPropertyIds = allLikes.stream()
+			    .filter(PropertyLike::getStatus)
+			    .map(like -> like.getProperty().getId())
+			    .collect(Collectors.toSet());
+			
+			Map<Integer, String> industryNameMap = industryRepository.findAllById(industryIds).stream()
+			        .collect(Collectors.toMap(Industry::getIndustryId, Industry::getIndustryName));
 
 			for (ShootingLocationPropertyDetails property : properties) {
+				
+				  // Fetch like status
+				 boolean likeStatus = likedPropertyIds.contains(property.getId());
+				 
+				 String industryName = null;
+				 if (property.getIndustry() != null) {
+				     industryName = industryNameMap.get(property.getIndustry().getIndustryId());
+				 }
 
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
@@ -1249,6 +1278,8 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
+						 .likedByUser(likeStatus)
+						 .industryName(industryName)
 						.build();
 
 				dtoList.add(dto);
