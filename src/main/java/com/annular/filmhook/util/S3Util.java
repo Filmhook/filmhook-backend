@@ -251,7 +251,24 @@ public class S3Util {
         return s3BaseURL + S3Util.S3_PATH_DELIMITER + filePath;
     }
     
-    
+    private String extractKeyFromUrl(String fileUrl) {
+        // Remove the base URL and bucket name from the full S3 URL
+        return fileUrl.replace(getS3BaseURL() + "/" + getS3BucketName() + "/", "");
+    }
+    public void deleteFileFromS3(String fileUrl) {
+        try {
+            String s3Key = extractKeyFromUrl(fileUrl);
+            S3Client s3 = S3Client.builder()
+                    .region(Region.of(s3RegionName))
+                    .credentialsProvider(getAwsCredentialsProvider())
+                    .build();
+
+            s3.deleteObject(builder -> builder.bucket(s3BucketName).key(s3Key).build());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete file from S3: " + e.getMessage(), e);
+        }
+    }
+
 
 }
         
