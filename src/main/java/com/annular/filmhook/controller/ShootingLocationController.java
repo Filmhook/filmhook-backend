@@ -287,6 +287,7 @@ public class ShootingLocationController {
 		                  .body("An unexpected error occurred. Please try again later.");
 		      }
 
+
 		  }
 
 		  //============================================================
@@ -377,3 +378,4 @@ public class ShootingLocationController {
 		    }
 
 }
+

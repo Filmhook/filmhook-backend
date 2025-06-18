@@ -10,7 +10,6 @@ public interface ShootingLocationPropertyReviewRepository extends JpaRepository<
     List<ShootingLocationPropertyReview> findByPropertyId(Integer propertyId);
     List<ShootingLocationPropertyReview> findByPropertyIdAndUser_UserId(Integer propertyId, Integer userId);
 
-
     
     
     

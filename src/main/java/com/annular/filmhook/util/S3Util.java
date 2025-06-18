@@ -47,7 +47,7 @@ public class S3Util {
 	            .profileFile(ProfileFile.builder()
 	                    .type(ProfileFile.Type.CREDENTIALS)  // Specify the type!
                    .content(Paths.get("C:\\.aws\\credentials.txt")) // Your custom credentials file path
-         //       .content(Paths.get("/home/ubuntu/.aws/credentials.txt"))
+              //  .content(Paths.get("/home/ubuntu/.aws/credentials.txt"))
 	                    .build())
 	            .build();
     return AwsCredentialsProviderChain.builder()
@@ -250,11 +250,7 @@ public class S3Util {
     public String generateS3FilePath(String filePath) {
         return s3BaseURL + S3Util.S3_PATH_DELIMITER + filePath;
     }
-    
-    private String extractKeyFromUrl(String fileUrl) {
-        // Remove the base URL and bucket name from the full S3 URL
-        return fileUrl.replace(getS3BaseURL() + "/" + getS3BucketName() + "/", "");
-    }
+    //======================
     public void deleteFileFromS3(String fileUrl) {
         try {
             String s3Key = extractKeyFromUrl(fileUrl);
@@ -269,6 +265,12 @@ public class S3Util {
         }
     }
 
+    private String extractKeyFromUrl(String fileUrl) {
+        // Remove the base URL and bucket name from the full S3 URL
+        return fileUrl.replace(getS3BaseURL() + "/" + getS3BucketName() + "/", "");
+    }
+    
+   
 
 }
         

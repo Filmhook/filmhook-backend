@@ -119,10 +119,12 @@ public class ShootingLocationPropertyDetailsDTO {
 	private ShootingLocationCategoryDTO category;
 	private ShootingLocationSubcategoryDTO subCategory;
 	private ShootingLocationSubcategorySelectionDTO subcategorySelectionDTO;
-	
+	private String industryName;
+	private List<Integer> industryIds;   
 	private boolean likedByUser;
-	private Integer industryId;
-private double averageRating;
+	private Integer industryId;	
+	private double averageRating;
 	private List<ShootingLocationPropertyReviewDTO> reviews;
 
 }
+

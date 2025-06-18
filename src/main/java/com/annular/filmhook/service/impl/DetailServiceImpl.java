@@ -39,6 +39,7 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.model.PlatformDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
+import com.annular.filmhook.model.ShootingLocationImages;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.CountryRepository;
 import com.annular.filmhook.repository.FilmProfessionDetailRepository;
@@ -71,6 +72,7 @@ import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
+import com.annular.filmhook.webmodel.ShootingLocationWebModal;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.SubProfessionsWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -146,6 +148,7 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     FilmSubProfessionPermanentDetailsRepository filmSubProfessionPermanentDetailsRepository;
+  
 
     public static final Logger logger = LoggerFactory.getLogger(DetailServiceImpl.class);
 
@@ -498,6 +501,7 @@ public class DetailServiceImpl implements DetailService {
         }
         return fileOutputWebModelList;
     }
+    
 
     @Override
     public ResponseEntity<?> updateTemporaryDetails(IndustryTemporaryWebModel industryTemporaryWebModel) {
@@ -1142,6 +1146,10 @@ public class DetailServiceImpl implements DetailService {
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", "Could not delete temporary details"));
         }
     }
+
+
+
+
 
 }
 

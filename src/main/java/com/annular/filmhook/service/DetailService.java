@@ -12,7 +12,7 @@ import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
-import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+import com.annular.filmhook.webmodel.ShootingLocationWebModal;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface DetailService {
@@ -54,7 +54,8 @@ public interface DetailService {
 	List<FileOutputWebModel> saveIndustryUserFiless(IndustryFileInputWebModel inputFileData);
 
 	List<FileOutputWebModel> saveIndustryUserFilesss(IndustryFileInputWebModel inputFileData);
-
+	
+	
 	
 	
 

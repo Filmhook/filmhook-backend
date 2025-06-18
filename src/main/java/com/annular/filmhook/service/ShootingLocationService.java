@@ -30,5 +30,6 @@ public interface ShootingLocationService {
     void saveReview(Integer propertyId, Integer userId, int rating, String reviewText);
     double getAverageRating(Integer propertyId);
     List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
+
     
 }

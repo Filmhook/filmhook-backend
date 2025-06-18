@@ -258,11 +258,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				industry = industryRepository.getReferenceById(dto.getIndustryId());
 			}
 
-
-
 			ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.builder()
 					// 1. Owner & Property Identity
-
 					.firstName(dto.getFirstName())
 					.middleName(dto.getMiddleName())
 					.lastName(dto.getLastName())
@@ -352,7 +349,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.build();
 
 			ShootingLocationPropertyDetails savedProperty = propertyDetailsRepository.saveAndFlush(property);
-			System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 			if (dto.getBusinessInformation() != null) {
 
 				BusinessInformation business = BusinessInformation.builder()
@@ -845,9 +841,19 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							c -> c
 							));
 
+			List<PropertyLike> allLikes = likeRepository.findByLikedById(userId);
+			Set<Integer> likedPropertyIds = allLikes.stream()
+					.filter(PropertyLike::getStatus)
+					.map(like -> like.getProperty().getId())
+					.collect(Collectors.toSet());
+
+
+
 			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
 
 			for (ShootingLocationPropertyDetails property : properties) {
+
+				boolean likeStatus = likedPropertyIds.contains(property.getId());
 
 
 				BusinessInformationDTO businessInfoDTO = null;
@@ -1056,6 +1062,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
+						.likedByUser(likeStatus)
 						.reviews(reviews)
 						.averageRating(avgRating)
 						.build();
@@ -1072,7 +1079,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		}
 	}
 	//===========================================
-
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId) {
 		logger.info("Fetching properties for industries: {}", industryIds);
 
@@ -1111,8 +1117,24 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.stream().collect(Collectors.toMap(c -> c.getId(), c -> c));
 
 			List<ShootingLocationPropertyDetailsDTO> dtoList = new ArrayList<>();
+			List<PropertyLike> allLikes = likeRepository.findByLikedById(userId);
+			Set<Integer> likedPropertyIds = allLikes.stream()
+					.filter(PropertyLike::getStatus)
+					.map(like -> like.getProperty().getId())
+					.collect(Collectors.toSet());
+
+			Map<Integer, String> industryNameMap = industryRepository.findAllById(industryIds).stream()
+					.collect(Collectors.toMap(Industry::getIndustryId, Industry::getIndustryName));
 
 			for (ShootingLocationPropertyDetails property : properties) {
+
+				// Fetch like status
+				boolean likeStatus = likedPropertyIds.contains(property.getId());
+
+				String industryName = null;
+				if (property.getIndustry() != null) {
+					industryName = industryNameMap.get(property.getIndustry().getIndustryId());
+				}
 
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
@@ -1191,10 +1213,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.singleProperty(shooting.getSingleProperty())
 							.build();
 				}
-				// Fetch like status
-				Optional<PropertyLike> likeOpt = likeRepository.findByPropertyIdAndLikedById(property.getId(), userId);
-				boolean likeStatus = likeOpt.map(PropertyLike::getStatus).orElse(false);
-
 
 				List<String> imageUrls = new ArrayList<>();
 				List<String> videoUrls = new ArrayList<>();
@@ -1233,6 +1251,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
 						.average()
 						.orElse(0.0);
+
 
 				// Map property DTO (reuse from your existing method)
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
@@ -1311,6 +1330,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
 						.likedByUser(likeStatus)
+						.industryName(industryName)
 						.industryId(property.getIndustry().getIndustryId())
 						.categoryId(property.getCategory().getId())
 						.subCategoryId(property.getSubCategory().getId())
@@ -1319,6 +1339,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.reviews(reviews)
 						.averageRating(avgRating)
 						.build();
+
 
 				dtoList.add(dto);
 			}

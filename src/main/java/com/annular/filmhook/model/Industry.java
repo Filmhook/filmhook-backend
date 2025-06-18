@@ -78,6 +78,7 @@ public class Industry {
     @Column(name = "icon_file_path")
     private String filePath;
     
+
     @OneToMany(mappedBy = "industry", cascade = CascadeType.ALL)
     private List<ShootingLocationPropertyDetails> properties;
 

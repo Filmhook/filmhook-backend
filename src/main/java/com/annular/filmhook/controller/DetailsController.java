@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +33,7 @@ import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
+import com.annular.filmhook.webmodel.ShootingLocationWebModal;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.util.Utility;
@@ -49,6 +52,8 @@ public class DetailsController {
     
 	@Autowired
 	private UserService userService;
+	
+	
 
     @PostMapping("/getDetails")
     public ResponseEntity<?> getDetails(@RequestBody DetailRequest detailRequest) {
@@ -232,6 +237,8 @@ public class DetailsController {
         return new Response(-1, "Error occurred while saving files...", null);
     }
 
+   
+    
     @GetMapping("/getIndustryFilesByUserId")
     public Response getIndustryFiles(@RequestParam("userId") Integer userId) {
         try {

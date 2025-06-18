@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "45052522559",
+    "project_id": "filmhook-notify",
+    "storage_bucket": "filmhook-notify.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:45052522559:android:d9d71891ee1e54062bc88a",
+        "android_client_info": {
+          "package_name": "com.projectfh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs6qjoUCZWqTH1swrM9-H2mawbrUqPe8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
