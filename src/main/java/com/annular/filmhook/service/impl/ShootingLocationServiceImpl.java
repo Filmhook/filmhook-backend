@@ -96,7 +96,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	MultiMediaFileRepository multiMediaFilesRepository;
-	
+
 	@Autowired 
 	ShootingLocationPropertyReviewRepository propertyReviewRepository;
 
@@ -666,6 +666,22 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.singleProperty(shooting.getSingleProperty())
 							.build();
 				}
+				List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyId(property.getId())
+						.stream()
+						.map(review -> ShootingLocationPropertyReviewDTO.builder()
+								.propertyId(review.getProperty().getId())
+								.userId(review.getUser().getUserId())
+								.rating(review.getRating())
+								.reviewText(review.getReviewText())
+								.userName(review.getUser().getName())
+								.build())
+						.collect(Collectors.toList());
+
+				// 2. Calculate average rating
+				double avgRating = reviews.stream()
+						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+						.average()
+						.orElse(0.0);
 
 				// Build the DTO
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
@@ -758,6 +774,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
 						.likedByUser(likeStatus)
+						.reviews(reviews)
+						.averageRating(avgRating)
 						.build();
 
 				propertyDTOs.add(dto);
@@ -932,6 +950,21 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					logger.info("Videos: {}", videoUrls);
 					logger.info("Govt IDs: {}", governmentIdUrls);
 				}
+				List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyIdAndUser_UserId(property.getId(), userId)
+						.stream()
+						.map(review -> ShootingLocationPropertyReviewDTO.builder()
+								.propertyId(review.getProperty().getId())
+								.userId(review.getUser().getUserId())
+								.rating(review.getRating())
+								.reviewText(review.getReviewText())
+								.userName(review.getUser().getName())
+								.build())
+						.collect(Collectors.toList());
+
+				double avgRating = reviews.stream()
+						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+						.average()
+						.orElse(0.0);
 
 
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
@@ -1023,6 +1056,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
+						.reviews(reviews)
+						.averageRating(avgRating)
 						.build();
 
 				propertyDTOs.add(dto);
@@ -1102,6 +1137,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				if (property.getBankDetails() != null) {
 					var bank = property.getBankDetails();
 					bankDetailsDTO = BankDetailsDTO.builder()
+							.id(bank.getId())
 							.beneficiaryName(bank.getBeneficiaryName())
 							.mobileNumber(bank.getMobileNumber())
 							.accountNumber(bank.getAccountNumber())
@@ -1150,6 +1186,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				if (property.getSubcategorySelection() != null) {
 					var shooting = property.getSubcategorySelection();
 					shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
+							.subcategoryId(property.getSubcategorySelection().getId())
 							.entireProperty(shooting.getEntireProperty())
 							.singleProperty(shooting.getSingleProperty())
 							.build();
@@ -1180,6 +1217,22 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					logger.info("Videos: {}", videoUrls);
 					logger.info("Govt IDs: {}", governmentIdUrls);
 				}
+				List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyId(property.getId())
+						.stream()
+						.map(review -> ShootingLocationPropertyReviewDTO.builder()
+								.propertyId(review.getProperty().getId())
+								.userId(review.getUser().getUserId())
+								.rating(review.getRating())
+								.reviewText(review.getReviewText())
+								.userName(review.getUser().getName())
+								.build())
+						.collect(Collectors.toList());
+
+				// 2. Calculate average rating
+				double avgRating = reviews.stream()
+						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+						.average()
+						.orElse(0.0);
 
 				// Map property DTO (reuse from your existing method)
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
@@ -1258,7 +1311,13 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
 						.likedByUser(likeStatus)
-
+						.industryId(property.getIndustry().getIndustryId())
+						.categoryId(property.getCategory().getId())
+						.subCategoryId(property.getSubCategory().getId())
+						.typesId(property.getTypes().getId())
+						.userId(property.getUser().getUserId())
+						.reviews(reviews)
+						.averageRating(avgRating)
 						.build();
 
 				dtoList.add(dto);
@@ -1469,30 +1528,30 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 		propertyReviewRepository.save(review);
 	}
-		
-	   public double getAverageRating(Integer propertyId) {
-	        List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
-	        return reviews.stream()
-	                .mapToInt(ShootingLocationPropertyReview::getRating)
-	                .average()
-	                .orElse(0.0);
-	    }
-	   
-	   public List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId) {
-		    List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
 
-		    return reviews.stream()
-		        .map(review -> ShootingLocationPropertyReviewDTO.builder()
-		            .propertyId(review.getProperty().getId().intValue())
-		            .userId(review.getUser().getUserId())
-		            .rating(review.getRating())
-		            .reviewText(review.getReviewText())
-		            .userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
-		            .build())
-		        .collect(Collectors.toList());
-		}
+	public double getAverageRating(Integer propertyId) {
+		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
+		return reviews.stream()
+				.mapToInt(ShootingLocationPropertyReview::getRating)
+				.average()
+				.orElse(0.0);
+	}
+
+	public List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId) {
+		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
+
+		return reviews.stream()
+				.map(review -> ShootingLocationPropertyReviewDTO.builder()
+						.propertyId(review.getProperty().getId().intValue())
+						.userId(review.getUser().getUserId())
+						.rating(review.getRating())
+						.reviewText(review.getReviewText())
+						.userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
+						.build())
+				.collect(Collectors.toList());
+	}
 
 
-	
+
 
 }

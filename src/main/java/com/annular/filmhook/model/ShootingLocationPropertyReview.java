@@ -31,7 +31,7 @@ public class ShootingLocationPropertyReview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     private int rating; 
     private String reviewText;
