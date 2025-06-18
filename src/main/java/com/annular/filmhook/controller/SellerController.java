@@ -13,55 +13,64 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/sellers")
+@RequestMapping("/sellers")
 @RequiredArgsConstructor
 public class SellerController {
 
     private final SellerService sellerService;
 
     @PostMapping("/save")
-    public ResponseEntity<SellerInfo> saveSellerInfo(
+    public ResponseEntity<?> saveSellerInfo(
             @RequestPart("seller") SellerInfoDTO sellerInfoDTO,
             @RequestPart(value = "idProofImages", required = false) List<MultipartFile> idProofImages,
             @RequestPart(value = "shopLogos", required = false) List<MultipartFile> shopLogos) {
+        try {
+            SellerFileInputModel fileInput = new SellerFileInputModel();
+            fileInput.setIdProofImages(idProofImages);
+            fileInput.setShopLogos(shopLogos);
 
-        SellerFileInputModel fileInput = new SellerFileInputModel();
-        fileInput.setIdProofImages(idProofImages);
-        fileInput.setShopLogos(shopLogos);
-
-        SellerInfo savedSeller = sellerService.saveSellerInfo(sellerInfoDTO, fileInput);
-        return ResponseEntity.ok(savedSeller);
+            SellerInfo savedSeller = sellerService.saveSellerInfo(sellerInfoDTO, fileInput);
+            return ResponseEntity.ok(savedSeller);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to save seller info: " + e.getMessage());
+        }
     }
-    
-    
+
     @PutMapping("/update/{id}")
-    public ResponseEntity<SellerInfo> updateSellerInfo(
+    public ResponseEntity<?> updateSellerInfo(
             @PathVariable Long id,
             @RequestPart("seller") SellerInfoDTO sellerInfoDTO,
             @RequestPart(value = "idProofImages", required = false) List<MultipartFile> idProofImages,
             @RequestPart(value = "shopLogos", required = false) List<MultipartFile> shopLogos) {
+        try {
+            SellerFileInputModel fileInput = new SellerFileInputModel();
+            fileInput.setIdProofImages(idProofImages);
+            fileInput.setShopLogos(shopLogos);
 
-        SellerFileInputModel fileInput = new SellerFileInputModel();
-        fileInput.setIdProofImages(idProofImages);
-        fileInput.setShopLogos(shopLogos);
-
-        SellerInfo updatedSeller = sellerService.updateSellerInfo(id, sellerInfoDTO, fileInput);
-        return ResponseEntity.ok(updatedSeller);
+            SellerInfo updatedSeller = sellerService.updateSellerInfo(id, sellerInfoDTO, fileInput);
+            return ResponseEntity.ok(updatedSeller);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to update seller info: " + e.getMessage());
+        }
     }
-    
-	    @GetMapping("/seller/user/{userId}")
-	    public ResponseEntity<SellerInfoDTO> getSellerDetailsByUserId(@PathVariable Integer userId) {
-	        SellerInfoDTO response = sellerService.getSellerDetailsByUserId(userId);
-	        return ResponseEntity.ok(response);
-	    }
-	    
-	    @DeleteMapping("/delete/{sellerId}")
-	    public ResponseEntity<String> deleteSeller(@PathVariable Long sellerId) {
-	        try {
-	            sellerService.deleteSellerById(sellerId);
-	            return ResponseEntity.ok("Seller with ID " + sellerId + " deleted successfully.");
-	        } catch (RuntimeException e) {
-	            return ResponseEntity.status(404).body(e.getMessage());
-	        }
-	    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getSellerDetailsByUserId(@PathVariable Integer userId) {
+        try {
+            SellerInfoDTO response = sellerService.getSellerDetailsByUserId(userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body("Seller not found for user ID: " + userId);
+        }
+    }
+
+    @DeleteMapping("/delete/{sellerId}")
+    public ResponseEntity<?> deleteSeller(@PathVariable Long sellerId) {
+        try {
+            sellerService.deleteSellerById(sellerId);
+            return ResponseEntity.ok("Seller with ID " + sellerId + " deleted successfully.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
 }

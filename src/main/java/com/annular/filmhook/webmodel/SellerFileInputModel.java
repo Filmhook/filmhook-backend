@@ -8,4 +8,12 @@ import lombok.Data;
 public class SellerFileInputModel {
     private List<MultipartFile> idProofImages;
     private List<MultipartFile> shopLogos;
+    private List<MultipartFile> productImages;
+    private List<MultipartFile> productVideos;
+    private String updateMode; 
+    public boolean isEmpty() {
+        return (productImages == null || productImages.isEmpty()) &&
+               (productVideos == null || productVideos.isEmpty());
+    }
+
 }

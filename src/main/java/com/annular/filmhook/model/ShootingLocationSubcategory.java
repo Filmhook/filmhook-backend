@@ -28,7 +28,7 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+
 public class ShootingLocationSubcategory {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

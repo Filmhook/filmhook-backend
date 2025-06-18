@@ -10,13 +10,14 @@ import lombok.Data;
 @Data
 @Builder
 public class ShootingLocationFileInputModel {
-	
-//	private Integer propertyID;
-//    private String category;
-    private List<MultipartFile> images;
-    private List<MultipartFile> videos;
-//    private MultipartFile panCard;
-//    private MultipartFile adharCard;
-   
-    private List<MultipartFile> govermentId;
+
+
+	private List<MultipartFile> images;
+	private List<MultipartFile> videos;
+	//    private MultipartFile panCard;
+	//    private MultipartFile adharCard;
+	//	private Integer propertyID;
+	//  private String category;
+
+	private List<MultipartFile> govermentId;
 }

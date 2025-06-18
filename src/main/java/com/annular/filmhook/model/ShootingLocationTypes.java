@@ -48,16 +48,6 @@ public class ShootingLocationTypes {
 	    private List<ShootingLocationCategory> categories;
 	
 
-//	    private Boolean status;
-//	    private Integer createdBy;
-//
-//	    @CreationTimestamp
-//	    private Date createdOn;
-//
-//	    private Integer updatedBy;
-//
-//	    @UpdateTimestamp
-//	    private Date updatedOn;
 	    
 
 	

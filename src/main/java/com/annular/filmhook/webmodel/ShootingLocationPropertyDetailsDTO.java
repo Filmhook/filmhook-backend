@@ -12,11 +12,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
+
+
+@Data
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-@Builder
 public class ShootingLocationPropertyDetailsDTO {
 	// Property Information
 	private Integer id;
@@ -105,22 +108,23 @@ public class ShootingLocationPropertyDetailsDTO {
 	private BankDetailsDTO bankDetailsDTO;
 
 	private List<String> imageUrls;
-    private List<String> governmentIdUrls;
-    private List<String> videoUrls;
+	private List<String> governmentIdUrls;
+	private List<String> videoUrls;
 
-	private Long categoryId;
-	private Long subCategoryId;
-	private Long typesId;
+	private Integer categoryId;
+	private Integer subCategoryId;
+	private Integer typesId;
 	private Integer userId;
 	private ShootingLocationTypeDTO type;
 	private ShootingLocationCategoryDTO category;
 	private ShootingLocationSubcategoryDTO subCategory;
 	private ShootingLocationSubcategorySelectionDTO subcategorySelectionDTO;
-	
-	//Like status 
-	private boolean likedByUser;
 	private String industryName;
-	private List<Integer> industryIds;
-    private Integer industryId;
-	
+	private List<Integer> industryIds;   
+	private boolean likedByUser;
+	private Integer industryId;	
+	private double averageRating;
+	private List<ShootingLocationPropertyReviewDTO> reviews;
+
 }
+

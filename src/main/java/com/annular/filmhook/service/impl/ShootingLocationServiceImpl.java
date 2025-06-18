@@ -35,6 +35,7 @@ import com.annular.filmhook.model.PropertyLike;
 import com.annular.filmhook.model.ShootingLocationCategory;
 import com.annular.filmhook.model.ShootingLocationImages;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
+import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.model.ShootingLocationSubcategory;
 import com.annular.filmhook.model.ShootingLocationSubcategorySelection;
 import com.annular.filmhook.model.ShootingLocationTypes;
@@ -47,6 +48,7 @@ import com.annular.filmhook.repository.PropertyLikeRepository;
 import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationImageRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
+import com.annular.filmhook.repository.ShootingLocationPropertyReviewRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepository;
 import com.annular.filmhook.repository.ShootingLocationTypesRepository;
@@ -63,6 +65,7 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
@@ -70,29 +73,32 @@ import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 
 @Service
 public class ShootingLocationServiceImpl implements ShootingLocationService {
-	
+
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
-	
+
 	@Autowired
 	private ShootingLocationTypesRepository typesRepo;
-	
+
 	@Autowired
 	private PropertyLikeRepository likeRepository;
-	
+
 	@Autowired
 	private ShootingLocationCategoryRepository categoryRepo;
-	
+
 	@Autowired
 	private ShootingLocationSubcategoryRepository subcategoryRepo;
-	
+
 	@Autowired
 	private  ShootingLocationSubcategorySelectionRepository selectionRepo;
-	
+
 	@Autowired
 	private ShootingLocationPropertyDetailsRepository propertyDetailsRepository;
-	
+
 	@Autowired
 	MultiMediaFileRepository multiMediaFilesRepository;
+
+	@Autowired 
+	ShootingLocationPropertyReviewRepository propertyReviewRepository;
 
 	@Autowired
 	AwsS3Service awsS3Service;
@@ -113,13 +119,13 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	private BankDetailsRepository bankDetailsRepository;
-	
+
 	@Autowired
 	private UserRepository userRepository;
-	
+
 	@Autowired
 	IndustryRepository industryRepository;
-	
+
 	@Override
 	public List<ShootingLocationTypeDTO> getAllTypes() {
 		try {
@@ -251,12 +257,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			if (dto.getIndustryId() != null) {
 				industry = industryRepository.getReferenceById(dto.getIndustryId());
 			}
-			
-			
 
-ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.builder()
+			ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.builder()
 					// 1. Owner & Property Identity
-					
 					.firstName(dto.getFirstName())
 					.middleName(dto.getMiddleName())
 					.lastName(dto.getLastName())
@@ -334,9 +337,9 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 					.videoWalkthrough(dto.getVideoWalkthrough())
 					.status(true)
 					.createdBy(dto.getUserId()) 
-				    .createdOn(LocalDateTime.now())
-				    .updatedBy(dto.getUserId())
-				    .updatedOn(LocalDateTime.now())
+					.createdOn(LocalDateTime.now())
+					.updatedBy(dto.getUserId())
+					.updatedOn(LocalDateTime.now())
 					.category(category)
 					.subCategory(subCategory)
 					.types(type)
@@ -346,7 +349,6 @@ ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.build
 					.build();
 
 			ShootingLocationPropertyDetails savedProperty = propertyDetailsRepository.saveAndFlush(property);
-System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 			if (dto.getBusinessInformation() != null) {
 
 				BusinessInformation business = BusinessInformation.builder()
@@ -369,7 +371,6 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 
 			if (dto.getBankDetailsDTO() != null) {
 
-				BankDetailsDTO bankDto = dto.getBankDetailsDTO();
 
 				BankDetails bank = BankDetails.builder()
 						.propertyDetails(savedProperty)
@@ -411,31 +412,31 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 		}
 	}
 	private Map<ShootingLocationImages, MultipartFile> prepareMediaFileData(
-	        ShootingLocationPropertyDetailsDTO dto,
-	        ShootingLocationFileInputModel inputFile,
-	        User user,
-	        ShootingLocationPropertyDetails savedProperty) {
+			ShootingLocationPropertyDetailsDTO dto,
+			ShootingLocationFileInputModel inputFile,
+			User user,
+			ShootingLocationPropertyDetails savedProperty) {
 
-	    Map<ShootingLocationImages, MultipartFile> mediaFilesMap = new HashMap<>();
+		Map<ShootingLocationImages, MultipartFile> mediaFilesMap = new HashMap<>();
 
-	    if (inputFile.getImages() != null) {
-	        for (MultipartFile file : inputFile.getImages()) {
-	            mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.shootingLocationImage.toString(), dto.getId(), savedProperty), file);
-	        }
-	    }
+		if (inputFile.getImages() != null) {
+			for (MultipartFile file : inputFile.getImages()) {
+				mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.shootingLocationImage.toString(), dto.getId(), savedProperty), file);
+			}
+		}
 
-	    if (inputFile.getGovermentId() != null) {
-	        for (MultipartFile file : inputFile.getGovermentId()) {
-	            mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.govermentId.toString(), dto.getId(), savedProperty), file);
-	        }
-	    }
-	    if (inputFile.getVideos() != null) {
-	        for (MultipartFile file : inputFile.getVideos()) {
-	            mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.Video.toString(), dto.getId(), savedProperty), file);
-	        }
-	    }
+		if (inputFile.getGovermentId() != null) {
+			for (MultipartFile file : inputFile.getGovermentId()) {
+				mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.govermentId.toString(), dto.getId(), savedProperty), file);
+			}
+		}
+		if (inputFile.getVideos() != null) {
+			for (MultipartFile file : inputFile.getVideos()) {
+				mediaFilesMap.put(createMediaFile(file, user, MediaFileCategory.Video.toString(), dto.getId(), savedProperty), file);
+			}
+		}
 
-	    return mediaFilesMap;
+		return mediaFilesMap;
 	}
 
 
@@ -487,7 +488,7 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 			if ("File Uploaded".equalsIgnoreCase(response)) {
 				tempFile.delete();
 
-				
+
 				String s3FullPath = s3Util.getS3BaseURL() + "/" + relativePath;
 				logger.info("s3FullPath {}", s3FullPath);
 				mediaFile.setFilePath(s3FullPath); 
@@ -555,30 +556,30 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
-				  // Fetch like status
-	            Optional<PropertyLike> likeOpt = likeRepository.findByPropertyIdAndLikedById(property.getId(), userId);
-	            boolean likeStatus = likeOpt.map(PropertyLike::getStatus).orElse(false);
-				
+				// Fetch like status
+				Optional<PropertyLike> likeOpt = likeRepository.findByPropertyIdAndLikedById(property.getId(), userId);
+				boolean likeStatus = likeOpt.map(PropertyLike::getStatus).orElse(false);
+
 				List<String> imageUrls = new ArrayList<>();
 				List<String> videoUrls = new ArrayList<>();
 				List<String> governmentIdUrls = new ArrayList<>();
 
 				if (property.getMediaFiles() != null && !property.getMediaFiles().isEmpty()) {
-				    for (ShootingLocationImages file : property.getMediaFiles()) {
-				    	if (file.getCategory() != null) {
-				    	    if (file.getCategory().equals(MediaFileCategory.shootingLocationImage.toString())) {
-				    	        imageUrls.add(file.getFilePath());
-				    	    } else if (file.getCategory().equals(MediaFileCategory.Video.toString())) {
-				    	        videoUrls.add(file.getFilePath());
-				    	    } else if (file.getCategory().equals(MediaFileCategory.govermentId.toString())) {
-				    	        governmentIdUrls.add(file.getFilePath());
-				    	    }
-				    	}
-				    }
+					for (ShootingLocationImages file : property.getMediaFiles()) {
+						if (file.getCategory() != null) {
+							if (file.getCategory().equals(MediaFileCategory.shootingLocationImage.toString())) {
+								imageUrls.add(file.getFilePath());
+							} else if (file.getCategory().equals(MediaFileCategory.Video.toString())) {
+								videoUrls.add(file.getFilePath());
+							} else if (file.getCategory().equals(MediaFileCategory.govermentId.toString())) {
+								governmentIdUrls.add(file.getFilePath());
+							}
+						}
+					}
 
-				    logger.info("Images: {}", imageUrls);
-				    logger.info("Videos: {}", videoUrls);
-				    logger.info("Govt IDs: {}", governmentIdUrls);
+					logger.info("Images: {}", imageUrls);
+					logger.info("Videos: {}", videoUrls);
+					logger.info("Govt IDs: {}", governmentIdUrls);
 				}
 
 				// Business Info Mapping
@@ -661,6 +662,22 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 							.singleProperty(shooting.getSingleProperty())
 							.build();
 				}
+				List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyId(property.getId())
+						.stream()
+						.map(review -> ShootingLocationPropertyReviewDTO.builder()
+								.propertyId(review.getProperty().getId())
+								.userId(review.getUser().getUserId())
+								.rating(review.getRating())
+								.reviewText(review.getReviewText())
+								.userName(review.getUser().getName())
+								.build())
+						.collect(Collectors.toList());
+
+				// 2. Calculate average rating
+				double avgRating = reviews.stream()
+						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+						.average()
+						.orElse(0.0);
 
 				// Build the DTO
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
@@ -752,7 +769,9 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
-	                    .likedByUser(likeStatus)
+						.likedByUser(likeStatus)
+						.reviews(reviews)
+						.averageRating(avgRating)
 						.build();
 
 				propertyDTOs.add(dto);
@@ -821,22 +840,22 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 							ShootingLocationTypes::getId,
 							c -> c
 							));
-			
+
 			List<PropertyLike> allLikes = likeRepository.findByLikedById(userId);
 			Set<Integer> likedPropertyIds = allLikes.stream()
-			    .filter(PropertyLike::getStatus)
-			    .map(like -> like.getProperty().getId())
-			    .collect(Collectors.toSet());
-			
-		
+					.filter(PropertyLike::getStatus)
+					.map(like -> like.getProperty().getId())
+					.collect(Collectors.toSet());
+
+
 
 			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
-				 boolean likeStatus = likedPropertyIds.contains(property.getId());
-				 
-				
+				boolean likeStatus = likedPropertyIds.contains(property.getId());
+
+
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
 					var b = property.getBusinessInformation();
@@ -921,23 +940,37 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 				List<String> governmentIdUrls = new ArrayList<>();
 
 				if (property.getMediaFiles() != null && !property.getMediaFiles().isEmpty()) {
-				    for (ShootingLocationImages file : property.getMediaFiles()) {
-				     	if (file.getCategory() != null) {
-				    	    if (file.getCategory().equals(MediaFileCategory.shootingLocationImage.toString())) {
-				    	        imageUrls.add(file.getFilePath());
-				    	    } else if (file.getCategory().equals(MediaFileCategory.Video.toString())) {
-				    	        videoUrls.add(file.getFilePath());
-				    	    } else if (file.getCategory().equals(MediaFileCategory.govermentId.toString())) {
-				    	        governmentIdUrls.add(file.getFilePath());
-				    	    }
-				    	}
-				    }
+					for (ShootingLocationImages file : property.getMediaFiles()) {
+						if (file.getCategory() != null) {
+							if (file.getCategory().equals(MediaFileCategory.shootingLocationImage.toString())) {
+								imageUrls.add(file.getFilePath());
+							} else if (file.getCategory().equals(MediaFileCategory.Video.toString())) {
+								videoUrls.add(file.getFilePath());
+							} else if (file.getCategory().equals(MediaFileCategory.govermentId.toString())) {
+								governmentIdUrls.add(file.getFilePath());
+							}
+						}
+					}
 
-				    logger.info("Images: {}", imageUrls);
-				    logger.info("Videos: {}", videoUrls);
-				    logger.info("Govt IDs: {}", governmentIdUrls);
+					logger.info("Images: {}", imageUrls);
+					logger.info("Videos: {}", videoUrls);
+					logger.info("Govt IDs: {}", governmentIdUrls);
 				}
+				List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyIdAndUser_UserId(property.getId(), userId)
+						.stream()
+						.map(review -> ShootingLocationPropertyReviewDTO.builder()
+								.propertyId(review.getProperty().getId())
+								.userId(review.getUser().getUserId())
+								.rating(review.getRating())
+								.reviewText(review.getReviewText())
+								.userName(review.getUser().getName())
+								.build())
+						.collect(Collectors.toList());
 
+				double avgRating = reviews.stream()
+						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+						.average()
+						.orElse(0.0);
 
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
 						// 1. Owner & Property Identity
@@ -1028,8 +1061,9 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
-						 .likedByUser(likeStatus)
-						
+						.likedByUser(likeStatus)
+						.reviews(reviews)
+						.averageRating(avgRating)
 						.build();
 
 				propertyDTOs.add(dto);
@@ -1044,7 +1078,6 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 		}
 	}
 	//===========================================
-	
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId) {
 		logger.info("Fetching properties for industries: {}", industryIds);
 
@@ -1083,25 +1116,24 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 					.stream().collect(Collectors.toMap(c -> c.getId(), c -> c));
 
 			List<ShootingLocationPropertyDetailsDTO> dtoList = new ArrayList<>();
-			
 			List<PropertyLike> allLikes = likeRepository.findByLikedById(userId);
 			Set<Integer> likedPropertyIds = allLikes.stream()
-			    .filter(PropertyLike::getStatus)
-			    .map(like -> like.getProperty().getId())
-			    .collect(Collectors.toSet());
-			
+					.filter(PropertyLike::getStatus)
+					.map(like -> like.getProperty().getId())
+					.collect(Collectors.toSet());
+
 			Map<Integer, String> industryNameMap = industryRepository.findAllById(industryIds).stream()
-			        .collect(Collectors.toMap(Industry::getIndustryId, Industry::getIndustryName));
+					.collect(Collectors.toMap(Industry::getIndustryId, Industry::getIndustryName));
 
 			for (ShootingLocationPropertyDetails property : properties) {
-				
-				  // Fetch like status
-				 boolean likeStatus = likedPropertyIds.contains(property.getId());
-				 
-				 String industryName = null;
-				 if (property.getIndustry() != null) {
-				     industryName = industryNameMap.get(property.getIndustry().getIndustryId());
-				 }
+
+				// Fetch like status
+				boolean likeStatus = likedPropertyIds.contains(property.getId());
+
+				String industryName = null;
+				if (property.getIndustry() != null) {
+					industryName = industryNameMap.get(property.getIndustry().getIndustryId());
+				}
 
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
@@ -1126,6 +1158,7 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 				if (property.getBankDetails() != null) {
 					var bank = property.getBankDetails();
 					bankDetailsDTO = BankDetailsDTO.builder()
+							.id(bank.getId())
 							.beneficiaryName(bank.getBeneficiaryName())
 							.mobileNumber(bank.getMobileNumber())
 							.accountNumber(bank.getAccountNumber())
@@ -1174,11 +1207,11 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 				if (property.getSubcategorySelection() != null) {
 					var shooting = property.getSubcategorySelection();
 					shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
+							.subcategoryId(property.getSubcategorySelection().getId())
 							.entireProperty(shooting.getEntireProperty())
 							.singleProperty(shooting.getSingleProperty())
 							.build();
 				}
-
 
 				List<String> imageUrls = new ArrayList<>();
 				List<String> videoUrls = new ArrayList<>();
@@ -1201,6 +1234,23 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 					logger.info("Videos: {}", videoUrls);
 					logger.info("Govt IDs: {}", governmentIdUrls);
 				}
+				
+				List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyId(property.getId())
+				        .stream()
+				        .map(review -> ShootingLocationPropertyReviewDTO.builder()
+				          .propertyId(review.getProperty().getId())
+				            .userId(review.getUser().getUserId())
+				            .rating(review.getRating())
+				            .reviewText(review.getReviewText())
+				          .userName(review.getUser().getName())
+				            .build())
+				        .collect(Collectors.toList());
+
+				    // 2. Calculate average rating
+				    double avgRating = reviews.stream()
+				        .mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+				        .average()
+				        .orElse(0.0);
 
 				// Map property DTO (reuse from your existing method)
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
@@ -1278,9 +1328,17 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 						.imageUrls(imageUrls)
 						.videoUrls(videoUrls)
 						.governmentIdUrls(governmentIdUrls)
-						 .likedByUser(likeStatus)
-						 .industryName(industryName)
+						.likedByUser(likeStatus)
+						.industryName(industryName)
+						.industryId(property.getIndustry().getIndustryId())
+						.categoryId(property.getCategory().getId())
+						.subCategoryId(property.getSubCategory().getId())
+						.typesId(property.getTypes().getId())
+						.userId(property.getUser().getUserId())
+						.reviews(reviews)
+        				.averageRating(avgRating)
 						.build();
+
 
 				dtoList.add(dto);
 			}
@@ -1293,7 +1351,7 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 			return Collections.emptyList();
 		}
 	}
-	
+
 	@Override
 	public void deletePropertyById(Integer id) {
 		try {
@@ -1443,40 +1501,77 @@ System.out.println("propertyDetailsRepository.saveAndFlush(property)");
 			throw new RuntimeException("Error updating property with ID: " + id + " - " + e.getMessage());
 		}
 	}
-	
+
 	public String toggleLike(Integer propertyId, Integer userId) {
-        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Property not found"));
+		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+				.orElseThrow(() -> new RuntimeException("Property not found"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-        Optional<PropertyLike> existingLike = likeRepository.findByPropertyAndLikedBy(property, user);
+		Optional<PropertyLike> existingLike = likeRepository.findByPropertyAndLikedBy(property, user);
 
-        if (existingLike.isPresent()) {
-            likeRepository.delete(existingLike.get());
-            return "Unliked successfully";
-        } else {
-            PropertyLike like = PropertyLike.builder()
-                    .property(property)
-                    .likedBy(user)
-                    .status(true)
-                    .createdBy(userId)
-                    .build();
-            likeRepository.save(like);
-            return "Liked successfully";
-        }
-    }
+		if (existingLike.isPresent()) {
+			likeRepository.delete(existingLike.get());
+			return "Unliked successfully";
+		} else {
+			PropertyLike like = PropertyLike.builder()
+					.property(property)
+					.likedBy(user)
+					.status(true)
+					.createdBy(userId)
+					.build();
+			likeRepository.save(like);
+			return "Liked successfully";
+		}
+	}
 
-    public Long countLikes(Integer propertyId) {
-        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
-                .orElseThrow(() -> new RuntimeException("Property not found"));
-        return likeRepository.countByProperty(property);
-    }
-    
+	public Long countLikes(Integer propertyId) {
+		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+				.orElseThrow(() -> new RuntimeException("Property not found"));
+		return likeRepository.countByProperty(property);
+	}
+
+	public void saveReview(Integer propertyId, Integer userId, int rating, String reviewText) {
+		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+				.orElseThrow(() -> new RuntimeException("Property not found"));
+
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		ShootingLocationPropertyReview review = ShootingLocationPropertyReview.builder()
+				.property(property)
+				.user(user)
+				.rating(rating)
+				.reviewText(reviewText)
+				.build();
+
+		propertyReviewRepository.save(review);
+	}
+
+	public double getAverageRating(Integer propertyId) {
+		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
+		return reviews.stream()
+				.mapToInt(ShootingLocationPropertyReview::getRating)
+				.average()
+				.orElse(0.0);
+	}
+
+	public List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId) {
+		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
+
+		return reviews.stream()
+				.map(review -> ShootingLocationPropertyReviewDTO.builder()
+						.propertyId(review.getProperty().getId().intValue())
+						.userId(review.getUser().getUserId())
+						.rating(review.getRating())
+						.reviewText(review.getReviewText())
+						.userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
+						.build())
+				.collect(Collectors.toList());
+	}
+
+
+
+
 }
-
-
-
-
-

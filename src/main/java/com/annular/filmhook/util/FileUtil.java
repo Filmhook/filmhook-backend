@@ -3,10 +3,7 @@ package com.annular.filmhook.util;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.AwsS3Service;
 
-import io.github.techgnious.IVCompressor;
-import io.github.techgnious.dto.ImageFormats;
-import io.github.techgnious.dto.ResizeResolution;
-import io.github.techgnious.dto.VideoFormats;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,15 +13,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
-import java.awt.image.BufferedImage;
+
 import java.io.*;
 import java.nio.file.Files;
-import java.util.Iterator;
+
 import java.util.List;
 import java.util.Set;
 

@@ -89,3 +89,4 @@ public class ShootingLocationImages {
 	    private ShootingLocationPropertyDetails property;
 
 }
+

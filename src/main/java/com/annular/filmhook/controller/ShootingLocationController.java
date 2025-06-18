@@ -1,4 +1,3 @@
-
 package com.annular.filmhook.controller;
 
 
@@ -31,13 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
-
+import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
 
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
@@ -50,11 +50,11 @@ import lombok.RequiredArgsConstructor;
 public class ShootingLocationController {
 	@Autowired
 	private ShootingLocationService service;
-	
-	
+
+
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
-	
-	
+
+
 	@GetMapping("/types")
 	public ResponseEntity<?> getTypes() {
 	    try {
@@ -107,7 +107,7 @@ public class ShootingLocationController {
 	         logger.info("Received selection save request for subcategoryId: {}, entire: {}, single: {}",
 	                 dto.getSubcategoryId(), dto.getEntireProperty(), dto.getSingleProperty());
 
-	   
+
 	         logger.info("Selection saved successfully for subcategoryId: {}", dto.getSubcategoryId());
 	         return ResponseEntity.ok(new Response(1, "Selection saved successfully", null));
 
@@ -161,13 +161,13 @@ public class ShootingLocationController {
 		        Map<String, Object> response = new HashMap<>();
 		        try {
 		            logger.info("Attempting to delete property with ID: {}", id);
-		            
+
 		            service.deletePropertyById(id);
-		            
+
 		            response.put("status", "success");
 		            response.put("message", "Property deleted successfully");
 		            response.put("propertyId", id);
-		            
+
 		            logger.info("Successfully deleted property with ID: {}", id);
 		            return ResponseEntity.ok(response); 
 		        } catch (RuntimeException e) {
@@ -214,7 +214,7 @@ public class ShootingLocationController {
 		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); 
 		      }
 		  }
-		  
+
 
 		  @PostMapping("/savePropertyDetails")
 		  public ResponseEntity<?> savePropertyDetails(@ModelAttribute ShootingLocationFileInputModel inputFile,
@@ -239,7 +239,7 @@ public class ShootingLocationController {
 		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		      }
 		  }
-		  
+
 		  @PostMapping("/addLike")
 		  public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer propertyId, @RequestParam Integer userId) {
 		      Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -268,9 +268,9 @@ public class ShootingLocationController {
 		      Logger logger = LoggerFactory.getLogger(this.getClass());
 		      try {
 		          logger.info("Received request to count likes for property ID: {}", propertyId);
-		          
+
 		          Long count = service.countLikes(propertyId);
-		          
+
 		          logger.info("Like count for property ID {} is {}", propertyId, count);
 		          return ResponseEntity.ok(count);
 
@@ -286,36 +286,11 @@ public class ShootingLocationController {
 		                  .status(HttpStatus.INTERNAL_SERVER_ERROR)
 		                  .body("An unexpected error occurred. Please try again later.");
 		      }
-		  
+
+
 		  }
-		  
+
 		  //============================================================
-		  
-//		  @PostMapping("/getPropertiesByIndustry")
-//		    public ResponseEntity<?> getAllPropertiesByIndustryIds(@RequestBody List<Integer> industryIds) {
-//		        logger.info("Received request to fetch properties for industry IDs: {}", industryIds);
-//
-//		        try {
-//		            if (industryIds == null || industryIds.isEmpty()) {
-//		                logger.warn("Industry ID list is null or empty.");
-//		                return ResponseEntity.badRequest().body("Industry ID list cannot be null or empty.");
-//		            }
-//
-//		            List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByIndustryIds(industryIds);
-//
-//		            if (properties.isEmpty()) {
-//		                logger.info("No properties found for the given industry IDs: {}", industryIds);
-//		                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No properties found for the provided industry IDs.");
-//		            }
-//
-//		            logger.info("Returning {} properties for industries: {}", properties.size(), industryIds);
-//		            return ResponseEntity.ok(properties);
-//
-//		        } catch (Exception ex) {
-//		            logger.error("Error while fetching properties for industry IDs: {}", industryIds, ex);
-//		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
-//		        }
-//		    }
 		  
 		  @PostMapping("/getPropertiesByIndustry")
 		  public ResponseEntity<List<ShootingLocationPropertyDetailsDTO>> getAllPropertiesByIndustryIds(
@@ -355,8 +330,52 @@ public class ShootingLocationController {
 		      }
 		  }
 
-		  
-		  		  
+		  @PostMapping("/review")
+		  public ResponseEntity<String> addReview(@RequestBody ShootingLocationPropertyReviewDTO propertyReviewDTO) {
+		      try {
+		          service.saveReview(
+		              propertyReviewDTO.getPropertyId(),
+		              propertyReviewDTO.getUserId(),
+		              propertyReviewDTO.getRating(),
+		              propertyReviewDTO.getReviewText()
+		          );
+		          return ResponseEntity.ok("Review saved");
+		      } catch (RuntimeException e) {
+		      
+		          logger.warn("Validation failed: {}", e.getMessage());
+		          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		      } catch (Exception e) {
+		          logger.error("Error saving review", e);
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save review");
+		      }
+		  }
+
+		  @GetMapping("/average-rating/{propertyId}")
+		    public ResponseEntity<?> getAverageRating(@PathVariable Integer propertyId) {
+		        logger.info("Fetching average rating for property ID: {}", propertyId);
+		        try {
+		            double averageRating = service.getAverageRating(propertyId);
+		            logger.info("Average rating for property {} is {}", propertyId, averageRating);
+		            return ResponseEntity.ok(new Response(1, "Success", averageRating));
+		        } catch (Exception e) {
+		            logger.error("Failed to fetch average rating for property ID: {}", propertyId, e);
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                                 .body(new Response(-1, "Failed to get average rating", null));
+		        }
+		    }
+		  @GetMapping("/property/{propertyId}")
+		    public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId) {
+		        logger.info("Fetching reviews for property ID: {}", propertyId);
+		        try {
+		            List<ShootingLocationPropertyReviewDTO> reviews = service.getReviewsByPropertyId(propertyId);
+		            logger.info("Fetched {} reviews for property ID: {}", reviews.size(), propertyId);
+		            return ResponseEntity.ok(new Response(1, "Success", reviews));
+		        } catch (Exception e) {
+		            logger.error("Failed to fetch reviews for property ID: {}", propertyId, e);
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                                 .body(new Response(-1, "Failed to get property reviews", null));
+		        }
+		    }
 
 }
 

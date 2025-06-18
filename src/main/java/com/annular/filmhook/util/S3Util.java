@@ -270,7 +270,7 @@ public class S3Util {
         return fileUrl.replace(getS3BaseURL() + "/" + getS3BucketName() + "/", "");
     }
     
-    
+   
 
 }
         

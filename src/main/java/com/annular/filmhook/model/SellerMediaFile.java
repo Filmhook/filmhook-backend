@@ -1,12 +1,28 @@
 package com.annular.filmhook.model;
 
+
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import javax.persistence.*;
 import java.sql.Date;
+import java.sql.Date;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import org.hibernate.annotations.CreationTimestamp;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 
 @Entity
 @Table(name = "seller_media_files")
@@ -21,6 +37,7 @@ public class SellerMediaFile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "media_id")
     private Integer mediaId;
+
 
     @ManyToOne
     @JsonIgnore
@@ -70,4 +87,9 @@ public class SellerMediaFile {
 
     @Column(name = "unverified_list")
     private Boolean unverifiedList;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private MarketPlaceProducts product;
 }
+
