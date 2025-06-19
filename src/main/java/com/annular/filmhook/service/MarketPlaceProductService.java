@@ -28,5 +28,5 @@ public interface MarketPlaceProductService {
 	    void deleteProduct(Integer id);
 	     List<MarketPlaceProductDTO> getProductsBySubCategoryId(Integer subCategoryId);
 	     void updateProduct(Integer productId, MarketPlaceProductDTO dto, SellerFileInputModel mediaFiles);
-	    
+	     List<MarketPlaceProductDTO> getProductsByUserId(Long userId);
 }

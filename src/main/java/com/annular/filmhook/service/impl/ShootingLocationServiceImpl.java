@@ -972,6 +972,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.average()
 						.orElse(0.0);
 
+
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
 						// 1. Owner & Property Identity
 						.id(property.getId())
@@ -1234,23 +1235,23 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					logger.info("Videos: {}", videoUrls);
 					logger.info("Govt IDs: {}", governmentIdUrls);
 				}
-				
 				List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyId(property.getId())
-				        .stream()
-				        .map(review -> ShootingLocationPropertyReviewDTO.builder()
-				          .propertyId(review.getProperty().getId())
-				            .userId(review.getUser().getUserId())
-				            .rating(review.getRating())
-				            .reviewText(review.getReviewText())
-				          .userName(review.getUser().getName())
-				            .build())
-				        .collect(Collectors.toList());
+						.stream()
+						.map(review -> ShootingLocationPropertyReviewDTO.builder()
+								.propertyId(review.getProperty().getId())
+								.userId(review.getUser().getUserId())
+								.rating(review.getRating())
+								.reviewText(review.getReviewText())
+								.userName(review.getUser().getName())
+								.build())
+						.collect(Collectors.toList());
 
-				    // 2. Calculate average rating
-				    double avgRating = reviews.stream()
-				        .mapToInt(ShootingLocationPropertyReviewDTO::getRating)
-				        .average()
-				        .orElse(0.0);
+				// 2. Calculate average rating
+				double avgRating = reviews.stream()
+						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+						.average()
+						.orElse(0.0);
+
 
 				// Map property DTO (reuse from your existing method)
 				ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
@@ -1336,7 +1337,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.typesId(property.getTypes().getId())
 						.userId(property.getUser().getUserId())
 						.reviews(reviews)
-        				.averageRating(avgRating)
+						.averageRating(avgRating)
 						.build();
 
 

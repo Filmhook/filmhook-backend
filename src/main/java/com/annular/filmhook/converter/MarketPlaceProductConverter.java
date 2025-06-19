@@ -12,6 +12,7 @@ import com.annular.filmhook.model.MarketPlaceCategories;
 import com.annular.filmhook.model.MarketPlaceProducts;
 import com.annular.filmhook.model.MarketPlaceSubCategories;
 import com.annular.filmhook.model.MarketPlaceSubCategoryFields;
+import com.annular.filmhook.model.SellerInfo;
 import com.annular.filmhook.model.SellerMediaFile;
 import com.annular.filmhook.repository.MarketPlaceSubCategoryFiledsRepository;
 import com.annular.filmhook.repository.MarketPlaceSubCategoryRepository;
@@ -78,6 +79,7 @@ public class MarketPlaceProductConverter {
 	        entity.setRequired(dto.isRequired());
 	        entity.setSection(dto.getSection());
 	        entity.setOptions(dto.getOptions());
+	       
 
 	        if (dto.getSubCategoryId() != null) {
 	            MarketPlaceSubCategories subCategory = subCategoryRepo.findById(dto.getSubCategoryId())
@@ -107,7 +109,7 @@ public class MarketPlaceProductConverter {
 	    
 	    
 	    // Convert Request DTO to Entity MarketPlaceProducts
-	    public static MarketPlaceProducts toEntity(MarketPlaceProductDTO dto, MarketPlaceSubCategories subCategory) {
+	    public static MarketPlaceProducts toEntity(MarketPlaceProductDTO dto, MarketPlaceSubCategories subCategory, SellerInfo seller) {
 	        ObjectMapper objectMapper = new ObjectMapper();
 	        String dynamicAttributesJson = null;
 
@@ -126,9 +128,10 @@ public class MarketPlaceProductConverter {
 	                .price(dto.getPrice())
 	                .availability(dto.getAvailability())
 	                .dynamicAttributesJson(dynamicAttributesJson)
+	                .seller(seller)
 	                .subCategory(subCategory)
-	                .createdBy(dto.getCreatedBy())
-	                .updatedBy(dto.getUpdatedBy())
+	                .createdBy(dto.getSellerId())
+	              
 	                .build();
 	    }
 
@@ -145,22 +148,38 @@ public class MarketPlaceProductConverter {
 	        } catch (IOException e) {
 	            throw new RuntimeException("Failed to parse dynamicAttributesJson", e);
 	        }
-	        List<SellerMediaFile> mediaFiles = entity.getMediaList();
 
 	        List<String> imageUrls = new ArrayList<>();
 	        List<String> videoUrls = new ArrayList<>();
 
+	        List<SellerMediaFile> mediaFiles = entity.getMediaList();
+
 	        if (mediaFiles != null) {
 	            for (SellerMediaFile media : mediaFiles) {
-	                if (media.getFileType() != null) {
-	                    if (media.getFileType().startsWith("image/")) {
+	                String mediaCategory = media.getCategory();
+	                if (mediaCategory != null) {
+	                    if (mediaCategory.equalsIgnoreCase("PRODUCT_IMAGE")) {
 	                        imageUrls.add(media.getFilePath());
-	                    } else if (media.getFileType().startsWith("video/")) {
+	                    } else if (mediaCategory.equalsIgnoreCase("PRODUCT_VIDEO")) {
 	                        videoUrls.add(media.getFilePath());
 	                    }
 	                }
 	            }
 	        }
+	        
+	        String sellerFullName = null;
+	        String sellerEmail = null;
+	        if (entity.getSeller() != null) {
+	            SellerInfo seller = entity.getSeller();
+	            sellerFullName = (seller.getFirstName() != null ? seller.getFirstName() + " " : "") +
+	                             (seller.getMiddleName() != null ? seller.getMiddleName() + " " : "") +
+	                             (seller.getLastName() != null ? seller.getLastName() : "");
+
+	            if (seller.getUser() != null) {
+	                sellerEmail = seller.getUser().getEmail();
+	            }
+	        }
+
 	        return MarketPlaceProductDTO.builder()
 	                .id(entity.getId())
 	                .subCategoryId(entity.getSubCategory() != null ? entity.getSubCategory().getId() : null)
@@ -171,8 +190,10 @@ public class MarketPlaceProductConverter {
 	                .dynamicAttributesJson(dynamicAttributesMap)
 	                .imageUrls(imageUrls)
 	                .videoUrls(videoUrls)
-	                
+	                .sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
+	                .sellerFullName(sellerFullName)
+	                .sellerEmail(sellerEmail)
+	                .subCategoryName(entity.getSubCategory() != null ? entity.getSubCategory().getName() : null)
 	                .build();
 	    }
-
-	}
+}

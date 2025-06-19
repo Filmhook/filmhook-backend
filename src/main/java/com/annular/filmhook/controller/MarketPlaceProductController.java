@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MarketPlaceSubCategories;
+import com.annular.filmhook.repository.SellerInfoRepository;
 import com.annular.filmhook.service.MarketPlaceProductService;
 import com.annular.filmhook.webmodel.MarketPlaceCategoryDTO;
 import com.annular.filmhook.webmodel.MarketPlaceProductDTO;
@@ -38,6 +40,7 @@ public class MarketPlaceProductController {
 
 	@Autowired
 	private MarketPlaceProductService service;  
+	
 
 	private static final Logger logger = LoggerFactory.getLogger(MarketPlaceProductController.class);
 
@@ -123,37 +126,42 @@ public class MarketPlaceProductController {
 			return new Response(-1, "Failed to fetch fields", e.getMessage());
 		}
 	}
-	
 	@PostMapping("/saveProduct")
-    public ResponseEntity<?> saveProduct(
-            @ModelAttribute SellerFileInputModel mediaFiles,
-            @RequestPart(value = "product", required = false) MarketPlaceProductDTO productDto) {
-        
-        logger.info("POST /save - Received request to save product: {}", 
-            productDto != null ? productDto.getModelName() : "No product data");
+	public ResponseEntity<?> saveProduct(
+	        @ModelAttribute SellerFileInputModel mediaFiles,
+	        @RequestPart(value = "product", required = false) MarketPlaceProductDTO productDto) {
 
-        try {
-        	
-        	
-            MarketPlaceProductDTO savedProduct = service.saveProduct(productDto, mediaFiles);
-            logger.info("Product '{}' saved successfully", productDto.getModelName());
+	    logger.info("POST /saveProduct - Received product: {}", 
+	        productDto != null ? productDto.getModelName() : "No product data");
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("message", "Product saved successfully");
-            response.put("data", null);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	    Map<String, Object> response = new HashMap<>();
 
-        } catch (Exception e) {
-            logger.error("Error saving product '{}': {}", 
-                productDto != null ? productDto.getModelName() : "null", e.getMessage(), e);
+	    try {
+	        if (productDto == null || productDto.getSellerId() == null) {
+	            response.put("status", "error");
+	            response.put("message", "Seller ID is required. Please log in or register as a seller.");
+	            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	        }
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "error");
-            response.put("message", "Failed to save product: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
+	        MarketPlaceProductDTO savedProduct = service.saveProduct(productDto, mediaFiles);
+
+	        response.put("status", "success");
+	        response.put("message", "Product saved successfully.");
+	        response.put("data", savedProduct);
+	        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+	    } catch (RuntimeException e) {
+	        logger.error("Error while saving product: {}", e.getMessage(), e);
+	        response.put("status", "error");
+	        response.put("message", e.getMessage()); 
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+	    } catch (Exception e) {
+	        logger.error("Unexpected error while saving product: {}", e.getMessage(), e);
+	        response.put("status", "error");
+	        response.put("message", "Something went wrong while saving product.");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
+	}
 
 
     @GetMapping("/getAllProducts")
@@ -173,12 +181,21 @@ public class MarketPlaceProductController {
         try {
             logger.info("Fetching product by id: {}", id);
             MarketPlaceProductDTO product = service.getProductById(id);
+
             return ResponseEntity.ok(new Response(1, "Success", product));
+
+        } catch (ResponseStatusException e) {
+            logger.warn("Product not found: {}", e.getReason());
+            return ResponseEntity.status(e.getStatus())
+                    .body(new Response(-1, e.getReason(), null));
+
         } catch (Exception e) {
-            logger.error("Error fetching product by id: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(new Response(-1, "Failed to fetch product", e.getMessage()));
+            logger.error("Unexpected error fetching product: {}", e.getMessage(), e);
+            return ResponseEntity.status(500)
+                    .body(new Response(-1, "Something went wrong", e.getMessage()));
         }
     }
+
 
     @DeleteMapping("/deleteProduct/{id}")
     public ResponseEntity<Response> deleteProduct(@PathVariable Integer id) {
@@ -186,11 +203,19 @@ public class MarketPlaceProductController {
             logger.info("Deleting product by id: {}", id);
             service.deleteProduct(id);
             return ResponseEntity.ok(new Response(1, "Product deleted successfully", null));
+
+        } catch (ResponseStatusException e) {
+            logger.warn("Product deletion failed: {}", e.getReason());
+            return ResponseEntity.status(e.getStatus())
+                    .body(new Response(-1, e.getReason(), null));
+
         } catch (Exception e) {
             logger.error("Error deleting product: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(new Response(-1, "Failed to delete product", e.getMessage()));
+            return ResponseEntity.status(500)
+                    .body(new Response(-1, "Unexpected error during deletion", e.getMessage()));
         }
     }
+
 
     @GetMapping("/getProductsBysubcategory/{subCategoryId}")
     public ResponseEntity<Response> getProductsBySubCategory(@PathVariable Integer subCategoryId) {
@@ -209,16 +234,48 @@ public class MarketPlaceProductController {
             @PathVariable Integer productId,
             @RequestPart("productDetails") MarketPlaceProductDTO dto,
             @ModelAttribute SellerFileInputModel mediaFiles) {
+
         try {
+            logger.info("Initiating update for product ID: {}", productId);
             service.updateProduct(productId, dto, mediaFiles);
             return ResponseEntity.ok(new Response(1, "Product updated successfully", null));
+
+        } catch (ResponseStatusException e) {
+            logger.warn("Update failed: {}", e.getReason());
+            return ResponseEntity.status(e.getStatus())
+                    .body(new Response(-1, e.getReason(), null));
+
         } catch (Exception e) {
-            logger.error("Error updating product: {}", e.getMessage(), e);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response(-1, "Failed to update product", e.getMessage()));
+            logger.error("Unexpected error updating product: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Unexpected error during update", e.getMessage()));
         }
     }
+
+    
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<Response> getProductsByUserId(@PathVariable Long userId) {
+        try {
+            logger.info("Received request to fetch products by userId: {}", userId);
+
+            List<MarketPlaceProductDTO> productList = service.getProductsByUserId(userId);
+
+            if (productList.isEmpty()) {
+                logger.warn("No products found for userId: {}", userId);
+                return ResponseEntity.ok(new Response(1, "No products found for this user.", productList));
+            }
+
+            logger.info("Returning {} products for userId: {}", productList.size(), userId);
+            return ResponseEntity.ok(new Response(1, "Products fetched successfully.", productList));
+
+        } catch (Exception e) {
+            logger.error("Failed to fetch products for userId: {}", userId, e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Failed to fetch products", e.getMessage()));
+        }
+    }
+
 
 
 

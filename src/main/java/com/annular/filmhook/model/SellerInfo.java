@@ -1,5 +1,7 @@
 package com.annular.filmhook.model;
 
+import java.util.List;
+
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -55,4 +57,13 @@ public class SellerInfo {
     @JsonIgnore
     @JoinColumn(name = "user_id")
     private User user;
+    
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<MarketPlaceProducts> products;
+
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<SellerMediaFile> sellerMediaFiles;
+
 }

@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -21,6 +22,8 @@ import javax.persistence.Table;
 
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,10 +47,10 @@ public class MarketPlaceProducts {
 	private LocalDateTime createdDate;
 	private LocalDateTime updatedDate;
 	@CreatedBy
-	private Integer createdBy;
+	private Long createdBy;
 
 	@LastModifiedBy
-	private Integer updatedBy;
+	private Long updatedBy;
 	@Lob
 	@Column(columnDefinition = "TEXT")
 	private String dynamicAttributesJson;
@@ -59,12 +62,12 @@ public class MarketPlaceProducts {
 	@ManyToOne(optional = false)
 	@JoinColumn(name = "subcategory_id")
 	private MarketPlaceSubCategories subCategory;
-
-	//	    // ---------- SELLER ----------
-	//	    @ManyToOne(optional = false)
-	//	    @JoinColumn(name = "seller_id")
-	//	    private Seller seller;
-
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "seller_id")
+	@JsonIgnore
+	private SellerInfo seller;
+	
 	@PrePersist
 	public void onCreate() {
 		this.createdDate = LocalDateTime.now();

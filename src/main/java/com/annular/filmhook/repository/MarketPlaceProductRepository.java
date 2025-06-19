@@ -8,4 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MarketPlaceProductRepository extends JpaRepository<MarketPlaceProducts, Integer> {
 	   List<MarketPlaceProducts> findBySubCategory_Id(Integer subCategoryId);
+	   List<MarketPlaceProducts> findBySellerId(Long sellerId);
+
+
 }

@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -117,20 +118,19 @@ public class SellerController {
             return ResponseEntity.status(500).body(response);
         }
     }
-
-
-    @DeleteMapping("/delete/{sellerId}")
+      
+    @DeleteMapping("/deleteSeller/{sellerId}")
     public ResponseEntity<Response> deleteSeller(@PathVariable Long sellerId) {
         try {
             sellerService.deleteSellerById(sellerId);
-            Response response = new Response(200, "Seller with ID " + sellerId + " deleted successfully.", null);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            Response response = new Response(404, e.getMessage(), null);
-            return ResponseEntity.status(404).body(response);
+            return ResponseEntity.ok(new Response(1, "Seller and all associated data deleted successfully", null));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus())
+                    .body(new Response(-1, e.getReason(), null));
         } catch (Exception e) {
-            Response response = new Response(500, "Internal server error: " + e.getMessage(), null);
-            return ResponseEntity.status(500).body(response);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Unexpected error occurred while deleting seller", e.getMessage()));
         }
     }
+
 }

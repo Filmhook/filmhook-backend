@@ -11,5 +11,4 @@ public interface SellerMediaFileRepository extends JpaRepository<SellerMediaFile
 
 	List<SellerMediaFile> findBySellerId(Long sellerId);
 
-
 }
