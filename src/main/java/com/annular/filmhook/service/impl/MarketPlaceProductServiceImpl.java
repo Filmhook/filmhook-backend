@@ -435,7 +435,7 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 				s3Client.putObject(putRequest, RequestBody.fromBytes(file.getBytes()));
 			}
 
-			return s3Util.getS3BaseURL() + "/" + s3Util.getS3BucketName() + "/" + s3Key;
+			return s3Util.getS3BaseURL() + "/" + s3Key;
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to upload file to S3: " + e.getMessage(), e);
 		}
