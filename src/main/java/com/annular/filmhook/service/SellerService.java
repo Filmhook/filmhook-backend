@@ -14,6 +14,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,8 +28,16 @@ public class SellerService {
     private final S3Util s3Util;
 
     public SellerInfo saveSellerInfo(SellerInfoDTO dto, SellerFileInputModel files) {
-        User user = userRepository.findById(dto.getUserId()).orElseThrow();
+        User user = userRepository.findById(dto.getUserId())
+            .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getUserId()));
 
+        // Step 1: Check if a SellerInfo already exists for this user
+        Optional<SellerInfo> existingSeller = sellerInfoRepository.findByUserId(dto.getUserId());
+        if (existingSeller.isPresent()) {
+            throw new RuntimeException("Seller account already exists for userId: " + dto.getUserId());
+        }
+
+        // Step 2: Proceed with saving new SellerInfo
         SellerInfo seller = SellerInfo.builder()
                 .firstName(dto.getFirstName())
                 .middleName(dto.getMiddleName())
@@ -276,6 +286,21 @@ public class SellerService {
     public void deleteSellerById(Long sellerId) {
         SellerInfo seller = sellerInfoRepository.findById(sellerId)
             .orElseThrow(() -> new RuntimeException("Seller not found with ID: " + sellerId));
+
+        // Step 1: Get all media files associated with this seller
+        List<SellerMediaFile> mediaFiles = sellerMediaFileRepository.findBySellerId(sellerId);
+
+        // Step 2: Delete each file from S3
+        for (SellerMediaFile mediaFile : mediaFiles) {
+            if (mediaFile.getFilePath() != null) {
+                s3Util.deleteFileFromS3(mediaFile.getFilePath());
+            }
+        }
+
+        // Step 3 (optional): Delete media file records from DB if not using cascade
+        sellerMediaFileRepository.deleteAll(mediaFiles);
+
+        // Step 4: Delete seller
         sellerInfoRepository.delete(seller);
     }
 
