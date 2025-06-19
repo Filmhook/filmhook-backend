@@ -21,8 +21,11 @@ public class MarketPlaceProductDTO {
 	    private String availability;
 	    private Integer createdBy;
 	    private Integer updatedBy; 
-
+	    private Long sellerId;
 	    private Map<String, Object> dynamicAttributesJson;
 	    private List<String> imageUrls;
-	    private List<String> videoUrls;  
+	    private List<String> videoUrls; 
+	    private String sellerFullName;
+	    private String sellerEmail;
+	    private String subCategoryName;
 }

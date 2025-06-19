@@ -1,14 +1,18 @@
 package com.annular.filmhook.controller;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.SellerInfo;
 import com.annular.filmhook.service.SellerService;
 import com.annular.filmhook.webmodel.SellerFileInputModel;
 import com.annular.filmhook.webmodel.SellerInfoDTO;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -63,14 +67,19 @@ public class SellerController {
             return ResponseEntity.status(404).body("Seller not found for user ID: " + userId);
         }
     }
-
-    @DeleteMapping("/delete/{sellerId}")
-    public ResponseEntity<?> deleteSeller(@PathVariable Long sellerId) {
+        
+    @DeleteMapping("/deleteSeller/{sellerId}")
+    public ResponseEntity<Response> deleteSeller(@PathVariable Long sellerId) {
         try {
             sellerService.deleteSellerById(sellerId);
-            return ResponseEntity.ok("Seller with ID " + sellerId + " deleted successfully.");
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
+            return ResponseEntity.ok(new Response(1, "Seller and all associated data deleted successfully", null));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus())
+                    .body(new Response(-1, e.getReason(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Unexpected error occurred while deleting seller", e.getMessage()));
         }
     }
+
 }
