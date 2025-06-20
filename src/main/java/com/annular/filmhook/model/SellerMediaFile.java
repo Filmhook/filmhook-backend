@@ -44,7 +44,7 @@ public class SellerMediaFile {
     @JoinColumn(name = "seller_id")
     private SellerInfo seller;
 
-    @Column(name = "category") // e.g. ID_PROOF, SHOP_LOGO
+    @Column(name = "category") 
     private String category;
 
     @Column(name = "file_id")

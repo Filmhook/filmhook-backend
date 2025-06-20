@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 
 import com.annular.filmhook.converter.MarketPlaceProductConverter;
 import com.annular.filmhook.model.MarketPlaceCategories;
+import com.annular.filmhook.model.MarketPlaceProductDynamicAttribute;
 import com.annular.filmhook.model.MarketPlaceProducts;
 import com.annular.filmhook.model.MarketPlaceSubCategories;
 import com.annular.filmhook.model.MarketPlaceSubCategoryFields;
@@ -60,10 +61,10 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 
 	@Autowired
 	private SellerMediaFileRepository sellerMediaFileRepository;
-	
-     @Autowired
-    private SellerInfoRepository sellerInfoRepo;
-     
+
+	@Autowired
+	private SellerInfoRepository sellerInfoRepo;
+
 	@Autowired
 	private S3Util s3Util;
 
@@ -179,24 +180,23 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 
 	@Override
 	public MarketPlaceProductDTO saveProduct(MarketPlaceProductDTO dto, SellerFileInputModel mediaFiles) {
-		 try {
-		        if (dto.getSellerId() == null) {
-		            throw new RuntimeException("Seller ID is required to add a product.");
-		        }
+		try {
+			if (dto.getSellerId() == null) {
+				throw new RuntimeException("Seller ID is required to add a product.");
+			}
 
-		        SellerInfo sellerInfo = sellerInfoRepo.findById(dto.getSellerId())
-		                .orElseThrow(() -> new RuntimeException("Seller not found. Please create a seller account first."));
+			SellerInfo sellerInfo = sellerInfoRepo.findById(dto.getSellerId())
+					.orElseThrow(() -> new RuntimeException("Seller not found. Please create a seller account first."));
 
 
-		        MarketPlaceSubCategories subCategory = subCategoryRepo.findById(dto.getSubCategoryId())
-		                .orElseThrow(() -> new RuntimeException("SubCategory not found with ID: " + dto.getSubCategoryId()));
+			MarketPlaceSubCategories subCategory = subCategoryRepo.findById(dto.getSubCategoryId())
+					.orElseThrow(() -> new RuntimeException("SubCategory not found with ID: " + dto.getSubCategoryId()));
 
-		        MarketPlaceProducts product = MarketPlaceProductConverter.toEntity(dto, subCategory, sellerInfo);
-		        MarketPlaceProducts savedProduct = productRepo.save(product);
+			MarketPlaceProducts product = MarketPlaceProductConverter.toEntity(dto, subCategory, sellerInfo);
+			MarketPlaceProducts savedProduct = productRepo.save(product);
 
 			List<SellerMediaFile> mediaList = new ArrayList<>();
 
-			// Upload and attach product images
 			if (mediaFiles != null && mediaFiles.getProductImages() != null && !mediaFiles.getProductImages().isEmpty()) {
 				for (MultipartFile image : mediaFiles.getProductImages()) {
 					SellerMediaFile imageFile = saveProductMediaFile(image, savedProduct, "PRODUCT_IMAGE");
@@ -238,58 +238,58 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 	// 3. Get product by ID
 	@Override
 	public MarketPlaceProductDTO getProductById(Integer id) {
-	    try {
-	        MarketPlaceProducts product = productRepo.findById(id)
-	                .orElseThrow(() -> {
-	                    logger.warn("Product not found with ID: {}", id);
-	                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + id);
-	                });
+		try {
+			MarketPlaceProducts product = productRepo.findById(id)
+					.orElseThrow(() -> {
+						logger.warn("Product not found with ID: {}", id);
+						return new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + id);
+					});
 
-	        return MarketPlaceProductConverter.toDTO(product);
+			return MarketPlaceProductConverter.toDTO(product);
 
-	    } catch (ResponseStatusException e) {
-	        throw e; 
-	    } catch (Exception e) {
-	        logger.error("Error fetching product by ID {}: {}", id, e.getMessage(), e);
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to get product");
-	    }
+		} catch (ResponseStatusException e) {
+			throw e; 
+		} catch (Exception e) {
+			logger.error("Error fetching product by ID {}: {}", id, e.getMessage(), e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to get product");
+		}
 	}
 
 
 	// 4. Delete product
 	@Override
 	public void deleteProduct(Integer id) {
-	    try {
-	        Optional<MarketPlaceProducts> optionalProduct = productRepo.findById(id);
+		try {
+			Optional<MarketPlaceProducts> optionalProduct = productRepo.findById(id);
 
-	        if (!optionalProduct.isPresent()) {
-	            logger.warn("Product not found with ID: {}", id);
-	            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + id);
-	        }
+			if (!optionalProduct.isPresent()) {
+				logger.warn("Product not found with ID: {}", id);
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + id);
+			}
 
-	        MarketPlaceProducts product = optionalProduct.get();
+			MarketPlaceProducts product = optionalProduct.get();
 
-	        // Delete each media file from S3
-	        List<SellerMediaFile> mediaFiles = product.getMediaList();
-	        if (mediaFiles != null && !mediaFiles.isEmpty()) {
-	            for (SellerMediaFile media : mediaFiles) {
-	                if (media.getFilePath() != null) {
-	                    s3Util.deleteFileFromS3(media.getFilePath()); 
-	                    logger.info("Deleted media file from S3: {}", media.getFilePath());
-	                }
-	            }
-	        }
+			// Delete each media file from S3
+			List<SellerMediaFile> mediaFiles = product.getMediaList();
+			if (mediaFiles != null && !mediaFiles.isEmpty()) {
+				for (SellerMediaFile media : mediaFiles) {
+					if (media.getFilePath() != null) {
+						s3Util.deleteFileFromS3(media.getFilePath()); 
+						logger.info("Deleted media file from S3: {}", media.getFilePath());
+					}
+				}
+			}
 
-	        productRepo.deleteById(id);
-	        logger.info("Product and associated media files deleted successfully: ID = {}", id);
+			productRepo.deleteById(id);
+			logger.info("Product and associated media files deleted successfully: ID = {}", id);
 
-	    } catch (ResponseStatusException e) {
-	        throw e;
+		} catch (ResponseStatusException e) {
+			throw e;
 
-	    } catch (Exception e) {
-	        logger.error("Error deleting product with ID {}: {}", id, e.getMessage(), e);
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete product");
-	    }
+		} catch (Exception e) {
+			logger.error("Error deleting product with ID {}: {}", id, e.getMessage(), e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete product");
+		}
 	}
 
 
@@ -310,88 +310,104 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 
 	@Override
 	public void updateProduct(Integer productId, MarketPlaceProductDTO dto, SellerFileInputModel mediaFiles) {
-	    try {
-	        logger.info("Updating product with ID: {}", productId);
+		try {
+			logger.info("Updating product with ID: {}", productId);
 
-	        MarketPlaceProducts existing = productRepo.findById(productId)
-	                .orElseThrow(() -> {
-	                    logger.warn("Product not found: ID {}", productId);
-	                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + productId);
-	                });
+			MarketPlaceProducts existing = productRepo.findById(productId)
+					.orElseThrow(() -> {
+						logger.warn("Product not found: ID {}", productId);
+						return new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + productId);
+					});
 
-	        MarketPlaceSubCategories subCategory = subCategoryRepo.findById(dto.getSubCategoryId())
-	                .orElseThrow(() -> {
-	                    logger.warn("SubCategory not found: ID {}", dto.getSubCategoryId());
-	                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "SubCategory not found with ID: " + dto.getSubCategoryId());
-	                });
+			MarketPlaceSubCategories subCategory = subCategoryRepo.findById(dto.getSubCategoryId())
+					.orElseThrow(() -> {
+						logger.warn("SubCategory not found: ID {}", dto.getSubCategoryId());
+						return new ResponseStatusException(HttpStatus.NOT_FOUND, "SubCategory not found with ID: " + dto.getSubCategoryId());
+					});
 
-	        SellerInfo seller = sellerInfoRepo.findById(dto.getSellerId())
-	                .orElseThrow(() -> {
-	                    logger.warn("Seller not found: ID {}", dto.getSellerId());
-	                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found with ID: " + dto.getSellerId());
-	                });
+			SellerInfo seller = sellerInfoRepo.findById(dto.getSellerId())
+					.orElseThrow(() -> {
+						logger.warn("Seller not found: ID {}", dto.getSellerId());
+						return new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller not found with ID: " + dto.getSellerId());
+					});
 
-	        ObjectMapper objectMapper = new ObjectMapper();
-	        String dynamicAttributesJson = dto.getDynamicAttributesJson() != null
-	                ? objectMapper.writeValueAsString(dto.getDynamicAttributesJson())
-	                : null;
 
-	        existing.setBrandName(dto.getBrandName());
-	        existing.setModelName(dto.getModelName());
-	        existing.setPrice(dto.getPrice());
-	        existing.setAvailability(dto.getAvailability());
-	        existing.setSubCategory(subCategory);
-	        existing.setDynamicAttributesJson(dynamicAttributesJson);
-	        existing.setUpdatedBy(dto.getSellerId());
-	        existing.setCreatedBy(dto.getSellerId());
-	        existing.setSeller(seller);
 
-	        // Validate update mode
-	        String updateMode = mediaFiles.getUpdateMode();
-	        boolean isReplace = "REPLACE".equalsIgnoreCase(updateMode);
-	        boolean isAppend = "APPEND".equalsIgnoreCase(updateMode);
+			existing.setBrandName(dto.getBrandName());
+			existing.setModelName(dto.getModelName());
+			existing.setPrice(dto.getPrice());
+			existing.setAvailability(dto.getAvailability());
+			existing.setSubCategory(subCategory);
+			existing.setUpdatedBy(dto.getSellerId());
+			existing.setCreatedBy(dto.getSellerId());
+			existing.setSeller(seller);
+			existing.setStatus(dto.getStatus());
+			if (dto.getDynamicAttributes() != null) {
+			
+				if (existing.getDynamicAttributes() != null) {
+					existing.getDynamicAttributes().clear();
+				}
 
-	        if (!isReplace && !isAppend) {
-	            logger.warn("Invalid update mode: {}", updateMode);
-	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid update mode. Use APPEND or REPLACE.");
-	        }
+				List<MarketPlaceProductDynamicAttribute> updatedAttributes = dto.getDynamicAttributes().stream()
+						.map(attrDto -> MarketPlaceProductDynamicAttribute.builder()
+								.fieldKey(attrDto.getFieldKey())
+								.value(attrDto.getValue())
+								.section(attrDto.getSection())
+								.product(existing)
+								.build())
+						.collect(Collectors.toList());
+			
 
-	        // Delete existing media if REPLACE
-	        if (isReplace && existing.getMediaList() != null) {
-	            for (SellerMediaFile media : existing.getMediaList()) {
-	                s3Util.deleteFileFromS3(media.getFilePath());
-	            }
-	            existing.getMediaList().clear();
-	            logger.info("Existing media files deleted for REPLACE mode");
-	        }
+				existing.setDynamicAttributes(updatedAttributes);
+				logger.info("Dynamic attributes updated for product ID: {}", productId);
+			}
 
-	        // Add new media files
-	        if (mediaFiles != null) {
-	            if (mediaFiles.getProductImages() != null) {
-	                for (MultipartFile image : mediaFiles.getProductImages()) {
-	                    SellerMediaFile newImage = saveProductMediaFile(image, existing, "PRODUCT_IMAGE");
-	                    existing.getMediaList().add(newImage);
-	                }
-	            }
+			// Validate update mode
+			String updateMode = mediaFiles.getUpdateMode();
+			boolean isReplace = "REPLACE".equalsIgnoreCase(updateMode);
+			boolean isAppend = "APPEND".equalsIgnoreCase(updateMode);
 
-	            if (mediaFiles.getProductVideos() != null) {
-	                for (MultipartFile video : mediaFiles.getProductVideos()) {
-	                    SellerMediaFile newVideo = saveProductMediaFile(video, existing, "PRODUCT_VIDEO");
-	                    existing.getMediaList().add(newVideo);
-	                }
-	            }
-	        }
+			if (!isReplace && !isAppend) {
+				logger.warn("Invalid update mode: {}", updateMode);
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid update mode. Use APPEND or REPLACE.");
+			}
 
-	        productRepo.save(existing);
-	        logger.info("Product updated successfully: ID {}", productId);
+			// Delete existing media if REPLACE
+			if (isReplace && existing.getMediaList() != null) {
+				for (SellerMediaFile media : existing.getMediaList()) {
+					s3Util.deleteFileFromS3(media.getFilePath());
+				}
+				existing.getMediaList().clear();
+				logger.info("Existing media files deleted for REPLACE mode");
+			}
 
-	    } catch (ResponseStatusException e) {
-	        throw e;
+			// Add new media files
+			if (mediaFiles != null) {
+				if (mediaFiles.getProductImages() != null) {
+					for (MultipartFile image : mediaFiles.getProductImages()) {
+						SellerMediaFile newImage = saveProductMediaFile(image, existing, "PRODUCT_IMAGE");
+						existing.getMediaList().add(newImage);
+					}
+				}
 
-	    } catch (Exception e) {
-	        logger.error("Unexpected error while updating product: {}", e.getMessage(), e);
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update product");
-	    }
+				if (mediaFiles.getProductVideos() != null) {
+					for (MultipartFile video : mediaFiles.getProductVideos()) {
+						SellerMediaFile newVideo = saveProductMediaFile(video, existing, "PRODUCT_VIDEO");
+						existing.getMediaList().add(newVideo);
+					}
+				}
+			}
+
+			productRepo.save(existing);
+			logger.info("Product updated successfully: ID {}", productId);
+
+		} catch (ResponseStatusException e) {
+			throw e;
+
+		} catch (Exception e) {
+			logger.error("Unexpected error while updating product: {}", e.getMessage(), e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update product");
+		}
 	}
 
 	private SellerMediaFile saveProductMediaFile(MultipartFile file, MarketPlaceProducts product, String category) {
@@ -435,36 +451,36 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 				s3Client.putObject(putRequest, RequestBody.fromBytes(file.getBytes()));
 			}
 
-			return s3Util.getS3BaseURL() + "/" + s3Util.getS3BucketName() + "/" + s3Key;
+			return s3Util.getS3BaseURL() + "/" + s3Key;
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to upload file to S3: " + e.getMessage(), e);
 		}
 
 	}
-	
+
 	@Override
 	public List<MarketPlaceProductDTO> getProductsByUserId(Long userId) {
-	    try {
-	        logger.info("Fetching seller for userId: {}", userId);
+		try {
+			logger.info("Fetching seller for userId: {}", userId);
 
-	        // 1. Find seller by user ID
-	        SellerInfo seller = sellerInfoRepo.findSellerInfoByUserId(userId.intValue())
-	                .orElseThrow(() -> new RuntimeException("Seller not found for userId: " + userId));
+			// 1. Find seller by user ID
+			SellerInfo seller = sellerInfoRepo.findSellerInfoByUserId(userId.intValue())
+					.orElseThrow(() -> new RuntimeException("Seller not found for userId: " + userId));
 
-	        logger.info("Fetching products for sellerId: {}", seller.getId());
+			logger.info("Fetching products for sellerId: {}", seller.getId());
 
-	        // 2. Fetch all products linked to this seller
-	        List<MarketPlaceProducts> products = productRepo.findBySellerId(seller.getId());
+			// 2. Fetch all products linked to this seller
+			List<MarketPlaceProducts> products = productRepo.findBySellerId(seller.getId());
 
-	        // 3. Map to DTOs (which now includes subCategory name)
-	        return products.stream()
-	                .map(MarketPlaceProductConverter::toDTO)
-	                .collect(Collectors.toList());
+			// 3. Map to DTOs (which now includes subCategory name)
+			return products.stream()
+					.map(MarketPlaceProductConverter::toDTO)
+					.collect(Collectors.toList());
 
-	    } catch (Exception e) {
-	        logger.error("Error fetching products for userId: {}", userId, e);
-	        throw new RuntimeException("Failed to fetch products. Reason: " + e.getMessage());
-	    }
+		} catch (Exception e) {
+			logger.error("Error fetching products for userId: {}", userId, e);
+			throw new RuntimeException("Failed to fetch products. Reason: " + e.getMessage());
+		}
 	}
 
 }

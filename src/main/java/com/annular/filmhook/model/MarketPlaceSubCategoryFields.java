@@ -36,7 +36,7 @@ public class MarketPlaceSubCategoryFields {
 private Integer id;
 
 private String fieldKey;  
-private String label;
+//private String label;
 private String type; 
 private boolean required;
 private String section;

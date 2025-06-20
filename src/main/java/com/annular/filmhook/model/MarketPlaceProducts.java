@@ -44,20 +44,22 @@ public class MarketPlaceProducts {
 	private String modelName;
 	private BigDecimal price;
 	private String availability;
+	private String additionalDetails;
 	private LocalDateTime createdDate;
 	private LocalDateTime updatedDate;
+	private String status;
+
 	@CreatedBy
 	private Long createdBy;
 
 	@LastModifiedBy
 	private Long updatedBy;
-	@Lob
-	@Column(columnDefinition = "TEXT")
-	private String dynamicAttributesJson;
 
 	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<SellerMediaFile> mediaList;
 
+	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+	private List<MarketPlaceProductDynamicAttribute> dynamicAttributes;
 
 	@ManyToOne(optional = false)
 	@JoinColumn(name = "subcategory_id")
@@ -72,6 +74,9 @@ public class MarketPlaceProducts {
 	public void onCreate() {
 		this.createdDate = LocalDateTime.now();
 		this.updatedDate = LocalDateTime.now();
+		if (this.status == null) {
+			this.status = "ACTIVE"; 
+		}
 	}
 
 	@PreUpdate
