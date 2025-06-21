@@ -275,6 +275,29 @@ public class MarketPlaceProductController {
                     .body(new Response(-1, "Failed to fetch products", e.getMessage()));
         }
     }
+    
+    @PostMapping("/addLike")
+	  public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer productId, @RequestParam Integer userId) {
+	      Logger logger = LoggerFactory.getLogger(this.getClass());
+	      Map<String, String> response = new HashMap<>();
+
+	      try {
+	          logger.info("Toggling like for propertyId: {}, userId: {}", productId, userId);
+	          String message = service.toggleLike(productId, userId);
+	          response.put("message", message);
+	          return ResponseEntity.ok(response);
+
+	      } catch (RuntimeException ex) {
+	          logger.error("Error: {}", ex.getMessage());
+	          response.put("message", "Error: " + ex.getMessage());
+	          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+
+	      } catch (Exception ex) {
+	          logger.error("Unexpected error: {}", ex.getMessage());
+	          response.put("message", "Something went wrong.");
+	          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	      }
+	  }
 
 
 

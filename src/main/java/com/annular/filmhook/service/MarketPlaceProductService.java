@@ -29,4 +29,5 @@ public interface MarketPlaceProductService {
 	     List<MarketPlaceProductDTO> getProductsBySubCategoryId(Integer subCategoryId);
 	     void updateProduct(Integer productId, MarketPlaceProductDTO dto, SellerFileInputModel mediaFiles);
 	     List<MarketPlaceProductDTO> getProductsByUserId(Long userId);
+		String toggleLike(Integer productId, Integer userId);
 }

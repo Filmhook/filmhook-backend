@@ -467,4 +467,10 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 	    }
 	}
 
+	@Override
+	public String toggleLike(Integer productId, Integer userId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
