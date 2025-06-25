@@ -488,6 +488,7 @@ public class ReportServiceImpl implements ReportService {
             
             String userEmail = post.getUser().getEmail();
             String userName = post.getUser().getName();
+            Integer userId = post.getUser().getUserId();
             
             if (userEmail == null || userEmail.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User email not found");
@@ -495,6 +496,7 @@ public class ReportServiceImpl implements ReportService {
             
             postWebModel.setEmailId(userEmail);
             postWebModel.setUserName(userName != null ? userName : "User");
+            postWebModel.setUserId(userId);
 
             // Send moderation email
             sendModerationEmail(postWebModel);
@@ -574,7 +576,16 @@ public class ReportServiceImpl implements ReportService {
                         model.getEmailId(), 
                         model.getViolationReason() != null ? model.getViolationReason() : "Severe policy violation", 
                         formattedDate);
-                    break;
+                    
+                    // Fetch user by ID and deactivate
+                    if (model.getUserId() != null) {
+                        Optional<User> optionalUser = userRepository.findById(model.getUserId());
+                        if (optionalUser.isPresent()) {
+                            User user = optionalUser.get();
+                            user.setStatus(false);
+                            userRepository.save(user);
+                        }
+                    }
                     
                 default: // Warning (case 0 and any other values)
                     subject = "⚠️ Content Warning Notice from The Film-hook Team";

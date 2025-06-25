@@ -12,7 +12,7 @@ import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 
 @Component
-public class Cron {
+public class Crons {
 	
 	@Autowired
     private PromoteRepository promoteRepository;
