@@ -1,6 +1,9 @@
 package com.annular.filmhook.service.impl;
 
 import java.io.IOException;
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,25 +24,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.converter.MarketPlaceProductConverter;
 import com.annular.filmhook.model.MarketPlaceCategories;
+import com.annular.filmhook.model.MarketPlaceLikes;
 import com.annular.filmhook.model.MarketPlaceProductDynamicAttribute;
+import com.annular.filmhook.model.MarketPlaceProductReview;
 import com.annular.filmhook.model.MarketPlaceProducts;
 import com.annular.filmhook.model.MarketPlaceSubCategories;
 import com.annular.filmhook.model.MarketPlaceSubCategoryFields;
 import com.annular.filmhook.model.SellerInfo;
 import com.annular.filmhook.model.SellerMediaFile;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MarketPlaceCategoryRepository;
+import com.annular.filmhook.repository.MarketPlaceLikesRepository;
 import com.annular.filmhook.repository.MarketPlaceProductRepository;
+import com.annular.filmhook.repository.MarketPlaceProductReviewRepository;
 import com.annular.filmhook.repository.MarketPlaceSubCategoryFiledsRepository;
 import com.annular.filmhook.repository.MarketPlaceSubCategoryRepository;
 import com.annular.filmhook.repository.SellerInfoRepository;
 import com.annular.filmhook.repository.SellerMediaFileRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.MarketPlaceProductService;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.MarketPlaceCategoryDTO;
+import com.annular.filmhook.webmodel.MarketPlaceLikesDTO;
 import com.annular.filmhook.webmodel.MarketPlaceProductDTO;
+import com.annular.filmhook.webmodel.MarketPlaceProductReviewDTO;
 import com.annular.filmhook.webmodel.MarketPlaceSubCategoryDTO;
 import com.annular.filmhook.webmodel.MarketPlaceSubCategoryFieldDTO;
 import com.annular.filmhook.webmodel.SellerFileInputModel;
@@ -63,10 +75,19 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 	private SellerMediaFileRepository sellerMediaFileRepository;
 
 	@Autowired
+	private UserRepository userRepository;
+
+	@Autowired
+	private MarketPlaceProductReviewRepository reviewRepository;
+
+	@Autowired
 	private SellerInfoRepository sellerInfoRepo;
 
 	@Autowired
 	private S3Util s3Util;
+
+	@Autowired
+	private  MarketPlaceLikesRepository likesRepository;
 
 	private static final Logger logger = LoggerFactory.getLogger(MarketPlaceProductServiceImpl.class);
 
@@ -223,12 +244,13 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 
 
 	@Override
-	public List<MarketPlaceProductDTO> getAllProducts() {
+	public List<MarketPlaceProductDTO> getAllProducts(Integer currentUserId)
+ {
 		try {
 			return productRepo.findAll()
-					.stream()
-					.map(MarketPlaceProductConverter::toDTO)
-					.collect(Collectors.toList());
+			        .stream()
+			        .map(product -> MarketPlaceProductConverter.toDTO(product, currentUserId))
+			        .collect(Collectors.toList());
 		} catch (Exception e) {
 			logger.error("Error fetching all products: {}", e.getMessage(), e);
 			return Collections.emptyList();
@@ -296,11 +318,11 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 
 	// 5. Get products by subcategory
 	@Override
-	public List<MarketPlaceProductDTO> getProductsBySubCategoryId(Integer subCategoryId) {
+	public List<MarketPlaceProductDTO> getProductsBySubCategoryId(Integer subCategoryId, Integer currentUserId) {
 		try {
 			List<MarketPlaceProducts> products = productRepo.findBySubCategory_Id(subCategoryId);
 			return products.stream()
-					.map(MarketPlaceProductConverter::toDTO)
+					.map(product -> MarketPlaceProductConverter.toDTO(product, currentUserId))
 					.collect(Collectors.toList());
 		} catch (Exception e) {
 			logger.error("Error fetching products for subCategoryId {}: {}", subCategoryId, e.getMessage(), e);
@@ -343,7 +365,7 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 			existing.setSeller(seller);
 			existing.setStatus(dto.getStatus());
 			if (dto.getDynamicAttributes() != null) {
-			
+
 				if (existing.getDynamicAttributes() != null) {
 					existing.getDynamicAttributes().clear();
 				}
@@ -356,7 +378,7 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 								.product(existing)
 								.build())
 						.collect(Collectors.toList());
-			
+
 
 				existing.setDynamicAttributes(updatedAttributes);
 				logger.info("Dynamic attributes updated for product ID: {}", productId);
@@ -463,24 +485,105 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 		try {
 			logger.info("Fetching seller for userId: {}", userId);
 
-			// 1. Find seller by user ID
+
 			SellerInfo seller = sellerInfoRepo.findSellerInfoByUserId(userId.intValue())
 					.orElseThrow(() -> new RuntimeException("Seller not found for userId: " + userId));
 
 			logger.info("Fetching products for sellerId: {}", seller.getId());
 
-			// 2. Fetch all products linked to this seller
+
 			List<MarketPlaceProducts> products = productRepo.findBySellerId(seller.getId());
 
-			// 3. Map to DTOs (which now includes subCategory name)
 			return products.stream()
-					.map(MarketPlaceProductConverter::toDTO)
-					.collect(Collectors.toList());
+			        .map(product -> MarketPlaceProductConverter.toDTO(product, userId.intValue())) 
+			        .collect(Collectors.toList());
 
 		} catch (Exception e) {
 			logger.error("Error fetching products for userId: {}", userId, e);
 			throw new RuntimeException("Failed to fetch products. Reason: " + e.getMessage());
 		}
 	}
+
+	@Override
+	public void saveReview(MarketPlaceProductReviewDTO dto) {
+		logger.info("Saving review for productId: {}, userId: {}", dto.getProductId(), dto.getUserId());
+
+		User user = userRepository.findById(dto.getUserId())
+				.orElseThrow(() -> {
+					logger.warn("User not found for userId: {}", dto.getUserId());
+					return new RuntimeException("User not found");
+				});
+
+		MarketPlaceProducts product = productRepo.findById(dto.getProductId())
+				.orElseThrow(() -> {
+					logger.warn("Product not found for productId: {}", dto.getProductId());
+					return new RuntimeException("Product not found");
+				});
+
+		MarketPlaceProductReview review = MarketPlaceProductConverter.toEntity(dto, product, user);
+		reviewRepository.save(review);
+
+		logger.info("Review saved successfully for productId: {}", dto.getProductId());
+	}
+
+	@Override
+	public void deleteReview(Integer reviewId) {
+		MarketPlaceProductReview review = reviewRepository.findById(reviewId)
+				.orElseThrow(() -> new RuntimeException("Review not found with ID: " + reviewId));
+
+		reviewRepository.delete(review);
+	}
+
+	@Override
+	public String saveLike(MarketPlaceLikesDTO dto) {
+	    MarketPlaceProducts product = productRepo.findById(dto.getProductId())
+	            .orElseThrow(() -> new RuntimeException("Product not found"));
+
+	    User user = userRepository.findById(dto.getUserId())
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    Optional<MarketPlaceLikes> existing = likesRepository.findByProductIdAndLikedByUserId(dto.getProductId(), dto.getUserId());
+
+	    if (existing.isPresent()) {
+	        MarketPlaceLikes like = existing.get();
+	        Boolean newStatus = !like.getStatus();  
+	        like.setStatus(newStatus);
+	        like.setUpdatedBy(dto.getUserId());
+	        like.setUpdatedOn(LocalDateTime.now());
+	        likesRepository.save(like);
+	        return newStatus ? "Product added to wishlist" : "Product removed from wishlist";
+	    } else {
+	        MarketPlaceLikes like = MarketPlaceLikes.builder()
+	                .product(product)
+	                .likedBy(user)
+	                .status(true)
+	                .createdBy(dto.getUserId())
+	                .createdOn(LocalDateTime.now())
+	                .liveDate(LocalDateTime.now().toString())
+	                .build();
+	        likesRepository.save(like);
+	        return "Product added to wishlist";
+	    }
+	}
+
+	@Override
+	public List<MarketPlaceProductDTO> getWishlistProducts(Integer userId) {
+	    logger.info("Getting wishlist for userId: {}", userId);
+
+	    List<MarketPlaceLikes> likes = likesRepository.findByLikedBy_UserIdAndStatus(userId, true);
+
+	    if (likes.isEmpty()) {
+	        logger.info("No liked products found for userId: {}", userId);
+	        return Collections.emptyList();
+	    }
+
+	    return likes.stream()
+	            .map(like -> MarketPlaceProductConverter.toDTO(like.getProduct(), userId))
+	            .collect(Collectors.toList());
+	}
+
+
+
+
 
 }

@@ -16,13 +16,15 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.controller.ShootingLocationController;
 
@@ -1354,153 +1356,241 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 	@Override
+	@Transactional
 	public void deletePropertyById(Integer id) {
-		try {
-			Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
+	    try {
+	        Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
 
-			if (optionalProperty.isPresent()) {
-				propertyDetailsRepository.deleteById(id);
-				logger.info("Deleted property with ID: {}", id);
-			} else {
-				logger.warn("Property with ID {} not found for deletion", id);
-				throw new RuntimeException("Property with ID " + id + " not found");
-			}
-		} catch (Exception e) {
-			logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
-			throw new RuntimeException("An error occurred while deleting the property with ID " + id);
-		}
+	        if (!optionalProperty.isPresent()) {
+	            logger.warn("Property with ID {} not found for deletion", id);
+	            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property with ID " + id + " not found");
+	        }
+
+	        ShootingLocationPropertyDetails property = optionalProperty.get();
+
+	        // --- Delete media files from S3 ---
+	        List<ShootingLocationImages> mediaFiles = shootingLocationImagesRepository.findByProperty(property);
+	        if (mediaFiles != null && !mediaFiles.isEmpty()) {
+	            for (ShootingLocationImages media : mediaFiles) {
+	                if (media.getFilePath() != null) {
+	                    s3Util.deleteFileFromS3(media.getFilePath());
+	                    logger.info("Deleted media file from S3: {}", media.getFilePath());
+	                }
+	            }
+	            shootingLocationImagesRepository.deleteAllByProperty(property);
+	        }
+
+	        // --- Delete bank details ---
+	        bankDetailsRepository.findByPropertyDetails(property).ifPresent(bankDetailsRepository::delete);
+
+	        // --- Delete business info ---
+	        businessInformationRepository.findByPropertyDetails(property).ifPresent(businessInformationRepository::delete);
+
+	        // --- Delete property itself ---
+	        propertyDetailsRepository.delete(property);
+
+	        logger.info("Property and related data deleted successfully: ID = {}", id);
+
+	    } catch (ResponseStatusException e) {
+	        throw e;
+
+	    } catch (Exception e) {
+	        logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
+	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting property with ID " + id);
+	    }
 	}
 
+	@Transactional
 	@Override
-	public ShootingLocationPropertyDetailsDTO updateProperty(Integer id, ShootingLocationPropertyDetailsDTO dto) {
-		logger.info("Attempting to update property with ID: {}", id);
+	public ShootingLocationPropertyDetailsDTO updatePropertyDetails(Integer id, ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile) {
 
-		try {
-			Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
-			if (optionalProperty.isEmpty()) {
-				throw new RuntimeException("Property not found with ID: " + id);
-			}
-
-			ShootingLocationPropertyDetails property = optionalProperty.get();
-
-			// 1. Property Info
-			property.getId();
-
-			property.setFirstName(dto.getFirstName());
-			property.setMiddleName(dto.getMiddleName());
-			property.setLastName(dto.getLastName());
-			property.setCitizenship(dto.getCitizenship());
-			property.setPlaceOfBirth(dto.getPlaceOfBirth());
-			property.setPropertyName(dto.getPropertyName());
-			property.setLocation(dto.getLocation());
-			property.setDateOfBirth(dto.getDateOfBirth());
-			property.setProofOfIdentity(dto.getProofOfIdentity());
-			property.setCountryOfIssued(dto.getCountryOfIssued());
-
-			// 2. Listing Summary
-			property.setNumberOfPeopleAllowed(dto.getNumberOfPeopleAllowed());
-			property.setTotalArea(dto.getTotalArea());
-			property.setSelectedUnit(dto.getSelectedUnit());
-			property.setNumberOfRooms(dto.getNumberOfRooms());
-			property.setNumberOfFloor(dto.getNumberOfFloor());
-			property.setCeilingHeight(dto.getCeilingHeight());
-			property.setOutdoorFeatures(dto.getOutdoorFeatures());
-			property.setArchitecturalStyle(dto.getArchitecturalStyle());
-			property.setVintage(dto.getVintage());
-			property.setIndustrial(dto.getIndustrial());
-			property.setTraditional(dto.getTraditional());
-
-			// 3. Facilities & Amenities
-			property.setPowerSupply(dto.getPowerSupply());
-			property.setBakupGeneratorsAndVoltage(dto.getBakupGeneratorsAndVoltage());
-			property.setWifi(dto.getWifi());
-			property.setAirConditionAndHeating(dto.getAirConditionAndHeating());
-			property.setNumberOfWashrooms(dto.getNumberOfWashrooms());
-			property.setRestrooms(dto.getRestrooms());
-			property.setWaterSupply(dto.getWaterSupply());
-			property.setChangingRooms(dto.getChangingRooms());
-			property.setKitchen(dto.getKitchen());
-			property.setFurnitureAndProps(dto.getFurnitureAndProps());
-			property.setNeutralLightingConditions(dto.getNeutralLightingConditions());
-			property.setArtificialLightingAvailability(dto.getArtificialLightingAvailability());
-			property.setParkingCapacity(dto.getParkingCapacity());
-
-			// 4. Filming Requirements & Restrictions
-			property.setDroneUsage(dto.getDroneUsage());
-			property.setFirearms(dto.getFirearms());
-			property.setActionScenes(dto.getActionScenes());
-			property.setSecurity(dto.getSecurity());
-			property.setStructuralModification(dto.getStructuralModification());
-			property.setTemporary(dto.getTemporary());
-			property.setDressing(dto.getDressing());
-			property.setPermissions(dto.getPermissions());
-			property.setNoiseRestrictions(dto.getNoiseRestrictions());
-			property.setShootingTiming(dto.getShootingTiming());
-			property.setInsuranceRequired(dto.getInsuranceRequired());
-			property.setLegalAgreements(dto.getLegalAgreements());
-
-			// 5. Accessibility & Transportation
-			property.setRoadAccessAndCondition(dto.getRoadAccessAndCondition());
-			property.setPublicTransport(dto.getPublicTransport());
-			property.setNearestAirportOrRailway(dto.getNearestAirportOrRailway());
-			property.setAccommodationNearby(dto.getAccommodationNearby());
-			property.setFoodAndCatering(dto.getFoodAndCatering());
-			property.setEmergencyServicesNearby(dto.getEmergencyServicesNearby());
-
-			// 6. Pricing & Payment Terms
-			property.setRentalCost(dto.getRentalCost());
-			property.setSecurityDeposit(dto.getSecurityDeposit());
-			property.setAdditionalCharges(dto.getAdditionalCharges());
-			property.setPaymentModelsAccepted(dto.getPaymentModelsAccepted());
-			property.setCancellationPolicy(dto.getCancellationPolicy());
-
-			// 7. Media References & Business Info
-			property.setDescription(dto.getDescription());
-			property.setPriceCustomerPay(dto.getPriceCustomerPay());
-			property.setDiscount20Percent(dto.isDiscount20Percent());
-			property.setBusinessOwner(dto.isBusinessOwner());
-			property.setHighQualityPhotos(dto.getHighQualityPhotos());
-			property.setVideoWalkthrough(dto.getVideoWalkthrough());
-
-			// 8. Bank Details
-			if (dto.getBankDetailsDTO() != null) {
-				BankDetails bank = new BankDetails();
-				bank.setId(dto.getBankDetailsDTO().getId());
-				bank.setBeneficiaryName(dto.getBankDetailsDTO().getBeneficiaryName());
-				bank.setMobileNumber(dto.getBankDetailsDTO().getMobileNumber());
-				bank.setAccountNumber(dto.getBankDetailsDTO().getAccountNumber());
-				bank.setConfirmAccountNumber(dto.getBankDetailsDTO().getConfirmAccountNumber());
-				bank.setIfscCode(dto.getBankDetailsDTO().getIfscCode());
-				property.setBankDetails(bank);
-			}
-
-			// 9. Business Info
-			if (dto.getBusinessInformation() != null) {
-				BusinessInformation info = new BusinessInformation();
-				info.setBusinessName(dto.getBusinessInformation().getBusinessName());
-				info.setBusinessType(dto.getBusinessInformation().getBusinessType());
-				info.setBusinessLocation(dto.getBusinessInformation().getBusinessLocation());
-				info.setPanOrGSTNumber(dto.getBusinessInformation().getPanOrGSTNumber());
-				info.setLocation(dto.getBusinessInformation().getLocation());
-				info.setAddressLine1(dto.getBusinessInformation().getAddressLine1());
-				info.setAddressLine2(dto.getBusinessInformation().getAddressLine2());
-				info.setAddressLine3(dto.getBusinessInformation().getAddressLine3());
-				info.setState(dto.getBusinessInformation().getState());
-				info.setPostalCode(dto.getBusinessInformation().getPostalCode());
-				property.setBusinessInformation(info);
-			}
+	    try {
+	    	if (id == null) {
+	    	    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Property ID must not be null");
+	    	}
+	    	ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(id)
+	    		    .orElseThrow(() -> new RuntimeException("Property not found with ID: " + id));
 
 
-			ShootingLocationPropertyDetails saved = propertyDetailsRepository.save(property);
-			logger.info("Successfully updated property ID: {}", saved.getId());
+	        logger.info("Updating property: {}", dto.getPropertyName());
 
+	        // --- Update main entity fields ---
+	        property.setFirstName(dto.getFirstName());
+	        property.setMiddleName(dto.getMiddleName());
+	        property.setLastName(dto.getLastName());
+	        property.setCitizenship(dto.getCitizenship());
+	        property.setPlaceOfBirth(dto.getPlaceOfBirth());
+	        property.setPropertyName(dto.getPropertyName());
+	        property.setLocation(dto.getLocation());
+	        property.setDateOfBirth(dto.getDateOfBirth());
+	        property.setProofOfIdentity(dto.getProofOfIdentity());
+	        property.setCountryOfIssued(dto.getCountryOfIssued());
+	        property.setNumberOfPeopleAllowed(dto.getNumberOfPeopleAllowed());
+	        property.setTotalArea(dto.getTotalArea());
+	        property.setSelectedUnit(dto.getSelectedUnit());
+	        property.setNumberOfRooms(dto.getNumberOfRooms());
+	        property.setNumberOfFloor(dto.getNumberOfFloor());
+	        property.setCeilingHeight(dto.getCeilingHeight());
 
-			return dto; 
+	        property.setOutdoorFeatures(dto.getOutdoorFeatures());
+	        property.setArchitecturalStyle(dto.getArchitecturalStyle());
+	        property.setVintage(dto.getVintage());
+	        property.setIndustrial(dto.getIndustrial());
+	        property.setTraditional(dto.getTraditional());
 
-		} catch (Exception e) {
-			logger.error("Error updating property ID {}: {}", id, e.getMessage(), e);
-			throw new RuntimeException("Error updating property with ID: " + id + " - " + e.getMessage());
-		}
+	        property.setPowerSupply(dto.getPowerSupply());
+	        property.setBakupGeneratorsAndVoltage(dto.getBakupGeneratorsAndVoltage());
+	        property.setWifi(dto.getWifi());
+	        property.setAirConditionAndHeating(dto.getAirConditionAndHeating());
+	        property.setNumberOfWashrooms(dto.getNumberOfWashrooms());
+	        property.setRestrooms(dto.getRestrooms());
+	        property.setWaterSupply(dto.getWaterSupply());
+	        property.setChangingRooms(dto.getChangingRooms());
+	        property.setKitchen(dto.getKitchen());
+	        property.setFurnitureAndProps(dto.getFurnitureAndProps());
+	        property.setNeutralLightingConditions(dto.getNeutralLightingConditions());
+	        property.setArtificialLightingAvailability(dto.getArtificialLightingAvailability());
+	        property.setParkingCapacity(dto.getParkingCapacity());
+
+	        property.setDroneUsage(dto.getDroneUsage());
+	        property.setFirearms(dto.getFirearms());
+	        property.setActionScenes(dto.getActionScenes());
+	        property.setSecurity(dto.getSecurity());
+	        property.setStructuralModification(dto.getStructuralModification());
+	        property.setTemporary(dto.getTemporary());
+	        property.setDressing(dto.getDressing());
+	        property.setPermissions(dto.getPermissions());
+	        property.setNoiseRestrictions(dto.getNoiseRestrictions());
+	        property.setShootingTiming(dto.getShootingTiming());
+	        property.setInsuranceRequired(dto.getInsuranceRequired());
+	        property.setLegalAgreements(dto.getLegalAgreements());
+
+	        property.setRoadAccessAndCondition(dto.getRoadAccessAndCondition());
+	        property.setPublicTransport(dto.getPublicTransport());
+	        property.setNearestAirportOrRailway(dto.getNearestAirportOrRailway());
+	        property.setAccommodationNearby(dto.getAccommodationNearby());
+	        property.setFoodAndCatering(dto.getFoodAndCatering());
+	        property.setEmergencyServicesNearby(dto.getEmergencyServicesNearby());
+
+	        property.setRentalCost(dto.getRentalCost());
+	        property.setSecurityDeposit(dto.getSecurityDeposit());
+	        property.setAdditionalCharges(dto.getAdditionalCharges());
+	        property.setPaymentModelsAccepted(dto.getPaymentModelsAccepted());
+	        property.setCancellationPolicy(dto.getCancellationPolicy());
+
+	        property.setDescription(dto.getDescription());
+	        property.setPriceCustomerPay(dto.getPriceCustomerPay());
+	        property.setDiscount20Percent(dto.isDiscount20Percent());
+	        property.setBusinessOwner(dto.isBusinessOwner());
+	        property.setUpdatedOn(LocalDateTime.now());
+	        property.setUpdatedBy(dto.getUserId());
+
+	        // --- Update Category/SubCategory/Type/User/Industry ---
+	        if (dto.getCategoryId() != null) {
+	            ShootingLocationCategory category = new ShootingLocationCategory();
+	            category.setId(dto.getCategoryId());
+	           
+	        }
+
+	        if (dto.getSubCategoryId() != null) {
+	            ShootingLocationSubcategory subCategory = new ShootingLocationSubcategory();
+	            subCategory.setId(dto.getSubCategoryId());
+	          
+	        }
+
+	        if (dto.getTypesId() != null) {
+	            ShootingLocationTypes type = new ShootingLocationTypes();
+	            type.setId(dto.getTypesId());
+	       
+	        }
+
+	        if (dto.getUserId() != null) {
+	            User user = new User();
+	            user.setUserId(dto.getUserId());
+	      
+	        }
+
+	        if (dto.getIndustryId() != null) {
+	            Industry industry = industryRepository.findById(dto.getIndustryId())
+	                    .orElseThrow(() -> new RuntimeException("Industry not found"));
+	            property.setIndustry(industry);
+	        }
+
+	        // --- Update Subcategory Selection ---
+	        if (dto.getSubcategorySelectionDTO() != null) {
+	            property.setSubcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()));
+	        }
+
+	        ShootingLocationPropertyDetails updatedProperty = propertyDetailsRepository.save(property);
+
+	        // --- Business Info ---
+	        if (dto.getBusinessInformation() != null) {
+	            BusinessInformation business = businessInformationRepository.findByPropertyDetails(updatedProperty)
+	                    .orElse(new BusinessInformation());
+	            business.setPropertyDetails(updatedProperty);
+	            business.setBusinessName(dto.getBusinessInformation().getBusinessName());
+	            business.setBusinessType(dto.getBusinessInformation().getBusinessType());
+	            business.setBusinessLocation(dto.getBusinessInformation().getBusinessLocation());
+	            business.setPanOrGSTNumber(dto.getBusinessInformation().getPanOrGSTNumber());
+	            business.setLocation(dto.getBusinessInformation().getLocation());
+	            business.setAddressLine1(dto.getBusinessInformation().getAddressLine1());
+	            business.setAddressLine2(dto.getBusinessInformation().getAddressLine2());
+	            business.setAddressLine3(dto.getBusinessInformation().getAddressLine3());
+	            business.setState(dto.getBusinessInformation().getState());
+	            business.setPostalCode(dto.getBusinessInformation().getPostalCode());
+	            businessInformationRepository.save(business);
+	        }
+
+	        // --- Bank Info ---
+	        if (dto.getBankDetailsDTO() != null) {
+	            BankDetails bank = bankDetailsRepository.findByPropertyDetails(updatedProperty)
+	                    .orElse(new BankDetails());
+	            bank.setPropertyDetails(updatedProperty);
+	            bank.setBeneficiaryName(dto.getBankDetailsDTO().getBeneficiaryName());
+	            bank.setMobileNumber(dto.getBankDetailsDTO().getMobileNumber());
+	            bank.setAccountNumber(dto.getBankDetailsDTO().getAccountNumber());
+	            bank.setConfirmAccountNumber(dto.getBankDetailsDTO().getConfirmAccountNumber());
+	            bank.setIfscCode(dto.getBankDetailsDTO().getIfscCode());
+	            bankDetailsRepository.save(bank);
+	        }
+	        
+	        if (inputFile != null) {
+	            String updateMode = inputFile.getUpdateMode();
+	            boolean isReplace = "REPLACE".equalsIgnoreCase(updateMode);
+	            boolean isAppend = "APPEND".equalsIgnoreCase(updateMode);
+
+	            if (!isReplace && !isAppend) {
+	                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid update mode. Use APPEND or REPLACE.");
+	            }
+
+	            if (isReplace) {
+	                List<ShootingLocationImages> oldFiles = shootingLocationImagesRepository.findByProperty(property);
+	                for (ShootingLocationImages media : oldFiles) {
+	                    s3Util.deleteFileFromS3(media.getFilePath());
+	                }
+	                shootingLocationImagesRepository.deleteAllByProperty(property);
+	            }
+
+	            // Upload new media
+	            Map<ShootingLocationImages, MultipartFile> mediaFilesMap = prepareMediaFileData(dto, inputFile, property.getUser(), property);
+	            for (Map.Entry<ShootingLocationImages, MultipartFile> entry : mediaFilesMap.entrySet()) {
+	                ShootingLocationImages media = entry.getKey();
+	                MultipartFile file = entry.getValue();
+	                shootingLocationImagesRepository.save(media);
+	                FileOutputWebModel uploaded = uploadToS3(file, media);
+	                if (uploaded != null) {
+	                    logger.info("Uploaded file: {}", uploaded.getFilePath());
+	                }
+	            }
+	        }
+
+	        propertyDetailsRepository.save(property);
+	        return dto;
+
+	    } catch (Exception e) {
+	        logger.error("Error updating property details", e);
+	        throw new RuntimeException("Failed to update property", e);
+	    }
 	}
 
 	public String toggleLike(Integer propertyId, Integer userId) {

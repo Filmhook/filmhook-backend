@@ -1,6 +1,5 @@
 package com.annular.filmhook.controller;
 
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,7 +26,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
@@ -183,38 +184,6 @@ public class ShootingLocationController {
 		        }
 		    }
 
-		  @PutMapping("update/{id}")
-		  public ResponseEntity<Map<String, String>> updateProperty(
-		          @PathVariable Integer id,
-		          @RequestBody ShootingLocationPropertyDetailsDTO dto) {
-
-		      Map<String, String> response = new HashMap<>();
-
-		      try {
-		          logger.info("Attempting to update property with ID: {}", id);
-
-		          service.updateProperty(id, dto);
-
-		          response.put("status", "success");
-		          response.put("message", "Property updated successfully");
-
-		          logger.info("Property updated successfully for ID: {}", id);
-		          return ResponseEntity.ok(response); 
-
-		      } catch (RuntimeException e) {
-		          logger.error("Property not found or update failed for ID: {}, Error: {}", id, e.getMessage());
-		          response.put("status", "error");
-		          response.put("message", "Property not found or update failed for ID: " + id);
-		          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response); 
-
-		      } catch (Exception e) {
-		          logger.error("Unexpected error while updating property ID: {}, Error: {}", id, e.getMessage(), e);
-		          response.put("status", "error");
-		          response.put("message", "Internal server error occurred");
-		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); 
-		      }
-		  }
-
 
 		  @PostMapping("/savePropertyDetails")
 		  public ResponseEntity<?> savePropertyDetails(@ModelAttribute ShootingLocationFileInputModel inputFile,
@@ -239,6 +208,28 @@ public class ShootingLocationController {
 		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		      }
 		  }
+		  
+
+		  @PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+		  public ResponseEntity<Response> updateProperty(
+		          @RequestParam("propertyId") Integer propertyId,
+		          @RequestPart("propertyDetails") ShootingLocationPropertyDetailsDTO dto,
+		          @ModelAttribute ShootingLocationFileInputModel mediaFiles) {
+
+		      try {
+		          service.updatePropertyDetails(propertyId, dto, mediaFiles);
+		          return ResponseEntity.ok(new Response(1, "Property updated successfully", null));
+
+		      } catch (ResponseStatusException e) {
+		          return ResponseEntity.status(e.getStatus())
+		                  .body(new Response(-1, e.getReason(), null));
+
+		      } catch (Exception e) {
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                  .body(new Response(-1, "Unexpected error during update", e.getMessage()));
+		      }
+		  }
+
 
 		  @PostMapping("/addLike")
 		  public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer propertyId, @RequestParam Integer userId) {

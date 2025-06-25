@@ -31,6 +31,9 @@ public class MarketPlaceProductDTO {
 	    private Map<String, List<MarketPlaceDynamicAttributeDTO>> groupedAttributes;
 	    private String additionalDetails;
 	    private String status;
+	    private double averageRating;
+		private List<MarketPlaceProductReviewDTO> reviews;
+		private boolean likedByUser;
 
 }
 

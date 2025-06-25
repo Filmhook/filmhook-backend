@@ -34,6 +34,7 @@ public class ShootingLocationPropertyReview {
     private Integer id;
 
     private int rating; 
+    
     private String reviewText;
 
     @ManyToOne(fetch = FetchType.LAZY)

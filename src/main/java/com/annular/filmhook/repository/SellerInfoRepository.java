@@ -13,6 +13,9 @@ public interface SellerInfoRepository extends JpaRepository<SellerInfo, Long> {
 	   @Query("SELECT s FROM SellerInfo s WHERE s.user.userId = :userId")
 	    Optional<SellerInfo> findSellerInfoByUserId(@Param("userId") Integer userId);
 	   
+
+
+	   
 	
 
 }

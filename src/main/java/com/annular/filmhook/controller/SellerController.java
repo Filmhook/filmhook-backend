@@ -2,6 +2,7 @@ package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.SellerInfo;
+import com.annular.filmhook.repository.SellerInfoRepository;
 import com.annular.filmhook.service.SellerService;
 import com.annular.filmhook.webmodel.SellerFileInputModel;
 import com.annular.filmhook.webmodel.SellerInfoDTO;
@@ -14,7 +15,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/sellers")
@@ -22,6 +26,30 @@ import java.util.List;
 public class SellerController {
 
     private final SellerService sellerService;
+   private final SellerInfoRepository sellerInfoRepository;
+    
+	   @GetMapping("/check-seller/{userId}")
+	   public ResponseEntity<Map<String, Object>> checkIfUserIsSeller(@PathVariable Integer userId) {
+	       Map<String, Object> response = new HashMap<>();
+	       try {
+	           Optional<SellerInfo> sellerOptional = sellerInfoRepository.findSellerInfoByUserId(userId);
+	
+	           if (sellerOptional.isPresent()) {
+	               response.put("status", true);
+	               response.put("message", "Seller account found for user ID: " + userId);
+	               response.put("sellerId", sellerOptional.get().getId());
+	           } else {
+	               response.put("status", false);
+	               response.put("message", "No seller account associated with user ID: " + userId);
+	           }
+	
+	           return ResponseEntity.ok(response);
+	       } catch (Exception e) {
+	           response.put("status", false);
+	           response.put("message", "Error checking seller account: " + e.getMessage());
+	           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	       }
+	   }
 
     @PostMapping("/save")
     public ResponseEntity<?> saveSellerInfo(

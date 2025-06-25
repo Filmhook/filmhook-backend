@@ -20,4 +20,5 @@ public class ShootingLocationFileInputModel {
 	//  private String category;
 
 	private List<MultipartFile> govermentId;
+	   private String updateMode;
 }

@@ -1,6 +1,7 @@
 package com.annular.filmhook.converter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,17 +11,22 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.annular.filmhook.model.MarketPlaceCategories;
+import com.annular.filmhook.model.MarketPlaceLikes;
 import com.annular.filmhook.model.MarketPlaceProductDynamicAttribute;
+import com.annular.filmhook.model.MarketPlaceProductReview;
 import com.annular.filmhook.model.MarketPlaceProducts;
 import com.annular.filmhook.model.MarketPlaceSubCategories;
 import com.annular.filmhook.model.MarketPlaceSubCategoryFields;
 import com.annular.filmhook.model.SellerInfo;
 import com.annular.filmhook.model.SellerMediaFile;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.MarketPlaceSubCategoryFiledsRepository;
 import com.annular.filmhook.repository.MarketPlaceSubCategoryRepository;
 import com.annular.filmhook.webmodel.MarketPlaceCategoryDTO;
 import com.annular.filmhook.webmodel.MarketPlaceDynamicAttributeDTO;
+import com.annular.filmhook.webmodel.MarketPlaceLikesDTO;
 import com.annular.filmhook.webmodel.MarketPlaceProductDTO;
+import com.annular.filmhook.webmodel.MarketPlaceProductReviewDTO;
 import com.annular.filmhook.webmodel.MarketPlaceSubCategoryDTO;
 import com.annular.filmhook.webmodel.MarketPlaceSubCategoryFieldDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -142,9 +148,13 @@ public class MarketPlaceProductConverter {
 	}
 
 
-
-	// Convert Entity to DTO
 	public static MarketPlaceProductDTO toDTO(MarketPlaceProducts entity) {
+	    return toDTO(entity, null); // default: no current user
+	}
+	
+	
+	// Convert Entity to DTO
+	public static MarketPlaceProductDTO toDTO(MarketPlaceProducts entity, Integer currentUserId) {
 
 		Map<String, List<MarketPlaceDynamicAttributeDTO>> groupedAttributes = new LinkedHashMap<>();
 		if (entity.getDynamicAttributes() != null) {
@@ -186,6 +196,30 @@ public class MarketPlaceProductConverter {
 				sellerEmail = seller.getUser().getEmail();
 			}
 		}
+		
+		   List<MarketPlaceProductReviewDTO> reviewDTOs = new ArrayList<>();
+		    double avgRating = 0.0;
+		    if (entity.getReviews() != null && !entity.getReviews().isEmpty()) {
+		        int total = 0;
+		        for (MarketPlaceProductReview review : entity.getReviews()) {
+		            total += review.getRating();
+		            reviewDTOs.add(MarketPlaceProductReviewDTO.builder()
+		                    .productId(entity.getId())
+		                    .userId(review.getUser().getUserId())
+		                    .userName(review.getUser().getName()) 
+		                    .rating(review.getRating())
+		                    .reviewText(review.getReviewText())
+		                    .build());
+		        }
+		        avgRating = (double) total / entity.getReviews().size();
+		    }
+		    
+		    Boolean isLiked = false;
+		    if (currentUserId != null && entity.getLikes() != null) {
+		        isLiked = entity.getLikes().stream()
+		            .anyMatch(like -> like.getLikedBy().getUserId().equals(currentUserId) && Boolean.TRUE.equals(like.getStatus()));
+		    }
+
 
 		return MarketPlaceProductDTO.builder()
 				.id(entity.getId())
@@ -197,13 +231,50 @@ public class MarketPlaceProductConverter {
 				.imageUrls(imageUrls)
 				.groupedAttributes(groupedAttributes)
 				.videoUrls(videoUrls)
-				.createdBy(entity.getSeller().getId().intValue())
+				.createdBy(entity.getSeller() != null && entity.getSeller().getId() != null 
+		           ? entity.getSeller().getId().intValue() 
+		           : null)
 				.status(entity.getStatus())
 				.sellerId(entity.getSeller() != null ? entity.getSeller().getId() : null)
 				.sellerFullName(sellerFullName)
 				.sellerEmail(sellerEmail)
 				.subCategoryName(entity.getSubCategory() != null ? entity.getSubCategory().getName() : null)
 				.additionalDetails(entity.getAdditionalDetails())
+				.averageRating(avgRating)
+				.reviews(reviewDTOs)
+				.likedByUser(isLiked)
 				.build();
 	}
+	
+	
+//	reviews
+	 public static MarketPlaceProductReview toEntity(MarketPlaceProductReviewDTO dto, MarketPlaceProducts product, User user) {
+	        return MarketPlaceProductReview.builder()
+	                .rating(dto.getRating())
+	                .reviewText(dto.getReviewText())
+	                .product(product)
+	                .user(user)
+	                .build();
+	    }
+
+	    // Convert Entity to DTO
+	    public static MarketPlaceProductReviewDTO toDTO(MarketPlaceProductReview review) {
+	        return MarketPlaceProductReviewDTO.builder()
+	                .productId(review.getProduct().getId())
+	                .userId(review.getUser().getUserId())
+	                .userName(review.getUser().getName())
+	                .rating(review.getRating())
+	                .reviewText(review.getReviewText())
+	                .userName(review.getUser().getName())
+	                .build();
+	    }
+	    	    
+	    public static MarketPlaceLikes toEntity(MarketPlaceLikesDTO dto, MarketPlaceProducts product, User user) {
+	        return MarketPlaceLikes.builder()
+	                .product(product)
+	                .likedBy(user)
+	               	.createdBy(dto.getUserId())
+	                .liveDate(LocalDateTime.now().toString())
+	                .build();
+	    }
 }

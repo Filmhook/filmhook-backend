@@ -70,6 +70,12 @@ public class MarketPlaceProducts {
 	@JsonIgnore
 	private SellerInfo seller;
 	
+	@OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<MarketPlaceProductReview> reviews;
+	
+	  @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+	    private List<MarketPlaceLikes> likes;
+	
 	@PrePersist
 	public void onCreate() {
 		this.createdDate = LocalDateTime.now();
