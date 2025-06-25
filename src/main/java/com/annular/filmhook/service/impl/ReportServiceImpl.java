@@ -383,7 +383,6 @@ public class ReportServiceImpl implements ReportService {
             return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
         }
     }
-
     @Override
     public ResponseEntity<?> getReportsByUserId(ReportPostWebModel postWebModel) {
         Map<String, Object> response = new HashMap<>();
@@ -394,48 +393,68 @@ public class ReportServiceImpl implements ReportService {
                 Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
                 if (post == null) continue;
 
-                List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+                List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+                    MediaFileCategory.Post, post.getId());
 
-                Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId()).stream()
-                        .map(FilmProfessionPermanentDetail::getProfessionName)
-                        .collect(Collectors.toSet());
+                Set<String> professionNames = filmProfessionPermanentDetailRepository
+                    .getProfessionDataByUserId(post.getUser().getUserId()).stream()
+                    .map(FilmProfessionPermanentDetail::getProfessionName)
+                    .collect(Collectors.toSet());
 
-                List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+                List<FollowersRequest> followersList = friendRequestRepository
+                    .findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
                 Integer userId = userDetails.userInfo().getId();
                 boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
-                        .map(Likes::getStatus)
-                        .orElse(false);
+                    .map(Likes::getStatus).orElse(false);
 
-                boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
-                        .map(UserProfilePin::isStatus)
-                        .orElse(false);
+                boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(
+                    post.getUser().getUserId(), userId).map(UserProfilePin::isStatus).orElse(false);
 
                 PostWebModel postWebModels = PostWebModel.builder()
-                        .id(post.getId())
-                        .userId(post.getUser().getUserId())
-                        .userName(post.getUser().getName())
-                        .postId(post.getPostId())
-                        .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
-                        .description(post.getDescription())
-                        .pinStatus(pinStatus)
-                        .likeCount(post.getLikesCount())
-                        .shareCount(post.getSharesCount())
-                        .commentCount(post.getCommentsCount())
-                        .promoteFlag(post.getPromoteFlag())
-                        .postFiles(postFiles)
-                        .likeStatus(likeStatus)
-                        .privateOrPublic(post.getPrivateOrPublic())
-                        .locationName(post.getLocationName())
-                        .professionNames(professionNames)
-                        .followersCount(followersList.size())
-                        .build();
+                    .id(post.getId())
+                    .userId(post.getUser().getUserId())
+                    .userName(post.getUser().getName())
+                    .postId(post.getPostId())
+                    .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+                    .description(post.getDescription())
+                    .pinStatus(pinStatus)
+                    .likeCount(post.getLikesCount())
+                    .shareCount(post.getSharesCount())
+                    .commentCount(post.getCommentsCount())
+                    .promoteFlag(post.getPromoteFlag())
+                    .postFiles(postFiles)
+                    .likeStatus(likeStatus)
+                    .privateOrPublic(post.getPrivateOrPublic())
+                    .locationName(post.getLocationName())
+                    .professionNames(professionNames)
+                    .followersCount(followersList.size())
+                    .build();
+
+                // Fetch userName for the reporter
+                Optional<User> reportUserOpt = userRepository.findById(reportPost.getUserId());
+                String reportUserName = reportUserOpt.map(User::getName).orElse("Unknown");
+
+                Map<String, Object> reportDetailsMap = new HashMap<>();
+                reportDetailsMap.put("reportPostId", reportPost.getReportPostId());
+                reportDetailsMap.put("userId", reportPost.getUserId());
+                reportDetailsMap.put("userName", reportUserName); // ✅ Added userName from User table
+                reportDetailsMap.put("postId", reportPost.getPostId());
+                reportDetailsMap.put("reason", reportPost.getReason());
+                reportDetailsMap.put("status", reportPost.getStatus());
+                reportDetailsMap.put("createdBy", reportPost.getCreatedBy());
+                reportDetailsMap.put("createdOn", reportPost.getCreatedOn());
+                reportDetailsMap.put("updatedBy", reportPost.getUpdatedBy());
+                reportDetailsMap.put("updatedOn", reportPost.getUpdatedOn());
+                reportDetailsMap.put("notificationCount", reportPost.getNotificationCount());
+                reportDetailsMap.put("deletePostSuspension", reportPost.getDeletePostSuspension());
 
                 Map<String, Object> combinedDetails = new HashMap<>();
                 combinedDetails.put("postWebModel", postWebModels);
-                combinedDetails.put("reportDetails", reportPost);
+                combinedDetails.put("reportDetails", reportDetailsMap);
                 combinedDetailsList.add(combinedDetails);
             }
+
             response.put("combinedDetailsList", combinedDetailsList);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -444,6 +463,7 @@ public class ReportServiceImpl implements ReportService {
             return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
         }
     }
+
 
     @Override
     public ResponseEntity<?> updateReportsByDeleteAnsSuspension(ReportPostWebModel postWebModel) {
