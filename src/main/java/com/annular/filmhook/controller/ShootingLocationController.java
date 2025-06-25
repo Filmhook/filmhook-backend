@@ -33,7 +33,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
-
+import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
@@ -50,6 +50,7 @@ import lombok.RequiredArgsConstructor;
 public class ShootingLocationController {
 	@Autowired
 	private ShootingLocationService service;
+	
 
 
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
@@ -374,6 +375,27 @@ public class ShootingLocationController {
 		            logger.error("Failed to fetch reviews for property ID: {}", propertyId, e);
 		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 		                                 .body(new Response(-1, "Failed to get property reviews", null));
+		        }
+		    }
+		  
+		  
+		  @PostMapping("/save/availabilityDates")
+		    public ResponseEntity<?> saveAvailability(@RequestBody PropertyAvailabilityDTO dto) {
+		        try {
+		            PropertyAvailabilityDTO saved = service.saveAvailability(dto);
+		            return ResponseEntity.ok(new Response(1, "Availability Saved", saved));
+		        } catch (Exception e) {
+		            return ResponseEntity.internalServerError().body(new Response(-1, e.getMessage(), null));
+		        }
+		    }
+
+		    @GetMapping("/availabilityDates/{propertyId}")
+		    public ResponseEntity<?> getAvailability(@PathVariable Integer propertyId) {
+		        try {
+		            List<PropertyAvailabilityDTO> list = service.getAvailabilityByPropertyId(propertyId);
+		            return ResponseEntity.ok(new Response(1, "Fetched successfully", list));
+		        } catch (Exception e) {
+		            return ResponseEntity.internalServerError().body(new Response(-1, e.getMessage(), null));
 		        }
 		    }
 

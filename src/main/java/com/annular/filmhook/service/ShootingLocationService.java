@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
@@ -30,6 +31,9 @@ public interface ShootingLocationService {
     void saveReview(Integer propertyId, Integer userId, int rating, String reviewText);
     double getAverageRating(Integer propertyId);
     List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
+    
+    PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto);
+    List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId);
 
     
 }

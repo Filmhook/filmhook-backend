@@ -215,7 +215,9 @@ public class ShootingLocationPropertyDetails {
 
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ShootingLocationPropertyReview> reviews;
-
+ 
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<PropertyAvailabilityDate> availabilityDates;
     
 	
 
