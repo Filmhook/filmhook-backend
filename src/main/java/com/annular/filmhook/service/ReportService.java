@@ -16,4 +16,6 @@ public interface ReportService {
 
     ResponseEntity<?> getReportsByUserId(ReportPostWebModel postWebModel);
 
+	ResponseEntity<?> updateReportsByDeleteAnsSuspension(ReportPostWebModel postWebModel);
+
 }
