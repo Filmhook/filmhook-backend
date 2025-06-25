@@ -9,6 +9,6 @@ import com.annular.filmhook.model.SellerMediaFile;
 
 public interface SellerMediaFileRepository extends JpaRepository<SellerMediaFile, Integer> {
 
-	List<SellerMediaFile> findBySellerId(Long sellerId);
+//	List<SellerMediaFile> findBySellerId(Long sellerId);
 
 }

@@ -11,10 +11,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-
-
+import javax.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,6 +25,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name= "market_place_product_like")
 public class MarketPlaceLikes {
 
 	@Id
@@ -61,5 +60,6 @@ public class MarketPlaceLikes {
 
 	@Column(name = "live_date")
 	private String liveDate;
+
 }
 

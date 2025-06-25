@@ -1,6 +1,8 @@
 package com.annular.filmhook.controller;
 
 
+import java.security.Principal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,13 +23,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MarketPlaceSubCategories;
 import com.annular.filmhook.repository.SellerInfoRepository;
 import com.annular.filmhook.service.MarketPlaceProductService;
 import com.annular.filmhook.webmodel.MarketPlaceCategoryDTO;
+import com.annular.filmhook.webmodel.MarketPlaceLikesDTO;
 import com.annular.filmhook.webmodel.MarketPlaceProductDTO;
+import com.annular.filmhook.webmodel.MarketPlaceProductReviewDTO;
 import com.annular.filmhook.webmodel.MarketPlaceSubCategoryDTO;
 import com.annular.filmhook.webmodel.MarketPlaceSubCategoryFieldDTO;
 import com.annular.filmhook.webmodel.SellerFileInputModel;
@@ -165,10 +168,10 @@ public class MarketPlaceProductController {
 
 
     @GetMapping("/getAllProducts")
-    public ResponseEntity<Response> getAllProducts() {
+    public ResponseEntity<Response> getAllProducts(Integer currentUserId) {
         try {
             logger.info("Fetching all products");
-            List<MarketPlaceProductDTO> products = service.getAllProducts();
+            List<MarketPlaceProductDTO> products = service.getAllProducts(currentUserId);
             return ResponseEntity.ok(new Response(1, "Success", products));
         } catch (Exception e) {
             logger.error("Error fetching products: {}", e.getMessage(), e);
@@ -216,12 +219,11 @@ public class MarketPlaceProductController {
         }
     }
 
-
     @GetMapping("/getProductsBysubcategory/{subCategoryId}")
-    public ResponseEntity<Response> getProductsBySubCategory(@PathVariable Integer subCategoryId) {
+    public ResponseEntity<Response> getProductsBySubCategory(@PathVariable Integer subCategoryId, Integer currentUserId) {
         try {
             logger.info("Fetching products by subCategoryId: {}", subCategoryId);
-            List<MarketPlaceProductDTO> products = service.getProductsBySubCategoryId(subCategoryId);
+            List<MarketPlaceProductDTO> products = service.getProductsBySubCategoryId(subCategoryId, currentUserId);
             return ResponseEntity.ok(new Response(1, "Success", products));
         } catch (Exception e) {
             logger.error("Error fetching products by subCategoryId: {}", e.getMessage(), e);
@@ -276,30 +278,97 @@ public class MarketPlaceProductController {
         }
     }
     
-    @PostMapping("/addLike")
-	  public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer productId, @RequestParam Integer userId) {
-	      Logger logger = LoggerFactory.getLogger(this.getClass());
-	      Map<String, String> response = new HashMap<>();
+  
+    @PostMapping("/saveReview")
+    public ResponseEntity<Map<String, Object>> submitReview(@RequestBody MarketPlaceProductReviewDTO reviewDTO) {
+        Map<String, Object> response = new HashMap<>();
 
-	      try {
-	          logger.info("Toggling like for propertyId: {}, userId: {}", productId, userId);
-	          String message = service.toggleLike(productId, userId);
-	          response.put("message", message);
-	          return ResponseEntity.ok(response);
+        try {
+            service.saveReview(reviewDTO);
+            response.put("status", "success");
+            response.put("message", "Review submitted successfully.");
+            response.put("data", null);
+            return ResponseEntity.ok(response);
 
-	      } catch (RuntimeException ex) {
-	          logger.error("Error: {}", ex.getMessage());
-	          response.put("message", "Error: " + ex.getMessage());
-	          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (RuntimeException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            response.put("data", null);
+            return ResponseEntity.status(400).body(response);
 
-	      } catch (Exception ex) {
-	          logger.error("Unexpected error: {}", ex.getMessage());
-	          response.put("message", "Something went wrong.");
-	          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	      }
-	  }
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Internal server error");
+            response.put("data", null);
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @DeleteMapping("/deleteReview/{reviewId}")
+    public ResponseEntity<?> deleteReview(@PathVariable Integer reviewId) {
+        try {
+            logger.info("Deleting review with ID: {}", reviewId);
+            service.deleteReview(reviewId);
+            return ResponseEntity.ok(Map.of("status", true, "message", "Review deleted successfully"));
+        } catch (Exception e) {
+            logger.error("Error deleting review: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", false, "message", "Failed to delete review: " + e.getMessage()));
+        }
+    }
 
 
+    @PostMapping("/saveLike")
+    public ResponseEntity<Map<String, Object>> likeProduct(@RequestBody MarketPlaceLikesDTO dto) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String message = service.saveLike(dto);
+            response.put("status", "success");
+            response.put("message", message);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
+    @GetMapping("/wishlist")
+    public ResponseEntity<Map<String, Object>> getWishlist(@RequestParam(required = false) Integer userId) {
+        Map<String, Object> response = new HashMap<>();
 
+        if (userId == null) {
+            response.put("status", "error");
+            response.put("message", "User ID must not be null");
+            response.put("data", null);
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        try {
+            logger.info("Fetching wishlist for userId: {}", userId);
+
+            List<MarketPlaceProductDTO> wishlist = service.getWishlistProducts(userId);
+
+         
+            if (wishlist == null || wishlist.isEmpty()) {
+                response.put("status", "success");
+                response.put("message", "No liked products found for this user.");
+                response.put("data", Collections.emptyList());
+                return ResponseEntity.ok(response);
+            }
+
+            response.put("status", "success");
+            response.put("message", "Wishlist fetched successfully");
+            response.put("data", wishlist);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error fetching wishlist for userId {}: {}", userId, e.getMessage(), e);
+            response.put("status", "error");
+            response.put("message", "Failed to fetch wishlist: " + e.getMessage());
+            response.put("data", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 
 }

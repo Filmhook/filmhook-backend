@@ -53,7 +53,12 @@ public class ShootingLocationPropertyDetails {
 	private String firstName;
 	private String middleName;
 	private String lastName;
+	
+//	@Column(name = "is_owner_name_visible")
+//	private Boolean isOwnerNameVisible;
+	
 	private String citizenship;
+	
 	private String placeOfBirth;
 	private String propertyName;
 	private String location;

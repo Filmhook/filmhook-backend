@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class MarketPlaceSubCategoryFieldDTO {
     private Integer id;
     private String fieldKey;
-    private String label;
+//    private String label;
     private String type;
     private boolean required;
     private String section;

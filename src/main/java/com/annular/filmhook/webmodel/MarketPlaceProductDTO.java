@@ -22,10 +22,18 @@ public class MarketPlaceProductDTO {
 	    private Integer createdBy;
 	    private Integer updatedBy; 
 	    private Long sellerId;
-	    private Map<String, Object> dynamicAttributesJson;
-	    private List<String> imageUrls;
+	 	    private List<String> imageUrls;
 	    private List<String> videoUrls; 
 	    private String sellerFullName;
 	    private String sellerEmail;
 	    private String subCategoryName;
+	    private List<MarketPlaceDynamicAttributeDTO> dynamicAttributes;
+	    private Map<String, List<MarketPlaceDynamicAttributeDTO>> groupedAttributes;
+	    private String additionalDetails;
+	    private String status;
+	    private double averageRating;
+		private List<MarketPlaceProductReviewDTO> reviews;
+		private boolean likedByUser;
+
 }
+
