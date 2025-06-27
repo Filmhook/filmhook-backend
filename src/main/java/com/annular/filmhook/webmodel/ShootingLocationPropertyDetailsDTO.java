@@ -126,8 +126,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private Integer industryId;	
 	private double averageRating;
 	private List<ShootingLocationPropertyReviewDTO> reviews;
-	
-	
+	private List<PropertyAvailabilityDTO> availabilityDates;
 
 
 }

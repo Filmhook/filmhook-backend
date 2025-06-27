@@ -34,7 +34,7 @@ public interface MarketPlaceProductService {
 	    List<MarketPlaceProductDTO> getProductsBySubCategoryId(Integer subCategoryId, Integer currentUserId);
 	     void updateProduct(Integer productId, MarketPlaceProductDTO dto, SellerFileInputModel mediaFiles);
 	     List<MarketPlaceProductDTO> getProductsByUserId(Long userId);
-	   
+
 	     void saveReview(MarketPlaceProductReviewDTO dto);
 	     void deleteReview(Integer reviewId);
 	     String saveLike(MarketPlaceLikesDTO dto);

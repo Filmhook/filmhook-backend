@@ -567,6 +567,7 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 	}
 
 	@Override
+
 	public List<MarketPlaceProductDTO> getWishlistProducts(Integer userId) {
 	    logger.info("Getting wishlist for userId: {}", userId);
 
@@ -581,9 +582,5 @@ public class MarketPlaceProductServiceImpl implements MarketPlaceProductService{
 	            .map(like -> MarketPlaceProductConverter.toDTO(like.getProduct(), userId))
 	            .collect(Collectors.toList());
 	}
-
-
-
-
 
 }

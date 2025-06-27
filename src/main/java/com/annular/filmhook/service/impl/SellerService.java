@@ -1,10 +1,16 @@
-package com.annular.filmhook.service;
+package com.annular.filmhook.service.impl;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import javax.mail.internet.MimeMessage;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,6 +40,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+
 @Service
 @RequiredArgsConstructor
 public class SellerService {
@@ -42,27 +49,40 @@ public class SellerService {
 	private final SellerMediaFileRepository sellerMediaFileRepository;
 	private final UserRepository userRepository;
 	private final S3Util s3Util;
+	
+	@Autowired
+	private JavaMailSender javaMailSender;
 
-	public SellerInfo saveSellerInfo(SellerInfoDTO dto, SellerFileInputModel files) {
-		User user = userRepository.findById(dto.getUserId()).orElseThrow();
+    public SellerInfo saveSellerInfo(SellerInfoDTO dto, SellerFileInputModel files) {
+        User user = userRepository.findById(dto.getUserId())
+            .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getUserId()));
 
-		SellerInfo seller = SellerInfo.builder()
-				.firstName(dto.getFirstName())
-				.middleName(dto.getMiddleName())
-				.lastName(dto.getLastName())
-				.citizenship(dto.getCitizenship())
-				.placeOfBirth(dto.getPlaceOfBirth())
-				.idProofNumber(dto.getIdProofNumber())
-				.doorFlatNumber(dto.getDoorFlatNumber())
-				.streetCross(dto.getStreetCross())
-				.area(dto.getArea())
-				.state(dto.getState())
-				.postalCode(dto.getPostalCode())
-				.businessInfo(mapBusinessInfo(dto.getBusinessInfo()))
-				.shopInfo(mapShopInfo(dto.getShopInfo()))
-				.gstVerification(mapGstVerification(dto.getGstVerification()))
-				.user(user)
-				.build();
+        // Step 1: Check if a SellerInfo already exists for this user
+        Optional<SellerInfo> existingSeller = sellerInfoRepository.findByUserId(dto.getUserId());
+        if (existingSeller.isPresent()) {
+            throw new RuntimeException("Seller account already exists for userId: " + dto.getUserId());
+        }
+
+        // Step 2: Proceed with saving new SellerInfo
+        SellerInfo seller = SellerInfo.builder()
+                .firstName(dto.getFirstName())
+                .middleName(dto.getMiddleName())
+                .lastName(dto.getLastName())
+                .citizenship(dto.getCitizenship())
+                .placeOfBirth(dto.getPlaceOfBirth())
+                .idProofNumber(dto.getIdProofNumber())
+                .doorFlatNumber(dto.getDoorFlatNumber())
+                .streetCross(dto.getStreetCross())
+                .area(dto.getArea())
+                .state(dto.getState())
+                .postalCode(dto.getPostalCode())
+                .businessInfo(mapBusinessInfo(dto.getBusinessInfo()))
+                .shopInfo(mapShopInfo(dto.getShopInfo()))
+                .gstVerification(mapGstVerification(dto.getGstVerification()))
+                .user(user)
+                .buttonStatus(dto.isButtonStatus()) 
+                .activeStatus(dto.getActiveStatus()) 
+                .build();
 
 		seller = sellerInfoRepository.save(seller);
 
@@ -77,9 +97,64 @@ public class SellerService {
 			}
 		}
 
-		return sellerInfoRepository.save(seller);
+		seller = sellerInfoRepository.save(seller);
+		sendSellerEmail(seller.getShopInfo().getEmai(), seller.getFirstName(),
+			    "🎬 Seller Registration Submitted - Pending Approval",
+			    "<p>📝 Your seller account has been submitted and is currently under review by our admin team.</p>"
+			);
+		
+		 return seller;
 	}
+    
+    
 
+    private void sendSellerEmail(String to, String firstName, String subject, String messageBody) {
+        try {
+            StringBuilder content = new StringBuilder();
+            content.append("<html><body>");
+            content.append("<h3>Hello ").append(firstName).append(",</h3>");
+            content.append(messageBody);
+            content.append("<br><p>Thank you for using <b>FilmHook</b>!</p>");
+            content.append("</body></html>");
+
+            MimeMessage message = javaMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(content.toString(), true);
+
+            javaMailSender.send(message);
+            System.out.println("✅ Email sent to " + to);
+        } catch (Exception e) {
+            System.err.println("❌ Error sending email: " + e.getMessage());
+        }
+    }
+    
+    public void sendSellerStatusUpdateEmail(String status, SellerInfo seller, String reason) {
+        String email = seller.getShopInfo().getEmai(); // Fix typo: getEmai() ➝ getEmail()
+        String name = seller.getFirstName();
+
+        if ("Approved".equalsIgnoreCase(status)) {
+            sendSellerEmail(email, name,
+                "✅ Seller Account Approved",
+                "<p>Congratulations! Your seller account has been <b>approved</b>. You can now start listing your shooting locations.</p>"
+            );
+        } else if ("Rejected".equalsIgnoreCase(status)) {
+            String rejectionMessage = "<p>Unfortunately, your seller account has been <b>rejected</b>.</p>";
+            if (reason != null && !reason.isEmpty()) {
+                rejectionMessage += "<p><b>Reason:</b> " + reason + "</p>";
+            }
+            rejectionMessage += "<p>Please review your information or contact support for clarification.</p>";
+
+            sendSellerEmail(email, name,
+                "Seller Account Rejected",
+                rejectionMessage
+            );
+        }
+    }
+
+
+    
 	public SellerInfo updateSellerInfo(Long sellerId, SellerInfoDTO dto, SellerFileInputModel files) {
 		SellerInfo existing = sellerInfoRepository.findById(sellerId)
 				.orElseThrow(() -> new RuntimeException("SellerInfo not found for sellerId: " + sellerId));
@@ -245,6 +320,7 @@ public class SellerService {
 				.shopInfo(mapShopInfoToDto(seller.getShopInfo()))
 				.gstVerification(mapGstToDto(seller.getGstVerification()))
 				.userId(seller.getUser() != null ? seller.getUser().getUserId() : null)
+				
 				.build();
 	}
 

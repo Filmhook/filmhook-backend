@@ -34,7 +34,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
-
+import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
@@ -51,6 +51,7 @@ import lombok.RequiredArgsConstructor;
 public class ShootingLocationController {
 	@Autowired
 	private ShootingLocationService service;
+	
 
 
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
@@ -367,6 +368,59 @@ public class ShootingLocationController {
 		                                 .body(new Response(-1, "Failed to get property reviews", null));
 		        }
 		    }
+		  
+		  
+		  @PostMapping("/save/availabilityDates")
+		    public ResponseEntity<?> saveAvailability(@RequestBody PropertyAvailabilityDTO dto) {
+		        try {
+		            PropertyAvailabilityDTO saved = service.saveAvailability(dto);
+		            return ResponseEntity.ok(new Response(1, "Availability Saved", saved));
+		        } catch (Exception e) {
+		            return ResponseEntity.internalServerError().body(new Response(-1, e.getMessage(), null));
+		        }
+		    }
+
+		    @GetMapping("/availabilityDates/{propertyId}")
+		    public ResponseEntity<?> getAvailability(@PathVariable Integer propertyId) {
+		        try {
+		            List<PropertyAvailabilityDTO> list = service.getAvailabilityByPropertyId(propertyId);
+		            return ResponseEntity.ok(new Response(1, "Fetched successfully", list));
+		        } catch (Exception e) {
+		            return ResponseEntity.internalServerError().body(new Response(-1, e.getMessage(), null));
+		        }
+		    }
+		    
+		    @PutMapping("/availabilityDates/update")
+		    public ResponseEntity<?> updateAvailability(@RequestBody List<PropertyAvailabilityDTO> availabilityList) {
+		        try {
+		            if (availabilityList == null || availabilityList.isEmpty()) {
+		                return ResponseEntity.badRequest().body("❌ Availability list is empty.");
+		            }
+
+		            // Validate date ranges
+		            for (PropertyAvailabilityDTO dto : availabilityList) {
+		                if (dto.getStartDate() == null || dto.getEndDate() == null) {
+		                    return ResponseEntity.badRequest().body("❌ Start date and end date must not be null.");
+		                }
+		                if (!dto.getEndDate().isAfter(dto.getStartDate())) {
+		                    return ResponseEntity.badRequest().body(
+		                            "❌ End date must be after start date. Found: startDate=" + dto.getStartDate() +
+		                            ", endDate=" + dto.getEndDate()
+		                    );
+		                }
+		            }
+
+		            Integer propertyId = availabilityList.get(0).getPropertyId();
+		            service.updateAvailabilityDates(propertyId, availabilityList);
+
+		            return ResponseEntity.ok("✅ Availability dates updated successfully.");
+		        } catch (Exception e) {
+		            e.printStackTrace();
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                    .body("❌ Failed to update availability dates: " + e.getMessage());
+		        }
+		    }
+
 
 }
 

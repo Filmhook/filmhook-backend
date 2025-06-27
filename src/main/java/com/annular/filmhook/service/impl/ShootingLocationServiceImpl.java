@@ -33,6 +33,7 @@ import com.annular.filmhook.model.BusinessInformation;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MultiMediaFiles;
+import com.annular.filmhook.model.PropertyAvailabilityDate;
 import com.annular.filmhook.model.PropertyLike;
 import com.annular.filmhook.model.ShootingLocationCategory;
 import com.annular.filmhook.model.ShootingLocationImages;
@@ -46,6 +47,7 @@ import com.annular.filmhook.repository.BankDetailsRepository;
 import com.annular.filmhook.repository.BusinessInformationRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
+import com.annular.filmhook.repository.PropertyAvailabilityDateRepository;
 import com.annular.filmhook.repository.PropertyLikeRepository;
 import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationImageRepository;
@@ -64,6 +66,7 @@ import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
 import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
@@ -113,9 +116,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	ShootingLocationImageRepository shootingLocationImagesRepository;
-
-
-
+	
 	@Autowired
 	private BusinessInformationRepository businessInformationRepository;
 
@@ -127,6 +128,12 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	IndustryRepository industryRepository;
+	
+
+    @Autowired
+    private PropertyAvailabilityDateRepository availabilityRepository;
+
+
 
 	@Override
 	public List<ShootingLocationTypeDTO> getAllTypes() {
@@ -853,21 +860,12 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
 			
-//			Map<Integer, String> industryNameMap = industryRepository.findAllById(industryIds).stream()
-//					.collect(Collectors.toMap(Industry::getIndustryId, Industry::getIndustryName));
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
 				boolean likeStatus = likedPropertyIds.contains(property.getId());
 				int likeCount = likeRepository.countLikesByPropertyId(property.getId()) ;
 				
-//				String industryName = null;
-//				if (property.getIndustry() != null) {
-//					industryName = industryNameMap.get(property.getIndustry().getIndustryId());
-//				}
-
-
-
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
 					BusinessInformation b = property.getBusinessInformation();
@@ -1273,6 +1271,22 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
 						.average()
 						.orElse(0.0);
+				
+				List<Integer> propertyIds = properties.stream().map(ShootingLocationPropertyDetails::getId).toList();
+				List<PropertyAvailabilityDate> allAvailability = availabilityRepository.findByPropertyIdIn(propertyIds);
+
+				// Group availability records by propertyId
+				Map<Integer, List<PropertyAvailabilityDTO>> availabilityMap = allAvailability.stream()
+				    .collect(Collectors.groupingBy(
+				        avail -> avail.getProperty().getId(),
+				        Collectors.mapping(avail -> PropertyAvailabilityDTO.builder()
+				                .propertyId(avail.getProperty().getId())
+				                .startDate(avail.getStartDate())
+				                .endDate(avail.getEndDate())
+				                .build(),
+				            Collectors.toList()
+				        )
+				    ));
 
 
 				// Map property DTO (reuse from your existing method)
@@ -1361,6 +1375,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.reviews(reviews)
 						.averageRating(avgRating)
 						.likeCount(likeCount)
+						 .availabilityDates(availabilityMap.getOrDefault(property.getId(), Collections.emptyList()))
 						.build();
 
 
@@ -1682,6 +1697,69 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.build())
 				.collect(Collectors.toList());
 	}
+	
+	@Override
+	public PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto) {
+	    ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(dto.getPropertyId())
+	        .orElseThrow(() -> new RuntimeException("Property not found"));
+
+	    // Fetch existing availability (you expect only one per property)
+	    List<PropertyAvailabilityDate> existingList = availabilityRepository.findByProperty_Id(dto.getPropertyId());
+
+	    PropertyAvailabilityDate availability;
+	    if (!existingList.isEmpty()) {
+	        // Update the first one (you may choose latest if multiple exist)
+	        availability = existingList.get(0);
+	        availability.setStartDate(dto.getStartDate());
+	        availability.setEndDate(dto.getEndDate());
+	    } else {
+	        // Create new
+	        availability = PropertyAvailabilityDate.builder()
+	            .property(property)
+	            .startDate(dto.getStartDate())
+	            .endDate(dto.getEndDate())
+	            .build();
+	    }
+
+	    PropertyAvailabilityDate saved = availabilityRepository.save(availability);
+
+	    return PropertyAvailabilityDTO.builder()
+	        .propertyId(saved.getProperty().getId())
+	        .startDate(saved.getStartDate())
+	        .endDate(saved.getEndDate())
+	        .build();
+	}
+
+	    @Override
+	    public List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId) {
+	        return availabilityRepository.findByPropertyId(propertyId).stream()
+	            .map(a -> PropertyAvailabilityDTO.builder()
+	                .propertyId(a.getProperty().getId())
+	                .startDate(a.getStartDate())
+	                .endDate(a.getEndDate())
+	                .build())
+	            .collect(Collectors.toList());
+	    }
+	    @Override
+	    public void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList) {
+	        // Step 1: Fetch property
+	        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+	                .orElseThrow(() -> new RuntimeException("❌ Property not found with id: " + propertyId));
+
+	        // Step 2: Delete old dates
+	        availabilityRepository.deleteByPropertyId(propertyId);
+
+	        // Step 3: Save new availability
+	        List<PropertyAvailabilityDate> newDates = availabilityList.stream()
+	                .map(dto -> PropertyAvailabilityDate.builder()
+	                        .startDate(dto.getStartDate())
+	                        .endDate(dto.getEndDate())
+	                        .property(property)
+	                        .build())
+	                .collect(Collectors.toList());
+
+	        availabilityRepository.saveAll(newDates);
+	    }
 
 
 

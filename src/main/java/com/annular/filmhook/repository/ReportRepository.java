@@ -29,6 +29,10 @@ public interface ReportRepository extends JpaRepository<ReportPost, Integer> {
     @Query("SELECT COUNT(r) FROM ReportPost r WHERE (r.notificationCount IS NULL OR r.notificationCount = false) AND r.status = false")
     Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
 
+	@Query("SELECT r FROM ReportPost r WHERE r.deletePostSuspension = 1 AND r.updatedOn <= :sevenDaysAgo")
+List<ReportPost> findOldSuspendedReports(@Param("sevenDaysAgo") Date sevenDaysAgo);
+
+
 
 
 

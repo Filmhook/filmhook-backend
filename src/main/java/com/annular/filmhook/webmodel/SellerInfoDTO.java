@@ -26,4 +26,6 @@ public class SellerInfoDTO {
     private GstVerificationDTO gstVerification;
 
     private Integer userId; // for created_by
+    private boolean buttonStatus;
+    private String activeStatus;
 }

@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
 
 import javax.persistence.Column;
@@ -11,9 +12,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-
 import org.hibernate.annotations.CreationTimestamp;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -61,4 +60,6 @@ public class MarketPlaceLikes {
 
 	@Column(name = "live_date")
 	private String liveDate;
+
 }
+

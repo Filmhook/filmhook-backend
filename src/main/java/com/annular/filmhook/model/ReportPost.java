@@ -61,6 +61,9 @@ public class ReportPost {
     
     @Column(name = "notificationCount")
     private Boolean notificationCount;
+    
+    @Column(name = "deletePostSuspension")
+    private Integer deletePostSuspension;
 
 }
 

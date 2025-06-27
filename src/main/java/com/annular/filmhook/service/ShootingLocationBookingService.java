@@ -27,6 +27,6 @@ public interface ShootingLocationBookingService {
     void sendBookingExpiryReminders();
     void markBookingsAsCompleted();
     
-//    List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
+    List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
 
 }

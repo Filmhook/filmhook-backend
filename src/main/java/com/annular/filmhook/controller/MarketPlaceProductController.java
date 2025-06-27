@@ -3,7 +3,6 @@ package com.annular.filmhook.controller;
 
 import java.security.Principal;
 import java.util.Collections;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MarketPlaceSubCategories;
 import com.annular.filmhook.repository.SellerInfoRepository;
@@ -279,7 +277,8 @@ public class MarketPlaceProductController {
                     .body(new Response(-1, "Failed to fetch products", e.getMessage()));
         }
     }
-
+    
+  
     @PostMapping("/saveReview")
     public ResponseEntity<Map<String, Object>> submitReview(@RequestBody MarketPlaceProductReviewDTO reviewDTO) {
         Map<String, Object> response = new HashMap<>();

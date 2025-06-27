@@ -6,10 +6,12 @@ import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationPaymentConverter;
 import com.annular.filmhook.model.BookingStatus;
+import com.annular.filmhook.model.PropertyAvailabilityDate;
 import com.annular.filmhook.model.ShootingLocationBooking;
 import com.annular.filmhook.model.ShootingLocationPayment;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.PropertyAvailabilityDateRepository;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
 import com.annular.filmhook.repository.ShootingLocationPaymentRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
@@ -68,6 +70,9 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Autowired
 	private JavaMailSender javaMailSender;
+	
+	@Autowired
+	 private PropertyAvailabilityDateRepository availabilityRepo;
 
 	@Value("${payu.key}")
 	private String key;
@@ -77,32 +82,52 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Override
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
-		// Check if property exists
-		ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+	    // Check if property exists
+	    ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
 
-		// Check if client exists
-		User client = userRepository.findById(dto.getClientId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+	    // Check if client exists
+	    User client = userRepository.findById(dto.getClientId())
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
 
-//		// Check if already confirmed booking exists for this property
-//		bookingRepository.findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED)
-//		.ifPresent(existing -> {
-//			throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-//					"This property has already been confirmed as booked.");
-//		});
+	    LocalDate newStart = dto.getShootStartDate();
+	    LocalDate newEnd = dto.getShootEndDate();
 
-		// Check if same client already booked (any status)
-		List<ShootingLocationBooking> bookings = bookingRepository.findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId());
-		if (!bookings.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You have already requested booking for this property.");
-		}
+	    // ✅ Step 1: Prevent overlapping CONFIRMED bookings for this property
+	    List<ShootingLocationBooking> confirmedBookings = bookingRepository
+	            .findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
 
-		// Create and save booking
-		ShootingLocationBooking entity = ShootingLocationBookingConverter.toEntity(dto, client, property);
-		ShootingLocationBooking saved = bookingRepository.save(entity);
+	    for (ShootingLocationBooking existing : confirmedBookings) {
+	        LocalDate existingStart = existing.getShootStartDate();
+	        LocalDate existingEnd = existing.getShootEndDate();
 
-		return ShootingLocationBookingConverter.toDTO(saved);
+	        boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
+	        if (overlaps) {
+	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+	                    "This property is already booked for selected dates.");
+	        }
+	    }
+
+	    // ✅ Step 2: Allow same client to book again (on non-overlapping dates)
+	    List<ShootingLocationBooking> clientBookings = bookingRepository
+	            .findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId());
+
+	    for (ShootingLocationBooking b : clientBookings) {
+	        LocalDate clientStart = b.getShootStartDate();
+	        LocalDate clientEnd = b.getShootEndDate();
+
+	        boolean overlaps = !(newEnd.isBefore(clientStart) || newStart.isAfter(clientEnd));
+	        if (overlaps) {
+	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+	                    "You already have a booking for this property on these dates.");
+	        }
+	    }
+
+	    // ✅ Step 3: Save new booking
+	    ShootingLocationBooking entity = ShootingLocationBookingConverter.toEntity(dto, client, property);
+	    ShootingLocationBooking saved = bookingRepository.save(entity);
+
+	    return ShootingLocationBookingConverter.toDTO(saved);
 	}
 
 	@Override
@@ -317,31 +342,49 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
             logger.info("📩 Completion email sent to {}", to);
         }
 
-//        @Override
-//        public List<LocalDate> getAvailableDatesForProperty(Integer propertyId) {
-//            // Step 1: Get owner-defined availability dates
-//            List<LocalDate> ownerDates = availabilityRepo.findDatesByPropertyId(propertyId);
-//
-//            // Step 2: Get all confirmed bookings
-//            List<ShootingLocationBooking> confirmedBookings =
-//                bookingRepo.findByProperty_IdAndStatus(propertyId, BookingStatus.CONFIRMED);
-//
-//            // Step 3: Collect booked dates
-//            Set<LocalDate> bookedDates = new HashSet<>();
-//            for (ShootingLocationBooking booking : confirmedBookings) {
-//                LocalDate start = booking.getShootStartDate();
-//                LocalDate end = booking.getShootEndDate();
-//                while (!start.isAfter(end)) {
-//                    bookedDates.add(start);
-//                    start = start.plusDays(1);
-//                }
-//            }
-//
-//            // Step 4: Filter out booked dates from owner's available dates
-//            return ownerDates.stream()
-//                    .filter(date -> !bookedDates.contains(date))
-//                    .collect(Collectors.toList());
-//        }
+        @Override
+        public List<LocalDate> getAvailableDatesForProperty(Integer propertyId) {
+
+            // Step 1: Fetch all availability ranges for the property
+            List<PropertyAvailabilityDate> availabilityRanges = availabilityRepo.findByProperty_Id(propertyId);
+
+            // Step 2: Expand each availability range into individual dates
+            Set<LocalDate> ownerAvailableDates = new HashSet<>();
+            for (PropertyAvailabilityDate range : availabilityRanges) {
+                LocalDate current = range.getStartDate();
+                while (!current.isAfter(range.getEndDate())) {
+                    ownerAvailableDates.add(current);
+                    current = current.plusDays(1);
+                }
+            }
+
+            // Step 3: Get all confirmed bookings for this property
+            List<ShootingLocationBooking> confirmedBookings =
+                    bookingRepo.findByProperty_IdAndStatus(propertyId, BookingStatus.CONFIRMED);
+
+            // Step 4: Collect booked dates
+            Set<LocalDate> bookedDates = new HashSet<>();
+            for (ShootingLocationBooking booking : confirmedBookings) {
+                LocalDate current = booking.getShootStartDate();
+                while (!current.isAfter(booking.getShootEndDate())) {
+                    bookedDates.add(current);
+                    current = current.plusDays(1);
+                }
+            }
+
+            // Step 5: Filter out booked dates from owner's available dates
+            ownerAvailableDates.removeAll(bookedDates);
+            
+            LocalDate today = LocalDate.now();
+            
+            // Step 6: Return sorted available dates
+            return ownerAvailableDates.stream()
+            		.sorted()
+            		.filter(date -> !bookedDates.contains(date)) // not booked
+                    .filter(date -> !date.isBefore(today))       // not in past
+                    .collect(Collectors.toList());
+        }
+
 
 
 }

@@ -82,4 +82,15 @@ public class ReportController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    @PostMapping("/updateReportsByDeleteAnsSuspension")
+    public ResponseEntity<?> updateReportsByDeleteAnsSuspension(@RequestBody ReportPostWebModel postWebModel) {
+        try {
+            logger.info("updateReportsByDeleteAnsSuspension controller start");
+            return reportService.updateReportsByDeleteAnsSuspension(postWebModel);
+        } catch (Exception e) {
+            logger.error("updateReportsByDeleteAnsSuspension Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
 }

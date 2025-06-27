@@ -3,9 +3,10 @@ package com.annular.filmhook.controller;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.SellerInfo;
 import com.annular.filmhook.repository.SellerInfoRepository;
-import com.annular.filmhook.service.SellerService;
+import com.annular.filmhook.service.impl.SellerService;
 import com.annular.filmhook.webmodel.SellerFileInputModel;
 import com.annular.filmhook.webmodel.SellerInfoDTO;
+import com.annular.filmhook.webmodel.SellerStatusUpdateDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,50 +53,101 @@ public class SellerController {
 	   }
 
     @PostMapping("/save")
-    public ResponseEntity<?> saveSellerInfo(
+    public ResponseEntity<Response> saveSellerInfo(
             @RequestPart("seller") SellerInfoDTO sellerInfoDTO,
             @RequestPart(value = "idProofImages", required = false) List<MultipartFile> idProofImages,
             @RequestPart(value = "shopLogos", required = false) List<MultipartFile> shopLogos) {
+
         try {
             SellerFileInputModel fileInput = new SellerFileInputModel();
             fileInput.setIdProofImages(idProofImages);
             fileInput.setShopLogos(shopLogos);
 
             SellerInfo savedSeller = sellerService.saveSellerInfo(sellerInfoDTO, fileInput);
-            return ResponseEntity.ok(savedSeller);
+
+            Response response = Response.builder()
+                    .status(200)
+                    .message("Seller information saved successfully.")
+                    .data(savedSeller)
+                    .build();
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            Response response = Response.builder()
+                    .status(400)
+                    .message(e.getMessage())
+                    .data(null)
+                    .build();
+
+            return ResponseEntity.status(400).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Failed to save seller info: " + e.getMessage());
+            Response response = Response.builder()
+                    .status(500)
+                    .message("Internal server error: " + e.getMessage())
+                    .data(null)
+                    .build();
+
+            return ResponseEntity.status(500).body(response);
         }
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateSellerInfo(
+    public ResponseEntity<Response> updateSellerInfo(
             @PathVariable Long id,
             @RequestPart("seller") SellerInfoDTO sellerInfoDTO,
             @RequestPart(value = "idProofImages", required = false) List<MultipartFile> idProofImages,
             @RequestPart(value = "shopLogos", required = false) List<MultipartFile> shopLogos) {
+
         try {
             SellerFileInputModel fileInput = new SellerFileInputModel();
             fileInput.setIdProofImages(idProofImages);
             fileInput.setShopLogos(shopLogos);
 
             SellerInfo updatedSeller = sellerService.updateSellerInfo(id, sellerInfoDTO, fileInput);
-            return ResponseEntity.ok(updatedSeller);
+
+            Response response = new Response(
+                    200,
+                    "Seller information updated successfully.",
+                    updatedSeller
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            Response response = new Response(
+                    400,
+                    "Failed to update seller info: " + e.getMessage(),
+                    null
+            );
+            return ResponseEntity.status(400).body(response);
+
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Failed to update seller info: " + e.getMessage());
+            Response response = new Response(
+                    500,
+                    "Internal server error: " + e.getMessage(),
+                    null
+            );
+            return ResponseEntity.status(500).body(response);
         }
     }
 
+
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getSellerDetailsByUserId(@PathVariable Integer userId) {
+    public ResponseEntity<Response> getSellerDetailsByUserId(@PathVariable Integer userId) {
         try {
-            SellerInfoDTO response = sellerService.getSellerDetailsByUserId(userId);
+            SellerInfoDTO sellerInfo = sellerService.getSellerDetailsByUserId(userId);
+            Response response = new Response(200, "Seller details fetched successfully.", sellerInfo);
             return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Response response = new Response(404, "Seller not found for user ID: " + userId, null);
+            return ResponseEntity.status(404).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(404).body("Seller not found for user ID: " + userId);
+            Response response = new Response(500, "Internal server error: " + e.getMessage(), null);
+            return ResponseEntity.status(500).body(response);
         }
     }
-        
+      
     @DeleteMapping("/deleteSeller/{sellerId}")
     public ResponseEntity<Response> deleteSeller(@PathVariable Long sellerId) {
         try {
@@ -109,5 +161,47 @@ public class SellerController {
                     .body(new Response(-1, "Unexpected error occurred while deleting seller", e.getMessage()));
         }
     }
+    
+    @PutMapping("/update-status")
+    public ResponseEntity<Response> updateSellerStatus(@RequestBody SellerStatusUpdateDTO dto) {
+        try {
+            Optional<SellerInfo> optionalSeller = sellerInfoRepository.findById(dto.getSellerId());
+
+            if (optionalSeller.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    Response.builder()
+                            .status(404)
+                            .message("Seller not found with ID: " + dto.getSellerId())
+                            .data(null)
+                            .build()
+                );
+            }
+
+            SellerInfo seller = optionalSeller.get();
+            seller.setButtonStatus(dto.isButtonStatus());
+            seller.setActiveStatus(dto.getActiveStatus());
+
+            sellerInfoRepository.save(seller);
+            sellerService.sendSellerStatusUpdateEmail(dto.getActiveStatus(), seller, dto.getReason() );
+
+            return ResponseEntity.ok(
+                Response.builder()
+                        .status(200)
+                        .message("Seller status updated successfully")
+                        .data(seller)
+                        .build()
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Response.builder()
+                        .status(500)
+                        .message("Error updating seller status: " + e.getMessage())
+                        .data(null)
+                        .build()
+            );
+        }
+    }
+
 
 }
