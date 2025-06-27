@@ -795,7 +795,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 	@Override
-	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId) {
+	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId ) {
 		logger.info("Starting getPropertiesByUserId() - fetching properties for userId: {}", userId);
 
 		try {
@@ -852,10 +852,20 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
+			
+//			Map<Integer, String> industryNameMap = industryRepository.findAllById(industryIds).stream()
+//					.collect(Collectors.toMap(Industry::getIndustryId, Industry::getIndustryName));
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
 				boolean likeStatus = likedPropertyIds.contains(property.getId());
+				int likeCount = likeRepository.countLikesByPropertyId(property.getId()) ;
+				
+//				String industryName = null;
+//				if (property.getIndustry() != null) {
+//					industryName = industryNameMap.get(property.getIndustry().getIndustryId());
+//				}
+
 
 
 				BusinessInformationDTO businessInfoDTO = null;
@@ -1067,6 +1077,13 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.likedByUser(likeStatus)
 						.reviews(reviews)
 						.averageRating(avgRating)
+						.likeCount(likeCount)
+						.industryName(property.getIndustry().getIndustryName())
+						.industryId(property.getIndustry().getIndustryId())
+						.categoryId(property.getCategory().getId())
+						.subCategoryId(property.getSubCategory().getId())
+						.typesId(property.getTypes().getId())
+						.userId(property.getUser().getUserId())
 						.build();
 
 				propertyDTOs.add(dto);
