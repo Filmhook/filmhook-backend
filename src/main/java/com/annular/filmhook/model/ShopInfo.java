@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.util.List;
 import javax.persistence.*;
 import lombok.Data;
 
@@ -13,7 +14,6 @@ public class ShopInfo {
 
     private String shopName;
 
-    // Updated to SellerMediaFile instead of Image
     @OneToOne
     @JoinColumn(name = "shop_logo_id")
     private SellerMediaFile shopLogo;
@@ -23,4 +23,12 @@ public class ShopInfo {
     private String emai;
 
     private boolean isProductSale;
+
+   
+    @ElementCollection
+    private List<String> otherWebsites;
+
+    @ManyToOne
+    @JoinColumn(name = "type_of_sale_id")
+    private TypesOfSale typeOfSale;
 }

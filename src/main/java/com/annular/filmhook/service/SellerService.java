@@ -22,9 +22,11 @@ import com.annular.filmhook.model.MarketPlaceProducts;
 import com.annular.filmhook.model.SellerInfo;
 import com.annular.filmhook.model.SellerMediaFile;
 import com.annular.filmhook.model.ShopInfo;
+import com.annular.filmhook.model.TypesOfSale;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.SellerInfoRepository;
 import com.annular.filmhook.repository.SellerMediaFileRepository;
+import com.annular.filmhook.repository.TypesOfSaleRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.BusinessInfoDTO;
@@ -52,6 +54,9 @@ public class SellerService {
 	
 	@Autowired
 	private JavaMailSender javaMailSender;
+	
+	@Autowired
+	private TypesOfSaleRepository typesOfSaleRepository;
 
     public SellerInfo saveSellerInfo(SellerInfoDTO dto, SellerFileInputModel files) {
         User user = userRepository.findById(dto.getUserId())
@@ -281,12 +286,23 @@ public class SellerService {
 	}
 
 	private ShopInfo mapShopInfo(ShopInfoDTO dto) {
-		ShopInfo info = new ShopInfo();
-		info.setShopName(dto.getShopName());
-		info.setPhoneNumber(dto.getPhoneNumber());
-		info.setEmai(dto.getEmail());
-		info.setProductSale(dto.isProductSale());
-		return info;
+	    ShopInfo info = new ShopInfo();
+	    info.setShopName(dto.getShopName());
+	    info.setPhoneNumber(dto.getPhoneNumber());
+	    info.setEmai(dto.getEmail());
+	    info.setProductSale(dto.isProductSale());
+
+	    // Set otherWebsites
+	    info.setOtherWebsites(dto.getOtherWebsites());
+
+	    // Fetch and set TypesOfSale
+	    if (dto.getTypeOfSaleId() != null) {
+	        TypesOfSale type = typesOfSaleRepository.findById(dto.getTypeOfSaleId())
+	                .orElseThrow(() -> new RuntimeException("Invalid typeOfSale ID: " + dto.getTypeOfSaleId()));
+	        info.setTypeOfSale(type);
+	    }
+
+	    return info;
 	}
 
 	private GstVerification mapGstVerification(GstVerificationDTO dto) {

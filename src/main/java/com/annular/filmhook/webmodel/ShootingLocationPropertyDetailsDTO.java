@@ -127,6 +127,9 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<ShootingLocationPropertyReviewDTO> reviews;
 	private List<PropertyAvailabilityDTO> availabilityDates;
 
+	private String typeLocation;
+	private String locationLink;
+
 
 }
 

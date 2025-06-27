@@ -355,6 +355,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.user(user)
 					.subcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()))
 					.industry(industry)
+					.typeLocation(dto.getTypeLocation())
+					.locationLink(dto.getLocationLink())
 					.build();
 
 			ShootingLocationPropertyDetails savedProperty = propertyDetailsRepository.saveAndFlush(property);
@@ -917,6 +919,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 								.id(subCategory.getId())
 								.name(subCategory.getName())
 								.description(subCategory.getDescription())
+								.imageUrl(subCategory.getImageUrl())
 								.build();
 					}
 				}
@@ -1074,6 +1077,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.likedByUser(likeStatus)
 						.reviews(reviews)
 						.averageRating(avgRating)
+						.typeLocation(property.getTypeLocation())
+						.locationLink(property.getLocationLink())
 						.build();
 
 				propertyDTOs.add(dto);
@@ -1197,6 +1202,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 								.id(subCategory.getId())
 								.name(subCategory.getName())
 								.description(subCategory.getDescription())
+								.imageUrl(subCategory.getImageUrl())
 								.build();
 					}
 				}
@@ -1364,6 +1370,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.reviews(reviews)
 						.averageRating(avgRating)
 						 .availabilityDates(availabilityMap.getOrDefault(property.getId(), Collections.emptyList()))
+						 .typeLocation(property.getTypeLocation())
+						 .locationLink(property.getLocationLink())
 						.build();
 
 
@@ -1508,6 +1516,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	        property.setBusinessOwner(dto.isBusinessOwner());
 	        property.setUpdatedOn(LocalDateTime.now());
 	        property.setUpdatedBy(dto.getUserId());
+	        property.setTypeLocation(dto.getTypeLocation());
+	        property.setLocationLink(dto.getLocationLink());
 
 	        // --- Update Category/SubCategory/Type/User/Industry ---
 	        if (dto.getCategoryId() != null) {

@@ -224,6 +224,9 @@ public class ShootingLocationPropertyDetails {
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PropertyAvailabilityDate> availabilityDates;
     
+    private String typeLocation;
+    private String locationLink;
+    
 	
 
 }
