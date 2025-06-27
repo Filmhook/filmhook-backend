@@ -33,6 +33,7 @@ public interface ShootingLocationService {
 	List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
 	PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto);
 	List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId);
+	void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList);
 
 
 }

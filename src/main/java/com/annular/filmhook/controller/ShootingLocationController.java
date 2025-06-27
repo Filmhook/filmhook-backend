@@ -389,6 +389,38 @@ public class ShootingLocationController {
 		            return ResponseEntity.internalServerError().body(new Response(-1, e.getMessage(), null));
 		        }
 		    }
+		    
+		    @PutMapping("/availabilityDates/update")
+		    public ResponseEntity<?> updateAvailability(@RequestBody List<PropertyAvailabilityDTO> availabilityList) {
+		        try {
+		            if (availabilityList == null || availabilityList.isEmpty()) {
+		                return ResponseEntity.badRequest().body("❌ Availability list is empty.");
+		            }
+
+		            // Validate date ranges
+		            for (PropertyAvailabilityDTO dto : availabilityList) {
+		                if (dto.getStartDate() == null || dto.getEndDate() == null) {
+		                    return ResponseEntity.badRequest().body("❌ Start date and end date must not be null.");
+		                }
+		                if (!dto.getEndDate().isAfter(dto.getStartDate())) {
+		                    return ResponseEntity.badRequest().body(
+		                            "❌ End date must be after start date. Found: startDate=" + dto.getStartDate() +
+		                            ", endDate=" + dto.getEndDate()
+		                    );
+		                }
+		            }
+
+		            Integer propertyId = availabilityList.get(0).getPropertyId();
+		            service.updateAvailabilityDates(propertyId, availabilityList);
+
+		            return ResponseEntity.ok("✅ Availability dates updated successfully.");
+		        } catch (Exception e) {
+		            e.printStackTrace();
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                    .body("❌ Failed to update availability dates: " + e.getMessage());
+		        }
+		    }
+
 
 }
 

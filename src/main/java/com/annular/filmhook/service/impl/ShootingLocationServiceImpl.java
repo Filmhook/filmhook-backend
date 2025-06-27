@@ -1716,8 +1716,27 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	                .build())
 	            .collect(Collectors.toList());
 	    }
+	    @Override
+	    public void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList) {
+	        // Step 1: Fetch property
+	        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+	                .orElseThrow(() -> new RuntimeException("❌ Property not found with id: " + propertyId));
 
-	
+	        // Step 2: Delete old dates
+	        availabilityRepository.deleteByPropertyId(propertyId);
+
+	        // Step 3: Save new availability
+	        List<PropertyAvailabilityDate> newDates = availabilityList.stream()
+	                .map(dto -> PropertyAvailabilityDate.builder()
+	                        .startDate(dto.getStartDate())
+	                        .endDate(dto.getEndDate())
+	                        .property(property)
+	                        .build())
+	                .collect(Collectors.toList());
+
+	        availabilityRepository.saveAll(newDates);
+	    }
+
 
 
 

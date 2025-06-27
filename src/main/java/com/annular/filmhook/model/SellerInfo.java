@@ -65,5 +65,9 @@ public class SellerInfo {
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<SellerMediaFile> sellerMediaFiles;
+    
+    private boolean buttonStatus;
+
+    private String activeStatus; 
 
 }

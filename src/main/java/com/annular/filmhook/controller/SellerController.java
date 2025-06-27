@@ -6,6 +6,7 @@ import com.annular.filmhook.repository.SellerInfoRepository;
 import com.annular.filmhook.service.SellerService;
 import com.annular.filmhook.webmodel.SellerFileInputModel;
 import com.annular.filmhook.webmodel.SellerInfoDTO;
+import com.annular.filmhook.webmodel.SellerStatusUpdateDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -160,5 +161,47 @@ public class SellerController {
                     .body(new Response(-1, "Unexpected error occurred while deleting seller", e.getMessage()));
         }
     }
+    
+    @PutMapping("/update-status")
+    public ResponseEntity<Response> updateSellerStatus(@RequestBody SellerStatusUpdateDTO dto) {
+        try {
+            Optional<SellerInfo> optionalSeller = sellerInfoRepository.findById(dto.getSellerId());
+
+            if (optionalSeller.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    Response.builder()
+                            .status(404)
+                            .message("Seller not found with ID: " + dto.getSellerId())
+                            .data(null)
+                            .build()
+                );
+            }
+
+            SellerInfo seller = optionalSeller.get();
+            seller.setButtonStatus(dto.isButtonStatus());
+            seller.setActiveStatus(dto.getActiveStatus());
+
+            sellerInfoRepository.save(seller);
+            sellerService.sendSellerStatusUpdateEmail(dto.getActiveStatus(), seller, dto.getReason() );
+
+            return ResponseEntity.ok(
+                Response.builder()
+                        .status(200)
+                        .message("Seller status updated successfully")
+                        .data(seller)
+                        .build()
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
+                Response.builder()
+                        .status(500)
+                        .message("Error updating seller status: " + e.getMessage())
+                        .data(null)
+                        .build()
+            );
+        }
+    }
+
 
 }
