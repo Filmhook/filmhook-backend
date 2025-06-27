@@ -942,6 +942,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				if (property.getSubcategorySelection() != null) {
 					ShootingLocationSubcategorySelection shooting = property.getSubcategorySelection();
 					shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
+							.subcategoryId(shooting.getId())
 							.entireProperty(shooting.getEntireProperty())
 							.singleProperty(shooting.getSingleProperty())
 							.build();
