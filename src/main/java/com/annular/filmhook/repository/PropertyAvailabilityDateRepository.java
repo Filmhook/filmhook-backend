@@ -1,10 +1,12 @@
 package com.annular.filmhook.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,4 +22,10 @@ public interface PropertyAvailabilityDateRepository extends JpaRepository<Proper
     @Transactional
     @Query("DELETE FROM PropertyAvailabilityDate p WHERE p.property.id = :propertyId")
     void deleteByPropertyId(Integer propertyId);
+    
+    List<PropertyAvailabilityDate> findByProperty_Id(Integer propertyId);
+    
+
+
+
 }

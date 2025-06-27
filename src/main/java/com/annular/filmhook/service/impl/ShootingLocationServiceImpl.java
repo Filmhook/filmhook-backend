@@ -596,7 +596,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Business Info Mapping
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
-					var b = property.getBusinessInformation();
+					BusinessInformation b = property.getBusinessInformation();
 					businessInfoDTO = BusinessInformationDTO.builder()
 							.id(b.getId())
 							.businessName(b.getBusinessName())
@@ -615,7 +615,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Bank Details Mapping
 				BankDetailsDTO bankDetailsDTO = null;
 				if (property.getBankDetails() != null) {
-					var bank = property.getBankDetails();
+					BankDetails bank = property.getBankDetails();
 					bankDetailsDTO = BankDetailsDTO.builder()
 							.id(bank.getId())
 							.beneficiaryName(bank.getBeneficiaryName())
@@ -629,7 +629,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Category Mapping
 				ShootingLocationCategoryDTO categoryDTO = null;
 				if (property.getCategory() != null) {
-					var category = categoryRepo.findById(property.getCategory().getId()).orElse(null);
+					ShootingLocationCategory category = categoryRepo.findById(property.getCategory().getId()).orElse(null);
 					if (category != null) {
 						categoryDTO = ShootingLocationCategoryDTO.builder()
 								.id(category.getId())
@@ -641,7 +641,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// SubCategory Mapping
 				ShootingLocationSubcategoryDTO subcategoryDTO = null;
 				if (property.getSubCategory() != null) {
-					var subCategory = subcategoryRepo.findById(property.getSubCategory().getId()).orElse(null);
+					ShootingLocationSubcategory subCategory = subcategoryRepo.findById(property.getSubCategory().getId()).orElse(null);
 					if (subCategory != null) {
 						subcategoryDTO = ShootingLocationSubcategoryDTO.builder()
 								.id(subCategory.getId())
@@ -654,7 +654,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Type Mapping
 				ShootingLocationTypeDTO typeDTO = null;
 				if (property.getTypes() != null) {
-					var types = typesRepo.findById(property.getTypes().getId()).orElse(null);
+					ShootingLocationTypes types = typesRepo.findById(property.getTypes().getId()).orElse(null);
 					if (types != null) {
 						typeDTO = ShootingLocationTypeDTO.builder()
 								.id(types.getId())
@@ -667,7 +667,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Subcategory Selection Mapping
 				ShootingLocationSubcategorySelectionDTO shootingLocationSubcategorySelectionDTO = null;
 				if (property.getSubcategorySelection() != null) {
-					var shooting = property.getSubcategorySelection();
+					ShootingLocationSubcategorySelection shooting = property.getSubcategorySelection();
 					shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
 							.entireProperty(shooting.getEntireProperty())
 							.singleProperty(shooting.getSingleProperty())
@@ -804,7 +804,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 	@Override
-	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId) {
+	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId ) {
 		logger.info("Starting getPropertiesByUserId() - fetching properties for userId: {}", userId);
 
 		try {
@@ -861,15 +861,16 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
+			
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
 				boolean likeStatus = likedPropertyIds.contains(property.getId());
-
-
+				int likeCount = likeRepository.countLikesByPropertyId(property.getId()) ;
+				
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
-					var b = property.getBusinessInformation();
+					BusinessInformation b = property.getBusinessInformation();
 					businessInfoDTO = BusinessInformationDTO.builder()
 							.id(b.getId())
 							.businessName(b.getBusinessName())
@@ -888,7 +889,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Map nested BankDetailsDTO
 				BankDetailsDTO bankDetailsDTO = null;
 				if (property.getBankDetails() != null) {
-					var bank = property.getBankDetails();
+					BankDetails bank = property.getBankDetails();
 					bankDetailsDTO = BankDetailsDTO.builder()
 							.beneficiaryName(bank.getBeneficiaryName())
 							.mobileNumber(bank.getMobileNumber())
@@ -940,8 +941,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Map SubcategorySelection DTO
 				ShootingLocationSubcategorySelectionDTO shootingLocationSubcategorySelectionDTO = null;
 				if (property.getSubcategorySelection() != null) {
-					var shooting = property.getSubcategorySelection();
+					ShootingLocationSubcategorySelection shooting = property.getSubcategorySelection();
 					shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
+							.subcategoryId(shooting.getId())
 							.entireProperty(shooting.getEntireProperty())
 							.singleProperty(shooting.getSingleProperty())
 							.build();
@@ -1079,6 +1081,13 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.averageRating(avgRating)
 						.typeLocation(property.getTypeLocation())
 						.locationLink(property.getLocationLink())
+						.likeCount(likeCount)
+						.industryName(property.getIndustry().getIndustryName())
+						.industryId(property.getIndustry().getIndustryId())
+						.categoryId(property.getCategory().getId())
+						.subCategoryId(property.getSubCategory().getId())
+						.typesId(property.getTypes().getId())
+						.userId(property.getUser().getUserId())
 						.build();
 
 				propertyDTOs.add(dto);
@@ -1144,6 +1153,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				// Fetch like status
 				boolean likeStatus = likedPropertyIds.contains(property.getId());
+				int likeCount = likeRepository.countLikesByPropertyId(property.getId()) ;
+
 
 				String industryName = null;
 				if (property.getIndustry() != null) {
@@ -1152,7 +1163,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
-					var b = property.getBusinessInformation();
+					BusinessInformation b = property.getBusinessInformation();
 					businessInfoDTO = BusinessInformationDTO.builder()
 							.id(b.getId())
 							.businessName(b.getBusinessName())
@@ -1171,7 +1182,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Map nested BankDetailsDTO
 				BankDetailsDTO bankDetailsDTO = null;
 				if (property.getBankDetails() != null) {
-					var bank = property.getBankDetails();
+					BankDetails bank = property.getBankDetails();
 					bankDetailsDTO = BankDetailsDTO.builder()
 							.id(bank.getId())
 							.beneficiaryName(bank.getBeneficiaryName())
@@ -1185,7 +1196,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				ShootingLocationCategoryDTO categoryDTO = null;
 				if (property.getCategory() != null) {
-					var category = categoryMap.get(property.getCategory().getId());
+					ShootingLocationCategory category = categoryMap.get(property.getCategory().getId());
 					if (category != null) {
 						categoryDTO = ShootingLocationCategoryDTO.builder()
 								.id(category.getId())
@@ -1196,7 +1207,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				ShootingLocationSubcategoryDTO subcategoryDTO = null;
 				if (property.getSubCategory() != null) {
-					var subCategory = subcategoryMap.get(property.getSubCategory().getId());
+					ShootingLocationSubcategory subCategory = subcategoryMap.get(property.getSubCategory().getId());
 					if (subCategory != null) {
 						subcategoryDTO = ShootingLocationSubcategoryDTO.builder()
 								.id(subCategory.getId())
@@ -1209,7 +1220,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				ShootingLocationTypeDTO typeDTO = null;
 				if (property.getTypes() != null) {
-					var types = typesMap.get(property.getTypes().getId());
+					ShootingLocationTypes types = typesMap.get(property.getTypes().getId());
 					if (types != null) {
 						typeDTO = ShootingLocationTypeDTO.builder()
 								.id(types.getId())
@@ -1221,7 +1232,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				ShootingLocationSubcategorySelectionDTO shootingLocationSubcategorySelectionDTO = null;
 				if (property.getSubcategorySelection() != null) {
-					var shooting = property.getSubcategorySelection();
+					ShootingLocationSubcategorySelection shooting = property.getSubcategorySelection();
 					shootingLocationSubcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
 							.subcategoryId(property.getSubcategorySelection().getId())
 							.entireProperty(shooting.getEntireProperty())
@@ -1369,6 +1380,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.userId(property.getUser().getUserId())
 						.reviews(reviews)
 						.averageRating(avgRating)
+						.likeCount(likeCount)
 						 .availabilityDates(availabilityMap.getOrDefault(property.getId(), Collections.emptyList()))
 						 .typeLocation(property.getTypeLocation())
 						 .locationLink(property.getLocationLink())
@@ -1696,25 +1708,37 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.collect(Collectors.toList());
 	}
 	
-	 @Override
-	    public PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto) {
-	        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(dto.getPropertyId())
-	            .orElseThrow(() -> new RuntimeException("Property not found"));
+	@Override
+	public PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto) {
+	    ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(dto.getPropertyId())
+	        .orElseThrow(() -> new RuntimeException("Property not found"));
 
-	        PropertyAvailabilityDate availability = PropertyAvailabilityDate.builder()
+	    // Fetch existing availability (you expect only one per property)
+	    List<PropertyAvailabilityDate> existingList = availabilityRepository.findByProperty_Id(dto.getPropertyId());
+
+	    PropertyAvailabilityDate availability;
+	    if (!existingList.isEmpty()) {
+	        // Update the first one (you may choose latest if multiple exist)
+	        availability = existingList.get(0);
+	        availability.setStartDate(dto.getStartDate());
+	        availability.setEndDate(dto.getEndDate());
+	    } else {
+	        // Create new
+	        availability = PropertyAvailabilityDate.builder()
 	            .property(property)
 	            .startDate(dto.getStartDate())
 	            .endDate(dto.getEndDate())
 	            .build();
-
-	        PropertyAvailabilityDate saved = availabilityRepository.save(availability);
-
-	        return PropertyAvailabilityDTO.builder()
-	            .propertyId(saved.getProperty().getId())
-	            .startDate(saved.getStartDate())
-	            .endDate(saved.getEndDate())
-	            .build();
 	    }
+
+	    PropertyAvailabilityDate saved = availabilityRepository.save(availability);
+
+	    return PropertyAvailabilityDTO.builder()
+	        .propertyId(saved.getProperty().getId())
+	        .startDate(saved.getStartDate())
+	        .endDate(saved.getEndDate())
+	        .build();
+	}
 
 	    @Override
 	    public List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId) {

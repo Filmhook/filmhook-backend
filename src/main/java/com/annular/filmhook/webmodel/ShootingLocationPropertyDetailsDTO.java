@@ -122,6 +122,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String industryName;
 	private List<Integer> industryIds;   
 	private boolean likedByUser;
+	private int likeCount;
 	private Integer industryId;	
 	private double averageRating;
 	private List<ShootingLocationPropertyReviewDTO> reviews;

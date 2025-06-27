@@ -23,5 +23,8 @@ public interface PropertyLikeRepository extends JpaRepository<PropertyLike, Inte
     
     @Query("SELECT pl FROM PropertyLike pl WHERE pl.likedBy.id = :userId")
     List<PropertyLike> findByLikedById(@Param("userId") Integer userId);
+    
+    @Query("SELECT COUNT(pl) FROM PropertyLike pl WHERE pl.property.id = :propertyId AND pl.status = true")
+    int countLikesByPropertyId(@Param("propertyId") Integer propertyId);
 
 }

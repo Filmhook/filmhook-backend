@@ -19,6 +19,7 @@ public class ShootingLocationBookingConverter {
         double totalAmount = pricePerDay * days;
 
         return ShootingLocationBooking.builder()
+        		
                 .shootStartDate(dto.getShootStartDate())
                 .shootEndDate(dto.getShootEndDate())
                 .bookingDate(LocalDate.now())
@@ -34,12 +35,15 @@ public class ShootingLocationBookingConverter {
 
     public static ShootingLocationBookingDTO toDTO(ShootingLocationBooking booking) {
         return ShootingLocationBookingDTO.builder()
+        		.bookingId(booking.getId())
                 .propertyId(booking.getProperty().getId())
                 .clientId(booking.getClient().getUserId())
                 .createdBy(booking.getClient().getUserId())
                 .shootStartDate(booking.getShootStartDate())
                 .shootEndDate(booking.getShootEndDate())
                 .bookingMessage(booking.getBookingMessage())
+                .pricePerDay(booking.getPricePerDay())
+                .totalAmount(booking.getTotalAmount())
                 .build();
     }
 }

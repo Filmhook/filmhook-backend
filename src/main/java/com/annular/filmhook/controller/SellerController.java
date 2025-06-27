@@ -3,7 +3,7 @@ package com.annular.filmhook.controller;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.SellerInfo;
 import com.annular.filmhook.repository.SellerInfoRepository;
-import com.annular.filmhook.service.SellerService;
+import com.annular.filmhook.service.impl.SellerService;
 import com.annular.filmhook.webmodel.SellerFileInputModel;
 import com.annular.filmhook.webmodel.SellerInfoDTO;
 import com.annular.filmhook.webmodel.SellerStatusUpdateDTO;
