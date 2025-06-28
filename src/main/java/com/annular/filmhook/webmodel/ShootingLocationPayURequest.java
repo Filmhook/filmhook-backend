@@ -1,5 +1,6 @@
 package com.annular.filmhook.webmodel;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import lombok.Data;
@@ -14,7 +15,7 @@ public class ShootingLocationPayURequest {
 	private String firstname;
 	private String email;
 	private Integer createdBy;
-	private Date createdOn;
+	private LocalDateTime createdOn;
 	private Integer updatedBy;
 	private Date updatedOn;
 	private String status;

@@ -1,6 +1,11 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.Response;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.Optional;
 import com.annular.filmhook.controller.ShootingLocationBookingController;
 import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
@@ -8,28 +13,33 @@ import com.annular.filmhook.converter.ShootingLocationPaymentConverter;
 import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.PropertyAvailabilityDate;
 import com.annular.filmhook.model.ShootingLocationBooking;
+import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.model.ShootingLocationPayment;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.PropertyAvailabilityDateRepository;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
+import com.annular.filmhook.repository.ShootingLocationChatRepository;
 import com.annular.filmhook.repository.ShootingLocationPaymentRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.ShootingLocationBookingService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
+import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
 import com.google.api.client.util.Value;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -70,9 +80,12 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Autowired
 	private JavaMailSender javaMailSender;
+
+	@Autowired
+	private PropertyAvailabilityDateRepository availabilityRepo;
 	
 	@Autowired
-	 private PropertyAvailabilityDateRepository availabilityRepo;
+    private ShootingLocationChatRepository chatRepo;
 
 	@Value("${payu.key}")
 	private String key;
@@ -82,61 +95,61 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Override
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
-	    // Check if property exists
-	    ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+		// Check if property exists
+		ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
 
-	    // Check if client exists
-	    User client = userRepository.findById(dto.getClientId())
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+		// Check if client exists
+		User client = userRepository.findById(dto.getClientId())
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
 
-	    LocalDate newStart = dto.getShootStartDate();
-	    LocalDate newEnd = dto.getShootEndDate();
+		LocalDate newStart = dto.getShootStartDate();
+		LocalDate newEnd = dto.getShootEndDate();
 
-	    // ✅ Step 1: Prevent overlapping CONFIRMED bookings for this property
-	    List<ShootingLocationBooking> confirmedBookings = bookingRepository
-	            .findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
+		// ✅ Step 1: Prevent overlapping CONFIRMED bookings for this property
+		List<ShootingLocationBooking> confirmedBookings = bookingRepository
+				.findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
 
-	    for (ShootingLocationBooking existing : confirmedBookings) {
-	        LocalDate existingStart = existing.getShootStartDate();
-	        LocalDate existingEnd = existing.getShootEndDate();
+		for (ShootingLocationBooking existing : confirmedBookings) {
+			LocalDate existingStart = existing.getShootStartDate();
+			LocalDate existingEnd = existing.getShootEndDate();
 
-	        boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
-	        if (overlaps) {
-	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-	                    "This property is already booked for selected dates.");
-	        }
-	    }
+			boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
+			if (overlaps) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"This property is already booked for selected dates.");
+			}
+		}
 
-	    // ✅ Step 2: Allow same client to book again (on non-overlapping dates)
-	    List<ShootingLocationBooking> clientBookings = bookingRepository
-	            .findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId());
+		// ✅ Step 2: Allow same client to book again (on non-overlapping dates)
+		List<ShootingLocationBooking> clientBookings = bookingRepository
+				.findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId());
 
-	    for (ShootingLocationBooking b : clientBookings) {
-	        LocalDate clientStart = b.getShootStartDate();
-	        LocalDate clientEnd = b.getShootEndDate();
+		for (ShootingLocationBooking b : clientBookings) {
+			LocalDate clientStart = b.getShootStartDate();
+			LocalDate clientEnd = b.getShootEndDate();
 
-	        boolean overlaps = !(newEnd.isBefore(clientStart) || newStart.isAfter(clientEnd));
-	        if (overlaps) {
-	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-	                    "You already have a booking for this property on these dates.");
-	        }
-	    }
+			boolean overlaps = !(newEnd.isBefore(clientStart) || newStart.isAfter(clientEnd));
+			if (overlaps) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+						"You already have a booking for this property on these dates.");
+			}
+		}
 
-	    // ✅ Step 3: Save new booking
-	    ShootingLocationBooking entity = ShootingLocationBookingConverter.toEntity(dto, client, property);
-	    ShootingLocationBooking saved = bookingRepository.save(entity);
+		// ✅ Step 3: Save new booking
+		ShootingLocationBooking entity = ShootingLocationBookingConverter.toEntity(dto, client, property);
+		ShootingLocationBooking saved = bookingRepository.save(entity);
 
-	    return ShootingLocationBookingConverter.toDTO(saved);
+		return ShootingLocationBookingConverter.toDTO(saved);
 	}
-
-	@Override
-	public List<ShootingLocationBookingDTO> getBookingsByClient(Integer clientId) {
-		return bookingRepository.findByClient_UserId(clientId)
-				.stream()
-				.map(ShootingLocationBookingConverter::toDTO)
-				.collect(Collectors.toList());
-	}
+// My order
+		@Override
+		public List<ShootingLocationBookingDTO> getBookingsByClient(Integer clientId) {
+			return bookingRepository.findByClient_UserId(clientId)
+					.stream()
+					.map(ShootingLocationBookingConverter::toDTO)
+					.collect(Collectors.toList());
+		}
 
 	@Override
 	public List<ShootingLocationBookingDTO> getBookingsByProperty(Integer propertyId) {
@@ -146,7 +159,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 				.collect(Collectors.toList());
 	}
 
-	
+
 
 	@Override
 	public ResponseEntity<?> saveShootingPayment(ShootingLocationPayURequest req) {
@@ -254,138 +267,228 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Scheduled(cron = "0 0 17 * * *") // Every day at 5:00 PM
 	public void sendBookingExpiryReminders() {
-	    LocalDate tomorrow = LocalDate.now().plusDays(1);
-	    List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDate(tomorrow);
+		LocalDate tomorrow = LocalDate.now().plusDays(1);
+		List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDate(tomorrow);
 
-	    logger.info("Found {} bookings ending tomorrow ({})", bookings.size(), tomorrow);
+		logger.info("Found {} bookings ending tomorrow ({})", bookings.size(), tomorrow);
 
-	    for (ShootingLocationBooking booking : bookings) {
-	        // ✅ Check if payment exists and is marked as SUCCESS
-	        Optional<ShootingLocationPayment> paymentOpt = paymentRepo.findByBooking_IdAndStatus(booking.getId(), "SUCCESS");
+		for (ShootingLocationBooking booking : bookings) {
+			// ✅ Check if payment exists and is marked as SUCCESS
+			Optional<ShootingLocationPayment> paymentOpt = paymentRepo.findByBooking_IdAndStatus(booking.getId(), "SUCCESS");
 
-	        if (paymentOpt.isPresent()) {
-	            try {
-	                sendReminderEmail(booking);
-	                logger.info("✅ Reminder email sent to {} for booking {}", booking.getClient().getEmail(), booking.getId());
-	            } catch (Exception ex) {
-	                logger.error("❌ Failed to send reminder for booking {}: {}", booking.getId(), ex.getMessage(), ex);
-	            }
-	        } else {
-	            logger.info("⏭️ Skipping booking {} – no successful payment found", booking.getId());
-	        }
-	    }
+			if (paymentOpt.isPresent()) {
+				try {
+					sendReminderEmail(booking);
+					logger.info("✅ Reminder email sent to {} for booking {}", booking.getClient().getEmail(), booking.getId());
+				} catch (Exception ex) {
+					logger.error("❌ Failed to send reminder for booking {}: {}", booking.getId(), ex.getMessage(), ex);
+				}
+			} else {
+				logger.info("⏭️ Skipping booking {} – no successful payment found", booking.getId());
+			}
+		}
 	}
 
 
-    private void sendReminderEmail(ShootingLocationBooking booking) throws MessagingException {
-        String to = booking.getClient().getEmail();
-        String name = booking.getClient().getName();
-        String subject = "⏳ Reminder: Your shoot at “" + booking.getProperty().getPropertyName() + "” ends tomorrow";
-        String html =
-            "<html><body>" +
-            "<p>Hi " + name + ",</p>" +
-            "<p>This is a friendly reminder that your booking at <b>" +
-            booking.getProperty().getPropertyName() +
-            "</b> will end on <b>" + booking.getShootEndDate() + "</b>.</p>" +
-            "<p>Thank you for choosing FilmHook!</p>" +
-            "</body></html>";
+	private void sendReminderEmail(ShootingLocationBooking booking) throws MessagingException {
+		String to = booking.getClient().getEmail();
+		String name = booking.getClient().getName();
+		String subject = "⏳ Reminder: Your shoot at “" + booking.getProperty().getPropertyName() + "” ends tomorrow";
+		String html =
+				"<html><body>" +
+						"<p>Hi " + name + ",</p>" +
+						"<p>This is a friendly reminder that your booking at <b>" +
+						booking.getProperty().getPropertyName() +
+						"</b> will end on <b>" + booking.getShootEndDate() + "</b>.</p>" +
+						"<p>Thank you for choosing FilmHook!</p>" +
+						"</body></html>";
 
-        MimeMessage message = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(html, true); 
-        javaMailSender.send(message);
-    }
+		MimeMessage message = javaMailSender.createMimeMessage();
+		MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+		helper.setTo(to);
+		helper.setSubject(subject);
+		helper.setText(html, true); 
+		javaMailSender.send(message);
+	}
 
-    @Scheduled(cron = "0 30 0 * * *") // Every day at 12:30 AM
-    public void markBookingsAsCompleted() {
-        LocalDate today = LocalDate.now();
-     
-   List<ShootingLocationBooking> expiredBookings = bookingRepo.findByShootEndDateLessThanEqualAndStatus(today, BookingStatus.CONFIRMED);
+	@Scheduled(cron = "0 30 0 * * *") // Every day at 12:30 AM
+	public void markBookingsAsCompleted() {
+		LocalDate today = LocalDate.now();
 
-        logger.info("Found {} CONFIRMED bookings to mark as COMPLETED", expiredBookings.size());
+		List<ShootingLocationBooking> expiredBookings = bookingRepo.findByShootEndDateLessThanEqualAndStatus(today, BookingStatus.CONFIRMED);
 
-        for (ShootingLocationBooking booking : expiredBookings) {
-            try {
-                booking.setStatus(BookingStatus.COMPLETED);
-                bookingRepo.save(booking);
-                logger.info("✅ Booking ID {} marked as COMPLETED", booking.getId());
-                // Send email notification
-                sendCompletionEmail(booking);
-            } catch (Exception ex) {
-                logger.error("❌ Error updating booking {}: {}", booking.getId(), ex.getMessage(), ex);
-            }
-        }}
-    
-        private void sendCompletionEmail(ShootingLocationBooking booking) throws MessagingException {
-            String to = booking.getClient().getEmail();
-            String name = booking.getClient().getName();
-            String property = booking.getProperty().getPropertyName();
+		logger.info("Found {} CONFIRMED bookings to mark as COMPLETED", expiredBookings.size());
 
-            String subject = "📸 Booking Completed - Thank You for Choosing FilmHook!";
-            String html = "<html><body>" +
-                    "<p>Hi " + name + ",</p>" +
-                    "<p>We hope your shoot at <b>" + property + "</b> was a success! 🎬</p>" +
-                    "<p>Your booking has now been marked as <b>COMPLETED</b> as of <b>" + booking.getShootEndDate() + "</b>.</p>" +
-                    "<p>Thank you for using <b>FilmHook</b>. We look forward to serving you again!</p>" +
-                    "<p>📧 <a href='mailto:support@film-hookapps.com'>Contact Support</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Website</a></p>" +
-                    "</body></html>";
+		for (ShootingLocationBooking booking : expiredBookings) {
+			try {
+				booking.setStatus(BookingStatus.COMPLETED);
+				bookingRepo.save(booking);
+				logger.info("✅ Booking ID {} marked as COMPLETED", booking.getId());
+				// Send email notification
+				sendCompletionEmail(booking);
+			} catch (Exception ex) {
+				logger.error("❌ Error updating booking {}: {}", booking.getId(), ex.getMessage(), ex);
+			}
+		}}
 
-            MimeMessage message = javaMailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(html, true);
-            javaMailSender.send(message);
+	private void sendCompletionEmail(ShootingLocationBooking booking) throws MessagingException {
+		String to = booking.getClient().getEmail();
+		String name = booking.getClient().getName();
+		String property = booking.getProperty().getPropertyName();
 
-            logger.info("📩 Completion email sent to {}", to);
-        }
+		String subject = "📸 Booking Completed - Thank You for Choosing FilmHook!";
+		String html = "<html><body>" +
+				"<p>Hi " + name + ",</p>" +
+				"<p>We hope your shoot at <b>" + property + "</b> was a success! 🎬</p>" +
+				"<p>Your booking has now been marked as <b>COMPLETED</b> as of <b>" + booking.getShootEndDate() + "</b>.</p>" +
+				"<p>Thank you for using <b>FilmHook</b>. We look forward to serving you again!</p>" +
+				"<p>📧 <a href='mailto:support@film-hookapps.com'>Contact Support</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Website</a></p>" +
+				"</body></html>";
 
-        @Override
-        public List<LocalDate> getAvailableDatesForProperty(Integer propertyId) {
+		MimeMessage message = javaMailSender.createMimeMessage();
+		MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+		helper.setTo(to);
+		helper.setSubject(subject);
+		helper.setText(html, true);
+		javaMailSender.send(message);
 
-            // Step 1: Fetch all availability ranges for the property
-            List<PropertyAvailabilityDate> availabilityRanges = availabilityRepo.findByProperty_Id(propertyId);
+		logger.info("📩 Completion email sent to {}", to);
+	}
 
-            // Step 2: Expand each availability range into individual dates
-            Set<LocalDate> ownerAvailableDates = new HashSet<>();
-            for (PropertyAvailabilityDate range : availabilityRanges) {
-                LocalDate current = range.getStartDate();
-                while (!current.isAfter(range.getEndDate())) {
-                    ownerAvailableDates.add(current);
-                    current = current.plusDays(1);
-                }
-            }
+	@Override
+	public List<LocalDate> getAvailableDatesForProperty(Integer propertyId) {
 
-            // Step 3: Get all confirmed bookings for this property
-            List<ShootingLocationBooking> confirmedBookings =
-                    bookingRepo.findByProperty_IdAndStatus(propertyId, BookingStatus.CONFIRMED);
+		// Step 1: Fetch all availability ranges for the property
+		List<PropertyAvailabilityDate> availabilityRanges = availabilityRepo.findByProperty_Id(propertyId);
 
-            // Step 4: Collect booked dates
-            Set<LocalDate> bookedDates = new HashSet<>();
-            for (ShootingLocationBooking booking : confirmedBookings) {
-                LocalDate current = booking.getShootStartDate();
-                while (!current.isAfter(booking.getShootEndDate())) {
-                    bookedDates.add(current);
-                    current = current.plusDays(1);
-                }
-            }
+		// Step 2: Expand each availability range into individual dates
+		Set<LocalDate> ownerAvailableDates = new HashSet<>();
+		for (PropertyAvailabilityDate range : availabilityRanges) {
+			LocalDate current = range.getStartDate();
+			while (!current.isAfter(range.getEndDate())) {
+				ownerAvailableDates.add(current);
+				current = current.plusDays(1);
+			}
+		}
 
-            // Step 5: Filter out booked dates from owner's available dates
-            ownerAvailableDates.removeAll(bookedDates);
-            
-            LocalDate today = LocalDate.now();
-            
-            // Step 6: Return sorted available dates
-            return ownerAvailableDates.stream()
-            		.sorted()
-            		.filter(date -> !bookedDates.contains(date)) // not booked
-                    .filter(date -> !date.isBefore(today))       // not in past
-                    .collect(Collectors.toList());
-        }
+		// Step 3: Get all confirmed bookings for this property
+		List<ShootingLocationBooking> confirmedBookings =
+				bookingRepo.findByProperty_IdAndStatus(propertyId, BookingStatus.CONFIRMED);
+
+		// Step 4: Collect booked dates
+		Set<LocalDate> bookedDates = new HashSet<>();
+		for (ShootingLocationBooking booking : confirmedBookings) {
+			LocalDate current = booking.getShootStartDate();
+			while (!current.isAfter(booking.getShootEndDate())) {
+				bookedDates.add(current);
+				current = current.plusDays(1);
+			}
+		}
+
+		// Step 5: Filter out booked dates from owner's available dates
+		ownerAvailableDates.removeAll(bookedDates);
+
+		LocalDate today = LocalDate.now();
+
+		// Step 6: Return sorted available dates
+		return ownerAvailableDates.stream()
+				.sorted()
+				.filter(date -> !bookedDates.contains(date)) // not booked
+				.filter(date -> !date.isBefore(today))       // not in past
+				.collect(Collectors.toList());
+	}
 
 
+	 @Override
+	    public boolean canChatByProperty(Integer senderId, Integer receiverId, Integer propertyId) {
+	        LocalDateTime now = LocalDateTime.now();
+
+	        List<ShootingLocationBooking> bookings = bookingRepository.findBookingsBetweenUsersAndProperty(
+	                senderId, receiverId, propertyId);
+
+	        for (ShootingLocationBooking booking : bookings) {
+	            Integer clientId = booking.getClient().getUserId();
+	            Integer ownerId = booking.getProperty().getUser().getUserId();
+
+	            boolean isValidPair = 
+	                (senderId.equals(clientId) && receiverId.equals(ownerId)) ||
+	                (senderId.equals(ownerId) && receiverId.equals(clientId));
+
+	            if (!isValidPair) continue;
+
+	            Optional<ShootingLocationPayment> paymentOpt = 
+	                paymentRepo.findByBooking_IdAndStatus(booking.getId(), "SUCCESS");
+
+	            if (paymentOpt.isPresent()) {
+	                LocalDateTime paymentTime = paymentOpt.get().getCreatedOn();
+	                LocalDateTime shootEndTime = booking.getShootEndDate().atTime(23, 59);
+
+	                if (now.isAfter(paymentTime) && now.isBefore(shootEndTime)) {
+	                    return true;
+	                }
+	            }
+	        }
+
+	        return false;
+	    }
+
+
+	 @Override
+	 public String sendMessage(ShootingLocationChatDTO dto, Integer propertyId) {
+	     if (!canChatByProperty(dto.getSenderId(), dto.getReceiverId(), propertyId)) {
+	         throw new AccessDeniedException("Chat not allowed for this property.");
+	     }
+
+	     ShootingLocationBooking booking = findBookingForChat(dto.getSenderId(), dto.getReceiverId(), propertyId);
+	     if (booking == null) {
+	         throw new RuntimeException("Booking with payment not found for chat.");
+	     }
+
+	     ShootingLocationChat chat = new ShootingLocationChat();
+	     chat.setShootingLocationSenderId(dto.getSenderId());
+	     chat.setShootingLocationReceiverId(dto.getReceiverId());
+	     chat.setMessage(dto.getMessage());
+	     chat.setTimeStamp(new Date());
+	     chat.setBooking(booking);
+
+	     chatRepo.save(chat);
+	     return "Message sent";
+	 }
+
+	private ShootingLocationBooking findBookingForChat(Integer senderId, Integer receiverId, Integer propertyId) {
+	    List<ShootingLocationBooking> bookings = bookingRepository.findBookingsBetweenUsers(senderId, receiverId);
+	    for (ShootingLocationBooking booking : bookings) {
+	        Optional<ShootingLocationPayment> paymentOpt = paymentRepo.findByBooking_IdAndStatus(booking.getId(), "SUCCESS");
+	        if (paymentOpt.isPresent()) {
+	            LocalDateTime now = LocalDateTime.now();
+	            LocalDateTime paymentTime = paymentOpt.get().getCreatedOn();
+	            LocalDateTime endTime = booking.getShootEndDate().atTime(23, 59);
+	            if (now.isAfter(paymentTime) && now.isBefore(endTime)) {
+	                return booking;
+	            }
+	        }
+	    }
+	    return null;
+	}
+
+	@Override
+	public List<ShootingLocationChatDTO> getChatHistory(Integer senderId, Integer receiverId) {
+	    List<ShootingLocationChat> chats = chatRepo.getChatHistoryBetweenUsers(senderId, receiverId);
+	    return chats.stream().map(this::convertToDTO).collect(Collectors.toList());
+	}
+
+	private ShootingLocationChatDTO convertToDTO(ShootingLocationChat chat) {
+	    return ShootingLocationChatDTO.builder()
+	    		
+	            .chatId(chat.getShootingLocationChatId())
+	            .senderId(chat.getShootingLocationSenderId())
+	            .receiverId(chat.getShootingLocationReceiverId())
+	            .message(chat.getMessage())
+	            .timeStamp(chat.getTimeStamp())
+	            .build();
+
+
+	}
 
 }
 

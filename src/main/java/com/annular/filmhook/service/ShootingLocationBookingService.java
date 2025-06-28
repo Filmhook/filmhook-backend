@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
+import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
 
 
@@ -28,5 +29,12 @@ public interface ShootingLocationBookingService {
     void markBookingsAsCompleted();
     
     List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
+    
+    boolean canChatByProperty(Integer senderId, Integer receiverId, Integer propertyId);
+    String sendMessage(ShootingLocationChatDTO dto, Integer propertyId);
+    List<ShootingLocationChatDTO> getChatHistory(Integer senderId, Integer receiverId);
+    
+ 
+
 
 }

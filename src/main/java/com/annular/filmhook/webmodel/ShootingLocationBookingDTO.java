@@ -18,5 +18,6 @@ private Integer bookingId;
     private Double pricePerDay;
     private Double totalAmount;
     private String bookingMessage;  
+    private String bookingStatus;
 
 }

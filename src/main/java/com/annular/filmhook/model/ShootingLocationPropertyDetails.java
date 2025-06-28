@@ -53,10 +53,7 @@ public class ShootingLocationPropertyDetails {
 	private String firstName;
 	private String middleName;
 	private String lastName;
-	
-//	@Column(name = "is_owner_name_visible")
-//	private Boolean isOwnerNameVisible;
-	
+		
 	private String citizenship;
 	
 	private String placeOfBirth;
@@ -166,12 +163,12 @@ public class ShootingLocationPropertyDetails {
 	@Convert(converter = StringListConverter.class)
 	private List<String> videoWalkthrough;
 	
+	private String govtLicenseAndPermissions;
 
     private Integer createdBy;
 
     @CreationTimestamp
- 
-    private LocalDateTime createdOn;
+     private LocalDateTime createdOn;
 
     private Integer updatedBy;
 

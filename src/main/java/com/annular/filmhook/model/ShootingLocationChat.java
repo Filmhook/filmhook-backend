@@ -7,6 +7,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -73,5 +75,10 @@ public class ShootingLocationChat {
 	
     @Column(name = "accept")
     private Boolean accept;
+    
+    @ManyToOne
+    @JoinColumn(name = "booking_id")
+    private ShootingLocationBooking booking;
+
 
 }

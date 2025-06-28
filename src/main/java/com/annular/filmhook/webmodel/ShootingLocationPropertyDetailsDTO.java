@@ -77,6 +77,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<String> shootingTiming;
 	private List<String> insuranceRequired;
 	private List<String> legalAgreements;
+	private String govtLicenseAndPermissions;
 
 	// 5. Accessibility & Transportation
 	private List<String> roadAccessAndCondition;
@@ -99,6 +100,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private boolean businessOwner;
 	private List<String> highQualityPhotos;
 	private List<String> videoWalkthrough;
+	
 
 	private Date createdOn;
 	private Integer createdBy;

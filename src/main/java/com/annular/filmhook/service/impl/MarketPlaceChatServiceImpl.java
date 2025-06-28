@@ -733,7 +733,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                            chat.getShootingLocationChatId(),
 	                            chat.getShootingLocationSenderId(),
 	                            chat.getShootingLocationReceiverId(),
-	                            chat.getMessage(),
+	                             chat.getMessage(),
 	                            chat.getTimeStamp(),
 	                            chat.getShootingLocationStartTime(),
 	                            chat.getShootingLocationEndTime(),

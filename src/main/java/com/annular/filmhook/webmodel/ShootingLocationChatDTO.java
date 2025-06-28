@@ -16,7 +16,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
+@Builder
 public class ShootingLocationChatDTO {
+	
 	private Integer chatId;
     private Integer senderId;
     private Integer receiverId;

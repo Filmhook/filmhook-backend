@@ -2,11 +2,13 @@ package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.ShootingLocationBooking;
+import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
 import com.annular.filmhook.service.ShootingLocationBookingService;
 import com.annular.filmhook.util.HashGenerator;
 
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
+import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
 
 import org.slf4j.Logger;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -64,17 +67,31 @@ public class ShootingLocationBookingController {
 	}
 	@GetMapping("/client/{clientId}")
 	public ResponseEntity<Response> getBookingsByClient(@PathVariable Integer clientId) {
-		try {
-			logger.info("Fetching bookings for client ID: {}", clientId);
-			List<ShootingLocationBookingDTO> bookings = bookingService.getBookingsByClient(clientId);
-			logger.info("Fetched {} bookings for client ID: {}", bookings.size(), clientId);
-			return ResponseEntity.ok(new Response(1, "Client bookings retrieved successfully", bookings));
-		} catch (Exception e) {
-			logger.error("Error while retrieving bookings by client ID: {}", clientId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error retrieving client bookings", null));
-		}
+	    try {
+	        logger.info("Fetching bookings for client ID: {}", clientId);
+
+	        List<ShootingLocationBookingDTO> bookings = bookingService.getBookingsByClient(clientId);
+
+	        if (bookings.isEmpty()) {
+	            logger.warn("No bookings found or client not valid: {}", clientId);
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new Response(0, "No bookings found or client not found", null));
+	        }
+
+	        logger.info("Fetched {} bookings for client ID: {}", bookings.size(), clientId);
+	        return ResponseEntity.ok(new Response(1, "Client bookings retrieved successfully", bookings));
+
+	    } catch (IllegalArgumentException e) {
+	        logger.error("Invalid data: {}", e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new Response(0, "Invalid booking data: " + e.getMessage(), null));
+	    } catch (Exception e) {
+	        logger.error("Error while retrieving bookings by client ID: {}", clientId, e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Error retrieving client bookings", null));
+	    }
 	}
+
 
 	@GetMapping("/property/{propertyId}")
 	public ResponseEntity<Response> getBookingsByProperty(@PathVariable Integer propertyId) {
@@ -140,6 +157,59 @@ public class ShootingLocationBookingController {
 	    }
 	}
 
+	@PostMapping("/send")
+	public ResponseEntity<Response> sendMessage(
+	        @RequestBody ShootingLocationChatDTO dto,
+	        @RequestParam Integer propertyId 
+	) {
+	    try {
+	        String result = bookingService.sendMessage(dto, propertyId);
+	        return ResponseEntity.ok(new Response(1, result, null));
+	    } catch (AccessDeniedException ade) {
+	        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                .body(new Response(0, ade.getMessage(), null));
+	    } catch (RuntimeException re) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new Response(0, re.getMessage(), null));
+	    } catch (Exception ex) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(0, "Unexpected error: " + ex.getMessage(), null));
+	    }
+	}
 
+	@GetMapping("/can-chat")
+	public ResponseEntity<Response> canChat(
+	        @RequestParam Integer senderId,
+	        @RequestParam Integer receiverId,
+	        @RequestParam Integer propertyId) {
+	    try {
+	        boolean allowed = bookingService.canChatByProperty(senderId, receiverId, propertyId);
+
+	        if (allowed) {
+	            return ResponseEntity.ok(new Response(1, "Chat access granted", true));
+	        } else {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body(new Response(0, "Chat not allowed for this property", false));
+	        }
+
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                .body(new Response(0, "Invalid request: " + e.getMessage(), null));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(0, "Error checking chat availability: " + e.getMessage(), null));
+	    }
+	}
+
+	
+	@GetMapping("/getMessages/{senderId}/{receiverId}")
+	public ResponseEntity<List<ShootingLocationChatDTO>> getChatMessages(
+	        @PathVariable Integer senderId,
+	        @PathVariable Integer receiverId) {
+	    List<ShootingLocationChatDTO> chatHistory = bookingService.getChatHistory(senderId, receiverId);
+	    return ResponseEntity.ok(chatHistory);
+	}
+
+	
 
 }

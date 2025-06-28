@@ -13,5 +13,7 @@ public interface ShootingLocationPaymentRepository extends JpaRepository<Shootin
     boolean existsByTxnid(String txnid);
     
     Optional<ShootingLocationPayment> findByBooking_IdAndStatus(Integer bookingId, String status);
+    
+
 
 }

@@ -116,7 +116,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	ShootingLocationImageRepository shootingLocationImagesRepository;
-	
+
 	@Autowired
 	private BusinessInformationRepository businessInformationRepository;
 
@@ -128,10 +128,10 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	IndustryRepository industryRepository;
-	
 
-    @Autowired
-    private PropertyAvailabilityDateRepository availabilityRepository;
+
+	@Autowired
+	private PropertyAvailabilityDateRepository availabilityRepository;
 
 
 
@@ -321,6 +321,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.shootingTiming(dto.getShootingTiming())
 					.insuranceRequired(dto.getInsuranceRequired())
 					.legalAgreements(dto.getLegalAgreements())
+					.govtLicenseAndPermissions(dto.getGovtLicenseAndPermissions())
 
 					// 5. Accessibility & Transportation
 					.roadAccessAndCondition(dto.getRoadAccessAndCondition())
@@ -744,6 +745,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.shootingTiming(defaultList(property.getShootingTiming()))
 						.insuranceRequired(defaultList(property.getInsuranceRequired()))
 						.legalAgreements(defaultList(property.getLegalAgreements()))
+						.govtLicenseAndPermissions(property.getGovtLicenseAndPermissions())
 
 						// Accessibility & Transport
 						.roadAccessAndCondition(defaultList(property.getRoadAccessAndCondition()))
@@ -859,13 +861,13 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 			List<ShootingLocationPropertyDetailsDTO> propertyDTOs = new ArrayList<>();
-			
+
 
 			for (ShootingLocationPropertyDetails property : properties) {
 
 				boolean likeStatus = likedPropertyIds.contains(property.getId());
 				int likeCount = likeRepository.countLikesByPropertyId(property.getId()) ;
-				
+
 				BusinessInformationDTO businessInfoDTO = null;
 				if (property.getBusinessInformation() != null) {
 					BusinessInformation b = property.getBusinessInformation();
@@ -1039,6 +1041,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.shootingTiming(property.getShootingTiming() != null ? property.getShootingTiming() : Collections.emptyList())
 						.insuranceRequired(property.getInsuranceRequired() != null ? property.getInsuranceRequired() : Collections.emptyList())
 						.legalAgreements(property.getLegalAgreements() != null ? property.getLegalAgreements() : Collections.emptyList())
+						.govtLicenseAndPermissions(property.getGovtLicenseAndPermissions())
 
 						// 5. Accessibility & Transportation
 						.roadAccessAndCondition(property.getRoadAccessAndCondition() != null ? property.getRoadAccessAndCondition() : Collections.emptyList())
@@ -1083,6 +1086,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.subCategoryId(property.getSubCategory().getId())
 						.typesId(property.getTypes().getId())
 						.userId(property.getUser().getUserId())
+						
 						.build();
 
 				propertyDTOs.add(dto);
@@ -1208,6 +1212,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 								.id(subCategory.getId())
 								.name(subCategory.getName())
 								.description(subCategory.getDescription())
+								.imageUrl(subCategory.getImageUrl())
 								.build();
 					}
 				}
@@ -1271,22 +1276,22 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
 						.average()
 						.orElse(0.0);
-				
+
 				List<Integer> propertyIds = properties.stream().map(ShootingLocationPropertyDetails::getId).toList();
 				List<PropertyAvailabilityDate> allAvailability = availabilityRepository.findByPropertyIdIn(propertyIds);
 
 				// Group availability records by propertyId
 				Map<Integer, List<PropertyAvailabilityDTO>> availabilityMap = allAvailability.stream()
-				    .collect(Collectors.groupingBy(
-				        avail -> avail.getProperty().getId(),
-				        Collectors.mapping(avail -> PropertyAvailabilityDTO.builder()
-				                .propertyId(avail.getProperty().getId())
-				                .startDate(avail.getStartDate())
-				                .endDate(avail.getEndDate())
-				                .build(),
-				            Collectors.toList()
-				        )
-				    ));
+						.collect(Collectors.groupingBy(
+								avail -> avail.getProperty().getId(),
+								Collectors.mapping(avail -> PropertyAvailabilityDTO.builder()
+										.propertyId(avail.getProperty().getId())
+										.startDate(avail.getStartDate())
+										.endDate(avail.getEndDate())
+										.build(),
+										Collectors.toList()
+										)
+								));
 
 
 				// Map property DTO (reuse from your existing method)
@@ -1339,6 +1344,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.shootingTiming(property.getShootingTiming())
 						.insuranceRequired(property.getInsuranceRequired())
 						.legalAgreements(property.getLegalAgreements())
+						.govtLicenseAndPermissions(property.getGovtLicenseAndPermissions())
 						.roadAccessAndCondition(property.getRoadAccessAndCondition())
 						.publicTransport(property.getPublicTransport())
 						.nearestAirportOrRailway(property.getNearestAirportOrRailway())
@@ -1375,7 +1381,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.reviews(reviews)
 						.averageRating(avgRating)
 						.likeCount(likeCount)
-						 .availabilityDates(availabilityMap.getOrDefault(property.getId(), Collections.emptyList()))
+						.availabilityDates(availabilityMap.getOrDefault(property.getId(), Collections.emptyList()))
 						.build();
 
 
@@ -1394,239 +1400,240 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Override
 	@Transactional
 	public void deletePropertyById(Integer id) {
-	    try {
-	        Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
+		try {
+			Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
 
-	        if (!optionalProperty.isPresent()) {
-	            logger.warn("Property with ID {} not found for deletion", id);
-	            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property with ID " + id + " not found");
-	        }
+			if (!optionalProperty.isPresent()) {
+				logger.warn("Property with ID {} not found for deletion", id);
+				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property with ID " + id + " not found");
+			}
 
-	        ShootingLocationPropertyDetails property = optionalProperty.get();
+			ShootingLocationPropertyDetails property = optionalProperty.get();
 
-	        // --- Delete media files from S3 ---
-	        List<ShootingLocationImages> mediaFiles = shootingLocationImagesRepository.findByProperty(property);
-	        if (mediaFiles != null && !mediaFiles.isEmpty()) {
-	            for (ShootingLocationImages media : mediaFiles) {
-	                if (media.getFilePath() != null) {
-	                    s3Util.deleteFileFromS3(media.getFilePath());
-	                    logger.info("Deleted media file from S3: {}", media.getFilePath());
-	                }
-	            }
-	            shootingLocationImagesRepository.deleteAllByProperty(property);
-	        }
+			// --- Delete media files from S3 ---
+			List<ShootingLocationImages> mediaFiles = shootingLocationImagesRepository.findByProperty(property);
+			if (mediaFiles != null && !mediaFiles.isEmpty()) {
+				for (ShootingLocationImages media : mediaFiles) {
+					if (media.getFilePath() != null) {
+						s3Util.deleteFileFromS3(media.getFilePath());
+						logger.info("Deleted media file from S3: {}", media.getFilePath());
+					}
+				}
+				shootingLocationImagesRepository.deleteAllByProperty(property);
+			}
 
-	        // --- Delete bank details ---
-	        bankDetailsRepository.findByPropertyDetails(property).ifPresent(bankDetailsRepository::delete);
+			// --- Delete bank details ---
+			bankDetailsRepository.findByPropertyDetails(property).ifPresent(bankDetailsRepository::delete);
 
-	        // --- Delete business info ---
-	        businessInformationRepository.findByPropertyDetails(property).ifPresent(businessInformationRepository::delete);
+			// --- Delete business info ---
+			businessInformationRepository.findByPropertyDetails(property).ifPresent(businessInformationRepository::delete);
 
-	        // --- Delete property itself ---
-	        propertyDetailsRepository.delete(property);
+			// --- Delete property itself ---
+			propertyDetailsRepository.delete(property);
 
-	        logger.info("Property and related data deleted successfully: ID = {}", id);
+			logger.info("Property and related data deleted successfully: ID = {}", id);
 
-	    } catch (ResponseStatusException e) {
-	        throw e;
+		} catch (ResponseStatusException e) {
+			throw e;
 
-	    } catch (Exception e) {
-	        logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting property with ID " + id);
-	    }
+		} catch (Exception e) {
+			logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting property with ID " + id);
+		}
 	}
 
 	@Transactional
 	@Override
 	public ShootingLocationPropertyDetailsDTO updatePropertyDetails(Integer id, ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile) {
 
-	    try {
-	    	if (id == null) {
-	    	    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Property ID must not be null");
-	    	}
-	    	ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(id)
-	    		    .orElseThrow(() -> new RuntimeException("Property not found with ID: " + id));
+		try {
+			if (id == null) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Property ID must not be null");
+			}
+			ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(id)
+					.orElseThrow(() -> new RuntimeException("Property not found with ID: " + id));
 
 
-	        logger.info("Updating property: {}", dto.getPropertyName());
+			logger.info("Updating property: {}", dto.getPropertyName());
 
-	        // --- Update main entity fields ---
-	        property.setFirstName(dto.getFirstName());
-	        property.setMiddleName(dto.getMiddleName());
-	        property.setLastName(dto.getLastName());
-	        property.setCitizenship(dto.getCitizenship());
-	        property.setPlaceOfBirth(dto.getPlaceOfBirth());
-	        property.setPropertyName(dto.getPropertyName());
-	        property.setLocation(dto.getLocation());
-	        property.setDateOfBirth(dto.getDateOfBirth());
-	        property.setProofOfIdentity(dto.getProofOfIdentity());
-	        property.setCountryOfIssued(dto.getCountryOfIssued());
-	        property.setNumberOfPeopleAllowed(dto.getNumberOfPeopleAllowed());
-	        property.setTotalArea(dto.getTotalArea());
-	        property.setSelectedUnit(dto.getSelectedUnit());
-	        property.setNumberOfRooms(dto.getNumberOfRooms());
-	        property.setNumberOfFloor(dto.getNumberOfFloor());
-	        property.setCeilingHeight(dto.getCeilingHeight());
+			// --- Update main entity fields ---
+			property.setFirstName(dto.getFirstName());
+			property.setMiddleName(dto.getMiddleName());
+			property.setLastName(dto.getLastName());
+			property.setCitizenship(dto.getCitizenship());
+			property.setPlaceOfBirth(dto.getPlaceOfBirth());
+			property.setPropertyName(dto.getPropertyName());
+			property.setLocation(dto.getLocation());
+			property.setDateOfBirth(dto.getDateOfBirth());
+			property.setProofOfIdentity(dto.getProofOfIdentity());
+			property.setCountryOfIssued(dto.getCountryOfIssued());
+			property.setNumberOfPeopleAllowed(dto.getNumberOfPeopleAllowed());
+			property.setTotalArea(dto.getTotalArea());
+			property.setSelectedUnit(dto.getSelectedUnit());
+			property.setNumberOfRooms(dto.getNumberOfRooms());
+			property.setNumberOfFloor(dto.getNumberOfFloor());
+			property.setCeilingHeight(dto.getCeilingHeight());
+			property.setGovtLicenseAndPermissions(dto.getGovtLicenseAndPermissions());
 
-	        property.setOutdoorFeatures(dto.getOutdoorFeatures());
-	        property.setArchitecturalStyle(dto.getArchitecturalStyle());
-	        property.setVintage(dto.getVintage());
-	        property.setIndustrial(dto.getIndustrial());
-	        property.setTraditional(dto.getTraditional());
+			property.setOutdoorFeatures(dto.getOutdoorFeatures());
+			property.setArchitecturalStyle(dto.getArchitecturalStyle());
+			property.setVintage(dto.getVintage());
+			property.setIndustrial(dto.getIndustrial());
+			property.setTraditional(dto.getTraditional());
 
-	        property.setPowerSupply(dto.getPowerSupply());
-	        property.setBakupGeneratorsAndVoltage(dto.getBakupGeneratorsAndVoltage());
-	        property.setWifi(dto.getWifi());
-	        property.setAirConditionAndHeating(dto.getAirConditionAndHeating());
-	        property.setNumberOfWashrooms(dto.getNumberOfWashrooms());
-	        property.setRestrooms(dto.getRestrooms());
-	        property.setWaterSupply(dto.getWaterSupply());
-	        property.setChangingRooms(dto.getChangingRooms());
-	        property.setKitchen(dto.getKitchen());
-	        property.setFurnitureAndProps(dto.getFurnitureAndProps());
-	        property.setNeutralLightingConditions(dto.getNeutralLightingConditions());
-	        property.setArtificialLightingAvailability(dto.getArtificialLightingAvailability());
-	        property.setParkingCapacity(dto.getParkingCapacity());
+			property.setPowerSupply(dto.getPowerSupply());
+			property.setBakupGeneratorsAndVoltage(dto.getBakupGeneratorsAndVoltage());
+			property.setWifi(dto.getWifi());
+			property.setAirConditionAndHeating(dto.getAirConditionAndHeating());
+			property.setNumberOfWashrooms(dto.getNumberOfWashrooms());
+			property.setRestrooms(dto.getRestrooms());
+			property.setWaterSupply(dto.getWaterSupply());
+			property.setChangingRooms(dto.getChangingRooms());
+			property.setKitchen(dto.getKitchen());
+			property.setFurnitureAndProps(dto.getFurnitureAndProps());
+			property.setNeutralLightingConditions(dto.getNeutralLightingConditions());
+			property.setArtificialLightingAvailability(dto.getArtificialLightingAvailability());
+			property.setParkingCapacity(dto.getParkingCapacity());
 
-	        property.setDroneUsage(dto.getDroneUsage());
-	        property.setFirearms(dto.getFirearms());
-	        property.setActionScenes(dto.getActionScenes());
-	        property.setSecurity(dto.getSecurity());
-	        property.setStructuralModification(dto.getStructuralModification());
-	        property.setTemporary(dto.getTemporary());
-	        property.setDressing(dto.getDressing());
-	        property.setPermissions(dto.getPermissions());
-	        property.setNoiseRestrictions(dto.getNoiseRestrictions());
-	        property.setShootingTiming(dto.getShootingTiming());
-	        property.setInsuranceRequired(dto.getInsuranceRequired());
-	        property.setLegalAgreements(dto.getLegalAgreements());
+			property.setDroneUsage(dto.getDroneUsage());
+			property.setFirearms(dto.getFirearms());
+			property.setActionScenes(dto.getActionScenes());
+			property.setSecurity(dto.getSecurity());
+			property.setStructuralModification(dto.getStructuralModification());
+			property.setTemporary(dto.getTemporary());
+			property.setDressing(dto.getDressing());
+			property.setPermissions(dto.getPermissions());
+			property.setNoiseRestrictions(dto.getNoiseRestrictions());
+			property.setShootingTiming(dto.getShootingTiming());
+			property.setInsuranceRequired(dto.getInsuranceRequired());
+			property.setLegalAgreements(dto.getLegalAgreements());
 
-	        property.setRoadAccessAndCondition(dto.getRoadAccessAndCondition());
-	        property.setPublicTransport(dto.getPublicTransport());
-	        property.setNearestAirportOrRailway(dto.getNearestAirportOrRailway());
-	        property.setAccommodationNearby(dto.getAccommodationNearby());
-	        property.setFoodAndCatering(dto.getFoodAndCatering());
-	        property.setEmergencyServicesNearby(dto.getEmergencyServicesNearby());
+			property.setRoadAccessAndCondition(dto.getRoadAccessAndCondition());
+			property.setPublicTransport(dto.getPublicTransport());
+			property.setNearestAirportOrRailway(dto.getNearestAirportOrRailway());
+			property.setAccommodationNearby(dto.getAccommodationNearby());
+			property.setFoodAndCatering(dto.getFoodAndCatering());
+			property.setEmergencyServicesNearby(dto.getEmergencyServicesNearby());
 
-	        property.setRentalCost(dto.getRentalCost());
-	        property.setSecurityDeposit(dto.getSecurityDeposit());
-	        property.setAdditionalCharges(dto.getAdditionalCharges());
-	        property.setPaymentModelsAccepted(dto.getPaymentModelsAccepted());
-	        property.setCancellationPolicy(dto.getCancellationPolicy());
+			property.setRentalCost(dto.getRentalCost());
+			property.setSecurityDeposit(dto.getSecurityDeposit());
+			property.setAdditionalCharges(dto.getAdditionalCharges());
+			property.setPaymentModelsAccepted(dto.getPaymentModelsAccepted());
+			property.setCancellationPolicy(dto.getCancellationPolicy());
 
-	        property.setDescription(dto.getDescription());
-	        property.setPriceCustomerPay(dto.getPriceCustomerPay());
-	        property.setDiscount20Percent(dto.isDiscount20Percent());
-	        property.setBusinessOwner(dto.isBusinessOwner());
-	        property.setUpdatedOn(LocalDateTime.now());
-	        property.setUpdatedBy(dto.getUserId());
+			property.setDescription(dto.getDescription());
+			property.setPriceCustomerPay(dto.getPriceCustomerPay());
+			property.setDiscount20Percent(dto.isDiscount20Percent());
+			property.setBusinessOwner(dto.isBusinessOwner());
+			property.setUpdatedOn(LocalDateTime.now());
+			property.setUpdatedBy(dto.getUserId());
 
-	        // --- Update Category/SubCategory/Type/User/Industry ---
-	        if (dto.getCategoryId() != null) {
-	            ShootingLocationCategory category = new ShootingLocationCategory();
-	            category.setId(dto.getCategoryId());
-	           
-	        }
+			// --- Update Category/SubCategory/Type/User/Industry ---
+			if (dto.getCategoryId() != null) {
+				ShootingLocationCategory category = new ShootingLocationCategory();
+				category.setId(dto.getCategoryId());
 
-	        if (dto.getSubCategoryId() != null) {
-	            ShootingLocationSubcategory subCategory = new ShootingLocationSubcategory();
-	            subCategory.setId(dto.getSubCategoryId());
-	          
-	        }
+			}
 
-	        if (dto.getTypesId() != null) {
-	            ShootingLocationTypes type = new ShootingLocationTypes();
-	            type.setId(dto.getTypesId());
-	       
-	        }
+			if (dto.getSubCategoryId() != null) {
+				ShootingLocationSubcategory subCategory = new ShootingLocationSubcategory();
+				subCategory.setId(dto.getSubCategoryId());
 
-	        if (dto.getUserId() != null) {
-	            User user = new User();
-	            user.setUserId(dto.getUserId());
-	      
-	        }
+			}
 
-	        if (dto.getIndustryId() != null) {
-	            Industry industry = industryRepository.findById(dto.getIndustryId())
-	                    .orElseThrow(() -> new RuntimeException("Industry not found"));
-	            property.setIndustry(industry);
-	        }
+			if (dto.getTypesId() != null) {
+				ShootingLocationTypes type = new ShootingLocationTypes();
+				type.setId(dto.getTypesId());
 
-	        // --- Update Subcategory Selection ---
-	        if (dto.getSubcategorySelectionDTO() != null) {
-	            property.setSubcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()));
-	        }
+			}
 
-	        ShootingLocationPropertyDetails updatedProperty = propertyDetailsRepository.save(property);
+			if (dto.getUserId() != null) {
+				User user = new User();
+				user.setUserId(dto.getUserId());
 
-	        // --- Business Info ---
-	        if (dto.getBusinessInformation() != null) {
-	            BusinessInformation business = businessInformationRepository.findByPropertyDetails(updatedProperty)
-	                    .orElse(new BusinessInformation());
-	            business.setPropertyDetails(updatedProperty);
-	            business.setBusinessName(dto.getBusinessInformation().getBusinessName());
-	            business.setBusinessType(dto.getBusinessInformation().getBusinessType());
-	            business.setBusinessLocation(dto.getBusinessInformation().getBusinessLocation());
-	            business.setPanOrGSTNumber(dto.getBusinessInformation().getPanOrGSTNumber());
-	            business.setLocation(dto.getBusinessInformation().getLocation());
-	            business.setAddressLine1(dto.getBusinessInformation().getAddressLine1());
-	            business.setAddressLine2(dto.getBusinessInformation().getAddressLine2());
-	            business.setAddressLine3(dto.getBusinessInformation().getAddressLine3());
-	            business.setState(dto.getBusinessInformation().getState());
-	            business.setPostalCode(dto.getBusinessInformation().getPostalCode());
-	            businessInformationRepository.save(business);
-	        }
+			}
 
-	        // --- Bank Info ---
-	        if (dto.getBankDetailsDTO() != null) {
-	            BankDetails bank = bankDetailsRepository.findByPropertyDetails(updatedProperty)
-	                    .orElse(new BankDetails());
-	            bank.setPropertyDetails(updatedProperty);
-	            bank.setBeneficiaryName(dto.getBankDetailsDTO().getBeneficiaryName());
-	            bank.setMobileNumber(dto.getBankDetailsDTO().getMobileNumber());
-	            bank.setAccountNumber(dto.getBankDetailsDTO().getAccountNumber());
-	            bank.setConfirmAccountNumber(dto.getBankDetailsDTO().getConfirmAccountNumber());
-	            bank.setIfscCode(dto.getBankDetailsDTO().getIfscCode());
-	            bankDetailsRepository.save(bank);
-	        }
-	        
-	        if (inputFile != null) {
-	            String updateMode = inputFile.getUpdateMode();
-	            boolean isReplace = "REPLACE".equalsIgnoreCase(updateMode);
-	            boolean isAppend = "APPEND".equalsIgnoreCase(updateMode);
+			if (dto.getIndustryId() != null) {
+				Industry industry = industryRepository.findById(dto.getIndustryId())
+						.orElseThrow(() -> new RuntimeException("Industry not found"));
+				property.setIndustry(industry);
+			}
 
-	            if (!isReplace && !isAppend) {
-	                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid update mode. Use APPEND or REPLACE.");
-	            }
+			// --- Update Subcategory Selection ---
+			if (dto.getSubcategorySelectionDTO() != null) {
+				property.setSubcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()));
+			}
 
-	            if (isReplace) {
-	                List<ShootingLocationImages> oldFiles = shootingLocationImagesRepository.findByProperty(property);
-	                for (ShootingLocationImages media : oldFiles) {
-	                    s3Util.deleteFileFromS3(media.getFilePath());
-	                }
-	                shootingLocationImagesRepository.deleteAllByProperty(property);
-	            }
+			ShootingLocationPropertyDetails updatedProperty = propertyDetailsRepository.save(property);
 
-	            // Upload new media
-	            Map<ShootingLocationImages, MultipartFile> mediaFilesMap = prepareMediaFileData(dto, inputFile, property.getUser(), property);
-	            for (Map.Entry<ShootingLocationImages, MultipartFile> entry : mediaFilesMap.entrySet()) {
-	                ShootingLocationImages media = entry.getKey();
-	                MultipartFile file = entry.getValue();
-	                shootingLocationImagesRepository.save(media);
-	                FileOutputWebModel uploaded = uploadToS3(file, media);
-	                if (uploaded != null) {
-	                    logger.info("Uploaded file: {}", uploaded.getFilePath());
-	                }
-	            }
-	        }
+			// --- Business Info ---
+			if (dto.getBusinessInformation() != null) {
+				BusinessInformation business = businessInformationRepository.findByPropertyDetails(updatedProperty)
+						.orElse(new BusinessInformation());
+				business.setPropertyDetails(updatedProperty);
+				business.setBusinessName(dto.getBusinessInformation().getBusinessName());
+				business.setBusinessType(dto.getBusinessInformation().getBusinessType());
+				business.setBusinessLocation(dto.getBusinessInformation().getBusinessLocation());
+				business.setPanOrGSTNumber(dto.getBusinessInformation().getPanOrGSTNumber());
+				business.setLocation(dto.getBusinessInformation().getLocation());
+				business.setAddressLine1(dto.getBusinessInformation().getAddressLine1());
+				business.setAddressLine2(dto.getBusinessInformation().getAddressLine2());
+				business.setAddressLine3(dto.getBusinessInformation().getAddressLine3());
+				business.setState(dto.getBusinessInformation().getState());
+				business.setPostalCode(dto.getBusinessInformation().getPostalCode());
+				businessInformationRepository.save(business);
+			}
 
-	        propertyDetailsRepository.save(property);
-	        return dto;
+			// --- Bank Info ---
+			if (dto.getBankDetailsDTO() != null) {
+				BankDetails bank = bankDetailsRepository.findByPropertyDetails(updatedProperty)
+						.orElse(new BankDetails());
+				bank.setPropertyDetails(updatedProperty);
+				bank.setBeneficiaryName(dto.getBankDetailsDTO().getBeneficiaryName());
+				bank.setMobileNumber(dto.getBankDetailsDTO().getMobileNumber());
+				bank.setAccountNumber(dto.getBankDetailsDTO().getAccountNumber());
+				bank.setConfirmAccountNumber(dto.getBankDetailsDTO().getConfirmAccountNumber());
+				bank.setIfscCode(dto.getBankDetailsDTO().getIfscCode());
+				bankDetailsRepository.save(bank);
+			}
 
-	    } catch (Exception e) {
-	        logger.error("Error updating property details", e);
-	        throw new RuntimeException("Failed to update property", e);
-	    }
+			if (inputFile != null) {
+				String updateMode = inputFile.getUpdateMode();
+				boolean isReplace = "REPLACE".equalsIgnoreCase(updateMode);
+				boolean isAppend = "APPEND".equalsIgnoreCase(updateMode);
+
+				if (!isReplace && !isAppend) {
+					throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid update mode. Use APPEND or REPLACE.");
+				}
+
+				if (isReplace) {
+					List<ShootingLocationImages> oldFiles = shootingLocationImagesRepository.findByProperty(property);
+					for (ShootingLocationImages media : oldFiles) {
+						s3Util.deleteFileFromS3(media.getFilePath());
+					}
+					shootingLocationImagesRepository.deleteAllByProperty(property);
+				}
+
+				// Upload new media
+				Map<ShootingLocationImages, MultipartFile> mediaFilesMap = prepareMediaFileData(dto, inputFile, property.getUser(), property);
+				for (Map.Entry<ShootingLocationImages, MultipartFile> entry : mediaFilesMap.entrySet()) {
+					ShootingLocationImages media = entry.getKey();
+					MultipartFile file = entry.getValue();
+					shootingLocationImagesRepository.save(media);
+					FileOutputWebModel uploaded = uploadToS3(file, media);
+					if (uploaded != null) {
+						logger.info("Uploaded file: {}", uploaded.getFilePath());
+					}
+				}
+			}
+
+			propertyDetailsRepository.save(property);
+			return dto;
+
+		} catch (Exception e) {
+			logger.error("Error updating property details", e);
+			throw new RuntimeException("Failed to update property", e);
+		}
 	}
 
 	public String toggleLike(Integer propertyId, Integer userId) {
@@ -1697,69 +1704,69 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.build())
 				.collect(Collectors.toList());
 	}
-	
+
 	@Override
 	public PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto) {
-	    ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(dto.getPropertyId())
-	        .orElseThrow(() -> new RuntimeException("Property not found"));
+		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(dto.getPropertyId())
+				.orElseThrow(() -> new RuntimeException("Property not found"));
 
-	    // Fetch existing availability (you expect only one per property)
-	    List<PropertyAvailabilityDate> existingList = availabilityRepository.findByProperty_Id(dto.getPropertyId());
+		// Fetch existing availability (you expect only one per property)
+		List<PropertyAvailabilityDate> existingList = availabilityRepository.findByProperty_Id(dto.getPropertyId());
 
-	    PropertyAvailabilityDate availability;
-	    if (!existingList.isEmpty()) {
-	        // Update the first one (you may choose latest if multiple exist)
-	        availability = existingList.get(0);
-	        availability.setStartDate(dto.getStartDate());
-	        availability.setEndDate(dto.getEndDate());
-	    } else {
-	        // Create new
-	        availability = PropertyAvailabilityDate.builder()
-	            .property(property)
-	            .startDate(dto.getStartDate())
-	            .endDate(dto.getEndDate())
-	            .build();
-	    }
+		PropertyAvailabilityDate availability;
+		if (!existingList.isEmpty()) {
+			// Update the first one (you may choose latest if multiple exist)
+			availability = existingList.get(0);
+			availability.setStartDate(dto.getStartDate());
+			availability.setEndDate(dto.getEndDate());
+		} else {
+			// Create new
+			availability = PropertyAvailabilityDate.builder()
+					.property(property)
+					.startDate(dto.getStartDate())
+					.endDate(dto.getEndDate())
+					.build();
+		}
 
-	    PropertyAvailabilityDate saved = availabilityRepository.save(availability);
+		PropertyAvailabilityDate saved = availabilityRepository.save(availability);
 
-	    return PropertyAvailabilityDTO.builder()
-	        .propertyId(saved.getProperty().getId())
-	        .startDate(saved.getStartDate())
-	        .endDate(saved.getEndDate())
-	        .build();
+		return PropertyAvailabilityDTO.builder()
+				.propertyId(saved.getProperty().getId())
+				.startDate(saved.getStartDate())
+				.endDate(saved.getEndDate())
+				.build();
 	}
 
-	    @Override
-	    public List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId) {
-	        return availabilityRepository.findByPropertyId(propertyId).stream()
-	            .map(a -> PropertyAvailabilityDTO.builder()
-	                .propertyId(a.getProperty().getId())
-	                .startDate(a.getStartDate())
-	                .endDate(a.getEndDate())
-	                .build())
-	            .collect(Collectors.toList());
-	    }
-	    @Override
-	    public void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList) {
-	        // Step 1: Fetch property
-	        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
-	                .orElseThrow(() -> new RuntimeException("❌ Property not found with id: " + propertyId));
+	@Override
+	public List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId) {
+		return availabilityRepository.findByPropertyId(propertyId).stream()
+				.map(a -> PropertyAvailabilityDTO.builder()
+						.propertyId(a.getProperty().getId())
+						.startDate(a.getStartDate())
+						.endDate(a.getEndDate())
+						.build())
+				.collect(Collectors.toList());
+	}
+	@Override
+	public void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList) {
+		// Step 1: Fetch property
+		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+				.orElseThrow(() -> new RuntimeException("❌ Property not found with id: " + propertyId));
 
-	        // Step 2: Delete old dates
-	        availabilityRepository.deleteByPropertyId(propertyId);
+		// Step 2: Delete old dates
+		availabilityRepository.deleteByPropertyId(propertyId);
 
-	        // Step 3: Save new availability
-	        List<PropertyAvailabilityDate> newDates = availabilityList.stream()
-	                .map(dto -> PropertyAvailabilityDate.builder()
-	                        .startDate(dto.getStartDate())
-	                        .endDate(dto.getEndDate())
-	                        .property(property)
-	                        .build())
-	                .collect(Collectors.toList());
+		// Step 3: Save new availability
+		List<PropertyAvailabilityDate> newDates = availabilityList.stream()
+				.map(dto -> PropertyAvailabilityDate.builder()
+						.startDate(dto.getStartDate())
+						.endDate(dto.getEndDate())
+						.property(property)
+						.build())
+				.collect(Collectors.toList());
 
-	        availabilityRepository.saveAll(newDates);
-	    }
+		availabilityRepository.saveAll(newDates);
+	}
 
 
 

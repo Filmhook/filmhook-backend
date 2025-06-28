@@ -38,6 +38,15 @@ public interface ShootingLocationChatRepository extends JpaRepository<ShootingLo
 
     @Query("SELECT c FROM ShootingLocationChat c WHERE c.shootingLocationChatId = :id")
 	Optional<ShootingLocationChat> findByIds(Integer id);
+    
+    @Query("SELECT c FROM ShootingLocationChat c " +
+    	       "WHERE (c.shootingLocationSenderId = :userId AND c.shootingLocationReceiverId = :otherUserId) " +
+    	       "   OR (c.shootingLocationSenderId = :otherUserId AND c.shootingLocationReceiverId = :userId) " +
+    	       "ORDER BY c.timeStamp ASC")
+    	List<ShootingLocationChat> getChatHistoryBetweenUsers(@Param("userId") Integer userId,
+    	                                                       @Param("otherUserId") Integer otherUserId);
+
+
 
 
 

@@ -31,6 +31,25 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
  
 
     List<ShootingLocationBooking> findByShootEndDateLessThanEqualAndStatus(LocalDate date, BookingStatus status);
+    
+    @Query("SELECT b FROM ShootingLocationBooking b " +
+            "WHERE ((b.client.userId = :user1 AND b.property.user.id = :user2) " +
+            "   OR (b.client.userId = :user2 AND b.property.user.id = :user1))")
+     List<ShootingLocationBooking> findBookingsBetweenUsers(@Param("user1") Integer user1,
+                                                             @Param("user2") Integer user2);
+    
+//   chat between perticular client and owner for booked property
+    @Query("SELECT b FROM ShootingLocationBooking b " +
+            "WHERE ((b.client.userId = :user1 AND b.property.user.userId = :user2) " +
+            "    OR (b.client.userId = :user2 AND b.property.user.userId = :user1)) " +
+            "AND b.property.id = :propertyId")
+     List<ShootingLocationBooking> findBookingsBetweenUsersAndProperty(@Param("user1") Integer user1,
+                                                                        @Param("user2") Integer user2,
+                                                                        @Param("propertyId") Integer propertyId);
+    
+
+
+
 
 
 

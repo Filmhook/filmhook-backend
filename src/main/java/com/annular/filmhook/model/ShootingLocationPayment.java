@@ -1,6 +1,7 @@
 
 package com.annular.filmhook.model;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import javax.persistence.*;
@@ -56,7 +57,7 @@ public class ShootingLocationPayment {
 
     @CreationTimestamp
     @Column(name = "created_on", updatable = false)
-    private Date createdOn;
+    private LocalDateTime createdOn;
 
     @UpdateTimestamp
     @Column(name = "updated_on")

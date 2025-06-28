@@ -34,6 +34,14 @@ public class ShootingLocationBookingConverter {
     }
 
     public static ShootingLocationBookingDTO toDTO(ShootingLocationBooking booking) {
+    	
+    	 if (booking == null) {
+    	        throw new IllegalArgumentException("Booking is null");
+    	    }
+
+    	    if (booking.getClient() == null || booking.getProperty() == null) {
+    	        throw new IllegalArgumentException("Client or Property information is missing in booking ID: " + booking.getId());
+    	    }
         return ShootingLocationBookingDTO.builder()
         		.bookingId(booking.getId())
                 .propertyId(booking.getProperty().getId())
@@ -44,6 +52,10 @@ public class ShootingLocationBookingConverter {
                 .bookingMessage(booking.getBookingMessage())
                 .pricePerDay(booking.getPricePerDay())
                 .totalAmount(booking.getTotalAmount())
+                .bookingStatus(
+                	    booking.getStatus() != null ? booking.getStatus().name() : "UNKNOWN"
+                	)
                 .build();
+               
     }
 }

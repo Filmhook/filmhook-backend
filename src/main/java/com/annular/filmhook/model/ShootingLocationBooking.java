@@ -59,5 +59,5 @@ public class ShootingLocationBooking {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Getters and setters...
+  
 }
