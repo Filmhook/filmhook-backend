@@ -7,7 +7,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Optional;
 import com.annular.filmhook.controller.ShootingLocationBookingController;
-import com.annular.filmhook.controller.ShootingLocationController;
+
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationPaymentConverter;
 import com.annular.filmhook.model.BookingStatus;
@@ -43,7 +43,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.lang.foreign.Linker.Option;
+
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -55,7 +55,6 @@ import java.util.stream.Collectors;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import javax.mail.internet.MimeMessage;
 
 
 @Service

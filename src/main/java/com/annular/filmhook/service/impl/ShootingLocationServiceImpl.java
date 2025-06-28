@@ -356,6 +356,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.user(user)
 					.subcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()))
 					.industry(industry)
+					.typeLocation(dto.getTypeLocation())
+					.locationLink(dto.getLocationLink())
 					.build();
 
 			ShootingLocationPropertyDetails savedProperty = propertyDetailsRepository.saveAndFlush(property);
@@ -920,6 +922,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 								.id(subCategory.getId())
 								.name(subCategory.getName())
 								.description(subCategory.getDescription())
+								.imageUrl(subCategory.getImageUrl())
 								.build();
 					}
 				}
@@ -1079,6 +1082,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.likedByUser(likeStatus)
 						.reviews(reviews)
 						.averageRating(avgRating)
+						.typeLocation(property.getTypeLocation())
+						.locationLink(property.getLocationLink())
 						.likeCount(likeCount)
 						.industryName(property.getIndustry().getIndustryName())
 						.industryId(property.getIndustry().getIndustryId())
@@ -1381,7 +1386,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.reviews(reviews)
 						.averageRating(avgRating)
 						.likeCount(likeCount)
-						.availabilityDates(availabilityMap.getOrDefault(property.getId(), Collections.emptyList()))
+
+						 .availabilityDates(availabilityMap.getOrDefault(property.getId(), Collections.emptyList()))
+						 .typeLocation(property.getTypeLocation())
+						 .locationLink(property.getLocationLink())
+
 						.build();
 
 
@@ -1521,12 +1530,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			property.setPaymentModelsAccepted(dto.getPaymentModelsAccepted());
 			property.setCancellationPolicy(dto.getCancellationPolicy());
 
-			property.setDescription(dto.getDescription());
-			property.setPriceCustomerPay(dto.getPriceCustomerPay());
-			property.setDiscount20Percent(dto.isDiscount20Percent());
-			property.setBusinessOwner(dto.isBusinessOwner());
-			property.setUpdatedOn(LocalDateTime.now());
-			property.setUpdatedBy(dto.getUserId());
+	        property.setDescription(dto.getDescription());
+	        property.setPriceCustomerPay(dto.getPriceCustomerPay());
+	        property.setDiscount20Percent(dto.isDiscount20Percent());
+	        property.setBusinessOwner(dto.isBusinessOwner());
+	        property.setUpdatedOn(LocalDateTime.now());
+	        property.setUpdatedBy(dto.getUserId());
+	        property.setTypeLocation(dto.getTypeLocation());
+	        property.setLocationLink(dto.getLocationLink());
 
 			// --- Update Category/SubCategory/Type/User/Industry ---
 			if (dto.getCategoryId() != null) {
