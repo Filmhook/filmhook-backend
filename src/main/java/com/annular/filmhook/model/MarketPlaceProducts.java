@@ -40,6 +40,9 @@ public class MarketPlaceProducts {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
+	
+	private String productType;//Sale, Rent, Both
+	 
 	private String brandName;
 	private String modelName;
 	private BigDecimal price;

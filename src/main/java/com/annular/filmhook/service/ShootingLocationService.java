@@ -34,6 +34,7 @@ public interface ShootingLocationService {
 	PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto);
 	List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId);
 	void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList);
+	List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer userId);
 
 
 }

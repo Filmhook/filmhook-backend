@@ -281,6 +281,39 @@ public class ShootingLocationController {
 
 
 		  }
+		  
+		  
+		  @GetMapping("/getPropertiesByliked")
+		  public ResponseEntity<?> getLikedProperties(@RequestParam Integer userId) {
+		      Logger logger = LoggerFactory.getLogger(this.getClass());
+		      Map<String, String> response = new HashMap<>();
+
+		      try {
+		          logger.info("Fetching liked properties for userId: {}", userId);
+
+		          if (userId == null) {
+		              logger.warn("User ID is null");
+		              response.put("message", "User ID cannot be null");
+		              return ResponseEntity.badRequest().body(response);
+		          }
+          List<ShootingLocationPropertyDetailsDTO> likedProperties = service.getPropertiesLikedByUser(userId);
+
+		          if (likedProperties.isEmpty()) {
+		              logger.info("No liked properties found for userId: {}", userId);
+		              response.put("message", "No properties found in wishlist");
+		              return ResponseEntity.ok(response);
+		          }
+
+		          logger.info("Found {} liked properties for userId: {}", likedProperties.size(), userId);
+		          return ResponseEntity.ok(likedProperties);
+
+		      } catch (Exception ex) {
+		          logger.error("Unexpected error while fetching liked properties for userId {}: {}", userId, ex.getMessage());
+		          response.put("message", "Something went wrong while fetching wishlist");
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		      }
+		  }
+
 
 		  //============================================================
 		  
