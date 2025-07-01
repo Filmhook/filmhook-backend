@@ -187,29 +187,28 @@ public class ShootingLocationController {
 
 
 		  @PostMapping("/savePropertyDetails")
-		  public ResponseEntity<?> savePropertyDetails(@ModelAttribute ShootingLocationFileInputModel inputFile,
-				  @RequestPart(value ="propertyDetails", required = false) ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
-		      logger.info("POST /save - Received request to save property with n: {}", propertyDetailsDTO.getPropertyName());
-		      logger.info("POST /save - Received request to save property with name: {}", propertyDetailsDTO.getSubcategorySelectionDTO());
-		      try {
-		    	  service.savePropertyDetails(propertyDetailsDTO, inputFile);
-		          logger.info("Property '{}' saved successfully", propertyDetailsDTO.getPropertyName());
+		  public ResponseEntity<Response> savePropertyDetails(
+		          @ModelAttribute ShootingLocationFileInputModel inputFile,
+		          @RequestPart(value = "propertyDetails", required = false) ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
 
-		          Map<String, String> response = new HashMap<>();
-		          response.put("status", "success");
-		          response.put("message", "Property details saved successfully");
-		          return ResponseEntity.status(HttpStatus.CREATED).body(response);
+		      try {
+		          logger.info("POST /save - Saving property: {}", propertyDetailsDTO.getPropertyName());
+		          service.savePropertyDetails(propertyDetailsDTO, inputFile);
+		          return ResponseEntity.status(HttpStatus.CREATED)
+		                  .body(new Response(1, "Property details saved successfully", null));
+
+		      } catch (ResponseStatusException e) {
+		          logger.warn("Save failed: {}", e.getReason());
+		          return ResponseEntity.status(e.getStatus())
+		                  .body(new Response(-1, e.getReason(), null));
 
 		      } catch (Exception e) {
-		          logger.error("Error saving property '{}': {}", propertyDetailsDTO.getPropertyName(), e.getMessage(), e);
-
-		          Map<String, String> response = new HashMap<>();
-		          response.put("status", "error");
-		          response.put("message", "Failed to save property details: " + e.getMessage());
-		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		          logger.error("Unexpected error saving property: {}", e.getMessage(), e);
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                  .body(new Response(-1, "Failed to save property details", e.getMessage()));
 		      }
 		  }
-		  
+
 
 		  @PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 		  public ResponseEntity<Response> updateProperty(
@@ -283,8 +282,8 @@ public class ShootingLocationController {
 		  }
 		  
 		  
-		  @GetMapping("/getPropertiesByliked")
-		  public ResponseEntity<?> getLikedProperties(@RequestParam Integer userId) {
+ @GetMapping("/getPropertiesByliked")
+ public ResponseEntity<?> getLikedProperties(@RequestParam Integer userId) {
 		      Logger logger = LoggerFactory.getLogger(this.getClass());
 		      Map<String, String> response = new HashMap<>();
 
