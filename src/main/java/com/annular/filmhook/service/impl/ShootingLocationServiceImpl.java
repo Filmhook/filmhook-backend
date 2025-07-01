@@ -243,29 +243,34 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			ShootingLocationCategory category = null;
 			if (dto.getCategoryId() != null) {
-				category = new ShootingLocationCategory();
-				category.setId(dto.getCategoryId().intValue());  
+			    category = categoryRepo.findById(dto.getCategoryId())
+			            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found with ID: " + dto.getCategoryId()));
+			}
+			ShootingLocationSubcategory subCategory = null;
+			if (dto.getSubCategory() != null) {
+			    Integer subCategoryId = dto.getSubCategory().getId();
+			    // safe usage
+			} else {
+			    logger.warn("No subcategory set for property ID {}", dto.getId());
 			}
 
-			ShootingLocationSubcategory subCategory = null;
-			if (dto.getSubCategoryId() != null) {
-				subCategory = new ShootingLocationSubcategory();
-				subCategory.setId(dto.getSubCategoryId().intValue());
-			}
 			ShootingLocationTypes type=null;
-			if(dto.getTypesId()!=null) {
-				type= new ShootingLocationTypes();
-				type.setId(dto.getTypesId().intValue());
+			if (dto.getTypesId() != null) {
+			    type = typesRepo.findById(dto.getTypesId())
+			            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Type not found with ID: " + dto.getTypesId()));
 			}
 			User user=null;
-			if(dto.getUserId()!=null) {
-				user= new User();
-				user.setUserId(dto.getUserId().intValue());
+			if (dto.getUserId() != null) {
+			    user = userRepository.findById(dto.getUserId())
+			            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found with ID: " + dto.getUserId()));
 			}
+
 			Industry industry = null;
 			if (dto.getIndustryId() != null) {
-				industry = industryRepository.getReferenceById(dto.getIndustryId());
+			    industry = industryRepository.findById(dto.getIndustryId())
+			            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Industry not found with ID: " + dto.getIndustryId()));
 			}
+
 
 			ShootingLocationPropertyDetails property = ShootingLocationPropertyDetails.builder()
 					// 1. Owner & Property Identity
@@ -351,7 +356,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.updatedBy(dto.getUserId())
 					.updatedOn(LocalDateTime.now())
 					.category(category)
-					.subCategory(subCategory)
+					.subCategory(subCategory != null ? subCategory : null)
 					.types(type)
 					.user(user)
 					.subcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()))
@@ -1369,7 +1374,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.videoWalkthrough(property.getVideoWalkthrough())
 						.businessInformation(businessInfoDTO)
 						.bankDetailsDTO(bankDetailsDTO)
-						.subcategorySelectionDTO(shootingLocationSubcategorySelectionDTO)
+						.subcategorySelectionDTO(property.getSubcategorySelection() != null ? shootingLocationSubcategorySelectionDTO : null)
+
 						.category(categoryDTO)
 						.subCategory(subcategoryDTO)
 						.type(typeDTO)
@@ -1380,7 +1386,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.industryName(industryName)
 						.industryId(property.getIndustry().getIndustryId())
 						.categoryId(property.getCategory().getId())
-						.subCategoryId(property.getSubCategory().getId())
+						.subCategoryId(property.getSubCategory() != null ? property.getSubCategory().getId() : null)
+
 						.typesId(property.getTypes().getId())
 						.userId(property.getUser().getUserId())
 						.reviews(reviews)
