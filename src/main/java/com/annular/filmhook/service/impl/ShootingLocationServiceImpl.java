@@ -1077,7 +1077,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						// Nested DTOs
 						.businessInformation(businessInfoDTO)
 						.bankDetailsDTO(bankDetailsDTO)
-						.subcategorySelectionDTO(shootingLocationSubcategorySelectionDTO)
+						.subcategorySelectionDTO(property.getSubcategorySelection() != null ? shootingLocationSubcategorySelectionDTO : null)
 						.category(categoryDTO)
 						.subCategory(subcategoryDTO)
 						.type(typeDTO)
@@ -1093,7 +1093,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.industryName(property.getIndustry().getIndustryName())
 						.industryId(property.getIndustry().getIndustryId())
 						.categoryId(property.getCategory().getId())
-						.subCategoryId(property.getSubCategory().getId())
+						.subCategoryId(property.getSubCategory() != null ? property.getSubCategory().getId() : null)
 						.typesId(property.getTypes().getId())
 						.userId(property.getUser().getUserId())
 						
