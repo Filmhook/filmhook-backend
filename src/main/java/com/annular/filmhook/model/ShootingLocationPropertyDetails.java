@@ -43,6 +43,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @Builder
+
 public class ShootingLocationPropertyDetails {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
