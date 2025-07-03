@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+//@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class ShootingLocationPropertyDetailsDTO {
 	// Property Information
 	private Integer id;
@@ -37,7 +40,11 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	// 2. Listing Summary
 	private int numberOfPeopleAllowed;
-	private double totalArea;
+	
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	private Double totalArea;
+ 
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private String selectedUnit;
 	private int numberOfRooms;
 	private String numberOfFloor;
@@ -133,6 +140,9 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String typeLocation;
 	private String locationLink;
 
-
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public Double getTotalArea() {
+	    return (totalArea != null && totalArea == 0.0) ? null : totalArea;
+	}
 }
 
