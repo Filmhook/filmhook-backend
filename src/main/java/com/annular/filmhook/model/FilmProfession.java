@@ -24,9 +24,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.util.Collection;
 import java.util.Date;
 
-/**
- * Master data table for Film's Profession
- */
 
 @Entity
 @Table(name = "FilmProfession")

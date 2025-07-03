@@ -38,7 +38,7 @@ public class Comment {
     @Column(name="category")
     private String category; // Post or Comment
 
-    @Column(name = "post_Id")
+    @Column(name = "post_id")
 	private Integer postId; // primary key of posts, userMediaPin, userProfilePin
 
     @Column(name = "parent_comment_Id", columnDefinition = "int default null")
