@@ -7,6 +7,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -67,5 +69,11 @@ public class Comment {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
+    
+    @ManyToOne
+    @JoinColumn(name = "post_id", insertable = false, updatable = false)
+    private Posts post;
+    @Column(name = "reply_count")
+    private Integer replyCount = 0;
 
 }
