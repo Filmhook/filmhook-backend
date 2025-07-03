@@ -28,5 +28,7 @@ public interface ChatService {
 	Response deleteByChatId(ChatWebModel chatWebModel);
 
 	Response updateOnlineStatus(UserWebModel userWebModel);
+	
+	Response deleteChatProfile(Integer currentUserId, Integer targetUserId);
 
 }

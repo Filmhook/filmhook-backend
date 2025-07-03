@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -142,95 +143,128 @@ public class ChatServiceImpl implements ChatService {
 //    }
 	@Override
 	public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
-		try {
-			logger.info("Save Message Method Start");
+	    try {
+	        logger.info("Save Message Method Start");
 
-			Integer userId = userDetails.userInfo().getId();
-			Optional<User> userOptional = userRepository.findById(userId);
+	        Integer userId = userDetails.userInfo().getId();
+	        Optional<User> userOptional = userRepository.findById(userId);
 
-			if (userOptional.isPresent()) {
-				User user = userOptional.get();
-				Chat chat = Chat.builder().message(chatWebModel.getMessage())
-						.chatReceiverId(chatWebModel.getChatReceiverId()).userAccountName(user.getName())
-						.chatSenderId(userId).userType(user.getUserType()).timeStamp(new Date()).chatIsActive(true)
-						.chatCreatedBy(userId).senderRead(true).receiverRead(false).chatCreatedOn(new Date()).build();
-				chatRepository.save(chat);
+	        if (userOptional.isPresent()) {
+	            User user = userOptional.get();
 
-				if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
-					// Saving the chat files in the media_files table
-					FileInputWebModel fileInputWebModel = FileInputWebModel.builder().userId(chatWebModel.getUserId())
-							.category(MediaFileCategory.Chat).categoryRefId(chat.getChatId())
-							.files(chatWebModel.getFiles()).build();
-					mediaFilesService.saveMediaFiles(fileInputWebModel, userOptional.get());
-				}
+	            Chat chat = Chat.builder()
+	                .message(chatWebModel.getMessage())
+	                .chatReceiverId(chatWebModel.getChatReceiverId())
+	                .userAccountName(user.getName())
+	                .chatSenderId(userId)
+	                .userType(user.getUserType())
+	                .timeStamp(new Date())
+	                .chatIsActive(true)
+	                .chatCreatedBy(userId)
+	                .senderRead(true)
+	                .receiverRead(false)
+	                .chatCreatedOn(new Date())
+	               
+	                .build();
 
-				// Sending push notification
-				if (chatWebModel.getChatReceiverId() != null) {
-					Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
-					if (receiverOptional.isPresent()) {
-						User receiver = receiverOptional.get();
-						String notificationTitle = "filmHook";
-						String notificationMessage = "You have a new message from " + user.getName();
-						// Save the notification to the InAppNotification table
-						InAppNotification inAppNotification = InAppNotification.builder().senderId(userId)
-								.receiverId(receiver.getUserId()).title(notificationTitle)
-								.userType("chat")
-								.id(chat.getChatId())
-								.message(notificationMessage).createdOn(new Date()).isRead(true).createdBy(userId)
-								.build();
-						inAppNotificationRepository.save(inAppNotification);
+	            chatRepository.save(chat);
 
-						Message message = Message.builder()
-								.setNotification(Notification.builder().setTitle(notificationTitle)
-										.setBody(notificationMessage).build())
-								.putData("chatId", Integer.toString(chat.getChatId())) // Add chatId to data
-								.setToken(receiver.getFirebaseDeviceToken()) // Set the receiver's device token
-								.build();
+	            if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
+	                FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                    .userId(chatWebModel.getUserId())
+	                    .category(MediaFileCategory.Chat)
+	                    .categoryRefId(chat.getChatId())
+	                    .files(chatWebModel.getFiles())
+	                    .build();
 
-						// Send the message using FirebaseMessaging
-						try {
-							String response = FirebaseMessaging.getInstance().send(message);
-							//String response = firebaseConfig.firebaseMessaging().send(message);
-							logger.info("Successfully sent message: " + response);
-							// Save the notification to the InAppNotification table
-//							InAppNotification inAppNotification = InAppNotification.builder().senderId(userId)
-//									.receiverId(receiver.getUserId()).title(notificationTitle)
-//									.message(notificationMessage).createdOn(new Date()).isRead(true).createdBy(userId)
-//									.build();
-//							inAppNotificationRepository.save(inAppNotification);
-						} catch (FirebaseMessagingException e) {
-							logger.error("Failed to send push notification: " + e.getMessage());
-						}
-					} else {
-						logger.warn("Receiver user not found for id: " + chatWebModel.getChatReceiverId());
-					}
-				}
+	                mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	            }
 
-				return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
-			} else {
-				return ResponseEntity.notFound().build();
-			}
-		} catch (Exception e) {
-			logger.error("Error occurred while saving message -> {}", e.getMessage());
-			return ResponseEntity.internalServerError().build();
-		}
+	            // Push notification
+	            if (chatWebModel.getChatReceiverId() != null) {
+	                Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
+
+	                if (receiverOptional.isPresent()) {
+	                    User receiver = receiverOptional.get();
+
+	                    String notificationTitle = "filmHook";
+	                    String notificationMessage = "You have a new message from " + user.getName();
+
+	                    InAppNotification inAppNotification = InAppNotification.builder()
+	                        .senderId(userId)
+	                        .receiverId(receiver.getUserId())
+	                        .title(notificationTitle)
+	                        .userType("chat")
+	                        .id(chat.getChatId())
+	                        .message(notificationMessage)
+	                        .createdOn(new Date())
+	                        .isRead(true)
+	                        .createdBy(userId)
+	                        .build();
+
+	                    inAppNotificationRepository.save(inAppNotification);
+
+	                    String deviceToken = receiver.getFirebaseDeviceToken();
+	                    if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+	                        try {
+	                            Message message = Message.builder()
+	                                .setNotification(Notification.builder()
+	                                    .setTitle(notificationTitle)
+	                                    .setBody(notificationMessage)
+	                                    .build())
+	                                .putData("chatId", Integer.toString(chat.getChatId()))
+	                                .setToken(deviceToken)
+	                                .build();
+
+	                            String response = FirebaseMessaging.getInstance().send(message);
+	                            logger.info("Successfully sent push notification: " + response);
+	                        } catch (FirebaseMessagingException e) {
+	                            logger.error("Failed to send push notification", e);
+	                        }
+	                    } else {
+	                        logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
+	                    }
+
+	                } else {
+	                    logger.warn("Receiver user not found for id: " + chatWebModel.getChatReceiverId());
+	                }
+	            }
+
+	            return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Failed", "Sender user not found"));
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error occurred while saving message", e);
+	        return ResponseEntity.internalServerError().body(new Response(0, "Failed", "An error occurred while saving message"));
+	    }
 	}
+
 
 	@Override
 	public ResponseEntity<?> getAllUser() {
 		try {
 			logger.info("Get All Users Method Start");
 			Integer loggedInUserId = userDetails.userInfo().getId();
-
+			 List<Chat> allChats = chatRepository.findAllChatsByUserId(loggedInUserId);
 			// Fetch all distinct user IDs associated with the logged-in user from
 			// ChatRepository
 			Set<Integer> chatUserIds = new HashSet<>();
-			chatUserIds.addAll(chatRepository.findSenderIdsByReceiverId(loggedInUserId));
-			chatUserIds.addAll(chatRepository.findReceiverIdsBySenderId(loggedInUserId));
+			  for (Chat chat : allChats) {
+		            if (chat.getChatSenderId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedBySender())) {
+		                continue; // Skip if deleted by sender
+		            }
+		            if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
+		                continue; // Skip if deleted by receiver
+		            }
 
-			// Remove the logged-in user's ID from the set
-			chatUserIds.remove(loggedInUserId);
-
+		            // Add the other user ID
+		            if (chat.getChatSenderId().equals(loggedInUserId)) {
+		                chatUserIds.add(chat.getChatReceiverId());
+		            } else {
+		                chatUserIds.add(chat.getChatSenderId());
+		            }
+		        }
 			if (chatUserIds.isEmpty()) {
 				return ResponseEntity.notFound().build();
 			}
@@ -413,9 +447,19 @@ public class ChatServiceImpl implements ChatService {
 	        List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId);
 
 	        // Combine both lists of messages
+	 
 	        List<Chat> allMessages = new ArrayList<>();
-	        allMessages.addAll(senderMessages);
-	        allMessages.addAll(receiverMessages);
+	        for (Chat c : senderMessages) {
+	            if (!Boolean.TRUE.equals(c.getDeletedBySender())) {
+	                allMessages.add(c);
+	            }
+	        }
+	        for (Chat c : receiverMessages) {
+	            if (!Boolean.TRUE.equals(c.getDeletedByReceiver())) {
+	                allMessages.add(c);
+	            }
+	        }
+
 
 	        // Sort combined messages by chatCreatedOn in descending order
 	        allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn).reversed());
@@ -439,6 +483,10 @@ public class ChatServiceImpl implements ChatService {
 	        int senderUnreadCount = 0;
 	        int receiverUnreadCount = 0;
 	        for (Chat chat : paginatedMessages) {
+	        	 if ((chat.getChatSenderId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
+	                     (chat.getChatReceiverId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedByReceiver()))) {
+	                     continue;
+	                 }
 	            Optional<User> userData = userRepository.findById(chat.getChatSenderId());
 	            Optional<User> userDatas = userRepository.findById(receiverId);
 
@@ -831,6 +879,42 @@ public class ChatServiceImpl implements ChatService {
 	        return new Response(1,"Success", "Online status updated successfully"); // Success response
 	    } else {
 	        return new Response(0,"fail", "User not found"); // Failure response
+	    }
+	}
+	
+	
+	@Override
+	public Response deleteChatProfile(Integer currentUserId, Integer targetUserId) {
+	    try {
+	        // Find all chat threads between current user and target user
+	        List<Chat> chats = chatRepository.findByParticipants(currentUserId, targetUserId);
+
+	        if (chats.isEmpty()) {
+	            return new Response(0, "Not Found", "No chats found between these users");
+	        }
+
+	        for (Chat chat : chats) {
+	            if (chat.getChatSenderId().equals(currentUserId)) {
+	                chat.setDeletedBySender(true);
+	            } else if (chat.getChatReceiverId().equals(currentUserId)) {
+	                chat.setDeletedByReceiver(true);
+	            }
+
+	            chatRepository.save(chat);
+
+
+	            List<MediaFiles> mediaFiles = mediaFilesRepository.findByCategoryRefId(chat.getChatId());
+	            for (MediaFiles media : mediaFiles) {
+	                media.setStatus(false); // assuming 'status' is used for soft delete
+	            }
+	            mediaFilesRepository.saveAll(mediaFiles);
+	        }
+
+	        return new Response(1, "Success", "Chat profile soft-deleted for current user");
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return new Response(0, "Error", "An error occurred while soft-deleting chat profile");
 	    }
 	}
 
