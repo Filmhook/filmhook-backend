@@ -41,8 +41,8 @@ public class ShootingLocationPropertyDetailsDTO {
 	// 2. Listing Summary
 	private int numberOfPeopleAllowed;
 	
-	@JsonInclude(JsonInclude.Include.NON_NULL)
-	private Double totalArea;
+	
+	private double totalArea;
  
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private String selectedUnit;
@@ -139,10 +139,10 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	private String typeLocation;
 	private String locationLink;
-
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+	
 	public Double getTotalArea() {
-	    return (totalArea != null && totalArea == 0.0) ? null : totalArea;
+	    return totalArea;
 	}
+
 }
 

@@ -148,7 +148,7 @@
             <artifactId>utils</artifactId>
             <version>${aws.sdk.version}</version>
         </dependency>
-        <dependency>
+                <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>sdk-core</artifactId>
             <version>${aws.sdk.version}</version>
@@ -238,6 +238,12 @@
     <artifactId>imageio-core</artifactId>
     <version>3.10.1</version>
 </dependency>
+<dependency>
+    <groupId>ws.schild</groupId>
+    <artifactId>jave-core</artifactId>
+    <version>3.3.1</version>
+</dependency>
+
     </dependencies>
 
     <build>

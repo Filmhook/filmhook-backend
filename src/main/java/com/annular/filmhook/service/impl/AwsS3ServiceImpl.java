@@ -28,6 +28,7 @@ public class AwsS3ServiceImpl implements AwsS3Service {
 
     @Override
     public List<S3Object> getAllObjectsByBucket(String bucketName) {
+    	
         return s3Util.getAllObjectsFromS3Bucket(bucketName);
     }
 
