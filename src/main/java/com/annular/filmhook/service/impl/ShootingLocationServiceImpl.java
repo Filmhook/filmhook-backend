@@ -129,7 +129,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Autowired
 	IndustryRepository industryRepository;
 
-
+ 
 	@Autowired
 	private PropertyAvailabilityDateRepository availabilityRepository;
 
@@ -247,11 +247,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category not found with ID: " + dto.getCategoryId()));
 			}
 			ShootingLocationSubcategory subCategory = null;
-			if (dto.getSubCategory() != null) {
-			    Integer subCategoryId = dto.getSubCategory().getId();
-			    // safe usage
+
+			if (dto.getSubCategoryId() != null) {
+			    subCategory = subcategoryRepo.findById(dto.getSubCategoryId())
+			            .orElseThrow(() -> new ResponseStatusException(
+			                    HttpStatus.BAD_REQUEST,
+			                    "Subcategory not found with ID: " + dto.getSubCategoryId()));
 			} else {
-			    logger.warn("No subcategory set for property ID {}", dto.getId());
+			    logger.info("No subcategory set for property '{}', might be Outdoor", dto.getPropertyName());
 			}
 
 			ShootingLocationTypes type=null;
@@ -356,7 +359,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.updatedBy(dto.getUserId())
 					.updatedOn(LocalDateTime.now())
 					.category(category)
-					.subCategory(subCategory != null ? subCategory : null)
+					 .subCategory(subCategory)
 					.types(type)
 					.user(user)
 					.subcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()))
@@ -1775,25 +1778,50 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
                     .build() : null;
 
             ShootingLocationCategory category = property.getCategory();
-            ShootingLocationCategoryDTO categoryDTO = (category != null) ? ShootingLocationCategoryDTO.builder()
+            ShootingLocationCategoryDTO categoryDTO = null;
+            if (category != null) {
+                ShootingLocationCategory mappedCategory = categoryMap.get(category.getId());
+                categoryDTO = ShootingLocationCategoryDTO.builder()
                     .id(category.getId())
-                    .name(categoryMap.get(category.getId()).getName())
-                    .build() : null;
+                    .name(mappedCategory != null ? mappedCategory.getName() : category.getName())
+                    .build();
+            }
+
 
             ShootingLocationSubcategory subCategory = property.getSubCategory();
-            ShootingLocationSubcategoryDTO subcategoryDTO = (subCategory != null) ? ShootingLocationSubcategoryDTO.builder()
-                    .id(subCategory.getId())
-                    .name(subcategoryMap.get(subCategory.getId()).getName())
-                    .description(subcategoryMap.get(subCategory.getId()).getDescription())
-                    .imageUrl(subcategoryMap.get(subCategory.getId()).getImageUrl())
-                    .build() : null;
+   
+			ShootingLocationSubcategoryDTO subcategoryDTO=null;
+			if (subCategory != null) {
+                ShootingLocationSubcategory mappedSubCategory = subcategoryMap.get(subCategory.getId());
+                if (mappedSubCategory != null) {
+                    subcategoryDTO = ShootingLocationSubcategoryDTO.builder()
+                        .id(mappedSubCategory.getId())
+                        .name(mappedSubCategory.getName())
+                        .description(mappedSubCategory.getDescription())
+                        .imageUrl(mappedSubCategory.getImageUrl())
+                        .build();
+                } else {
+                    // Fallback using raw entity
+                    subcategoryDTO = ShootingLocationSubcategoryDTO.builder()
+                        .id(subCategory.getId())
+                        .name(subCategory.getName())
+                        .description(subCategory.getDescription())
+                        .imageUrl(subCategory.getImageUrl())
+                        .build();
+                }
+            }
 
             ShootingLocationTypes types = property.getTypes();
-            ShootingLocationTypeDTO typeDTO = (types != null) ? ShootingLocationTypeDTO.builder()
+            ShootingLocationTypeDTO typeDTO = null;
+            if (types != null) {
+                ShootingLocationTypes mappedType = typesMap.get(types.getId());
+                typeDTO = ShootingLocationTypeDTO.builder()
                     .id(types.getId())
-                    .name(typesMap.get(types.getId()).getName())
-                    .description(typesMap.get(types.getId()).getDescription())
-                    .build() : null;
+                    .name(mappedType != null ? mappedType.getName() : types.getName())
+                    .description(mappedType != null ? mappedType.getDescription() : types.getDescription())
+                    .build();
+            }
+
 
             ShootingLocationSubcategorySelection selection = property.getSubcategorySelection();
             ShootingLocationSubcategorySelectionDTO selectionDTO = (selection != null) ? ShootingLocationSubcategorySelectionDTO.builder()
@@ -1916,10 +1944,10 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
                     .governmentIdUrls(governmentIdUrls)
                     .likedByUser(likeStatus)
                     .industryName(industryName)
-                    .industryId(property.getIndustry().getIndustryId())
-                    .categoryId(property.getCategory().getId())
-                    .subCategoryId(property.getSubCategory().getId())
-                    .typesId(property.getTypes().getId())
+                    .industryId(property.getIndustry() != null ? property.getIndustry().getIndustryId() : null)
+                    .categoryId(property.getCategory() != null ? property.getCategory().getId() : null)
+                    .subCategoryId(property.getSubCategory() != null ? property.getSubCategory().getId() : null)
+                    .typesId(property.getTypes() != null ? property.getTypes().getId() : null)
                     .userId(property.getUser().getUserId())
                     .reviews(reviews)
                     .averageRating(avgRating)

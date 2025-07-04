@@ -15,6 +15,7 @@ import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
+import com.annular.filmhook.util.MediaConversionUtil;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
 
@@ -116,28 +117,64 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
         List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
         try {
-            // 1. Save first in MySQL
+            // Step 1: Save metadata to MySQL
             Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
             logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
 
-            // 2. Upload into S3
+            // Step 2: Convert and upload to S3
             mediaFilesMap.forEach((mediaFile, inputFile) -> {
                 mediaFilesRepository.saveAndFlush(mediaFile);
+                File originalFile = null;
+                File convertedFile = null;
+
                 try {
-                    File file = File.createTempFile(mediaFile.getFileId(), null);
-                    FileUtil.convertMultiPartFileToFile(inputFile, file);
-                    String response = fileUtil.uploadFile(file, mediaFile.getFilePath() + mediaFile.getFileType());
-                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-                        file.delete(); // deleting temp file
-                        fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
+                    // Create temp file from Multipart
+                    String originalExtension = mediaFile.getFileType();
+                    originalFile = File.createTempFile(mediaFile.getFileId(), originalExtension);
+                    FileUtil.convertMultiPartFileToFile(inputFile, originalFile);
+
+                    // Determine media type
+                    String contentType = inputFile.getContentType();
+                    String s3FileExtension;
+
+                    if (contentType != null && contentType.startsWith("image/")) {
+                        // Convert to WebP
+                        convertedFile = File.createTempFile(mediaFile.getFileId() + "_converted", ".webp");
+                        MediaConversionUtil.convertToWebP(originalFile.getAbsolutePath(), convertedFile.getAbsolutePath());
+                        s3FileExtension = ".webp";
+                    } else if (contentType != null && contentType.startsWith("video/")) {
+                        // Convert to WebM
+                        convertedFile = File.createTempFile(mediaFile.getFileId() + "_converted", ".webm");
+                        MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(), convertedFile.getAbsolutePath());
+                        s3FileExtension = ".webm";
+                    } else {
+                        // Keep original
+                        convertedFile = originalFile;
+                        s3FileExtension = originalExtension;
                     }
-                } catch (IOException e) {
-                    logger.error("Error at saveMediaFiles()...", e);
+
+                    // Upload to S3
+                    String response = fileUtil.uploadFile(convertedFile, mediaFile.getFilePath() + s3FileExtension);
+                    if ("File Uploaded".equalsIgnoreCase(response)) {
+                        // Update DB with new file type
+                        mediaFile.setFileType(s3FileExtension);
+                        mediaFilesRepository.saveAndFlush(mediaFile);
+                        fileOutputWebModelList.add(this.transformData(mediaFile));
+                    }
+
+                } catch (Exception e) {
+                    logger.error("Error during media conversion or upload -> {}", e.getMessage());
+                    e.printStackTrace();
+                } finally {
+                    if (originalFile != null && originalFile.exists()) originalFile.delete();
+                    if (convertedFile != null && convertedFile.exists() && !convertedFile.equals(originalFile)) convertedFile.delete();
                 }
             });
+
+            // Sort output
             fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
         } catch (Exception e) {
-            logger.error("Error at saveMediaFiles()...", e);
+            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
             e.printStackTrace();
         }
         return fileOutputWebModelList;
