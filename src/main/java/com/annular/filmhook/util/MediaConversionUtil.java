@@ -1,15 +1,9 @@
 package com.annular.filmhook.util;
 
-import java.awt.image.BufferedImage;
+
+
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
-import javax.imageio.spi.IIORegistry;
-import javax.imageio.stream.FileImageOutputStream;
 
 import ws.schild.jave.Encoder;
 import ws.schild.jave.MultimediaObject;
@@ -19,23 +13,26 @@ import ws.schild.jave.encode.VideoAttributes;
 
 
 public class MediaConversionUtil {
-	  public static void convertToWebP(String inputPath, String outputPath) throws IOException {
-	        BufferedImage inputImage = ImageIO.read(new File(inputPath));
+	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
+	    // Use the full path to cwebp.exe
+	    ProcessBuilder processBuilder = new ProcessBuilder(
+	        "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",  "-q", "90",
+	        inputPath,
+	        "-o", 
+	        outputPath
+	    );
 
-	        Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("webp");
-	        if (!writers.hasNext()) {
-	            throw new IOException("WebP writer not found. Make sure TwelveMonkeys is in your classpath.");
-	        }
+	    processBuilder.inheritIO(); // To see output/errors in the console
+	    Process process = processBuilder.start();
+	    int exitCode = process.waitFor();
 
-	        ImageWriter writer = writers.next();
-	        File outputFile = new File(outputPath);
-	        FileImageOutputStream output = new FileImageOutputStream(outputFile);
-	        writer.setOutput(output);
-	        writer.write(inputImage);
-	        output.close();
-	        writer.dispose();
+	    if (exitCode != 0) {
+	        throw new IOException("WebP conversion failed. Exit code: " + exitCode);
 	    }
-	    public static void convertToWebM(String inputPath, String outputPath) throws Exception {
+	}
+
+
+	   public static void convertToWebM(String inputPath, String outputPath) throws Exception {
 	        File source = new File(inputPath);
 	        File target = new File(outputPath);
 
@@ -53,4 +50,6 @@ public class MediaConversionUtil {
 	        Encoder encoder = new Encoder();
 	        encoder.encode(new MultimediaObject(source), target, attrs);
 	    }
+	    
+	   
 }

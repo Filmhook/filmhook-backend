@@ -228,14 +228,17 @@
             <artifactId>url-connection-client</artifactId>
             <version>${aws.sdk.version}</version>
         </dependency>
-<dependency>
+        <dependency>
     <groupId>ws.schild</groupId>
     <artifactId>jave-core</artifactId>
     <version>3.3.1</version>
 </dependency>
 
 
+
     </dependencies>
+  
+ 
 
     <build>
         <plugins>

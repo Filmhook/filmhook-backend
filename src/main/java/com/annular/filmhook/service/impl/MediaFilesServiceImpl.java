@@ -30,8 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -138,13 +140,12 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                     String s3FileExtension;
 
                     if (contentType != null && contentType.startsWith("image/")) {
-                        // Convert to WebP
-                        convertedFile = File.createTempFile(mediaFile.getFileId() + "_converted", ".webp");
+                        convertedFile = File.createTempFile("converted_", ".webp");
                         MediaConversionUtil.convertToWebP(originalFile.getAbsolutePath(), convertedFile.getAbsolutePath());
                         s3FileExtension = ".webp";
+
                     } else if (contentType != null && contentType.startsWith("video/")) {
-                        // Convert to WebM
-                        convertedFile = File.createTempFile(mediaFile.getFileId() + "_converted", ".webm");
+                        convertedFile = File.createTempFile("converted_", ".webm");
                         MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(), convertedFile.getAbsolutePath());
                         s3FileExtension = ".webm";
                     } else {
@@ -160,6 +161,9 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         mediaFile.setFileType(s3FileExtension);
                         mediaFilesRepository.saveAndFlush(mediaFile);
                         fileOutputWebModelList.add(this.transformData(mediaFile));
+                    }
+                    else {
+                    	 logger.error("Error during media conversion or upload -> {}");
                     }
 
                 } catch (Exception e) {
