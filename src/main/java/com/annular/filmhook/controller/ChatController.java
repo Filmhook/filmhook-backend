@@ -167,4 +167,20 @@ public class ChatController {
 		}
 
 	}
+	
+	@PostMapping("/deleteChatProfile")
+	public ResponseEntity<Response> deleteChatProfile(@RequestBody ChatWebModel chatWebModel) {
+	    try {
+	        Integer currentUserId = chatWebModel.getChatSenderId();
+	        Integer targetUserId = chatWebModel.getChatReceiverId();
+
+	        Response response = chatService.deleteChatProfile(currentUserId, targetUserId);
+	        return ResponseEntity.ok(response);
+	    } catch (Exception e) {
+	        logger.error("Error in deleteChatProfile: {}", e.getMessage(), e);
+	        return ResponseEntity.internalServerError()
+	                .body(new Response(-1, "Error", "Internal server error"));
+	    }
+	}
+
 }

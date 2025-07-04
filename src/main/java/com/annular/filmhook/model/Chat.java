@@ -74,4 +74,8 @@ public class Chat {
     
     @Column(name = "receiverRead")
     private Boolean receiverRead;
+    
+    private Boolean deletedBySender = false;
+    private Boolean deletedByReceiver = false;
+
 }

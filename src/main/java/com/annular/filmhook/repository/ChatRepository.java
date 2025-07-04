@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.Chat;
@@ -39,5 +40,13 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     
     @Query("SELECT COUNT(c) FROM Chat c WHERE c.chatReceiverId = :receiverId AND c.chatSenderId = :senderId AND c.receiverRead = false")
     Integer countUnreadMessages(Integer receiverId, Integer senderId);
+    
+    @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :user1 AND c.chatReceiverId = :user2) OR (c.chatSenderId = :user2 AND c.chatReceiverId = :user1)")
+    List<Chat> findByParticipants(@Param("user1") Integer user1, @Param("user2") Integer user2);
+
+    @Query("SELECT c FROM Chat c WHERE c.chatSenderId = :userId OR c.chatReceiverId = :userId")
+    List<Chat> findAllChatsByUserId(@Param("userId") Integer userId);
+
+
 
 }

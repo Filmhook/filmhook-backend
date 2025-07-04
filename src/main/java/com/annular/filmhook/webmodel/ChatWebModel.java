@@ -45,4 +45,5 @@ public class ChatWebModel {
     private Integer pageNo;
     private Integer pageSize;
 
+    
 }
