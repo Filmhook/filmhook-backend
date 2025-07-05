@@ -1,10 +1,7 @@
 package com.annular.filmhook.util;
 
-
-
 import java.io.File;
 import java.io.IOException;
-
 import ws.schild.jave.Encoder;
 import ws.schild.jave.MultimediaObject;
 import ws.schild.jave.encode.AudioAttributes;
@@ -16,7 +13,8 @@ public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    // Use the full path to cwebp.exe
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-	        "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",  "-q", "90",
+	        "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
+	        "-q", "90",
 	        inputPath,
 	        "-o", 
 	        outputPath
