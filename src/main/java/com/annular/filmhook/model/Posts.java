@@ -130,8 +130,7 @@ public class Posts {
     @Column(name = "tagUsers")
     private String tagUsers;
     
-    @Column(name = "view_count", nullable = false, columnDefinition = "int default 0")
-    private Integer viewCount = 0;
+
 
 
 }

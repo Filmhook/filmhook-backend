@@ -47,6 +47,6 @@ public interface PostService {
     
 	boolean deletePostByUserId(PostWebModel postWebModel);
 	
-	PostWebModel viewPost(Integer postId, Integer userId);
+
 
 }

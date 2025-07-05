@@ -283,15 +283,5 @@ public class PostController {
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
         }
     }
-    @GetMapping("/view/{postId}/user/{userId}")
-    public ResponseEntity<?> viewPost(@PathVariable Integer postId, @PathVariable Integer userId) {
-        try {
-            PostWebModel model = postService.viewPost(postId, userId);
-            return ResponseEntity.ok(new Response(1, "View recorded successfully.", model));
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(-1, "Fail", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", "Unexpected error: " + e.getMessage()));
-        }
-    }
+  
 }

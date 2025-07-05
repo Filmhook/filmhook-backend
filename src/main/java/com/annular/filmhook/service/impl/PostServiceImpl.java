@@ -10,7 +10,7 @@ import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.PostTags;
-import com.annular.filmhook.model.PostView;
+
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
@@ -71,7 +71,7 @@ import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.repository.PostTagsRepository;
-import com.annular.filmhook.repository.PostViewRepository;
+
 import com.annular.filmhook.repository.FriendRequestRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.util.Utility;
@@ -90,8 +90,6 @@ public class PostServiceImpl implements PostService {
     @Autowired
     MediaFilesService mediaFilesService;
 
-    @Autowired
-    private PostViewRepository postViewRepository;
     @Autowired
     private UserRepository userRepository;
     
@@ -411,7 +409,7 @@ public class PostServiceImpl implements PostService {
                          // Fetch VisitPage status based on selectedOption
                          // Fetch VisitPage data based on selectedOption
                             .visitPageData(fetchVisitPageData(promoteDetails))
-                            .viewCount(post.getViewCount())
+                         
                             .build();
                     responseList.add(postWebModel);
                 });
@@ -901,63 +899,6 @@ public class PostServiceImpl implements PostService {
 
     }
     
-    
-    @Override
-    public PostWebModel viewPost(Integer postId, Integer userId) {
-        Posts post = postsRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        PostView lastView = postViewRepository.findTopByPostAndUserOrderByViewedAtDesc(post, user);
-
-        boolean shouldCountView = true;
-
-        if (lastView != null) {
-            long millisIn24Hours = 24 * 60 * 60 * 1000L;
-            Date now = new Date();
-            long timeDifference = now.getTime() - lastView.getViewedAt().getTime();
-
-            if (timeDifference < millisIn24Hours) {
-                shouldCountView = false;
-            }
-        }
-
-        if (shouldCountView) {
-            post.setViewCount(post.getViewCount() == null ? 1 : post.getViewCount() + 1);
-            postsRepository.save(post);
-
-            PostView view = PostView.builder()
-                    .post(post)
-                    .user(user)
-                    .viewedAt(new Date())
-                    .build();
-            postViewRepository.save(view);
-        }
-
-        return PostWebModel.builder()
-                .id(post.getId())
-                .postId(post.getPostId())
-                .description(post.getDescription())
-                .userId(user.getUserId())
-                .userName(user.getName())
-                .likeCount(post.getLikesCount())
-                .commentCount(post.getCommentsCount())
-                .shareCount(post.getSharesCount())
-                .viewCount(post.getViewCount())
-                .createdOn(post.getCreatedOn())
-                .createdBy(post.getCreatedBy())
-                .postLinkUrl(post.getPostLinkUrls())
-                .locationName(post.getLocationName())
-                .latitude(post.getLatitude())
-                .longitude(post.getLongitude())
-                .address(post.getAddress())
-                .privateOrPublic(post.getPrivateOrPublic())
-                .promoteFlag(post.getPromoteFlag())
-                .promoteStatus(post.getPromoteStatus())
-                .build();
-    }
 
 
 }
