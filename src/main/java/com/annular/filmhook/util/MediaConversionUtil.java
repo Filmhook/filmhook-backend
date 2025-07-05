@@ -37,9 +37,14 @@ public class MediaConversionUtil {
 
 	        AudioAttributes audio = new AudioAttributes();
 	        audio.setCodec("libopus");
+	        audio.setBitRate(128000);
+	        audio.setChannels(2);
+	        audio.setSamplingRate(44100);
 
 	        VideoAttributes video = new VideoAttributes();
 	        video.setCodec("libvpx");
+	        video.setBitRate(1000000); 
+	        video.setFrameRate(30);
 
 	        EncodingAttributes attrs = new EncodingAttributes();
 	        attrs.setOutputFormat("webm");
