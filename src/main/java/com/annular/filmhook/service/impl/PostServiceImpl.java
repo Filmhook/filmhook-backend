@@ -81,6 +81,9 @@ public class PostServiceImpl implements PostService {
     MediaFilesService mediaFilesService;
 
     @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
     FileUtil fileUtil;
 
     @Autowired
@@ -127,8 +130,6 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     FriendRequestRepository friendRequestRepository;
-    @Autowired
-    UserRepository userRepository;
     @Autowired
     PostViewRepository postViewRepository;
     
@@ -942,8 +943,7 @@ public class PostServiceImpl implements PostService {
         }
 
     }
-    
-  
+
     public PostView trackPostView(Integer postId, Integer userId) {
         Posts post = postsRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
