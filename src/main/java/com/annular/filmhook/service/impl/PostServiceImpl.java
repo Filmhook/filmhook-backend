@@ -10,6 +10,7 @@ import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.PostTags;
+import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
@@ -23,28 +24,20 @@ import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
-
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -54,11 +47,9 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Comparator;
 import java.util.stream.Collectors;
-
 import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
-
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
@@ -67,14 +58,16 @@ import com.annular.filmhook.repository.LinkRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.repository.PostTagsRepository;
+import com.annular.filmhook.repository.PostViewRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.util.FileUtil;
-
 import software.amazon.awssdk.services.s3.model.S3Object;
+import java.time.Duration;
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -134,7 +127,12 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     FriendRequestRepository friendRequestRepository;
-
+    @Autowired
+    UserRepository userRepository;
+    @Autowired
+    PostViewRepository postViewRepository;
+    
+    
     private static final String POST = "Post";
     private static final String COMMENT = "Comment";
 
@@ -304,6 +302,8 @@ public class PostServiceImpl implements PostService {
             if (!Utility.isNullOrEmptyList(postList)) {
 
                 postList.stream().filter(Objects::nonNull).forEach(post -> {
+                	
+                	
                     // Fetching post-files
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
@@ -403,6 +403,7 @@ public class PostServiceImpl implements PostService {
                          // Fetch VisitPage status based on selectedOption
                          // Fetch VisitPage data based on selectedOption
                             .visitPageData(fetchVisitPageData(promoteDetails))
+                            .viewsCount(post.getViewsCount())
                             .build();
                     responseList.add(postWebModel);
                 });
@@ -941,6 +942,42 @@ public class PostServiceImpl implements PostService {
         }
 
     }
+    
+  
+    public PostView trackPostView(Integer postId, Integer userId) {
+        Posts post = postsRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        Optional<PostView> existing = postViewRepository.findByPostAndUser(post, user);
+
+        boolean shouldIncrement = existing
+            .map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 24)
+            .orElse(true);
+
+        if (shouldIncrement) {
+            PostView view = existing.orElseGet(() ->
+                    PostView.builder()
+                            .post(post)
+                            .user(user)
+                            .build()
+            );
+            view.setLastViewedOn(now);
+            postViewRepository.save(view);
+
+            post.setViewsCount(post.getViewsCount() + 1);
+            postsRepository.save(post);
+
+            return view;
+        }
+
+        return existing.orElseThrow(); // Return existing if not updated (or throw as per use case)
+    }
+
 
 
 

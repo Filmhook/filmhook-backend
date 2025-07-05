@@ -70,4 +70,5 @@ public class PostWebModel {
     private String visitPage;
     // Add visitPageData field
     private String visitPageData;
+    private Integer viewsCount;
 }

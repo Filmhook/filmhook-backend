@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.service.PostService;
 
 import com.annular.filmhook.util.Utility;
@@ -30,7 +31,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -279,6 +282,20 @@ public class PostController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
         }
+    }
+    
+    @PostMapping("/posts/{postId}/view")
+    public ResponseEntity<?> trackView(@PathVariable Integer postId,
+                                       @RequestParam Integer userId) {
+        PostView view = postService.trackPostView(postId, userId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("viewId", view.getId());
+        response.put("postId", view.getPost().getId());
+        response.put("userId", view.getUser().getUserId());
+        response.put("lastViewedOn", view.getLastViewedOn());
+
+        return ResponseEntity.ok(response);
     }
 
 }
