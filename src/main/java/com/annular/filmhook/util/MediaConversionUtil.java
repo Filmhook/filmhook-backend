@@ -13,8 +13,8 @@ public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    // Use the full path to cwebp.exe
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-	    		"/usr/bin/cwebp",
-//	        "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
+	    		//"/usr/bin/cwebp",
+        "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 	        "-q", "90",
 	        inputPath,
 	        "-o", 

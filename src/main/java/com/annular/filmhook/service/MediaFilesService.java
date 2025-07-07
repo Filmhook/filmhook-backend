@@ -24,5 +24,8 @@ public interface MediaFilesService {
     void deleteMediaFilesByUserIdAndCategoryAndRefIds(Integer userId, MediaFileCategory category, List<Integer> idList);
 
     void deleteMediaFilesByCategoryAndRefIds(MediaFileCategory category, List<Integer> idList);
+    
+    
+    
 
 }

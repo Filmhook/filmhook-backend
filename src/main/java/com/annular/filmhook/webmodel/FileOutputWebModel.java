@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @Builder
@@ -35,6 +36,8 @@ public class FileOutputWebModel {
     private String elapsedTime;
     private String filmHookCode;
     private Long duration;
-
+    private Integer viewCount;
+    private List<StoryViewerDTO> viewedBy;
+    private String storyId;
 
 }

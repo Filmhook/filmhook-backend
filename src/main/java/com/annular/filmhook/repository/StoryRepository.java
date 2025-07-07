@@ -22,4 +22,6 @@ public interface StoryRepository extends JpaRepository<Story, Integer> {
 
     @Query(value = "select * from stories s where s.status=true and s.created_on <= DATE_SUB(NOW(), INTERVAL 1 DAY);", nativeQuery = true)
     List<Story> getMoreThanOneDayStories();
+    
+    Story findByStoryId(String storyId); 
 }
