@@ -187,7 +187,7 @@ public class StoriesServiceImpl implements StoriesService {
 		story.setStoryId(UUID.randomUUID().toString());
 		story.setType(inputData.getType());
 		story.setDescription(inputData.getDescription());
-		story.setViewCount(inputData.getViewCount() == null ? 0 : inputData.getViewCount());   
+//		story.setViewCount(inputData.getViewCount() == null ? 0 : inputData.getViewCount());   
 		story.setStatus(true);
 		story.setUser(user);
 		story.setCreatedBy(user.getUserId());
@@ -356,7 +356,7 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 		storiesWebModel.setProfileUrl(userService.getProfilePicUrl(story.getUser().getUserId()));
 		storiesWebModel.setUserName(story.getUser().getName());
 		storiesWebModel.setDescription(story.getDescription());
-		storiesWebModel.setViewCount(story.getViewCount());
+//		storiesWebModel.setViewCount(story.getViewCount());
 		storiesWebModel.setStatus(story.getStatus());
 		storiesWebModel.setUserId(story.getUser().getUserId());
 		storiesWebModel.setCreatedOn(story.getCreatedOn());
@@ -799,8 +799,10 @@ public void saveMediaView(String storyId, Integer mediaFileId, Integer viewerId)
             story.setViewCount(story.getViewCount() + 1);
         }
         storyRepository.save(story);
+        logger.info("✅ View saved for storyId: {}, by viewerId: {}", storyId, viewerId);
     }
 }
+
 
 }
 

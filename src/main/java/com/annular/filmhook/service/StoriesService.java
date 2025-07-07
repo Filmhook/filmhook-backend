@@ -34,9 +34,9 @@ public interface StoriesService {
     List<UserIdAndNameWebModel> getUserIdAndName(Integer userId);
 
 	List<StoriesWebModel> getUserStoriesByUserId(Integer userId);
-//	
-//	StoriesWebModel getStoryWithViews(String storyId, Integer viewerId);
+
 	void saveMediaView(String storyId, Integer mediaFileId, Integer viewerId);
+
 	
 	
 }

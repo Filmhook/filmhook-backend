@@ -19,6 +19,9 @@ public interface StoryViewRepository extends JpaRepository<StoryView, Integer> {
 	    int countByMediaFile(MediaFiles mediaFile);
 
 	    List<StoryView> findByMediaFile(MediaFiles mediaFile);
+	    
+	    boolean existsByStoryAndViewer(Story story, User viewer);
+
 
 }
  
