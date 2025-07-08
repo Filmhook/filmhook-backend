@@ -10,7 +10,7 @@ import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.PostTags;
-
+import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
@@ -24,28 +24,20 @@ import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
-
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -55,11 +47,9 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Comparator;
 import java.util.stream.Collectors;
-
 import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
-
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
@@ -71,13 +61,13 @@ import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.repository.PostTagsRepository;
-
+import com.annular.filmhook.repository.PostViewRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.util.FileUtil;
-
 import software.amazon.awssdk.services.s3.model.S3Object;
+import java.time.Duration;
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -140,7 +130,10 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     FriendRequestRepository friendRequestRepository;
-
+    @Autowired
+    PostViewRepository postViewRepository;
+    
+    
     private static final String POST = "Post";
     private static final String COMMENT = "Comment";
 
@@ -310,6 +303,8 @@ public class PostServiceImpl implements PostService {
             if (!Utility.isNullOrEmptyList(postList)) {
 
                 postList.stream().filter(Objects::nonNull).forEach(post -> {
+                	
+                	
                     // Fetching post-files
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
@@ -409,7 +404,7 @@ public class PostServiceImpl implements PostService {
                          // Fetch VisitPage status based on selectedOption
                          // Fetch VisitPage data based on selectedOption
                             .visitPageData(fetchVisitPageData(promoteDetails))
-                         
+                            .viewsCount(post.getViewsCount())
                             .build();
                     responseList.add(postWebModel);
                 });
@@ -635,6 +630,7 @@ public class PostServiceImpl implements PostService {
         try {
             Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
             if (post != null) {
+                // Create and save new comment or reply
                 Comment comment = Comment.builder()
                         .category(commentInputWebModel.getCategory())
                         .postId(post.getId())
@@ -646,22 +642,96 @@ public class PostServiceImpl implements PostService {
                         .createdBy(commentInputWebModel.getUserId())
                         .createdOn(new Date())
                         .build();
+
                 Comment savedComment = commentRepository.save(comment);
 
-                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase(POST)) {
-                    post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() + 1 : 1); // Increasing the comments count in post's table
-                    postsRepository.saveAndFlush(post);
+                // Always update post comment count (for both direct comments and replies)
+                int newPostCommentCount = !Utility.isNullOrZero(post.getCommentsCount())
+                        ? post.getCommentsCount() + 1
+                        : 1;
+                post.setCommentsCount(newPostCommentCount);
+                postsRepository.saveAndFlush(post);
+
+                // If it's a reply to a comment, update the parent comment's reply count
+                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory())
+                        && commentInputWebModel.getCategory().equalsIgnoreCase(COMMENT)) {
+
+                    Integer parentCommentId = commentInputWebModel.getParentCommentId();
+                    if (parentCommentId != null) {
+                        Comment parent = commentRepository.findById(parentCommentId).orElse(null);
+                        if (parent != null) {
+                            int newReplyCount = !Utility.isNullOrZero(parent.getReplyCount())
+                                    ? parent.getReplyCount() + 1
+                                    : 1;
+                            parent.setReplyCount(newReplyCount);
+                            commentRepository.saveAndFlush(parent);
+                        }
+                    }
                 }
 
-                logger.info("Comments count for post id [{}] is :- [{}]", post.getId(), post.getCommentsCount());
+                logger.info("Comment added under post [{}]", post.getId());
                 return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
             }
         } catch (Exception e) {
-            logger.error("Error at addComment() -> {}", e.getMessage());
-            e.printStackTrace();
+            logger.error("Error at addComment() -> {}", e.getMessage(), e);
         }
         return null;
     }
+
+
+    @Override
+    public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
+        try {
+            Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
+            if (post != null) {
+                Comment comment = commentRepository.findById(commentInputWebModel.getCommentId()).orElse(null);
+
+                if (comment != null && Boolean.TRUE.equals(comment.getStatus())) {
+                    // Soft delete the parent comment
+                    comment.setStatus(false);
+                    comment.setUpdatedBy(commentInputWebModel.getUserId());
+                    comment.setUpdatedOn(new Date());
+                    commentRepository.save(comment);
+
+                    // Handle child comments (soft delete them too)
+                    List<Comment> childComments = commentRepository.getChildComments(
+                            comment.getPost().getId(), comment.getCommentId());
+
+                    int childDeletedCount = 0;
+
+                    if (!Utility.isNullOrEmptyList(childComments)) {
+                        for (Comment child : childComments) {
+                            if (Boolean.TRUE.equals(child.getStatus())) {
+                                child.setStatus(false);
+                                child.setUpdatedBy(commentInputWebModel.getUserId());
+                                child.setUpdatedOn(new Date());
+                                commentRepository.save(child);
+                                childDeletedCount++;
+                            }
+                        }
+                    }
+
+                    // Optional: You can update the stored count (not required if using live count)
+                    int totalReduced = 1 + childDeletedCount;
+                    int currentStoredCount = post.getCommentsCount() != null ? post.getCommentsCount() : 0;
+                    post.setCommentsCount(Math.max(0, currentStoredCount - totalReduced));
+                    postsRepository.save(post);
+
+                    // ✅ Always recalculate current live count of active comments
+                    int activeCommentCount = commentRepository.countActiveCommentsByPostId(post.getId());
+
+                    logger.info("Updated comments count for post [{}] is [{}]", post.getId(), activeCommentCount);
+                    return this.transformCommentData(List.of(comment), activeCommentCount).get(0);
+                } else {
+                    logger.warn("Comment not found or already deleted.");
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error at deleteComment() -> {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
 
     private List<CommentOutputWebModel> transformCommentData(List<Comment> commentData, Integer totalCommentCount) {
         List<CommentOutputWebModel> commentOutWebModelList = new ArrayList<>();
@@ -710,7 +780,7 @@ public class PostServiceImpl implements PostService {
     public List<CommentOutputWebModel> getComment(CommentInputWebModel commentInputWebModel) {
         try {
             Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
-            if (post != null) {
+            if (post != null) {	
                 List<Comment> commentData = (List<Comment>) post.getCommentCollection();
                 // Filter comments with status true
                 List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase(POST)).collect(Collectors.toList());
@@ -723,33 +793,8 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
-    @Override
-    public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
-        try {
-            Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
-            if (post != null) {
-                Comment comment = commentRepository.findById(commentInputWebModel.getCommentId()).orElse(null);
-                if (comment != null) {
-                    comment.setStatus(false);
-                    comment.setUpdatedBy(commentInputWebModel.getUserId());
-                    comment.setUpdatedOn(new Date());
-                    Comment deletedComment = commentRepository.saveAndFlush(comment);
+   
 
-                    if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) && commentInputWebModel.getCategory().equalsIgnoreCase(POST)) {
-                        post.setCommentsCount(!Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() - 1 : 0); // Decreasing the comments count from post's table
-                        postsRepository.saveAndFlush(post);
-                    }
-
-                    logger.info("Comments count :- [{}]", post.getCommentsCount());
-                    return this.transformCommentData(List.of(deletedComment), post.getCommentsCount()).get(0);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error at deleteComment() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
 
     @Override
     public ShareWebModel addShare(ShareWebModel shareWebModel) {
@@ -898,7 +943,42 @@ public class PostServiceImpl implements PostService {
         }
 
     }
-    
+
+    public PostView trackPostView(Integer postId, Integer userId) {
+        Posts post = postsRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        Optional<PostView> existing = postViewRepository.findByPostAndUser(post, user);
+
+        boolean shouldIncrement = existing
+            .map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 24)
+            .orElse(true);
+
+        if (shouldIncrement) {
+            PostView view = existing.orElseGet(() ->
+                    PostView.builder()
+                            .post(post)
+                            .user(user)
+                            .build()
+            );
+            view.setLastViewedOn(now);
+            postViewRepository.save(view);
+
+            post.setViewsCount(post.getViewsCount() + 1);
+            postsRepository.save(post);
+
+            return view;
+        }
+
+        return existing.orElseThrow(); // Return existing if not updated (or throw as per use case)
+    }
+
+
 
 
 }

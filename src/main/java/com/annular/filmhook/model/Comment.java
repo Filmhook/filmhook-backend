@@ -7,6 +7,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -36,7 +38,7 @@ public class Comment {
     @Column(name="category")
     private String category; // Post or Comment
 
-    @Column(name = "post_Id")
+    @Column(name = "post_id")
 	private Integer postId; // primary key of posts, userMediaPin, userProfilePin
 
     @Column(name = "parent_comment_Id", columnDefinition = "int default null")
@@ -67,5 +69,11 @@ public class Comment {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
+    
+    @ManyToOne
+    @JoinColumn(name = "post_id", insertable = false, updatable = false)
+    private Posts post;
+    @Column(name = "reply_count")
+    private Integer replyCount = 0;
 
 }

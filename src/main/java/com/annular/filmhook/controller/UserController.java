@@ -4,9 +4,11 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Location;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.service.impl.UserServiceImpl;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.LocationWebModel;
+import com.annular.filmhook.webmodel.ProfessionIconWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -268,6 +271,7 @@ public class UserController {
         }
         return new Response(-1, "Profession(s) not found for platform id -> [" + searchWebModel.getPlatformId() + "]", "");
     }
+    
 
     @PostMapping("/getSubProfessionByProfession")
     public Response getSubProfessionByProfession(@RequestBody UserSearchWebModel searchWebModel) {

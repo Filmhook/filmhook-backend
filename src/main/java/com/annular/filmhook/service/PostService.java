@@ -1,5 +1,6 @@
 package com.annular.filmhook.service;
 
+import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
@@ -47,6 +48,8 @@ public interface PostService {
     
 	boolean deletePostByUserId(PostWebModel postWebModel);
 	
+
+	PostView trackPostView(Integer postId, Integer userId);
 
 
 }

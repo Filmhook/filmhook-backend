@@ -3,8 +3,6 @@ package com.annular.filmhook.service;
 
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;

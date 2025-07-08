@@ -10,6 +10,7 @@ import com.annular.filmhook.model.Location;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.LocationWebModel;
+import com.annular.filmhook.webmodel.ProfessionIconWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -90,5 +91,7 @@ public interface UserService {
 	ResponseEntity<?> getReferralCodeByUserId(Integer userId);
 
 	ResponseEntity<?> addLocation(UserWebModel userWebModel);
+	
+	
 
 }

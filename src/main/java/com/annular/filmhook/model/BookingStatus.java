@@ -1,4 +1,4 @@
-package com.annular.filmhook.model;
+ package com.annular.filmhook.model;
 
 public enum BookingStatus {
 	PENDING,

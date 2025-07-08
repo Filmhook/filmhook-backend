@@ -59,6 +59,10 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     
     @Query("SELECT COUNT(p) FROM Posts p WHERE p.createdOn BETWEEN :startDate AND :endDate")
     int getTotalPostCount(@Param("startDate") Date startDate, @Param("endDate") Date endDate);
+    
+    @Modifying
+    @Query("UPDATE Posts p SET p.viewsCount = p.viewsCount + 1 WHERE p.id = :postId")
+    void incrementViewCount(@Param("postId") Integer postId);
 
 
 
