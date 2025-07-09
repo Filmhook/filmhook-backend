@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -32,13 +33,14 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 
 import com.annular.filmhook.model.Chat;
+import com.annular.filmhook.model.ChatMediaDeleteTracker;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.MarketPlaceChat;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.model.User;
-
+import com.annular.filmhook.repository.ChatMediaDeleteTrackerRepository;
 import com.annular.filmhook.repository.ChatRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.MarketPlaceChatRepository;
@@ -94,6 +96,9 @@ public class ChatServiceImpl implements ChatService {
 	
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
+	
+	@Autowired
+	 ChatMediaDeleteTrackerRepository chatMediaDeleteTrackerRepository;
 
 	public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
@@ -164,7 +169,8 @@ public class ChatServiceImpl implements ChatService {
 	                .senderRead(true)
 	                .receiverRead(false)
 	                .chatCreatedOn(new Date())
-	               
+	                .storyId(chatWebModel.getStoryId())
+	                .replyType(chatWebModel.getStoryId() != null ? "story" : "normal")
 	                .build();
 
 	            chatRepository.save(chat);
@@ -188,13 +194,19 @@ public class ChatServiceImpl implements ChatService {
 	                    User receiver = receiverOptional.get();
 
 	                    String notificationTitle = "filmHook";
-	                    String notificationMessage = "You have a new message from " + user.getName();
+	                    String notificationMessage;
+	                    if (chatWebModel.getStoryId() != null) {
+	                        notificationMessage = user.getName() + " replied to your story";
+	                    } else {
+	                        notificationMessage = "You have a new message from " + user.getName();
+	                    }
+
 
 	                    InAppNotification inAppNotification = InAppNotification.builder()
 	                        .senderId(userId)
 	                        .receiverId(receiver.getUserId())
 	                        .title(notificationTitle)
-	                        .userType("chat")
+	                        .userType(chatWebModel.getStoryId() != null ? "story_reply" : "chat")
 	                        .id(chat.getChatId())
 	                        .message(notificationMessage)
 	                        .createdOn(new Date())
@@ -240,104 +252,118 @@ public class ChatServiceImpl implements ChatService {
 	    }
 	}
 
+	// Full Java code for getAllUser in ChatServiceImpl
 
 	@Override
 	public ResponseEntity<?> getAllUser() {
-		try {
-			logger.info("Get All Users Method Start");
-			Integer loggedInUserId = userDetails.userInfo().getId();
-			 List<Chat> allChats = chatRepository.findAllChatsByUserId(loggedInUserId);
-			// Fetch all distinct user IDs associated with the logged-in user from
-			// ChatRepository
-			Set<Integer> chatUserIds = new HashSet<>();
-			  for (Chat chat : allChats) {
-		            if (chat.getChatSenderId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedBySender())) {
-		                continue; // Skip if deleted by sender
-		            }
-		            if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
-		                continue; // Skip if deleted by receiver
-		            }
+	    try {
+	        logger.info("Get All Users Method Start");
+	        Integer loggedInUserId = userDetails.userInfo().getId();
 
-		            // Add the other user ID
-		            if (chat.getChatSenderId().equals(loggedInUserId)) {
-		                chatUserIds.add(chat.getChatReceiverId());
-		            } else {
-		                chatUserIds.add(chat.getChatSenderId());
-		            }
-		        }
-			if (chatUserIds.isEmpty()) {
-				return ResponseEntity.notFound().build();
-			}
+	        // Fetch all chats involving the logged-in user
+	        List<Chat> allChats = chatRepository.findAllChatsByUserId(loggedInUserId);
+	        Set<Integer> chatUserIds = new HashSet<>();
 
-			// Fetch user details for the user IDs
-			List<User> users = userRepository.findAllById(chatUserIds);
+	        for (Chat chat : allChats) {
+	            if (chat.getChatSenderId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedBySender())) {
+	                continue;
+	            }
+	            if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
+	                continue;
+	            }
+	            // Add the other user's ID
+	            if (chat.getChatSenderId().equals(loggedInUserId)) {
+	                chatUserIds.add(chat.getChatReceiverId());
+	            } else {
+	                chatUserIds.add(chat.getChatSenderId());
+	            }
+	        }
 
-			// If users exist, map them to a list of simplified user models containing ID,
-			// name, and profile picture URLs
-			if (!users.isEmpty()) {
-				List<ChatUserWebModel> userResponseList = this.transformUserDetailsForChat(users, loggedInUserId);
-				// Sort userResponseList based on latestMsgTime in descending order
-				Comparator<ChatUserWebModel> comparator = Comparator.comparing(ChatUserWebModel::getLatestMsgTime);
-				userResponseList.sort(comparator.reversed());
-				return ResponseEntity.ok(userResponseList);
-			} else {
-				return ResponseEntity.notFound().build();
-			}
-		} catch (Exception e) {
-			logger.error("Error occurred while retrieving users -> {}", e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.internalServerError().build();
-		}
+	        if (chatUserIds.isEmpty()) {
+	            return ResponseEntity.notFound().build();
+	        }
+
+	        // Fetch user details
+	        List<User> users = userRepository.findAllById(chatUserIds);
+	        if (!users.isEmpty()) {
+	            List<ChatUserWebModel> userResponseList = transformUserDetailsForChat(users, loggedInUserId);
+
+	            userResponseList.sort(
+	                Comparator.comparing(ChatUserWebModel::getLatestMsgTime, Comparator.nullsLast(Date::compareTo)).reversed()
+	            );
+
+	            return ResponseEntity.ok(userResponseList);
+	        } else {
+	            return ResponseEntity.notFound().build();
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error occurred while retrieving users -> {}", e.getMessage());
+	        return ResponseEntity.internalServerError().build();
+	    }
 	}
 
 	private List<ChatUserWebModel> transformUserDetailsForChat(List<User> users, Integer loggedInUserId) {
-		return users.stream().map(user -> {
-			ChatUserWebModel chatUserWebModel = new ChatUserWebModel();
-			chatUserWebModel.setUserId(user.getUserId());
-			chatUserWebModel.setUserName(user.getName());
-			chatUserWebModel.setUserType(user.getUserType());
-			chatUserWebModel.setAdminReview(user.getAdminReview());
-			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
-			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
-			this.getLatestChatMessage(user, chatUserWebModel); // To display in the chat user list
-			int unreadCount = chatRepository.countUnreadMessages(user.getUserId(), loggedInUserId);
-			chatUserWebModel.setReceiverUnreadCount(unreadCount);
-			return chatUserWebModel;
-		}).collect(Collectors.toList());
+	    return users.stream().map(user -> {
+	        ChatUserWebModel chatUserWebModel = new ChatUserWebModel();
+	        chatUserWebModel.setUserId(user.getUserId());
+	        chatUserWebModel.setUserName(user.getName());
+	        chatUserWebModel.setUserType(user.getUserType());
+	        chatUserWebModel.setAdminReview(user.getAdminReview());
+	        chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+	        chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
+
+	        getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
+
+	        int unreadCount = chatRepository.countUnreadMessages(user.getUserId(), loggedInUserId);
+	        chatUserWebModel.setReceiverUnreadCount(unreadCount);
+
+	        return chatUserWebModel;
+	    }).collect(Collectors.toList());
 	}
 
-	public void getLatestChatMessage(User user, ChatUserWebModel chatUserWebModel) {
-		String latestMsg = "";
-		Date latestMsgTime = null;
-		try {
-			Integer loggedInUserId = userDetails.userInfo().getId();
-			Optional<Chat> lastChat = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
-			if (lastChat.isPresent()) {
-				logger.debug("Latest chat details -> {}", lastChat.get());
-				if (!Utility.isNullOrBlankWithTrim(lastChat.get().getMessage())) {
-					latestMsg = lastChat.get().getMessage();
-				} else {
-					List<FileOutputWebModel> files = mediaFilesService
-							.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, lastChat.get().getChatId())
-							.stream().sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
-							.collect(Collectors.toList());
-					if (!Utility.isNullOrEmptyList(files)) {
-						String fileType = files.get(files.size() - 1).getFileType();
-						if (FileUtil.isImageFile(fileType))
-							latestMsg = "Photo";
-						else if (FileUtil.isVideoFile(fileType))
-							latestMsg = "Audio/Video";
-					}
-				}
-				latestMsgTime = lastChat.get().getTimeStamp();
-			}
-		} catch (Exception e) {
-			logger.error("Error while getting latest chat message -> {}", e.getMessage());
-			e.printStackTrace();
-		}
-		chatUserWebModel.setLatestMessage(latestMsg);
-		chatUserWebModel.setLatestMsgTime(latestMsgTime);
+	public void getLatestChatMessage(User user, ChatUserWebModel chatUserWebModel, Integer loggedInUserId) {
+	    String latestMsg = "";
+	    Date latestMsgTime = null;
+
+	    try {
+	        Optional<Chat> lastChat = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
+
+	        if (lastChat.isPresent()) {
+	            Chat chat = lastChat.get();
+
+	            if ("story".equalsIgnoreCase(chat.getReplyType())) {
+	                latestMsg = "Replied to your story";
+	            } else if (!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
+	                latestMsg = chat.getMessage();
+	            } else {
+	                List<FileOutputWebModel> files = mediaFilesService
+	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId())
+	                        .stream().sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+	                        .collect(Collectors.toList());
+
+	                if (!files.isEmpty()) {
+	                    String fileType = files.get(0).getFileType();
+	                    if (FileUtil.isImageFile(fileType)) {
+	                        latestMsg = "Photo";
+	                    } else if (FileUtil.isVideoFile(fileType)) {
+	                        latestMsg = "Audio/Video";
+	                    } else {
+	                        latestMsg = "Attachment";
+	                    }
+	                }
+	            }
+
+	            latestMsgTime = chat.getTimeStamp();
+	        }
+
+	    } catch (Exception e) {
+	        logger.error("Error while getting latest chat message -> {}", e.getMessage());
+	    }
+
+	    chatUserWebModel.setLatestMessage(latestMsg);
+	    chatUserWebModel.setLatestMsgTime(latestMsgTime);
 	}
+
 //	@Override
 //	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
 //	    Map<String, Object> response = new HashMap<>();
@@ -506,7 +532,9 @@ public class ChatServiceImpl implements ChatService {
 	                        .receiverRead(chat.getReceiverRead()).senderRead(chat.getSenderRead())
 	                        .chatFiles(mediaFiles).message(chat.getMessage())
 	                        .userType(userData.get().getUserType()).userAccountName(userData.get().getName())
-	                        .receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId()).build();
+	                        .receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId())
+	                        .storyId(chat.getStoryId())                 
+	                        .replyType(chat.getReplyType()) .build();
 
 	                // Update read status if the current user is the receiver
 	                if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
@@ -681,16 +709,15 @@ public class ChatServiceImpl implements ChatService {
 //	}
 	@Override
 	public Response getAllSearchByChat(String searchKey) {
-
-	    String loggedInUserType = userDetails.userInfo().getUserType(); // Get logged-in user's type
-	    Float loggedInAdminReview = userDetails.userInfo().getAdminReview(); // Get logged-in user's admin review
-
 	    try {
+	        Integer loggedInUserId = userDetails.userInfo().getId();
+	        String loggedInUserType = userDetails.userInfo().getUserType();
+	        Float loggedInAdminReview = userDetails.userInfo().getAdminReview();
+
 	        List<User> users;
 
-	        // Define the base query to find users by name
 	        if ("public User".equalsIgnoreCase(loggedInUserType)) {
-	            // For public users: fetch public users and industry users with valid admin reviews
+	            // Public user can chat with Public or Industry users having adminReview 1–5
 	            users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
 	                searchKey,
 	                true,
@@ -699,44 +726,51 @@ public class ChatServiceImpl implements ChatService {
 	                Arrays.asList(1f, 2f, 3f, 4f, 5f)
 	            );
 	        } else if ("Industry User".equalsIgnoreCase(loggedInUserType)) {
-	            // For industry users: fetch all users but filter based on admin reviews
+	            // Industry users can chat with Public and other Industry users having adminReview 5.1–9.9
 	            users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
 	                searchKey,
 	                true,
 	                "public User",
 	                "Industry User",
-	                Arrays.asList(5.1f, 9.9f)
+	                Arrays.asList(5.1f, 6f, 7f, 8f, 9f, 9.9f)
 	            );
 	        } else {
-	            return new Response(-1, "Invalid userType", null);
+	            return new Response(-1, "Invalid user type", null);
 	        }
 
-	        // Check if users list is not empty and transform it
-	        if (!Utility.isNullOrEmptyList(users)) {
-	            List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users);
+	        // Remove self from search results
+	        users = users.stream()
+	            .filter(user -> !user.getUserId().equals(loggedInUserId))
+	            .collect(Collectors.toList());
+
+	        if (!users.isEmpty()) {
+	            List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users, loggedInUserId);
 	            return new Response(1, "Success", responseList);
 	        } else {
-	            return new Response(-1, "User not found...", null);
+	            return new Response(-1, "No matching users found", null);
 	        }
 
 	    } catch (Exception e) {
-	        logger.error("Error while fetching users by search key -> {}", e.getMessage());
-	        e.printStackTrace();
-	        return new Response(-1, "Error", e.getMessage());
+	        logger.error("Error while searching chat users by keyword -> {}", e.getMessage(), e);
+	        return new Response(-1, "Internal server error", e.getMessage());
 	    }
 	}
 
-	private List<ChatUserWebModel> transformsUserDetailsForChat(List<User> users) {
-		return users.stream().map(user -> {
-			ChatUserWebModel chatUserWebModel = new ChatUserWebModel();
-			chatUserWebModel.setUserId(user.getUserId());
-			chatUserWebModel.setUserName(user.getName());
-			chatUserWebModel.setUserType(user.getUserType());
-			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
-			this.getLatestChatMessage(user, chatUserWebModel); // To display in the chat user list
-			return chatUserWebModel;
-		}).collect(Collectors.toList());
+	private List<ChatUserWebModel> transformsUserDetailsForChat(List<User> users, Integer loggedInUserId) {
+	    return users.stream().map(user -> {
+	        ChatUserWebModel chatUserWebModel = new ChatUserWebModel();
+	        chatUserWebModel.setUserId(user.getUserId());
+	        chatUserWebModel.setUserName(user.getName());
+	        chatUserWebModel.setUserType(user.getUserType());
+	        chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+	        chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
+	        chatUserWebModel.setAdminReview(user.getAdminReview());
+	        getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
+	        return chatUserWebModel;
+	    }).collect(Collectors.toList());
 	}
+
+	
 
 	@Override
 	public Response getInAppNotification() {
@@ -886,7 +920,7 @@ public class ChatServiceImpl implements ChatService {
 	@Override
 	public Response deleteChatProfile(Integer currentUserId, Integer targetUserId) {
 	    try {
-	        // Find all chat threads between current user and target user
+	        // Fetch all chats between the current user and target user
 	        List<Chat> chats = chatRepository.findByParticipants(currentUserId, targetUserId);
 
 	        if (chats.isEmpty()) {
@@ -894,6 +928,7 @@ public class ChatServiceImpl implements ChatService {
 	        }
 
 	        for (Chat chat : chats) {
+	            // Soft delete chat for the current user only
 	            if (chat.getChatSenderId().equals(currentUserId)) {
 	                chat.setDeletedBySender(true);
 	            } else if (chat.getChatReceiverId().equals(currentUserId)) {
@@ -902,12 +937,27 @@ public class ChatServiceImpl implements ChatService {
 
 	            chatRepository.save(chat);
 
-
+	            // Get all media files linked to this chat
 	            List<MediaFiles> mediaFiles = mediaFilesRepository.findByCategoryRefId(chat.getChatId());
+
 	            for (MediaFiles media : mediaFiles) {
-	                media.setStatus(false); // assuming 'status' is used for soft delete
+	                // Prevent duplicate tracker entries
+	                boolean alreadyDeleted = chatMediaDeleteTrackerRepository
+	                    .findByUserIdAndChatId(currentUserId, chat.getChatId())
+	                    .stream()
+	                    .anyMatch(t -> t.getMediaFileId().equals(media.getId()));
+
+	                if (!alreadyDeleted) {
+	                    ChatMediaDeleteTracker tracker = ChatMediaDeleteTracker.builder()
+	                        .chatId(chat.getChatId())
+	                        .mediaFileId(media.getId())
+	                        .userId(currentUserId)
+	                        .deleted(true)
+	                        .build();
+
+	                    chatMediaDeleteTrackerRepository.save(tracker);
+	                }
 	            }
-	            mediaFilesRepository.saveAll(mediaFiles);
 	        }
 
 	        return new Response(1, "Success", "Chat profile soft-deleted for current user");

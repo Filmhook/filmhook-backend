@@ -970,7 +970,7 @@ public class PostServiceImpl implements PostService {
         Optional<PostView> existing = postViewRepository.findByPostAndUser(post, user);
 
         boolean shouldIncrement = existing
-            .map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 0)
+            .map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 24)
             .orElse(true);
 
         if (shouldIncrement) {
