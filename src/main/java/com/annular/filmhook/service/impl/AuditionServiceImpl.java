@@ -1,9 +1,11 @@
 package com.annular.filmhook.service.impl;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,6 +136,8 @@ public class AuditionServiceImpl implements AuditionService {
 			audition.setStartDate(auditionWebModel.getStartDate());
 			audition.setEndDate(auditionWebModel.getEndDate());
 			audition.setAuditionIsactive(true);
+			audition.setPaymentStatus("Created");
+			
 
 			Audition savedAudition = auditionRepository.save(audition);
 			List<AuditionRoles> auditionRolesList = new ArrayList<>();
@@ -152,11 +156,7 @@ public class AuditionServiceImpl implements AuditionService {
 			}
 
 			auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
-			auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story
-																										// table
-																										// reference in
-																										// media files
-																										// table
+			auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story																										
 			List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
 					.saveMediaFiles(auditionWebModel.getFileInputWebModel(), userFromDB.get());
 
@@ -184,7 +184,10 @@ public class AuditionServiceImpl implements AuditionService {
 
 			// Fetch the list of auditions by category and exclude the ignored ones
 			List<Audition> auditions = auditionRepository.findByAuditionCategory(categoryId).stream()
-					.filter(audition -> !ignoredAuditionIds.contains(audition.getAuditionId()))
+					.filter(audition -> 
+				    !ignoredAuditionIds.contains(audition.getAuditionId()) &&
+				    "SUCCESS".equalsIgnoreCase(audition.getPaymentStatus())
+				)
 					.collect(Collectors.toList());
 
 			if (!auditions.isEmpty()) {
@@ -903,6 +906,21 @@ public class AuditionServiceImpl implements AuditionService {
 	    }
 
 	    return ResponseEntity.ok().body(new Response(1, "Accepted audition details fetched successfully", response));
+	}
+
+	@Override
+	public void updatePaymentStatus(String txnid, String status, String mihpayid, String amount) {
+		Integer txnids = Integer.parseInt(txnid);
+	    Audition audition = auditionRepository.findById(txnids)
+	        .orElseThrow(() -> new RuntimeException("Audition not found"));
+
+	    audition.setPaymentStatus(status);
+	    audition.setPaymentTransactionId(mihpayid);
+	    audition.setAuditionUpdatedOn(LocalDateTime.now());
+
+
+	    auditionRepository.save(audition);
+		
 	}
 
 

@@ -35,4 +35,6 @@ public interface AuditionService {
 
 	ResponseEntity<?> getAuditionAcceptanceListByUserId(AuditionWebModel auditionWebModel);
 
+	void updatePaymentStatus(String txnid, String string, String mihpayid, String amount);
+
 }

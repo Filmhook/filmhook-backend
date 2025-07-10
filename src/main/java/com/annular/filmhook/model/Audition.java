@@ -92,7 +92,7 @@ public class Audition {
 	
 	@Column(name = "audition_updatedon")
 	@CreationTimestamp
-	private Date auditionUpdatedOn;
+	private LocalDateTime auditionUpdatedOn;
 
 //	@ToString.Exclude
 //	@ManyToOne
@@ -113,5 +113,11 @@ public class Audition {
 	
 	@Column(name = "companyName")
 	private String companyName;
+	
+	@Column(name = "payment_transaction_id")
+	private String paymentTransactionId;
+
+	@Column(name = "payment_status")
+	private String paymentStatus; 
 
 }
