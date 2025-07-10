@@ -76,5 +76,7 @@ public class AuditionWebModel {
 	private Boolean termsAndCondition;
 	private Boolean auditionAttendanceStatus;
 	private Integer auditionRefId;
+	private String paymentTransactionId;
+	private String paymentStatus;
 
 }
