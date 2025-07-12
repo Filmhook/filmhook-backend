@@ -1,9 +1,9 @@
-package com.annular.filmhook.model;
+ package com.annular.filmhook.model;
 
 public enum BookingStatus {
-	PENDING,
-	CONFIRMED,
-	CANCELLED,
-	COMPLETED
-
+	  PENDING,
+	    INPROGRESS,
+	    CONFIRMED,
+	    CANCELLED,
+	    COMPLETED
 }

@@ -17,13 +17,13 @@ public class StoriesWebModel {
 
     private Integer userId;
     private String userName;
-    private String storyId;
+//    private String storyId;
     private String type;
     private String description;
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details
 
-    private Integer viewCount;
+//    private Integer viewCount;
 
     private Boolean status;
 
@@ -34,5 +34,6 @@ public class StoriesWebModel {
     private String filePath;
     private Boolean seen;
     private String link;
+  
 
 }

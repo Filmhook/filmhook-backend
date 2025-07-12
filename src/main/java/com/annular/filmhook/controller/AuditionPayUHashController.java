@@ -25,9 +25,12 @@ public class AuditionPayUHashController {
     private PaymentService paymentService;
     @Autowired
     private AuditionService auditionService;
+    
+    
 
     @PostMapping("/generateHash")
     public Map<String, String> generateHash(@RequestBody Map<String, String> request) {
+    	
         String txnid = request.get("txnid");
         String amount = request.get("amount");
         String productinfo = request.get("productinfo");

@@ -44,6 +44,8 @@ public class ChatWebModel {
     //Pagination details
     private Integer pageNo;
     private Integer pageSize;
+    private String storyId;
+    private String replyType;
 
     
 }

@@ -11,6 +11,11 @@ public class HashGenerator {
 
     public static String generateHash(String key, String txnid, String amount, String productinfo,
                                       String firstname, String email, String salt) {
+    	
+    
+        // Print key and salt values
+        System.out.println("Key: " + key);
+        System.out.println("Salt: " + salt);
         String input = key + "|" + txnid + "|" + amount + "|" + productinfo + "|" + firstname + "|" + email
                      + "|||||||||||" + salt;
         return sha512(input);

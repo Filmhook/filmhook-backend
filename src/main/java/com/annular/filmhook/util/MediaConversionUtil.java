@@ -11,10 +11,9 @@ import ws.schild.jave.encode.VideoAttributes;
 
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
-	    // Use the full path to cwebp.exe
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-	    		"/usr/bin/cwebp",
-	     //   "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
+	      "/usr/bin/cwebp",
+  // "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 	        "-q", "90",
 	        inputPath,
 	        "-o", 
@@ -36,14 +35,14 @@ public class MediaConversionUtil {
 	        File target = new File(outputPath);
 
 	        AudioAttributes audio = new AudioAttributes();
-	        audio.setCodec("libopus");
+	        audio.setCodec("aac");
 	        audio.setBitRate(128000);
 	        audio.setChannels(2);
 	        audio.setSamplingRate(44100);
 
 	        VideoAttributes video = new VideoAttributes();
-	        video.setCodec("libvpx");
-	        video.setBitRate(1000000); 
+	        video.setCodec("libx264");
+	        video.setBitRate(2000000); 
 	        video.setFrameRate(30);
 
 	        EncodingAttributes attrs = new EncodingAttributes();

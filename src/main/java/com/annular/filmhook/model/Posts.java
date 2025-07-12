@@ -131,7 +131,7 @@ public class Posts {
     private String tagUsers;
 
     @Column(name = "views_count", nullable = false, columnDefinition = "int default 0")
-    private Integer viewsCount = 0;
+    private int viewsCount = 0;
     
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

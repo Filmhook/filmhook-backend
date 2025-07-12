@@ -16,7 +16,9 @@ public class ShootingLocationBookingConverter {
     public static ShootingLocationBooking toEntity(ShootingLocationBookingDTO dto, User client, ShootingLocationPropertyDetails property) {
         Double pricePerDay = property.getPriceCustomerPay();
         long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
-        double totalAmount = pricePerDay * days;
+        double baseAmount = pricePerDay * days;
+        double gstAmount = baseAmount * 0.18; 
+        double totalAmount = baseAmount + gstAmount;
 
         return ShootingLocationBooking.builder()
         		
@@ -28,6 +30,8 @@ public class ShootingLocationBookingConverter {
                 .client(client)
                 .property(property)
                 .pricePerDay(pricePerDay)
+                .baseAmount(baseAmount)
+                .gstAmount(gstAmount)
                 .totalAmount(totalAmount)
                 .bookingMessage(dto.getBookingMessage())
                 .build();
@@ -52,6 +56,8 @@ public class ShootingLocationBookingConverter {
                 .bookingMessage(booking.getBookingMessage())
                 .pricePerDay(booking.getPricePerDay())
                 .totalAmount(booking.getTotalAmount())
+                .baseAmount(booking.getBaseAmount())
+                .gstAmount(booking.getGstAmount())
                 .bookingStatus(
                 	    booking.getStatus() != null ? booking.getStatus().name() : "UNKNOWN"
                 	)

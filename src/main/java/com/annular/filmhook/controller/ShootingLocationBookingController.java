@@ -111,6 +111,8 @@ public class ShootingLocationBookingController {
 	public ResponseEntity<?> savePayment(@RequestBody ShootingLocationPayURequest request) {
 		return bookingService.saveShootingPayment(request);
 	}
+	
+
 
 	@PostMapping("/send-booking-mail")
 	public ResponseEntity<?> sendBookingMail(@RequestBody ShootingLocationPayURequest request) {

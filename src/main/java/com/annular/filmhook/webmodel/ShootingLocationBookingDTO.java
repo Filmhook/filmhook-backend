@@ -17,6 +17,8 @@ private Integer bookingId;
     private LocalDate shootEndDate;    
     private Double pricePerDay;
     private Double totalAmount;
+    private Double baseAmount;
+    private Double gstAmount;
     private String bookingMessage;  
     private String bookingStatus;
 

@@ -77,5 +77,11 @@ public class Chat {
     
     private Boolean deletedBySender = false;
     private Boolean deletedByReceiver = false;
+    
+    @Column(name = "story_id")
+    private String storyId;
+    
+    @Column(name = "reply_type")
+    private String replyType;
 
 }

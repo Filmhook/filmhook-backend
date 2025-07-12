@@ -951,6 +951,20 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // ✅ Skip counting if the user is the owner of the post
+        if (post.getUser().getUserId().equals(userId)) {
+            // Optional: still save view timestamp for analytics
+            Optional<PostView> selfView = postViewRepository.findByPostAndUser(post, user);
+            PostView view = selfView.orElseGet(() ->
+                    PostView.builder()
+                            .post(post)
+                            .user(user)
+                            .build()
+            );
+            view.setLastViewedOn(LocalDateTime.now());
+            return postViewRepository.save(view);
+        }
+
         LocalDateTime now = LocalDateTime.now();
 
         Optional<PostView> existing = postViewRepository.findByPostAndUser(post, user);
@@ -975,9 +989,8 @@ public class PostServiceImpl implements PostService {
             return view;
         }
 
-        return existing.orElseThrow(); // Return existing if not updated (or throw as per use case)
+        return existing.orElseThrow();
     }
-
 
 
 
