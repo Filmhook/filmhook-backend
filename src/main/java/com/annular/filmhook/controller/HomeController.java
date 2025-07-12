@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
 public class HomeController {
 
     public static final Logger logger = LoggerFactory.getLogger(HomeController.class);
