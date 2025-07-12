@@ -50,6 +50,8 @@ public class ShootingLocationBooking {
 
     private Double pricePerDay;
     private Double totalAmount;
+    private Double baseAmount;
+    private Double gstAmount;
 
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
