@@ -13,20 +13,24 @@ public class ShootingLocationPaymentConverter {
 
 
 	public ShootingLocationPayURequest toDto(ShootingLocationPayment payment) {
-		ShootingLocationPayURequest dto = new ShootingLocationPayURequest();
-		dto.setPaymentId(payment.getPaymentId());
-		dto.setTxnid(payment.getTxnid());
-		dto.setAmount(payment.getAmount());
-		dto.setProductinfo(payment.getProductinfo());
-		dto.setFirstname(payment.getFirstname());
-		dto.setEmail(payment.getEmail());
-		dto.setPhone(payment.getPhone());
-		dto.setBookingId(payment.getBooking().getId());
-		dto.setCreatedBy(payment.getBooking().getClient().getUserId());
-		dto.setCreatedOn(payment.getCreatedOn());
-		dto.setUpdatedOn(payment.getUpdatedOn());
-		dto.setStatus(payment.getStatus());
-		dto.setReason(payment.getReason());
-		return dto;
+	    ShootingLocationPayURequest dto = new ShootingLocationPayURequest();
+	    dto.setPaymentId(payment.getPaymentId());
+	    dto.setTxnid(payment.getTxnid());
+	    dto.setAmount(payment.getAmount());
+	    dto.setProductinfo(payment.getProductinfo());
+	    dto.setFirstname(payment.getFirstname());
+	    dto.setEmail(payment.getEmail());
+	    dto.setPhone(payment.getPhone());
+	    dto.setBookingId(payment.getBooking().getId());
+	    dto.setCreatedBy(payment.getBooking().getClient().getUserId());
+	    dto.setCreatedOn(payment.getCreatedOn());
+	    dto.setUpdatedOn(payment.getUpdatedOn());
+	    dto.setStatus(payment.getStatus());
+	 
+	    dto.setHash(payment.getPaymentHash());           
+	 
+	    return dto;
+	}
 
-	}}
+
+	}

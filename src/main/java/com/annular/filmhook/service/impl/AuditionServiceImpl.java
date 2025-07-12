@@ -906,7 +906,7 @@ public class AuditionServiceImpl implements AuditionService {
 	    }
 
 	    return ResponseEntity.ok().body(new Response(1, "Accepted audition details fetched successfully", response));
-	}
+	}	
 
 	@Override
 	public void updatePaymentStatus(String txnid, String status, String mihpayid, String amount) {
