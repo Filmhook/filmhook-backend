@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,6 +61,29 @@ import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
 import com.annular.filmhook.webmodel.AuditionRolesWebModel;
 import com.annular.filmhook.webmodel.AuditionWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
+
+import javax.activation.DataSource;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+import javax.mail.util.ByteArrayDataSource;
+
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.io.image.ImageData;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.borders.SolidBorder;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 
 @Service
 public class AuditionServiceImpl implements AuditionService {
@@ -910,18 +934,277 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Override
 	public void updatePaymentStatus(String txnid, String status, String mihpayid, String amount) {
-		Integer txnids = Integer.parseInt(txnid);
+	    Integer txnids = Integer.parseInt(txnid);
 	    Audition audition = auditionRepository.findById(txnids)
 	        .orElseThrow(() -> new RuntimeException("Audition not found"));
 
 	    audition.setPaymentStatus(status);
 	    audition.setPaymentTransactionId(mihpayid);
 	    audition.setAuditionUpdatedOn(LocalDateTime.now());
-
-
 	    auditionRepository.save(audition);
-		
+
+	    // ✅ Get user details
+	    User user = audition.getUser();
+	    if (user == null) {
+	        throw new RuntimeException("User not found for audition");
+	    }
+	    String role = user.getWorkCategory();
+	    String email = user.getEmail();
+	    String name = user.getName();
+	    String capitalizedName = (name != null && name.length() > 0)
+	        ? name.substring(0, 1).toUpperCase() + name.substring(1)
+	        : "";
+
+	    // ✅ Build email content
+	    String subject;
+	    StringBuilder content = new StringBuilder();
+	    content.append("<html><body style='font-family:Arial,sans-serif;'>")
+	           .append("<div style='padding:20px; border:1px solid #ddd; border-radius:6px;'>");
+
+	    if ("SUCCESS".equalsIgnoreCase(status)) {
+	        subject = "🎤 Audition Registration Successful";
+	     
+	        content.append("<html><body style='font-family:Arial,sans-serif;'>")
+	               .append("<div style='padding:20px; border:1px solid #ddd; border-radius:6px;'>")
+	               .append("<h2 style='color:#28a745;'>Audition Posted Successfully ✅</h2>")
+	               .append("<p>Hello <strong>").append(capitalizedName).append(" (").append(role).append(")</strong>,</p>")
+	               .append("<p>Your audition post has been successfully published and your payment was successful.</p>")
+	               .append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("<br>")
+	               .append("<b>Category:</b> ").append(audition.getAuditionCategory()).append("<br>")
+	               .append("<b>Company:</b> ").append(audition.getCompanyName()).append("<br>")
+	               .append("<b>Expires On:</b> ").append(audition.getAuditionExpireOn()).append("</p>")
+	               .append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
+	               .append("<b>Amount Paid:</b> ₹").append(amount).append("</p>")
+	               .append("<p>Thank you for using FilmHook to publish your audition!</p>")
+	               .append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
+	               .append("<small>support@filmhook.com</small></p>")
+	               .append("</div></body></html>");
+	    } else {
+	        subject = "Payment Failed - Audition Registration";
+	        content.append("<html><body style='font-family:Arial,sans-serif;'>")
+	           .append("<div style='padding:20px; border:1px solid #ddd; border-radius:6px;'>")
+	           .append("<h2 style='color:#dc3545;'>Payment Failed</h2>")
+	           .append("<p>Hello <strong>").append(name).append(" (").append(role).append(")</strong>,</p>")
+	           .append("<p>Unfortunately, your audition post payment has <strong>failed</strong>.</p>")
+	           .append("<p>Your audition titled <b>").append(audition.getAuditionTitle()).append("</b> was not published.</p>")
+	           .append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
+	           .append("<b>Attempted Amount:</b> ₹").append(amount).append("</p>")
+	           .append("<p>Please retry the payment from your dashboard or contact support if needed.</p>")
+	           .append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
+	           .append("<small>support@filmhook.com</small></p>")
+	           .append("</div></body></html>");
+	    }
+
+	     // ✅ Send email
+	    try {
+	        MimeMessage message = javaMailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+	        helper.setTo(email);
+	        helper.setSubject(subject);
+	        helper.setText(content.toString(), true);
+
+	        if ("SUCCESS".equalsIgnoreCase(status)) {
+	            byte[] pdf = generateAuditionInvoicePdf(audition, amount);
+	            helper.addAttachment("AuditionInvoice_" + txnid + ".pdf",
+	                    new ByteArrayDataSource(pdf, "application/pdf"));
+	        }
+
+	        javaMailSender.send(message);
+
+	    } catch (Exception e) {
+	        e.printStackTrace(); // Handle properly in production
+	    }
 	}
+	private byte[] generateAuditionInvoicePdf(Audition audition, String amount) {
+	    try {
+	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	        PdfWriter writer = new PdfWriter(baos);
+	        PdfDocument pdf = new PdfDocument(writer);
+	        Document doc = new Document(pdf, PageSize.A4);
+	        doc.setMargins(36, 36, 36, 36);
+
+	        DeviceRgb blue = new DeviceRgb(41, 86, 184);
+	        final int fontSize = 10;
+
+	        double base = Double.parseDouble(amount);       
+	        double gst = base * 0.18;                        
+	        double total = base + gst;    
+	        String originalName = audition.getUser().getName();
+	        String capitalizedName = (originalName != null && !originalName.isEmpty())
+	            ? originalName.substring(0, 1).toUpperCase() + originalName.substring(1)
+	            : "";
+
+	        // --- Logo ---
+	        String logoPath = "src/main/resources/static/images/logo.jpeg";
+	        Image logo = new Image(ImageDataFactory.create(logoPath))
+	                .scaleToFit(120, 60)
+	                .setHorizontalAlignment(HorizontalAlignment.CENTER)
+	                .setMarginBottom(8);
+	        doc.add(logo);
+
+	        // --- Title ---
+	        doc.add(new Paragraph("TAX INVOICE")
+	                .setTextAlignment(TextAlignment.CENTER)
+	                .setFontSize(14)
+	                .setBold()
+	                .setFontColor(blue)
+	                .setMarginBottom(10));
+
+	        // --- Company Info ---
+	        Table header = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
+	                .setWidth(UnitValue.createPercentValue(100));
+	        header.addCell(new Cell()
+	                .add(new Paragraph("FilmHook Pvt. Ltd.")
+	                        .setBold().setFontSize(13).setFontColor(blue))
+	                .add(new Paragraph("Bangalore\nGSTIN: 29ABCDE1234F2Z5\nEmail: support@filmhook.com\nPhone: +91-9876543210")
+	                        .setFontSize(fontSize))
+	                .setBorder(Border.NO_BORDER));
+	        header.addCell(new Cell().setBorder(Border.NO_BORDER));
+	        doc.add(header);
+
+	        // --- Order Info ---
+	        Table orderInfo = new Table(UnitValue.createPercentArray(new float[]{33, 33, 33}))
+	                .setWidth(UnitValue.createPercentValue(100))
+	                .setMarginTop(15);
+	        orderInfo.addCell(getLightCell("Invoice No"));
+	        orderInfo.addCell(getLightCell("Date"));
+	        orderInfo.addCell(getLightCell("Candidate Email"));
+	        orderInfo.addCell(getPlainCell("INV-" + audition.getAuditionId()));
+	        orderInfo.addCell(getPlainCell(LocalDate.now().toString()));
+	        orderInfo.addCell(getPlainCell(audition.getUser().getEmail()));
+	        doc.add(orderInfo);
+
+	        // --- Bill To ---
+	        doc.add(new Paragraph("\nBill To")
+	                .setFontSize(fontSize)
+	                .setBold()
+	                .setMarginTop(8));
+	        doc.add(new Paragraph("Name: " + capitalizedName)
+	        	    .setFontSize(fontSize)
+	        	    .setMarginBottom(10));
+
+
+	        // --- Audition Info ---
+	        doc.add(new Paragraph("Audition Details")
+	                .setFontSize(fontSize)
+	                .setBold()
+	                .setMarginTop(5));
+	        doc.add(new Paragraph("Title: " + audition.getAuditionTitle())
+	                .setFontSize(fontSize));
+	        doc.add(new Paragraph("Category: " + audition.getAuditionCategory())
+	                .setFontSize(fontSize));
+	        doc.add(new Paragraph("Company: " + audition.getCompanyName())
+	                .setFontSize(fontSize));
+	        doc.add(new Paragraph("Audition Date: " + audition.getAuditionExpireOn())
+	                .setFontSize(fontSize)
+	                .setMarginBottom(10));
+
+	        // --- Charges Table ---
+	        Table charges = new Table(UnitValue.createPercentArray(new float[]{60, 40}))
+	                .setWidth(UnitValue.createPercentValue(100))
+	                .setMarginTop(10);
+
+	        charges.addHeaderCell(getStyledBottomBorderHeader("Description"));
+	        Cell totalHeader = getStyledBottomBorderHeader("Total Amount");
+	        totalHeader.setTextAlignment(TextAlignment.RIGHT);
+	        charges.addHeaderCell(totalHeader);
+
+	        charges.addCell(getStyledBottomBorderCell("Audition Registration Fee"));
+	        Cell baseCell = getStyledBottomBorderCell("₹ " + String.format("%.2f", base));
+	        baseCell.setTextAlignment(TextAlignment.RIGHT);
+	        charges.addCell(baseCell);
+
+	        // GST Info
+	        Cell taxLabel = new Cell(1, 1)
+	                .add(new Paragraph("\nApplied Tax").setBold().setUnderline().setFontSize(9))
+	                .add(new Paragraph("(18% GST Included)").setFontSize(8))
+	                .setBorder(Border.NO_BORDER);
+	        Cell taxValue = new Cell()
+	                .add(new Paragraph("₹ " + String.format("%.2f", gst))
+	                        .setTextAlignment(TextAlignment.RIGHT).setFontSize(9))
+	                .setBorder(Border.NO_BORDER);
+
+	        charges.addCell(taxLabel);
+	        charges.addCell(taxValue);
+
+	        // Total
+	        Cell totalLabel = new Cell(1, 1)
+	                .add(new Paragraph("Total Invoice Value")
+	                        .setFontColor(blue)
+	                        .setBold().setFontSize(10))
+	                .setBorderTop(new SolidBorder(ColorConstants.GRAY, 0.5f))
+	                .setBorder(Border.NO_BORDER);
+	        Cell totalAmount = new Cell()
+	                .add(new Paragraph("₹ " + String.format("%.2f", total))
+	                        .setFontSize(10)
+	                        .setBold()
+	                        .setFontColor(blue)
+	                        .setTextAlignment(TextAlignment.RIGHT))
+	                .setBorderTop(new SolidBorder(ColorConstants.GRAY, 0.5f))
+	                .setBorder(Border.NO_BORDER);
+
+	        charges.addCell(totalLabel);
+	        charges.addCell(totalAmount);
+	        doc.add(charges);
+
+	        // --- Declaration ---
+	        doc.add(new Paragraph("\nDeclaration")
+	                .setBold()
+	                .setFontSize(12)
+	                .setMarginTop(20));
+	        doc.add(new Paragraph("We declare that this invoice shows the actual price of the services provided and that all particulars are true and correct.")
+	                .setFontSize(fontSize));
+
+	        // --- Signature Section ---
+	        String signPath = "src/main/resources/static/images/signature.jpeg";
+	        Image sign = new Image(ImageDataFactory.create(signPath)).scaleToFit(80, 30);
+	        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
+	                .setFontSize(9)
+	                .setTextAlignment(TextAlignment.RIGHT);
+	        Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
+
+	        Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
+	        signTable.addCell(new Cell().add(signBlock)
+	                .setBorder(Border.NO_BORDER)
+	                .setTextAlignment(TextAlignment.RIGHT));
+	        doc.add(signTable);
+
+	        doc.close();
+	        return baos.toByteArray();
+
+	    } catch (Exception e) {
+	        throw new RuntimeException("Failed to generate audition invoice PDF", e);
+	    }
+	}
+
+	private Cell getLightCell(String text) {
+	    return new Cell().add(new Paragraph(text).setBold().setFontSize(9))
+	            .setBackgroundColor(new DeviceRgb(245, 245, 245))
+	            .setPadding(4);
+	}
+
+	private Cell getPlainCell(String text) {
+	    return new Cell().add(new Paragraph(text).setFontSize(9)).setPadding(5);
+	}
+
+	private Cell getStyledBottomBorderHeader(String text) {
+	    return new Cell()
+	            .add(new Paragraph(text).setBold().setFontSize(10))
+	            .setBorderTop(Border.NO_BORDER)
+	            .setBorderLeft(Border.NO_BORDER)
+	            .setBorderRight(Border.NO_BORDER)
+	            .setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f));
+	}
+
+	private Cell getStyledBottomBorderCell(String text) {
+	    return new Cell()
+	            .add(new Paragraph(text).setFontSize(9))
+	            .setBorderTop(Border.NO_BORDER)
+	            .setBorderLeft(Border.NO_BORDER)
+	            .setBorderRight(Border.NO_BORDER)
+	            .setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f));
+	}
+
 
 
 }

@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Optional;
 import com.annular.filmhook.controller.ShootingLocationBookingController;
@@ -322,17 +323,17 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        Document doc = new Document(pdf, PageSize.A4);
 	        doc.setMargins(36, 36, 36, 36);
 
-	        // Color and font
+	        // Colors & fonts
 	        DeviceRgb blue = new DeviceRgb(41, 86, 184);
 	        final int fontSize = 10;
 
-	        int days = (int) java.time.temporal.ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
-	        double rate = booking.getPricePerDay();
-	        double total = Double.parseDouble(payment.getAmount());
-	        double gst = total * 0.18;
-	        double base = total - gst;
+	        int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
+	        double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0.0;
+	        double base = booking.getBaseAmount() != null ? booking.getBaseAmount() : 0.0;
+	        double gst = booking.getGstAmount() != null ? booking.getGstAmount() : 0.0;
+	        double total = booking.getTotalAmount() != null ? booking.getTotalAmount() : base + gst;
 
-	        // --- Logo ---
+	        // Logo
 	        String logoPath = "src/main/resources/static/images/logo.jpeg";
 	        Image logo = new Image(ImageDataFactory.create(logoPath))
 	                .scaleToFit(120, 60)
@@ -340,7 +341,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                .setMarginBottom(8);
 	        doc.add(logo);
 
-	        // --- Title ---
+	        // Title
 	        doc.add(new Paragraph("TAX INVOICE")
 	                .setTextAlignment(TextAlignment.CENTER)
 	                .setFontSize(14)
@@ -348,7 +349,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                .setFontColor(blue)
 	                .setMarginBottom(10));
 
-	        // --- Company Info ---
+	        // Company info
 	        Table header = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
 	                .setWidth(UnitValue.createPercentValue(100));
 	        header.addCell(new Cell()
@@ -357,10 +358,10 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                .add(new Paragraph("Bangalore\nGSTIN: 29ABCDE1234F2Z5\nEmail: support@filmhook.com\nPhone: +91-9876543210")
 	                        .setFontSize(fontSize))
 	                .setBorder(Border.NO_BORDER));
-	        header.addCell(new Cell().setBorder(Border.NO_BORDER)); // Empty right cell
+	        header.addCell(new Cell().setBorder(Border.NO_BORDER)); // empty
 	        doc.add(header);
 
-	        // --- Order Info ---
+	        // Order Info
 	        Table orderInfo = new Table(UnitValue.createPercentArray(new float[]{33, 33, 33}))
 	                .setWidth(UnitValue.createPercentValue(100))
 	                .setMarginTop(15);
@@ -372,7 +373,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        orderInfo.addCell(getPlainCell(payment.getEmail()));
 	        doc.add(orderInfo);
 
-	        // --- Bill To ---
+	        // Bill To
 	        doc.add(new Paragraph("\nBill To")
 	                .setFontSize(fontSize)
 	                .setBold()
@@ -381,7 +382,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                .setFontSize(fontSize)
 	                .setMarginBottom(10));
 
-	        // --- Charges Table (Styled Like Screenshot) ---
+	        // Charges Table
 	        Table charges = new Table(UnitValue.createPercentArray(new float[]{40, 20, 20, 20}))
 	                .setWidth(UnitValue.createPercentValue(100))
 	                .setMarginTop(10);
@@ -389,31 +390,26 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        charges.addHeaderCell(getStyledBottomBorderHeader("Description"));
 	        charges.addHeaderCell(getStyledBottomBorderHeader("Days"));
 	        charges.addHeaderCell(getStyledBottomBorderHeader("Rate/Day"));
-	        Cell totalHeader = getStyledBottomBorderHeader("Total Amount");
+	        Cell totalHeader = getStyledBottomBorderHeader("Amount");
 	        totalHeader.setTextAlignment(TextAlignment.RIGHT);
 	        charges.addHeaderCell(totalHeader);
 
 	        charges.addCell(getStyledBottomBorderCell("Shooting Location Property: " + booking.getProperty().getPropertyName()));
 	        charges.addCell(getStyledBottomBorderCell(String.valueOf(days)));
 	        charges.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate)));
-	               
 	        Cell baseCell = getStyledBottomBorderCell("₹ " + String.format("%.2f", base));
 	        baseCell.setTextAlignment(TextAlignment.RIGHT);
 	        charges.addCell(baseCell);
 
-	        // Applied Tax (spans 3 columns, value right-aligned)
+	        // Applied Tax
 	        Cell taxLabel = new Cell(1, 3)
 	                .add(new Paragraph("\nApplied Tax").setBold().setUnderline().setFontSize(9))
 	                .add(new Paragraph("(18% GST Included)").setFontSize(8))
-	                .setBorderTop(Border.NO_BORDER)
-	                .setBorderBottom(Border.NO_BORDER)
-	                .setBorderLeft(Border.NO_BORDER)
-	                .setBorderRight(Border.NO_BORDER);
+	                .setBorder(Border.NO_BORDER);
 	        Cell taxValue = new Cell()
 	                .add(new Paragraph("₹ " + String.format("%.2f", gst))
-                        .setTextAlignment(TextAlignment.RIGHT).setFontSize(9))
+	                        .setTextAlignment(TextAlignment.RIGHT).setFontSize(9))
 	                .setBorder(Border.NO_BORDER);
-
 	        charges.addCell(taxLabel);
 	        charges.addCell(taxValue);
 
@@ -429,16 +425,15 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                        .setFontSize(10)
 	                        .setBold()
 	                        .setFontColor(blue)
-	                      .setTextAlignment(TextAlignment.RIGHT))
+	                        .setTextAlignment(TextAlignment.RIGHT))
 	                .setBorderTop(new SolidBorder(ColorConstants.GRAY, 0.5f))
 	                .setBorder(Border.NO_BORDER);
-
 	        charges.addCell(totalLabel);
 	        charges.addCell(totalAmount);
 
 	        doc.add(charges);
 
-	        // --- Declaration ---
+	        // Declaration
 	        doc.add(new Paragraph("\nDeclaration")
 	                .setBold()
 	                .setFontSize(12)
@@ -446,16 +441,13 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        doc.add(new Paragraph("We declare that this invoice shows the actual price of the services provided and that all particulars are true and correct.")
 	                .setFontSize(fontSize));
 
-	        // --- Signature Section (Right-Aligned) ---
+	        // Signature
 	        String signPath = "src/main/resources/static/images/signature.jpeg";
 	        Image sign = new Image(ImageDataFactory.create(signPath)).scaleToFit(80, 30);
-
 	        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
 	                .setFontSize(9)
 	                .setTextAlignment(TextAlignment.RIGHT);
-
 	        Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
-
 	        Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
 	        signTable.addCell(new Cell().add(signBlock)
 	                .setBorder(Border.NO_BORDER)
@@ -469,6 +461,8 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        throw new RuntimeException("Failed to generate invoice PDF", e);
 	    }
 	}
+
+	// Helper cells
 	private Cell getLightCell(String text) {
 	    return new Cell().add(new Paragraph(text).setBold().setFontSize(9))
 	            .setBackgroundColor(new DeviceRgb(245, 245, 245))
@@ -496,6 +490,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	            .setBorderRight(Border.NO_BORDER)
 	            .setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f));
 	}
+
 
 
 	@Scheduled(cron = "0 0 17 * * *") // Every day at 5:00 PM
