@@ -14,7 +14,7 @@ import java.util.HashMap;
 
 @RestController
 @RequestMapping("/payment")
-public class PayUHashController {
+public class AuditionPayUHashController {
 
     @Value("${payu.key}")
     private String merchantKey;

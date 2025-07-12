@@ -70,7 +70,7 @@ public class WebSecurityConfig {
                 .and()
                 .authorizeRequests(
                         (authorize) -> authorize
-                                .antMatchers("/user/register","/industryUser/deleteTemporaryDetails", "/user/verifyEmailOtp", "/user/changePassword", "/user/getAddressListOnSignUp", "/user/emailNotification",
+                                .antMatchers("/","/user/register","/industryUser/deleteTemporaryDetails", "/user/verifyEmailOtp", "/user/changePassword", "/user/getAddressListOnSignUp", "/user/emailNotification",
                                         "/user/login", "/user/logins", "/Film/getProfessionList", "/Film/getProfessionMapList", "/industryUser/getTemporaryDuplicateDetails",
                                         "/user/refreshToken", "/user/forgotPassword", "/admin/adminRegister", "/admin/updateRegister", "/user/getNewAddressListOnSignUp",
                                         "/user/changeUserPassword", "/user/verifyUser", "/admin/deleteRegister", "/admin/getRegister",
@@ -90,7 +90,7 @@ public class WebSecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:8080", "https://filmhook.annularprojects.com/filmhook-0.1"));
+        configuration.setAllowedOrigins(List.of("http://localhost:8080", "https://www.filmhookapps.com"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
