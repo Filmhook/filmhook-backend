@@ -442,7 +442,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                .setFontSize(fontSize));
 
 	        // Signature
-	        String signPath = "src/main/resources/static/images/signature.jpeg";
+	        String signPath = "src/main/resources/static/images/Signature.jpeg";
 	        Image sign = new Image(ImageDataFactory.create(signPath)).scaleToFit(80, 30);
 	        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
 	                .setFontSize(9)
