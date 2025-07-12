@@ -334,12 +334,12 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        double total = booking.getTotalAmount() != null ? booking.getTotalAmount() : base + gst;
 
 	        // Logo
-	        String logoPath = "src/main/resources/static/images/logo.jpeg";
-	        Image logo = new Image(ImageDataFactory.create(logoPath))
-	                .scaleToFit(120, 60)
-	                .setHorizontalAlignment(HorizontalAlignment.CENTER)
-	                .setMarginBottom(8);
-	        doc.add(logo);
+//	        String logoPath = "src/main/resources/static/images/logo.jpeg";
+//	        Image logo = new Image(ImageDataFactory.create(logoPath))
+//	                .scaleToFit(120, 60)
+//	                .setHorizontalAlignment(HorizontalAlignment.CENTER)
+//	                .setMarginBottom(8);
+//	        doc.add(logo);
 
 	        // Title
 	        doc.add(new Paragraph("TAX INVOICE")
@@ -442,17 +442,17 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                .setFontSize(fontSize));
 
 	        // Signature
-	        String signPath = "src/main/resources/static/images/Signature.jpeg";
-	        Image sign = new Image(ImageDataFactory.create(signPath)).scaleToFit(80, 30);
-	        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
-	                .setFontSize(9)
-	                .setTextAlignment(TextAlignment.RIGHT);
-	        Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
-	        Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
-	        signTable.addCell(new Cell().add(signBlock)
-	                .setBorder(Border.NO_BORDER)
-	                .setTextAlignment(TextAlignment.RIGHT));
-	        doc.add(signTable);
+//	        String signPath = "src/main/resources/static/images/Signature.jpeg";
+//	        Image sign = new Image(ImageDataFactory.create(signPath)).scaleToFit(80, 30);
+//	        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
+//	                .setFontSize(9)
+//	                .setTextAlignment(TextAlignment.RIGHT);
+//	        Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
+//	        Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
+//	        signTable.addCell(new Cell().add(signBlock)
+//	                .setBorder(Border.NO_BORDER)
+//	                .setTextAlignment(TextAlignment.RIGHT));
+//	        doc.add(signTable);
 
 	        doc.close();
 	        return baos.toByteArray();
