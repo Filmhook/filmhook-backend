@@ -12,7 +12,7 @@ import ws.schild.jave.encode.VideoAttributes;
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-	      "/usr/bin/cwebp",
+	     "/usr/bin/cwebp",
   // "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 	        "-q", "90",
 	        inputPath,
