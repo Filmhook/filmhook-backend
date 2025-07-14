@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.projectfh",
+      "sha256_cert_fingerprints": [
+        " CB:35:5F:CF:60:D1:9F:85:23:2A:FC:00:18:31:9F:72:28:2D:6F:9D:FA:EE:8B:25:CA:C1:7D:5E:47:88:9E:84"
+      ]
+    }
+  }
+]
