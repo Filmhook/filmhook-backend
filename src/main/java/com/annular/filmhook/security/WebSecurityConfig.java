@@ -72,7 +72,7 @@ public class WebSecurityConfig {
                 .and()
                 .authorizeRequests(
                         (authorize) -> authorize
-                                .antMatchers("/user/register","/industryUser/deleteTemporaryDetails", "/user/verifyEmailOtp", "/user/changePassword", "/user/getAddressListOnSignUp", "/user/emailNotification",
+                                .antMatchers("/","/.well-known/**","/user/register","/industryUser/deleteTemporaryDetails", "/user/verifyEmailOtp", "/user/changePassword", "/user/getAddressListOnSignUp", "/user/emailNotification",
                                         "/user/login", "/user/logins", "/Film/getProfessionList", "/Film/getProfessionMapList", "/industryUser/getTemporaryDuplicateDetails",
                                         "/user/refreshToken", "/user/forgotPassword", "/admin/adminRegister", "/admin/updateRegister", "/user/getNewAddressListOnSignUp",
                                         "/user/changeUserPassword", "/user/verifyUser", "/admin/deleteRegister", "/admin/getRegister",
@@ -93,8 +93,18 @@ public class WebSecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:8080", "https://filmhook.annularprojects.com/filmhook-0.1"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+
+        // ✅ Allow only these origins
+        configuration.setAllowedOrigins(List.of(
+            "https://www.filmhookapps.com",  // Production
+            "http://localhost:3000"          // Local React or similar dev server
+        ));
+
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
