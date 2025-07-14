@@ -35,18 +35,18 @@ public class MediaConversionUtil {
 	        File target = new File(outputPath);
 
 	        AudioAttributes audio = new AudioAttributes();
-	        audio.setCodec("aac");
+	        audio.setCodec("libvorbis"); 
 	        audio.setBitRate(128000);
 	        audio.setChannels(2);
 	        audio.setSamplingRate(44100);
 
 	        VideoAttributes video = new VideoAttributes();
-	        video.setCodec("libx264");
-	        video.setBitRate(2000000); 
+	        video.setCodec("libvpx"); 
+	        video.setBitRate(1000000);
 	        video.setFrameRate(30);
 
 	        EncodingAttributes attrs = new EncodingAttributes();
-	        attrs.setOutputFormat("webm");
+	        attrs.setOutputFormat("webm"); 
 	        attrs.setAudioAttributes(audio);
 	        attrs.setVideoAttributes(video);
 
