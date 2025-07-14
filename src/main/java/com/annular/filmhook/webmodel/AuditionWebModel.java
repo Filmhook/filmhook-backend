@@ -26,6 +26,8 @@ public class AuditionWebModel {
     private String auditionExperience;
 
     private Integer auditionCategory;
+  
+	private Integer auditionSubCategory;
 
     private String auditionAddress;
 

@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -186,4 +187,16 @@ public class AuditionController {
             return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
         }
     }
+    
+    @GetMapping("/sub-Auditiondetails")
+    public ResponseEntity<?> getSubDetailsByAuditionDetailsId(@RequestParam("id") Integer auditionDetailsId) {
+        logger.info("Controller: Received request for sub-details with ID: {}", auditionDetailsId);
+        return auditionService.getSubDetailsByAuditionDetailsId(auditionDetailsId);
+    }
+    
+    @GetMapping("getAuditionsBySubCategory/{subCategoryId}")
+    public ResponseEntity<?> getAuditionsBySubCategory(@PathVariable Integer subCategoryId) {
+        return auditionService.getAuditionBySubCategory(subCategoryId);
+    }
+
 }

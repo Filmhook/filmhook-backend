@@ -1,7 +1,10 @@
 package com.annular.filmhook.service;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 
+import com.annular.filmhook.model.AuditionSubDetails;
 import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
 import com.annular.filmhook.webmodel.AuditionDetailsWebModel;
 import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
@@ -36,5 +39,9 @@ public interface AuditionService {
 	ResponseEntity<?> getAuditionAcceptanceListByUserId(AuditionWebModel auditionWebModel);
 
 	void updatePaymentStatus(String txnid, String string, String mihpayid, String amount);
+	
+	ResponseEntity<?> getSubDetailsByAuditionDetailsId(Integer AuditionDetailsId);
+	
+	ResponseEntity<?> getAuditionBySubCategory(Integer subCategoryId);
 
 }

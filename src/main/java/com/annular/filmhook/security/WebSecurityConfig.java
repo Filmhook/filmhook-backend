@@ -17,6 +17,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -77,7 +79,8 @@ public class WebSecurityConfig {
                                         "/user/verify", "/user/resendOtp", "/user/verifyForgotOtp", "/industryUser/addIndustryUserPermanentDetails",
                                         "/api/printName", "/industryUser/getDetails", "/industryUser/addTemporaryDetails","/user/saveCoverPhotos",
                                         "/industryUser/getTemporaryDetails", "/industryUser/addIndustryUserPermanentDetails","/user/saveProfilePhotos",
-                                        "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag","/industryUser/saveOneMinuteVideo","/user/updateRerferrralcode","/industryUser/saveGovermentIdProof","/api/shooting-location/types","/payment/payment-failure", "/payment/payment-success")
+                                        "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag","/industryUser/saveOneMinuteVideo","/user/updateRerferrralcode","/industryUser/saveGovermentIdProof","/api/shooting-location/types",
+                                        "/payment/payment-failure", "/payment/payment-success","/deeplink/**")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
@@ -106,5 +109,7 @@ public class WebSecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+    
+  
 
 }

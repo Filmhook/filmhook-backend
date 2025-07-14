@@ -49,6 +49,9 @@ public class Audition {
 	@Column(name = "audition_category")
 	private Integer auditionCategory;
 	
+	@Column(name = "audition_sub_category")
+	private Integer auditionSubCategory;
+	
 	@Column(name = "audition_address")
 	private String auditionAddress;
 	
