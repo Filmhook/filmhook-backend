@@ -11,7 +11,7 @@ public class DeepLinkController {
 
     // Configurable constants
     private static final String ANDROID_PACKAGE = "com.projectfh";
-    private static final String WEB_BASE_URL = "https://www.filmhooks.annulartech.net";
+    private static final String WEB_BASE_URL = "https://www.filmhooks.com";
 
     @GetMapping("/{type}/{id}")
     public void handleDeepLink(
@@ -45,4 +45,5 @@ public class DeepLinkController {
             response.sendRedirect(webLink);
         }
     }
+    
 }
