@@ -147,6 +147,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         convertedFile = File.createTempFile("converted_", ".webm");
                         MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(), convertedFile.getAbsolutePath());
                         s3FileExtension = ".webm";
+                    
                     } else {
                         // Keep original
                         convertedFile = originalFile;
