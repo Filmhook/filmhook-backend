@@ -1,6 +1,8 @@
 package com.annular.filmhook.service.impl;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -103,6 +105,8 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Autowired
 	AuditionRepository auditionRepository;
+	
+    String paymentRetryLink = "https://film-hookapps.com/retry-payment";
 
 	// Define the date formatter for parsing endDate as "yyyy-MM-dd"
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -940,86 +944,118 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Override
 	public void updatePaymentStatus(String txnid, String status, String mihpayid, String amount) {
-		Integer txnids = Integer.parseInt(txnid);
-		Audition audition = auditionRepository.findById(txnids)
-				.orElseThrow(() -> new RuntimeException("Audition not found"));
+	    Integer txnids = Integer.parseInt(txnid);
+	    Audition audition = auditionRepository.findById(txnids)
+	            .orElseThrow(() -> new RuntimeException("Audition not found"));
 
-		audition.setPaymentStatus(status);
-		audition.setPaymentTransactionId(mihpayid);
-		audition.setAuditionUpdatedOn(LocalDateTime.now());
-		auditionRepository.save(audition);
+	    audition.setPaymentStatus(status);
+	    audition.setPaymentTransactionId(mihpayid);
+	    audition.setAuditionUpdatedOn(LocalDateTime.now());
+	    auditionRepository.save(audition);
 
-		// ✅ Get user details
-		User user = audition.getUser();
-		if (user == null) {
-			throw new RuntimeException("User not found for audition");
-		}
+	    User user = audition.getUser();
+	    if (user == null) throw new RuntimeException("User not found for audition");
 
-		String email = user.getEmail();
-		String name = user.getName();
-		String capitalizedName = (name != null && name.length() > 0)
-				? name.substring(0, 1).toUpperCase() + name.substring(1)
-				: "";
+	    String email = user.getEmail();
+	    String name = user.getName();
+	    String capitalizedName = (name != null && name.length() > 0)
+	            ? name.substring(0, 1).toUpperCase() + name.substring(1)
+	            : "";
 
-		// ✅ Build email content
-		String subject;
-		StringBuilder content = new StringBuilder();
-		content.append("<html><body style='font-family:Arial,sans-serif;'>")
-		.append("<div style='padding:20px; border:1px solid #ddd; border-radius:6px;'>");
+	    String subject;
+	    StringBuilder content = new StringBuilder();
+	    content.append("<!DOCTYPE html><html><head>")
+	        .append("<meta charset='UTF-8'>")
+	        .append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+	        .append("<style>")
+	        .append("@media only screen and (max-width: 600px) {")
+	        .append("  .email-container { width: 100% !important; padding: 10px !important; }")
+	        .append("  .email-content td { display: block !important; width: 100% !important; }")
+	        .append("  img { max-width: 100% !important; height: auto !important; }")
+	        .append("}")
+	        .append("</style></head>")
+	        .append("<body style='margin:0;padding:0;background:#f6f6f6;'>")
+	        .append("<table cellpadding='0' cellspacing='0' width='100%' style='background:#f6f6f6;'>")
+	        .append("<tr><td align='center'>")
+	        .append("<table class='email-container' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%;background:#ffffff;border-radius:8px;padding:20px;font-family:Arial,sans-serif;'>")
 
-		if ("SUCCESS".equalsIgnoreCase(status)) {
-			subject = "🎤 Audition Registration Successful";
-			content.append("<html><body style='font-family:Arial,sans-serif;'>")
-			.append("<div style='padding:20px; border:1px solid #ddd; border-radius:6px;'>")
-			.append("<h2 style='color:#28a745;'>Audition Posted Successfully ✅</h2>")
-			.append("<p>Hello <strong>").append(capitalizedName).append(" (").append(")</strong>,</p>")
-			.append("<p>Your audition post has been successfully published and your payment was successful.</p>")
-			.append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("<br>")
-			.append("<b>Category:</b> ").append(audition.getAuditionCategory()).append("<br>")
-			.append("<b>Company:</b> ").append(audition.getCompanyName()).append("<br>")
-			.append("<b>Expires On:</b> ").append(audition.getAuditionExpireOn()).append("</p>")
-			.append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
-			.append("<b>Amount Paid:</b> ₹").append(amount).append("</p>")
-			.append("<p>Thank you for using FilmHook to publish your audition!</p>")
-			.append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
-			.append("<small>support@filmhook.com</small></p>")
-			.append("</div></body></html>");
-		} else {
-			subject = "Payment Failed - Audition Registration";
-			content.append("<html><body style='font-family:Arial,sans-serif;'>")
-			.append("<div style='padding:20px; border:1px solid #ddd; border-radius:6px;'>")
-			.append("<h2 style='color:#dc3545;'>Payment Failed</h2>")
-			.append("<p>Hello <strong>").append(name).append(" (").append(")</strong>,</p>")
-			.append("<p>Unfortunately, your audition post payment has <strong>failed</strong>.</p>")
-			.append("<p>Your audition titled <b>").append(audition.getAuditionTitle()).append("</b> was not published.</p>")
-			.append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
-			.append("<b>Attempted Amount:</b> ₹").append(amount).append("</p>")
-			.append("<p>Please retry the payment from your dashboard or contact support if needed.</p>")
-			.append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
-			.append("<small>support@filmhook.com</small></p>")
-			.append("</div></body></html>");
-		}
+	        // Logo
+	        .append("<tr><td align='center' style='padding-bottom:20px;'>")
+	        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' alt='FilmHook Logo' style='width:180px;height:auto;'>")
+	        .append("</td></tr>");
 
-		// ✅ Send email
-		try {
-			MimeMessage message = javaMailSender.createMimeMessage();
-			MimeMessageHelper helper = new MimeMessageHelper(message, true);
-			helper.setTo(email);
-			helper.setSubject(subject);
-			helper.setText(content.toString(), true);
+	    // Success Email
+	    if ("SUCCESS".equalsIgnoreCase(status)) {
+	        subject = "Audition Registration Successful";
 
-			if ("SUCCESS".equalsIgnoreCase(status)) {
-				byte[] pdf = generateAuditionInvoicePdf(audition, amount);
-				helper.addAttachment("AuditionInvoice_" + txnid + ".pdf",
-						new ByteArrayDataSource(pdf, "application/pdf"));
-			}
+	        content.append("<tr><td style='color:#333;font-size:12px;'>")
+	            .append("<h3 style='color:#28a745;'>Audition Posted Successfully</h3>")
+	            .append("<p>Hi <strong>").append(capitalizedName).append("</strong>,</p>")
+	            .append("<p>Your audition has been successfully posted and payment received.</p>")
+	            .append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("<br>")
+	            .append("<b>Category:</b> ").append(audition.getAuditionCategory()).append("<br>")
+	            .append("<b>Company:</b> ").append(audition.getCompanyName()).append("<br>")
+	            .append("<b>Expires On:</b> ").append(audition.getAuditionExpireOn()).append("</p>")
+	            .append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
+	            .append("<b>Amount Paid:</b> ₹").append(amount).append("</p>")
+	            .append("<p>Thank you for using <strong>FilmHook</strong> to publish your audition!</p>");
+	    } else {
+	        // Failure Email
+	        subject = "Payment Failed - Audition Not Published";
 
-			javaMailSender.send(message);
+	        content.append("<tr><td style='color:#333;font-size:12px;'>")
+	            .append("<h3 style='color:#dc3545;'>Payment Failed</h3>")
+	            .append("<p>Hi <strong>").append(capitalizedName).append("</strong>,</p>")
+	            .append("<p>Unfortunately, your payment failed and your audition was not published.</p>")
+	            .append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("</p>")
+	            .append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
+	            .append("<b>Attempted Amount:</b> ₹").append(amount).append("</p>")
+	            .append("<p>🔄 <a href='").append(paymentRetryLink).append("' style='color:#007bff;'>Retry Payment</a></p>")
+	            .append("<p>Please retry payment from your dashboard or contact our support team.</p>");
+	    }
 
-		} catch (Exception e) {
-			e.printStackTrace(); // Handle properly in production
-		}
+	    // Footer
+	    content.append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
+	        .append("📧 <a href='mailto:support@filmhook.com'>support@filmhook.com</a><br>")
+	        .append("🌐 <a href='https://filmhook.com'>www.filmhook.com</a></p>")
+
+	        .append("<hr style='border:0;border-top:1px solid #ccc;margin:30px 0;'>")
+	        .append("<p>Download Our App:</p>")
+	        .append("<p>")
+	        .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' width='30'></a> ")
+	        .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' width='30'></a>")
+	        .append("</p>")
+	        .append("<p>🔗 Follow Us:</p>")
+	        .append("<p>")
+	        .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='20'></a> ")
+	        .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='20'></a> ")
+	        .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='20'></a> ")
+	        .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='20'></a> ")
+	        .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='20'></a> ")
+	        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='30'></a>")
+	        .append("</p>")
+
+	        .append("</td></tr></table></td></tr></table></body></html>");
+
+	    try {
+	        MimeMessage message = javaMailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+	        helper.setTo(email);
+	        helper.setSubject(subject);
+	        helper.setText(content.toString(), true);
+
+	        if ("SUCCESS".equalsIgnoreCase(status)) {
+	            byte[] pdf = generateAuditionInvoicePdf(audition, amount);
+	            helper.addAttachment("AuditionInvoice_" + txnid + ".pdf",
+	                    new ByteArrayDataSource(pdf, "application/pdf"));
+	        }
+
+	        javaMailSender.send(message);
+	    } catch (Exception e) {
+	        e.printStackTrace(); // log properly in production
+	    }
 	}
+
 	private byte[] generateAuditionInvoicePdf(Audition audition, String amount) {
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -1040,12 +1076,13 @@ public class AuditionServiceImpl implements AuditionService {
 					: "";
 
 			// --- Logo ---
-			String logoPath = "src/main/resources/static/images/logo.jpeg";
-			Image logo = new Image(ImageDataFactory.create(logoPath))
-					.scaleToFit(120, 60)
-					.setHorizontalAlignment(HorizontalAlignment.CENTER)
-					.setMarginBottom(8);
-			doc.add(logo);
+			   InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+		        if (logoStream == null) throw new RuntimeException("Logo image not found in classpath");
+		        Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
+		                .scaleToFit(120, 60)
+		                .setHorizontalAlignment(HorizontalAlignment.CENTER)
+		                .setMarginBottom(8);
+		        doc.add(logo);
 
 			// --- Title ---
 			doc.add(new Paragraph("TAX INVOICE")
@@ -1161,18 +1198,20 @@ public class AuditionServiceImpl implements AuditionService {
 					.setFontSize(fontSize));
 
 			// --- Signature Section ---
-			String signPath = "src/main/resources/static/images/signature.jpeg";
-			Image sign = new Image(ImageDataFactory.create(signPath)).scaleToFit(80, 30);
-			Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
-					.setFontSize(9)
-					.setTextAlignment(TextAlignment.RIGHT);
-			Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
+			  InputStream signStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+		        if (signStream == null) throw new RuntimeException("Signature image not found in classpath");
+		        Image sign = new Image(ImageDataFactory.create(signStream.readAllBytes()))
+		                .scaleToFit(80, 30);
+		        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
+		                .setFontSize(9)
+		                .setTextAlignment(TextAlignment.RIGHT);
+		        Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
+		        Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
+		        signTable.addCell(new Cell().add(signBlock)
+		                .setBorder(Border.NO_BORDER)
+		                .setTextAlignment(TextAlignment.RIGHT));
+		        doc.add(signTable);
 
-			Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
-			signTable.addCell(new Cell().add(signBlock)
-					.setBorder(Border.NO_BORDER)
-					.setTextAlignment(TextAlignment.RIGHT));
-			doc.add(signTable);
 
 			doc.close();
 			return baos.toByteArray();

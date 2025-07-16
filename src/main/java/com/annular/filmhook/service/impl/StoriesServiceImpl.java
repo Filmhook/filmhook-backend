@@ -186,7 +186,11 @@ public class StoriesServiceImpl implements StoriesService {
 		Story story = new Story();
 		story.setStoryId(UUID.randomUUID().toString());
 		story.setType(inputData.getType());
-		story.setDescription(inputData.getDescription());
+		   if (inputData.getFileInputWebModel() != null && inputData.getFileInputWebModel().getDescription() != null) {
+		        story.setDescription(inputData.getFileInputWebModel().getDescription());
+		    } else {
+		        story.setDescription(""); // fallback if null
+		    }
 //		story.setViewCount(inputData.getViewCount() == null ? 0 : inputData.getViewCount());   
 		story.setStatus(true);
 		story.setUser(user);
@@ -289,11 +293,14 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 
                 for (FileOutputWebModel model : mediaFiles) {
                     model.setStoryId(story.getStoryId()); // Always set storyId
-
+                    
+                    MediaFiles mediaEntity = mediaFilesRepository.findById(model.getId()).orElse(null);
+                    if (mediaEntity != null) {
+                        model.setDescription(mediaEntity.getDescription()); // ✅ Set description for all
+                    }
                     // Fetch view details only for logged-in user's stories
                     if (storyUserId.equals(userId)) {
-                        MediaFiles mediaEntity = mediaFilesRepository.findById(model.getId()).orElse(null);
-                        if (mediaEntity != null) {
+                      if (mediaEntity != null) {
                             // View count
                             int viewCount = storyViewRepository.countByMediaFile(mediaEntity);
                             model.setViewCount(viewCount);
@@ -302,13 +309,19 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
                             List<StoryView> views = storyViewRepository.findByMediaFile(mediaEntity);
                             List<StoryViewerDTO> viewerList = views.stream()
                                     .map(view -> {
+                                    	
                                         User viewer = view.getViewer();
                                         if (viewer == null) return null;
+                                        
                                         return StoryViewerDTO.builder()
                                                 .viewerId(viewer.getUserId())
                                                 .viewerName(viewer.getName())
                                                 .userProfilePic(userService.getProfilePicUrl(viewer.getUserId()))
                                                 .viewedOn(view.getViewedOn())
+                                                .viewedAtText(
+                                                	    Utility.formatRelativeTime(view.getViewedOn())
+                                                	)
+                                                                                    
                                                 .build();
                                     })
                                     .filter(Objects::nonNull)
@@ -343,10 +356,10 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 
 
 
-	private LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
-		return Instant.ofEpochMilli(dateToConvert.getTime())
-				.atZone(ZoneId.systemDefault())
-				.toLocalDateTime();
+	public static LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
+	    return Instant.ofEpochMilli(dateToConvert.getTime())
+	                  .atZone(ZoneId.systemDefault())  
+	                  .toLocalDateTime();
 	}
 
 	private StoriesWebModel transformData(Story story) {
@@ -355,7 +368,7 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 //		storiesWebModel.setStoryId(story.getStoryId());
 		storiesWebModel.setProfileUrl(userService.getProfilePicUrl(story.getUser().getUserId()));
 		storiesWebModel.setUserName(story.getUser().getName());
-		storiesWebModel.setDescription(story.getDescription());
+//		storiesWebModel.setDescription(story.getDescription());
 //		storiesWebModel.setViewCount(story.getViewCount());
 		storiesWebModel.setStatus(story.getStatus());
 		storiesWebModel.setUserId(story.getUser().getUserId());
@@ -411,18 +424,28 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 	}
 
 	@Override
-	public Story deleteStoryById(Integer id) {
-		Optional<Story> story = storyRepository.findById(id);
-		if (story.isPresent()) {
-			Story storyToUpdate = story.get();
-			this.deleteStory(storyToUpdate); // Deactivating the Story table Records
-			List<Integer> storyIdsList = Collections.singletonList(storyToUpdate.getId());
-			mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.Stories, storyIdsList); // Deactivating the MediaFiles table Records and S3 as well
-			return storyToUpdate;
-		} else {
-			return null;
-		}
+	public Story deleteStoryById(String storyId, Integer userId) {
+	    Story story = storyRepository.findByStoryId(storyId);
+
+	    if (story == null) {
+	        throw new RuntimeException("Story not found.");
+	    }
+
+	    if (!story.getUser().getUserId().equals(userId)) {
+	        throw new SecurityException("You are not authorized to delete this story.");
+	    }
+
+	    // Deactivate the story
+	    this.deleteStory(story);
+
+	    // Deactivate related media files
+	    List<Integer> storyIdsList = Collections.singletonList(story.getId());
+	    mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.Stories, storyIdsList);
+
+	    return story;
 	}
+
+
 
 	@Override
 	public List<Story> deleteStoryByUserId(Integer userId) {

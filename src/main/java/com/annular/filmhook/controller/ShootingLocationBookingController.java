@@ -3,7 +3,9 @@ package com.annular.filmhook.controller;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.ShootingLocationBooking;
 import com.annular.filmhook.model.ShootingLocationChat;
+import com.annular.filmhook.model.ShootingLocationPayment;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
+import com.annular.filmhook.repository.ShootingLocationPaymentRepository;
 import com.annular.filmhook.service.ShootingLocationBookingService;
 import com.annular.filmhook.util.HashGenerator;
 
@@ -40,6 +42,9 @@ public class ShootingLocationBookingController {
 
 	@Autowired
 	private HashGenerator hashGenerator;
+	
+    @Autowired
+    private ShootingLocationPaymentRepository paymentRepo;
 
 	@PostMapping("/create")
 	public ResponseEntity<Response> createBooking(@RequestBody ShootingLocationBookingDTO dto) {
@@ -114,16 +119,37 @@ public class ShootingLocationBookingController {
 	
 
 
-	@PostMapping("/send-booking-mail")
-	public ResponseEntity<?> sendBookingMail(@RequestBody ShootingLocationPayURequest request) {
-		try {
-			logger.info("Sending booking mail for txnid: {}", request.getTxnid());
-			return bookingService.sendShootingLocationBookingMail(request);
-		} catch (Exception e) {
-			logger.error("Error sending booking confirmation mail", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(0, "Failed to send booking mail: " + e.getMessage(), null));
-		}}
+	 @PostMapping("/send-booking-email")
+	    public ResponseEntity<?> sendBookingEmail(@RequestBody ShootingLocationPayURequest request) {
+	        try {
+	            String txnid = request.getTxnid();
+	            String status = request.getStatus();
+
+	            logger.info("Sending booking email for txnid: {}, status: {}", txnid, status);
+
+	            // Fetch payment by txnid
+	            ShootingLocationPayment payment = paymentRepo.findByTxnid(txnid)
+	                    .orElseThrow(() -> new RuntimeException("Payment not found for txnid: " + txnid));
+
+	            // Get the booking from payment
+	            ShootingLocationBooking booking = payment.getBooking();
+	            if (booking == null) {
+	                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                        .body(new Response(0, "Booking not found for txnid: " + txnid, null));
+	            }
+
+	            boolean isSuccess = "SUCCESS".equalsIgnoreCase(status);
+
+	            // Send emails
+	            return bookingService.sendShootingLocationBookingEmail(booking, payment, isSuccess);
+
+	        } catch (Exception e) {
+	            logger.error("Error sending booking email", e);
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to send booking email: " + e.getMessage(), null));
+	        }
+	    }
+	
 	
 
 	@PostMapping("/trigger/reminder-tomorrow")

@@ -140,20 +140,21 @@ public class StoriesController {
     }
 
     @DeleteMapping("/deleteStory")
-    public Response deleteUserStoriesById(@RequestParam("id") Integer storyId) {
+    public Response deleteUserStoriesById(
+            @RequestParam("storyId") String storyId,
+            @RequestParam("userId") Integer userId
+    ) {
         try {
-            Story story = storiesService.deleteStoryById(storyId);
-            if (story != null) {
-                return new Response(1, "Story deleted successfully...", null);
-            } else {
-                return new Response(-1, "Story not available to delete...", null);
-            }
+            Story story = storiesService.deleteStoryById(storyId, userId);
+            return new Response(1, "Story deleted successfully...", null);
+        } catch (SecurityException se) {
+            return new Response(-1, se.getMessage(), null);
         } catch (Exception e) {
-            logger.error("Error at deleteUserStoriesById() -> {}", e.getMessage());
-            e.printStackTrace();
+            logger.error("Error in deleteUserStoriesById() -> {}", e.getMessage(), e);
+            return new Response(-1, "Story could not be deleted.", null);
         }
-        return new Response(-1, "Story not found...", null);
     }
+
 
     @PutMapping("/updateStoryViews")
     public Response updateStoryViews(@RequestParam("userId") Integer userId,

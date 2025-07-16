@@ -7,6 +7,12 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -91,6 +97,32 @@ public class Utility {
     public static String generateOtp(int length) {
         Random random = new Random();
         return IntStream.range(0, length).mapToObj(i -> String.valueOf(random.nextInt(10))).collect(Collectors.joining());
+    }
+    
+    
+    public static String formatRelativeTime(Date viewedDate) {
+        if (viewedDate == null) return "unknown";
+
+        LocalDateTime viewedTime = viewedDate.toInstant()
+                .atZone(ZoneId.of("Asia/Kolkata"))
+                .toLocalDateTime();
+
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
+
+        Duration duration = Duration.between(viewedTime, now);
+        long minutes = duration.toMinutes();
+        long hours = duration.toHours();
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+
+        if (minutes < 1) return "just now";
+       // if (minutes < 60) return minutes + " minutes ago";
+        if (viewedTime.toLocalDate().equals(now.toLocalDate()))
+            return "Today, " + viewedTime.format(timeFormatter);
+        if (viewedTime.toLocalDate().equals(now.toLocalDate().minusDays(1)))
+            return "Yesterday at " + viewedTime.format(timeFormatter);
+
+        return viewedTime.format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
     }
 
 }

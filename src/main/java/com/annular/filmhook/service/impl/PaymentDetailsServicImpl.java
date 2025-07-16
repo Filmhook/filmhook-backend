@@ -299,7 +299,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                     .append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP' target='_blank'>")
                     .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30'></a>")
                     .append("<a href='https://www.linkedin.com/in/film-hook-68666a353' target='_blank'>")
-                    .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linedIn.jpeg' width='30'></a>")
+                    .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='30'></a>")
                     .append("</p>")
                     .append("</body></html>");
 

@@ -12,4 +12,5 @@ public class StoryViewerDTO {
     private String viewerName;
     private String userProfilePic;
     private Date viewedOn;
+    private String viewedAtText; 
 }

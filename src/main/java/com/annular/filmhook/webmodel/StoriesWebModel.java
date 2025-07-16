@@ -19,7 +19,7 @@ public class StoriesWebModel {
     private String userName;
 //    private String storyId;
     private String type;
-    private String description;
+//    private String description;
     private FileInputWebModel fileInputWebModel; // for file input details
     private List<FileOutputWebModel> fileOutputWebModel; // for file output details
 
