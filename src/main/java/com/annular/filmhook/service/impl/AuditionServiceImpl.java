@@ -106,7 +106,7 @@ public class AuditionServiceImpl implements AuditionService {
 	@Autowired
 	AuditionRepository auditionRepository;
 	
-    String paymentRetryLink = "https://film-hookapps.com/retry-payment";
+  
 
 	// Define the date formatter for parsing endDate as "yyyy-MM-dd"
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -952,6 +952,8 @@ public class AuditionServiceImpl implements AuditionService {
 	    audition.setPaymentTransactionId(mihpayid);
 	    audition.setAuditionUpdatedOn(LocalDateTime.now());
 	    auditionRepository.save(audition);
+	    String paymentRetryLink = "https://filmhookapps.com/retry-payment?auditionId=" + audition.getAuditionId();
+
 
 	    User user = audition.getUser();
 	    if (user == null) throw new RuntimeException("User not found for audition");

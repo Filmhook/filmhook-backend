@@ -260,8 +260,9 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             // Extract payment details
             String to = user.getEmail();
             String subject = "⚠️ Payment Failed for Your Post Promotion";
-            String amountAttempted = String.valueOf(paymentDetailsWebModel.getAmount());
-            String paymentRetryLink = "https://film-hookapps.com/retry-payment"; // Replace with actual retry link
+            String amountAttemptedString = String.valueOf(paymentDetailsWebModel.getAmount());
+            String paymentRetryLink = "https://film-hookapps.com/retry-payment?txnid=" + promoteData.getPromoteId();
+
 
             // Use StringBuilder to construct email content
             StringBuilder content = new StringBuilder();

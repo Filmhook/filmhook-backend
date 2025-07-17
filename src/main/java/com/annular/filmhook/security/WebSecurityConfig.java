@@ -80,7 +80,7 @@ public class WebSecurityConfig {
                                         "/api/printName", "/industryUser/getDetails", "/industryUser/addTemporaryDetails","/user/saveCoverPhotos",
                                         "/industryUser/getTemporaryDetails", "/industryUser/addIndustryUserPermanentDetails","/user/saveProfilePhotos",
                                         "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag","/industryUser/saveOneMinuteVideo","/user/updateRerferrralcode","/industryUser/saveGovermentIdProof","/api/shooting-location/types",
-                                        "/payment/payment-failure", "/payment/payment-success","/deeplink/**")
+                                        "/payment/payment-failure", "/payment/payment-success","/deeplink/**","/retry-payment/**")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
