@@ -198,9 +198,10 @@ public class StoriesController {
     public ResponseEntity<?> saveMediaView(
             @RequestParam String storyId,
             @RequestParam Integer mediaFileId,
-            @RequestParam Integer viewerId) {
+            @RequestParam Integer viewerId,
+            @RequestParam(required = false, defaultValue = "false") boolean liked) {
         try {
-            storiesService.saveMediaView(storyId, mediaFileId, viewerId);
+            storiesService.saveMediaView(storyId, mediaFileId, viewerId,liked );
             return ResponseEntity.ok().body(Map.of(
                 "status", 1,
                 "message", "View saved successfully"

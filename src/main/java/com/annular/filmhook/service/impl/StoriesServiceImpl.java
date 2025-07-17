@@ -60,17 +60,17 @@ public class StoriesServiceImpl implements StoriesService {
 
 	@Autowired
 	FileUtil fileUtil;
-	
+
 	@Autowired
 	StoryViewRepository storyViewRepository;
-	
+
 	@Autowired
 	StoryRepository storyRepository;
 
 	@Autowired
 	MediaFilesService mediaFilesService;
-    @Autowired
-	   MediaFilesRepository mediaFilesRepository;
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
 	@Autowired
 	UserService userService;
 
@@ -186,12 +186,12 @@ public class StoriesServiceImpl implements StoriesService {
 		Story story = new Story();
 		story.setStoryId(UUID.randomUUID().toString());
 		story.setType(inputData.getType());
-		   if (inputData.getFileInputWebModel() != null && inputData.getFileInputWebModel().getDescription() != null) {
-		        story.setDescription(inputData.getFileInputWebModel().getDescription());
-		    } else {
-		        story.setDescription(""); // fallback if null
-		    }
-//		story.setViewCount(inputData.getViewCount() == null ? 0 : inputData.getViewCount());   
+		if (inputData.getFileInputWebModel() != null && inputData.getFileInputWebModel().getDescription() != null) {
+			story.setDescription(inputData.getFileInputWebModel().getDescription());
+		} else {
+			story.setDescription(""); // fallback if null
+		}
+		//		story.setViewCount(inputData.getViewCount() == null ? 0 : inputData.getViewCount());   
 		story.setStatus(true);
 		story.setUser(user);
 		story.setCreatedBy(user.getUserId());
@@ -264,112 +264,113 @@ public class StoriesServiceImpl implements StoriesService {
 	//        return storiesWebModel;
 	//    }
 	//////Orginal Code for Stories
-	
+
 	@Override
-public List<StoriesWebModel> getStoryByUserId(Integer userId) {
-    List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
+	public List<StoriesWebModel> getStoryByUserId(Integer userId) {
+		List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
 
-    try {
-        List<Story> storyList = storyRepository.getAllActiveStories();
+		try {
+			List<Story> storyList = storyRepository.getAllActiveStories();
 
-        if (!Utility.isNullOrEmptyList(storyList)) {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime twentyFourHoursAgo = now.minusHours(24);
+			if (!Utility.isNullOrEmptyList(storyList)) {
+				LocalDateTime now = LocalDateTime.now();
+				LocalDateTime twentyFourHoursAgo = now.minusHours(24);
 
-            Map<Integer, StoriesWebModel> userStoriesMap = new LinkedHashMap<>();
+				Map<Integer, StoriesWebModel> userStoriesMap = new LinkedHashMap<>();
 
-            for (Story story : storyList) {
-                LocalDateTime storyCreatedOn = convertToLocalDateTimeViaInstant(story.getCreatedOn());
-                if (storyCreatedOn.isBefore(twentyFourHoursAgo)) continue;
+				for (Story story : storyList) {
+					LocalDateTime storyCreatedOn = convertToLocalDateTimeViaInstant(story.getCreatedOn());
+					if (storyCreatedOn.isBefore(twentyFourHoursAgo)) continue;
 
-                Integer storyUserId = story.getUser().getUserId();
-                StoriesWebModel storiesWebModel = userStoriesMap.getOrDefault(storyUserId, transformData(story));
-                List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-                        MediaFileCategory.Stories, story.getId());
+					Integer storyUserId = story.getUser().getUserId();
+					StoriesWebModel storiesWebModel = userStoriesMap.getOrDefault(storyUserId, transformData(story));
+					List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.Stories, story.getId());
 
-                List<FileOutputWebModel> enrichedFiles = storiesWebModel.getFileOutputWebModel() != null
-                        ? storiesWebModel.getFileOutputWebModel()
-                        : new ArrayList<>();
+					List<FileOutputWebModel> enrichedFiles = storiesWebModel.getFileOutputWebModel() != null
+							? storiesWebModel.getFileOutputWebModel()
+									: new ArrayList<>();
 
-                for (FileOutputWebModel model : mediaFiles) {
-                    model.setStoryId(story.getStoryId()); // Always set storyId
-                    
-                    MediaFiles mediaEntity = mediaFilesRepository.findById(model.getId()).orElse(null);
-                    if (mediaEntity != null) {
-                        model.setDescription(mediaEntity.getDescription()); // ✅ Set description for all
-                    }
-                    // Fetch view details only for logged-in user's stories
-                    if (storyUserId.equals(userId)) {
-                      if (mediaEntity != null) {
-                            // View count
-                            int viewCount = storyViewRepository.countByMediaFile(mediaEntity);
-                            model.setViewCount(viewCount);
+					for (FileOutputWebModel model : mediaFiles) {
+						model.setStoryId(story.getStoryId()); // Always set storyId
 
-                            // Viewers list
-                            List<StoryView> views = storyViewRepository.findByMediaFile(mediaEntity);
-                            List<StoryViewerDTO> viewerList = views.stream()
-                                    .map(view -> {
-                                    	
-                                        User viewer = view.getViewer();
-                                        if (viewer == null) return null;
-                                        
-                                        return StoryViewerDTO.builder()
-                                                .viewerId(viewer.getUserId())
-                                                .viewerName(viewer.getName())
-                                                .userProfilePic(userService.getProfilePicUrl(viewer.getUserId()))
-                                                .viewedOn(view.getViewedOn())
-                                                .viewedAtText(
-                                                	    Utility.formatRelativeTime(view.getViewedOn())
-                                                	)
-                                                                                    
-                                                .build();
-                                    })
-                                    .filter(Objects::nonNull)
-                                    .collect(Collectors.toList());
+						MediaFiles mediaEntity = mediaFilesRepository.findById(model.getId()).orElse(null);
+						if (mediaEntity != null) {
+							model.setDescription(mediaEntity.getDescription()); // ✅ Set description for all
+						}
+						// Fetch view details only for logged-in user's stories
+						if (storyUserId.equals(userId)) {
+							if (mediaEntity != null) {
+								// View count
+								int viewCount = storyViewRepository.countByMediaFile(mediaEntity);
+								model.setViewCount(viewCount);
 
-                            model.setViewedBy(viewerList);
-                        }
-                    }
+								// Viewers list
+								List<StoryView> views = storyViewRepository.findByMediaFile(mediaEntity);
+								List<StoryViewerDTO> viewerList = views.stream()
+										.map(view -> {
 
-                    enrichedFiles.add(model);
-                }
+											User viewer = view.getViewer();
+											if (viewer == null) return null;
 
-                storiesWebModel.setFileOutputWebModel(enrichedFiles);
-                userStoriesMap.put(storyUserId, storiesWebModel);
-            }
+											return StoryViewerDTO.builder()
+													.viewerId(viewer.getUserId())
+													.viewerName(viewer.getName())
+													.userProfilePic(userService.getProfilePicUrl(viewer.getUserId()))
+													.viewedOn(view.getViewedOn())
+													.viewedAtText(
+															Utility.formatRelativeTime(view.getViewedOn())
+															)
+													.liked(view.getLiked())
 
-            // Convert to list with user's own story first
-            storiesWebModelList = userStoriesMap.values().stream()
-                    .sorted((s1, s2) -> {
-                        if (s1.getUserId().equals(userId)) return -1;
-                        if (s2.getUserId().equals(userId)) return 1;
-                        return 0;
-                    })
-                    .collect(Collectors.toList());
-        }
-    } catch (Exception e) {
-        logger.error("Error at getStoryByUserId() -> {}", e.getMessage(), e);
-    }
+													.build();
+										})
+										.filter(Objects::nonNull)
+										.collect(Collectors.toList());
 
-    return storiesWebModelList;
-}
+								model.setViewedBy(viewerList);
+							}
+						}
+
+						enrichedFiles.add(model);
+					}
+
+					storiesWebModel.setFileOutputWebModel(enrichedFiles);
+					userStoriesMap.put(storyUserId, storiesWebModel);
+				}
+
+				// Convert to list with user's own story first
+				storiesWebModelList = userStoriesMap.values().stream()
+						.sorted((s1, s2) -> {
+							if (s1.getUserId().equals(userId)) return -1;
+							if (s2.getUserId().equals(userId)) return 1;
+							return 0;
+						})
+						.collect(Collectors.toList());
+			}
+		} catch (Exception e) {
+			logger.error("Error at getStoryByUserId() -> {}", e.getMessage(), e);
+		}
+
+		return storiesWebModelList;
+	}
 
 
 
 	public static LocalDateTime convertToLocalDateTimeViaInstant(Date dateToConvert) {
-	    return Instant.ofEpochMilli(dateToConvert.getTime())
-	                  .atZone(ZoneId.systemDefault())  
-	                  .toLocalDateTime();
+		return Instant.ofEpochMilli(dateToConvert.getTime())
+				.atZone(ZoneId.systemDefault())  
+				.toLocalDateTime();
 	}
 
 	private StoriesWebModel transformData(Story story) {
 		StoriesWebModel storiesWebModel = new StoriesWebModel();
 
-//		storiesWebModel.setStoryId(story.getStoryId());
+		//		storiesWebModel.setStoryId(story.getStoryId());
 		storiesWebModel.setProfileUrl(userService.getProfilePicUrl(story.getUser().getUserId()));
 		storiesWebModel.setUserName(story.getUser().getName());
-//		storiesWebModel.setDescription(story.getDescription());
-//		storiesWebModel.setViewCount(story.getViewCount());
+		//		storiesWebModel.setDescription(story.getDescription());
+		//		storiesWebModel.setViewCount(story.getViewCount());
 		storiesWebModel.setStatus(story.getStatus());
 		storiesWebModel.setUserId(story.getUser().getUserId());
 		storiesWebModel.setCreatedOn(story.getCreatedOn());
@@ -425,24 +426,24 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 
 	@Override
 	public Story deleteStoryById(String storyId, Integer userId) {
-	    Story story = storyRepository.findByStoryId(storyId);
+		Story story = storyRepository.findByStoryId(storyId);
 
-	    if (story == null) {
-	        throw new RuntimeException("Story not found.");
-	    }
+		if (story == null) {
+			throw new RuntimeException("Story not found.");
+		}
 
-	    if (!story.getUser().getUserId().equals(userId)) {
-	        throw new SecurityException("You are not authorized to delete this story.");
-	    }
+		if (!story.getUser().getUserId().equals(userId)) {
+			throw new SecurityException("You are not authorized to delete this story.");
+		}
 
-	    // Deactivate the story
-	    this.deleteStory(story);
+		// Deactivate the story
+		this.deleteStory(story);
 
-	    // Deactivate related media files
-	    List<Integer> storyIdsList = Collections.singletonList(story.getId());
-	    mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.Stories, storyIdsList);
+		// Deactivate related media files
+		List<Integer> storyIdsList = Collections.singletonList(story.getId());
+		mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.Stories, storyIdsList);
 
-	    return story;
+		return story;
 	}
 
 
@@ -562,85 +563,85 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 
 	@Override
 	public List<StoriesWebModel> getUserStoriesByUserId(Integer userId) {
-	    List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
+		List<StoriesWebModel> storiesWebModelList = new ArrayList<>();
 
-	    try {
-	        List<Story> storyList = storyRepository.getAllActiveStories();
+		try {
+			List<Story> storyList = storyRepository.getAllActiveStories();
 
-	        if (!Utility.isNullOrEmptyList(storyList)) {
-	            LocalDateTime now = LocalDateTime.now();
-	            LocalDateTime twentyFourHoursAgo = now.minusHours(24);
+			if (!Utility.isNullOrEmptyList(storyList)) {
+				LocalDateTime now = LocalDateTime.now();
+				LocalDateTime twentyFourHoursAgo = now.minusHours(24);
 
-	            // Grouping by userId, not storyId
-	            Map<Integer, StoriesWebModel> userStoriesMap = new LinkedHashMap<>();
+				// Grouping by userId, not storyId
+				Map<Integer, StoriesWebModel> userStoriesMap = new LinkedHashMap<>();
 
-	            for (Story story : storyList) {
-	                Integer storyUserId = story.getUser().getUserId();
+				for (Story story : storyList) {
+					Integer storyUserId = story.getUser().getUserId();
 
-	                // Filter only for the requested user and stories within 24 hours
-	                if (storyUserId.equals(userId)) {
-	                    LocalDateTime storyCreatedOn = convertToLocalDateTimeViaInstant(story.getCreatedOn());
+					// Filter only for the requested user and stories within 24 hours
+					if (storyUserId.equals(userId)) {
+						LocalDateTime storyCreatedOn = convertToLocalDateTimeViaInstant(story.getCreatedOn());
 
-	                    if (storyCreatedOn.isAfter(twentyFourHoursAgo)) {
+						if (storyCreatedOn.isAfter(twentyFourHoursAgo)) {
 
-	                        // Transform user details only once
-	                        StoriesWebModel storiesWebModel = userStoriesMap.getOrDefault(storyUserId, transformData(story));
-	                        List<FileOutputWebModel> enrichedFiles = storiesWebModel.getFileOutputWebModel() != null
-	                                ? storiesWebModel.getFileOutputWebModel()
-	                                : new ArrayList<>();
+							// Transform user details only once
+							StoriesWebModel storiesWebModel = userStoriesMap.getOrDefault(storyUserId, transformData(story));
+							List<FileOutputWebModel> enrichedFiles = storiesWebModel.getFileOutputWebModel() != null
+									? storiesWebModel.getFileOutputWebModel()
+											: new ArrayList<>();
 
-	                        // Fetch media files for this story
-	                        List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-	                                MediaFileCategory.Stories, story.getId()
-	                        );
+							// Fetch media files for this story
+							List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+									MediaFileCategory.Stories, story.getId()
+									);
 
-	                        for (FileOutputWebModel model : mediaFiles) {
-	                            Integer mediaFileId = model.getId();
-	                            MediaFiles mediaEntity = mediaFilesRepository.findById(mediaFileId).orElse(null);
-	                            if (mediaEntity == null) continue;
+							for (FileOutputWebModel model : mediaFiles) {
+								Integer mediaFileId = model.getId();
+								MediaFiles mediaEntity = mediaFilesRepository.findById(mediaFileId).orElse(null);
+								if (mediaEntity == null) continue;
 
-	                            // ✅ Set view count
-	                            int count = storyViewRepository.countByMediaFile(mediaEntity);
-	                            model.setViewCount(count);
+								// ✅ Set view count
+								int count = storyViewRepository.countByMediaFile(mediaEntity);
+								model.setViewCount(count);
 
-	                            // ✅ Set viewers
-	                            List<StoryView> views = storyViewRepository.findByMediaFile(mediaEntity);
-	                            List<StoryViewerDTO> viewers = views.stream()
-	                                    .map(view -> {
-	                                        User viewer = view.getViewer();
-	                                        if (viewer == null) return null;
-	                                        return StoryViewerDTO.builder()
-	                                                .viewerId(viewer.getUserId())
-	                                                .viewerName(viewer.getName())
-	                                                .userProfilePic(userService.getProfilePicUrl(viewer.getUserId()))
-	                                                .viewedOn(view.getViewedOn())
-	                                                .build();
-	                                    })
-	                                    .filter(Objects::nonNull)
-	                                    .collect(Collectors.toList());
+								// ✅ Set viewers
+								List<StoryView> views = storyViewRepository.findByMediaFile(mediaEntity);
+								List<StoryViewerDTO> viewers = views.stream()
+										.map(view -> {
+											User viewer = view.getViewer();
+											if (viewer == null) return null;
+											return StoryViewerDTO.builder()
+													.viewerId(viewer.getUserId())
+													.viewerName(viewer.getName())
+													.userProfilePic(userService.getProfilePicUrl(viewer.getUserId()))
+													.viewedOn(view.getViewedOn())
+													.build();
+										})
+										.filter(Objects::nonNull)
+										.collect(Collectors.toList());
 
-	                            model.setViewedBy(viewers);
+								model.setViewedBy(viewers);
 
-	                            // ✅ Set the correct storyId in each media
-	                            model.setStoryId(story.getStoryId());
+								// ✅ Set the correct storyId in each media
+								model.setStoryId(story.getStoryId());
 
-	                            enrichedFiles.add(model);
-	                        }
+								enrichedFiles.add(model);
+							}
 
-	                        storiesWebModel.setFileOutputWebModel(enrichedFiles);
-	                        userStoriesMap.put(storyUserId, storiesWebModel);
-	                    }
-	                }
-	            }
+							storiesWebModel.setFileOutputWebModel(enrichedFiles);
+							userStoriesMap.put(storyUserId, storiesWebModel);
+						}
+					}
+				}
 
-	            storiesWebModelList = new ArrayList<>(userStoriesMap.values());
-	        }
+				storiesWebModelList = new ArrayList<>(userStoriesMap.values());
+			}
 
-	    } catch (Exception e) {
-	        logger.error("Error in getUserStoriesByUserId() -> {}", e.getMessage(), e);
-	    }
+		} catch (Exception e) {
+			logger.error("Error in getUserStoriesByUserId() -> {}", e.getMessage(), e);
+		}
 
-	    return storiesWebModelList;
+		return storiesWebModelList;
 	}
 
 
@@ -729,102 +730,116 @@ public List<StoriesWebModel> getStoryByUserId(Integer userId) {
 	//        }
 	//        return storiesWebModelList;
 	//    }
-	
-//	@Override
-//	public StoriesWebModel getStoryWithViews(String storyId, Integer viewerId) {
-//	    Story story = storyRepository.findByStoryId(storyId);
-//	    if (story == null) return null;
-//
-//	    User viewer = userRepository.findById(viewerId).orElse(null);
-//	    if (viewer == null) return null;
-//
-//	    // Fetch all media files under this story
-//	    List<MediaFiles> mediaFilesList = mediaFilesService.getMediaFilesByCategoryAndRefId(
-//	            MediaFileCategory.Stories, story.getId());
-//
-//	    List<FileOutputWebModel> mediaModels = new ArrayList<>();
-//
-//	    for (MediaFiles mediaFile : mediaFilesList) {
-//	        // Check and save view only if not already viewed
-//	        if (!storyViewRepository.existsByMediaFileAndViewer(mediaFile, viewer)) {
-//	            StoryView view = StoryView.builder()
-//	                    .story(story)
-//	                    .mediaFile(mediaFile)
-//	                    .viewer(viewer)
-//	                    .build();
-//	            storyViewRepository.save(view);
-//
-//	            // Increment media view count manually if you're tracking it per media
-//	            mediaFile.setViews((mediaFile.getViews() == null ? 0 : mediaFile.getViews() + 1));
-//	            mediaFilesService.save(mediaFile); // Ensure your MediaFilesService supports this
-//	        }
-//
-//	        // Add to response model
-//	        FileOutputWebModel mediaModel = mediaFilesService.convertToWebModel(mediaFile);
-//
-//	        // Add viewers (if current user is owner)
-//	        if (story.getUser().getUserId().equals(viewerId)) {
-//	            List<StoryView> mediaViews = storyViewRepository.findByMediaFile(mediaFile);
-//	            List<StoryViewerDTO> viewerDTOs = mediaViews.stream().map(v -> {
-//	                User u = v.getViewer();
-//	                return StoryViewerDTO.builder()
-//	                        .viewerId(u.getUserId())
-//	                        .viewerName(u.getName())
-//	                        .userProfilePic(userService.getProfilePicUrl(u.getUserId()))
-//	                        .viewedOn(v.getViewedOn())
-//	                        .build();
-//	            }).collect(Collectors.toList());
-//
-//	            mediaModel.setViewers(viewerDTOs);
-//	            mediaModel.setViewCount(viewerDTOs.size());
-//	        }
-//
-//	        mediaModels.add(mediaModel);
-//	    }
-//
-//	    return StoriesWebModel.builder()
-//	            .storyId(story.getStoryId())
-//	            .userId(story.getUser().getUserId())
-//	            .userName(story.getUser().getName())
-//	            .profileUrl(userService.getProfilePicUrl(story.getUser().getUserId()))
-//	            .description(story.getDescription())
-//	            .type(story.getType())
-//	            .viewCount(null) // Optional: remove story-level count if you're switching to per-media
-//	            .fileOutputWebModel(mediaModels)
-//	            .createdOn(story.getCreatedOn())
-//	            .build();
-//	}
 
-@Override
-public void saveMediaView(String storyId, Integer mediaFileId, Integer viewerId) {
-    Story story = storyRepository.findByStoryId(storyId);
-    MediaFiles mediaFile = mediaFilesRepository.findById(mediaFileId).orElse(null);
-    User viewer = userRepository.findById(viewerId).orElse(null);
+	//	@Override
+	//	public StoriesWebModel getStoryWithViews(String storyId, Integer viewerId) {
+	//	    Story story = storyRepository.findByStoryId(storyId);
+	//	    if (story == null) return null;
+	//
+	//	    User viewer = userRepository.findById(viewerId).orElse(null);
+	//	    if (viewer == null) return null;
+	//
+	//	    // Fetch all media files under this story
+	//	    List<MediaFiles> mediaFilesList = mediaFilesService.getMediaFilesByCategoryAndRefId(
+	//	            MediaFileCategory.Stories, story.getId());
+	//
+	//	    List<FileOutputWebModel> mediaModels = new ArrayList<>();
+	//
+	//	    for (MediaFiles mediaFile : mediaFilesList) {
+	//	        // Check and save view only if not already viewed
+	//	        if (!storyViewRepository.existsByMediaFileAndViewer(mediaFile, viewer)) {
+	//	            StoryView view = StoryView.builder()
+	//	                    .story(story)
+	//	                    .mediaFile(mediaFile)
+	//	                    .viewer(viewer)
+	//	                    .build();
+	//	            storyViewRepository.save(view);
+	//
+	//	            // Increment media view count manually if you're tracking it per media
+	//	            mediaFile.setViews((mediaFile.getViews() == null ? 0 : mediaFile.getViews() + 1));
+	//	            mediaFilesService.save(mediaFile); // Ensure your MediaFilesService supports this
+	//	        }
+	//
+	//	        // Add to response model
+	//	        FileOutputWebModel mediaModel = mediaFilesService.convertToWebModel(mediaFile);
+	//
+	//	        // Add viewers (if current user is owner)
+	//	        if (story.getUser().getUserId().equals(viewerId)) {
+	//	            List<StoryView> mediaViews = storyViewRepository.findByMediaFile(mediaFile);
+	//	            List<StoryViewerDTO> viewerDTOs = mediaViews.stream().map(v -> {
+	//	                User u = v.getViewer();
+	//	                return StoryViewerDTO.builder()
+	//	                        .viewerId(u.getUserId())
+	//	                        .viewerName(u.getName())
+	//	                        .userProfilePic(userService.getProfilePicUrl(u.getUserId()))
+	//	                        .viewedOn(v.getViewedOn())
+	//	                        .build();
+	//	            }).collect(Collectors.toList());
+	//
+	//	            mediaModel.setViewers(viewerDTOs);
+	//	            mediaModel.setViewCount(viewerDTOs.size());
+	//	        }
+	//
+	//	        mediaModels.add(mediaModel);
+	//	    }
+	//
+	//	    return StoriesWebModel.builder()
+	//	            .storyId(story.getStoryId())
+	//	            .userId(story.getUser().getUserId())
+	//	            .userName(story.getUser().getName())
+	//	            .profileUrl(userService.getProfilePicUrl(story.getUser().getUserId()))
+	//	            .description(story.getDescription())
+	//	            .type(story.getType())
+	//	            .viewCount(null) // Optional: remove story-level count if you're switching to per-media
+	//	            .fileOutputWebModel(mediaModels)
+	//	            .createdOn(story.getCreatedOn())
+	//	            .build();
+	//	}
 
-    if (story == null || mediaFile == null || viewer == null) return;
+	@Override
+	public void saveMediaView(String storyId, Integer mediaFileId, Integer viewerId, Boolean liked) {
+		Story story = storyRepository.findByStoryId(storyId);
+		MediaFiles mediaFile = mediaFilesRepository.findById(mediaFileId).orElse(null);
+		User viewer = userRepository.findById(viewerId).orElse(null);
 
-    // Don't save if viewer is the owner
-    if (story.getUser().getUserId().equals(viewerId)) return;
+		if (story == null || mediaFile == null || viewer == null) return;
 
-    // Avoid duplicate views
-    if (!storyViewRepository.existsByMediaFileAndViewer(mediaFile, viewer)) {
-        StoryView view = StoryView.builder()
-                .story(story)
-                .mediaFile(mediaFile)
-                .viewer(viewer)
-                .build();
-        storyViewRepository.save(view);
+		// Don't save if viewer is the owner
+		if (story.getUser().getUserId().equals(viewerId)) return;
 
-        // Update story view count
-        if (story.getViewCount() == null) {
-            story.setViewCount(1);
-        } else {
-            story.setViewCount(story.getViewCount() + 1);
-        }
-        storyRepository.save(story);
-        logger.info("✅ View saved for storyId: {}, by viewerId: {}", storyId, viewerId);
-    }
-}
+		// Avoid duplicate views
+		Optional<StoryView> optionalView = storyViewRepository.findByMediaFileAndViewer(mediaFile, viewer);
+
+		if (optionalView.isEmpty()) {
+			StoryView view = StoryView.builder()
+					.story(story)
+					.mediaFile(mediaFile)
+					.viewer(viewer)
+					.liked(Boolean.TRUE.equals(liked)) 
+					.build();
+			storyViewRepository.save(view);
+
+			// Update story view count
+			if (story.getViewCount() == null) {
+				story.setViewCount(1);
+			} else {
+				story.setViewCount(story.getViewCount() + 1);
+			}
+			storyRepository.save(story);
+			logger.info("✅ View saved for storyId: {}, by viewerId: {}", storyId, viewerId);
+		}
+		else {
+			// Already viewed: only update like if liked = true (not for false/unliked)
+			  StoryView existingView = optionalView.get();
+		        if (existingView.getLiked() != Boolean.TRUE.equals(liked)) {
+		            existingView.setLiked(Boolean.TRUE.equals(liked));
+		            storyViewRepository.save(existingView);
+		            logger.info("🔄 Like status updated for storyId: {}, viewerId: {}, liked: {}", storyId, viewerId, liked);
+		        
+			}
+		}
+		
+	}
 
 
 }
