@@ -30,6 +30,8 @@ import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.ShootingLocationBookingService;
 import com.annular.filmhook.util.HashGenerator;
+import com.annular.filmhook.util.NumberToWordsConverter;
+import com.annular.filmhook.util.NumberToWordsConverter;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
@@ -79,7 +81,7 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-
+import java.net.URL;
 
 @Service
 public class ShootingLocationBookingServiceImpl implements ShootingLocationBookingService {
@@ -115,6 +117,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Value("${payu.salt}")
 	private String salt;
+    String paymentRetryLink = "https://film-hookapps.com/retry-payment";
 
 	@Override
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
@@ -231,149 +234,200 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	
 	@Override
-public ResponseEntity<?> sendShootingLocationBookingMail(ShootingLocationPayURequest request) {
-    try {
-        String status = request.getStatus();
-        String txnid = request.getTxnid();
+	public ResponseEntity<?> sendShootingLocationBookingEmail(ShootingLocationBooking booking, ShootingLocationPayment payment, boolean isSuccess) {
+	    try {
+	        String txnid = payment.getTxnid();
+	        String customerName = payment.getFirstname();
+	        String customerEmail = payment.getEmail();
+	        String locationName = booking.getProperty().getPropertyName();
+	        String checkIn = booking.getShootStartDate().toString();
+	        String checkOut = booking.getShootEndDate().toString();
+	        String amount = "₹" + payment.getAmount();
+	        String subject = isSuccess ? "Your Shooting Location Booking is Confirmed" : "Payment Failed - Booking Not Confirmed";
 
-        // Fetch payment and booking
-        ShootingLocationPayment payment = paymentRepo.findByTxnid(txnid)
-                .orElseThrow(() -> new RuntimeException("Payment not found with txnid: " + txnid));
-        ShootingLocationBooking booking = payment.getBooking();
+	        StringBuilder content = new StringBuilder();
+	        content.append("<!DOCTYPE html><html><head>")
+	            .append("<meta charset='UTF-8'>")
+	            .append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+	            .append("<style>")
+	            .append("@media only screen and (max-width: 700px) {")
+	            .append(".email-container { width: 100% !important; padding: 10px !important; }")
+	            .append(".email-content td { display: block !important; width: 100% !important; box-sizing: border-box; }")
+	            .append("img { max-width: 100% !important; height: auto !important; }")
+	            .append("}")
+	            .append("</style></head>")
+	            .append("<body style='margin:0;padding:0;background:#f6f6f6;'>")
 
-        if (payment == null || booking == null) {
-            throw new RuntimeException("Payment or booking not found");
-        }
+	            .append("<table cellpadding='0' cellspacing='0' width='100%' style='background:#f6f6f6;'>")
+	            .append("<tr><td align='center'>")
 
-        boolean isSuccess = "SUCCESS".equalsIgnoreCase(status);
+	            .append("<table class='email-container' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%;background:#ffffff;border-radius:8px;padding:0px;font-family:Arial,sans-serif;'>")
 
-        // Update status
-        payment.setStatus(isSuccess ? "SUCCESS" : "FAILURE");
-        booking.setStatus(isSuccess ? BookingStatus.CONFIRMED : BookingStatus.CANCELLED);
-        paymentRepo.save(payment);
-        bookingRepo.save(booking);
+	            // Logo
+	            .append("<tr class='email-content'><td align='center' style='padding-bottom:0px;'>")
+	            .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' alt='FilmHook Logo' style='width:180px;max-width:100%;height:auto;'>")
+	            .append("</td></tr>")
 
-        // Common booking details
-        String locationName = booking.getProperty().getPropertyName();
-        String checkIn = booking.getShootStartDate().toString();
-        String checkOut = booking.getShootEndDate().toString();
-        String amount = "₹" + payment.getAmount();
-        String paymentStatus = payment.getStatus().trim();
-        String customerName = payment.getFirstname();
-        String customerEmail = payment.getEmail();
+	            // Greeting & Status
+	            .append("<tr><td style='color:#333;font-size:12px;line-height:1.6;'>")
+	            .append("<p>Dear <strong>").append(customerName).append("</strong>,</p>")
+	            .append("<p>").append(isSuccess
+	                ? "We are excited to inform you that your shooting location booking has been successfully confirmed on <strong>Film-Hook Apps</strong>! 🎉"
+	                : "We regret to inform you that your payment for booking the shooting location on <strong>Film-Hook Apps</strong> was unsuccessful. ❌")
+	            .append("</p>")
 
-        // === 1. Prepare Client Email ===
-        String clientSubject = isSuccess
-                ? "🎬 Your Shooting Location Booking is Confirmed"
-                : "Payment Failed - Booking Not Confirmed";
+	            // Booking Details
+	            .append("<h3 style='color:#000;'>Booking Details:</h3>")
+	            .append("<table width='100%' cellpadding='5' cellspacing='0' style='font-size:12px;'>")
+	            .append("<tr><td><strong>Location:</strong></td><td>").append(locationName).append("</td></tr>")
+	            .append("<tr><td><strong>Check-in:</strong></td><td>").append(checkIn).append("</td></tr>")
+	            .append("<tr><td><strong>Check-out:</strong></td><td>").append(checkOut).append("</td></tr>")
+	            .append("<tr><td><strong>Total Amount:</strong></td><td>").append(amount).append("</td></tr>")
+	            .append("<tr><td><strong>Status:</strong></td><td>").append(isSuccess ? "Confirmed ✅" : "Failed ❌").append("</td></tr>")
+	            .append("</table>");
 
-        StringBuilder clientContent = new StringBuilder();
-        clientContent.append("<html><body style='font-family:Arial,sans-serif;'>")
-                .append("<div style='padding:20px; border:1px solid #ddd; border-radius:6px;'>")
-                .append("<h2 style='color:#2956b8;'>Shooting Location ").append(isSuccess ? "Confirmation✅" : "Failure ❌").append("</h2>")
-                .append("<p>Hello <strong>").append(customerName).append("</strong>,</p>");
+	        // Retry or Success Message
+	        if (!isSuccess) {
+	            content.append("<p style='color:#d9534f;'>Unfortunately, due to the failed transaction, your booking has not been processed.</p>")
+	                   .append("<p>🔄 <a href='").append(paymentRetryLink).append("' style='color:#007bff;'>Retry Payment</a></p>");
+	        } else {
+	            content.append("<p>📌 Your booking has been confirmed. Please check your profile or contact support if you need further information.</p>");
+	        }
 
-        if (isSuccess) {
-            clientContent.append("<p>🎉 Your booking has been <strong>successfully confirmed</strong>.</p>");
-        } else {
-            clientContent.append("<p>⚠️ Unfortunately, your payment <strong>failed</strong>. Your booking is not confirmed.</p>");
-        }
+	        // Footer
+	        content.append("<p style='margin-top:20px;'>If you need any assistance, feel free to contact our support team.</p>")
+	            .append("<p style='margin-top:30px;'>Best Regards,<br><strong>Film-Hook Apps Team</strong><br>")
+	            .append("<a href='mailto:support@film-hookapps.com'>📧 support@film-hookapps.com</a> | ")
+	            .append("<a href='https://film-hookapps.com'>🌐 Visit Website</a></p>")
 
-        clientContent.append("<h4 style='margin-top:20px; border-bottom:1px solid #ccc;'>Booking Details:</h4>")
-                .append("<p>")
-                .append("<b>Location:</b> ").append(locationName).append("<br>")
-                .append("<b>Check-in:</b> ").append(checkIn).append("<br>")
-                .append("<b>Check-out:</b> ").append(checkOut).append("<br>")
-                .append("<b>Total Amount:</b> ").append(amount).append("<br>")
-                .append("<b>Status:</b> ").append(paymentStatus)
-                .append("</p>");
+	            .append("<hr style='border:0;border-top:1px solid #ddd;margin:20px 0;'>")
 
-        if (isSuccess) {
-            clientContent.append("<p>📎 Invoice is attached for your reference.</p>");
-        } else {
-            clientContent.append("<p>Please try again or contact support if you need help.</p>");
-        }
+	            // App Links
+	            .append("<p>📲 Get the App:</p><p>")
+	            .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='25'></a> ")
+	            .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='25'></a></p>")
 
-        clientContent.append("<p style='margin-top:30px;'>Best regards,<br><strong>FilmHook Team</strong><br>")
-                .append("<small>support@filmhook.com | +91-9876543xxx</small></p>")
-                .append("</div></body></html>");
+	            // Social Media
+	            .append("<p>📢 Follow Us:</p><p>")
+	            .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='20'></a> ")
+	            .append("<a href='https://x.com/Filmhook_Apps?t=KQJkjwuvBzTPOaL4FzDtIA&s=08/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='20'></a> ")
+	            .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='20'></a> ")
+	            .append("<a href='https://www.instagram.com/filmhookapps?igsh=dXdvNnB0ZGg5b2tx'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='20'></a> ")
+	            .append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='20'></a> ")
+	            .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='20'></a>")
+	            .append("</p></td></tr></table></td></tr></table></body></html>");
 
-        // === Send Client Email ===
-        MimeMessage clientMessage = javaMailSender.createMimeMessage();
-        MimeMessageHelper clientHelper = new MimeMessageHelper(clientMessage, true);
-        clientHelper.setTo(customerEmail);
-        clientHelper.setSubject(clientSubject);
-        clientHelper.setText(clientContent.toString(), true);
+	        // Send Email to Client
+	        MimeMessage clientMessage = javaMailSender.createMimeMessage();
+	        MimeMessageHelper clientHelper = new MimeMessageHelper(clientMessage, true);
+	        clientHelper.setTo(customerEmail);
+	        clientHelper.setSubject(subject);
+	        clientHelper.setText(content.toString(), true);
 
-        if (isSuccess) {
-            byte[] invoiceBytes = generateInvoicePdf(payment, booking);
-            DataSource attachment = new ByteArrayDataSource(invoiceBytes, "application/pdf");
-            clientHelper.addAttachment("Invoice_" + txnid + ".pdf", attachment);
-        }
+	        if (isSuccess) {
+	            byte[] invoiceBytes = generateInvoicePdf(payment, booking);
+	            DataSource attachment = new ByteArrayDataSource(invoiceBytes, "application/pdf");
+	            clientHelper.addAttachment("Invoice_" + txnid + ".pdf", attachment);
+	        }
 
-        javaMailSender.send(clientMessage);
+	        javaMailSender.send(clientMessage);
 
-        // === 2. Prepare and Send Owner Email (only if success) ===
-        if (isSuccess) {
-            User owner = booking.getProperty().getUser();
-            if (owner != null && owner.getEmail() != null) {
-                String ownerName = owner.getName();
-                if (ownerName != null && !ownerName.isEmpty()) {
-                    ownerName = Arrays.stream(ownerName.trim().split("\\s+"))
-                            .map(w -> w.substring(0, 1).toUpperCase() + w.substring(1).toLowerCase())
-                            .collect(Collectors.joining(" "));
-                }
+	        // === Owner Email ===
+	        if (isSuccess) {
+	            User owner = booking.getProperty().getUser();
+	            if (owner != null && owner.getEmail() != null) {
+	                String ownerName = owner.getName();
+	                if (ownerName != null && !ownerName.isEmpty()) {
+	                    ownerName = Arrays.stream(ownerName.trim().split("\\s+"))
+	                        .map(w -> w.substring(0, 1).toUpperCase() + w.substring(1).toLowerCase())
+	                        .collect(Collectors.joining(" "));
+	                }
 
-                String ownerSubject = "Your Property Has Been Booked!";
-                StringBuilder ownerContent = new StringBuilder();
-                ownerContent.append("<html><body style='font-family:Arial,sans-serif;'>")
-                        .append("<div style='max-width:600px; margin:0 auto; padding:20px; border:1px solid #e0e0e0; border-radius:8px; background-color:#f9f9f9;'>")
-                        .append("<h2 style='color:#1a73e8; font-size:22px; margin-bottom:10px;'>📢 New Booking Alert</h2>")
-                        .append("<p style='font-size:16px;'>Dear <strong>").append(ownerName).append("</strong>,</p>")
-                        .append("<p style='font-size:15px; line-height:1.6;'>")
-                        .append("We are pleased to inform you that your property <strong>")
-                        .append(locationName)
-                        .append("</strong> has been successfully booked by <strong>")
-                        .append(customerName)
-                        .append("</strong>.</p>")
-                        .append("<h4 style='color:#444; font-size:16px; margin-top:25px; border-bottom:1px solid #ccc; padding-bottom:5px;'>📋 Booking Details</h4>")
-                        .append("<table style='width:100%; font-size:14px; line-height:1.6;'>")
-                        .append("<tr><td style='width:150px;'><strong>Check-in:</strong></td><td>").append(checkIn).append("</td></tr>")
-                        .append("<tr><td><strong>Check-out:</strong></td><td>").append(checkOut).append("</td></tr>")
-                        .append("<tr><td><strong>Client Email:</strong></td><td>").append(customerEmail).append("</td></tr>")
-                        .append("<tr><td><strong>Total Amount:</strong></td><td>").append(amount).append("</td></tr>")
-                        .append("</table>")
-                        .append("<p style='margin-top:30px; font-size:14px;'>")
-                        .append("Please ensure the property is prepared and ready for the scheduled booking. If you have any questions, feel free to contact our support team.")
-                        .append("</p>")
-                        .append("<p style='margin-top:30px; font-size:14px;'>")
-                        .append("Best regards,<br><strong>FilmHook Team</strong><br>")
-                        .append("<span style='color:#888;'>support@filmhook.com | +91-9876543xxx</span>")
-                        .append("</p>")
-                        .append("</div></body></html>");
+	                String ownerSubject = "Your Property Has Been Booked!";
+	                StringBuilder ownerContent = new StringBuilder();
 
-                MimeMessage ownerMessage = javaMailSender.createMimeMessage();
-                MimeMessageHelper ownerHelper = new MimeMessageHelper(ownerMessage, true);
-                ownerHelper.setTo(owner.getEmail());
-                ownerHelper.setSubject(ownerSubject);
-                ownerHelper.setText(ownerContent.toString(), true);
+	                ownerContent.append("<!DOCTYPE html><html><head>")
+	                    .append("<meta charset='UTF-8'>")
+	                    .append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+	                    .append("<style>")
+	                    .append("@media only screen and (max-width: 600px) {")
+	                    .append("  .email-container { width: 100% !important; padding: 10px !important; }")
+	                    .append("  .email-content td { display: block !important; width: 100% !important; box-sizing: border-box; }")
+	                    .append("  img { max-width: 100% !important; height: auto !important; }")
+	                    .append("}")
+	                    .append("</style></head><body style='margin:0;padding:0;background:#f6f6f6;'>")
 
-                javaMailSender.send(ownerMessage);
-                return ResponseEntity.ok(new Response(1, "Emails sent to client and owner", null));
-            } else {
-                return ResponseEntity.ok(new Response(1, "Client email sent. Owner email not sent (missing details)", null));
-            }
-        }
+	                    .append("<table cellpadding='0' cellspacing='0' width='100%' style='background-color:#f6f6f6;'>")
+	                    .append("<tr><td align='center'>")
+	                    .append("<table class='email-container' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%;background:#ffffff;border-radius:8px;padding:10px;font-family:Arial,sans-serif;'>")
 
-        // If payment failed
-        return ResponseEntity.ok(new Response(1, "Client email sent (payment failed)", null));
+	                    // Logo
+	                    .append("<tr><td align='center' style='padding-bottom:10px;'>")
+	                    .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' alt='FilmHook Logo' style='width:160px;height:auto;'>")
+	                    .append("</td></tr>")
 
-    } catch (Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new Response(0, "Error sending emails: " + e.getMessage(), null));
-    }
-}
+	                    // Message
+	                    .append("<tr><td style='color:#333;font-size:12px;'>")
+	                    .append("<h3 style='color:#1a73e8;'> New Booking Alert</h3>")
+	                    .append("<p>Dear <strong>").append(ownerName).append("</strong>,</p>")
+	                    .append("<p>Your property <strong>").append(locationName).append("</strong> has been successfully booked by <strong>").append(customerName).append("</strong>.</p>")
+
+	                    // Booking Details
+	                    .append("<table width='100%' cellpadding='0' cellspacing='0' style='font-size:12px;'>")
+	                    .append("<tr><td><strong>Check-in:</strong></td><td>").append(checkIn).append("</td></tr>")
+	                    .append("<tr><td><strong>Check-out:</strong></td><td>").append(checkOut).append("</td></tr>")
+	                    .append("<tr><td><strong>Client Email:</strong></td><td>").append(customerEmail).append("</td></tr>")
+	                    .append("<tr><td><strong>Total Amount:</strong></td><td>").append(amount).append("</td></tr>")
+	                    .append("</table>")
+
+	                    .append("<p>📌 Please ensure your property is ready before check-in. Contact support if you need assistance.</p>")
+
+	                    // Footer
+	                    .append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
+	                    .append("<a href='mailto:support@filmhook.com'>📧 support@filmhook.com</a><br>")
+	                    .append("<a href='https://filmhook.com'>🌐 www.filmhook.com</a></p>")
+
+	                    // App Links
+	                    .append("<hr style='border:0;border-top:1px solid #ddd;margin:30px 0;'>")
+	                    .append("<p>📲 Get the App:</p><p>")
+	                    .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30' style='margin-right:10px;'></a>")
+	                    .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
+
+	                    // Social Links
+	                    .append("<p>📢 Follow Us:</p><p>")
+	                    .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='25' style='margin-right:8px;'></a>")
+	                    .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25' style='margin-right:8px;'></a>")
+	                    .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25' style='margin-right:8px;'></a>")
+	                    .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25' style='margin-right:8px;'></a>")
+	                    .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30' style='margin-right:1px;'></a>")
+	                    .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='35'></a>")
+	                    .append("</p>")
+
+	                    .append("</td></tr></table></td></tr></table></body></html>");
+	                
+	                
+
+	                MimeMessage ownerMessage = javaMailSender.createMimeMessage();
+	                MimeMessageHelper ownerHelper = new MimeMessageHelper(ownerMessage, true);
+	                ownerHelper.setTo(owner.getEmail());
+	                ownerHelper.setSubject(ownerSubject);
+	                ownerHelper.setText(ownerContent.toString(), true);
+
+	                javaMailSender.send(ownerMessage);
+	                return ResponseEntity.ok(new Response(1, "Emails sent to client and owner", null));
+	            } else {
+	                return ResponseEntity.ok(new Response(1, "Client email sent. Owner email not sent (missing details)", null));
+	            }
+	        }
+
+	        return ResponseEntity.ok(new Response(1, "Client email sent (payment failed)", null));
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	            .body(new Response(0, "Error sending emails: " + e.getMessage(), null));
+	    }
+	}
 
 
 	private byte[] generateInvoicePdf(ShootingLocationPayment payment, ShootingLocationBooking booking) {
@@ -385,7 +439,7 @@ public ResponseEntity<?> sendShootingLocationBookingMail(ShootingLocationPayUReq
 	        doc.setMargins(36, 36, 36, 36);
 
 	        DeviceRgb blue = new DeviceRgb(41, 86, 184);
-	        final int fontSize = 10;
+	        final int fontSize = 9;
 
 	        int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
 	        double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0.0;
@@ -393,13 +447,11 @@ public ResponseEntity<?> sendShootingLocationBookingMail(ShootingLocationPayUReq
 	        double gst = booking.getGstAmount() != null ? booking.getGstAmount() : 0.0;
 	        double total = booking.getTotalAmount() != null ? booking.getTotalAmount() : base + gst;
 
-	        // ✅ Load logo from classpath
-	        InputStream logoStream = getClass().getClassLoader().getResourceAsStream("static/images/logo.jpeg");
-	        if (logoStream == null) throw new RuntimeException("Logo image not found in classpath");
+	        // Logo
+	        InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
 	        Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
 	                .scaleToFit(120, 60)
-	                .setHorizontalAlignment(HorizontalAlignment.CENTER)
-	                .setMarginBottom(8);
+	                .setHorizontalAlignment(HorizontalAlignment.CENTER);
 	        doc.add(logo);
 
 	        doc.add(new Paragraph("TAX INVOICE")
@@ -409,118 +461,106 @@ public ResponseEntity<?> sendShootingLocationBookingMail(ShootingLocationPayUReq
 	                .setFontColor(blue)
 	                .setMarginBottom(10));
 
-	        // Company info
-	        Table header = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
-	                .setWidth(UnitValue.createPercentValue(100));
-	        header.addCell(new Cell()
-	                .add(new Paragraph("FilmHook Pvt. Ltd.")
-	                        .setBold().setFontSize(13).setFontColor(blue))
-	                .add(new Paragraph("Bangalore\nGSTIN: 29ABCDE1234F2Z5\nEmail: support@filmhook.com\nPhone: +91-9876543210")
-	                        .setFontSize(fontSize))
-	                .setBorder(Border.NO_BORDER));
-	        header.addCell(new Cell().setBorder(Border.NO_BORDER)); // empty
-	        doc.add(header);
-
-	        // Order Info
-	        Table orderInfo = new Table(UnitValue.createPercentArray(new float[]{33, 33, 33}))
-	                .setWidth(UnitValue.createPercentValue(100))
-	                .setMarginTop(15);
-	        orderInfo.addCell(getLightCell("Order No"));
-	        orderInfo.addCell(getLightCell("Date"));
-	        orderInfo.addCell(getLightCell("Customer ID"));
-	        orderInfo.addCell(getPlainCell("INV-" + payment.getTxnid()));
-	        orderInfo.addCell(getPlainCell(LocalDate.now().toString()));
-	        orderInfo.addCell(getPlainCell(payment.getEmail()));
-	        doc.add(orderInfo);
-
-	        doc.add(new Paragraph("\nBill To")
-	                .setFontSize(fontSize)
-	                .setBold()
-	                .setMarginTop(8));
-	        doc.add(new Paragraph("Name: " + payment.getFirstname())
-	                .setFontSize(fontSize)
-	                .setMarginBottom(10));
-
-	        // Charges Table
-	        Table charges = new Table(UnitValue.createPercentArray(new float[]{40, 20, 20, 20}))
+	        // Invoice metadata
+	        Table meta = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
 	                .setWidth(UnitValue.createPercentValue(100))
 	                .setMarginTop(10);
 
-	        charges.addHeaderCell(getStyledBottomBorderHeader("Description"));
-	        charges.addHeaderCell(getStyledBottomBorderHeader("Days"));
-	        charges.addHeaderCell(getStyledBottomBorderHeader("Rate/Day"));
-	        Cell totalHeader = getStyledBottomBorderHeader("Amount");
-	        totalHeader.setTextAlignment(TextAlignment.RIGHT);
-	        charges.addHeaderCell(totalHeader);
+	        meta.addCell(getPlainCell("Invoice To: " + payment.getFirstname()));
+	        meta.addCell(getPlainCell("Issued by: FilmHook Pvt. Ltd.\nGSTIN: 29ABCDE1234F2Z5\nAddress: Bangalore\nPhone: +91-9876543210"));
 
-	        charges.addCell(getStyledBottomBorderCell("Shooting Location Property: " + booking.getProperty().getPropertyName()));
-	        charges.addCell(getStyledBottomBorderCell(String.valueOf(days)));
-	        charges.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate)));
-	        Cell baseCell = getStyledBottomBorderCell("₹ " + String.format("%.2f", base));
-	        baseCell.setTextAlignment(TextAlignment.RIGHT);
-	        charges.addCell(baseCell);
+	        meta.addCell(getPlainCell("Order ID: " + payment.getTxnid()));
+	        meta.addCell(getPlainCell("Date of Invoice: " + LocalDate.now()));
 
-	        // Applied Tax
-	        Cell taxLabel = new Cell(1, 3)
-	                .add(new Paragraph("\nApplied Tax").setBold().setUnderline().setFontSize(9))
-	                .add(new Paragraph("(18% GST Included)").setFontSize(8))
-	                .setBorder(Border.NO_BORDER);
-	        Cell taxValue = new Cell()
-	                .add(new Paragraph("₹ " + String.format("%.2f", gst))
-	                        .setTextAlignment(TextAlignment.RIGHT).setFontSize(9))
-	                .setBorder(Border.NO_BORDER);
-	        charges.addCell(taxLabel);
-	        charges.addCell(taxValue);
+	        meta.addCell(getPlainCell("Service Description: Shooting Location Rental"));
+	        meta.addCell(getPlainCell("HSN Code: 996331\nReverse Charges: No"));
 
-	        // Total Invoice
-	        Cell totalLabel = new Cell(1, 3)
-	                .add(new Paragraph("Total Invoice Value")
+	        doc.add(meta);
+
+	        // Item Table
+	        Table itemTable = new Table(UnitValue.createPercentArray(new float[]{25, 10, 10, 15, 15, 10, 15}))
+	                .setWidth(UnitValue.createPercentValue(100))
+	                .setMarginTop(10);
+
+	        itemTable.addHeaderCell(getStyledBottomBorderHeader("Description"));
+	        itemTable.addHeaderCell(getStyledBottomBorderHeader("UOM"));
+	        itemTable.addHeaderCell(getStyledBottomBorderHeader("Qty"));
+	        itemTable.addHeaderCell(getStyledBottomBorderHeader("Unit Price"));
+	        itemTable.addHeaderCell(getStyledBottomBorderHeader("Amount"));
+	        itemTable.addHeaderCell(getStyledBottomBorderHeader("Discount"));
+	        itemTable.addHeaderCell(getStyledBottomBorderHeader("Net Value"));
+
+	        itemTable.addCell(getStyledBottomBorderCell("Shooting Location: " + booking.getProperty().getPropertyName()));
+	        itemTable.addCell(getStyledBottomBorderCell("OTH"));
+	        itemTable.addCell(getStyledBottomBorderCell(String.valueOf(days)));
+	        itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate)));
+	        itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate * days)));
+	        itemTable.addCell(getStyledBottomBorderCell("₹ 0.00"));
+	        itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", base)));
+
+	        doc.add(itemTable);
+
+	        // Taxes
+	        Table taxTable = new Table(UnitValue.createPercentArray(new float[]{60, 10, 30}))
+	                .setWidth(UnitValue.createPercentValue(100))
+	                .setMarginTop(10);
+
+	        taxTable.addCell(getLightCell("Taxes"));
+	        taxTable.addCell(getLightCell("Rate"));
+	        taxTable.addCell(getLightCell("Amount"));
+
+	        taxTable.addCell(getPlainCell("CGST")).addCell(getPlainCell("2.5%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
+	        taxTable.addCell(getPlainCell("SGST")).addCell(getPlainCell("2.5%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
+
+	        taxTable.addCell(getLightCell("Total Taxes")).addCell(getPlainCell("")).addCell(getPlainCell("₹ " + String.format("%.2f", gst)));
+
+	        doc.add(taxTable);
+
+	        // Total
+	        Table totalTable = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
+	                .setWidth(UnitValue.createPercentValue(100))
+	                .setMarginTop(10);
+
+	        totalTable.addCell(new Cell().add(new Paragraph("Invoice Total").setFontSize(11).setBold())
+	                .setBorder(Border.NO_BORDER));
+
+	        totalTable.addCell(new Cell().add(new Paragraph("₹ " + String.format("%.2f", total))
 	                        .setFontColor(blue)
-	                        .setBold().setFontSize(10))
-	                .setBorderTop(new SolidBorder(ColorConstants.GRAY, 0.5f))
-	                .setBorder(Border.NO_BORDER);
-	        Cell totalAmount = new Cell()
-	                .add(new Paragraph("₹ " + String.format("%.2f", total))
-	                        .setFontSize(10)
 	                        .setBold()
-	                        .setFontColor(blue)
+	                        .setFontSize(11)
 	                        .setTextAlignment(TextAlignment.RIGHT))
-	                .setBorderTop(new SolidBorder(ColorConstants.GRAY, 0.5f))
-	                .setBorder(Border.NO_BORDER);
-	        charges.addCell(totalLabel);
-	        charges.addCell(totalAmount);
+	                .setBorder(Border.NO_BORDER));
 
-	        doc.add(charges);
+	        doc.add(totalTable);
 
-	        doc.add(new Paragraph("\nDeclaration")
-	                .setBold()
-	                .setFontSize(12)
-	                .setMarginTop(20));
+	        // Amount in words
+	        doc.add(new Paragraph("\nInvoice total in words: " + convertToIndianCurrency(total))
+	                .setFontSize(9)
+	                .setItalic());
+
+	        // Declaration
+	        doc.add(new Paragraph("\nDeclaration").setBold().setFontSize(11).setMarginTop(20));
 	        doc.add(new Paragraph("We declare that this invoice shows the actual price of the services provided and that all particulars are true and correct.")
 	                .setFontSize(fontSize));
 
-	        // ✅ Load signature from classpath
-	        InputStream signStream = getClass().getClassLoader().getResourceAsStream("static/images/Signature.jpeg");
-	        if (signStream == null) throw new RuntimeException("Signature image not found in classpath");
-	        Image sign = new Image(ImageDataFactory.create(signStream.readAllBytes()))
-	                .scaleToFit(80, 30);
-	        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
+	        // Signature
+	        InputStream signStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+	        Image sign = new Image(ImageDataFactory.create(signStream.readAllBytes())).scaleToFit(80, 30);
+	        Paragraph signText = new Paragraph("Digitally Signed by FilmHook Pvt. Ltd.")
 	                .setFontSize(9)
 	                .setTextAlignment(TextAlignment.RIGHT);
 	        Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
 	        Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
-	        signTable.addCell(new Cell().add(signBlock)
-	                .setBorder(Border.NO_BORDER)
-	                .setTextAlignment(TextAlignment.RIGHT));
+	        signTable.addCell(new Cell().add(signBlock).setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT));
 	        doc.add(signTable);
 
 	        doc.close();
 	        return baos.toByteArray();
-
 	    } catch (Exception e) {
 	        throw new RuntimeException("Failed to generate invoice PDF", e);
 	    }
 	}
+
 	private Cell getLightCell(String text) {
 	    return new Cell().add(new Paragraph(text).setBold().setFontSize(9))
 	            .setBackgroundColor(new DeviceRgb(245, 245, 245))
@@ -533,7 +573,7 @@ public ResponseEntity<?> sendShootingLocationBookingMail(ShootingLocationPayUReq
 
 	private Cell getStyledBottomBorderHeader(String text) {
 	    return new Cell()
-	            .add(new Paragraph(text).setBold().setFontSize(10))
+	            .add(new Paragraph(text).setBold().setFontSize(9))
 	            .setBorderTop(Border.NO_BORDER)
 	            .setBorderLeft(Border.NO_BORDER)
 	            .setBorderRight(Border.NO_BORDER)
@@ -548,7 +588,12 @@ public ResponseEntity<?> sendShootingLocationBookingMail(ShootingLocationPayUReq
 	            .setBorderRight(Border.NO_BORDER)
 	            .setBorderBottom(new SolidBorder(ColorConstants.LIGHT_GRAY, 0.5f));
 	}
-
+	public static String convertToIndianCurrency(double amount) {
+	    long rupees = (long) amount;
+	    long paise = Math.round((amount - rupees) * 100);
+	    return NumberToWordsConverter.convert(rupees) + " Rupees " +
+	           (paise > 0 ? NumberToWordsConverter.convert(paise) + " Paise" : "") + " Only";
+	}
 
 
 	@Scheduled(cron = "0 0 17 * * *") // Every day at 5:00 PM

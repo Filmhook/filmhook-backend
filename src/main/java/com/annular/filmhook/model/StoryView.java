@@ -40,4 +40,6 @@ public class StoryView {
     @CreationTimestamp
     @Column(name = "viewed_on", nullable = false, updatable = false)
     private Date viewedOn;
+    
+   
 }

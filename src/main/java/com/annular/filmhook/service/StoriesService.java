@@ -21,7 +21,8 @@ public interface StoriesService {
 
     void deleteStory(Story storyToUpdate);
 
-    Story deleteStoryById(Integer id);
+    public Story deleteStoryById(String storyId, Integer userId);
+
 
     List<Story> deleteStoryByUserId(Integer userId);
 
