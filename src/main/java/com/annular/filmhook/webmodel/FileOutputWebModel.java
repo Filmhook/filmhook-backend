@@ -30,13 +30,14 @@ public class FileOutputWebModel {
 
     private Integer createdBy;
     private Date createdOn;
-    private Integer updatedBy;
+    private Integer updatedBy;	
     private Date updatedOn;
 
     private String elapsedTime;
     private String filmHookCode;
     private Long duration;
     private Integer viewCount;
+    private Integer likedCount;
     private List<StoryViewerDTO> viewedBy;
     private String storyId;
 
