@@ -1,6 +1,7 @@
 package com.annular.filmhook.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,6 +23,6 @@ public interface StoryViewRepository extends JpaRepository<StoryView, Integer> {
 	    
 	    boolean existsByStoryAndViewer(Story story, User viewer);
 
-
+	    Optional<StoryView> findByMediaFileAndViewer(MediaFiles mediaFile, User viewer);
 }
  

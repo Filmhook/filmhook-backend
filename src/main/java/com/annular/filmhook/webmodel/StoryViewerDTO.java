@@ -13,4 +13,5 @@ public class StoryViewerDTO {
     private String userProfilePic;
     private Date viewedOn;
     private String viewedAtText; 
+    private Boolean liked;
 }

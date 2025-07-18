@@ -82,6 +82,7 @@ import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import java.net.URL;
+import java.net.URLEncoder;
 
 @Service
 public class ShootingLocationBookingServiceImpl implements ShootingLocationBookingService {
@@ -117,7 +118,8 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Value("${payu.salt}")
 	private String salt;
-    String paymentRetryLink = "https://film-hookapps.com/retry-payment";
+	
+//    String paymentRetryLink = "https://filmhookapps.com/shooting-location-retry-payment";
 
 	@Override
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
@@ -244,6 +246,8 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        String checkOut = booking.getShootEndDate().toString();
 	        String amount = "₹" + payment.getAmount();
 	        String subject = isSuccess ? "Your Shooting Location Booking is Confirmed" : "Payment Failed - Booking Not Confirmed";
+	        String paymentRetryLink = "https://filmhookapps.com/retry-payment?txnid=" + payment.getTxnid();
+
 
 	        StringBuilder content = new StringBuilder();
 	        content.append("<!DOCTYPE html><html><head>")

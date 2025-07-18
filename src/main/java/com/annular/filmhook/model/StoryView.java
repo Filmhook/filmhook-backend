@@ -36,6 +36,9 @@ public class StoryView {
     @ManyToOne
     @JoinColumn(name = "viewer_id", nullable = false)
     private User viewer;
+    
+    @Column(nullable = false)
+    private Boolean liked = false;
 
     @CreationTimestamp
     @Column(name = "viewed_on", nullable = false, updatable = false)

@@ -1,5 +1,8 @@
 package com.annular.filmhook.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
-
+import com.annular.filmhook.model.Audition;
+import com.annular.filmhook.repository.AuditionRepository;
 import com.annular.filmhook.service.AuditionService;
 
 import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
@@ -34,7 +38,9 @@ public class AuditionController {
 
     @Autowired
     AuditionService auditionService;
-
+    
+    @Autowired
+    AuditionRepository auditionRepository;
 //	@Autowired
 //	KafkaProducer kafkaProducer;
 
@@ -197,6 +203,25 @@ public class AuditionController {
     @GetMapping("getAuditionsBySubCategory/{subCategoryId}")
     public ResponseEntity<?> getAuditionsBySubCategory(@PathVariable Integer subCategoryId) {
         return auditionService.getAuditionBySubCategory(subCategoryId);
+    }
+    
+    @GetMapping("/payment-retry-details")
+    public ResponseEntity<?> getAuditionRetryDetails(@RequestParam Integer auditionId) {
+    	
+		Audition audition = auditionRepository.findById(auditionId)
+            .orElseThrow(() -> new RuntimeException("Audition not found"));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("auditionId", audition.getAuditionId());
+        data.put("title", audition.getAuditionTitle());
+        data.put("category", audition.getAuditionCategory());
+        data.put("company", audition.getCompanyName());
+//        data.put("amount", audition.getAmount()); // or whatever payment info you store
+        data.put("userName", audition.getUser().getName());
+        data.put("email", audition.getUser().getEmail());
+        // Add any other info needed
+
+        return ResponseEntity.ok(new Response(1, "Audition retry details fetched", data));
     }
 
 }

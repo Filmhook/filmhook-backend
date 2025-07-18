@@ -1,15 +1,24 @@
 package com.annular.filmhook.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.Promote;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.PromoteRepository;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PaymentDetailsService;
 import com.annular.filmhook.webmodel.LiveDetailsWebModel;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
@@ -17,9 +26,12 @@ import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
 @RestController
 @RequestMapping("/payment")
 public class PaymentDetailsController {
-	
+	@Autowired
+	private PromoteRepository promoteRepository; 
 	@Autowired
 	PaymentDetailsService paymentDetailsService;
+	@Autowired
+	private UserRepository userRepository;
 	
 	public static final Logger logger = LoggerFactory.getLogger(PaymentDetailsController.class);
 	
@@ -84,4 +96,24 @@ public class PaymentDetailsController {
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
 
+    @GetMapping("/retry-details")
+    public ResponseEntity<?> getPromotionRetryDetails(@RequestParam Integer promotionId) {
+        Promote promote = promoteRepository.findById(promotionId)
+            .orElseThrow(() -> new RuntimeException("Promotion not found"));
+
+        Integer userId = promote.getUserId();
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("promotionId", promote.getPromoteId());
+        data.put("amount", promote.getAmount());
+        data.put("name", user.getName());
+        data.put("email", user.getEmail());
+
+        return ResponseEntity.ok(new Response(1, "Retry payment data", data));
+    }
+
+
+    
 }

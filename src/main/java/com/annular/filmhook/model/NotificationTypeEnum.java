@@ -5,6 +5,7 @@ public enum NotificationTypeEnum {
     Post,
     Share,
     Tags,
-    BookingRequest
+    BookingRequest,
+    Like
 
 }

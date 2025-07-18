@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -238,6 +239,33 @@ public class ShootingLocationBookingController {
 	    return ResponseEntity.ok(chatHistory);
 	}
 
-	
+	@GetMapping("/payment/retry-details")
+	public ResponseEntity<?> getRetryPaymentDetails(@RequestParam String txnid) {
+	    try {
+	        ShootingLocationPayment payment = paymentRepo.findByTxnid(txnid)
+	                .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+	        ShootingLocationBooking booking = payment.getBooking();
+	        if (booking == null) {
+	            return ResponseEntity.badRequest().body(new Response(0, "Booking not found for this payment", null));
+	        }
+
+	        Map<String, Object> data = new HashMap<>();
+	        data.put("txnid", payment.getTxnid());
+	        data.put("amount", payment.getAmount());
+	        data.put("name", payment.getFirstname());
+	        data.put("email", payment.getEmail());
+	        data.put("phone", payment.getPhone());
+	        data.put("locationName", booking.getProperty().getPropertyName());
+	        data.put("checkIn", booking.getShootStartDate());
+	        data.put("checkOut", booking.getShootEndDate());
+
+	        return ResponseEntity.ok(new Response(1, "Retry payment details fetched", data));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(0, "Error fetching retry details: " + e.getMessage(), null));
+	    }
+	}
+
 
 }
