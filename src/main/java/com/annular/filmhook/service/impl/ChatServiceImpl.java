@@ -329,16 +329,17 @@ public class ChatServiceImpl implements ChatService {
 	public void getLatestChatMessage(User user, ChatUserWebModel chatUserWebModel, Integer loggedInUserId) {
 	    String latestMsg = "";
 	    Date latestMsgTime = null;
-
+	    boolean isLatestStory = false;
 	    try {
 	        Optional<Chat> lastChat = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
 
 	        if (lastChat.isPresent()) {
 	            Chat chat = lastChat.get();
 
-	            if ("story".equalsIgnoreCase(chat.getReplyType())) {
-	                latestMsg = "Replied to your story";
-	            } else if (!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
+	            if ("story".equalsIgnoreCase(chat.getReplyType())) {	               
+	                isLatestStory = true;
+	                latestMsg = chat.getMessage();
+	            } else if(!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
 	                latestMsg = chat.getMessage();
 	            } else {
 	                List<FileOutputWebModel> files = mediaFilesService
@@ -367,6 +368,7 @@ public class ChatServiceImpl implements ChatService {
 
 	    chatUserWebModel.setLatestMessage(latestMsg);
 	    chatUserWebModel.setLatestMsgTime(latestMsgTime);
+	    chatUserWebModel.setIsLatestStory(isLatestStory);
 	}
 
 //	@Override

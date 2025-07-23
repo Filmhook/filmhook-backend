@@ -22,6 +22,7 @@ public class ChatUserWebModel {
     private int receiverUnreadCount;
     private Float adminReview;
     private Boolean onlineStatus;
+    private Boolean isLatestStory;
     
 
 }
