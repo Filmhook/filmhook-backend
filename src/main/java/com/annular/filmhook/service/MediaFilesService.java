@@ -25,7 +25,7 @@ public interface MediaFilesService {
 
     void deleteMediaFilesByCategoryAndRefIds(MediaFileCategory category, List<Integer> idList);
     
-    
+    FileOutputWebModel getMediaFileById(Integer id);
     
 
 }

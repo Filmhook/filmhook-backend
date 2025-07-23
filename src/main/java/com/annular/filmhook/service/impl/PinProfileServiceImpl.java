@@ -323,6 +323,7 @@ public class PinProfileServiceImpl implements PinProfileService {
                 .createdOn(post.getCreatedOn())
                 .createdBy(post.getCreatedBy())
                 .taggedUsers(taggedUsers)
+                .viewsCount(post.getViewsCount())            
                 .build();
     }
     @Override

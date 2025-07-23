@@ -600,94 +600,179 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	}
 
 
-	@Scheduled(cron = "0 0 17 * * *") // Every day at 5:00 PM
+	@Scheduled(cron = "0 0 17 * * *") // Runs daily at 5:00 PM
 	public void sendBookingExpiryReminders() {
-		LocalDate tomorrow = LocalDate.now().plusDays(1);
-		List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDate(tomorrow);
+	    LocalDate tomorrow = LocalDate.now().plusDays(1);
+	    List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDate(tomorrow);
 
-		logger.info("Found {} bookings ending tomorrow ({})", bookings.size(), tomorrow);
+	    logger.info("🔍 Found {} bookings ending on {}", bookings.size(), tomorrow);
 
-		for (ShootingLocationBooking booking : bookings) {
-			// ✅ Check if payment exists and is marked as SUCCESS
-			Optional<ShootingLocationPayment> paymentOpt = paymentRepo.findByBooking_IdAndStatus(booking.getId(), "SUCCESS");
+	    for (ShootingLocationBooking booking : bookings) {
+	        Integer bookingId = booking.getId();
+	        String clientEmail = booking.getClient().getEmail();
 
-			if (paymentOpt.isPresent()) {
-				try {
-					sendReminderEmail(booking);
-					logger.info("✅ Reminder email sent to {} for booking {}", booking.getClient().getEmail(), booking.getId());
-				} catch (Exception ex) {
-					logger.error("❌ Failed to send reminder for booking {}: {}", booking.getId(), ex.getMessage(), ex);
-				}
-			} else {
-				logger.info("⏭️ Skipping booking {} – no successful payment found", booking.getId());
-			}
-		}
+	        // ✅ Check for successful payment
+	        Optional<ShootingLocationPayment> paymentOpt = paymentRepo.findByBooking_IdAndStatus(bookingId, "SUCCESS");
+
+	        if (paymentOpt.isPresent()) {
+	            try {
+	                sendReminderEmail(booking);
+	                logger.info("✅ Reminder email sent to '{}' for booking ID {}", clientEmail, bookingId);
+	            } catch (Exception ex) {
+	                logger.error("❌ Failed to send reminder for booking ID {} to '{}': {}", bookingId, clientEmail, ex.getMessage(), ex);
+	            }
+	        } else {
+	            logger.info("⏭️ Skipping booking ID {} – no successful payment found", bookingId);
+	        }
+	    }
 	}
+
 
 
 	private void sendReminderEmail(ShootingLocationBooking booking) throws MessagingException {
-		String to = booking.getClient().getEmail();
-		String name = booking.getClient().getName();
-		String subject = "⏳ Reminder: Your shoot at “" + booking.getProperty().getPropertyName() + "” ends tomorrow";
-		String html =
-				"<html><body>" +
-						"<p>Hi " + name + ",</p>" +
-						"<p>This is a friendly reminder that your booking at <b>" +
-						booking.getProperty().getPropertyName() +
-						"</b> will end on <b>" + booking.getShootEndDate() + "</b>.</p>" +
-						"<p>Thank you for choosing FilmHook!</p>" +
-						"</body></html>";
+	    String to = booking.getClient().getEmail();
+	    String name = booking.getClient().getName();
+	    String subject = "⏳ Reminder: Your shoot at \"" + booking.getProperty().getPropertyName() + "\" ends tomorrow";
 
-		MimeMessage message = javaMailSender.createMimeMessage();
-		MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-		helper.setTo(to);
-		helper.setSubject(subject);
-		helper.setText(html, true); 
-		javaMailSender.send(message);
+	    StringBuilder html = new StringBuilder();
+	    html.append("<html><body style='font-family:Arial, sans-serif;'>")
+	        .append("<p>Hi ").append(name).append(",</p>")
+	        .append("<p>This is a kind reminder that your booking at <b>")
+	        .append(booking.getProperty().getPropertyName())
+	        .append("</b> is scheduled to end on <b>")
+	        .append(booking.getShootEndDate())
+	        .append("</b>.</p>")
+
+	        .append("<h3>Booking Summary</h3>")
+	        .append("<table style='border-collapse: collapse;'>")
+	        .append("<tr><td><b>Property:</b></td><td>")
+	        .append(booking.getProperty().getPropertyName()).append("</td></tr>")
+	        .append("<tr><td><b>Start Date:</b></td><td>")
+	        .append(booking.getShootStartDate()).append("</td></tr>")
+	        .append("<tr><td><b>⏳ End Date:</b></td><td>")
+	        .append(booking.getShootEndDate()).append("</td></tr>")
+	        .append("<tr><td><b>Location:</b></td><td>")
+	        .append(booking.getProperty().getLocation()).append("</td></tr>")
+	        .append("</table>")
+
+	        .append("<p>We hope everything is going smoothly with your shoot. If you need an extension or assistance, feel free to reach out.</p>")
+	        .append("<p>Thank you for choosing <b>FilmHook</b>!</p>")
+
+	        // App Links
+	        .append("<hr style='border:0;border-top:1px solid #ddd;margin:30px 0;'>")
+	        .append("<p>📲 <b>Get the App:</b></p><p>")
+	        .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30' style='margin-right:10px;'></a>")
+	        .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
+
+	        // Social Links
+	        .append("<p>📢 <b>Follow Us:</b></p><p>")
+	        .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30' style='margin-right:1px;'></a>")
+	        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='35'></a>")
+	        .append("</p>")
+
+	        .append("</body></html>");
+
+	    MimeMessage message = javaMailSender.createMimeMessage();
+	    MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+	    helper.setTo(to);
+	    helper.setSubject(subject);
+	    helper.setText(html.toString(), true); // Enable HTML
+	    javaMailSender.send(message);
 	}
 
-	@Scheduled(cron = "0 30 0 * * *") // Every day at 12:30 AM
+	@Scheduled(cron = "0 30 0 * * *") // Runs every day at 12:30 AM
 	public void markBookingsAsCompleted() {
-		LocalDate today = LocalDate.now();
+	    LocalDate today = LocalDate.now();
 
-		List<ShootingLocationBooking> expiredBookings = bookingRepo.findByShootEndDateLessThanEqualAndStatus(today, BookingStatus.CONFIRMED);
+	    List<ShootingLocationBooking> expiredBookings =
+	            bookingRepo.findByShootEndDateLessThanEqualAndStatus(today, BookingStatus.CONFIRMED);
 
-		logger.info("Found {} CONFIRMED bookings to mark as COMPLETED", expiredBookings.size());
+	    logger.info("📅 [{}] Found {} confirmed bookings ending on or before today to mark as COMPLETED",
+	            today, expiredBookings.size());
 
-		for (ShootingLocationBooking booking : expiredBookings) {
-			try {
-				booking.setStatus(BookingStatus.COMPLETED);
-				bookingRepo.save(booking);
-				logger.info("✅ Booking ID {} marked as COMPLETED", booking.getId());
-				// Send email notification
-				sendCompletionEmail(booking);
-			} catch (Exception ex) {
-				logger.error("❌ Error updating booking {}: {}", booking.getId(), ex.getMessage(), ex);
-			}
-		}}
+	    for (ShootingLocationBooking booking : expiredBookings) {
+	        Integer bookingId = booking.getId();
+	        String clientEmail = booking.getClient() != null ? booking.getClient().getEmail() : "unknown";
+
+	        try {
+	            booking.setStatus(BookingStatus.COMPLETED);
+	            bookingRepo.save(booking);
+	            logger.info("✅ Booking ID {} marked as COMPLETED", bookingId);
+
+	            // Send completion email
+	            sendCompletionEmail(booking);
+	            logger.info("📩 Completion email sent to {}", clientEmail);
+
+	        } catch (Exception ex) {
+	            logger.error("❌ Error completing booking ID {} for email '{}': {}", bookingId, clientEmail, ex.getMessage(), ex);
+	        }
+	    }
+	}
+
 
 	private void sendCompletionEmail(ShootingLocationBooking booking) throws MessagingException {
-		String to = booking.getClient().getEmail();
-		String name = booking.getClient().getName();
-		String property = booking.getProperty().getPropertyName();
+	    String to = booking.getClient().getEmail();
+	    String name = booking.getClient().getName();
+	    String property = booking.getProperty().getPropertyName();
 
-		String subject = "📸 Booking Completed - Thank You for Choosing FilmHook!";
-		String html = "<html><body>" +
-				"<p>Hi " + name + ",</p>" +
-				"<p>We hope your shoot at <b>" + property + "</b> was a success! 🎬</p>" +
-				"<p>Your booking has now been marked as <b>COMPLETED</b> as of <b>" + booking.getShootEndDate() + "</b>.</p>" +
-				"<p>Thank you for using <b>FilmHook</b>. We look forward to serving you again!</p>" +
-				"<p>📧 <a href='mailto:support@film-hookapps.com'>Contact Support</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Website</a></p>" +
-				"</body></html>";
+	    String subject = "📸 Booking Completed - Thank You for Choosing FilmHook!";
 
-		MimeMessage message = javaMailSender.createMimeMessage();
-		MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-		helper.setTo(to);
-		helper.setSubject(subject);
-		helper.setText(html, true);
-		javaMailSender.send(message);
+	    StringBuilder html = new StringBuilder();
+	    html.append("<html><body style='font-family:Arial,sans-serif; color:#333;'>")
 
-		logger.info("📩 Completion email sent to {}", to);
+	        .append("<p>Hi ").append(name).append(",</p>")
+
+	        .append("<p>We hope your shoot at <b>").append(property).append("</b> was a great success! 🎬</p>")
+	        .append("<p>Your booking has been marked as <b>COMPLETED</b> as of <b>")
+	        .append(booking.getShootEndDate()).append("</b>.</p>")
+
+	        .append("<h3>Booking Summary</h3>")
+	        .append("<table style='line-height: 1.6;'>")
+	        .append("<tr><td><b>Property:</b></td><td>").append(property).append("</td></tr>")
+	        .append("<tr><td><b>Start Date:</b></td><td>").append(booking.getShootStartDate()).append("</td></tr>")
+	        .append("<tr><td><b>End Date:</b></td><td>").append(booking.getShootEndDate()).append("</td></tr>")
+	        .append("<tr><td><b>Location:</b></td><td>").append(booking.getProperty().getLocation()).append("</td></tr>")
+	        .append("</table>")
+
+	        .append("<p>Thank you for using <b>FilmHook</b>. We hope to work with you again soon! 😊</p>")
+
+	        .append("<p>Need help or have feedback? We'd love to hear from you.</p>")
+	        .append("<p>📧 <a href='mailto:support@film-hookapps.com'>Contact Support</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Our Website</a></p>")
+
+	        // App download section
+	        .append("<hr style='border:0;border-top:1px solid #ddd;margin:30px 0;'>")
+	        .append("<p><b>📲 Get the App:</b></p><p>")
+	        .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'>")
+	        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' width='30' style='margin-right:10px;' alt='Play Store'/>")
+	        .append("</a>")
+	        .append("<a href='#'>")
+	        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' width='30' alt='App Store'/>")
+	        .append("</a></p>")
+
+	        // Social media section
+	        .append("<p><b>📢 Follow Us:</b></p><p>")
+	        .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25' style='margin-right:8px;'></a>")
+	        .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30' style='margin-right:1px;'></a>")
+	        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='35'></a>")
+	        .append("</p>")
+
+	        .append("</body></html>");
+
+	    MimeMessage message = javaMailSender.createMimeMessage();
+	    MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+	    helper.setTo(to);
+	    helper.setSubject(subject);
+	    helper.setText(html.toString(), true);
+	    javaMailSender.send(message);
+
+	    logger.info("📩 Completion email sent to {}", to);
 	}
 
 	@Override
