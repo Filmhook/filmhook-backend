@@ -383,5 +383,25 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             e.printStackTrace();
         }
     }
+    
+ // File: MediaFilesServiceImpl.java
+
+    @Override
+    public FileOutputWebModel getMediaFileById(Integer id) {
+        FileOutputWebModel output = null;
+        try {
+            Optional<MediaFiles> mediaFileOpt = mediaFilesRepository.findById(id);
+            if (mediaFileOpt.isPresent() && mediaFileOpt.get().getStatus()) {
+                output = transformData(mediaFileOpt.get());
+            } else {
+                logger.warn("Media file not found or inactive for id: {}", id);
+            }
+        } catch (Exception e) {
+            logger.error("Error in getMediaFileById() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return output;
+    }
+
 
 }

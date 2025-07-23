@@ -131,7 +131,10 @@ public class ShootingLocationBookingController {
 	            // Fetch payment by txnid
 	            ShootingLocationPayment payment = paymentRepo.findByTxnid(txnid)
 	                    .orElseThrow(() -> new RuntimeException("Payment not found for txnid: " + txnid));
-
+	            
+	            payment.setStatus(status.toUpperCase()); 
+	            paymentRepo.save(payment); 
+	            
 	            // Get the booking from payment
 	            ShootingLocationBooking booking = payment.getBooking();
 	            if (booking == null) {

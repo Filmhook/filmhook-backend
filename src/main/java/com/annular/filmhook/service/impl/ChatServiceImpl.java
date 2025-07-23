@@ -39,6 +39,7 @@ import com.annular.filmhook.model.MarketPlaceChat;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.ShootingLocationChat;
+import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.ChatMediaDeleteTrackerRepository;
 import com.annular.filmhook.repository.ChatRepository;
@@ -46,6 +47,7 @@ import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.MarketPlaceChatRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.ShootingLocationChatRepository;
+import com.annular.filmhook.repository.StoryRepository;
 import com.annular.filmhook.repository.UserRepository;
 
 import com.annular.filmhook.service.ChatService;
@@ -96,6 +98,9 @@ public class ChatServiceImpl implements ChatService {
 	
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
+	
+	@Autowired
+    StoryRepository storyRepository;
 	
 	@Autowired
 	 ChatMediaDeleteTrackerRepository chatMediaDeleteTrackerRepository;
@@ -449,120 +454,136 @@ public class ChatServiceImpl implements ChatService {
 //	        logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
 //	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
 //	    }
-//	}
-	@Override
-	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
-	    Map<String, Object> response = new HashMap<>();
-	    try {
-	        // Fetch the user by receiver ID
-	        User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
-	        if (user == null) {
-	            return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
-	        }
+	//	}
+		@Override
+		public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
+		    Map<String, Object> response = new HashMap<>();
+		    try {
+		        // Fetch the user by receiver ID
+		        User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
+		        if (user == null) {
+		            return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
+		        }
+	
+		        logger.info("Get Messages by User ID Method Start");
+	
+		        // Fetch sender and receiver IDs
+		        Integer senderId = userDetails.userInfo().getId();
+		        Integer receiverId = message.getChatReceiverId();
+	
+		        // Fetch messages sent by the current user to the receiver
+		        List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, receiverId);
+	
+		        // Fetch messages received by the current user from the receiver
+		        List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId);
+	
+		        // Combine both lists of messages
+		 
+		        List<Chat> allMessages = new ArrayList<>();
+		        for (Chat c : senderMessages) {
+		            if (!Boolean.TRUE.equals(c.getDeletedBySender())) {
+		                allMessages.add(c);
+		            }
+		        }
+		        for (Chat c : receiverMessages) {
+		            if (!Boolean.TRUE.equals(c.getDeletedByReceiver())) {
+		                allMessages.add(c);
+		            }
+		        }
+	
+	
+		        // Sort combined messages by chatCreatedOn in descending order
+		        allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn).reversed());
+	
+		        // Use a Set to track seen chatIds and filter duplicates
+		        Set<Integer> seenChatIds = new HashSet<>();
+		        List<Chat> uniqueMessages = new ArrayList<>();
+		        for (Chat chat : allMessages) {
+		            if (!seenChatIds.contains(chat.getChatId())) {
+		                seenChatIds.add(chat.getChatId());
+		                uniqueMessages.add(chat);
+		            }
+		        }
+	
+		        // Adjust pagination to accumulate messages from page 1 to the current page
+		        int end = Math.min(message.getPageNo() * message.getPageSize(), uniqueMessages.size());
+		        List<Chat> paginatedMessages = uniqueMessages.subList(0, end);
+	
+		        // Construct the response structure
+		        List<ChatWebModel> messagesWithFiles = new ArrayList<>();
+		        int senderUnreadCount = 0;
+		        int receiverUnreadCount = 0;
+		        for (Chat chat : paginatedMessages) {
+		        	 if ((chat.getChatSenderId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
+		                     (chat.getChatReceiverId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedByReceiver()))) {
+		                     continue;
+		                 }
+		            Optional<User> userData = userRepository.findById(chat.getChatSenderId());
+		            Optional<User> userDatas = userRepository.findById(receiverId);
+	
+		            // Fetch profile picture URLs
+		            String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
+		            String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
+	
+		            if (userData.isPresent()) {
+		                List<FileOutputWebModel> mediaFiles = mediaFilesService
+		                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
+		                
+		                FileOutputWebModel storyMedia = null;
+		                if (chat.getStoryId() != null) {
+		                
+							Story story = storyRepository.findByStoryId(chat.getStoryId());
+		                    if (story != null && story.getId() != null) {
+		                        List<FileOutputWebModel> storyFiles = mediaFilesService
+		                            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
 
-	        logger.info("Get Messages by User ID Method Start");
-
-	        // Fetch sender and receiver IDs
-	        Integer senderId = userDetails.userInfo().getId();
-	        Integer receiverId = message.getChatReceiverId();
-
-	        // Fetch messages sent by the current user to the receiver
-	        List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, receiverId);
-
-	        // Fetch messages received by the current user from the receiver
-	        List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId);
-
-	        // Combine both lists of messages
-	 
-	        List<Chat> allMessages = new ArrayList<>();
-	        for (Chat c : senderMessages) {
-	            if (!Boolean.TRUE.equals(c.getDeletedBySender())) {
-	                allMessages.add(c);
-	            }
-	        }
-	        for (Chat c : receiverMessages) {
-	            if (!Boolean.TRUE.equals(c.getDeletedByReceiver())) {
-	                allMessages.add(c);
-	            }
-	        }
-
-
-	        // Sort combined messages by chatCreatedOn in descending order
-	        allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn).reversed());
-
-	        // Use a Set to track seen chatIds and filter duplicates
-	        Set<Integer> seenChatIds = new HashSet<>();
-	        List<Chat> uniqueMessages = new ArrayList<>();
-	        for (Chat chat : allMessages) {
-	            if (!seenChatIds.contains(chat.getChatId())) {
-	                seenChatIds.add(chat.getChatId());
-	                uniqueMessages.add(chat);
-	            }
-	        }
-
-	        // Adjust pagination to accumulate messages from page 1 to the current page
-	        int end = Math.min(message.getPageNo() * message.getPageSize(), uniqueMessages.size());
-	        List<Chat> paginatedMessages = uniqueMessages.subList(0, end);
-
-	        // Construct the response structure
-	        List<ChatWebModel> messagesWithFiles = new ArrayList<>();
-	        int senderUnreadCount = 0;
-	        int receiverUnreadCount = 0;
-	        for (Chat chat : paginatedMessages) {
-	        	 if ((chat.getChatSenderId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
-	                     (chat.getChatReceiverId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedByReceiver()))) {
-	                     continue;
-	                 }
-	            Optional<User> userData = userRepository.findById(chat.getChatSenderId());
-	            Optional<User> userDatas = userRepository.findById(receiverId);
-
-	            // Fetch profile picture URLs
-	            String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
-	            String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
-
-	            if (userData.isPresent()) {
-	                List<FileOutputWebModel> mediaFiles = mediaFilesService
-	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
-	                ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
-	                        .chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
-	                        .chatIsActive(chat.getChatIsActive()).chatCreatedBy(chat.getChatCreatedBy())
-	                        .chatCreatedOn(chat.getChatCreatedOn()).senderProfilePic(senderProfilePicUrl)
-	                        .receiverProfilePic(receiverProfilePicUrl)
-	                        .chatUpdatedBy(chat.getChatUpdatedBy()).chatUpdatedOn(chat.getChatUpdatedOn())
-	                        .receiverRead(chat.getReceiverRead()).senderRead(chat.getSenderRead())
-	                        .chatFiles(mediaFiles).message(chat.getMessage())
-	                        .userType(userData.get().getUserType()).userAccountName(userData.get().getName())
-	                        .receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId())
-	                        .storyId(chat.getStoryId())                 
-	                        .replyType(chat.getReplyType()) .build();
-
-	                // Update read status if the current user is the receiver
-	                if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
-	                    receiverUnreadCount++;
-	                    chat.setReceiverRead(true);
-	                    chatRepository.save(chat);
-	                }
-	                if (!chat.getSenderRead()) {
-	                    senderUnreadCount++;
-	                }
-
-	                messagesWithFiles.add(chatWebModel);
-	            }
-	        }
-
-	        // Put the final response together
-	        response.put("userChat", messagesWithFiles);
-	        response.put("numberOfItems", messagesWithFiles.size());
-	        response.put("currentPage", message.getPageNo());
-	        response.put("totalPages", (int) Math.ceil((double) uniqueMessages.size() / message.getPageSize()));
-
-	        logger.info("Get Messages by User ID Method End");
-	        return ResponseEntity.ok(new Response(1, "Success", response));
-	    } catch (Exception e) {
-	        logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
-	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
-	    }
-	}
+		                        if (!storyFiles.isEmpty()) {
+		                            storyMedia = storyFiles.get(0); 
+		                        }
+		                    }
+		                }
+		                       ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
+		                        .chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
+		                        .chatIsActive(chat.getChatIsActive()).chatCreatedBy(chat.getChatCreatedBy())
+		                        .chatCreatedOn(chat.getChatCreatedOn()).senderProfilePic(senderProfilePicUrl)
+		                        .receiverProfilePic(receiverProfilePicUrl)
+		                        .chatUpdatedBy(chat.getChatUpdatedBy()).chatUpdatedOn(chat.getChatUpdatedOn())
+		                        .receiverRead(chat.getReceiverRead()).senderRead(chat.getSenderRead())
+		                        .chatFiles(mediaFiles).message(chat.getMessage())
+		                        .userType(userData.get().getUserType()).userAccountName(userData.get().getName())
+		                        .receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId())
+		                        .storyId(chat.getStoryId())     
+		                        .storyMediaUrl(storyMedia != null ? storyMedia.getFilePath() : null)
+		                        .storyMediaType(storyMedia != null ? storyMedia.getFileType() : null)
+		                        .replyType(chat.getReplyType()) .build();
+	
+		                // Update read status if the current user is the receiver
+		                if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
+		                    receiverUnreadCount++;
+		                    chat.setReceiverRead(true);
+		                    chatRepository.save(chat);
+		                }
+		                if (!chat.getSenderRead()) {
+		                    senderUnreadCount++;
+		                }
+	
+		                messagesWithFiles.add(chatWebModel);
+		            }
+		        }
+	
+		        // Put the final response together
+		        response.put("userChat", messagesWithFiles);
+		        response.put("numberOfItems", messagesWithFiles.size());
+		        response.put("currentPage", message.getPageNo());
+		        response.put("totalPages", (int) Math.ceil((double) uniqueMessages.size() / message.getPageSize()));
+	
+		        logger.info("Get Messages by User ID Method End");
+		        return ResponseEntity.ok(new Response(1, "Success", response));
+		    } catch (Exception e) {
+		        logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
+		        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
+		    }
+		}
 
 
 

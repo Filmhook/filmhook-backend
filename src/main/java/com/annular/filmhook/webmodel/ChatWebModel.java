@@ -45,7 +45,9 @@ public class ChatWebModel {
     private Integer pageNo;
     private Integer pageSize;
     private String storyId;
+    private String storyMediaUrl;
     private String replyType;
+    private String storyMediaType;
 
     
 }
