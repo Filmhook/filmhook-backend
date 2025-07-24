@@ -40,5 +40,6 @@ public class FileOutputWebModel {
     private Integer likedCount;
     private List<StoryViewerDTO> viewedBy;
     private String storyId;
+    private Boolean isStoryLiked;
 
 }
