@@ -487,21 +487,18 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
         try {
-            // Fetch all active posts
             List<Posts> allPosts = postsRepository.getAllActivePosts();
-            
+
             if (allPosts == null || allPosts.isEmpty()) {
                 return Collections.emptyList();
             }
 
-            // Separate promoted and normal posts
+            // Sort by createdOn (newest first)
+            allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+
             List<Posts> promotedPosts = new ArrayList<>();
             List<Posts> normalPosts = new ArrayList<>();
-            
-            // Sort all posts by creation date first (newest first)
-            allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
-            
-            // Separate posts into promoted and normal lists
+
             for (Posts post : allPosts) {
                 if (Boolean.TRUE.equals(post.getPromoteFlag())) {
                     promotedPosts.add(post);
@@ -510,41 +507,38 @@ public class PostServiceImpl implements PostService {
                 }
             }
 
-            // Create the final ordered list with alternating pattern
+            // Interleave: 1 promoted + 5 normal pattern
             List<Posts> orderedPosts = new ArrayList<>();
-            int normalPostIndex = 0;
-            int promotedPostIndex = 0;
-            
-            while (orderedPosts.size() < allPosts.size()) {
-                // Add one promoted post if available
-                if (promotedPostIndex < promotedPosts.size()) {
-                    orderedPosts.add(promotedPosts.get(promotedPostIndex++));
+            int promoIdx = 0, normalIdx = 0;
+
+            while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
+                if (promoIdx < promotedPosts.size()) {
+                    orderedPosts.add(promotedPosts.get(promoIdx++));
                 }
-                
-                // Add up to 5 normal posts if available
-                for (int i = 0; i < 5 && normalPostIndex < normalPosts.size(); i++) {
-                    orderedPosts.add(normalPosts.get(normalPostIndex++));
+                for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
+                    orderedPosts.add(normalPosts.get(normalIdx++));
                 }
             }
 
-            // Apply pagination
+            // Pagination handling
             int start = (pageNo - 1) * pageSize;
             int end = Math.min(start + pageSize, orderedPosts.size());
-            
+
+            // If requested page is out of bounds, return empty
             if (start >= orderedPosts.size()) {
                 return Collections.emptyList();
             }
-            
+
             List<Posts> paginatedPosts = orderedPosts.subList(start, end);
-            
-            // Transform and return the paginated posts
+
             return transformPostsDataToPostWebModel(paginatedPosts);
-            
+
         } catch (Exception e) {
             logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
-            return Collections.emptyList(); // Return empty list instead of null
+            return Collections.emptyList();
         }
     }
+
     @Override
     public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
         try {
