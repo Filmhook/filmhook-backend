@@ -41,5 +41,6 @@ public class FileOutputWebModel {
     private List<StoryViewerDTO> viewedBy;
     private String storyId;
     private Boolean isStoryLiked;
+    private String thumbnailPath;
 
 }

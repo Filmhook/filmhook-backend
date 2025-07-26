@@ -90,5 +90,8 @@ public class MediaFiles {
     
     @Column(name = "type")
     private String type;
+    
+    @Column(name = "thumbnail_path")
+    private String thumbnailPath;
 
 }

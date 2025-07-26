@@ -32,7 +32,20 @@ public class ShareController {
         List<FileOutputWebModel> files = post.getPostFiles();
 
         // Use first media file path
-        String mediaUrl = files.get(0).getFilePath();
+        FileOutputWebModel file = files.get(0);
+        String mediaUrl;
+
+        if (file.getFileType() != null && file.getFileType().toLowerCase().contains("video")) {
+            // If it's a video, use thumbnail (but prepend base URL if not already full)
+            if (file.getThumbnailPath() != null && !file.getThumbnailPath().startsWith("http")) {
+                mediaUrl =file.getThumbnailPath();
+            } else {
+                mediaUrl = file.getThumbnailPath();
+            }
+        } else {
+            // Otherwise, use actual filePath (image)
+            mediaUrl = file.getFilePath();
+        }
         
         String redirectUrl = "filmhook://media/" + postId;
         String pageUrl = "https://filmhookapps.com/media/" + postId;

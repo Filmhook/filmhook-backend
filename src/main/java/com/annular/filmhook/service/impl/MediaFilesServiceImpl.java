@@ -118,23 +118,21 @@ public class MediaFilesServiceImpl implements MediaFilesService {
     public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
         List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
         try {
-            // Step 1: Save metadata to MySQL
             Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
             logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
 
-            // Step 2: Convert and upload to S3
             mediaFilesMap.forEach((mediaFile, inputFile) -> {
                 mediaFilesRepository.saveAndFlush(mediaFile);
+
                 File originalFile = null;
                 File convertedFile = null;
+                File thumbnailFile = null;
 
                 try {
-                    // Create temp file from Multipart
                     String originalExtension = mediaFile.getFileType();
                     originalFile = File.createTempFile(mediaFile.getFileId(), originalExtension);
                     FileUtil.convertMultiPartFileToFile(inputFile, originalFile);
 
-                    // Determine media type
                     String contentType = inputFile.getContentType();
                     String s3FileExtension;
 
@@ -147,42 +145,60 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         convertedFile = File.createTempFile("converted_", ".webm");
                         MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(), convertedFile.getAbsolutePath());
                         s3FileExtension = ".webm";
-                    
+
+                        // ✅ Generate video thumbnail
+                        thumbnailFile = File.createTempFile("thumb_", ".jpg");
+                        String thumbPath = thumbnailFile.getAbsolutePath();
+                        String inputPath = convertedFile.getAbsolutePath(); // or originalFile.getAbsolutePath()
+                      //  String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+                        
+                         String ffmpegPath= "/usr/bin/ffmpeg";
+                        // Use FFmpeg to extract frame at 00:00:01 (1 sec)
+                        String command = String.format("\"%s\" -y -i \"%s\" -ss 00:00:01.000 -vframes 1 \"%s\"", ffmpegPath, inputPath, thumbPath);
+                        Process process = Runtime.getRuntime().exec(command);
+                        process.waitFor();
+
+                        // ✅ Upload thumbnail to S3
+                        String thumbS3Path = mediaFile.getFilePath() + "_thumb.jpg";
+                        String thumbResponse = fileUtil.uploadFile(thumbnailFile, thumbS3Path);
+                        
+                        
+                        if ("File Uploaded".equalsIgnoreCase(thumbResponse)) {
+                        	
+                        	
+                            mediaFile.setThumbnailPath("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/" +thumbS3Path); // Save to DB
+                        }
                     } else {
-                        // Keep original
                         convertedFile = originalFile;
                         s3FileExtension = originalExtension;
                     }
 
-                    // Upload to S3
+                    // ✅ Upload converted file to S3
                     String response = fileUtil.uploadFile(convertedFile, mediaFile.getFilePath() + s3FileExtension);
                     if ("File Uploaded".equalsIgnoreCase(response)) {
-                        // Update DB with new file type
                         mediaFile.setFileType(s3FileExtension);
                         mediaFilesRepository.saveAndFlush(mediaFile);
                         fileOutputWebModelList.add(this.transformData(mediaFile));
-                    }
-                    else {
-                    	 logger.error("Error during media conversion or upload -> {}");
+                    } else {
+                        logger.error("S3 upload failed for media file: {}", mediaFile.getFileId());
                     }
 
                 } catch (Exception e) {
-                    logger.error("Error during media conversion or upload -> {}", e.getMessage());
-                    e.printStackTrace();
+                    logger.error("Error during media conversion or upload -> {}", e.getMessage(), e);
                 } finally {
                     if (originalFile != null && originalFile.exists()) originalFile.delete();
                     if (convertedFile != null && convertedFile.exists() && !convertedFile.equals(originalFile)) convertedFile.delete();
+                    if (thumbnailFile != null && thumbnailFile.exists()) thumbnailFile.delete();
                 }
             });
 
-            // Sort output
             fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
         } catch (Exception e) {
-            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
-            e.printStackTrace();
+            logger.error("Error at saveMediaFiles() -> {}", e.getMessage(), e);
         }
         return fileOutputWebModelList;
     }
+
 
     private Map<MediaFiles, MultipartFile> prepareMultipleMediaFilesData(FileInputWebModel fileInput, User user) {
         Map<MediaFiles, MultipartFile> mediaFilesMap = new HashMap<>();
@@ -331,6 +347,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
             fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
             fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
             fileOutputWebModel.setFilmHookCode(mediaFile.getUser().getFilmHookCode());
+            fileOutputWebModel.setThumbnailPath(mediaFile.getThumbnailPath());
          // Handle category type STORY
             if (mediaFile.getCategory() == MediaFileCategory.Stories) {
                 Story story = storiesrRepository.findById(mediaFile.getCategoryRefId())
