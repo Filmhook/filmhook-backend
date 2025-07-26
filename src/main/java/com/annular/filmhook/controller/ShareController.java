@@ -33,10 +33,15 @@ public class ShareController {
 
         // Use first media file path
         String mediaUrl = files.get(0).getFilePath();
+        
         String redirectUrl = "filmhook://media/" + postId;
         String pageUrl = "https://filmhookapps.com/media/" + postId;
 
-        // Basic OG HTML page with JS redirect
+        // ✅ Console logging
+        System.out.println("OG Title: " + title);
+        System.out.println("OG Media URL: " + mediaUrl);
+        System.out.println("OG Page URL: " + pageUrl);
+
         String html = "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n" +
                 "<head>\n" +
