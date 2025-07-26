@@ -29,15 +29,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Comparator;
@@ -146,35 +149,59 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(), convertedFile.getAbsolutePath());
                         s3FileExtension = ".webm";
 
-                        // ✅ Generate video thumbnail
+                        // ✅ Generate video thumbnail using ProcessBuilder
+                        String ffmpegPath = "/usr/bin/ffmpeg";
+                        
+                      //  String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+                        String inputPath = convertedFile.getAbsolutePath();
                         thumbnailFile = File.createTempFile("thumb_", ".jpg");
                         String thumbPath = thumbnailFile.getAbsolutePath();
-                        String inputPath = convertedFile.getAbsolutePath(); // or originalFile.getAbsolutePath()
-                      //  String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
-                        
-                         String ffmpegPath= "/usr/bin/ffmpeg";
-                        // Use FFmpeg to extract frame at 00:00:01 (1 sec)
-                        String command = String.format("\"%s\" -y -i \"%s\" -ss 00:00:01.000 -vframes 1 \"%s\"", ffmpegPath, inputPath, thumbPath);
-                        Process process = Runtime.getRuntime().exec(command);
-                        process.waitFor();
 
-                        // ✅ Upload thumbnail to S3
-                        String thumbS3Path = mediaFile.getFilePath() + "_thumb.jpg";
-                        String thumbResponse = fileUtil.uploadFile(thumbnailFile, thumbS3Path);
-                        
-                        
-                        if ("File Uploaded".equalsIgnoreCase(thumbResponse)) {
-                        	
-                        	
-                            mediaFile.setThumbnailPath("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/" +thumbS3Path); // Save to DB
+                        List<String> command = Arrays.asList(
+                            ffmpegPath, "-y",
+                            "-i", inputPath,
+                            "-ss", "00:00:01.000",
+                            "-vframes", "1",
+                            thumbPath
+                        );
+
+                        ProcessBuilder pb = new ProcessBuilder(command);
+                        pb.redirectErrorStream(true); // Combine stdout and stderr
+                        Process process = pb.start();
+
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            logger.info("FFmpeg output: {}", line);
                         }
+
+                        int exitCode = process.waitFor();
+                        logger.info("FFmpeg exited with code: {}", exitCode);
+
+                        if (exitCode == 0 && thumbnailFile.exists()) {
+                            String thumbS3Path = mediaFile.getFilePath() + "_thumb.jpg";
+                            String thumbUploadResult = fileUtil.uploadFile(thumbnailFile, thumbS3Path);
+
+                            if ("File Uploaded".equalsIgnoreCase(thumbUploadResult)) {
+                                String thumbFullUrl = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/" + thumbS3Path;
+                                mediaFile.setThumbnailPath(thumbFullUrl);
+                                logger.info("Thumbnail uploaded: {}", thumbFullUrl);
+                            } else {
+                                logger.warn("Thumbnail upload failed for: {}", mediaFile.getFileId());
+                            }
+                        } else {
+                            logger.warn("Thumbnail generation failed for: {}", mediaFile.getFileId());
+                        }
+
                     } else {
                         convertedFile = originalFile;
                         s3FileExtension = originalExtension;
                     }
 
-                    // ✅ Upload converted file to S3
-                    String response = fileUtil.uploadFile(convertedFile, mediaFile.getFilePath() + s3FileExtension);
+                    // ✅ Upload main file
+                    String s3Path = mediaFile.getFilePath() + s3FileExtension;
+                    String response = fileUtil.uploadFile(convertedFile, s3Path);
+
                     if ("File Uploaded".equalsIgnoreCase(response)) {
                         mediaFile.setFileType(s3FileExtension);
                         mediaFilesRepository.saveAndFlush(mediaFile);
@@ -196,6 +223,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
         } catch (Exception e) {
             logger.error("Error at saveMediaFiles() -> {}", e.getMessage(), e);
         }
+
         return fileOutputWebModelList;
     }
 

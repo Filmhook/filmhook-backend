@@ -16,7 +16,7 @@ import ws.schild.jave.info.VideoSize;
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-	    "/usr/bin/cwebp",
+	   "/usr/bin/cwebp",
  // "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 	        "-q", "90",
 	        inputPath,
@@ -39,29 +39,31 @@ public class MediaConversionUtil {
     
       String ffmpegPath= "/usr/bin/ffmpeg";
 
-    ProcessBuilder builder = new ProcessBuilder(
-    		 ffmpegPath,
-    		    "-i", inputPath,
+      ProcessBuilder builder = new ProcessBuilder(
+      	    ffmpegPath,
+              "-i", inputPath,
 
-    		    // ⚡ Speed-optimized libvpx settings
-    		    "-c:v", "libvpx",
-    		    "-b:v", "1M",           
-    		    "-crf", "23",           
-    		    "-cpu-used", "5",        
-    		    "-threads", "4",        
-    		    "-deadline", "realtime",     
+              // Video: High quality with scaling and padding to 1080x1920
+              "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
 
-    		    "-s", "854x480",       
-    		    "-r", "24",             
+              "-c:v", "libvpx",
+              "-b:v", "3M",           // Higher bitrate for quality
+              "-crf", "10",           // Lower CRF means higher quality
+              "-cpu-used", "4",       // Balanced speed vs quality
+              "-threads", "4",
+              "-deadline", "realtime", // For quick processing
 
-    		    "-c:a", "libopus",
-    		    "-b:a", "96k",
-    		    "-ac", "2",
-    		    "-ar", "48000",
+              "-r", "30",             // 30 fps
 
-    		    "-y",
-    		    outputPath
-    );
+              // Audio
+              "-c:a", "libopus",
+              "-b:a", "128k",
+              "-ac", "2",
+              "-ar", "48000",
+
+              "-y", // Overwrite without asking
+              outputPath
+      );
 
     builder.redirectErrorStream(true);
 
