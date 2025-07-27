@@ -179,11 +179,11 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         logger.info("FFmpeg exited with code: {}", exitCode);
 
                         if (exitCode == 0 && thumbnailFile.exists()) {
-                            String thumbS3Path = mediaFile.getFilePath() + "_thumb.jpg";
+                            String thumbS3Path = mediaFile.getFilePath() + "_thumb.webp";
                             String thumbUploadResult = fileUtil.uploadFile(thumbnailFile, thumbS3Path);
 
                             if ("File Uploaded".equalsIgnoreCase(thumbUploadResult)) {
-                                String thumbFullUrl = "https://d3cb2xboyh9a9l.cloudfront.net" + thumbS3Path;
+                                String thumbFullUrl = "https://d3cb2xboyh9a9l.cloudfront.net/" + thumbS3Path;
                                 mediaFile.setThumbnailPath(thumbFullUrl);
                                 logger.info("Thumbnail uploaded: {}", thumbFullUrl);
                             } else {
