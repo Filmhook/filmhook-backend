@@ -31,24 +31,19 @@ public class ShareController {
         String description = post.getDescription() != null ? post.getDescription() : "Check this post on FilmHook!";
         List<FileOutputWebModel> files = post.getPostFiles();
 
-        // Use first media file path
         FileOutputWebModel file = files.get(0);
         String mediaUrl;
+        boolean isVideo = false;
 
         if (file.getFileType() != null && file.getFileType().toLowerCase().contains(".webm")) {
-        	 mediaUrl = file.getThumbnailPath();
+            mediaUrl = file.getThumbnailPath();  // show video thumbnail
+            isVideo = true;
         } else {
-            // Otherwise, use actual filePath (image)
-            mediaUrl = file.getFilePath();
+            mediaUrl = file.getFilePath();  // show image
         }
-        
+
         String redirectUrl = "filmhook://media/" + postId;
         String pageUrl = "https://filmhookapps.com/media/" + postId;
-
-        // ✅ Console logging
-        System.out.println("OG Title: " + title);
-        System.out.println("OG Media URL: " + mediaUrl);
-        System.out.println("OG Page URL: " + pageUrl);
 
         String html = "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n" +
@@ -61,6 +56,34 @@ public class ShareController {
                 "  <meta property=\"og:image\" content=\"" + mediaUrl + "\" />\n" +
                 "  <meta property=\"og:url\" content=\"" + pageUrl + "\" />\n" +
                 "  <meta name=\"twitter:card\" content=\"summary_large_image\" />\n" +
+                "  <style>\n" +
+                "    body { margin: 0; padding: 0; text-align: center; font-family: sans-serif; background-color: #000; color: #fff; }\n" +
+                "    .media-container { position: relative; display: inline-block; max-width: 100%; }\n" +
+                "    .media-container img { max-width: 100%; height: auto; display: block; }\n" +
+                "    .play-icon {\n" +
+                "      position: absolute;\n" +
+                "      top: 50%;\n" +
+                "      left: 50%;\n" +
+                "      transform: translate(-50%, -50%);\n" +
+                "      width: 64px;\n" +
+                "      height: 64px;\n" +
+                "      background: rgba(0, 0, 0, 0.5);\n" +
+                "      border-radius: 50%;\n" +
+                "      display: flex;\n" +
+                "      justify-content: center;\n" +
+                "      align-items: center;\n" +
+                "    }\n" +
+                "    .play-icon:before {\n" +
+                "      content: '';\n" +
+                "      display: inline-block;\n" +
+                "      width: 0;\n" +
+                "      height: 0;\n" +
+                "      border-left: 20px solid white;\n" +
+                "      border-top: 12px solid transparent;\n" +
+                "      border-bottom: 12px solid transparent;\n" +
+                "      margin-left: 6px;\n" +
+                "    }\n" +
+                "  </style>\n" +
                 "  <script>\n" +
                 "    setTimeout(function() {\n" +
                 "      window.location.href = '" + redirectUrl + "';\n" +
@@ -68,6 +91,16 @@ public class ShareController {
                 "  </script>\n" +
                 "</head>\n" +
                 "<body>\n" +
+                "  <div class='media-container'>\n" +
+                "    <img src='" + mediaUrl + "' alt='Post Thumbnail' />\n";
+
+        // Add play icon if it's a video
+        if (isVideo) {
+            html += "    <div class='play-icon'></div>\n";
+        }
+
+        html +=
+                "  </div>\n" +
                 "  <p>Redirecting to FilmHook app... <a href=\"" + redirectUrl + "\">Click here</a> if not redirected.</p>\n" +
                 "</body>\n" +
                 "</html>";
