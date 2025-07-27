@@ -35,13 +35,8 @@ public class ShareController {
         FileOutputWebModel file = files.get(0);
         String mediaUrl;
 
-        if (file.getFileType() != null && file.getFileType().toLowerCase().contains("video")) {
-            // If it's a video, use thumbnail (but prepend base URL if not already full)
-            if (file.getThumbnailPath() != null && !file.getThumbnailPath().startsWith("https")) {
-                mediaUrl =file.getThumbnailPath();
-            } else {
-                mediaUrl = file.getThumbnailPath();
-            }
+        if (file.getFileType() != null && file.getFileType().toLowerCase().contains(".webm")) {
+        	 mediaUrl = file.getThumbnailPath();
         } else {
             // Otherwise, use actual filePath (image)
             mediaUrl = file.getFilePath();
