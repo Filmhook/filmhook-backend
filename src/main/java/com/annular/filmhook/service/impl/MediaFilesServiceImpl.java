@@ -154,7 +154,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                         
                       //  String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
                         String inputPath = convertedFile.getAbsolutePath();
-                        thumbnailFile = File.createTempFile("thumb_", ".jpg");
+                        thumbnailFile = File.createTempFile("thumb_", ".webp");
                         String thumbPath = thumbnailFile.getAbsolutePath();
 
                         List<String> command = Arrays.asList(
@@ -183,7 +183,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
                             String thumbUploadResult = fileUtil.uploadFile(thumbnailFile, thumbS3Path);
 
                             if ("File Uploaded".equalsIgnoreCase(thumbUploadResult)) {
-                                String thumbFullUrl = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/" + thumbS3Path;
+                                String thumbFullUrl = "https://d3cb2xboyh9a9l.cloudfront.net" + thumbS3Path;
                                 mediaFile.setThumbnailPath(thumbFullUrl);
                                 logger.info("Thumbnail uploaded: {}", thumbFullUrl);
                             } else {
