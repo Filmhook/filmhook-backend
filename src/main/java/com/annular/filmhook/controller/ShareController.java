@@ -37,7 +37,7 @@ public class ShareController {
 
         if (file.getFileType() != null && file.getFileType().toLowerCase().contains("video")) {
             // If it's a video, use thumbnail (but prepend base URL if not already full)
-            if (file.getThumbnailPath() != null && !file.getThumbnailPath().startsWith("http")) {
+            if (file.getThumbnailPath() != null && !file.getThumbnailPath().startsWith("https")) {
                 mediaUrl =file.getThumbnailPath();
             } else {
                 mediaUrl = file.getThumbnailPath();
