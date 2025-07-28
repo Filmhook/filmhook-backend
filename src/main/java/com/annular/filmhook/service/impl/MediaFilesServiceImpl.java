@@ -75,49 +75,49 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 	@Autowired
 	S3Util s3Util;
 
-	//    @Override
-	//    public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
-	//        List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
-	//        try {
-	//            // 1. Save first in MySQL
-	//            Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
-	//            logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
-	//
-	//            // 2. Upload into S3
-	//            mediaFilesMap.forEach((mediaFile, inputFile) -> {
-	//                mediaFilesRepository.saveAndFlush(mediaFile);
-	//                try {
-	//                    File orginalFile = File.createTempFile(mediaFile.getFileId(), null);
-	//                    File compressedFile = File.createTempFile(mediaFile.getFileId(), null);
-	//
-	//                    FileUtil.convertMultiPartFileToFile(inputFile, orginalFile); // Converting from Multipart to file
-	//
-	//                    // Compressing the files before save
-	//                    if (FileUtil.isImageFile(mediaFile.getFileType())) {
-	//                        FileUtil.compressImageFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
-	//                    } else if (FileUtil.isVideoFile(mediaFile.getFileType())) {
-	//                        FileUtil.compressVideoFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
-	//                    } else {
-	//                        compressedFile = orginalFile;
-	//                    }
-	//
-	//                    String response = fileUtil.uploadFile(compressedFile, mediaFile.getFilePath() + mediaFile.getFileType());
-	//                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-	//                        orginalFile.delete();
-	//                        compressedFile.delete(); // deleting temp file
-	//                        fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
-	//                    }
-	//                } catch (IOException e) {
-	//                    logger.error("Error at media file save() -> {}", e.getMessage());
-	//                }
-	//            });
-	//            fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
-	//        } catch (Exception e) {
-	//            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
-	//            e.printStackTrace();
-	//        }
-	//        return fileOutputWebModelList;
-	//    }
+//    @Override
+//    public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
+//        List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
+//        try {
+//            // 1. Save first in MySQL
+//            Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesData(fileInputWebModel, user);
+//            logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
+//
+//            // 2. Upload into S3
+//            mediaFilesMap.forEach((mediaFile, inputFile) -> {
+//                mediaFilesRepository.saveAndFlush(mediaFile);
+//                try {
+//                    File orginalFile = File.createTempFile(mediaFile.getFileId(), null);
+//                    File compressedFile = File.createTempFile(mediaFile.getFileId(), null);
+//
+//                    FileUtil.convertMultiPartFileToFile(inputFile, orginalFile); // Converting from Multipart to file
+//
+//                    // Compressing the files before save
+//                    if (FileUtil.isImageFile(mediaFile.getFileType())) {
+//                        FileUtil.compressImageFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+//                    } else if (FileUtil.isVideoFile(mediaFile.getFileType())) {
+//                        FileUtil.compressVideoFile(orginalFile, mediaFile.getFileType().substring(1), compressedFile);
+//                    } else {
+//                        compressedFile = orginalFile;
+//                    }
+//
+//                    String response = fileUtil.uploadFile(compressedFile, mediaFile.getFilePath() + mediaFile.getFileType());
+//                    if (response != null && response.equalsIgnoreCase("File Uploaded")) {
+//                        orginalFile.delete();
+//                        compressedFile.delete(); // deleting temp file
+//                        fileOutputWebModelList.add(this.transformData(mediaFile)); // Reading the saved file details
+//                    }
+//                } catch (IOException e) {
+//                    logger.error("Error at media file save() -> {}", e.getMessage());
+//                }
+//            });
+//            fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
+//        } catch (Exception e) {
+//            logger.error("Error at saveMediaFiles() -> {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//        return fileOutputWebModelList;
+//    }
 	public List<FileOutputWebModel> saveMediaFiles(FileInputWebModel fileInputWebModel, User user) {
 		List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
 		try {
@@ -144,7 +144,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 						MediaConversionUtil.convertToWebP(originalFile.getAbsolutePath(),
 								convertedFile.getAbsolutePath());
 						s3FileExtension = ".webp";
-
+						
 					} else if (contentType != null && contentType.startsWith("video/")) {
 						convertedFile = File.createTempFile("converted_", ".webm");
 						MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(),
@@ -152,7 +152,8 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 						s3FileExtension = ".webm";
 
 						// ✅ Generate thumbnail from video
-						//String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+//						String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+//						String playIconPath = "C:\\Users\\HP\\Pictures\\Saved Pictures\\play-icon.png";
 						String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
 						String ffmpegPath = "/usr/bin/ffmpeg";
 						String inputPath = convertedFile.getAbsolutePath();
@@ -160,14 +161,14 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 						String thumbPath = thumbnailFile.getAbsolutePath();
 
 						List<String> command = Arrays.asList(
-								ffmpegPath, "-y",
-								"-i", inputPath,
-								"-i", playIconPath, // PNG play icon
-								"-ss", "00:00:01.000",
-								"-vframes", "1",
-								"-filter_complex", "overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2",
-								thumbPath
-								);
+							    ffmpegPath, "-y",
+							    "-i", inputPath,
+							    "-i", playIconPath, // PNG play icon
+							    "-ss", "00:00:01.000",
+							    "-vframes", "1",
+							    "-filter_complex", "overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2",
+							    thumbPath
+							);
 
 						ProcessBuilder pb = new ProcessBuilder(command);
 						pb.redirectErrorStream(true); // Combine stdout and stderr
@@ -249,7 +250,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 							fileInput.getCategory().toString(), mediaFiles.getFileId()));
 					mediaFiles.setFileType(!Utility.isNullOrBlankWithTrim(file.getOriginalFilename())
 							? file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."))
-									: "");
+							: "");
 					mediaFiles.setFileSize(file.getSize());
 					mediaFiles.setStatus(true);
 					mediaFiles.setCreatedBy(user.getUserId());
@@ -376,7 +377,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 			fileOutputWebModel.setFileType(mediaFile.getFileType());
 			fileOutputWebModel.setFileSize(mediaFile.getFileSize());
 			fileOutputWebModel
-			.setFilePath(s3Util.generateS3FilePath(mediaFile.getFilePath() + mediaFile.getFileType()));
+					.setFilePath(s3Util.generateS3FilePath(mediaFile.getFilePath() + mediaFile.getFileType()));
 			fileOutputWebModel.setDescription(mediaFile.getDescription());
 
 			fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());
@@ -432,7 +433,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 					mediaFile.setStatus(false); // 1. Deactivating the MediaFiles
 					mediaFilesRepository.saveAndFlush(mediaFile);
 					fileUtil.deleteFile(mediaFile.getFilePath() + mediaFile.getFileType()); // 2. Deleting the S3
-					// Objects
+																							// Objects
 				});
 			}
 		} catch (Exception e) {
