@@ -1,13 +1,23 @@
 package com.annular.filmhook.util;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+
+import ws.schild.jave.Encoder;
+import ws.schild.jave.MultimediaObject;
+import ws.schild.jave.encode.AudioAttributes;
+import ws.schild.jave.encode.EncodingAttributes;
+import ws.schild.jave.encode.VideoAttributes;
+import ws.schild.jave.info.VideoSize;
+
 
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    ProcessBuilder processBuilder = new ProcessBuilder(
 	   "/usr/bin/cwebp",
-//"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
-
+ // "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 	        "-q", "90",
 	        inputPath,
 	        "-o", 
@@ -29,38 +39,48 @@ public class MediaConversionUtil {
     
       String ffmpegPath= "/usr/bin/ffmpeg";
 
-    ProcessBuilder builder = new ProcessBuilder(
-    	    ffmpegPath,
-            "-i", inputPath,
+      ProcessBuilder builder = new ProcessBuilder(
+      	    ffmpegPath,
+              "-i", inputPath,
 
-            // Video: High quality with scaling and padding to 1080x1920
-            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+              // Video: High quality with scaling and padding to 1080x1920
+              "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
 
-            "-c:v", "libvpx",
-            "-b:v", "3M",           // Higher bitrate for quality
-            "-crf", "10",           // Lower CRF means higher quality
-            "-cpu-used", "4",       // Balanced speed vs quality
-            "-threads", "4",
-            "-deadline", "realtime", // For quick processing
+              "-c:v", "libvpx",
+              "-b:v", "3M",           // Higher bitrate for quality
+              "-crf", "10",           // Lower CRF means higher quality
+              "-cpu-used", "4",       // Balanced speed vs quality
+              "-threads", "4",
+              "-deadline", "realtime", // For quick processing
 
-            "-r", "35",             // 30 fps
+              "-r", "30",             // 30 fps
 
-            // Audio
-            "-c:a", "libopus",
-            "-b:a", "128k",
-            "-ac", "2",
-            "-ar", "48000",
+              // Audio
+              "-c:a", "libopus",
+              "-b:a", "128k",
+              "-ac", "2",
+              "-ar", "48000",
 
-            "-y", // Overwrite without asking
-            outputPath
-    );
+              "-y", // Overwrite without asking
+              outputPath
+      );
 
-    builder.redirectErrorStream(true); // Redirect stderr to stdout
+    builder.redirectErrorStream(true);
+
+    long startTime = System.currentTimeMillis();
     Process process = builder.start();
 
-    // Don't print anything, just wait for it to finish
-    process.getInputStream().close(); // Close input stream as it's unused
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        String line;
+        System.out.println("=== FFmpeg Output (WebM) ===");
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+        }
+    }
+
     int exitCode = process.waitFor();
+    long duration = System.currentTimeMillis() - startTime;
+    System.out.println("WebM encoding completed in " + duration + " ms");
 
     if (exitCode != 0) {
         throw new IOException("FFmpeg WebM conversion failed. Exit code: " + exitCode);
