@@ -16,8 +16,8 @@ import ws.schild.jave.info.VideoSize;
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-	    "/usr/bin/cwebp",
- // "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
+	  //  "/usr/bin/cwebp",
+"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 	        "-q", "90",
 	        inputPath,
 	        "-o", 
@@ -35,50 +35,42 @@ public class MediaConversionUtil {
 
 	public static void convertToWebM(String inputPath, String outputPath) throws IOException, InterruptedException {
     
-  //String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+  String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
     
-      String ffmpegPath= "/usr/bin/ffmpeg";
+     // String ffmpegPath= "/usr/bin/ffmpeg";
 
     ProcessBuilder builder = new ProcessBuilder(
-    		 ffmpegPath,
-    		    "-i", inputPath,
+    	    ffmpegPath,
+            "-i", inputPath,
 
-    		    // ⚡ Speed-optimized libvpx settings
-    		    "-c:v", "libvpx",
-    		    "-b:v", "1M",           
-    		    "-crf", "23",           
-    		    "-cpu-used", "5",        
-    		    "-threads", "4",        
-    		    "-deadline", "realtime",     
+            // Video: High quality with scaling and padding to 1080x1920
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
 
-    		    "-s", "854x480",       
-    		    "-r", "24",             
+            "-c:v", "libvpx",
+            "-b:v", "3M",           // Higher bitrate for quality
+            "-crf", "10",           // Lower CRF means higher quality
+            "-cpu-used", "4",       // Balanced speed vs quality
+            "-threads", "4",
+            "-deadline", "realtime", // For quick processing
 
-    		    "-c:a", "libopus",
-    		    "-b:a", "96k",
-    		    "-ac", "2",
-    		    "-ar", "48000",
+            "-r", "35",             // 30 fps
 
-    		    "-y",
-    		    outputPath
+            // Audio
+            "-c:a", "libopus",
+            "-b:a", "128k",
+            "-ac", "2",
+            "-ar", "48000",
+
+            "-y", // Overwrite without asking
+            outputPath
     );
 
-    builder.redirectErrorStream(true);
-
-    long startTime = System.currentTimeMillis();
+    builder.redirectErrorStream(true); // Redirect stderr to stdout
     Process process = builder.start();
 
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-        String line;
-        System.out.println("=== FFmpeg Output (WebM) ===");
-        while ((line = reader.readLine()) != null) {
-            System.out.println(line);
-        }
-    }
-
+    // Don't print anything, just wait for it to finish
+    process.getInputStream().close(); // Close input stream as it's unused
     int exitCode = process.waitFor();
-    long duration = System.currentTimeMillis() - startTime;
-    System.out.println("WebM encoding completed in " + duration + " ms");
 
     if (exitCode != 0) {
         throw new IOException("FFmpeg WebM conversion failed. Exit code: " + exitCode);
