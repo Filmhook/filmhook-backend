@@ -30,6 +30,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
@@ -60,6 +62,7 @@ import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
+import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.repository.PostTagsRepository;
 import com.annular.filmhook.repository.PostViewRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
@@ -300,74 +303,80 @@ public class PostServiceImpl implements PostService {
     private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
         List<PostWebModel> responseList = new ArrayList<>();
         try {
-            if (!Utility.isNullOrEmptyList(postList)) {
+        	Integer loggedInUserTemp = null;
+        	Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        	if (principal instanceof UserDetailsImpl) {
+        	    loggedInUserTemp = ((UserDetailsImpl) principal).getId();
+        	}
+        	final Integer finalLoggedInUser = loggedInUserTemp;
 
+
+            if (!Utility.isNullOrEmptyList(postList)) {
                 postList.stream().filter(Objects::nonNull).forEach(post -> {
-                	
-                	
-                    // Fetching post-files
+
                     List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
-                    // Fetching the user Profession
+                    // Profession
                     Set<String> professionNames = new HashSet<>();
                     List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId());
                     if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
-                        professionNames = professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
+                        professionNames = professionPermanentDataList.stream()
+                                .map(FilmProfessionPermanentDetail::getProfessionName)
+                                .collect(Collectors.toSet());
                     } else {
                         professionNames.add("Public User");
                     }
 
-                    // Fetching the followers count for the user
-                    List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+                    // Followers
+                    List<FollowersRequest> followersList = friendRequestRepository
+                            .findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
-                    // Fetching the like actions from current logged-in user
-                    Integer loggedInUser = userDetails.userInfo().getId();
-                    Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), loggedInUser);
-                    Boolean likeStatus = likesList.map(Likes::getStatus).orElse(false);
-                    Integer latestLikeId = likesList.map(Likes::getLikeId).orElse(null);
+                    // Likes
+                    Boolean likeStatus = false;
+                    Integer latestLikeId = null;
+                    if (finalLoggedInUser != null) {
+                        Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
+                        likeStatus = likesList.map(Likes::getStatus).orElse(false);
+                        latestLikeId = likesList.map(Likes::getLikeId).orElse(null);
+                    }
 
-                    Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(loggedInUser, post.getUser().getUserId());
-                    Boolean pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
+                    // Pin Status
+                    Boolean pinStatus = false;
+                    if (finalLoggedInUser != null) {
+                        Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(finalLoggedInUser, post.getUser().getUserId());
+                        pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
+                    }
 
-                    // Check if the post is promoted
+                    // Promote
                     boolean isPromoted = promoteRepository.existsByPostIdAndStatus(post.getId(), true);
-
-
-                    // Check if the post is promoted and fetch promote details if it exists
                     Optional<Promote> promoteDetailsOpt = promoteRepository.findByPostIds(post.getId());
                     Promote promoteDetails = promoteDetailsOpt.orElse(null);
-                    
+
+                    // Tagged users
                     List<Map<String, Object>> taggedUsers = post.getPostTagsCollection() != null
                             ? post.getPostTagsCollection().stream()
-                            .filter(postTags -> postTags.getStatus().equals(true))
+                            .filter(postTags -> Boolean.TRUE.equals(postTags.getStatus()))
                             .map(postTags -> {
                                 Map<String, Object> taggedUserDetails = new HashMap<>();
                                 Integer taggedUserId = postTags.getTaggedUser().getUserId();
                                 taggedUserDetails.put("userId", taggedUserId);
-
-                                // Fetch username and profile pic
                                 userService.getUser(taggedUserId).ifPresent(user -> {
                                     taggedUserDetails.put("username", user.getName());
                                     taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
                                 });
-
                                 return taggedUserDetails;
                             })
                             .collect(Collectors.toList())
                             : null;
 
+                    LocalDateTime createdOn = LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
+                    String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
 
-                    Date createdDate = post.getCreatedOn(); // Convert Date to LocalDateTime
-                    LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
-                    String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
-
-                    // Preparing outputList
                     PostWebModel postWebModel = PostWebModel.builder()
                             .id(post.getId())
                             .userId(post.getUser().getUserId())
                             .userName(post.getUser().getName())
-                            .postId(post.getPostId()) // Unique id of each post
-                            //.postUrl(this.generatePostUrl(post.getPostId()))
+                            .postId(post.getPostId())
                             .adminReview(post.getUser().getAdminReview())
                             .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                             .description(post.getDescription())
@@ -392,7 +401,6 @@ public class PostServiceImpl implements PostService {
                             .createdOn(post.getCreatedOn())
                             .createdBy(post.getCreatedBy())
                             .taggedUserss(taggedUsers)
-                         // Include promoted details if available
                             .promoteStatus(promoteDetails != null)
                             .promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
                             .numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
@@ -401,23 +409,21 @@ public class PostServiceImpl implements PostService {
                             .webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
                             .selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
                             .visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
-                         // Fetch VisitPage status based on selectedOption
-                         // Fetch VisitPage data based on selectedOption
                             .visitPageData(fetchVisitPageData(promoteDetails))
                             .viewsCount(post.getViewsCount())
                             .build();
+
                     responseList.add(postWebModel);
                 });
-                //responseList.sort(Comparator.comparing(PostWebModel::getCreatedOn).reversed());
-               // responseList.sort(Comparator.nullsLast(Comparator.comparing(PostWebModel::getPromoteFlag).reversed()));
             }
         } catch (Exception e) {
-            logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage());
-            e.printStackTrace();
+            logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage(), e);
         }
+
         logger.info("Final post count to respond :- [{}]", responseList.size());
         return responseList;
     }
+
 
     private String fetchVisitPageData(Promote promoteDetails) {
         if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
@@ -487,21 +493,18 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
         try {
-            // Fetch all active posts
             List<Posts> allPosts = postsRepository.getAllActivePosts();
-            
+
             if (allPosts == null || allPosts.isEmpty()) {
                 return Collections.emptyList();
             }
 
-            // Separate promoted and normal posts
+            // Sort by createdOn (newest first)
+            allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+
             List<Posts> promotedPosts = new ArrayList<>();
             List<Posts> normalPosts = new ArrayList<>();
-            
-            // Sort all posts by creation date first (newest first)
-            allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
-            
-            // Separate posts into promoted and normal lists
+
             for (Posts post : allPosts) {
                 if (Boolean.TRUE.equals(post.getPromoteFlag())) {
                     promotedPosts.add(post);
@@ -510,41 +513,38 @@ public class PostServiceImpl implements PostService {
                 }
             }
 
-            // Create the final ordered list with alternating pattern
+            // Interleave: 1 promoted + 5 normal pattern
             List<Posts> orderedPosts = new ArrayList<>();
-            int normalPostIndex = 0;
-            int promotedPostIndex = 0;
-            
-            while (orderedPosts.size() < allPosts.size()) {
-                // Add one promoted post if available
-                if (promotedPostIndex < promotedPosts.size()) {
-                    orderedPosts.add(promotedPosts.get(promotedPostIndex++));
+            int promoIdx = 0, normalIdx = 0;
+
+            while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
+                if (promoIdx < promotedPosts.size()) {
+                    orderedPosts.add(promotedPosts.get(promoIdx++));
                 }
-                
-                // Add up to 5 normal posts if available
-                for (int i = 0; i < 5 && normalPostIndex < normalPosts.size(); i++) {
-                    orderedPosts.add(normalPosts.get(normalPostIndex++));
+                for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
+                    orderedPosts.add(normalPosts.get(normalIdx++));
                 }
             }
 
-            // Apply pagination
+            // Pagination handling
             int start = (pageNo - 1) * pageSize;
             int end = Math.min(start + pageSize, orderedPosts.size());
-            
+
+            // If requested page is out of bounds, return empty
             if (start >= orderedPosts.size()) {
                 return Collections.emptyList();
             }
-            
+
             List<Posts> paginatedPosts = orderedPosts.subList(start, end);
-            
-            // Transform and return the paginated posts
+
             return transformPostsDataToPostWebModel(paginatedPosts);
-            
+
         } catch (Exception e) {
             logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
-            return Collections.emptyList(); // Return empty list instead of null
+            return Collections.emptyList();
         }
     }
+
     @Override
     public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
         try {

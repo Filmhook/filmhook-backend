@@ -300,7 +300,7 @@ public class StoriesServiceImpl implements StoriesService {
 	                    }
 
 	                    // Fetch view details only for logged-in user's stories
-	                    if (storyUserId.equals(userId)) {
+	                   
 	                        if (mediaEntity != null) {
 	                            // View count
 	                            int viewCount = storyViewRepository.countByMediaFile(mediaEntity);
@@ -314,6 +314,14 @@ public class StoriesServiceImpl implements StoriesService {
 	                                    .filter(StoryView::getLiked)
 	                                    .count();
 	                            model.setLikedCount((int) likedCount);  // You should ensure this field exists in FileOutputWebModel
+	                            
+	                         // ✅ Set isStoryLiked for current (logged-in) user
+	                            boolean isLikedByCurrentUser = views.stream()
+	                                    .anyMatch(view -> view.getViewer() != null &&
+	                                            view.getViewer().getUserId().equals(userId) &&
+	                                            Boolean.TRUE.equals(view.getLiked()));
+
+	                            model.setIsStoryLiked(isLikedByCurrentUser);
 
 	                            List<StoryViewerDTO> viewerList = views.stream()
 	                                    .map(view -> {
@@ -334,7 +342,7 @@ public class StoriesServiceImpl implements StoriesService {
 
 	                            model.setViewedBy(viewerList);
 	                        }
-	                    }
+	                    
 
 	                    enrichedFiles.add(model);
 	                }

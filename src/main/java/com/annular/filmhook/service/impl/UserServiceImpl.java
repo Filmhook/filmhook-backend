@@ -248,19 +248,21 @@ public class UserServiceImpl implements UserService {
     }
 
     private void prepareUserBiographyData(UserWebModel userInput, User userToUpdate) {
-
         if (!Utility.isNullOrBlankWithTrim(userInput.getDob())) userToUpdate.setDob(userInput.getDob());
         if (!Utility.isNullOrBlankWithTrim(userInput.getGender())) userToUpdate.setGender(userInput.getGender());
         if (!Utility.isNullOrBlankWithTrim(userInput.getBirthPlace())) userToUpdate.setBirthPlace(userInput.getBirthPlace());
         if (!Utility.isNullOrBlankWithTrim(userInput.getLivingPlace())) userToUpdate.setLivingPlace(userInput.getLivingPlace());
-        //if (!Utility.isNullOrBlankWithTrim(userInput.getExperience())) userToUpdate.setExperience(userInput.getExperience());
-        //if (!Utility.isNullOrBlankWithTrim(userInput.getSchedule())) userToUpdate.setSchedule(userInput.getSchedule());
-        //if (!Utility.isNullOrBlankWithTrim(userInput.getCurrentAddress())) userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
-        //if (!Utility.isNullOrBlankWithTrim(userInput.getHomeAddress())) userToUpdate.setHomeAddress(userInput.getHomeAddress());
+        
+        if (!Utility.isNullOrBlankWithTrim(userInput.getCountry())) userToUpdate.setCountry(userInput.getCountry());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getState())) userToUpdate.setState(userInput.getState());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getDistrict())) userToUpdate.setDistrict(userInput.getDistrict());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getPhoneNumber())) userToUpdate.setPhoneNumber(userInput.getPhoneNumber());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getCurrentAddress())) userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
+        if (!Utility.isNullOrBlankWithTrim(userInput.getHomeAddress())) userToUpdate.setHomeAddress(userInput.getHomeAddress());
+
         userToUpdate.setUpdatedBy(userToUpdate.getUserId());
         userToUpdate.setUpdatedOn(new Date());
     }
-
     @Override
     public Optional<?> updateBiologicalData(UserWebModel userWebModel) {
         Optional<User> user;

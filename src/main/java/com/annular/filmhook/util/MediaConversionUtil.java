@@ -15,66 +15,67 @@ import ws.schild.jave.info.VideoSize;
 
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
-	    ProcessBuilder processBuilder = new ProcessBuilder(
-	  //  "/usr/bin/cwebp",
-"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
-	        "-q", "90",
-	        inputPath,
-	        "-o", 
-	        outputPath
-	    );
+		ProcessBuilder processBuilder = new ProcessBuilder(
+				"/usr/bin/cwebp",
+				//"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 
-	    processBuilder.inheritIO(); // To see output/errors in the console
-	    Process process = processBuilder.start();
-	    int exitCode = process.waitFor();
+				"-q", "90",
+				inputPath,
+				"-o", 
+				outputPath
+				);
 
-	    if (exitCode != 0) {
-	        throw new IOException("WebP conversion failed. Exit code: " + exitCode);
-	    }
+		processBuilder.inheritIO(); // To see output/errors in the console
+		Process process = processBuilder.start();
+		int exitCode = process.waitFor();
+
+		if (exitCode != 0) {
+			throw new IOException("WebP conversion failed. Exit code: " + exitCode);
+		}
 	}
 
 	public static void convertToWebM(String inputPath, String outputPath) throws IOException, InterruptedException {
-    
-  String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
-    
-     // String ffmpegPath= "/usr/bin/ffmpeg";
 
-    ProcessBuilder builder = new ProcessBuilder(
-    	    ffmpegPath,
-            "-i", inputPath,
+		//String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 
-            // Video: High quality with scaling and padding to 1080x1920
-            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+		String ffmpegPath= "/usr/bin/ffmpeg";
 
-            "-c:v", "libvpx",
-            "-b:v", "3M",           // Higher bitrate for quality
-            "-crf", "10",           // Lower CRF means higher quality
-            "-cpu-used", "4",       // Balanced speed vs quality
-            "-threads", "4",
-            "-deadline", "realtime", // For quick processing
+		ProcessBuilder builder = new ProcessBuilder(
+				ffmpegPath,
+				"-i", inputPath,
 
-            "-r", "35",             // 30 fps
+				// Video: High quality with scaling and padding to 1080x1920
+				"-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
 
-            // Audio
-            "-c:a", "libopus",
-            "-b:a", "128k",
-            "-ac", "2",
-            "-ar", "48000",
+				"-c:v", "libvpx",
+				"-b:v", "3M",           // Higher bitrate for quality
+				"-crf", "10",           // Lower CRF means higher quality
+				"-cpu-used", "4",       // Balanced speed vs quality
+				"-threads", "4",
+				"-deadline", "realtime", // For quick processing
 
-            "-y", // Overwrite without asking
-            outputPath
-    );
+				"-r", "35",             // 30 fps
 
-    builder.redirectErrorStream(true); // Redirect stderr to stdout
-    Process process = builder.start();
+				// Audio
+				"-c:a", "libopus",
+				"-b:a", "128k",
+				"-ac", "2",
+				"-ar", "48000",
 
-    // Don't print anything, just wait for it to finish
-    process.getInputStream().close(); // Close input stream as it's unused
-    int exitCode = process.waitFor();
+				"-y", // Overwrite without asking
+				outputPath
+				);
 
-    if (exitCode != 0) {
-        throw new IOException("FFmpeg WebM conversion failed. Exit code: " + exitCode);
-    }
-}
+		builder.redirectErrorStream(true); // Redirect stderr to stdout
+		Process process = builder.start();
+
+		// Don't print anything, just wait for it to finish
+		process.getInputStream().close(); // Close input stream as it's unused
+		int exitCode = process.waitFor();
+
+		if (exitCode != 0) {
+			throw new IOException("FFmpeg WebM conversion failed. Exit code: " + exitCode);
+		}
+	}
 
 }
