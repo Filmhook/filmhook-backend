@@ -1,81 +1,70 @@
 package com.annular.filmhook.util;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-
-import ws.schild.jave.Encoder;
-import ws.schild.jave.MultimediaObject;
-import ws.schild.jave.encode.AudioAttributes;
-import ws.schild.jave.encode.EncodingAttributes;
-import ws.schild.jave.encode.VideoAttributes;
-import ws.schild.jave.info.VideoSize;
-
 
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
-		ProcessBuilder processBuilder = new ProcessBuilder(
-				"/usr/bin/cwebp",
-				//"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
+	    ProcessBuilder processBuilder = new ProcessBuilder(
+	  //  "/usr/bin/cwebp",
+"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 
-				"-q", "90",
-				inputPath,
-				"-o", 
-				outputPath
-				);
+	        "-q", "90",
+	        inputPath,
+	        "-o", 
+	        outputPath
+	    );
 
-		processBuilder.inheritIO(); // To see output/errors in the console
-		Process process = processBuilder.start();
-		int exitCode = process.waitFor();
+	    processBuilder.inheritIO(); // To see output/errors in the console
+	    Process process = processBuilder.start();
+	    int exitCode = process.waitFor();
 
-		if (exitCode != 0) {
-			throw new IOException("WebP conversion failed. Exit code: " + exitCode);
-		}
+	    if (exitCode != 0) {
+	        throw new IOException("WebP conversion failed. Exit code: " + exitCode);
+	    }
 	}
 
 	public static void convertToWebM(String inputPath, String outputPath) throws IOException, InterruptedException {
+    
+  String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+    
+     // String ffmpegPath= "/usr/bin/ffmpeg";
 
-		//String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+    ProcessBuilder builder = new ProcessBuilder(
+    	    ffmpegPath,
+            "-i", inputPath,
 
-		String ffmpegPath= "/usr/bin/ffmpeg";
+            // Video: High quality with scaling and padding to 1080x1920
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
 
-		ProcessBuilder builder = new ProcessBuilder(
-				ffmpegPath,
-				"-i", inputPath,
+            "-c:v", "libvpx",
+            "-b:v", "3M",           // Higher bitrate for quality
+            "-crf", "10",           // Lower CRF means higher quality
+            "-cpu-used", "4",       // Balanced speed vs quality
+            "-threads", "4",
+            "-deadline", "realtime", // For quick processing
 
-				// Video: High quality with scaling and padding to 1080x1920
-				"-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+            "-r", "35",             // 30 fps
 
-				"-c:v", "libvpx",
-				"-b:v", "3M",           // Higher bitrate for quality
-				"-crf", "10",           // Lower CRF means higher quality
-				"-cpu-used", "4",       // Balanced speed vs quality
-				"-threads", "4",
-				"-deadline", "realtime", // For quick processing
+            // Audio
+            "-c:a", "libopus",
+            "-b:a", "128k",
+            "-ac", "2",
+            "-ar", "48000",
 
-				"-r", "35",             // 30 fps
+            "-y", // Overwrite without asking
+            outputPath
+    );
 
-				// Audio
-				"-c:a", "libopus",
-				"-b:a", "128k",
-				"-ac", "2",
-				"-ar", "48000",
+    builder.redirectErrorStream(true); // Redirect stderr to stdout
+    Process process = builder.start();
 
-				"-y", // Overwrite without asking
-				outputPath
-				);
+    // Don't print anything, just wait for it to finish
+    process.getInputStream().close(); // Close input stream as it's unused
+    int exitCode = process.waitFor();
 
-		builder.redirectErrorStream(true); // Redirect stderr to stdout
-		Process process = builder.start();
-
-		// Don't print anything, just wait for it to finish
-		process.getInputStream().close(); // Close input stream as it's unused
-		int exitCode = process.waitFor();
-
-		if (exitCode != 0) {
-			throw new IOException("FFmpeg WebM conversion failed. Exit code: " + exitCode);
-		}
-	}
+    if (exitCode != 0) {
+        throw new IOException("FFmpeg WebM conversion failed. Exit code: " + exitCode);
+    }
+}
 
 }
