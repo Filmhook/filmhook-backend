@@ -390,7 +390,7 @@ public class StoriesServiceImpl implements StoriesService {
 		storiesWebModel.setCreatedBy(story.getCreatedBy());
 		// Fetch user professions
 		Set<String> professionNames = new HashSet<>();
-		String userType = story.getUser().getUserType(); // directly from User entity
+		String userType = story.getUser().getUserType(); 
 		if (userType != null && !userType.isEmpty()) {
 			professionNames.add(userType);
 		} else {
