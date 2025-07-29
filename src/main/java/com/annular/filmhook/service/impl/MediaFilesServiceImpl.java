@@ -152,10 +152,10 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 						s3FileExtension = ".webm";
 
 						// ✅ Generate thumbnail from video
-//						String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+						String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 //						String playIconPath = "C:\\Users\\HP\\Pictures\\Saved Pictures\\play-icon.png";
 						String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
-						String ffmpegPath = "/usr/bin/ffmpeg";
+					//	String ffmpegPath = "/usr/bin/ffmpeg";
 						String inputPath = convertedFile.getAbsolutePath();
 						thumbnailFile = File.createTempFile("thumb_", ".webp");
 						String thumbPath = thumbnailFile.getAbsolutePath();
@@ -166,7 +166,8 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 							    "-i", playIconPath, // PNG play icon
 							    "-ss", "00:00:01.000",
 							    "-vframes", "1",
-							    "-filter_complex", "overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2",
+							    "-filter_complex", "[1:v]scale=200:200[icon];[0:v][icon]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2",
+
 							    thumbPath
 							);
 

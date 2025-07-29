@@ -6,6 +6,8 @@ import java.util.List;
 
 import javax.persistence.Column;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -80,5 +82,11 @@ public class AuditionWebModel {
 	private Integer auditionRefId;
 	private String paymentTransactionId;
 	private String paymentStatus;
+	private Integer numberOfRoles;
+	private String industry;
+	private String movieType;
 
+	private MultipartFile scriptUrl;
+	private String description;
+	private String scriptUrlPath;  
 }

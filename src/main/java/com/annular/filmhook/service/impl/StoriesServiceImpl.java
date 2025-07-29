@@ -390,13 +390,9 @@ public class StoriesServiceImpl implements StoriesService {
 		storiesWebModel.setCreatedBy(story.getCreatedBy());
 		// Fetch user professions
 		Set<String> professionNames = new HashSet<>();
-		List<FilmProfessionPermanentDetail> professionPermanentDataList = professionPermanentDetailsRepository
-				.getProfessionDataByUserId(story.getUser().getUserId());
-
-		if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
-			professionNames = professionPermanentDataList.stream()
-					.map(FilmProfessionPermanentDetail::getProfessionName)
-					.collect(Collectors.toSet());
+		String userType = story.getUser().getUserType(); // directly from User entity
+		if (userType != null && !userType.isEmpty()) {
+			professionNames.add(userType);
 		} else {
 			professionNames.add("Public User");
 		}

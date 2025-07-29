@@ -65,5 +65,42 @@ public class AuditionRoles {
     @Column(name = "audition_role_updatedon")
     @CreationTimestamp
     private Date auditionRoleUpdatedOn;
+    
+    // New fields 
+    @Column(name = "character_name")
+    private String characterName;
+
+    @Column(name = "age_range")
+    private String ageRange;
+
+    @Column(name = "ethnicity")
+    private String ethnicity;
+
+    @Column(name = "height_range")
+    private String heightRange;
+
+    @Column(name = "weight")
+    private String weight;
+
+    @Column(name = "profile_face")
+    private String profileFace;
+
+    @Column(name = "opportunity")
+    private String opportunity;
+
+    @Column(name = "experience")
+    private String experience;
+
+    @Column(name = "pay")
+    private String pay;
+
+    @Column(name = "days_of_shoot")
+    private Integer daysOfShoot;
+
+    @Column(name = "date_of_shoot")
+    private String dateOfShoot;
+
+    @Column(name = "compensation", length = 500)
+    private String compensation;
 
 }
