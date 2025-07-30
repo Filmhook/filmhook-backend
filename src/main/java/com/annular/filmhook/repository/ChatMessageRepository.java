@@ -23,16 +23,14 @@ public interface ChatMessageRepository extends JpaRepository<Chat, Integer> {
            "WHERE c.chatReceiverId = :userId " +
            "ORDER BY c.chatCreatedOn DESC")
     List<Integer> findUsersWhoMessagedMe(@Param("userId") Integer userId);
-    @Query(value = """
-    	    SELECT 
-    	        CASE 
-    	            WHEN chat_sender_id = :userId THEN chat_receiver_id 
-    	            ELSE chat_sender_id 
-    	        END AS partner_id
-    	    FROM chat
-    	    WHERE chat_sender_id = :userId OR chat_receiver_id = :userId
-    	    GROUP BY partner_id
-    	    ORDER BY MAX(chat_created_on) DESC
-    	    """, nativeQuery = true)
-    	List<Integer> findRecentChatPartnerIds(@Param("userId") Integer userId);
+    @Query(value = "SELECT " +
+            "CASE " +
+            "WHEN chat_sender_id = :userId THEN chat_receiver_id " +
+            "ELSE chat_sender_id " +
+            "END AS partner_id " +
+            "FROM chat " +
+            "WHERE chat_sender_id = :userId OR chat_receiver_id = :userId " +
+            "GROUP BY partner_id " +
+            "ORDER BY MAX(chat_created_on) DESC", nativeQuery = true)
+    List<Integer> findRecentChatPartnerIds(@Param("userId") Integer userId);
 }
