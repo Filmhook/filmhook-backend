@@ -7,10 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.UserSearchHistory;
-
 @Repository
 public interface UserSearchHistoryRepository extends JpaRepository<UserSearchHistory, Integer> {
-    List<UserSearchHistory> findByUserIdOrderBySearchedAtDesc(Integer userId);
 
-    Optional<UserSearchHistory> findByUserIdAndSearchedUserId(Integer userId, Integer searchedUserId);
+    Optional<UserSearchHistory> findByUserIdAndSearchedUserIdAndSource(Integer userId, Integer searchedUserId, String source);
+
+    List<UserSearchHistory> findByUserIdAndSourceOrderBySearchedAtDesc(Integer userId, String source);
 }

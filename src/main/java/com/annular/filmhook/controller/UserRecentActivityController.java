@@ -15,16 +15,21 @@ public class UserRecentActivityController {
     @Autowired
     private UserRecentActivityService userRecentActivityService;
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<RecentUserWebModel>> getRecentUsers(@PathVariable Integer userId) {
-        List<RecentUserWebModel> recentUsers = userRecentActivityService.getRecentUserActivities(userId);
-        return ResponseEntity.ok(recentUsers);
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getRecentUsers(@PathVariable Integer userId) {
+        List<RecentUserWebModel> list = userRecentActivityService.getRecentUserActivities(userId);
+        return ResponseEntity.ok(list);
     }
 
-    @PostMapping("/search")
-    public ResponseEntity<Void> saveSearch(@RequestParam Integer userId, @RequestParam Integer searchedUserId) {
-        userRecentActivityService.saveSearchHistory(userId, searchedUserId);
-        return ResponseEntity.ok().build();
+    @PostMapping("/search/save")
+    public ResponseEntity<?> saveSearch(
+            @RequestParam Integer userId,
+            @RequestParam Integer searchedUserId,
+            @RequestParam String source // "search" or "chat"
+    ) {
+        userRecentActivityService.saveSearchHistory(userId, searchedUserId, source);
+        return ResponseEntity.ok("Saved");
     }
+
 }
 

@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import javax.persistence.*;
 
 import lombok.*;
-
 @Entity
 @Table(name = "user_search_history", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "searched_user_id"}))
 @Getter
@@ -27,4 +26,7 @@ public class UserSearchHistory {
 
     @Column(name = "searched_at")
     private LocalDateTime searchedAt;
+
+    @Column(name = "source", nullable = false)
+    private String source; // "search" or "chat"
 }

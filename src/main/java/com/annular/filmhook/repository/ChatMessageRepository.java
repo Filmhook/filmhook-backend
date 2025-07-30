@@ -33,4 +33,13 @@ public interface ChatMessageRepository extends JpaRepository<Chat, Integer> {
             "GROUP BY partner_id " +
             "ORDER BY MAX(chat_created_on) DESC", nativeQuery = true)
     List<Integer> findRecentChatPartnerIds(@Param("userId") Integer userId);
+    
+    // Fetch all chats where this user is either sender or receiver
+    List<Chat> findByChatSenderIdOrChatReceiverId(Integer senderId, Integer receiverId);
+
+    // Optional: Fetch all messages between two users (chat screen)
+    List<Chat> findByChatSenderIdAndChatReceiverIdOrChatReceiverIdAndChatSenderId(
+            Integer senderId1, Integer receiverId1,
+            Integer senderId2, Integer receiverId2
+    );
 }

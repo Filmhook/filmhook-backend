@@ -30,65 +30,62 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
     private UserService userService;
 
     @Override
-    public void saveSearchHistory(Integer userId, Integer searchedUserId) {
+    public void saveSearchHistory(Integer userId, Integer searchedUserId, String source) {
         if (userId.equals(searchedUserId)) return;
 
-        Optional<UserSearchHistory> existing = userSearchHistoryRepo.findByUserIdAndSearchedUserId(userId, searchedUserId);
-        UserSearchHistory history = existing.orElse(UserSearchHistory.builder()
-                .userId(userId)
-                .searchedUserId(searchedUserId)
-                .build());
-        history.setSearchedAt(LocalDateTime.now());
+        Optional<UserSearchHistory> existingOpt = userSearchHistoryRepo
+                .findByUserIdAndSearchedUserIdAndSource(userId, searchedUserId, source);
 
+        UserSearchHistory history;
+
+        if (existingOpt.isPresent()) {
+            // ✅ Update the existing record — carry forward the ID
+            history = existingOpt.get();
+            history.setSearchedAt(LocalDateTime.now());
+        } else {
+            // ✅ Build new record
+            history = UserSearchHistory.builder()
+                    .userId(userId)
+                    .searchedUserId(searchedUserId)
+                    .source(source)
+                    .searchedAt(LocalDateTime.now())
+                    .build();
+        }
+
+        // ✅ Hibernate will insert or update depending on whether ID is set
         userSearchHistoryRepo.save(history);
     }
 
     @Override
     public List<RecentUserWebModel> getRecentUserActivities(Integer userId) {
-        Map<Integer, RecentUserWebModel> recentMap = new HashMap<>();
+        Map<String, Map<Integer, RecentUserWebModel>> categorizedMap = new HashMap<>();
+        categorizedMap.put("search", new LinkedHashMap<>());
+        categorizedMap.put("chat", new LinkedHashMap<>());
 
-        // Search history
-        for (UserSearchHistory history : userSearchHistoryRepo.findByUserIdOrderBySearchedAtDesc(userId)) {
-            userRepo.findById(history.getSearchedUserId().intValue()).ifPresent(user -> {
-                String profilePic = getProfilePic(user.getUserId());
-                recentMap.put(user.getUserId(), RecentUserWebModel.builder()
-                        .userId(user.getUserId())
-                        .name(user.getName())
-                        .userType(user.getUserType())
-                        .profilePic(profilePic)
-                        .source("search")
-                        .lastInteractionTime(history.getSearchedAt())
-                        .build());
-            });
-        }
-
-        // Chat history
-        List<Integer> chatUserIds = chatMessageRepo.findRecentChatPartnerIds(userId);
-        for (Integer chatUserId : chatUserIds) {
-            if (!chatUserId.equals(userId)) {
-                userRepo.findById(chatUserId.intValue()).ifPresent(user -> {
+        for (String source : List.of("search", "chat")) {
+            List<UserSearchHistory> historyList = userSearchHistoryRepo.findByUserIdAndSourceOrderBySearchedAtDesc(userId, source);
+            for (UserSearchHistory history : historyList) {
+                userRepo.findById(history.getSearchedUserId()).ifPresent(user -> {
                     String profilePic = getProfilePic(user.getUserId());
-                    RecentUserWebModel existing = recentMap.get(user.getUserId());
-
-                    LocalDateTime chatTime = LocalDateTime.now(); // TODO: Replace with actual last chat time if available
-                    RecentUserWebModel model = RecentUserWebModel.builder()
+                    categorizedMap.get(source).put(user.getUserId(), RecentUserWebModel.builder()
                             .userId(user.getUserId())
                             .name(user.getName())
                             .userType(user.getUserType())
                             .profilePic(profilePic)
-                            .source("chat")
-                            .lastInteractionTime(chatTime)
-                            .build();
-
-                    // Update only if new or newer timestamp
-                    if (existing == null || existing.getLastInteractionTime().isBefore(chatTime)) {
-                        recentMap.put(user.getUserId(), model);
-                    }
+                            .source(source)
+                            .lastInteractionTime(history.getSearchedAt())
+                            .build());
                 });
             }
         }
 
-        return recentMap.values().stream()
+        // Combine both types into one list
+        List<RecentUserWebModel> combined = new ArrayList<>();
+        combined.addAll(categorizedMap.get("search").values());
+        combined.addAll(categorizedMap.get("chat").values());
+
+        // Sort by time descending
+        return combined.stream()
                 .sorted(Comparator.comparing(RecentUserWebModel::getLastInteractionTime).reversed())
                 .collect(Collectors.toList());
     }
