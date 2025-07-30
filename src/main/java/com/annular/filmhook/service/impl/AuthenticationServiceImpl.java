@@ -128,6 +128,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setStatus(false);
                 user.setCreatedBy(user.getUserId());
                 user.setCreatedOn(new Date());
+                user.setUserFlag(true);
 
                 user = userRepository.save(user);
                 response.put("userDetails", user);
@@ -392,12 +393,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 // Check the user's flag (assuming this is a field in the User entity)
                 if (verifiedUser != null ) {
                     // If the userFlag is true, send the success email
-                    if (verifiedUser.getUserFlag()) {
+                	if (verifiedUser != null && Boolean.TRUE.equals(verifiedUser.getUserFlag())) {
                     	String mailContent ="<p>Thank you for joining the Film-hook community! We're thrilled to have you on board as a Public User.</p>" +
-                                "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";                        mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "Welcome to Film-hook  Media Apps", mailContent);
+                                "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";                        
                                 mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "Welcome to Film-hook Media Apps", mailContent);
                     }
-                }
+                }System.out.println("Verified user flag: " + verifiedUser.getUserFlag());
+
                 // Return a success response if email OTP is verified
                 return ResponseEntity.ok(new Response(1, "Email OTP verified successfully. Public user account created in FilmHook.", ""));
             } else {
