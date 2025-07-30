@@ -75,249 +75,249 @@ import java.time.Duration;
 @Service
 public class PostServiceImpl implements PostService {
 
-    @Autowired
-    UserDetails userDetails;
+	@Autowired
+	UserDetails userDetails;
 
-    public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
+	public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
 
-    @Autowired
-    MediaFilesService mediaFilesService;
+	@Autowired
+	MediaFilesService mediaFilesService;
 
-    @Autowired
-    private UserRepository userRepository;
-    
-    @Autowired
-    FileUtil fileUtil;
+	@Autowired
+	private UserRepository userRepository;
 
-    @Autowired
-    PinProfileRepository pinProfileRepository;
+	@Autowired
+	FileUtil fileUtil;
 
-    @Autowired
-    UserService userService;
+	@Autowired
+	PinProfileRepository pinProfileRepository;
 
-    @Autowired
-    AwsS3ServiceImpl awsService;
+	@Autowired
+	UserService userService;
 
-    @Autowired
-    PostsRepository postsRepository;
+	@Autowired
+	AwsS3ServiceImpl awsService;
 
-    @Autowired
-    FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
+	@Autowired
+	PostsRepository postsRepository;
 
-    @Autowired
-    LikeRepository likeRepository;
-    
-    @Autowired
-    VisitPageRepository visitPageRepository;
+	@Autowired
+	FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
 
-    @Autowired
-    LinkRepository linkRepository;
+	@Autowired
+	LikeRepository likeRepository;
 
-    @Autowired
-    CommentRepository commentRepository;
+	@Autowired
+	VisitPageRepository visitPageRepository;
 
-    @Autowired
-    ShareRepository shareRepository;
-    
-    @Autowired
-    PromoteRepository promoteRepository;
+	@Autowired
+	LinkRepository linkRepository;
 
-    @Autowired
-    PostTagsRepository postTagsRepository;
+	@Autowired
+	CommentRepository commentRepository;
 
-    @Value("${annular.app.url}")
-    private String appUrl;
+	@Autowired
+	ShareRepository shareRepository;
 
-    @Autowired
-    InAppNotificationRepository inAppNotificationRepository;
+	@Autowired
+	PromoteRepository promoteRepository;
 
-    @Autowired
-    FriendRequestRepository friendRequestRepository;
-    @Autowired
-    PostViewRepository postViewRepository;
-    
-    
-    private static final String POST = "Post";
-    private static final String COMMENT = "Comment";
+	@Autowired
+	PostTagsRepository postTagsRepository;
 
-    @Override
-    public PostWebModel savePostsWithFiles(PostWebModel postWebModel) {
-        try {
-            User userFromDB = userService.getUser(postWebModel.getUserId()).orElse(null);
-            if (userFromDB != null) {
-                logger.info("User found: {}", userFromDB.getName());
-                // Saving Tagged Users' IDs as a comma-separated string
-                String taggedUserIds = !Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())
-                        ? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
-                        : null;
+	@Value("${annular.app.url}")
+	private String appUrl;
 
-                Posts posts = Posts.builder()
-                        .postId(UUID.randomUUID().toString())
-                        .description(postWebModel.getDescription())
-                        .user(userFromDB)
-                        .postLinkUrls(postWebModel.getPostLinkUrl())
-                        .latitude(postWebModel.getLatitude())
-                        .longitude(postWebModel.getLongitude())
-                        .address(postWebModel.getAddress())
-                        .status(true)
-                        .privateOrPublic(postWebModel.getPrivateOrPublic())
-                        .promoteFlag(false)
-                        .promoteStatus(true)
-                        .locationName(postWebModel.getLocationName())
-                        .likesCount(0)
-                        .commentsCount(0)
-                        .sharesCount(0)
-                        .createdBy(postWebModel.getUserId())
-                        .createdOn(new Date())
-                        .tagUsers(taggedUserIds)
-                        .build();
-                Posts savedPost = postsRepository.saveAndFlush(posts);
+	@Autowired
+	InAppNotificationRepository inAppNotificationRepository;
 
-                if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
-                    // Saving the Post files in the media_files table
-                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-                            .userId(postWebModel.getUserId())
-                            .category(MediaFileCategory.Post)
-                            .categoryRefId(savedPost.getId())
-                            .files(postWebModel.getFiles())
-                            .build();
-                    mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
-                }
-
-                // Saving Tagged users
-                if (!Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())) {
-                    List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
-                            .map(taggedUserId -> PostTags.builder()
-                                    .postId(savedPost.getId())
-                                    .taggedUser(User.builder().userId(taggedUserId).build())
-                                    .status(true)
-                                    .createdBy(postWebModel.getUserId())
-                                    .createdOn(new Date())
-                                    .build())
-                            .collect(Collectors.toList());
-                    postTagsRepository.saveAllAndFlush(tagsList);
-
-                    for (Integer taggedUserId : postWebModel.getTaggedUsers()) {
-                        InAppNotification notification = InAppNotification.builder()
-                                .senderId(postWebModel.getUserId())
-                                .receiverId(taggedUserId)
-                                .title("You've been tagged in a post")
-                                .message("You have been tagged in a post by " + userFromDB.getName())
-                                .createdOn(new Date())
-                                .isRead(false)
-                                .createdBy(postWebModel.getUserId())
-                                .id(savedPost.getId())
-                                .userType("Tagged") // Adjust as per your userType logic
-                                .postId(savedPost.getPostId())
-                                .build();
-                        inAppNotificationRepository.save(notification);
-                    }
-
-                }
-
-                List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
-                return responseList.isEmpty() ? null : responseList.get(0);
-            }
-        } catch (Exception e) {
-            logger.error("Error at savePostsWithFiles() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
-        try {
-            Optional<User> userFromDB = userService.getUser(userId);
-            if (userFromDB.isPresent()) {
-                String filePath = FileUtil.generateFilePath(userFromDB.get(), category, fileId + fileType);
-                return new ByteArrayResource(fileUtil.downloadFile(filePath));
-            }
-        } catch (Exception e) {
-            logger.error("Error at getPostFile() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-//    @Override
-//    public List<PostWebModel> getPostsByUserId(Integer userId) {
-//        try {
-//            List<Posts> postList = postsRepository.getUserPosts(User.builder().userId(userId).build());
-//            return this.transformPostsDataToPostWebModel(postList);
-//        } catch (Exception e) {
-//            logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
-//            e.printStackTrace();
-//            return null;
-//        }
-//    }
-    @Override
-    public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) {
-        try {
-            // Fetch posts created by the user
-            List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
-
-            // Convert userId to String for querying tagged posts
-            String userIdString = userId.toString();
-
-            // Fetch posts where the user is tagged
-            List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
-
-            // Combine both lists and remove duplicates
-            Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
-            combinedPostsSet.addAll(taggedPosts);
-
-            // Transform the combined list of posts to PostWebModel
-            List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
-            // Sort the posts by creation date (or any other attribute)
-            //combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
-            // Sort the posts first by promote flag, then by creation date
-            combinedPostsList.sort(Comparator
-                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
-                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
-
-            // Apply pagination
-            int totalPosts = combinedPostsList.size();
-            int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
-            int toIndex = Math.min(fromIndex + pageSize, totalPosts);
-
-            List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
-
-            return this.transformPostsDataToPostWebModel(paginatedPosts);
-
-          // return this.transformPostsDataToPostWebModel(combinedPostsList);
-        } catch (Exception e) {
-            logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    @Override
-    public PostWebModel getPostByPostId(String postId) {
-        Posts post = postsRepository.findByPostId(postId);
-        List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
-        return responseList.isEmpty() ? null : responseList.get(0);
-    }
-
-    private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
-        List<PostWebModel> responseList = new ArrayList<>();
-        try {
-        	Integer loggedInUserTemp = null;
-        	Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        	if (principal instanceof UserDetailsImpl) {
-        	    loggedInUserTemp = ((UserDetailsImpl) principal).getId();
-        	}
-        	final Integer finalLoggedInUser = loggedInUserTemp;
+	@Autowired
+	FriendRequestRepository friendRequestRepository;
+	@Autowired
+	PostViewRepository postViewRepository;
 
 
-            if (!Utility.isNullOrEmptyList(postList)) {
-                postList.stream().filter(Objects::nonNull).forEach(post -> {
+	private static final String POST = "Post";
+	private static final String COMMENT = "Comment";
 
-                    List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+	@Override
+	public PostWebModel savePostsWithFiles(PostWebModel postWebModel) {
+		try {
+			User userFromDB = userService.getUser(postWebModel.getUserId()).orElse(null);
+			if (userFromDB != null) {
+				logger.info("User found: {}", userFromDB.getName());
+				// Saving Tagged Users' IDs as a comma-separated string
+				String taggedUserIds = !Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())
+						? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
+								: null;
 
-                    // Profession
-                    Set<String> professionNames = new HashSet<>();
+				Posts posts = Posts.builder()
+						.postId(UUID.randomUUID().toString())
+						.description(postWebModel.getDescription())
+						.user(userFromDB)
+						.postLinkUrls(postWebModel.getPostLinkUrl())
+						.latitude(postWebModel.getLatitude())
+						.longitude(postWebModel.getLongitude())
+						.address(postWebModel.getAddress())
+						.status(true)
+						.privateOrPublic(postWebModel.getPrivateOrPublic())
+						.promoteFlag(false)
+						.promoteStatus(true)
+						.locationName(postWebModel.getLocationName())
+						.likesCount(0)
+						.commentsCount(0)
+						.sharesCount(0)
+						.createdBy(postWebModel.getUserId())
+						.createdOn(new Date())
+						.tagUsers(taggedUserIds)
+						.build();
+				Posts savedPost = postsRepository.saveAndFlush(posts);
+
+				if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
+					// Saving the Post files in the media_files table
+					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+							.userId(postWebModel.getUserId())
+							.category(MediaFileCategory.Post)
+							.categoryRefId(savedPost.getId())
+							.files(postWebModel.getFiles())
+							.build();
+					mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+				}
+
+				// Saving Tagged users
+				if (!Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())) {
+					List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
+							.map(taggedUserId -> PostTags.builder()
+									.postId(savedPost.getId())
+									.taggedUser(User.builder().userId(taggedUserId).build())
+									.status(true)
+									.createdBy(postWebModel.getUserId())
+									.createdOn(new Date())
+									.build())
+							.collect(Collectors.toList());
+					postTagsRepository.saveAllAndFlush(tagsList);
+
+					for (Integer taggedUserId : postWebModel.getTaggedUsers()) {
+						InAppNotification notification = InAppNotification.builder()
+								.senderId(postWebModel.getUserId())
+								.receiverId(taggedUserId)
+								.title("You've been tagged in a post")
+								.message("You have been tagged in a post by " + userFromDB.getName())
+								.createdOn(new Date())
+								.isRead(false)
+								.createdBy(postWebModel.getUserId())
+								.id(savedPost.getId())
+								.userType("Tagged") // Adjust as per your userType logic
+								.postId(savedPost.getPostId())
+								.build();
+						inAppNotificationRepository.save(notification);
+					}
+
+				}
+
+				List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
+				return responseList.isEmpty() ? null : responseList.get(0);
+			}
+		} catch (Exception e) {
+			logger.error("Error at savePostsWithFiles() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
+		try {
+			Optional<User> userFromDB = userService.getUser(userId);
+			if (userFromDB.isPresent()) {
+				String filePath = FileUtil.generateFilePath(userFromDB.get(), category, fileId + fileType);
+				return new ByteArrayResource(fileUtil.downloadFile(filePath));
+			}
+		} catch (Exception e) {
+			logger.error("Error at getPostFile() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	//    @Override
+	//    public List<PostWebModel> getPostsByUserId(Integer userId) {
+	//        try {
+	//            List<Posts> postList = postsRepository.getUserPosts(User.builder().userId(userId).build());
+	//            return this.transformPostsDataToPostWebModel(postList);
+	//        } catch (Exception e) {
+	//            logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
+	//            e.printStackTrace();
+	//            return null;
+	//        }
+	//    }
+	@Override
+	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) {
+		try {
+			// Fetch posts created by the user
+			List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
+
+			// Convert userId to String for querying tagged posts
+			String userIdString = userId.toString();
+
+			// Fetch posts where the user is tagged
+			List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
+
+			// Combine both lists and remove duplicates
+			Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
+			combinedPostsSet.addAll(taggedPosts);
+
+			// Transform the combined list of posts to PostWebModel
+			List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
+			// Sort the posts by creation date (or any other attribute)
+			//combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+			// Sort the posts first by promote flag, then by creation date
+			combinedPostsList.sort(Comparator
+					.comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
+					.thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
+
+			// Apply pagination
+			int totalPosts = combinedPostsList.size();
+			int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
+			int toIndex = Math.min(fromIndex + pageSize, totalPosts);
+
+			List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
+
+			return this.transformPostsDataToPostWebModel(paginatedPosts);
+
+			// return this.transformPostsDataToPostWebModel(combinedPostsList);
+		} catch (Exception e) {
+			logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@Override
+	public PostWebModel getPostByPostId(String postId) {
+		Posts post = postsRepository.findByPostId(postId);
+		List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
+		return responseList.isEmpty() ? null : responseList.get(0);
+	}
+
+	private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
+		List<PostWebModel> responseList = new ArrayList<>();
+		try {
+			Integer loggedInUserTemp = null;
+			Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			if (principal instanceof UserDetailsImpl) {
+				loggedInUserTemp = ((UserDetailsImpl) principal).getId();
+			}
+			final Integer finalLoggedInUser = loggedInUserTemp;
+
+
+			if (!Utility.isNullOrEmptyList(postList)) {
+				postList.stream().filter(Objects::nonNull).forEach(post -> {
+
+					List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+
+					// Profession
+					Set<String> professionNames = new HashSet<>();
 					String userType = post.getUser().getUserType(); 
 					if (userType != null && !userType.isEmpty()) {
 						professionNames.add(userType);
@@ -325,670 +325,670 @@ public class PostServiceImpl implements PostService {
 						professionNames.add("Public User");
 					}
 
-                    // Followers
-                    List<FollowersRequest> followersList = friendRequestRepository
-                            .findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+					// Followers
+					List<FollowersRequest> followersList = friendRequestRepository
+							.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
-                    // Likes
-                    Boolean likeStatus = false;
-                    Integer latestLikeId = null;
-                    if (finalLoggedInUser != null) {
-                        Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
-                        likeStatus = likesList.map(Likes::getStatus).orElse(false);
-                        latestLikeId = likesList.map(Likes::getLikeId).orElse(null);
-                    }
+					// Likes
+					Boolean likeStatus = false;
+					Integer latestLikeId = null;
+					if (finalLoggedInUser != null) {
+						Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
+						likeStatus = likesList.map(Likes::getStatus).orElse(false);
+						latestLikeId = likesList.map(Likes::getLikeId).orElse(null);
+					}
 
-                    // Pin Status
-                    Boolean pinStatus = false;
-                    if (finalLoggedInUser != null) {
-                        Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(finalLoggedInUser, post.getUser().getUserId());
-                        pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
-                    }
+					// Pin Status
+					Boolean pinStatus = false;
+					if (finalLoggedInUser != null) {
+						Optional<UserProfilePin> userData = pinProfileRepository.findByPinProfileIdAndUserId(finalLoggedInUser, post.getUser().getUserId());
+						pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
+					}
 
-                    // Promote
-                    boolean isPromoted = promoteRepository.existsByPostIdAndStatus(post.getId(), true);
-                    Optional<Promote> promoteDetailsOpt = promoteRepository.findByPostIds(post.getId());
-                    Promote promoteDetails = promoteDetailsOpt.orElse(null);
+					// Promote
+					boolean isPromoted = promoteRepository.existsByPostIdAndStatus(post.getId(), true);
+					Optional<Promote> promoteDetailsOpt = promoteRepository.findByPostIds(post.getId());
+					Promote promoteDetails = promoteDetailsOpt.orElse(null);
 
-                    // Tagged users
-                    List<Map<String, Object>> taggedUsers = post.getPostTagsCollection() != null
-                            ? post.getPostTagsCollection().stream()
-                            .filter(postTags -> Boolean.TRUE.equals(postTags.getStatus()))
-                            .map(postTags -> {
-                                Map<String, Object> taggedUserDetails = new HashMap<>();
-                                Integer taggedUserId = postTags.getTaggedUser().getUserId();
-                                taggedUserDetails.put("userId", taggedUserId);
-                                userService.getUser(taggedUserId).ifPresent(user -> {
-                                    taggedUserDetails.put("username", user.getName());
-                                    taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
-                                });
-                                return taggedUserDetails;
-                            })
-                            .collect(Collectors.toList())
-                            : null;
+					// Tagged users
+					List<Map<String, Object>> taggedUsers = post.getPostTagsCollection() != null
+							? post.getPostTagsCollection().stream()
+									.filter(postTags -> Boolean.TRUE.equals(postTags.getStatus()))
+									.map(postTags -> {
+										Map<String, Object> taggedUserDetails = new HashMap<>();
+										Integer taggedUserId = postTags.getTaggedUser().getUserId();
+										taggedUserDetails.put("userId", taggedUserId);
+										userService.getUser(taggedUserId).ifPresent(user -> {
+											taggedUserDetails.put("username", user.getName());
+											taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
+										});
+										return taggedUserDetails;
+									})
+									.collect(Collectors.toList())
+									: null;
 
-                    LocalDateTime createdOn = LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
-                    String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+					LocalDateTime createdOn = LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
+					String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
 
-                    PostWebModel postWebModel = PostWebModel.builder()
-                            .id(post.getId())
-                            .userId(post.getUser().getUserId())
-                            .userName(post.getUser().getName())
-                            .postId(post.getPostId())
-                            .adminReview(post.getUser().getAdminReview())
-                            .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
-                            .description(post.getDescription())
-                            .pinStatus(pinStatus)
-                            .userType(post.getUser().getUserType())
-                            .likeCount(post.getLikesCount())
-                            .shareCount(post.getSharesCount())
-                            .commentCount(post.getCommentsCount())
-                            .promoteFlag(post.getPromoteFlag())
-                            .postFiles(postFiles)
-                            .postLinkUrl(post.getPostLinkUrls())
-                            .latitude(post.getLatitude())
-                            .longitude(post.getLongitude())
-                            .address(post.getAddress())
-                            .likeStatus(likeStatus)
-                            .likeId(latestLikeId)
-                            .elapsedTime(elapsedTime)
-                            .privateOrPublic(post.getPrivateOrPublic())
-                            .locationName(post.getLocationName())
-                            .professionNames(professionNames)
-                            .followersCount(followersList.size())
-                            .createdOn(post.getCreatedOn())
-                            .createdBy(post.getCreatedBy())
-                            .taggedUserss(taggedUsers)
-                            .promoteStatus(promoteDetails != null)
-                            .promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
-                            .numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
-                            .amount(promoteDetails != null ? promoteDetails.getAmount() : null)
-                            .whatsAppNumber(promoteDetails != null ? promoteDetails.getWhatsAppNumber() : null)
-                            .webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
-                            .selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
-                            .visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
-                            .visitPageData(fetchVisitPageData(promoteDetails))
-                            .viewsCount(post.getViewsCount())
-                            .build();
+					PostWebModel postWebModel = PostWebModel.builder()
+							.id(post.getId())
+							.userId(post.getUser().getUserId())
+							.userName(post.getUser().getName())
+							.postId(post.getPostId())
+							.adminReview(post.getUser().getAdminReview())
+							.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+							.description(post.getDescription())
+							.pinStatus(pinStatus)
+							.userType(post.getUser().getUserType())
+							.likeCount(post.getLikesCount())
+							.shareCount(post.getSharesCount())
+							.commentCount(post.getCommentsCount())
+							.promoteFlag(post.getPromoteFlag())
+							.postFiles(postFiles)
+							.postLinkUrl(post.getPostLinkUrls())
+							.latitude(post.getLatitude())
+							.longitude(post.getLongitude())
+							.address(post.getAddress())
+							.likeStatus(likeStatus)
+							.likeId(latestLikeId)
+							.elapsedTime(elapsedTime)
+							.privateOrPublic(post.getPrivateOrPublic())
+							.locationName(post.getLocationName())
+							.professionNames(professionNames)
+							.followersCount(followersList.size())
+							.createdOn(post.getCreatedOn())
+							.createdBy(post.getCreatedBy())
+							.taggedUserss(taggedUsers)
+							.promoteStatus(promoteDetails != null)
+							.promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
+							.numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
+							.amount(promoteDetails != null ? promoteDetails.getAmount() : null)
+							.whatsAppNumber(promoteDetails != null ? promoteDetails.getWhatsAppNumber() : null)
+							.webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
+							.selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
+							.visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
+							.visitPageData(fetchVisitPageData(promoteDetails))
+							.viewsCount(post.getViewsCount())
+							.build();
 
-                    responseList.add(postWebModel);
-                });
-            }
-        } catch (Exception e) {
-            logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage(), e);
-        }
+					responseList.add(postWebModel);
+				});
+			}
+		} catch (Exception e) {
+			logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage(), e);
+		}
 
-        logger.info("Final post count to respond :- [{}]", responseList.size());
-        return responseList;
-    }
+		logger.info("Final post count to respond :- [{}]", responseList.size());
+		return responseList;
+	}
 
 
-    private String fetchVisitPageData(Promote promoteDetails) {
-        if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
-            // Assuming selectedOption is a foreign key that refers to VisitPage
-            Optional<VisitPage> visitPageOpt = visitPageRepository.findById(promoteDetails.getSelectOption());
-            return visitPageOpt.map(VisitPage::getData).orElse(null); // Fetching the data field
-        }
-        return null; // Return null if no data is available
-    }
+	private String fetchVisitPageData(Promote promoteDetails) {
+		if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
+			// Assuming selectedOption is a foreign key that refers to VisitPage
+			Optional<VisitPage> visitPageOpt = visitPageRepository.findById(promoteDetails.getSelectOption());
+			return visitPageOpt.map(VisitPage::getData).orElse(null); // Fetching the data field
+		}
+		return null; // Return null if no data is available
+	}
 
 
 	private String generatePostUrl(String postId) {
-        return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";
-    }
-
-    @Override
-    public Resource getAllPostByUserIdAndCategory(Integer userId, String category) {
-        try {
-            Optional<User> userFromDB = userService.getUser(userId);
-            if (userFromDB.isPresent()) {
-                String destinationPath = FileUtil.generateDestinationPath(userFromDB.get(), category);
-                List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
-                return new ByteArrayResource(fileUtil.downloadFile(s3data));
-            }
-        } catch (Exception e) {
-            logger.error("Error at getAllPostByUserIdAndCategory() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public Resource getAllPostFilesByCategory(String category) {
-        try {
-            String destinationPath = FileUtil.generateDestinationPath(category);
-            List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
-            return new ByteArrayResource(fileUtil.downloadFile(s3data));
-        } catch (Exception e) {
-            logger.error("Error at getAllPostFilesByCategory() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-//    @Override
-//    public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
-//        try {
-//            Pageable paging = PageRequest.of(pageNo - 1, pageSize);
-//
-//            // Fetch all active posts with pagination
-//            List<Posts> postList = postsRepository.getAllActivePosts(paging);
-//
-//            // Sort the posts: false (or null) promoteFlag first, true last, then by creation date (newest first)
-//            postList.sort(Comparator
-//                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // false/null first, true last
-//                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
-//
-//            // Transform the sorted posts into PostWebModel and return the result
-//            return this.transformPostsDataToPostWebModel(postList);
-//        } catch (Exception e) {
-//            logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
-//            e.printStackTrace();
-//            return null;
-//        }
-//    }
-
-    @Override
-    public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
-        try {
-            List<Posts> allPosts = postsRepository.getAllActivePosts();
-
-            if (allPosts == null || allPosts.isEmpty()) {
-                return Collections.emptyList();
-            }
-
-            // Sort by createdOn (newest first)
-            allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
-
-            List<Posts> promotedPosts = new ArrayList<>();
-            List<Posts> normalPosts = new ArrayList<>();
-
-            for (Posts post : allPosts) {
-                if (Boolean.TRUE.equals(post.getPromoteFlag())) {
-                    promotedPosts.add(post);
-                } else {
-                    normalPosts.add(post);
-                }
-            }
-
-            // Interleave: 1 promoted + 5 normal pattern
-            List<Posts> orderedPosts = new ArrayList<>();
-            int promoIdx = 0, normalIdx = 0;
-
-            while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
-                if (promoIdx < promotedPosts.size()) {
-                    orderedPosts.add(promotedPosts.get(promoIdx++));
-                }
-                for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
-                    orderedPosts.add(normalPosts.get(normalIdx++));
-                }
-            }
-
-            // Pagination handling
-            int start = (pageNo - 1) * pageSize;
-            int end = Math.min(start + pageSize, orderedPosts.size());
-
-            // If requested page is out of bounds, return empty
-            if (start >= orderedPosts.size()) {
-                return Collections.emptyList();
-            }
-
-            List<Posts> paginatedPosts = orderedPosts.subList(start, end);
-
-            return transformPostsDataToPostWebModel(paginatedPosts);
-
-        } catch (Exception e) {
-            logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
-            return Collections.emptyList();
-        }
-    }
-
-    @Override
-    public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
-        try {
-            Likes likeRowToSaveOrUpdate;
-            Posts post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
-            if (post != null) {
-
-                Likes existingLike;
-                if (!Utility.isNullObject(likeWebModel.getLikeId())) {
-                    existingLike = likeRepository.findById(likeWebModel.getLikeId()).orElse(null);
-                } else {
-                    existingLike = likeRepository.findByPostIdAndUserId(likeWebModel.getPostId(), likeWebModel.getUserId()).orElse(null);
-                }
-                Comment existingComment = likeWebModel.getCommentId() != null ? commentRepository.findById(likeWebModel.getCommentId()).orElse(null) : null;
-
-                if (existingLike != null) {
-                    likeRowToSaveOrUpdate = existingLike;
-                    likeRowToSaveOrUpdate.setStatus(!existingLike.getStatus());
-                    likeRowToSaveOrUpdate.setUpdatedBy(likeWebModel.getUserId());
-                    likeRowToSaveOrUpdate.setUpdatedOn(new Date());
-                } else {
-                    likeRowToSaveOrUpdate = Likes.builder()
-                            .category(likeWebModel.getCategory())
-                            .postId(post.getId())
-                            .commentId(likeWebModel.getCommentId())
-                            .likedBy(likeWebModel.getUserId())
-                            .liveDate(null)
-                            .status(true)
-                            .createdBy(likeWebModel.getUserId())
-                            .createdOn(new Date())
-                            .build();
-                }
-                Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
-
-                Integer totalLikes = 0;
-                if (!Utility.isNullOrBlankWithTrim(likeWebModel.getCategory())) {
-                    if (likeWebModel.getCategory().equalsIgnoreCase(POST)) {
-                        if (likeRowToSaveOrUpdate.getStatus()) {
-                            post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() + 1 : 1); // Increasing Post's like count
-                        } else {
-                            post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() - 1 : 0); // Decreasing Post's like count
-                        }
-                        postsRepository.saveAndFlush(post);
-                        totalLikes = post.getLikesCount();
-                    } else if (likeWebModel.getCategory().equalsIgnoreCase(COMMENT) && existingComment != null) {
-                        if (likeRowToSaveOrUpdate.getStatus()) {
-                            existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() + 1 : 1); // Increasing Comment's like count
-                        } else {
-                            existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() - 1 : 0); // Decreasing Comment's like count
-                        }
-                        commentRepository.saveAndFlush(existingComment);
-                        totalLikes = existingComment.getLikesCount();
-                    }
-                }
-                logger.info("Like count for post id [{}] is :- [{}]", post.getId(), totalLikes);
-                return this.transformLikeData(savedLike, totalLikes);
-            }
-        } catch (Exception e) {
-            logger.error("Error at addOrUpdateLike() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private LikeWebModel transformLikeData(Likes likes, Integer totalCount) {
-        return LikeWebModel.builder()
-                .likeId(likes.getLikeId())
-                .category(likes.getCategory())
-                .postId(likes.getPostId())
-                .commentId(likes.getCommentId())
-                .userId(likes.getLikedBy())
-                .totalLikesCount(totalCount)
-                .status(likes.getStatus())
-                .createdBy(likes.getCreatedBy())
-                .createdOn(likes.getCreatedOn())
-                .updatedBy(likes.getUpdatedBy())
-                .updatedOn(likes.getUpdatedOn())
-                .build();
-    }
-
-    @Override
-    public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {
-        try {
-            Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
-            if (post != null) {
-                // Create and save new comment or reply
-                Comment comment = Comment.builder()
-                        .category(commentInputWebModel.getCategory())
-                        .postId(post.getId())
-                        .parentCommentId(commentInputWebModel.getParentCommentId())
-                        .content(commentInputWebModel.getContent())
-                        .commentedBy(commentInputWebModel.getUserId())
-                        .status(true)
-                        .likesCount(0)
-                        .createdBy(commentInputWebModel.getUserId())
-                        .createdOn(new Date())
-                        .build();
-
-                Comment savedComment = commentRepository.save(comment);
-
-                // Always update post comment count (for both direct comments and replies)
-                int newPostCommentCount = !Utility.isNullOrZero(post.getCommentsCount())
-                        ? post.getCommentsCount() + 1
-                        : 1;
-                post.setCommentsCount(newPostCommentCount);
-                postsRepository.saveAndFlush(post);
-
-                // If it's a reply to a comment, update the parent comment's reply count
-                if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory())
-                        && commentInputWebModel.getCategory().equalsIgnoreCase(COMMENT)) {
-
-                    Integer parentCommentId = commentInputWebModel.getParentCommentId();
-                    if (parentCommentId != null) {
-                        Comment parent = commentRepository.findById(parentCommentId).orElse(null);
-                        if (parent != null) {
-                            int newReplyCount = !Utility.isNullOrZero(parent.getReplyCount())
-                                    ? parent.getReplyCount() + 1
-                                    : 1;
-                            parent.setReplyCount(newReplyCount);
-                            commentRepository.saveAndFlush(parent);
-                        }
-                    }
-                }
-
-                logger.info("Comment added under post [{}]", post.getId());
-                return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
-            }
-        } catch (Exception e) {
-            logger.error("Error at addComment() -> {}", e.getMessage(), e);
-        }
-        return null;
-    }
-
-
-    @Override
-    public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
-        try {
-            Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
-            if (post != null) {
-                Comment comment = commentRepository.findById(commentInputWebModel.getCommentId()).orElse(null);
-
-                if (comment != null && Boolean.TRUE.equals(comment.getStatus())) {
-                    // Soft delete the parent comment
-                    comment.setStatus(false);
-                    comment.setUpdatedBy(commentInputWebModel.getUserId());
-                    comment.setUpdatedOn(new Date());
-                    commentRepository.save(comment);
-
-                    // Handle child comments (soft delete them too)
-                    List<Comment> childComments = commentRepository.getChildComments(
-                            comment.getPost().getId(), comment.getCommentId());
-
-                    int childDeletedCount = 0;
-
-                    if (!Utility.isNullOrEmptyList(childComments)) {
-                        for (Comment child : childComments) {
-                            if (Boolean.TRUE.equals(child.getStatus())) {
-                                child.setStatus(false);
-                                child.setUpdatedBy(commentInputWebModel.getUserId());
-                                child.setUpdatedOn(new Date());
-                                commentRepository.save(child);
-                                childDeletedCount++;
-                            }
-                        }
-                    }
-
-                    // Optional: You can update the stored count (not required if using live count)
-                    int totalReduced = 1 + childDeletedCount;
-                    int currentStoredCount = post.getCommentsCount() != null ? post.getCommentsCount() : 0;
-                    post.setCommentsCount(Math.max(0, currentStoredCount - totalReduced));
-                    postsRepository.save(post);
-
-                    // ✅ Always recalculate current live count of active comments
-                    int activeCommentCount = commentRepository.countActiveCommentsByPostId(post.getId());
-
-                    logger.info("Updated comments count for post [{}] is [{}]", post.getId(), activeCommentCount);
-                    return this.transformCommentData(List.of(comment), activeCommentCount).get(0);
-                } else {
-                    logger.warn("Comment not found or already deleted.");
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error at deleteComment() -> {}", e.getMessage(), e);
-        }
-        return null;
-    }
-
-
-    private List<CommentOutputWebModel> transformCommentData(List<Comment> commentData, Integer totalCommentCount) {
-        List<CommentOutputWebModel> commentOutWebModelList = new ArrayList<>();
-        if (!Utility.isNullOrEmptyList(commentData)) {
-            commentData.stream().filter(Objects::nonNull).forEach(comment -> {
-                User user = userService.getUser(comment.getCommentedBy()).orElse(null); // Fetch user information
-
-                Date createdDate = comment.getCreatedOn(); // Convert Date to LocalDateTime
-                LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
-                String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
-
-                Posts post = postsRepository.findByPostId(comment.getPostId()).orElse(null);
-
-                List<CommentOutputWebModel> childComments = null;
-                List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
-                if (!Utility.isNullOrEmptyList(dbChildComments))
-                    childComments = this.transformCommentData(dbChildComments, 0);
-
-                CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
-                        .commentId(comment.getCommentId())
-                        .category(comment.getCategory())
-                        .postId(comment.getPostId())// I want that postId userId want in post table
-                        .userId(comment.getCommentedBy())
-                        .parentCommentId(comment.getParentCommentId())
-                        .content(comment.getContent())
-                        .totalLikesCount(comment.getLikesCount())
-                        .totalCommentCount(totalCommentCount)
-                        .status(comment.getStatus())
-                        .userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
-                        .userName(user != null ? user.getName() : "")
-                        .time(elapsedTime)
-                        .postUserId(post.getUser().getUserId())
-                        .childComments(childComments)
-                        .createdBy(comment.getCreatedBy())
-                        .createdOn(comment.getCreatedOn())
-                        .updatedBy(comment.getUpdatedBy())
-                        .updatedOn(comment.getUpdatedOn())
-                        .build();
-                commentOutWebModelList.add(commentOutputWebModel);
-            });
-        }
-        return commentOutWebModelList;
-    }
-
-    @Override
-    public List<CommentOutputWebModel> getComment(CommentInputWebModel commentInputWebModel) {
-        try {
-            Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
-            if (post != null) {	
-                List<Comment> commentData = (List<Comment>) post.getCommentCollection();
-                // Filter comments with status true
-                List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase(POST)).collect(Collectors.toList());
-                return this.transformCommentData(filteredComments, post.getCommentsCount());
-            }
-        } catch (Exception e) {
-            logger.error("Error at getComment() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-   
-
-
-    @Override
-    public ShareWebModel addShare(ShareWebModel shareWebModel) {
-        try {
-            Posts post = postsRepository.findById(shareWebModel.getPostId()).orElse(null);
-            if (post != null) {
-                Share share = Share.builder()
-                        .sharedBy(shareWebModel.getUserId())
-                        .postId(post.getId())
-                        .status(true)
-                        .createdBy(shareWebModel.getUserId())
-                        .createdOn(new Date()).build();
-                Share savedShare = shareRepository.saveAndFlush(share); // Save the updated like
-
-                post.setSharesCount(!Utility.isNullOrZero(post.getSharesCount()) ? post.getSharesCount() + 1 : 1); // Increasing the share count in post's table
-                postsRepository.saveAndFlush(post);
-
-                logger.info("Shares count for post id [{}] is :- [{}]", post.getId(), post.getSharesCount());
-                return this.transformShareData(savedShare, post.getSharesCount());
-            }
-        } catch (Exception e) {
-            logger.error("Error at addShare() -> {}", e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private ShareWebModel transformShareData(Share share, Integer currentTotalShareCount) {
-        return ShareWebModel.builder()
-                .shareId(share.getShareId())
-                .userId(share.getSharedBy())
-                .postId(share.getPostId())
-                .totalSharesCount(currentTotalShareCount)
-                .status(share.getStatus())
-                .createdBy(share.getCreatedBy())
-                .createdOn(share.getCreatedOn())
-                .updatedBy(share.getUpdatedBy())
-                .updatedOn(share.getUpdatedOn())
-                .build();
-    }
-
-    @Override
-    public LinkWebModel addLink(LinkWebModel linkWebModel) {
-        Link link = Link.builder()
-                .links(linkWebModel.getLinks())
-                .status(true)
-                .createdBy(linkWebModel.getUserId())
-                .createdOn(new Date())
-                .userId(linkWebModel.getUserId())
-                .build();
-
-        Link savedLink = linkRepository.save(link);
-
-        linkWebModel.setLinkId(savedLink.getLinkId());
-        linkWebModel.setCreatedOn(new Date());
-        linkWebModel.setUpdatedOn(new Date());
-
-        return linkWebModel;
-    }
-
-    @Override
-    public List<PostWebModel> getPostsByUserIds(Integer userId) {
-        try {
-            List<Posts> postList = postsRepository.findByUsers(User.builder().userId(userId).build());
-            return this.transformPostsDataToPostWebModel(postList);
-        } catch (Exception e) {
-            logger.error("Error at getPostsByUserIds() -> {}", e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-
-    }
-
-    @Override
-    public CommentOutputWebModel updateComment(CommentInputWebModel commentInputWebModel) {
-        try {
-            Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
-            if (post != null) {
-                // Fetch the existing comment by ID
-                Optional<Comment> existingCommentOptional = commentRepository.findById(commentInputWebModel.getCommentId());
-
-                if (existingCommentOptional.isPresent()) {
-                    Comment existingComment = existingCommentOptional.get();
-
-                    // Update the content of the comment
-                    existingComment.setContent(commentInputWebModel.getContent());
-                    existingComment.setUpdatedOn(new Date());
-                    existingComment.setUpdatedBy(commentInputWebModel.getUserId());
-
-                    // Save the updated comment back to the repository
-                    Comment updatedComment = commentRepository.saveAndFlush(existingComment);
-                    return this.transformCommentData(List.of(updatedComment), post.getCommentsCount()).get(0);
-                } else {
-                    // If the comment with the given ID is not found, log an error and return null or throw an exception
-                    logger.error("Comment with ID [{}] not found", commentInputWebModel.getCommentId());
-                    return null;
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error at updateComment() -> {}", e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-        return null;
-    }
-
-    // Helper method to transform Comment to CommentWebModel
-    private CommentOutputWebModel transformToCommentWebModel(Comment comment) {
-        return CommentOutputWebModel.builder()
-                .commentId(comment.getCommentId())
-                .category(comment.getCategory())
-                .postId(comment.getPostId())
-                .parentCommentId(comment.getParentCommentId())
-                .userId(comment.getCommentedBy())
-                .content(comment.getContent())
-                .createdOn(comment.getCreatedOn())
-                .updatedOn(comment.getUpdatedOn())
-                .status(comment.getStatus())
-                .build();
-    }
-
-    @Override
-    public boolean deletePostByUserId(PostWebModel postWebModel) {
-        try {
-            // Find the post by its ID and user ID
-            Optional<Posts> postData = postsRepository.findByIdAndUserId(postWebModel.getMediaFilesIds(), postWebModel.getUserId());
-            if (postData.isPresent()) {
-                Posts post = postData.get();
-
-                // Delete associated media files
-                mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(post.getUser().getUserId(), MediaFileCategory.Post, postWebModel.getMediaFilesIds());
-
-                // Update post status to false
-                post.setStatus(false);
-
-                // Save the updated post
-                postsRepository.save(post);
-                return true;
-            } else {
-                return false; // Post not found
-            }
-        } catch (Exception e) {
-            // Log the exception
-            e.printStackTrace();
-            return false;
-        }
-
-    }
-
-    public PostView trackPostView(Integer postId, Integer userId) {
-        Posts post = postsRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // ✅ Skip counting if the user is the owner of the post
-        if (post.getUser().getUserId().equals(userId)) {
-            // Optional: still save view timestamp for analytics
-            Optional<PostView> selfView = postViewRepository.findByPostAndUser(post, user);
-            PostView view = selfView.orElseGet(() ->
-                    PostView.builder()
-                            .post(post)
-                            .user(user)
-                            .build()
-            );
-            view.setLastViewedOn(LocalDateTime.now());
-            return postViewRepository.save(view);
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-
-        Optional<PostView> existing = postViewRepository.findByPostAndUser(post, user);
-
-        boolean shouldIncrement = existing
-            .map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 24)
-            .orElse(true);
-
-        if (shouldIncrement) {
-            PostView view = existing.orElseGet(() ->
-                    PostView.builder()
-                            .post(post)
-                            .user(user)
-                            .build()
-            );
-            view.setLastViewedOn(now);
-            postViewRepository.save(view);
-
-            post.setViewsCount(post.getViewsCount() + 1);
-            postsRepository.save(post);
-
-            return view;
-        }
-
-        return existing.orElseThrow();
-    }
+		return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";
+	}
+
+	@Override
+	public Resource getAllPostByUserIdAndCategory(Integer userId, String category) {
+		try {
+			Optional<User> userFromDB = userService.getUser(userId);
+			if (userFromDB.isPresent()) {
+				String destinationPath = FileUtil.generateDestinationPath(userFromDB.get(), category);
+				List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
+				return new ByteArrayResource(fileUtil.downloadFile(s3data));
+			}
+		} catch (Exception e) {
+			logger.error("Error at getAllPostByUserIdAndCategory() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	@Override
+	public Resource getAllPostFilesByCategory(String category) {
+		try {
+			String destinationPath = FileUtil.generateDestinationPath(category);
+			List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
+			return new ByteArrayResource(fileUtil.downloadFile(s3data));
+		} catch (Exception e) {
+			logger.error("Error at getAllPostFilesByCategory() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	//    @Override
+	//    public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
+	//        try {
+	//            Pageable paging = PageRequest.of(pageNo - 1, pageSize);
+	//
+	//            // Fetch all active posts with pagination
+	//            List<Posts> postList = postsRepository.getAllActivePosts(paging);
+	//
+	//            // Sort the posts: false (or null) promoteFlag first, true last, then by creation date (newest first)
+	//            postList.sort(Comparator
+	//                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // false/null first, true last
+	//                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
+	//
+	//            // Transform the sorted posts into PostWebModel and return the result
+	//            return this.transformPostsDataToPostWebModel(postList);
+	//        } catch (Exception e) {
+	//            logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
+	//            e.printStackTrace();
+	//            return null;
+	//        }
+	//    }
+
+	@Override
+	public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
+		try {
+			List<Posts> allPosts = postsRepository.getAllActivePosts();
+
+			if (allPosts == null || allPosts.isEmpty()) {
+				return Collections.emptyList();
+			}
+
+			// Sort by createdOn (newest first)
+			allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+
+			List<Posts> promotedPosts = new ArrayList<>();
+			List<Posts> normalPosts = new ArrayList<>();
+
+			for (Posts post : allPosts) {
+				if (Boolean.TRUE.equals(post.getPromoteFlag())) {
+					promotedPosts.add(post);
+				} else {
+					normalPosts.add(post);
+				}
+			}
+
+			// Interleave: 1 promoted + 5 normal pattern
+			List<Posts> orderedPosts = new ArrayList<>();
+			int promoIdx = 0, normalIdx = 0;
+
+			while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
+				if (promoIdx < promotedPosts.size()) {
+					orderedPosts.add(promotedPosts.get(promoIdx++));
+				}
+				for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
+					orderedPosts.add(normalPosts.get(normalIdx++));
+				}
+			}
+
+			// Pagination handling
+			int start = (pageNo - 1) * pageSize;
+			int end = Math.min(start + pageSize, orderedPosts.size());
+
+			// If requested page is out of bounds, return empty
+			if (start >= orderedPosts.size()) {
+				return Collections.emptyList();
+			}
+
+			List<Posts> paginatedPosts = orderedPosts.subList(start, end);
+
+			return transformPostsDataToPostWebModel(paginatedPosts);
+
+		} catch (Exception e) {
+			logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
+			return Collections.emptyList();
+		}
+	}
+
+	@Override
+	public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
+		try {
+			Likes likeRowToSaveOrUpdate;
+			Posts post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
+			if (post != null) {
+
+				Likes existingLike;
+				if (!Utility.isNullObject(likeWebModel.getLikeId())) {
+					existingLike = likeRepository.findById(likeWebModel.getLikeId()).orElse(null);
+				} else {
+					existingLike = likeRepository.findByPostIdAndUserId(likeWebModel.getPostId(), likeWebModel.getUserId()).orElse(null);
+				}
+				Comment existingComment = likeWebModel.getCommentId() != null ? commentRepository.findById(likeWebModel.getCommentId()).orElse(null) : null;
+
+				if (existingLike != null) {
+					likeRowToSaveOrUpdate = existingLike;
+					likeRowToSaveOrUpdate.setStatus(!existingLike.getStatus());
+					likeRowToSaveOrUpdate.setUpdatedBy(likeWebModel.getUserId());
+					likeRowToSaveOrUpdate.setUpdatedOn(new Date());
+				} else {
+					likeRowToSaveOrUpdate = Likes.builder()
+							.category(likeWebModel.getCategory())
+							.postId(post.getId())
+							.commentId(likeWebModel.getCommentId())
+							.likedBy(likeWebModel.getUserId())
+							.liveDate(null)
+							.status(true)
+							.createdBy(likeWebModel.getUserId())
+							.createdOn(new Date())
+							.build();
+				}
+				Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
+
+				Integer totalLikes = 0;
+				if (!Utility.isNullOrBlankWithTrim(likeWebModel.getCategory())) {
+					if (likeWebModel.getCategory().equalsIgnoreCase(POST)) {
+						if (likeRowToSaveOrUpdate.getStatus()) {
+							post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() + 1 : 1); // Increasing Post's like count
+						} else {
+							post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() - 1 : 0); // Decreasing Post's like count
+						}
+						postsRepository.saveAndFlush(post);
+						totalLikes = post.getLikesCount();
+					} else if (likeWebModel.getCategory().equalsIgnoreCase(COMMENT) && existingComment != null) {
+						if (likeRowToSaveOrUpdate.getStatus()) {
+							existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() + 1 : 1); // Increasing Comment's like count
+						} else {
+							existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() - 1 : 0); // Decreasing Comment's like count
+						}
+						commentRepository.saveAndFlush(existingComment);
+						totalLikes = existingComment.getLikesCount();
+					}
+				}
+				logger.info("Like count for post id [{}] is :- [{}]", post.getId(), totalLikes);
+				return this.transformLikeData(savedLike, totalLikes);
+			}
+		} catch (Exception e) {
+			logger.error("Error at addOrUpdateLike() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private LikeWebModel transformLikeData(Likes likes, Integer totalCount) {
+		return LikeWebModel.builder()
+				.likeId(likes.getLikeId())
+				.category(likes.getCategory())
+				.postId(likes.getPostId())
+				.commentId(likes.getCommentId())
+				.userId(likes.getLikedBy())
+				.totalLikesCount(totalCount)
+				.status(likes.getStatus())
+				.createdBy(likes.getCreatedBy())
+				.createdOn(likes.getCreatedOn())
+				.updatedBy(likes.getUpdatedBy())
+				.updatedOn(likes.getUpdatedOn())
+				.build();
+	}
+
+	@Override
+	public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {
+		try {
+			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
+			if (post != null) {
+				// Create and save new comment or reply
+				Comment comment = Comment.builder()
+						.category(commentInputWebModel.getCategory())
+						.postId(post.getId())
+						.parentCommentId(commentInputWebModel.getParentCommentId())
+						.content(commentInputWebModel.getContent())
+						.commentedBy(commentInputWebModel.getUserId())
+						.status(true)
+						.likesCount(0)
+						.createdBy(commentInputWebModel.getUserId())
+						.createdOn(new Date())
+						.build();
+
+				Comment savedComment = commentRepository.save(comment);
+
+				// Always update post comment count (for both direct comments and replies)
+				int newPostCommentCount = !Utility.isNullOrZero(post.getCommentsCount())
+						? post.getCommentsCount() + 1
+								: 1;
+				post.setCommentsCount(newPostCommentCount);
+				postsRepository.saveAndFlush(post);
+
+				// If it's a reply to a comment, update the parent comment's reply count
+				if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory())
+						&& commentInputWebModel.getCategory().equalsIgnoreCase(COMMENT)) {
+
+					Integer parentCommentId = commentInputWebModel.getParentCommentId();
+					if (parentCommentId != null) {
+						Comment parent = commentRepository.findById(parentCommentId).orElse(null);
+						if (parent != null) {
+							int newReplyCount = !Utility.isNullOrZero(parent.getReplyCount())
+									? parent.getReplyCount() + 1
+											: 1;
+							parent.setReplyCount(newReplyCount);
+							commentRepository.saveAndFlush(parent);
+						}
+					}
+				}
+
+				logger.info("Comment added under post [{}]", post.getId());
+				return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
+			}
+		} catch (Exception e) {
+			logger.error("Error at addComment() -> {}", e.getMessage(), e);
+		}
+		return null;
+	}
+
+
+	@Override
+	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
+		try {
+			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
+			if (post != null) {
+				Comment comment = commentRepository.findById(commentInputWebModel.getCommentId()).orElse(null);
+
+				if (comment != null && Boolean.TRUE.equals(comment.getStatus())) {
+					// Soft delete the parent comment
+					comment.setStatus(false);
+					comment.setUpdatedBy(commentInputWebModel.getUserId());
+					comment.setUpdatedOn(new Date());
+					commentRepository.save(comment);
+
+					// Handle child comments (soft delete them too)
+					List<Comment> childComments = commentRepository.getChildComments(
+							comment.getPost().getId(), comment.getCommentId());
+
+					int childDeletedCount = 0;
+
+					if (!Utility.isNullOrEmptyList(childComments)) {
+						for (Comment child : childComments) {
+							if (Boolean.TRUE.equals(child.getStatus())) {
+								child.setStatus(false);
+								child.setUpdatedBy(commentInputWebModel.getUserId());
+								child.setUpdatedOn(new Date());
+								commentRepository.save(child);
+								childDeletedCount++;
+							}
+						}
+					}
+
+					// Optional: You can update the stored count (not required if using live count)
+					int totalReduced = 1 + childDeletedCount;
+					int currentStoredCount = post.getCommentsCount() != null ? post.getCommentsCount() : 0;
+					post.setCommentsCount(Math.max(0, currentStoredCount - totalReduced));
+					postsRepository.save(post);
+
+					// ✅ Always recalculate current live count of active comments
+					int activeCommentCount = commentRepository.countActiveCommentsByPostId(post.getId());
+
+					logger.info("Updated comments count for post [{}] is [{}]", post.getId(), activeCommentCount);
+					return this.transformCommentData(List.of(comment), activeCommentCount).get(0);
+				} else {
+					logger.warn("Comment not found or already deleted.");
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Error at deleteComment() -> {}", e.getMessage(), e);
+		}
+		return null;
+	}
+
+
+	private List<CommentOutputWebModel> transformCommentData(List<Comment> commentData, Integer totalCommentCount) {
+		List<CommentOutputWebModel> commentOutWebModelList = new ArrayList<>();
+		if (!Utility.isNullOrEmptyList(commentData)) {
+			commentData.stream().filter(Objects::nonNull).forEach(comment -> {
+				User user = userService.getUser(comment.getCommentedBy()).orElse(null); // Fetch user information
+
+				Date createdDate = comment.getCreatedOn(); // Convert Date to LocalDateTime
+				LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
+				String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
+
+				Posts post = postsRepository.findByPostId(comment.getPostId()).orElse(null);
+
+				List<CommentOutputWebModel> childComments = null;
+				List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
+				if (!Utility.isNullOrEmptyList(dbChildComments))
+					childComments = this.transformCommentData(dbChildComments, 0);
+
+				CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
+						.commentId(comment.getCommentId())
+						.category(comment.getCategory())
+						.postId(comment.getPostId())// I want that postId userId want in post table
+						.userId(comment.getCommentedBy())
+						.parentCommentId(comment.getParentCommentId())
+						.content(comment.getContent())
+						.totalLikesCount(comment.getLikesCount())
+						.totalCommentCount(totalCommentCount)
+						.status(comment.getStatus())
+						.userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
+						.userName(user != null ? user.getName() : "")
+						.time(elapsedTime)
+						.postUserId(post.getUser().getUserId())
+						.childComments(childComments)
+						.createdBy(comment.getCreatedBy())
+						.createdOn(comment.getCreatedOn())
+						.updatedBy(comment.getUpdatedBy())
+						.updatedOn(comment.getUpdatedOn())
+						.build();
+				commentOutWebModelList.add(commentOutputWebModel);
+			});
+		}
+		return commentOutWebModelList;
+	}
+
+	@Override
+	public List<CommentOutputWebModel> getComment(CommentInputWebModel commentInputWebModel) {
+		try {
+			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
+			if (post != null) {	
+				List<Comment> commentData = (List<Comment>) post.getCommentCollection();
+				// Filter comments with status true
+				List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase(POST)).collect(Collectors.toList());
+				return this.transformCommentData(filteredComments, post.getCommentsCount());
+			}
+		} catch (Exception e) {
+			logger.error("Error at getComment() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+
+
+
+	@Override
+	public ShareWebModel addShare(ShareWebModel shareWebModel) {
+		try {
+			Posts post = postsRepository.findById(shareWebModel.getPostId()).orElse(null);
+			if (post != null) {
+				Share share = Share.builder()
+						.sharedBy(shareWebModel.getUserId())
+						.postId(post.getId())
+						.status(true)
+						.createdBy(shareWebModel.getUserId())
+						.createdOn(new Date()).build();
+				Share savedShare = shareRepository.saveAndFlush(share); // Save the updated like
+
+				post.setSharesCount(!Utility.isNullOrZero(post.getSharesCount()) ? post.getSharesCount() + 1 : 1); // Increasing the share count in post's table
+				postsRepository.saveAndFlush(post);
+
+				logger.info("Shares count for post id [{}] is :- [{}]", post.getId(), post.getSharesCount());
+				return this.transformShareData(savedShare, post.getSharesCount());
+			}
+		} catch (Exception e) {
+			logger.error("Error at addShare() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private ShareWebModel transformShareData(Share share, Integer currentTotalShareCount) {
+		return ShareWebModel.builder()
+				.shareId(share.getShareId())
+				.userId(share.getSharedBy())
+				.postId(share.getPostId())
+				.totalSharesCount(currentTotalShareCount)
+				.status(share.getStatus())
+				.createdBy(share.getCreatedBy())
+				.createdOn(share.getCreatedOn())
+				.updatedBy(share.getUpdatedBy())
+				.updatedOn(share.getUpdatedOn())
+				.build();
+	}
+
+	@Override
+	public LinkWebModel addLink(LinkWebModel linkWebModel) {
+		Link link = Link.builder()
+				.links(linkWebModel.getLinks())
+				.status(true)
+				.createdBy(linkWebModel.getUserId())
+				.createdOn(new Date())
+				.userId(linkWebModel.getUserId())
+				.build();
+
+		Link savedLink = linkRepository.save(link);
+
+		linkWebModel.setLinkId(savedLink.getLinkId());
+		linkWebModel.setCreatedOn(new Date());
+		linkWebModel.setUpdatedOn(new Date());
+
+		return linkWebModel;
+	}
+
+	@Override
+	public List<PostWebModel> getPostsByUserIds(Integer userId) {
+		try {
+			List<Posts> postList = postsRepository.findByUsers(User.builder().userId(userId).build());
+			return this.transformPostsDataToPostWebModel(postList);
+		} catch (Exception e) {
+			logger.error("Error at getPostsByUserIds() -> {}", e.getMessage());
+			e.printStackTrace();
+			return null;
+		}
+
+	}
+
+	@Override
+	public CommentOutputWebModel updateComment(CommentInputWebModel commentInputWebModel) {
+		try {
+			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
+			if (post != null) {
+				// Fetch the existing comment by ID
+				Optional<Comment> existingCommentOptional = commentRepository.findById(commentInputWebModel.getCommentId());
+
+				if (existingCommentOptional.isPresent()) {
+					Comment existingComment = existingCommentOptional.get();
+
+					// Update the content of the comment
+					existingComment.setContent(commentInputWebModel.getContent());
+					existingComment.setUpdatedOn(new Date());
+					existingComment.setUpdatedBy(commentInputWebModel.getUserId());
+
+					// Save the updated comment back to the repository
+					Comment updatedComment = commentRepository.saveAndFlush(existingComment);
+					return this.transformCommentData(List.of(updatedComment), post.getCommentsCount()).get(0);
+				} else {
+					// If the comment with the given ID is not found, log an error and return null or throw an exception
+					logger.error("Comment with ID [{}] not found", commentInputWebModel.getCommentId());
+					return null;
+				}
+			}
+		} catch (Exception e) {
+			logger.error("Error at updateComment() -> {}", e.getMessage());
+			e.printStackTrace();
+			return null;
+		}
+		return null;
+	}
+
+	// Helper method to transform Comment to CommentWebModel
+	private CommentOutputWebModel transformToCommentWebModel(Comment comment) {
+		return CommentOutputWebModel.builder()
+				.commentId(comment.getCommentId())
+				.category(comment.getCategory())
+				.postId(comment.getPostId())
+				.parentCommentId(comment.getParentCommentId())
+				.userId(comment.getCommentedBy())
+				.content(comment.getContent())
+				.createdOn(comment.getCreatedOn())
+				.updatedOn(comment.getUpdatedOn())
+				.status(comment.getStatus())
+				.build();
+	}
+
+	@Override
+	public boolean deletePostByUserId(PostWebModel postWebModel) {
+		try {
+			// Find the post by its ID and user ID
+			Optional<Posts> postData = postsRepository.findByIdAndUserId(postWebModel.getMediaFilesIds(), postWebModel.getUserId());
+			if (postData.isPresent()) {
+				Posts post = postData.get();
+
+				// Delete associated media files
+				mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(post.getUser().getUserId(), MediaFileCategory.Post, postWebModel.getMediaFilesIds());
+
+				// Update post status to false
+				post.setStatus(false);
+
+				// Save the updated post
+				postsRepository.save(post);
+				return true;
+			} else {
+				return false; // Post not found
+			}
+		} catch (Exception e) {
+			// Log the exception
+			e.printStackTrace();
+			return false;
+		}
+
+	}
+
+	public PostView trackPostView(Integer postId, Integer userId) {
+		Posts post = postsRepository.findById(postId)
+				.orElseThrow(() -> new RuntimeException("Post not found"));
+
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		// ✅ Skip counting if the user is the owner of the post
+		if (post.getUser().getUserId().equals(userId)) {
+			// Optional: still save view timestamp for analytics
+			Optional<PostView> selfView = postViewRepository.findByPostAndUser(post, user);
+			PostView view = selfView.orElseGet(() ->
+			PostView.builder()
+			.post(post)
+			.user(user)
+			.build()
+					);
+			view.setLastViewedOn(LocalDateTime.now());
+			return postViewRepository.save(view);
+		}
+
+		LocalDateTime now = LocalDateTime.now();
+
+		Optional<PostView> existing = postViewRepository.findByPostAndUser(post, user);
+
+		boolean shouldIncrement = existing
+				.map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 24)
+				.orElse(true);
+
+		if (shouldIncrement) {
+			PostView view = existing.orElseGet(() ->
+			PostView.builder()
+			.post(post)
+			.user(user)
+			.build()
+					);
+			view.setLastViewedOn(now);
+			postViewRepository.save(view);
+
+			post.setViewsCount(post.getViewsCount() + 1);
+			postsRepository.save(post);
+
+			return view;
+		}
+
+		return existing.orElseThrow();
+	}
 
 
 
