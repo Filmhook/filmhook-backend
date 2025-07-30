@@ -657,10 +657,11 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        .append("</table>")
 
 	        .append("<p>We hope everything is going smoothly with your shoot. If you need an extension or assistance, feel free to reach out.</p>")
-	        .append("<p>Thank you for choosing <b>FilmHook</b>!</p>")
+	        .append("<p>Thank you for choosing <b>Film-hook</b>!</p>")
+	        .append("<tr><td><p>Best Regards,<br>The Film-hook Team.</p></td></tr>")
 
 	        // App Links
-	        .append("<hr style='border:0;border-top:1px solid #ddd;margin:30px 0;'>")
+	        .append("<hr style='border:0;border-top:1px solid s#ddd;margin:30px 0;'>")
 	        .append("<p>📲 <b>Get the App:</b></p><p>")
 	        .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30' style='margin-right:10px;'></a>")
 	        .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
@@ -671,8 +672,8 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25' style='margin-right:8px;'></a>")
 	        .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25' style='margin-right:8px;'></a>")
 	        .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25' style='margin-right:8px;'></a>")
-	        .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30' style='margin-right:1px;'></a>")
-	        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='35'></a>")
+	        .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='25' style='margin-right:1px;'></a>")
+	        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25'></a>")
 	        .append("</p>")
 
 	        .append("</body></html>");

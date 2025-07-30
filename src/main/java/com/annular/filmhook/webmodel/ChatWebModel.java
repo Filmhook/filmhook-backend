@@ -49,6 +49,7 @@ public class ChatWebModel {
     private String replyType;
     private String storyMediaType;
     private String deleteType;
+    private Boolean isDeletedForEveryone;
    
     
 }

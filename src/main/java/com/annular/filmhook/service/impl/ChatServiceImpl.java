@@ -549,7 +549,7 @@ public class ChatServiceImpl implements ChatService {
 		                }
 		                // Set deleted message text if isDeletedForEveryone = true
 		                String finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
-		                        ? "This message was deleted"
+		                        ? "🚫 This message was deleted"
 		                        : chat.getMessage();
 		                
 		                       ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
@@ -565,7 +565,11 @@ public class ChatServiceImpl implements ChatService {
 		                        .storyId(chat.getStoryId())     
 		                        .storyMediaUrl(storyMedia != null ? storyMedia.getFilePath() : null)
 		                        .storyMediaType(storyMedia != null ? storyMedia.getFileType() : null)
-		                        .replyType(chat.getReplyType()) .build();
+		                        .replyType(chat.getReplyType())
+		                        .isDeletedForEveryone(chat.getIsDeletedForEveryone())
+		                        .build();
+		                
+		                
 	
 		                // Update read status if the current user is the receiver
 		                if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
