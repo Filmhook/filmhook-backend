@@ -36,7 +36,6 @@ public class AuditionSubDetails {
 
     @Column(name = "created_by")
     private Integer createdBy;
-
     @Column(name = "created_on")
     @CreationTimestamp
     private Date createdOn;

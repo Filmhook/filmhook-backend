@@ -335,8 +335,9 @@ public class ChatServiceImpl implements ChatService {
 
 	        if (lastChat.isPresent()) {
 	            Chat chat = lastChat.get();
-
-	            if ("story".equalsIgnoreCase(chat.getReplyType())) {	               
+	            if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+	                latestMsg = "This message was deleted";
+	            } else if ("story".equalsIgnoreCase(chat.getReplyType())) {	               
 	                isLatestStory = true;
 	                latestMsg = chat.getMessage();
 	            } else if(!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
@@ -483,12 +484,13 @@ public class ChatServiceImpl implements ChatService {
 		 
 		        List<Chat> allMessages = new ArrayList<>();
 		        for (Chat c : senderMessages) {
-		            if (!Boolean.TRUE.equals(c.getDeletedBySender())) {
+		            if (Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedBySender())) {
 		                allMessages.add(c);
 		            }
 		        }
+
 		        for (Chat c : receiverMessages) {
-		            if (!Boolean.TRUE.equals(c.getDeletedByReceiver())) {
+		            if (Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedByReceiver())) {
 		                allMessages.add(c);
 		            }
 		        }
@@ -516,10 +518,11 @@ public class ChatServiceImpl implements ChatService {
 		        int senderUnreadCount = 0;
 		        int receiverUnreadCount = 0;
 		        for (Chat chat : paginatedMessages) {
-		        	 if ((chat.getChatSenderId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
-		                     (chat.getChatReceiverId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedByReceiver()))) {
-		                     continue;
-		                 }
+		        	if (!Boolean.TRUE.equals(chat.getIsDeletedForEveryone()) &&
+		        		    ((chat.getChatSenderId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
+		        		     (chat.getChatReceiverId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())))) {
+		        		    continue;
+		        		}
 		            Optional<User> userData = userRepository.findById(chat.getChatSenderId());
 		            Optional<User> userDatas = userRepository.findById(receiverId);
 	
@@ -544,6 +547,11 @@ public class ChatServiceImpl implements ChatService {
 		                        }
 		                    }
 		                }
+		                // Set deleted message text if isDeletedForEveryone = true
+		                String finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
+		                        ? "This message was deleted"
+		                        : chat.getMessage();
+		                
 		                       ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
 		                        .chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
 		                        .chatIsActive(chat.getChatIsActive()).chatCreatedBy(chat.getChatCreatedBy())
@@ -551,7 +559,7 @@ public class ChatServiceImpl implements ChatService {
 		                        .receiverProfilePic(receiverProfilePicUrl)
 		                        .chatUpdatedBy(chat.getChatUpdatedBy()).chatUpdatedOn(chat.getChatUpdatedOn())
 		                        .receiverRead(chat.getReceiverRead()).senderRead(chat.getSenderRead())
-		                        .chatFiles(mediaFiles).message(chat.getMessage())
+		                        .chatFiles(mediaFiles).message(finalMessage)
 		                        .userType(userData.get().getUserType()).userAccountName(userData.get().getName())
 		                        .receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId())
 		                        .storyId(chat.getStoryId())     
@@ -902,26 +910,66 @@ public class ChatServiceImpl implements ChatService {
 	}
 
 	@Override
-	public Response deleteByChatId(ChatWebModel chatWebModel) {
+	public Response deleteChatMessage(ChatWebModel chatWebModel) {
 	    try {
-	        Optional<Chat> chatData = chatRepository.findById(chatWebModel.getChatId());
-	        if (chatData.isPresent()) {
-	            Chat data = chatData.get();
-	            data.setChatIsActive(false);
-	            chatRepository.save(data); // Save the updated chat object
-	            // Update mediaFiles status where refId matches chatId
-	            List<MediaFiles> mediaFiles = mediaFilesRepository.findByCategoryRefId(chatWebModel.getChatId());
-	            for (MediaFiles mediaFile : mediaFiles) {
-	                mediaFile.setStatus(false);
-	                mediaFilesRepository.save(mediaFile); // Save the updated media file object
+	        Optional<Chat> chatOptional = chatRepository.findById(chatWebModel.getChatId());
+
+	        if (chatOptional.isEmpty()) {
+	            return new Response(0, "Not Found", "Chat not found");
+	        }
+
+	        Chat chat = chatOptional.get();
+
+	        boolean isSender = chat.getChatSenderId().equals(chatWebModel.getUserId());
+	        boolean isReceiver = chat.getChatReceiverId().equals(chatWebModel.getUserId());
+
+	        if (!isSender && !isReceiver) {
+	            return new Response(0, "Unauthorized", "User is not part of this chat");
+	        }
+
+	        String deleteType = chatWebModel.getDeleteType();
+
+	        if ("everyone".equalsIgnoreCase(deleteType)) {
+	            // Delete for everyone
+	            chat.setIsDeletedForEveryone(true);
+	            chat.setDeletedBySender(true);
+	            chat.setDeletedByReceiver(true);
+	           
+
+	            // Soft delete media files
+	            List<MediaFiles> mediaFiles = mediaFilesRepository.findByCategoryRefId(chat.getChatId());
+	            for (MediaFiles file : mediaFiles) {
+	                file.setStatus(false);
 	            }
-	            return new Response(1,"success","Chat deactivated successfully");
+	            mediaFilesRepository.saveAll(mediaFiles);
+
+	            chatRepository.save(chat);
+	            return new Response(1, "Success", "Message deleted for everyone");
 	        } else {
-	            return new Response(0,"Not Found","Chat not found");
+	            // Delete only for the current user
+	            if (isSender) {
+	                chat.setDeletedBySender(true);
+	            } else if (isReceiver) {
+	                chat.setDeletedByReceiver(true);
+	            }
+
+	            // If both sender and receiver have deleted, mark as fully deleted
+	            if (Boolean.TRUE.equals(chat.getDeletedBySender()) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
+	                chat.setIsDeletedForEveryone(true);
+
+	                List<MediaFiles> mediaFiles = mediaFilesRepository.findByCategoryRefId(chat.getChatId());
+	                for (MediaFiles file : mediaFiles) {
+	                    file.setStatus(false);
+	                }
+	                mediaFilesRepository.saveAll(mediaFiles);
+	            }
+
+	            chatRepository.save(chat);
+	            return new Response(1, "Success", "Message deleted for current user");
 	        }
 	    } catch (Exception e) {
-	        e.printStackTrace(); // Log the exception for debugging
-	        return new Response(0, "Error","An error occurred while deactivating the chat");
+	        e.printStackTrace();
+	        return new Response(0, "Error", "Something went wrong while deleting the chat message");
 	    }
 	}
 

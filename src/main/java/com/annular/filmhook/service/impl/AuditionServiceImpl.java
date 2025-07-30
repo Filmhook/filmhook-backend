@@ -32,6 +32,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
@@ -64,6 +65,7 @@ import com.annular.filmhook.webmodel.AuditionDetailsWebModel;
 import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
 import com.annular.filmhook.webmodel.AuditionRolesWebModel;
 import com.annular.filmhook.webmodel.AuditionWebModel;
+import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
 import javax.activation.DataSource;
@@ -105,8 +107,8 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Autowired
 	AuditionRepository auditionRepository;
-	
-  
+
+
 
 	// Define the date formatter for parsing endDate as "yyyy-MM-dd"
 	private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -148,7 +150,7 @@ public class AuditionServiceImpl implements AuditionService {
 			logger.info("Save audition method start");
 
 			Optional<User> userFromDB = userService.getUser(auditionWebModel.getAuditionCreatedBy());
-			if (!userFromDB.isPresent()) {
+			if (!userFromDB. isPresent()) {
 				return ResponseEntity.ok().body(new Response(-1, "User not found", null));
 			}
 
@@ -156,7 +158,7 @@ public class AuditionServiceImpl implements AuditionService {
 			audition.setAuditionTitle(auditionWebModel.getAuditionTitle());
 			audition.setUser(userFromDB.get());
 			audition.setAuditionExperience(auditionWebModel.getAuditionExperience());
-			audition.setAuditionCategory(auditionWebModel.getAuditionCategory());
+			//audition.setAuditionCategory(auditionWebModel.getAuditionCategory());
 			audition.setAuditionSubCategory(auditionWebModel.getAuditionSubCategory());
 			audition.setAuditionExpireOn(auditionWebModel.getAuditionExpireOn());
 			audition.setAuditionPostedBy(userFromDB.get().getFilmHookCode());
@@ -171,24 +173,55 @@ public class AuditionServiceImpl implements AuditionService {
 			audition.setEndDate(auditionWebModel.getEndDate());
 			audition.setAuditionIsactive(true);
 			audition.setPaymentStatus("Created");
+			audition.setNumberOfRoles(auditionWebModel.getNumberOfRoles());
+			audition.setIndustry(auditionWebModel.getIndustry());
+			audition.setMovieType(auditionWebModel.getMovieType());
+
+			audition.setDescription(auditionWebModel.getDescription());
 
 
 			Audition savedAudition = auditionRepository.save(audition);
-			List<AuditionRoles> auditionRolesList = new ArrayList<>();
+			
+		     // --- Upload Script File as Media ---
+			MultipartFile file = auditionWebModel.getScriptUrl();
+			if (file != null && !file.isEmpty()) {
+				if (auditionWebModel.getScriptUrl() != null && !auditionWebModel.getScriptUrl().isEmpty()) {
+				    FileInputWebModel scriptFileInput = new FileInputWebModel();
+				    scriptFileInput.setCategory(MediaFileCategory.Audition);
+				    scriptFileInput.setCategoryRefId(savedAudition.getAuditionId());
+				    scriptFileInput.setUserId(userFromDB.get().getUserId());
+				    scriptFileInput.setFiles(List.of(auditionWebModel.getScriptUrl())); // Set the MultipartFile here
 
-			if (auditionWebModel.getAuditionRoles().length != 0) {
-				String[] auditionRolesArray = auditionWebModel.getAuditionRoles();
-				for (String role : auditionRolesArray) {
-					AuditionRoles auditionRoles = new AuditionRoles(); // Create a new instance inside the loop
-					auditionRoles.setAuditionRoleDesc(role);
-					auditionRoles.setAudition(savedAudition);
-					auditionRoles.setAuditionRoleCreatedBy(savedAudition.getAuditionCreatedBy());
-					auditionRoles.setAuditionRoleIsactive(true);
-
-					auditionRolesList.add(auditionRolesRepository.save(auditionRoles));
+				    List<FileOutputWebModel> scriptMedia = mediaFilesService.saveMediaFiles(scriptFileInput, userFromDB.get());
+				    if (!scriptMedia.isEmpty()) {
+				        savedAudition.setScriptUrl(scriptMedia.get(0).getFilePath()); // Assuming this is a String path
+				        auditionRepository.save(savedAudition); // Save the updated URL
+				    }
 				}
+
 			}
 
+			List<AuditionRoles> auditionRolesList = new ArrayList<>();
+			if (auditionWebModel.getAuditionRolesWebModels() != null && !auditionWebModel.getAuditionRolesWebModels().isEmpty()) {
+				for (AuditionRolesWebModel roleModel : auditionWebModel.getAuditionRolesWebModels()) {
+					AuditionRoles auditionRole = new AuditionRoles();
+					auditionRole.setAudition(savedAudition);
+					auditionRole.setAuditionRoleDesc(roleModel.getAuditionRoleDesc());
+					auditionRole.setCharacterName(roleModel.getCharacterName());
+					auditionRole.setAgeRange(roleModel.getAgeRange());
+					auditionRole.setEthnicity(roleModel.getEthnicity());
+					auditionRole.setHeightRange(roleModel.getHeightRange());
+					auditionRole.setWeight(roleModel.getWeight());
+					auditionRole.setProfileFace(roleModel.getProfileFace());
+					auditionRole.setExperience(roleModel.getExperience());
+					auditionRole.setPay(roleModel.getPay());
+					auditionRole.setCompensation(roleModel.getCompensation());
+					auditionRole.setAuditionRoleCreatedBy(savedAudition.getAuditionCreatedBy());
+					auditionRole.setAuditionRoleIsactive(true);
+
+					auditionRolesList.add(auditionRolesRepository.save(auditionRole));
+				}
+			}
 			auditionWebModel.getFileInputWebModel().setCategory(MediaFileCategory.Audition);
 			auditionWebModel.getFileInputWebModel().setCategoryRefId(savedAudition.getAuditionId()); // adding the story																										
 			List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
@@ -944,118 +977,118 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Override
 	public void updatePaymentStatus(String txnid, String status, String mihpayid, String amount) {
-	    Integer txnids = Integer.parseInt(txnid);
-	    Audition audition = auditionRepository.findById(txnids)
-	            .orElseThrow(() -> new RuntimeException("Audition not found"));
+		Integer txnids = Integer.parseInt(txnid);
+		Audition audition = auditionRepository.findById(txnids)
+				.orElseThrow(() -> new RuntimeException("Audition not found"));
 
-	    audition.setPaymentStatus(status);
-	    audition.setPaymentTransactionId(mihpayid);
-	    audition.setAuditionUpdatedOn(LocalDateTime.now());
-	    auditionRepository.save(audition);
-	    String paymentRetryLink = "https://filmhookapps.com/retry-payment?auditionId=" + audition.getAuditionId();
+		audition.setPaymentStatus(status);
+		audition.setPaymentTransactionId(mihpayid);
+		audition.setAuditionUpdatedOn(LocalDateTime.now());
+		auditionRepository.save(audition);
+		String paymentRetryLink = "https://filmhookapps.com/retry-payment?auditionId=" + audition.getAuditionId();
 
 
-	    User user = audition.getUser();
-	    if (user == null) throw new RuntimeException("User not found for audition");
+		User user = audition.getUser();
+		if (user == null) throw new RuntimeException("User not found for audition");
 
-	    String email = user.getEmail();
-	    String name = user.getName();
-	    String capitalizedName = (name != null && name.length() > 0)
-	            ? name.substring(0, 1).toUpperCase() + name.substring(1)
-	            : "";
+		String email = user.getEmail();
+		String name = user.getName();
+		String capitalizedName = (name != null && name.length() > 0)
+				? name.substring(0, 1).toUpperCase() + name.substring(1)
+				: "";
 
-	    String subject;
-	    StringBuilder content = new StringBuilder();
-	    content.append("<!DOCTYPE html><html><head>")
-	        .append("<meta charset='UTF-8'>")
-	        .append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
-	        .append("<style>")
-	        .append("@media only screen and (max-width: 600px) {")
-	        .append("  .email-container { width: 100% !important; padding: 10px !important; }")
-	        .append("  .email-content td { display: block !important; width: 100% !important; }")
-	        .append("  img { max-width: 100% !important; height: auto !important; }")
-	        .append("}")
-	        .append("</style></head>")
-	        .append("<body style='margin:0;padding:0;background:#f6f6f6;'>")
-	        .append("<table cellpadding='0' cellspacing='0' width='100%' style='background:#f6f6f6;'>")
-	        .append("<tr><td align='center'>")
-	        .append("<table class='email-container' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%;background:#ffffff;border-radius:8px;padding:20px;font-family:Arial,sans-serif;'>")
+		String subject;
+		StringBuilder content = new StringBuilder();
+		content.append("<!DOCTYPE html><html><head>")
+		.append("<meta charset='UTF-8'>")
+		.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>")
+		.append("<style>")
+		.append("@media only screen and (max-width: 600px) {")
+		.append("  .email-container { width: 100% !important; padding: 10px !important; }")
+		.append("  .email-content td { display: block !important; width: 100% !important; }")
+		.append("  img { max-width: 100% !important; height: auto !important; }")
+		.append("}")
+		.append("</style></head>")
+		.append("<body style='margin:0;padding:0;background:#f6f6f6;'>")
+		.append("<table cellpadding='0' cellspacing='0' width='100%' style='background:#f6f6f6;'>")
+		.append("<tr><td align='center'>")
+		.append("<table class='email-container' cellpadding='0' cellspacing='0' style='max-width:600px;width:100%;background:#ffffff;border-radius:8px;padding:20px;font-family:Arial,sans-serif;'>")
 
-	        // Logo
-	        .append("<tr><td align='center' style='padding-bottom:20px;'>")
-	        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' alt='FilmHook Logo' style='width:180px;height:auto;'>")
-	        .append("</td></tr>");
+		// Logo
+		.append("<tr><td align='center' style='padding-bottom:20px;'>")
+		.append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' alt='FilmHook Logo' style='width:180px;height:auto;'>")
+		.append("</td></tr>");
 
-	    // Success Email
-	    if ("SUCCESS".equalsIgnoreCase(status)) {
-	        subject = "Audition Registration Successful";
+		// Success Email
+		if ("SUCCESS".equalsIgnoreCase(status)) {
+			subject = "Audition Registration Successful";
 
-	        content.append("<tr><td style='color:#333;font-size:12px;'>")
-	            .append("<h3 style='color:#28a745;'>Audition Posted Successfully</h3>")
-	            .append("<p>Hi <strong>").append(capitalizedName).append("</strong>,</p>")
-	            .append("<p>Your audition has been successfully posted and payment received.</p>")
-	            .append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("<br>")
-	            .append("<b>Category:</b> ").append(audition.getAuditionCategory()).append("<br>")
-	            .append("<b>Company:</b> ").append(audition.getCompanyName()).append("<br>")
-	            .append("<b>Expires On:</b> ").append(audition.getAuditionExpireOn()).append("</p>")
-	            .append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
-	            .append("<b>Amount Paid:</b> ₹").append(amount).append("</p>")
-	            .append("<p>Thank you for using <strong>FilmHook</strong> to publish your audition!</p>");
-	    } else {
-	        // Failure Email
-	        subject = "Payment Failed - Audition Not Published";
+			content.append("<tr><td style='color:#333;font-size:12px;'>")
+			.append("<h3 style='color:#28a745;'>Audition Posted Successfully</h3>")
+			.append("<p>Hi <strong>").append(capitalizedName).append("</strong>,</p>")
+			.append("<p>Your audition has been successfully posted and payment received.</p>")
+			.append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("<br>")
+			.append("<b>Category:</b> ").append(audition.getAuditionCategory()).append("<br>")
+			.append("<b>Company:</b> ").append(audition.getCompanyName()).append("<br>")
+			.append("<b>Expires On:</b> ").append(audition.getAuditionExpireOn()).append("</p>")
+			.append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
+			.append("<b>Amount Paid:</b> ₹").append(amount).append("</p>")
+			.append("<p>Thank you for using <strong>FilmHook</strong> to publish your audition!</p>");
+		} else {
+			// Failure Email
+			subject = "Payment Failed - Audition Not Published";
 
-	        content.append("<tr><td style='color:#333;font-size:12px;'>")
-	            .append("<h3 style='color:#dc3545;'>Payment Failed</h3>")
-	            .append("<p>Hi <strong>").append(capitalizedName).append("</strong>,</p>")
-	            .append("<p>Unfortunately, your payment failed and your audition was not published.</p>")
-	            .append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("</p>")
-	            .append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
-	            .append("<b>Attempted Amount:</b> ₹").append(amount).append("</p>")
-	            .append("<p>🔄 <a href='").append(paymentRetryLink).append("' style='color:#007bff;'>Retry Payment</a></p>")
-	            .append("<p>Please retry payment from your dashboard or contact our support team.</p>");
-	    }
+			content.append("<tr><td style='color:#333;font-size:12px;'>")
+			.append("<h3 style='color:#dc3545;'>Payment Failed</h3>")
+			.append("<p>Hi <strong>").append(capitalizedName).append("</strong>,</p>")
+			.append("<p>Unfortunately, your payment failed and your audition was not published.</p>")
+			.append("<p><b>Audition Title:</b> ").append(audition.getAuditionTitle()).append("</p>")
+			.append("<p><b>Transaction ID:</b> ").append(mihpayid).append("<br>")
+			.append("<b>Attempted Amount:</b> ₹").append(amount).append("</p>")
+			.append("<p>🔄 <a href='").append(paymentRetryLink).append("' style='color:#007bff;'>Retry Payment</a></p>")
+			.append("<p>Please retry payment from your dashboard or contact our support team.</p>");
+		}
 
-	    // Footer
-	    content.append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
-	        .append("📧 <a href='mailto:support@filmhook.com'>support@filmhook.com</a><br>")
-	        .append("🌐 <a href='https://filmhook.com'>www.filmhook.com</a></p>")
+		// Footer
+		content.append("<p style='margin-top:30px;'>Regards,<br><strong>FilmHook Team</strong><br>")
+		.append("📧 <a href='mailto:support@filmhook.com'>support@filmhook.com</a><br>")
+		.append("🌐 <a href='https://filmhook.com'>www.filmhook.com</a></p>")
 
-	        .append("<hr style='border:0;border-top:1px solid #ccc;margin:30px 0;'>")
-	        .append("<p>Download Our App:</p>")
-	        .append("<p>")
-	        .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' width='30'></a> ")
-	        .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' width='30'></a>")
-	        .append("</p>")
-	        .append("<p>🔗 Follow Us:</p>")
-	        .append("<p>")
-	        .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='20'></a> ")
-	        .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='20'></a> ")
-	        .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='20'></a> ")
-	        .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='20'></a> ")
-	        .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='20'></a> ")
-	        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='30'></a>")
-	        .append("</p>")
+		.append("<hr style='border:0;border-top:1px solid #ccc;margin:30px 0;'>")
+		.append("<p>Download Our App:</p>")
+		.append("<p>")
+		.append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' width='30'></a> ")
+		.append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' width='30'></a>")
+		.append("</p>")
+		.append("<p>🔗 Follow Us:</p>")
+		.append("<p>")
+		.append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='20'></a> ")
+		.append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='20'></a> ")
+		.append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='20'></a> ")
+		.append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='20'></a> ")
+		.append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='20'></a> ")
+		.append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='30'></a>")
+		.append("</p>")
 
-	        .append("</td></tr></table></td></tr></table></body></html>");
+		.append("</td></tr></table></td></tr></table></body></html>");
 
-	    try {
-	        MimeMessage message = javaMailSender.createMimeMessage();
-	        MimeMessageHelper helper = new MimeMessageHelper(message, true);
-	        helper.setTo(email);
-	        helper.setSubject(subject);
-	        helper.setText(content.toString(), true);
+		try {
+			MimeMessage message = javaMailSender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(message, true);
+			helper.setTo(email);
+			helper.setSubject(subject);
+			helper.setText(content.toString(), true);
 
-	        if ("SUCCESS".equalsIgnoreCase(status)) {
-	            byte[] pdf = generateAuditionInvoicePdf(audition, amount);
-	            helper.addAttachment("AuditionInvoice_" + txnid + ".pdf",
-	                    new ByteArrayDataSource(pdf, "application/pdf"));
-	        }
+			if ("SUCCESS".equalsIgnoreCase(status)) {
+				byte[] pdf = generateAuditionInvoicePdf(audition, amount);
+				helper.addAttachment("AuditionInvoice_" + txnid + ".pdf",
+						new ByteArrayDataSource(pdf, "application/pdf"));
+			}
 
-	        javaMailSender.send(message);
-	    } catch (Exception e) {
-	        e.printStackTrace(); // log properly in production
-	    }
+			javaMailSender.send(message);
+		} catch (Exception e) {
+			e.printStackTrace(); // log properly in production
+		}
 	}
 
 	private byte[] generateAuditionInvoicePdf(Audition audition, String amount) {
@@ -1078,13 +1111,13 @@ public class AuditionServiceImpl implements AuditionService {
 					: "";
 
 			// --- Logo ---
-			   InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
-		        if (logoStream == null) throw new RuntimeException("Logo image not found in classpath");
-		        Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
-		                .scaleToFit(120, 60)
-		                .setHorizontalAlignment(HorizontalAlignment.CENTER)
-		                .setMarginBottom(8);
-		        doc.add(logo);
+			InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+			if (logoStream == null) throw new RuntimeException("Logo image not found in classpath");
+			Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
+					.scaleToFit(120, 60)
+					.setHorizontalAlignment(HorizontalAlignment.CENTER)
+					.setMarginBottom(8);
+			doc.add(logo);
 
 			// --- Title ---
 			doc.add(new Paragraph("TAX INVOICE")
@@ -1200,19 +1233,19 @@ public class AuditionServiceImpl implements AuditionService {
 					.setFontSize(fontSize));
 
 			// --- Signature Section ---
-			  InputStream signStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
-		        if (signStream == null) throw new RuntimeException("Signature image not found in classpath");
-		        Image sign = new Image(ImageDataFactory.create(signStream.readAllBytes()))
-		                .scaleToFit(80, 30);
-		        Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
-		                .setFontSize(9)
-		                .setTextAlignment(TextAlignment.RIGHT);
-		        Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
-		        Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
-		        signTable.addCell(new Cell().add(signBlock)
-		                .setBorder(Border.NO_BORDER)
-		                .setTextAlignment(TextAlignment.RIGHT));
-		        doc.add(signTable);
+			InputStream signStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+			if (signStream == null) throw new RuntimeException("Signature image not found in classpath");
+			Image sign = new Image(ImageDataFactory.create(signStream.readAllBytes()))
+					.scaleToFit(80, 30);
+			Paragraph signText = new Paragraph("For FilmHook Pvt. Ltd\n(Authorized Signatory)")
+					.setFontSize(9)
+					.setTextAlignment(TextAlignment.RIGHT);
+			Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
+			Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
+			signTable.addCell(new Cell().add(signBlock)
+					.setBorder(Border.NO_BORDER)
+					.setTextAlignment(TextAlignment.RIGHT));
+			doc.add(signTable);
 
 
 			doc.close();
@@ -1252,116 +1285,137 @@ public class AuditionServiceImpl implements AuditionService {
 	}
 
 
-@Override
-	 public ResponseEntity<?> getSubDetailsByAuditionDetailsId(Integer auditionDetailsId) {
-	        logger.info("Fetching audition sub-details for detailsId: {}", auditionDetailsId);
+	@Override
+	public ResponseEntity<?> getSubDetailsByAuditionDetailsId(Integer auditionDetailsId) {
+		logger.info("Fetching audition sub-details for detailsId: {}", auditionDetailsId);
 
-	        try {
-	            List<AuditionSubDetails> subDetailsList =
-	                    auditionSubDetailsRepository.findByAuditionDetails_AuditionDetailsId(auditionDetailsId);
+		try {
+			List<AuditionSubDetails> subDetailsList =
+					auditionSubDetailsRepository.findByAuditionDetails_AuditionDetailsId(auditionDetailsId);
 
-	            if (subDetailsList.isEmpty()) {
-	                logger.warn("No sub-details found for detailsId: {}", auditionDetailsId);
-	                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-	                        .body(new Response(0, "No sub-categories found for ID: " + auditionDetailsId, null));
-	            }
+			if (subDetailsList.isEmpty()) {
+				logger.warn("No sub-details found for detailsId: {}", auditionDetailsId);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(new Response(0, "No sub-categories found for ID: " + auditionDetailsId, null));
+			}
 
-	            logger.info("Successfully fetched {} sub-details for detailsId: {}", subDetailsList.size(), auditionDetailsId);
-	            return ResponseEntity.ok(new Response(1, "Sub-categories fetched successfully", subDetailsList));
+			logger.info("Successfully fetched {} sub-details for detailsId: {}", subDetailsList.size(), auditionDetailsId);
+			return ResponseEntity.ok(new Response(1, "Sub-categories fetched successfully", subDetailsList));
 
-	        } catch (Exception e) {
-	            logger.error("Exception while fetching sub-details for ID {}: {}", auditionDetailsId, e.getMessage());
-	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                    .body(new Response(-1, "Error fetching sub-categories", e.getMessage()));
-	        }
-	    }
+		} catch (Exception e) {
+			logger.error("Exception while fetching sub-details for ID {}: {}", auditionDetailsId, e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Error fetching sub-categories", e.getMessage()));
+		}
+	}
 
-@Override
-public ResponseEntity<?> getAuditionBySubCategory(Integer subCategoryId) {
-    HashMap<String, Object> response = new HashMap<>();
-    try {
-        logger.info("get audition by sub-category method start");
+	@Override
+	public ResponseEntity<?> getAuditionBySubCategory(Integer subCategoryId) {
+		HashMap<String, Object> response = new HashMap<>();
+		try {
+			logger.info("get audition by sub-category method start");
 
-        Integer userId = userDetails.userInfo().getId();
-        List<Integer> ignoredAuditionIds = auditionIgnoranceRepository.findIgnoredAuditionIdsByUserId(userId);
+			Integer userId = userDetails.userInfo().getId();
+			List<Integer> ignoredAuditionIds = auditionIgnoranceRepository.findIgnoredAuditionIdsByUserId(userId);
 
-        List<Audition> auditions = auditionRepository.findByAuditionSubCategory(subCategoryId).stream()
-                .filter(audition ->
-                        !ignoredAuditionIds.contains(audition.getAuditionId()) &&
-                        "SUCCESS".equalsIgnoreCase(audition.getPaymentStatus()))
-                .collect(Collectors.toList());
+			List<Audition> auditions = auditionRepository.findByAuditionSubCategory(subCategoryId).stream()
+					.filter(audition ->
+					!ignoredAuditionIds.contains(audition.getAuditionId()) &&
+					"SUCCESS".equalsIgnoreCase(audition.getPaymentStatus()))
+					.collect(Collectors.toList());
 
-        if (!auditions.isEmpty()) {
-            auditions.sort(Comparator.comparing(Audition::getAuditionCreatedOn).reversed());
+			if (!auditions.isEmpty()) {
+				auditions.sort(Comparator.comparing(Audition::getAuditionCreatedOn).reversed());
 
-            List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
-            for (Audition audition : auditions) {
-                AuditionWebModel auditionWebModel = new AuditionWebModel();
-                auditionWebModel.setAuditionId(audition.getAuditionId());
-                auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
-                auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
-                auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
-                auditionWebModel.setAuditionSubCategory(audition.getAuditionSubCategory());
-                auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
-                auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
-                auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
-                auditionWebModel.setStartDate(audition.getStartDate());
-                auditionWebModel.setEndDate(audition.getEndDate());
-                auditionWebModel.setCompanyName(audition.getCompanyName());
-                auditionWebModel.setUrl(audition.getUrl());
-                auditionWebModel.setTermsAndCondition(audition.getTermsAndCondition());
-                auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
-                auditionWebModel.setAuditionCreatedOn(audition.getAuditionCreatedOn());
-                auditionWebModel.setAuditionLocation(audition.getAuditionLocation());
-                auditionWebModel.setAuditionAttendedCount(
-                        acceptanceRepository.getAttendedCount(audition.getAuditionId()));
-                auditionWebModel.setAuditionIgnoredCount(
-                        acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
+				List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
+				for (Audition audition : auditions) {
+					AuditionWebModel auditionWebModel = new AuditionWebModel();
+					auditionWebModel.setAuditionId(audition.getAuditionId());
+					auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
+					auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
+					auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
+					auditionWebModel.setAuditionSubCategory(audition.getAuditionSubCategory());
+					auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
+					auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
+					auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
+					auditionWebModel.setStartDate(audition.getStartDate());
+					auditionWebModel.setEndDate(audition.getEndDate());
+					auditionWebModel.setCompanyName(audition.getCompanyName());
+					auditionWebModel.setUrl(audition.getUrl());
+					auditionWebModel.setTermsAndCondition(audition.getTermsAndCondition());
+					auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
+					auditionWebModel.setAuditionCreatedOn(audition.getAuditionCreatedOn());
+					auditionWebModel.setAuditionLocation(audition.getAuditionLocation());
+					auditionWebModel.setIndustry(audition.getIndustry());
+					auditionWebModel.setMovieType(audition.getMovieType());
+				
+					auditionWebModel.setDescription(audition.getDescription());
+					auditionWebModel.setScriptUrlPath(audition.getScriptUrl());
+					auditionWebModel.setAuditionAttendedCount(
+							acceptanceRepository.getAttendedCount(audition.getAuditionId()));
+					auditionWebModel.setAuditionIgnoredCount(
+							acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
 
-                boolean isAccepted = acceptanceRepository
-                        .existsByAuditionAcceptanceUserAndAuditionRefId(userId, audition.getAuditionId());
-                auditionWebModel.setAuditionAttendanceStatus(isAccepted);
+					boolean isAccepted = acceptanceRepository
+							.existsByAuditionAcceptanceUserAndAuditionRefId(userId, audition.getAuditionId());
+					auditionWebModel.setAuditionAttendanceStatus(isAccepted);
 
-                Optional<User> userOptional = userService.getUser(audition.getUser().getUserId());
-                userOptional.ifPresent(user -> {
-                    auditionWebModel.setFilmHookCode(user.getFilmHookCode());
-                    auditionWebModel.setName(user.getName());
-                    auditionWebModel.setAdminReview(user.getAdminReview());
-                    auditionWebModel.setUserType(user.getUserType());
-                    auditionWebModel.setUserId(user.getUserId());
-                    auditionWebModel.setProfilePic(userService.getProfilePicUrl(userId));
-                });
+					Optional<User> userOptional = userService.getUser(audition.getUser().getUserId());
+					userOptional.ifPresent(user -> {
+						auditionWebModel.setFilmHookCode(user.getFilmHookCode());
+						auditionWebModel.setName(user.getName());
+						auditionWebModel.setAdminReview(user.getAdminReview());
+						auditionWebModel.setUserType(user.getUserType());
+						auditionWebModel.setUserId(user.getUserId());
+						auditionWebModel.setProfilePic(userService.getProfilePicUrl(userId));
+					});
 
-                if (!audition.getAuditionRoles().isEmpty()) {
-                    List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
-                    for (AuditionRoles auditionRoles : audition.getAuditionRoles()) {
-                        AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
-                        auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
-                        auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
-                        auditionRolesWebModelsList.add(auditionRolesWebModel);
-                    }
-                    auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
-                }
+					if (!audition.getAuditionRoles().isEmpty()) {
+						List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
+						for (AuditionRoles auditionRoles : audition.getAuditionRoles()) {
+							AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
+							auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
+							auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
+							auditionRolesWebModel.setCharacterName(auditionRoles.getCharacterName());
+							auditionRolesWebModel.setAgeRange(auditionRoles.getAgeRange());
+							auditionRolesWebModel.setEthnicity(auditionRoles.getEthnicity());
+							auditionRolesWebModel.setHeightRange(auditionRoles.getHeightRange());
+							auditionRolesWebModel.setWeight(auditionRoles.getWeight());
+							auditionRolesWebModel.setProfileFace(auditionRoles.getProfileFace());
+							auditionRolesWebModel.setOpportunity(auditionRoles.getOpportunity());
+							auditionRolesWebModel.setExperience(auditionRoles.getExperience());
+							auditionRolesWebModel.setPay(auditionRoles.getPay());
+							auditionRolesWebModel.setDaysOfShoot(auditionRoles.getDaysOfShoot());
+							auditionRolesWebModel.setCompensation(auditionRoles.getCompensation());
+							auditionRolesWebModel.setAuditionRoleIsactive(auditionRoles.isAuditionRoleIsactive());
+							auditionRolesWebModel.setAuditionRoleCreatedBy(auditionRoles.getAuditionRoleCreatedBy());
+							auditionRolesWebModel.setAuditionRoleCreatedOn(auditionRoles.getAuditionRoleCreatedOn());
+							auditionRolesWebModel.setAuditionRoleUpdatedBy(auditionRoles.getAuditionRoleUpdatedBy());
+							auditionRolesWebModel.setAuditionRoleUpdatedOn(auditionRoles.getAuditionRoleUpdatedOn());
+							auditionRolesWebModelsList.add(auditionRolesWebModel);
+						}
+						auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
+					}
 
-                List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
-                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
-                if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
-                    auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
-                }
+					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
+							.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
+					if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
+						auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
+					}
 
-                auditionWebModelsList.add(auditionWebModel);
-            }
-            response.put("Audition List", auditionWebModelsList);
-        } else {
-            response.put("No auditions found", "");
-        }
-    } catch (Exception e) {
-        logger.error("get audition by sub-category Exception -> {}", e.getMessage());
-        e.printStackTrace();
-        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
-    }
-    return ResponseEntity.ok().body(new Response(1, "Auditions fetched by sub-category", response));
-}
+					auditionWebModelsList.add(auditionWebModel);
+				}
+				response.put("Audition List", auditionWebModelsList);
+			} else {
+				response.put("No auditions found", "");
+			}
+		} catch (Exception e) {
+			logger.error("get audition by sub-category Exception -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+		}
+		return ResponseEntity.ok().body(new Response(1, "Auditions fetched by sub-category", response));
+	}
 
 
 }

@@ -313,12 +313,12 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	            // Social Media
 	            .append("<p>📢 Follow Us:</p><p>")
-	            .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='20'></a> ")
-	            .append("<a href='https://x.com/Filmhook_Apps?t=KQJkjwuvBzTPOaL4FzDtIA&s=08/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='20'></a> ")
-	            .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='20'></a> ")
-	            .append("<a href='https://www.instagram.com/filmhookapps?igsh=dXdvNnB0ZGg5b2tx'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='20'></a> ")
-	            .append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='20'></a> ")
-	            .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='20'></a>")
+	            .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='25'></a> ")
+	            .append("<a href='https://x.com/Filmhook_Apps?t=KQJkjwuvBzTPOaL4FzDtIA&s=08/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25'></a> ")
+	            .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25'></a> ")
+	            .append("<a href='https://www.instagram.com/filmhookapps?igsh=dXdvNnB0ZGg5b2tx'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25'></a> ")
+	            .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='25' style='margin-right:5px;'></a>")
+                .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25' ></a>")
 	            .append("</p></td></tr></table></td></tr></table></body></html>");
 
 	        // Send Email to Client
@@ -392,10 +392,10 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                    .append("<a href='https://filmhook.com'>🌐 www.filmhook.com</a></p>")
 
 	                    // App Links
-	                    .append("<hr style='border:0;border-top:1px solid #ddd;margin:30px 0;'>")
+	                    .append("<hr style='border:0;border-top:1px solid #ddd;margin:20px 0;'>")
 	                    .append("<p>📲 Get the App:</p><p>")
-	                    .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30' style='margin-right:10px;'></a>")
-	                    .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
+	                    .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='25' style='margin-right:8px;'></a>")
+	                    .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='25'></a></p>")
 
 	                    // Social Links
 	                    .append("<p>📢 Follow Us:</p><p>")
@@ -403,8 +403,8 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                    .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25' style='margin-right:8px;'></a>")
 	                    .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25' style='margin-right:8px;'></a>")
 	                    .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25' style='margin-right:8px;'></a>")
-	                    .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30' style='margin-right:1px;'></a>")
-	                    .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='35'></a>")
+	                    .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='25' style='margin-right:5px;'></a>")
+	                    .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25' ></a>")
 	                    .append("</p>")
 
 	                    .append("</td></tr></table></td></tr></table></body></html>");
@@ -443,7 +443,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        doc.setMargins(36, 36, 36, 36);
 
 	        DeviceRgb blue = new DeviceRgb(41, 86, 184);
-	        final int fontSize = 9;
+	        final int fontSize = 12;
 
 	        int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
 	        double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0.0;
@@ -455,6 +455,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
 	        Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
 	                .scaleToFit(120, 60)
+	                .setMarginBottom(3)
 	                .setHorizontalAlignment(HorizontalAlignment.CENTER);
 	        doc.add(logo);
 
@@ -513,8 +514,8 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        taxTable.addCell(getLightCell("Rate"));
 	        taxTable.addCell(getLightCell("Amount"));
 
-	        taxTable.addCell(getPlainCell("CGST")).addCell(getPlainCell("2.5%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
-	        taxTable.addCell(getPlainCell("SGST")).addCell(getPlainCell("2.5%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
+	        taxTable.addCell(getPlainCell("CGST")).addCell(getPlainCell("9%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
+	        taxTable.addCell(getPlainCell("SGST")).addCell(getPlainCell("9%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
 
 	        taxTable.addCell(getLightCell("Total Taxes")).addCell(getPlainCell("")).addCell(getPlainCell("₹ " + String.format("%.2f", gst)));
 
@@ -539,11 +540,11 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	        // Amount in words
 	        doc.add(new Paragraph("\nInvoice total in words: " + convertToIndianCurrency(total))
-	                .setFontSize(9)
+	                .setFontSize(12)
 	                .setItalic());
 
 	        // Declaration
-	        doc.add(new Paragraph("\nDeclaration").setBold().setFontSize(11).setMarginTop(20));
+	        doc.add(new Paragraph("\nDeclaration").setBold().setFontSize(12).setMarginTop(20));
 	        doc.add(new Paragraph("We declare that this invoice shows the actual price of the services provided and that all particulars are true and correct.")
 	                .setFontSize(fontSize));
 

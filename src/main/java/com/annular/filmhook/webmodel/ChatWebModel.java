@@ -48,7 +48,7 @@ public class ChatWebModel {
     private String storyMediaUrl;
     private String replyType;
     private String storyMediaType;
-
-
+    private String deleteType;
+   
     
 }

@@ -28,5 +28,18 @@ public class AuditionRolesWebModel {
     private Integer auditionRoleUpdatedBy;
 
     private Date auditionRoleUpdatedOn;
+    
+    private String characterName;
+    private String ageRange;
+    private String ethnicity;
+    private String heightRange;
+    private String weight;
+    private String profileFace;
+    private String opportunity;
+    private String experience;
+    private String pay;
+    private Integer daysOfShoot;
+
+    private String compensation;
 
 }

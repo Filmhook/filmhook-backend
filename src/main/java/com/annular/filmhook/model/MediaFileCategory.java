@@ -21,6 +21,6 @@ public enum MediaFileCategory {
     oneMinuteVideo,
     govermentId,
     shootingLocationImage,
-    shootingLocationImageProof
-
+    shootingLocationImageProof,
+    AuditionScript
 }

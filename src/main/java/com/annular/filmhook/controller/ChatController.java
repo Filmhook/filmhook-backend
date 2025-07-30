@@ -143,16 +143,17 @@ public class ChatController {
 		}
 	}
 
-	@PostMapping("deleteByChatId")
-	public ResponseEntity<Response> deleteByChatId(@RequestBody ChatWebModel ChatWebModel) {
-		try {
-			Response response = chatService.deleteByChatId(ChatWebModel);
-			return ResponseEntity.ok().body(response);
-		} catch (Exception e) {
-			logger.error("Error at ChatWebModel -> {}", e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.internalServerError().body(new Response(-1, "Error", e.getMessage()));
-		}
+	@PostMapping("/deleteByChatId")
+	public ResponseEntity<Response> deleteByChatId(@RequestBody ChatWebModel chatWebModel) {
+	    try {
+	        Response response = chatService.deleteChatMessage(chatWebModel);
+
+	        return ResponseEntity.ok(response);
+	    } catch (Exception e) {
+	        logger.error("Error while deleting chat message for chatId {}: {}", chatWebModel.getChatId(), e.getMessage(), e);
+	        return ResponseEntity.internalServerError()
+	                .body(new Response(-1, "Error", "Something went wrong while deleting the chat message"));
+	    }
 	}
 
 	@PostMapping("updateOnlineStatus")
