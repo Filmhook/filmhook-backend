@@ -1,0 +1,35 @@
+package com.annular.filmhook.controller;
+
+import com.annular.filmhook.service.UserRecentActivityService;
+import com.annular.filmhook.webmodel.RecentUserWebModel;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/user/recent")
+public class UserRecentActivityController {
+
+    @Autowired
+    private UserRecentActivityService userRecentActivityService;
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getRecentUsers(@PathVariable Integer userId) {
+        List<RecentUserWebModel> list = userRecentActivityService.getRecentUserActivities(userId);
+        return ResponseEntity.ok(list);
+    }
+
+    @PostMapping("/search/save")
+    public ResponseEntity<?> saveSearch(
+            @RequestParam Integer userId,
+            @RequestParam Integer searchedUserId,
+            @RequestParam String source // "search" or "chat"
+    ) {
+        userRecentActivityService.saveSearchHistory(userId, searchedUserId, source);
+        return ResponseEntity.ok("Saved");
+    }
+
+}
+

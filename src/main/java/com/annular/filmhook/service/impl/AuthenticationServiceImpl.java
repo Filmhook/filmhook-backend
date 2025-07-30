@@ -43,6 +43,7 @@ import net.bytebuddy.utility.RandomString;
 @Service
 public class AuthenticationServiceImpl implements AuthenticationService {
 
+
     public static final Logger logger = LoggerFactory.getLogger(AuthenticationServiceImpl.class);
 
     @Autowired
@@ -129,7 +130,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setCreatedBy(user.getUserId());
                 user.setCreatedOn(new Date());
                 user.setUserFlag(true);
-
                 user = userRepository.save(user);
                 response.put("userDetails", user);
                 //response.put("verificationCode", user.getVerificationCode());
@@ -398,7 +398,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                 "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";                        
                                 mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "Welcome to Film-hook Media Apps", mailContent);
                     }
-               
+
                 // Return a success response if email OTP is verified
                 return ResponseEntity.ok(new Response(1, "Email OTP verified successfully. Public user account created in FilmHook.", ""));
             } else {
@@ -732,102 +732,102 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Override
 	public ResponseEntity<?> saveQueries(HelpAndSupportWebModel helpAndSupportWebModel) {
-		  try {
-	            HelpAndSupport dbData = new HelpAndSupport();
-	            dbData.setUserId(userDetails.userInfo().getId());
-	            dbData.setHelpAndSupportIsActive(true);
-	            dbData.setHelpAndSupportCreatedBy(userDetails.userInfo().getId());
-	            dbData.setMessage(helpAndSupportWebModel.getMessage());
-	            dbData.setSubject(helpAndSupportWebModel.getSubject());
-	            dbData.setReceipentEmail(helpAndSupportWebModel.getReceipentEmail());
+		try {
+			HelpAndSupport dbData = new HelpAndSupport();
+			dbData.setUserId(userDetails.userInfo().getId());
+			dbData.setHelpAndSupportIsActive(true);
+			dbData.setHelpAndSupportCreatedBy(userDetails.userInfo().getId());
+			dbData.setMessage(helpAndSupportWebModel.getMessage());
+			dbData.setSubject(helpAndSupportWebModel.getSubject());
+			dbData.setReceipentEmail(helpAndSupportWebModel.getReceipentEmail());
 
-	            helpAndSupportRepository.save(dbData);
+			helpAndSupportRepository.save(dbData);
 
-	            // Send email
-	            boolean emailSent = mailNotification.sendFilmHookQueries(dbData);
-	            if (emailSent) {
-	                return ResponseEntity.ok("Query saved and email sent successfully.");
-	            } else {
-	                return ResponseEntity.status(500).body("Query saved, but failed to send email.");
-	            }
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	            return ResponseEntity.status(500).body("An error occurred while saving the query.");
-	        }
-	    }
+			// Send email
+			boolean emailSent = mailNotification.sendFilmHookQueries(dbData);
+			if (emailSent) {
+				return ResponseEntity.ok("Query saved and email sent successfully.");
+			} else {
+				return ResponseEntity.status(500).body("Query saved, but failed to send email.");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(500).body("An error occurred while saving the query.");
+		}
+	}
 
 	@Override
 	public Response updateUserFlag(UserWebModel userWebModel) {
-		 Optional<User> userData = userRepository.findById(userWebModel.getUserId());
-		    
-		    if (userData.isPresent()) {
-		        User user = userData.get();
-		        user.setUserFlag(userWebModel.getUserFlag());
-		        userRepository.save(user);
-		        return new Response(1,"Success", "user flag updated successfully"); // Success response
-		    } else {
-		        return new Response(0,"fail", "User not found"); // Failure response
-		    }
+		Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+
+		if (userData.isPresent()) {
+			User user = userData.get();
+			user.setUserFlag(userWebModel.getUserFlag());
+			userRepository.save(user);
+			return new Response(1,"Success", "user flag updated successfully"); // Success response
+		} else {
+			return new Response(0,"fail", "User not found"); // Failure response
+		}
 	}
 	@Override
 	public ResponseEntity<?> updateSecondaryMobileNumber(UserWebModel userWebModel) {
-	    try {
-	        Optional<User> userData = userRepository.findById(userWebModel.getUserId());
-	        if (userData.isPresent()) {
-	            User user = userData.get();
-	            user.setPhoneNumber(userWebModel.getPhoneNumber());
-	            user.setCountryCode(userWebModel.getCountryCode());
-	            userRepository.save(user);
-	            return ResponseEntity.ok(new Response(1, "Success", "User phone number updated successfully"));
-	        } else {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Fail", "User not found"));
-	        }
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(0, "Fail", "An error occurred"));
-	    }
+		try {
+			Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+			if (userData.isPresent()) {
+				User user = userData.get();
+				user.setPhoneNumber(userWebModel.getPhoneNumber());
+				user.setCountryCode(userWebModel.getCountryCode());
+				userRepository.save(user);
+				return ResponseEntity.ok(new Response(1, "Success", "User phone number updated successfully"));
+			} else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Fail", "User not found"));
+			}
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new Response(0, "Fail", "An error occurred"));
+		}
 	}
 	@Override
 	public Response updateUserDeactivateFlag(UserWebModel userWebModel) {
-	    try {
-	        // Fetch the user by ID
-	        Optional<User> userData = userRepository.findById(userWebModel.getUserId());
-	        
-	        if (userData.isPresent()) {
-	            User user = userData.get();
+		try {
+			// Fetch the user by ID
+			Optional<User> userData = userRepository.findById(userWebModel.getUserId());
 
-	            // Update the deactivateAccessOrdeny field
-	            user.setDeactivateAccessOrdeny(userWebModel.getDeactivateAccessOrdeny());
+			if (userData.isPresent()) {
+				User user = userData.get();
 
-	            // Save the updated user entity
-	            userRepository.save(user);
+				// Update the deactivateAccessOrdeny field
+				user.setDeactivateAccessOrdeny(userWebModel.getDeactivateAccessOrdeny());
 
-	            return new Response(1, "User deactivateAccessOrdeny updated successfully.", true);
-	        } else {
-	            return new Response(0, "User not found.", false);
-	        }
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return new Response(-1, "An error occurred while updating the user.", false);
-	    }
+				// Save the updated user entity
+				userRepository.save(user);
+
+				return new Response(1, "User deactivateAccessOrdeny updated successfully.", true);
+			} else {
+				return new Response(0, "User not found.", false);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new Response(-1, "An error occurred while updating the user.", false);
+		}
 	}
 
 	@Override
 	public ResponseEntity<?> getDeactivateList() {
-	    try {
-	        // Fetch users with deleteReason not null
-	        List<User> deactivateList = userRepository.findByDeleteReasonIsNotNull();
+		try {
+			// Fetch users with deleteReason not null
+			List<User> deactivateList = userRepository.findByDeleteReasonIsNotNull();
 
-	        // Check if the list is empty
-	        if (deactivateList.isEmpty()) {
-	            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No users with deleteReason found.");
-	        }
+			// Check if the list is empty
+			if (deactivateList.isEmpty()) {
+				return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No users with deleteReason found.");
+			}
 
-	        // Return the list
-	        return ResponseEntity.ok(deactivateList);
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the deactivate list.");
-	    }
+			// Return the list
+			return ResponseEntity.ok(deactivateList);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the deactivate list.");
+		}
 	}
 
 }
