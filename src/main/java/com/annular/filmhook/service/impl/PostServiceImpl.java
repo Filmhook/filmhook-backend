@@ -318,14 +318,12 @@ public class PostServiceImpl implements PostService {
 
                     // Profession
                     Set<String> professionNames = new HashSet<>();
-                    List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId());
-                    if (!Utility.isNullOrEmptyList(professionPermanentDataList)) {
-                        professionNames = professionPermanentDataList.stream()
-                                .map(FilmProfessionPermanentDetail::getProfessionName)
-                                .collect(Collectors.toSet());
-                    } else {
-                        professionNames.add("Public User");
-                    }
+					String userType = post.getUser().getUserType(); 
+					if (userType != null && !userType.isEmpty()) {
+						professionNames.add(userType);
+					} else {
+						professionNames.add("Public User");
+					}
 
                     // Followers
                     List<FollowersRequest> followersList = friendRequestRepository
