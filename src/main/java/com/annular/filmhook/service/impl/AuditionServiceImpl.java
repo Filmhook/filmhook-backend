@@ -64,6 +64,7 @@ import com.annular.filmhook.webmodel.AuditionAcceptanceWebModel;
 import com.annular.filmhook.webmodel.AuditionDetailsWebModel;
 import com.annular.filmhook.webmodel.AuditionIgnoranceWebModel;
 import com.annular.filmhook.webmodel.AuditionRolesWebModel;
+import com.annular.filmhook.webmodel.AuditionSubCategoryDTO;
 import com.annular.filmhook.webmodel.AuditionWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -760,7 +761,7 @@ public class AuditionServiceImpl implements AuditionService {
 		for (Audition audition : activeAuditions) {
 			try {
 				LocalDate endDate = LocalDate.parse(audition.getEndDate(), DATE_FORMATTER);
-				if (endDate.isBefore(today) || endDate.isEqual(today)) {
+				if (endDate.isBefore(today)) {
 					audition.setAuditionIsactive(false);
 				}
 			} catch (Exception e) {
@@ -1287,27 +1288,32 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Override
 	public ResponseEntity<?> getSubDetailsByAuditionDetailsId(Integer auditionDetailsId) {
-		logger.info("Fetching audition sub-details for detailsId: {}", auditionDetailsId);
+	    logger.info("Fetching audition sub-details for detailsId: {}", auditionDetailsId);
 
-		try {
-			List<AuditionSubDetails> subDetailsList =
-					auditionSubDetailsRepository.findByAuditionDetails_AuditionDetailsId(auditionDetailsId);
+	    try {
+	        List<AuditionSubDetails> subDetailsList =
+	                auditionSubDetailsRepository.findByAuditionDetails_AuditionDetailsId(auditionDetailsId);
 
-			if (subDetailsList.isEmpty()) {
-				logger.warn("No sub-details found for detailsId: {}", auditionDetailsId);
-				return ResponseEntity.status(HttpStatus.NOT_FOUND)
-						.body(new Response(0, "No sub-categories found for ID: " + auditionDetailsId, null));
-			}
+	        if (subDetailsList.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new Response(0, "No sub-categories found for ID: " + auditionDetailsId, null));
+	        }
 
-			logger.info("Successfully fetched {} sub-details for detailsId: {}", subDetailsList.size(), auditionDetailsId);
-			return ResponseEntity.ok(new Response(1, "Sub-categories fetched successfully", subDetailsList));
+	        List<AuditionSubCategoryDTO> result = subDetailsList.stream().map(sub -> {
+	            int count = auditionRepository.countBySubCategoryWithSuccessPayment(sub.getSubId());
+	            return new AuditionSubCategoryDTO(sub.getSubId(), sub.getSubName(), count);
+	        }).collect(Collectors.toList());
 
-		} catch (Exception e) {
-			logger.error("Exception while fetching sub-details for ID {}: {}", auditionDetailsId, e.getMessage());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Error fetching sub-categories", e.getMessage()));
-		}
+	        return ResponseEntity.ok(new Response(1, "Sub-categories with audition count fetched", result));
+
+	    } catch (Exception e) {
+	        logger.error("Error while fetching sub-details with count: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Error fetching sub-category data", e.getMessage()));
+	    }
 	}
+
+
 
 	@Override
 	public ResponseEntity<?> getAuditionBySubCategory(Integer subCategoryId) {

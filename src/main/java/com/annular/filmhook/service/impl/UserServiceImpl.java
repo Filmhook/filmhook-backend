@@ -939,6 +939,7 @@ public class UserServiceImpl implements UserService {
                                 .userType(user.getUserType())
                                 .profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
                                 .profilePicUrl(this.getProfilePicUrl(user.getUserId()))
+                                .userType(user.getUserType())
                                 .build())
                         .collect(Collectors.toList());
             }
