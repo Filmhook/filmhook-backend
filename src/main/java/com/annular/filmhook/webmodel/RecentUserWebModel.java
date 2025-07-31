@@ -13,4 +13,5 @@ public class RecentUserWebModel {
     private String profilePic; 
     private String source; // "search" or "chat"
     private LocalDateTime lastInteractionTime;
+    private String review;
 }

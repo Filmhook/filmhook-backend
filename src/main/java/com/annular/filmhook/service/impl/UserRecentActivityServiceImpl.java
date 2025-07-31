@@ -74,6 +74,7 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
                             .profilePic(profilePic)
                             .source(source)
                             .lastInteractionTime(history.getSearchedAt())
+                            .review(user.getUserType())
                             .build());
                 });
             }
@@ -88,6 +89,19 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
         return combined.stream()
                 .sorted(Comparator.comparing(RecentUserWebModel::getLastInteractionTime).reversed())
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    public void deleteSearchHistory(Integer userId, Integer targetUserId, String source) {
+        Optional<UserSearchHistory> historyOpt =
+                userSearchHistoryRepo.findByUserIdAndSearchedUserIdAndSource(userId, targetUserId, source);
+        historyOpt.ifPresent(userSearchHistoryRepo::delete);
+    }
+
+    @Override
+    public void deleteAllSearchHistory(Integer userId) {
+        List<UserSearchHistory> allHistories = userSearchHistoryRepo.findByUserId(userId);
+        userSearchHistoryRepo.deleteAll(allHistories);
     }
 
     private String getProfilePic(Integer userId) {

@@ -13,4 +13,7 @@ public interface UserSearchHistoryRepository extends JpaRepository<UserSearchHis
     Optional<UserSearchHistory> findByUserIdAndSearchedUserIdAndSource(Integer userId, Integer searchedUserId, String source);
 
     List<UserSearchHistory> findByUserIdAndSourceOrderBySearchedAtDesc(Integer userId, String source);
+    List<UserSearchHistory> findByUserId(Integer userId);
+  
+
 }

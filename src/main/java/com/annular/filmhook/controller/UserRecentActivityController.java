@@ -30,6 +30,23 @@ public class UserRecentActivityController {
         userRecentActivityService.saveSearchHistory(userId, searchedUserId, source);
         return ResponseEntity.ok("Saved");
     }
+    
+    
+    @DeleteMapping("/delete")
+    public ResponseEntity<String> deleteSingleSearchHistory(
+            @RequestParam Integer userId,
+            @RequestParam Integer targetUserId,
+            @RequestParam String source) {
+
+        userRecentActivityService.deleteSearchHistory(userId, targetUserId, source);
+        return ResponseEntity.ok("Search history entry deleted.");
+    }
+
+    @DeleteMapping("/deleteAll")
+    public ResponseEntity<String> deleteAllSearchHistory(@RequestParam Integer userId) {
+        userRecentActivityService.deleteAllSearchHistory(userId);
+        return ResponseEntity.ok("All search history entries deleted.");
+    }
 
 }
 
