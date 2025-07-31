@@ -14,6 +14,6 @@ public interface UserSearchHistoryRepository extends JpaRepository<UserSearchHis
 
     List<UserSearchHistory> findByUserIdAndSourceOrderBySearchedAtDesc(Integer userId, String source);
     List<UserSearchHistory> findByUserId(Integer userId);
-  
+    long countByUserIdAndSourceAndPinProfileTrue(Integer userId, String source);
 
 }

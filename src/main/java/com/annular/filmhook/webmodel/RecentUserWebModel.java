@@ -10,8 +10,10 @@ public class RecentUserWebModel {
     private Integer userId;
     private String name;
     private String userType;
-    private String profilePic; 
+    private String profilePicUrl;
     private String source; // "search" or "chat"
     private LocalDateTime lastInteractionTime;
-    private String review;
+    private Float review;
+    private Boolean pinProfile; // Already present in service logic
+    private Boolean common;     // New field: true if 3 are pinned, else false
 }

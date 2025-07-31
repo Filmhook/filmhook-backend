@@ -9,4 +9,6 @@ public interface UserRecentActivityService {
     List<RecentUserWebModel> getRecentUserActivities(Integer userId);
     void deleteSearchHistory(Integer userId, Integer targetUserId, String source); // Single delete
     void deleteAllSearchHistory(Integer userId); // Delete all
+    void pinUserProfile(Integer userId, Integer targetUserId, String source, boolean pin);
+    
 }
