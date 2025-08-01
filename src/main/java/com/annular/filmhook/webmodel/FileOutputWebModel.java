@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
 
+import com.annular.filmhook.model.FileStatus;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -42,5 +44,5 @@ public class FileOutputWebModel {
     private String storyId;
     private Boolean isStoryLiked;
     private String thumbnailPath;
-
+    private FileStatus fileStatus; 
 }

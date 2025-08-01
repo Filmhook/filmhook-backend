@@ -37,13 +37,16 @@ public class ProjectController {
         try {
             logger.info("saveProjectFiles Inputs :- {}", projectWebModel);
             List<FileOutputWebModel> outputList = projectService.saveProjectFiles(projectWebModel);
-            if (outputList != null && !outputList.isEmpty()) return new Response(1, "File(s) saved successfully...", outputList);
+
+            if (outputList != null && !outputList.isEmpty()) {
+                return new Response(1, "File(s) saved successfully.", outputList);
+            } else {
+                return new Response(0, "No files were saved.", null);
+            }
         } catch (Exception e) {
-            logger.error("Error at saveProjectFiles() -> {}", e.getMessage());
-            e.printStackTrace();
-            return new Response(-1, "Error occurred while saving saveProject Files..", e);
+            logger.error("Error at saveProjectFiles() -> ", e);
+            return new Response(-1, "Error occurred while saving project files.", e.getMessage());
         }
-        return new Response(-1, "Error occurred while save Project Files...", null);
     }
 
     @GetMapping("/getProjectFilesByPlatformId")
@@ -84,5 +87,40 @@ public class ProjectController {
         }
         return ResponseEntity.internalServerError().build();
     }
+    
+    @GetMapping("/admin/getPendingProjectFilesByPlatformId")
+    public Response getPendingProjectFilesByPlatformId(@RequestParam("userId") Integer userId,
+                                                       @RequestParam("platformPermanentId") Integer platformPermanentId) {
+        try {
+            List<FileOutputWebModel> outputList = projectService.getPendingProjectFiles(userId, platformPermanentId);
+            if (outputList != null && !outputList.isEmpty()) {
+                logger.info("[{}] pending project media files found for userId :- {}", outputList.size(), userId);
+                return new Response(1, "Pending project file(s) found successfully...", outputList);
+            } else {
+                return new Response(-1, "No pending file(s) available for this user...", null);
+            }
+        } catch (Exception e) {
+            logger.error("Error at getPendingProjectFilesByPlatformId() -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return new Response(-1, "Pending files were not found...", null);
+    }
+    
+    @PostMapping("/updateProjectFileStatus")
+    public Response updateProjectFileStatus(@RequestParam("fileId") Integer fileId,
+                                            @RequestParam("status") String status) {
+        try {
+            boolean result = projectService.updateProjectFileStatus(fileId, status);
+            if (result) {
+                return new Response(1, "Project file status updated successfully.", null);
+            } else {
+                return new Response(-1, "Failed to update project file status.", null);
+            }
+        } catch (Exception e) {
+            logger.error("Error updating project file status: {}", e.getMessage());
+            return new Response(-1, "Exception occurred while updating status.", null);
+        }
+    }
+
 
 }
