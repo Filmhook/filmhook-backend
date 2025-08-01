@@ -6,11 +6,13 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSearchHistoryRepository;
 import com.annular.filmhook.service.UserRecentActivityService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.RecentUserWebModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,7 +41,7 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
         UserSearchHistory history;
 
         if (existingOpt.isPresent()) {
-            // ✅ Update the existing record — carry forward the ID
+            //Update the existing record — carry forward the ID
             history = existingOpt.get();
             history.setSearchedAt(LocalDateTime.now());
         } else {
@@ -52,7 +54,7 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
         	        .build();
         }
 
-        // ✅ Hibernate will insert or update depending on whether ID is set
+        // Hibernate will insert or update depending on whether ID is set
         userSearchHistoryRepo.save(history);
     }
 
@@ -71,16 +73,22 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
             for (UserSearchHistory history : historyList) {
                 userRepo.findById(history.getSearchedUserId()).ifPresent(user -> {
                     String profilePic = getProfilePic(user.getUserId());
+                    
+                    Date searchedAtDate = Date.from(history.getSearchedAt()
+                            .atZone(ZoneId.of("Asia/Kolkata"))
+                            .toInstant());
+
+                    String relativeTime = Utility.formatRelativeTime(searchedAtDate); 
                     categorizedMap.get(source).put(user.getUserId(), RecentUserWebModel.builder()
                             .userId(user.getUserId())
                             .name(user.getName())
                             .userType(user.getUserType())
                             .profilePicUrl(profilePic)
                             .source(source)
-                            .lastInteractionTime(history.getSearchedAt())
+                            .lastInteractionTime(relativeTime)
                             .review(user.getAdminReview())
                             .pinProfile(history.getPinProfile())
-                            .common(isCommon) // ✅ if total pinned for this source is 3 or more
+                            .common(isCommon) //if total pinned for this source is 3 or more
                             .build());
                 });
             }

@@ -42,7 +42,6 @@ public class UserRecentActivityController {
         userRecentActivityService.deleteSearchHistory(userId, targetUserId, source);
         return ResponseEntity.ok("Search history entry deleted.");
     }
-
     @DeleteMapping("/deleteAll")
     public ResponseEntity<String> deleteAllSearchHistory(@RequestParam Integer userId) {
         userRecentActivityService.deleteAllSearchHistory(userId);
