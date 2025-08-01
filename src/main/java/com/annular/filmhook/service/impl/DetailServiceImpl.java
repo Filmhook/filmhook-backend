@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Country;
+import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.FilmProfession;
 import com.annular.filmhook.model.FilmProfessionDetails;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
@@ -745,7 +746,7 @@ public class DetailServiceImpl implements DetailService {
                     platformMap.put("dailySalary", detail.getDailySalary());
 
                     // Fetch media files
-                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefId(userId, MediaFileCategory.Project, detail.getPlatformPermanentId());
+                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefIdAndStatus(userId, MediaFileCategory.Project, detail.getPlatformPermanentId(), FileStatus.APPROVED);
                     platformMap.put("outputWebModelList", outputWebModelList);
 
                     // Fetch professions

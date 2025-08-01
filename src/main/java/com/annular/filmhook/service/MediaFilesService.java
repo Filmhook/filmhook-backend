@@ -1,5 +1,6 @@
 package com.annular.filmhook.service;
 
+import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.FileInputWebModel;
@@ -19,13 +20,16 @@ public interface MediaFilesService {
 
     List<FileOutputWebModel> getMediaFilesByCategoryAndRefId(MediaFileCategory category, Integer refId);
 
-    List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category, Integer refId);
+    List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefIdAndStatus(Integer userId, MediaFileCategory category,
+            Integer refId, FileStatus status);
 
     void deleteMediaFilesByUserIdAndCategoryAndRefIds(Integer userId, MediaFileCategory category, List<Integer> idList);
 
     void deleteMediaFilesByCategoryAndRefIds(MediaFileCategory category, List<Integer> idList);
     
     FileOutputWebModel getMediaFileById(Integer id);
+    List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category,
+			Integer refId);
     
 
 }

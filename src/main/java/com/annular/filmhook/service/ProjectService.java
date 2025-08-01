@@ -14,5 +14,8 @@ public interface ProjectService {
     List<FileOutputWebModel> getProjectFiles(Integer userId, Integer platformPermanentId);
 
     Resource getProjectFiles(Integer userId, String category, String fileId);
+    
+    List<FileOutputWebModel> getPendingProjectFiles(Integer userId, Integer platformPermanentId);
+    boolean updateProjectFileStatus(Integer fileId, String status);
 
 }

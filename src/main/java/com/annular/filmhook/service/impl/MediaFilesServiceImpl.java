@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.MultiMediaFiles;
@@ -152,9 +153,9 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 						s3FileExtension = ".webm";
 
 						// ✅ Generate thumbnail from video
-						//String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+					//	String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 						String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
-						String ffmpegPath = "/usr/bin/ffmpeg";
+				String ffmpegPath = "/usr/bin/ffmpeg";
 						String inputPath = convertedFile.getAbsolutePath();
 						thumbnailFile = File.createTempFile("thumb_", ".webp");
 						String thumbPath = thumbnailFile.getAbsolutePath();
@@ -243,6 +244,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 					mediaFiles.setUser(user);
 					mediaFiles.setCategory(fileInput.getCategory());
 					mediaFiles.setCategoryRefId(fileInput.getCategoryRefId());
+					  mediaFiles.setFileStatus(fileInput.getFileStatus());
 					mediaFiles.setDescription(fileInput.getDescription());
 					mediaFiles.setFileId(UUID.randomUUID().toString());
 					mediaFiles.setFileName(file.getOriginalFilename());
@@ -386,6 +388,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 			fileOutputWebModel.setUpdatedOn(mediaFile.getUpdatedOn());
 			fileOutputWebModel.setFilmHookCode(mediaFile.getUser().getFilmHookCode());
 			fileOutputWebModel.setThumbnailPath(mediaFile.getThumbnailPath());
+			fileOutputWebModel.setFileStatus(mediaFile.getFileStatus());
 			// Handle category type STORY
 			if (mediaFile.getCategory() == MediaFileCategory.Stories) {
 				Story story = storiesrRepository.findById(mediaFile.getCategoryRefId()).orElseThrow(
@@ -460,5 +463,20 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		}
 		return output;
 	}
-
+	@Override
+	public List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefIdAndStatus(Integer userId, MediaFileCategory category,
+	                                                                                  Integer refId, FileStatus status) {
+	    List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+	    try {
+	        List<MediaFiles> mediaFiles = mediaFilesRepository
+	            .getMediaFilesByUserIdAndCategoryAndRefIdAndStatus(userId, category, refId, status);
+	        if (!Utility.isNullOrEmptyList(mediaFiles)) {
+	            outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error at getMediaFilesByUserIdAndCategoryAndRefIdAndStatus() -> {}", e.getMessage());
+	        e.printStackTrace();
+	    }
+	    return outputWebModelList;
+	}
 }

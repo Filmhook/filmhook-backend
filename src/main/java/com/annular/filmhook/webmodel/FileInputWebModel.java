@@ -1,5 +1,6 @@
 package com.annular.filmhook.webmodel;
 
+import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.MediaFileCategory;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -28,5 +29,7 @@ public class FileInputWebModel {
 	private String fileType;
 	private String filePath;
 	private String type;
+	private FileStatus fileStatus;
+	
 
 }

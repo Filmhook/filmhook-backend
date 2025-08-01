@@ -93,5 +93,9 @@ public class MediaFiles {
     
     @Column(name = "thumbnail_path")
     private String thumbnailPath;
+    
+    @Column(name = "file_status")
+    @Enumerated(EnumType.STRING)
+    private FileStatus fileStatus;
 
 }
