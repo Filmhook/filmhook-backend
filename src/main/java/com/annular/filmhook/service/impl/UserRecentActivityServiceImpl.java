@@ -6,6 +6,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSearchHistoryRepository;
 import com.annular.filmhook.service.UserRecentActivityService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.CalendarUtil;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.RecentUserWebModel;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,19 +75,15 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
                 userRepo.findById(history.getSearchedUserId()).ifPresent(user -> {
                     String profilePic = getProfilePic(user.getUserId());
                     
-                    Date searchedAtDate = Date.from(history.getSearchedAt()
-                            .atZone(ZoneId.of("Asia/Kolkata"))
-                            .toInstant());
-
-                    String relativeTime = Utility.formatRelativeTime(searchedAtDate); 
+             
                     categorizedMap.get(source).put(user.getUserId(), RecentUserWebModel.builder()
                             .userId(user.getUserId())
                             .name(user.getName())
                             .userType(user.getUserType())
                             .profilePicUrl(profilePic)
                             .source(source)
-                            .lastInteractionTime(relativeTime)
-                            .review(user.getAdminReview())
+                            .lastInteractionTime(CalendarUtil.calculateElapsedTime(history.getSearchedAt()))
+                            .adminReview(user.getAdminReview())
                             .pinProfile(history.getPinProfile())
                             .common(isCommon) //if total pinned for this source is 3 or more
                             .build());
