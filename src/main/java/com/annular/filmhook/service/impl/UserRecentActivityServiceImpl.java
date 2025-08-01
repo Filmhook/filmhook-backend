@@ -6,11 +6,13 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSearchHistoryRepository;
 import com.annular.filmhook.service.UserRecentActivityService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.RecentUserWebModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,20 +41,20 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
         UserSearchHistory history;
 
         if (existingOpt.isPresent()) {
-            // ✅ Update the existing record — carry forward the ID
+            //Update the existing record — carry forward the ID
             history = existingOpt.get();
             history.setSearchedAt(LocalDateTime.now());
         } else {
-            // ✅ Build new record
-            history = UserSearchHistory.builder()
-                    .userId(userId)
-                    .searchedUserId(searchedUserId)
-                    .source(source)
-                    .searchedAt(LocalDateTime.now())
-                    .build();
+        	history = UserSearchHistory.builder()
+        	        .userId(userId)
+        	        .searchedUserId(searchedUserId)
+        	        .source(source)
+        	        .searchedAt(LocalDateTime.now())
+        	        .pinProfile(false) 
+        	        .build();
         }
 
-        // ✅ Hibernate will insert or update depending on whether ID is set
+        // Hibernate will insert or update depending on whether ID is set
         userSearchHistoryRepo.save(history);
     }
 
@@ -64,16 +66,29 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
 
         for (String source : List.of("search", "chat")) {
             List<UserSearchHistory> historyList = userSearchHistoryRepo.findByUserIdAndSourceOrderBySearchedAtDesc(userId, source);
+
+            long pinCount = historyList.stream().filter(UserSearchHistory::getPinProfile).count();
+            boolean isCommon = pinCount >= 3;
+
             for (UserSearchHistory history : historyList) {
                 userRepo.findById(history.getSearchedUserId()).ifPresent(user -> {
                     String profilePic = getProfilePic(user.getUserId());
+                    
+                    Date searchedAtDate = Date.from(history.getSearchedAt()
+                            .atZone(ZoneId.of("Asia/Kolkata"))
+                            .toInstant());
+
+                    String relativeTime = Utility.formatRelativeTime(searchedAtDate); 
                     categorizedMap.get(source).put(user.getUserId(), RecentUserWebModel.builder()
                             .userId(user.getUserId())
                             .name(user.getName())
                             .userType(user.getUserType())
-                            .profilePic(profilePic)
+                            .profilePicUrl(profilePic)
                             .source(source)
-                            .lastInteractionTime(history.getSearchedAt())
+                            .lastInteractionTime(relativeTime)
+                            .review(user.getAdminReview())
+                            .pinProfile(history.getPinProfile())
+                            .common(isCommon) //if total pinned for this source is 3 or more
                             .build());
                 });
             }
@@ -84,10 +99,51 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
         combined.addAll(categorizedMap.get("search").values());
         combined.addAll(categorizedMap.get("chat").values());
 
-        // Sort by time descending
+     //Sort: pinned profiles first, then by recent interaction time
         return combined.stream()
-                .sorted(Comparator.comparing(RecentUserWebModel::getLastInteractionTime).reversed())
+                .sorted(Comparator
+                        .comparing(RecentUserWebModel::getPinProfile) // true first
+                        .thenComparing(RecentUserWebModel::getLastInteractionTime).reversed())
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    public void deleteSearchHistory(Integer userId, Integer targetUserId, String source) {
+        Optional<UserSearchHistory> historyOpt =
+                userSearchHistoryRepo.findByUserIdAndSearchedUserIdAndSource(userId, targetUserId, source);
+        historyOpt.ifPresent(userSearchHistoryRepo::delete);
+    }
+
+    @Override
+    public void deleteAllSearchHistory(Integer userId) {
+        List<UserSearchHistory> allHistories = userSearchHistoryRepo.findByUserId(userId);
+        userSearchHistoryRepo.deleteAll(allHistories);
+    }
+    
+    @Override
+    public void pinUserProfile(Integer userId, Integer targetUserId, String source, boolean pin) {
+        Optional<UserSearchHistory> existingOpt =
+                userSearchHistoryRepo.findByUserIdAndSearchedUserIdAndSource(userId, targetUserId, source);
+
+        if (existingOpt.isEmpty()) return;
+
+        UserSearchHistory targetHistory = existingOpt.get();
+
+        if (pin) {
+            // Count currently pinned profiles for this user & source
+            long pinnedCount = userSearchHistoryRepo.countByUserIdAndSourceAndPinProfileTrue(userId, source);
+
+            // If already 3 pinned and trying to pin a new one (not already pinned), reject
+            if (pinnedCount >= 3 && !Boolean.TRUE.equals(targetHistory.getPinProfile())) {
+                throw new RuntimeException("You can only pin up to 3 profiles per source.");
+            }
+
+            targetHistory.setPinProfile(true);
+        } else {
+            targetHistory.setPinProfile(false);
+        }
+
+        userSearchHistoryRepo.save(targetHistory);
     }
 
     private String getProfilePic(Integer userId) {

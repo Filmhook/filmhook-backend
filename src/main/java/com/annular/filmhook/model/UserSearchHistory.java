@@ -29,4 +29,7 @@ public class UserSearchHistory {
 
     @Column(name = "source", nullable = false)
     private String source; // "search" or "chat"
+    
+    @Column(name= "pin_profile", nullable = false)
+    private Boolean pinProfile;
 }
