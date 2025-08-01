@@ -17,5 +17,6 @@ public interface ProjectService {
     
     List<FileOutputWebModel> getPendingProjectFiles(Integer userId, Integer platformPermanentId);
     boolean updateProjectFileStatus(Integer fileId, String status);
+    List<FileOutputWebModel> getPendingProjectFilesByUserId(Integer userId);
 
 }

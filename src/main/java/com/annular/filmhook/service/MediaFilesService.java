@@ -30,6 +30,10 @@ public interface MediaFilesService {
     FileOutputWebModel getMediaFileById(Integer id);
     List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category,
 			Integer refId);
+    List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndStatus(
+    	    Integer userId, MediaFileCategory category, FileStatus status
+    	);
+
     
 
 }

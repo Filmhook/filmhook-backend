@@ -42,6 +42,12 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 	                                                                        @Param("refId") Integer refId,
 	                                                                        @Param("status") FileStatus status);
 	  List<MediaFiles> findByCategoryAndFileStatus(String category, FileStatus fileStatus);
+	
+	  List<MediaFiles> findByUser_UserIdAndCategoryAndFileStatus(
+			    Integer userId,
+			    MediaFileCategory category,
+			    FileStatus fileStatus
+			);
 
 
 }
