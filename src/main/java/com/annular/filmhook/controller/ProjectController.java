@@ -122,5 +122,22 @@ public class ProjectController {
         }
     }
 
+    @GetMapping("/getAllPendingProjectFilesByUserId")
+    public Response getPendingProjectFilesByUserId(@RequestParam("userId") Integer userId) {
+        try {
+            List<FileOutputWebModel> outputList = projectService.getPendingProjectFilesByUserId(userId);
+            if (outputList != null && !outputList.isEmpty()) {
+                logger.info("[{}] pending project files found for userId: {}", outputList.size(), userId);
+                return new Response(1, "Pending project files fetched successfully.", outputList);
+            } else {
+                return new Response(-1, "No pending project files found for the given user.", null);
+            }
+        } catch (Exception e) {
+            logger.error("Error in getPendingProjectFilesByUserId() -> {}", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Failed to fetch pending project files.", null);
+        }
+    }
+
 
 }

@@ -3,6 +3,7 @@ package com.annular.filmhook.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.MediaFileCategory;
@@ -164,5 +165,24 @@ public class ProjectServiceImpl implements ProjectService {
         }
         return null;
     }
+
+    @Override
+    public List<FileOutputWebModel> getPendingProjectFilesByUserId(Integer userId) {
+        List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+        try {
+            outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndStatus(
+                userId,
+                MediaFileCategory.Project,
+                FileStatus.PENDING
+            );
+        } catch (Exception e) {
+            logger.error("Error at getPendingProjectFilesByUserId() -> {}", e.getMessage(), e);
+        }
+        return outputWebModelList;
+    }
+
+
+
+
 
 }

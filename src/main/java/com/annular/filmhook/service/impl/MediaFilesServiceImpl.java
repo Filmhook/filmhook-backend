@@ -153,9 +153,9 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 						s3FileExtension = ".webm";
 
 						// ✅ Generate thumbnail from video
-					//	String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+					String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 						String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
-				String ffmpegPath = "/usr/bin/ffmpeg";
+				//String ffmpegPath = "/usr/bin/ffmpeg";
 						String inputPath = convertedFile.getAbsolutePath();
 						thumbnailFile = File.createTempFile("thumb_", ".webp");
 						String thumbPath = thumbnailFile.getAbsolutePath();
@@ -479,4 +479,26 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 	    }
 	    return outputWebModelList;
 	}
+	
+	@Override
+	public List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndStatus(
+	    Integer userId, MediaFileCategory category, FileStatus status
+	) {
+	    List<FileOutputWebModel> outputList = new ArrayList<>();
+	    try {
+	        List<MediaFiles> mediaFiles = mediaFilesRepository
+	            .findByUser_UserIdAndCategoryAndFileStatus(userId, category, status);
+
+	        if (!Utility.isNullOrEmptyList(mediaFiles)) {
+	            outputList = mediaFiles.stream()
+	                                   .map(this::transformData)
+	                                   .collect(Collectors.toList());
+	        }
+	    } catch (Exception e) {
+	        logger.error("Error in getMediaFilesByUserIdAndCategoryAndStatus() -> {}", e.getMessage(), e);
+	    }
+	    return outputList;
+	}
+
+
 }
