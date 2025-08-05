@@ -17,4 +17,19 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
     @Query("select count(l) from Likes l where l.commentId = :commentId and l.postId = :postId and l.category = 'Comment' and l.status = true")
     Integer getLikesForCommentByCommentId(Integer postId, Integer commentId);
 
+    long countByCategoryAndAuditionIdAndStatusTrue(String category, Integer auditionId);
+
+    boolean existsByCategoryAndAuditionIdAndLikedByAndStatusTrue(String category, Integer auditionId, Integer likedBy);
+
+    
+    Optional<Likes> findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionId(
+    	    String category,
+    	    Integer likedBy,
+    	    Integer postId,
+    	    Integer commentId,
+    	    Integer auditionId
+    	);
+    
+    Optional<Likes> findByCategoryAndAuditionIdAndLikedByAndStatusTrue(String category, Integer auditionId, Integer likedBy);
+
 }

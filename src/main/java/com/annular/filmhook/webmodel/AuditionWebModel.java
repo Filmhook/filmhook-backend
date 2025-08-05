@@ -89,4 +89,7 @@ public class AuditionWebModel {
 	private MultipartFile scriptUrl;
 	private String description;
 	private String scriptUrlPath;  
+	private long likesCount;
+	private boolean isLiked;
+	private Integer likeId;
 }

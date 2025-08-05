@@ -1,4 +1,4 @@
- package com.annular.filmhook.model;
+package com.annular.filmhook.model;
 
 import java.sql.Date;
 import java.util.List;
@@ -52,10 +52,16 @@ public class AuditionDetails {
 	@Column(name = "audition_details_updatedby")
 	private Integer auditionDetailsUpdatedBy;
 
+	@Column(name = "icon_file_path")
+	private String filePath;
+	
+	@Column(name = "counts")
+	private Integer counts;
+
 	@Column(name = "audition_details_updatedon")
 	@CreationTimestamp
 	private Date auditionDetailsUpdatedOn;
-	
+
 	@OneToMany(mappedBy = "auditionDetails", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	@JsonManagedReference
 	private List<AuditionSubDetails> subDetailsList;

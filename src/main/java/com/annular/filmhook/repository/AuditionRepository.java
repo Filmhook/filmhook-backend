@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.Audition;
+import com.annular.filmhook.model.AuditionDetails;
 
 @Repository
 public interface AuditionRepository extends JpaRepository<Audition, Integer> {
@@ -37,6 +38,9 @@ public interface AuditionRepository extends JpaRepository<Audition, Integer> {
     	       "AND a.auditionIsactive = true " +
     	       "AND a.paymentStatus = 'success'")
     	int countBySubCategoryWithSuccessPayment(@Param("subId") Integer subId);
+
+    long countByAuditionCategoryAndPaymentStatusAndAuditionIsactive(Integer auditionCategory, String paymentStatus, Boolean auditionIsactive);
+
 
 
 

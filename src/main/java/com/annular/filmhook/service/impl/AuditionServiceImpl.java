@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
 
 import org.checkerframework.checker.units.qual.A;
@@ -44,6 +45,7 @@ import com.annular.filmhook.model.AuditionDetails;
 import com.annular.filmhook.model.AuditionIgnoranceDetails;
 import com.annular.filmhook.model.AuditionRoles;
 import com.annular.filmhook.model.AuditionSubDetails;
+import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.MediaFileCategory;
 
@@ -54,6 +56,7 @@ import com.annular.filmhook.repository.AuditionIgnoranceRepository;
 import com.annular.filmhook.repository.AuditionRepository;
 import com.annular.filmhook.repository.AuditionRolesRepository;
 import com.annular.filmhook.repository.AuditionSubDetailsRepository;
+import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionService;
 import com.annular.filmhook.service.MediaFilesService;
@@ -140,6 +143,10 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Value("${spring.mail.username}")
 	private String senderEmail;
+    @Autowired
+    S3Util s3Util;
+    @Autowired
+    LikeRepository likesRepository;
 
 	// @Autowired
 	// KafkaProducer kafkaProducer;
@@ -499,22 +506,36 @@ public class AuditionServiceImpl implements AuditionService {
 	}
 
 	public ResponseEntity<?> getAuditionDetails(AuditionDetailsWebModel auditionDetailsWebModel) {
-		// Fetch all AuditionDetails
-		List<AuditionDetails> auditionDetailsList = auditionDetailsRepository.findAll();
+	    // Fetch all AuditionDetails
+	    List<AuditionDetails> auditionDetailsList = auditionDetailsRepository.findAll();
 
-		if (auditionDetailsList.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
+	    if (auditionDetailsList.isEmpty()) {
+	        return ResponseEntity.notFound().build();
+	    }
 
-		// Create a list to hold the response data
-		List<Map<String, Object>> responseList = auditionDetailsList.stream().map(auditionDetails -> {
-			Map<String, Object> response = new HashMap<>();
-			response.put("auditionDetailsId", auditionDetails.getAuditionDetailsId());
-			response.put("auditionDetailsName", auditionDetails.getAuditionDetailsName());
-			return response;
-		}).collect(Collectors.toList());
+	    // Create a list to hold the response data
+	    List<Map<String, Object>> responseList = auditionDetailsList.stream().map(auditionDetails -> {
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("auditionDetailsId", auditionDetails.getAuditionDetailsId());
+	        response.put("auditionDetailsName", auditionDetails.getAuditionDetailsName());
+	        response.put(
+	            "iconFilePath",
+	            !Utility.isNullOrBlankWithTrim(auditionDetails.getFilePath()) 
+	                ? s3Util.generateS3FilePath(auditionDetails.getFilePath()) 
+	                : ""
+	        );
 
-		return ResponseEntity.ok(responseList);
+	        //  Moved inside the loop — calculate success count per auditionDetails
+	        long successCount = auditionRepository.countByAuditionCategoryAndPaymentStatusAndAuditionIsactive(
+	                auditionDetails.getAuditionDetailsId(), "SUCCESS", true);
+	            
+
+	            response.put("counts", successCount);
+
+	        return response;
+	    }).collect(Collectors.toList());
+
+	    return ResponseEntity.ok(responseList);
 	}
 
 	@Override
@@ -1317,111 +1338,125 @@ public class AuditionServiceImpl implements AuditionService {
 
 	@Override
 	public ResponseEntity<?> getAuditionBySubCategory(Integer subCategoryId) {
-		HashMap<String, Object> response = new HashMap<>();
-		try {
-			logger.info("get audition by sub-category method start");
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        logger.info("get audition by sub-category method start");
 
-			Integer userId = userDetails.userInfo().getId();
-			List<Integer> ignoredAuditionIds = auditionIgnoranceRepository.findIgnoredAuditionIdsByUserId(userId);
+	        Integer userId = userDetails.userInfo().getId();
+	        List<Integer> ignoredAuditionIds = auditionIgnoranceRepository.findIgnoredAuditionIdsByUserId(userId);
 
-			List<Audition> auditions = auditionRepository.findByAuditionSubCategory(subCategoryId).stream()
-					.filter(audition ->
-					!ignoredAuditionIds.contains(audition.getAuditionId()) &&
-					"SUCCESS".equalsIgnoreCase(audition.getPaymentStatus()))
-					.collect(Collectors.toList());
+	        List<Audition> auditions = auditionRepository.findByAuditionSubCategory(subCategoryId).stream()
+	                .filter(audition ->
+	                        !ignoredAuditionIds.contains(audition.getAuditionId()) &&
+	                                "SUCCESS".equalsIgnoreCase(audition.getPaymentStatus()))
+	                .collect(Collectors.toList());
 
-			if (!auditions.isEmpty()) {
-				auditions.sort(Comparator.comparing(Audition::getAuditionCreatedOn).reversed());
+	        if (!auditions.isEmpty()) {
+	            auditions.sort(Comparator.comparing(Audition::getAuditionCreatedOn).reversed());
 
-				List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
-				for (Audition audition : auditions) {
-					AuditionWebModel auditionWebModel = new AuditionWebModel();
-					auditionWebModel.setAuditionId(audition.getAuditionId());
-					auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
-					auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
-					auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
-					auditionWebModel.setAuditionSubCategory(audition.getAuditionSubCategory());
-					auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
-					auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
-					auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
-					auditionWebModel.setStartDate(audition.getStartDate());
-					auditionWebModel.setEndDate(audition.getEndDate());
-					auditionWebModel.setCompanyName(audition.getCompanyName());
-					auditionWebModel.setUrl(audition.getUrl());
-					auditionWebModel.setTermsAndCondition(audition.getTermsAndCondition());
-					auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
-					auditionWebModel.setAuditionCreatedOn(audition.getAuditionCreatedOn());
-					auditionWebModel.setAuditionLocation(audition.getAuditionLocation());
-					auditionWebModel.setIndustry(audition.getIndustry());
-					auditionWebModel.setMovieType(audition.getMovieType());
-				
-					auditionWebModel.setDescription(audition.getDescription());
-					auditionWebModel.setScriptUrlPath(audition.getScriptUrl());
-					auditionWebModel.setAuditionAttendedCount(
-							acceptanceRepository.getAttendedCount(audition.getAuditionId()));
-					auditionWebModel.setAuditionIgnoredCount(
-							acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
+	            List<AuditionWebModel> auditionWebModelsList = new ArrayList<>();
+	            for (Audition audition : auditions) {
+	                AuditionWebModel auditionWebModel = new AuditionWebModel();
+	                auditionWebModel.setAuditionId(audition.getAuditionId());
+	                auditionWebModel.setAuditionTitle(audition.getAuditionTitle());
+	                auditionWebModel.setAuditionExperience(audition.getAuditionExperience());
+	                auditionWebModel.setAuditionCategory(audition.getAuditionCategory());
+	                auditionWebModel.setAuditionSubCategory(audition.getAuditionSubCategory());
+	                auditionWebModel.setAuditionExpireOn(audition.getAuditionExpireOn());
+	                auditionWebModel.setAuditionPostedBy(audition.getAuditionPostedBy());
+	                auditionWebModel.setAuditionAddress(audition.getAuditionAddress());
+	                auditionWebModel.setStartDate(audition.getStartDate());
+	                auditionWebModel.setEndDate(audition.getEndDate());
+	                auditionWebModel.setCompanyName(audition.getCompanyName());
+	                auditionWebModel.setUrl(audition.getUrl());
+	                auditionWebModel.setTermsAndCondition(audition.getTermsAndCondition());
+	                auditionWebModel.setAuditionMessage(audition.getAuditionMessage());
+	                auditionWebModel.setAuditionCreatedOn(audition.getAuditionCreatedOn());
+	                auditionWebModel.setAuditionLocation(audition.getAuditionLocation());
+	                auditionWebModel.setIndustry(audition.getIndustry());
+	                auditionWebModel.setMovieType(audition.getMovieType());
+	                auditionWebModel.setDescription(audition.getDescription());
+	                auditionWebModel.setScriptUrlPath(audition.getScriptUrl());
 
-					boolean isAccepted = acceptanceRepository
-							.existsByAuditionAcceptanceUserAndAuditionRefId(userId, audition.getAuditionId());
-					auditionWebModel.setAuditionAttendanceStatus(isAccepted);
+	                // Attendance
+	                auditionWebModel.setAuditionAttendedCount(
+	                        acceptanceRepository.getAttendedCount(audition.getAuditionId()));
+	                auditionWebModel.setAuditionIgnoredCount(
+	                        acceptanceRepository.getIgnoredCount(audition.getAuditionId()));
+	                boolean isAccepted = acceptanceRepository
+	                        .existsByAuditionAcceptanceUserAndAuditionRefId(userId, audition.getAuditionId());
+	                auditionWebModel.setAuditionAttendanceStatus(isAccepted);
 
-					Optional<User> userOptional = userService.getUser(audition.getUser().getUserId());
-					userOptional.ifPresent(user -> {
-						auditionWebModel.setFilmHookCode(user.getFilmHookCode());
-						auditionWebModel.setName(user.getName());
-						auditionWebModel.setAdminReview(user.getAdminReview());
-						auditionWebModel.setUserType(user.getUserType());
-						auditionWebModel.setUserId(user.getUserId());
-						auditionWebModel.setProfilePic(userService.getProfilePicUrl(userId));
-					});
+	                long likesCount = likesRepository.countByCategoryAndAuditionIdAndStatusTrue("Audition", audition.getAuditionId());
+	                boolean isLiked = likesRepository.existsByCategoryAndAuditionIdAndLikedByAndStatusTrue("Audition", audition.getAuditionId(), userId);
 
-					if (!audition.getAuditionRoles().isEmpty()) {
-						List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
-						for (AuditionRoles auditionRoles : audition.getAuditionRoles()) {
-							AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
-							auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
-							auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
-							auditionRolesWebModel.setCharacterName(auditionRoles.getCharacterName());
-							auditionRolesWebModel.setAgeRange(auditionRoles.getAgeRange());
-							auditionRolesWebModel.setEthnicity(auditionRoles.getEthnicity());
-							auditionRolesWebModel.setHeightRange(auditionRoles.getHeightRange());
-							auditionRolesWebModel.setWeight(auditionRoles.getWeight());
-							auditionRolesWebModel.setProfileFace(auditionRoles.getProfileFace());
-							auditionRolesWebModel.setOpportunity(auditionRoles.getOpportunity());
-							auditionRolesWebModel.setExperience(auditionRoles.getExperience());
-							auditionRolesWebModel.setPay(auditionRoles.getPay());
-							auditionRolesWebModel.setDaysOfShoot(auditionRoles.getDaysOfShoot());
-							auditionRolesWebModel.setCompensation(auditionRoles.getCompensation());
-							auditionRolesWebModel.setAuditionRoleIsactive(auditionRoles.isAuditionRoleIsactive());
-							auditionRolesWebModel.setAuditionRoleCreatedBy(auditionRoles.getAuditionRoleCreatedBy());
-							auditionRolesWebModel.setAuditionRoleCreatedOn(auditionRoles.getAuditionRoleCreatedOn());
-							auditionRolesWebModel.setAuditionRoleUpdatedBy(auditionRoles.getAuditionRoleUpdatedBy());
-							auditionRolesWebModel.setAuditionRoleUpdatedOn(auditionRoles.getAuditionRoleUpdatedOn());
-							auditionRolesWebModelsList.add(auditionRolesWebModel);
-						}
-						auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
-					}
+	                Optional<Likes> likeOptional = likesRepository.findByCategoryAndAuditionIdAndLikedByAndStatusTrue("Audition", audition.getAuditionId(), userId);
+	                Integer likeId = likeOptional.map(Likes::getLikeId).orElse(null);
 
-					List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
-							.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
-					if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
-						auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
-					}
+	                auditionWebModel.setLikesCount(likesCount);
+	                auditionWebModel.setLiked(isLiked);
+	                auditionWebModel.setLikeId(likeId); 
 
-					auditionWebModelsList.add(auditionWebModel);
-				}
-				response.put("Audition List", auditionWebModelsList);
-			} else {
-				response.put("No auditions found", "");
-			}
-		} catch (Exception e) {
-			logger.error("get audition by sub-category Exception -> {}", e.getMessage());
-			e.printStackTrace();
-			return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
-		}
-		return ResponseEntity.ok().body(new Response(1, "Auditions fetched by sub-category", response));
+	                // User info
+	                Optional<User> userOptional = userService.getUser(audition.getUser().getUserId());
+	                userOptional.ifPresent(user -> {
+	                    auditionWebModel.setFilmHookCode(user.getFilmHookCode());
+	                    auditionWebModel.setName(user.getName());
+	                    auditionWebModel.setAdminReview(user.getAdminReview());
+	                    auditionWebModel.setUserType(user.getUserType());
+	                    auditionWebModel.setUserId(user.getUserId());
+	                    auditionWebModel.setProfilePic(userService.getProfilePicUrl(userId));
+	                });
+
+	                // Audition roles
+	                if (!audition.getAuditionRoles().isEmpty()) {
+	                    List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
+	                    for (AuditionRoles auditionRoles : audition.getAuditionRoles()) {
+	                        AuditionRolesWebModel auditionRolesWebModel = new AuditionRolesWebModel();
+	                        auditionRolesWebModel.setAuditionRoleId(auditionRoles.getAuditionRoleId());
+	                        auditionRolesWebModel.setAuditionRoleDesc(auditionRoles.getAuditionRoleDesc());
+	                        auditionRolesWebModel.setCharacterName(auditionRoles.getCharacterName());
+	                        auditionRolesWebModel.setAgeRange(auditionRoles.getAgeRange());
+	                        auditionRolesWebModel.setEthnicity(auditionRoles.getEthnicity());
+	                        auditionRolesWebModel.setHeightRange(auditionRoles.getHeightRange());
+	                        auditionRolesWebModel.setWeight(auditionRoles.getWeight());
+	                        auditionRolesWebModel.setProfileFace(auditionRoles.getProfileFace());
+	                        auditionRolesWebModel.setOpportunity(auditionRoles.getOpportunity());
+	                        auditionRolesWebModel.setExperience(auditionRoles.getExperience());
+	                        auditionRolesWebModel.setPay(auditionRoles.getPay());
+	                        auditionRolesWebModel.setDaysOfShoot(auditionRoles.getDaysOfShoot());
+	                        auditionRolesWebModel.setCompensation(auditionRoles.getCompensation());
+	                        auditionRolesWebModel.setAuditionRoleIsactive(auditionRoles.isAuditionRoleIsactive());
+	                        auditionRolesWebModel.setAuditionRoleCreatedBy(auditionRoles.getAuditionRoleCreatedBy());
+	                        auditionRolesWebModel.setAuditionRoleCreatedOn(auditionRoles.getAuditionRoleCreatedOn());
+	                        auditionRolesWebModel.setAuditionRoleUpdatedBy(auditionRoles.getAuditionRoleUpdatedBy());
+	                        auditionRolesWebModel.setAuditionRoleUpdatedOn(auditionRoles.getAuditionRoleUpdatedOn());
+	                        auditionRolesWebModelsList.add(auditionRolesWebModel);
+	                    }
+	                    auditionWebModel.setAuditionRolesWebModels(auditionRolesWebModelsList);
+	                }
+
+	                // Media files
+	                List<FileOutputWebModel> fileOutputWebModelList = mediaFilesService
+	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, audition.getAuditionId());
+	                if (!Utility.isNullOrEmptyList(fileOutputWebModelList)) {
+	                    auditionWebModel.setFileOutputWebModel(fileOutputWebModelList);
+	                }
+
+	                auditionWebModelsList.add(auditionWebModel);
+	            }
+	            response.put("Audition List", auditionWebModelsList);
+	        } else {
+	            response.put("No auditions found", "");
+	        }
+	    } catch (Exception e) {
+	        logger.error("get audition by sub-category Exception -> {}", e.getMessage());
+	        e.printStackTrace();
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+	    }
+	    return ResponseEntity.ok().body(new Response(1, "Auditions fetched by sub-category", response));
 	}
+
 
 
 }

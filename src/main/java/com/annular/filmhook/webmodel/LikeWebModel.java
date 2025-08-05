@@ -13,7 +13,7 @@ public class LikeWebModel {
     private Integer userId; // primary key of user table
     private Integer postId; // primary key of posts table
     private Integer totalLikesCount;
-
+    private Integer auditionId;
     private String category; // 'Post' or 'Comment'
     private Integer commentId; // Comment primary key. If like is for any comment.
 

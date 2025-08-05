@@ -44,6 +44,8 @@ public class Likes {
 
     @Column(name = "liked_by")
     private Integer likedBy; // primary key for user table
+   
+    private Integer auditionId;
 
     @Column(name = "status")
     private Boolean status;
