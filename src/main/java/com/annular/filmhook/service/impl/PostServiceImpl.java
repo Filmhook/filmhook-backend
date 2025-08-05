@@ -25,6 +25,7 @@ import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 
@@ -826,20 +827,23 @@ public class PostServiceImpl implements PostService {
 	        logger.info("✅ In-app notification saved for user ID {}", receiverId);
 
 	        // Send Firebase push notification if device token exists
-	        if (receiver.getFirebaseDeviceToken() != null && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
-	            Message firebaseMessage = Message.builder()
-	                    .setNotification(Notification.builder()
-	                            .setTitle(title)
-	                            .setBody(messageBody)
-	                            .build())
-	                    .putData("type", userType)
-	                    .putData("refId", String.valueOf(refId))
-	                    .setToken(receiver.getFirebaseDeviceToken())
-	                    .build();
+	        String deviceToken = receiver.getFirebaseDeviceToken();
+            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+                try {
+                    Message message = Message.builder()
+                        .setNotification(Notification.builder()
+                            .setTitle(title)
+                            .setBody(messageBody)
+                            .build())
+                      .putData("refId", String.valueOf(refId))
+                        .setToken(deviceToken)
+                        .build();
 
-	            logger.info("👉 Preparing to send push notification from {} to {} for {}", senderId, receiverId, userType);
-	            String response = FirebaseMessaging.getInstance().send(firebaseMessage);
-	            logger.info("📲 Push Notification Sent: {}", response);
+                    String response = FirebaseMessaging.getInstance().send(message);
+                    logger.info("Successfully sent push notification: " + response);
+                } catch (FirebaseMessagingException e) {
+                    logger.error("Failed to send push notification", e);
+                }
 	        } else {
 	            logger.warn("⚠️ No Firebase token found for user ID: {}", receiverId);
 	        }
