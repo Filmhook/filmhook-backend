@@ -18,7 +18,7 @@ public class MediaConversionUtil {
 	    ProcessBuilder processBuilder = new ProcessBuilder(
 
    "/usr/bin/cwebp",
-// "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
+//"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 
 	        "-q", "90",
 	        inputPath,
@@ -37,9 +37,10 @@ public class MediaConversionUtil {
 
 	public static void convertToWebM(String inputPath, String outputPath) throws IOException, InterruptedException {
     
-  //String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+//String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
     
-     String ffmpegPath= "/usr/bin/ffmpeg";
+    String ffmpegPath= "/usr/bin/ffmpeg";
+
 
       ProcessBuilder builder = new ProcessBuilder(
       	    ffmpegPath,

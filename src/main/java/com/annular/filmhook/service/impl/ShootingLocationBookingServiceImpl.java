@@ -767,9 +767,9 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 				booking.setStatus(BookingStatus.COMPLETED);
 				bookingRepo.save(booking);
 				String title = "Your Shooting Location Booking is Now Completed";
-				String messageBody = "Hi " + booking.getClient().getName() +
-						", your booking at \"" + booking.getProperty().getPropertyName() + "\" has been successfully completed. " +
-						"Thank you for choosing us! We hope to see you again.";
+					String messageBody = "Hi " + booking.getClient().getName() +
+							", your booking at " + booking.getProperty().getPropertyName() +" has been successfully completed. " +
+							"Thank you for choosing us! We hope to see you again.";
 
 				// In-App Notification
 				InAppNotification notification = InAppNotification.builder()

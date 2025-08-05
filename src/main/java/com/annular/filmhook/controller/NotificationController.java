@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -87,6 +88,11 @@ public class NotificationController {
 
         return ResponseEntity.ok("Notifications sent to all users successfully.");
     }
-
+    
+    @DeleteMapping("/deleteSelected")
+    public ResponseEntity<Response> deleteSelectedNotifications(@RequestBody InAppNotificationWebModel model) {
+        Response response = notificationService.deleteNotificationsByIds(model.getReceiverIds());
+        return ResponseEntity.ok(response);
+    }
 
 }

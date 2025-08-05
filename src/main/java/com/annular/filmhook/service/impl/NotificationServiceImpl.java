@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Bookings;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.NotificationTypeEnum;
@@ -142,5 +143,17 @@ public class NotificationServiceImpl implements NotificationService {
 	        }
 	    }
 	
+	  @Override
+	    public Response deleteNotificationsByIds(List<Integer> ids) {
+	        try {
+	            if (ids == null || ids.isEmpty()) {
+	                return new Response(0, "No IDs provided", "No notifications were selected for deletion.");
+	            }
 
+	            inAppNotificationRepository.softDeleteByIds(ids);
+	            return new Response(1, "Success", "Selected notifications have been deleted.");
+	        } catch (Exception e) {
+	            return new Response(0, "Error", "Failed to delete notifications: " + e.getMessage());
+	        }
+	    }
 }

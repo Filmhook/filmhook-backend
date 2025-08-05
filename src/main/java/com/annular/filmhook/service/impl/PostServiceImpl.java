@@ -24,6 +24,7 @@ import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -838,8 +839,9 @@ public class PostServiceImpl implements PostService {
                       .putData("refId", String.valueOf(refId))
                         .setToken(deviceToken)
                         .build();
-
-                    String response = FirebaseMessaging.getInstance().send(message);
+                    FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
+                    
+                    String response = FirebaseMessaging.getInstance(firebaseApp).send(message);
                     logger.info("Successfully sent push notification: " + response);
                 } catch (FirebaseMessagingException e) {
                     logger.error("Failed to send push notification", e);

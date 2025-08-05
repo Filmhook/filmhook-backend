@@ -1,5 +1,6 @@
 package com.annular.filmhook.service;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Bookings;
 import com.annular.filmhook.model.Notifications;
 import com.annular.filmhook.model.User;
@@ -15,5 +16,5 @@ public interface NotificationService {
 
     void sendBookingRequestNotifications(Bookings savedBookingRequest);
     void sendNotificationToUser(Integer senderId, User receiver, String title, String message, String userType, Integer refId);
-
+    Response deleteNotificationsByIds(List<Integer> ids);
 }
