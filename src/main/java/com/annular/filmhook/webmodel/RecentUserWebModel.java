@@ -13,7 +13,7 @@ public class RecentUserWebModel {
     private String profilePicUrl;
     private String source; // "search" or "chat"
     private String lastInteractionTime;
-    private Float review;
+    private Float adminReview;
     private Boolean pinProfile; // Already present in service logic
     private Boolean common;  
                             // New field: true if 3 are pinned, else false
