@@ -31,6 +31,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
@@ -85,6 +86,9 @@ public class ChatServiceImpl implements ChatService {
 	@Autowired
 	UserDetails userDetails;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+    
 	@Autowired
 	private UserService userService;
 

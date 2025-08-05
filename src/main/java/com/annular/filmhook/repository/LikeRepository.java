@@ -21,4 +21,19 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
     List<Likes> findByStatusTrueAndNotifiedFalse();
 
 
+    long countByCategoryAndAuditionIdAndStatusTrue(String category, Integer auditionId);
+
+    boolean existsByCategoryAndAuditionIdAndLikedByAndStatusTrue(String category, Integer auditionId, Integer likedBy);
+
+    
+    Optional<Likes> findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionId(
+    	    String category,
+    	    Integer likedBy,
+    	    Integer postId,
+    	    Integer commentId,
+    	    Integer auditionId
+    	);
+    
+    Optional<Likes> findByCategoryAndAuditionIdAndLikedByAndStatusTrue(String category, Integer auditionId, Integer likedBy);
+
 }

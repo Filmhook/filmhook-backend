@@ -137,5 +137,8 @@ public class Audition {
 
 	@Column(name = "description", columnDefinition = "TEXT")
 	private String description;
+	@Column(name = "likes_count")
+	private Integer likesCount;
+	
 
 }
