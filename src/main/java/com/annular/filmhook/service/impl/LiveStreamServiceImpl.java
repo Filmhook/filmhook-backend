@@ -79,6 +79,8 @@ public class LiveStreamServiceImpl implements LiveStreamService {
                             .receiverId(user.getUserId())
                             .title(notificationTitle)
                             .userType("Live")
+                            .adminReview(user.getAdminReview())
+                            .Profession(user.getUserType())
                             .message(notificationMessage)
                             .createdOn(new Date())
                             .isRead(false)

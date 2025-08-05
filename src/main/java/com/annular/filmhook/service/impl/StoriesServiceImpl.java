@@ -3,12 +3,14 @@ package com.annular.filmhook.service.impl;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.controller.StoriesController;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.StoryView;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
+import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.StoryRepository;
 import com.annular.filmhook.repository.StoryViewRepository;
@@ -22,18 +24,16 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.StoriesWebModel;
 import com.annular.filmhook.webmodel.StoryViewerDTO;
 import com.annular.filmhook.webmodel.UserIdAndNameWebModel;
-
-import com.annular.filmhook.webmodel.UserWebModel;
-
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -44,11 +44,9 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Objects;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -80,7 +78,9 @@ public class StoriesServiceImpl implements StoriesService {
 	@Autowired
 	UserRepository userRepository;
 
-
+	@Autowired
+	private InAppNotificationRepository inAppNotificationRepository;
+	
 	@Override
 	public StoriesWebModel uploadStory(StoriesWebModel inputData) {
 		try {
@@ -846,11 +846,64 @@ public class StoriesServiceImpl implements StoriesService {
 		            logger.info("🔄 Like status updated for storyId: {}, viewerId: {}, liked: {}", storyId, viewerId, liked);
 		        
 			}
-		}
-		
-	}
+		        if (story != null && mediaFile != null && viewer != null) {
 
+		            User storyOwner = story.getUser();
 
-}
+		            if (storyOwner != null) {
+
+		                String title = "filmHook";
+		                String message = viewer.getName() + " liked your story";
+
+		                // Save In-App Notification
+		                InAppNotification notification = InAppNotification.builder()
+		                        .senderId(viewer.getUserId())
+		                        .receiverId(storyOwner.getUserId())
+		                        .title(title)
+		                        .message(message)
+		                        .postId(story.getStoryId()) 
+		                        .id(mediaFile.getId())     
+		                        .createdOn(new Date())
+		                        .isRead(false)
+		                        .createdBy(viewer.getUserId())
+		                        .userType("Like")
+		                        .adminReview(viewer.getAdminReview())
+		                        .Profession(viewer.getUserType())
+		                        .build();
+
+		                inAppNotificationRepository.save(notification);
+
+		                // Firebase Push Notification
+		                String deviceToken = storyOwner.getFirebaseDeviceToken();
+
+		                if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+		                    try {
+		                        Message firebaseMessage = Message.builder()
+		                                .setNotification(Notification.builder()
+		                                        .setTitle(title)
+		                                        .setBody(message)
+		                                        .build())
+		                                .putData("storyId", story.getStoryId())
+		                                .putData("type", "story_like")
+		                                .setToken(deviceToken)
+		                                .build();
+
+		                        String response = FirebaseMessaging.getInstance().send(firebaseMessage);
+		                        logger.info("✅ FCM push notification sent: {}", response);
+
+		                    } catch (FirebaseMessagingException e) {
+		                        logger.error("❌ Failed to send FCM push notification", e);
+		                    }
+
+		                } else {
+		                    logger.warn("⚠️ Device token is missing for userId: {}", storyOwner.getUserId());
+		                }
+
+		            } else {
+		                logger.warn("⚠️ Story owner not found for userId: {}", story.getUser().getUserId());
+		            }
+		        }
+
+}}}
 
 

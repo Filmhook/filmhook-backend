@@ -1,5 +1,6 @@
 package com.annular.filmhook.repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +21,8 @@ public interface InAppNotificationRepository extends JpaRepository<InAppNotifica
 	@Query("SELECT n FROM InAppNotification n WHERE n.id = :marketPlaceChatId")
 	List<InAppNotification> findByChatIds(Integer marketPlaceChatId);
 
-	
+	List<InAppNotification> findByReceiverIdAndCreatedOnAfterOrderByCreatedOnDesc(Integer receiverId, Date createdOn);
+
 
 	
 	

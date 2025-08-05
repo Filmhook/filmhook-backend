@@ -2,6 +2,7 @@ package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -191,61 +192,61 @@ public class ChatServiceImpl implements ChatService {
 	                mediaFilesService.saveMediaFiles(fileInputWebModel, user);
 	            }
 
-	            // Push notification
-	            if (chatWebModel.getChatReceiverId() != null) {
-	                Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
-
-	                if (receiverOptional.isPresent()) {
-	                    User receiver = receiverOptional.get();
-
-	                    String notificationTitle = "filmHook";
-	                    String notificationMessage;
-	                    if (chatWebModel.getStoryId() != null) {
-	                        notificationMessage = user.getName() + " replied to your story";
-	                    } else {
-	                        notificationMessage = "You have a new message from " + user.getName();
-	                    }
-
-
-	                    InAppNotification inAppNotification = InAppNotification.builder()
-	                        .senderId(userId)
-	                        .receiverId(receiver.getUserId())
-	                        .title(notificationTitle)
-	                        .userType(chatWebModel.getStoryId() != null ? "story_reply" : "chat")
-	                        .id(chat.getChatId())
-	                        .message(notificationMessage)
-	                        .createdOn(new Date())
-	                        .isRead(true)
-	                        .createdBy(userId)
-	                        .build();
-
-	                    inAppNotificationRepository.save(inAppNotification);
-
-	                    String deviceToken = receiver.getFirebaseDeviceToken();
-	                    if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-	                        try {
-	                            Message message = Message.builder()
-	                                .setNotification(Notification.builder()
-	                                    .setTitle(notificationTitle)
-	                                    .setBody(notificationMessage)
-	                                    .build())
-	                                .putData("chatId", Integer.toString(chat.getChatId()))
-	                                .setToken(deviceToken)
-	                                .build();
-
-	                            String response = FirebaseMessaging.getInstance().send(message);
-	                            logger.info("Successfully sent push notification: " + response);
-	                        } catch (FirebaseMessagingException e) {
-	                            logger.error("Failed to send push notification", e);
-	                        }
-	                    } else {
-	                        logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
-	                    }
-
-	                } else {
-	                    logger.warn("Receiver user not found for id: " + chatWebModel.getChatReceiverId());
-	                }
-	            }
+//	            // Push notification
+//	            if (chatWebModel.getChatReceiverId() != null) {
+//	                Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
+//
+//	                if (receiverOptional.isPresent()) {
+//	                    User receiver = receiverOptional.get();
+//
+//	                    String notificationTitle = "filmHook";
+//	                    String notificationMessage;
+//	                    if (chatWebModel.getStoryId() != null) {
+//	                        notificationMessage = user.getName() + " replied to your story";
+//	                    } else {
+//	                        notificationMessage = "You have a new message from " + user.getName();
+//	                    }
+//
+//
+//	                    InAppNotification inAppNotification = InAppNotification.builder()
+//	                        .senderId(userId)
+//	                        .receiverId(receiver.getUserId())
+//	                        .title(notificationTitle)
+//	                        .userType(chatWebModel.getStoryId() != null ? "story_reply" : "chat")
+//	                        .id(chat.getChatId())
+//	                        .message(notificationMessage)
+//	                        .createdOn(new Date())
+//	                        .isRead(true)
+//	                        .createdBy(userId)
+//	                        .build();
+//
+//	                    inAppNotificationRepository.save(inAppNotification);
+//
+//	                    String deviceToken = receiver.getFirebaseDeviceToken();
+//	                    if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+//	                        try {
+//	                            Message message = Message.builder()
+//	                                .setNotification(Notification.builder()
+//	                                    .setTitle(notificationTitle)
+//	                                    .setBody(notificationMessage)
+//	                                    .build())
+//	                                .putData("chatId", Integer.toString(chat.getChatId()))
+//	                                .setToken(deviceToken)
+//	                                .build();
+//
+//	                            String response = FirebaseMessaging.getInstance().send(message);
+//	                            logger.info("Successfully sent push notification: " + response);
+//	                        } catch (FirebaseMessagingException e) {
+//	                            logger.error("Failed to send push notification", e);
+//	                        }
+//	                    } else {
+//	                        logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
+//	                    }
+//
+//	                } else {
+//	                    logger.warn("Receiver user not found for id: " + chatWebModel.getChatReceiverId());
+//	                }
+//	            }
 
 	            return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
 	        } else {
@@ -811,24 +812,30 @@ public class ChatServiceImpl implements ChatService {
 	public Response getInAppNotification() {
 	    try {
 	        Integer userId = userDetails.userInfo().getId();
-	        // Fetch notifications for the given userId
+
+	        // Get the date 30 days ago from today
+	        Calendar calendar = Calendar.getInstance();
+	        calendar.add(Calendar.DAY_OF_YEAR, -30);
+	        Date thirtyDaysAgo = calendar.getTime();
+
+	        // Fetch notifications created within the last 30 days
 	        List<InAppNotification> notifications = inAppNotificationRepository
-	                .findByReceiverIdOrderByCreatedOnDesc(userId);
+	                .findByReceiverIdAndCreatedOnAfterOrderByCreatedOnDesc(userId, thirtyDaysAgo);
 
 	        if (notifications.isEmpty()) {
-	            return new Response(0, "No Notifications", "No notifications found for the given user ID");
+	            return new Response(0, "No Notifications", "No notifications found for the last 30 days");
 	        }
 
-	        // Initialize a counter for unread notifications
+	        // Count unread notifications
 	        long unreadCount = notifications.stream()
-	                                        .filter(notification -> notification.getIsRead())
-	                                        .count();
+	                .filter(notification -> !notification.getIsRead())
+	                .count();
 
 	        List<InAppNotificationWebModel> notificationDtos = notifications.stream().map(notification -> {
 	            InAppNotificationWebModel dto = new InAppNotificationWebModel();
 	            dto.setInAppNotificationId(notification.getInAppNotificationId());
 	            dto.setSenderId(notification.getSenderId());
-	            dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId())); // Fetch profile picture URL
+	            dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
 	            dto.setReceiverId(notification.getReceiverId());
 	            dto.setTitle(notification.getTitle());
 	            dto.setMessage(notification.getMessage());
@@ -836,7 +843,6 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setIsRead(notification.getIsRead());
 	            dto.setCurrentStatus(notification.getCurrentStatus());
 
-	            // Fetch user details using senderId
 	            Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
 	            dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
 
@@ -846,30 +852,28 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setUserType(notification.getUserType());
 	            dto.setId(notification.getId());
 	            dto.setPostId(notification.getPostId());
+	            dto.setProfession(notification.getProfession());
+	            dto.setAdminReview(notification.getAdminReview());
 
-	            // Handle userType specific accept and additionalData fields
 	            if ("marketPlace".equals(notification.getUserType())) {
 	                Optional<MarketPlaceChat> marketPlaceChat = marketPlaceChatRepository.findByIds(notification.getId());
-	                if (marketPlaceChat.isPresent()) {
-	                    Boolean isAccepted = marketPlaceChat.get().getAccept();
-	                    dto.setAccept(isAccepted);
-	                    dto.setAdditionalData(isAccepted != null ? (isAccepted ? "Accepted" : "Declined") : "null");
-	                } else {
+	                marketPlaceChat.ifPresentOrElse(chat -> {
+	                    dto.setAccept(chat.getAccept());
+	                    dto.setAdditionalData(chat.getAccept() != null ? (chat.getAccept() ? "Accepted" : "Declined") : "null");
+	                }, () -> {
 	                    dto.setAccept(null);
 	                    dto.setAdditionalData("null");
-	                }
+	                });
 	            } else if ("shootingLocation".equals(notification.getUserType())) {
 	                Optional<ShootingLocationChat> shootingChat = shootingLocationChatRepository.findByIds(notification.getId());
-	                if (shootingChat.isPresent()) {
-	                    Boolean isAccepted = shootingChat.get().getAccept();
-	                    dto.setAccept(isAccepted);
-	                    dto.setAdditionalData(isAccepted != null ? (isAccepted ? "Accepted" : "Declined") : "null");
-	                } else {
+	                shootingChat.ifPresentOrElse(chat -> {
+	                    dto.setAccept(chat.getAccept());
+	                    dto.setAdditionalData(chat.getAccept() != null ? (chat.getAccept() ? "Accepted" : "Declined") : "null");
+	                }, () -> {
 	                    dto.setAccept(null);
 	                    dto.setAdditionalData("null");
-	                }
+	                });
 	            } else {
-	                // Default values for userType other than "marketType" or "shootingLocation"
 	                dto.setAccept(null);
 	                dto.setAdditionalData("null");
 	            }
@@ -877,7 +881,6 @@ public class ChatServiceImpl implements ChatService {
 	            return dto;
 	        }).collect(Collectors.toList());
 
-	        // Include the unread count in the response
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("notifications", notificationDtos);
 	        response.put("unreadCount", unreadCount);

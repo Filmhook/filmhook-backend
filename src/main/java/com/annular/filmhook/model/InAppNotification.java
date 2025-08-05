@@ -70,4 +70,13 @@ public class InAppNotification {
     
     @Column(name = "currentStatus")
     private Boolean currentStatus;
+    
+    @Column(name = "Profession")
+    private String Profession;
+    
+    @Column(name = "admin_review")
+    private Float adminReview;
+    
+  
+    
 }

@@ -1,15 +1,21 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.model.Bookings;
+import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.NotificationTypeEnum;
 import com.annular.filmhook.model.Notifications;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.NotificationRepository;
 import com.annular.filmhook.service.NotificationService;
 
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.NotificationWebModel;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +33,10 @@ public class NotificationServiceImpl implements NotificationService {
 
 	@Autowired
 	UserService userService;
-
+	
+	 @Autowired
+	    private InAppNotificationRepository inAppNotificationRepository;
+	 
 	@Autowired
 	MailNotification mailNotification;
 
@@ -89,4 +98,49 @@ public class NotificationServiceImpl implements NotificationService {
 			e.printStackTrace();
 		}
 	}
+	
+	 @Override
+	    public void sendNotificationToUser(Integer senderId, User receiver, String title, String messageBody, String userType, Integer refId) {
+
+	        // Save In-App Notification
+	        InAppNotification notification = InAppNotification.builder()
+	                .senderId(senderId)
+	                .receiverId(receiver.getUserId())
+	                .title(title)
+	                .message(messageBody)
+	                .userType(userType)
+	                .id(refId)
+	                .isRead(false)
+	                .createdOn(new Date())
+	                .createdBy(senderId)
+	                .build();
+
+	        inAppNotificationRepository.save(notification);
+
+	        // Send Firebase Push Notification
+	        String deviceToken = receiver.getFirebaseDeviceToken();
+	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+	            try {
+	                Message firebaseMessage = Message.builder()
+	                        .setNotification(Notification.builder()
+	                                .setTitle(title)
+	                                .setBody(messageBody)
+	                                .build())
+	                        .putData("type", userType)
+	                        .putData("refId", String.valueOf(refId))
+	                        .setToken(deviceToken)
+	                        .build();
+
+	                String response = FirebaseMessaging.getInstance().send(firebaseMessage);
+	                logger.info("Push Notification Sent: " + response);
+
+	            } catch (FirebaseMessagingException e) {
+	                logger.error("Failed to send push notification", e);
+	            }
+	        } else {
+	            logger.warn("No Firebase token found for user ID: " + receiver.getUserId());
+	        }
+	    }
+	
+
 }
