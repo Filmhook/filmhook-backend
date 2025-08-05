@@ -576,76 +576,7 @@ public class PostServiceImpl implements PostService {
 	            audition = auditionRepository.findById(likeWebModel.getAuditionId()).orElse(null);
 	            if (audition == null) return null;
 	        }
-//
-//<<<<<<< HEAD
-//				if (existingLike != null) {
-//					likeRowToSaveOrUpdate = existingLike;
-//					likeRowToSaveOrUpdate.setStatus(!existingLike.getStatus());
-//					likeRowToSaveOrUpdate.setUpdatedBy(likeWebModel.getUserId());
-//					likeRowToSaveOrUpdate.setUpdatedOn(new Date());
-//				} else {
-//					likeRowToSaveOrUpdate = Likes.builder()
-//							.category(likeWebModel.getCategory())
-//							.postId(post.getId())
-//							.commentId(likeWebModel.getCommentId())
-//							.likedBy(likeWebModel.getUserId())
-//							.liveDate(null)
-//							.status(true)
-//							.createdBy(likeWebModel.getUserId())
-//							.createdOn(new Date())
-//							.notified(false)
-//							.build();
-//				}
-//				Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
-//
-//				Integer totalLikes = 0;
-//				if (!Utility.isNullOrBlankWithTrim(likeWebModel.getCategory())) {
-//					if (likeWebModel.getCategory().equalsIgnoreCase(POST)) {
-//						if (likeRowToSaveOrUpdate.getStatus()) {
-//							post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() + 1 : 1); // Increasing Post's like count
-//						} else {
-//							post.setLikesCount(!Utility.isNullOrZero(post.getLikesCount()) ? post.getLikesCount() - 1 : 0); // Decreasing Post's like count
-//						}
-//						postsRepository.saveAndFlush(post);
-//						totalLikes = post.getLikesCount();
-//					} else if (likeWebModel.getCategory().equalsIgnoreCase(COMMENT) && existingComment != null) {
-//						if (likeRowToSaveOrUpdate.getStatus()) {
-//							existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() + 1 : 1); // Increasing Comment's like count
-//						} else {
-//							existingComment.setLikesCount(!Utility.isNullOrZero(existingComment.getLikesCount()) ? existingComment.getLikesCount() - 1 : 0); // Decreasing Comment's like count
-//						}
-//						commentRepository.saveAndFlush(existingComment);
-//						totalLikes = existingComment.getLikesCount();
-//						if (likeRowToSaveOrUpdate.getStatus() &&
-//							    existingComment != null &&
-//							    existingComment.getCommentedBy() != null &&
-//							    !existingComment.getCommentedBy().equals(likeWebModel.getUserId())) {
-//
-//							    User liker = userRepository.findById(likeWebModel.getUserId()).orElse(null);
-//							    String likerName = liker != null ? liker.getName() : "Someone";
-//
-//							    logger.info("🔔 Triggering comment like notification for commentId: {}", existingComment.getCommentId());
-//
-//							    sendNotification(
-//							        existingComment.getCommentedBy(),
-//							        likeWebModel.getUserId(),
-//							        "Someone Liked Your Comment",
-//							        likerName + " liked your comment.",
-//							        "COMMENT_LIKE",
-//							        existingComment.getCommentId()
-//							    );
-//							
-//						}}
-//				}
-//				logger.info("Like count for post id [{}] is :- [{}]", post.getId(), totalLikes);
-//				return this.transformLikeData(savedLike, totalLikes);
-//			}
-//		} catch (Exception e) {
-//			logger.error("Error at addOrUpdateLike() -> {}", e.getMessage());
-//			e.printStackTrace();
-//		}
-//		return null;
-//=======
+
 	        if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
 	            existingComment = likeWebModel.getCommentId() != null ?
 	                    commentRepository.findById(likeWebModel.getCommentId()).orElse(null) : null;
