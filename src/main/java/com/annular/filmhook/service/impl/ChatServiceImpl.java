@@ -2,7 +2,6 @@ package com.annular.filmhook.service.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -812,30 +811,24 @@ public class ChatServiceImpl implements ChatService {
 	public Response getInAppNotification() {
 	    try {
 	        Integer userId = userDetails.userInfo().getId();
-
-	        // Get the date 30 days ago from today
-	        Calendar calendar = Calendar.getInstance();
-	        calendar.add(Calendar.DAY_OF_YEAR, -30);
-	        Date thirtyDaysAgo = calendar.getTime();
-
-	        // Fetch notifications created within the last 30 days
+	        // Fetch notifications for the given userId
 	        List<InAppNotification> notifications = inAppNotificationRepository
-	                .findByReceiverIdAndCreatedOnAfterOrderByCreatedOnDesc(userId, thirtyDaysAgo);
+	                .findByReceiverIdOrderByCreatedOnDesc(userId);
 
 	        if (notifications.isEmpty()) {
-	            return new Response(0, "No Notifications", "No notifications found for the last 30 days");
+	            return new Response(0, "No Notifications", "No notifications found for the given user ID");
 	        }
 
-	        // Count unread notifications
+	        // Initialize a counter for unread notifications
 	        long unreadCount = notifications.stream()
-	                .filter(notification -> !notification.getIsRead())
-	                .count();
+	                                        .filter(notification -> notification.getIsRead())
+	                                        .count();
 
 	        List<InAppNotificationWebModel> notificationDtos = notifications.stream().map(notification -> {
 	            InAppNotificationWebModel dto = new InAppNotificationWebModel();
 	            dto.setInAppNotificationId(notification.getInAppNotificationId());
 	            dto.setSenderId(notification.getSenderId());
-	            dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
+	            dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId())); // Fetch profile picture URL
 	            dto.setReceiverId(notification.getReceiverId());
 	            dto.setTitle(notification.getTitle());
 	            dto.setMessage(notification.getMessage());
@@ -843,6 +836,7 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setIsRead(notification.getIsRead());
 	            dto.setCurrentStatus(notification.getCurrentStatus());
 
+	            // Fetch user details using senderId
 	            Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
 	            dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
 
@@ -855,25 +849,29 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setProfession(notification.getProfession());
 	            dto.setAdminReview(notification.getAdminReview());
 
+	            // Handle userType specific accept and additionalData fields
 	            if ("marketPlace".equals(notification.getUserType())) {
 	                Optional<MarketPlaceChat> marketPlaceChat = marketPlaceChatRepository.findByIds(notification.getId());
-	                marketPlaceChat.ifPresentOrElse(chat -> {
-	                    dto.setAccept(chat.getAccept());
-	                    dto.setAdditionalData(chat.getAccept() != null ? (chat.getAccept() ? "Accepted" : "Declined") : "null");
-	                }, () -> {
+	                if (marketPlaceChat.isPresent()) {
+	                    Boolean isAccepted = marketPlaceChat.get().getAccept();
+	                    dto.setAccept(isAccepted);
+	                    dto.setAdditionalData(isAccepted != null ? (isAccepted ? "Accepted" : "Declined") : "null");
+	                } else {
 	                    dto.setAccept(null);
 	                    dto.setAdditionalData("null");
-	                });
+	                }
 	            } else if ("shootingLocation".equals(notification.getUserType())) {
 	                Optional<ShootingLocationChat> shootingChat = shootingLocationChatRepository.findByIds(notification.getId());
-	                shootingChat.ifPresentOrElse(chat -> {
-	                    dto.setAccept(chat.getAccept());
-	                    dto.setAdditionalData(chat.getAccept() != null ? (chat.getAccept() ? "Accepted" : "Declined") : "null");
-	                }, () -> {
+	                if (shootingChat.isPresent()) {
+	                    Boolean isAccepted = shootingChat.get().getAccept();
+	                    dto.setAccept(isAccepted);
+	                    dto.setAdditionalData(isAccepted != null ? (isAccepted ? "Accepted" : "Declined") : "null");
+	                } else {
 	                    dto.setAccept(null);
 	                    dto.setAdditionalData("null");
-	                });
+	                }
 	            } else {
+	                // Default values for userType other than "marketType" or "shootingLocation"
 	                dto.setAccept(null);
 	                dto.setAdditionalData("null");
 	            }
@@ -881,6 +879,7 @@ public class ChatServiceImpl implements ChatService {
 	            return dto;
 	        }).collect(Collectors.toList());
 
+	        // Include the unread count in the response
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("notifications", notificationDtos);
 	        response.put("unreadCount", unreadCount);

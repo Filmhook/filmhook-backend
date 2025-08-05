@@ -798,24 +798,35 @@ public class PostServiceImpl implements PostService {
 	
 	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId) {
 	    try {
-	        // Save in-app notification
+	        // Fetch sender and receiver details
+	        User userFromDB = userRepository.findById(senderId).orElse(null);
+	        User receiver = userRepository.findById(receiverId).orElse(null);
+
+	        if (userFromDB == null || receiver == null) {
+	            logger.warn("❗ Sender or Receiver not found. Notification not sent.");
+	            return;
+	        }
+
+	        // Create in-app notification
 	        InAppNotification notification = InAppNotification.builder()
 	                .senderId(senderId)
 	                .receiverId(receiverId)
 	                .title(title)
 	                .message(messageBody)
-	                .userType(userType)
-	                .id(refId)
+	                .userType(userType)                // e.g., "COMMENT_LIKE", "POST_LIKE"
+	                .id(refId)                         
+	                 .adminReview(userFromDB.getAdminReview())
+	                .Profession(userFromDB.getUserType())
 	                .isRead(false)
-	                .createdOn(new Date())
 	                .createdBy(senderId)
+	                .createdOn(new Date())
 	                .build();
+
 	        inAppNotificationRepo.save(notification);
 	        logger.info("✅ In-app notification saved for user ID {}", receiverId);
 
-	        // Send Firebase push notification
-	        User receiver = userRepository.findById(receiverId).orElse(null);
-	        if (receiver != null && receiver.getFirebaseDeviceToken() != null) {
+	        // Send Firebase push notification if device token exists
+	        if (receiver.getFirebaseDeviceToken() != null && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
 	            Message firebaseMessage = Message.builder()
 	                    .setNotification(Notification.builder()
 	                            .setTitle(title)
@@ -825,13 +836,14 @@ public class PostServiceImpl implements PostService {
 	                    .putData("refId", String.valueOf(refId))
 	                    .setToken(receiver.getFirebaseDeviceToken())
 	                    .build();
-	            logger.info("👉 Preparing to send notification from {} to {} for {}", senderId, receiverId, userType);
 
+	            logger.info("👉 Preparing to send push notification from {} to {} for {}", senderId, receiverId, userType);
 	            String response = FirebaseMessaging.getInstance().send(firebaseMessage);
 	            logger.info("📲 Push Notification Sent: {}", response);
 	        } else {
 	            logger.warn("⚠️ No Firebase token found for user ID: {}", receiverId);
 	        }
+
 	    } catch (Exception e) {
 	        logger.error("❌ Error sending notification to user ID {}: {}", receiverId, e.getMessage(), e);
 	    }
