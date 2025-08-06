@@ -35,5 +35,6 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
     	);
     
     Optional<Likes> findByCategoryAndAuditionIdAndLikedByAndStatusTrue(String category, Integer auditionId, Integer likedBy);
+    List<Likes> findTop2ByPostIdAndStatusTrueOrderByCreatedOnDesc(Integer postId);
 
 }
