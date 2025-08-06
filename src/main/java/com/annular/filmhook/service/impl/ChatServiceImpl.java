@@ -186,7 +186,7 @@ public class ChatServiceImpl implements ChatService {
 	                .build();
 
 	            chatRepository.save(chat);
-
+	            // Save media files if present
 	            if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
 	                FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
 	                    .userId(chatWebModel.getUserId())
@@ -253,7 +253,38 @@ public class ChatServiceImpl implements ChatService {
 //	                    logger.warn("Receiver user not found for id: " + chatWebModel.getChatReceiverId());
 //	                }
 //	            }
+	            
+	            // ✅ Firebase Push Notification
+	            Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
+	            if (receiverOptional.isPresent()) {
+	                User receiver = receiverOptional.get();
+	                String deviceToken = receiver.getFirebaseDeviceToken();
 
+	                if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+	                    String notificationTitle = user.getName();
+	                    String notificationMessage = chatWebModel.getMessage();  // Push actual message like "Hi", "Bye", etc.
+
+	                    try {
+	                        Message message = Message.builder()
+	                                .setNotification(Notification.builder()
+	                                        .setTitle(notificationTitle)
+	                                        .setBody(notificationMessage)
+	                                        .build())
+	                                .putData("chatId", String.valueOf(chat.getChatId()))
+	                                .setToken(deviceToken)
+	                                .build();
+
+	                        String response = FirebaseMessaging.getInstance().send(message);
+	                        logger.info("Successfully sent push notification: " + response);
+
+	                    } catch (FirebaseMessagingException e) {
+	                        logger.error("Failed to send push notification", e);
+	                    }
+
+	                } else {
+	                    logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
+	                }
+	            }
 	            return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
 	        } else {
 	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Failed", "Sender user not found"));
