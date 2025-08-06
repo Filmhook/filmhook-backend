@@ -222,6 +222,7 @@ public class PostServiceImpl implements PostService {
 								.isRead(false)
 								 .adminReview(userFromDB.getAdminReview())
 		                            .Profession(userFromDB.getUserType())
+		                            .isDeleted(false)
 								.createdBy(postWebModel.getUserId())
 								.id(savedPost.getId())
 								.userType("Tagged") // Adjust as per your userType logic
@@ -782,117 +783,123 @@ public class PostServiceImpl implements PostService {
 				post.setCommentsCount(newPostCommentCount);
 				postsRepository.saveAndFlush(post);
 
-				// If it's a reply to a comment, update the parent comment's reply count
-				  boolean isReply = !Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) &&
-		                    commentInputWebModel.getCategory().equalsIgnoreCase(COMMENT);
+				 boolean isReply = COMMENT.equalsIgnoreCase(commentInputWebModel.getCategory());
+			        Integer parentCommentId = commentInputWebModel.getParentCommentId();
+				 
+				  if (isReply && parentCommentId != null) {
+			            Comment parent = commentRepository.findById(parentCommentId).orElse(null);
+			            if (parent != null) {
+			                parent.setReplyCount((parent.getReplyCount() == null ? 0 : parent.getReplyCount()) + 1);
+			                commentRepository.saveAndFlush(parent);
 
-		            if (isReply) {
-		                Integer parentCommentId = commentInputWebModel.getParentCommentId();
-		                if (parentCommentId != null) {
-		                    Comment parent = commentRepository.findById(parentCommentId).orElse(null);
-		                    if (parent != null) {
-		                        int newReplyCount = !Utility.isNullOrZero(parent.getReplyCount()) ? parent.getReplyCount() + 1 : 1;
-		                        parent.setReplyCount(newReplyCount);
-		                        commentRepository.saveAndFlush(parent);
+			                // Notify parent comment owner (if not replying to self!)
+			                if (!parent.getCommentedBy().equals(commentInputWebModel.getUserId())) {
+			                    User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+			                    String senderName = sender != null ? sender.getName() : "Someone";
+			                    sendNotification(
+			                        parent.getCommentedBy(),            // to
+			                        commentInputWebModel.getUserId(),                  // from
+			                        "Reply to Your Comment",
+			                        senderName + " replied to your comment.",
+			                        "COMMENT_REPLY",
+			                        savedComment.getCommentId()         // Use commentId for context
+			                    );
+			                }
+			            }
+			        }
 
-		                        if (!parent.getCommentedBy().equals(commentInputWebModel.getUserId())) {
-		                            User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
-		                            String senderName = sender != null ? sender.getName() : "Someone";
+			        // 4. Always notify post owner if commenter is not the post owner
+			        if (!post.getCreatedBy().equals(commentInputWebModel.getUserId())) {
+			            User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+			            String commenterName = commenter != null ? commenter.getName() : "Someone";
+			            sendNotification(
+			                post.getCreatedBy(),                         // to
+			                commentInputWebModel.getUserId(),                           // from
+			                "New Comment on Your Post",
+			                commenterName + " commented on your post.",
+			                "POST_COMMENT",
+			                savedComment.getPostId()
+			            );
+			        }
 
-		                            sendNotification(
-		                                    parent.getCommentedBy(),
-		                                    commentInputWebModel.getUserId(),
-		                                    "Reply to Your Comment",
-		                                    senderName + " replied to your comment.",
-		                                    "COMMENT_REPLY",
-		                                    savedComment.getPostId()
-		                            );
-		                        }
-		                    }
-		                }
-		            }
+			        logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), commentInputWebModel.getUserId());
+			        logger.info("Comment added to post [{}]", post.getId());
+			        return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
 
-		            // 🔔 Always notify post owner if commenter is not the post creator
-		            if (!post.getCreatedBy().equals(commentInputWebModel.getUserId())) {
-		                User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
-		                String commenterName = commenter != null ? commenter.getName() : "Someone";
-
-		                sendNotification(
-		                        post.getCreatedBy(),
-		                        commentInputWebModel.getUserId(),
-		                        "New Comment on Your Post",
-		                        commenterName + " commented on your post.",
-		                        "POST_COMMENT",
-		                        savedComment.getPostId()
-		                );
-		            }
-
-		            logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), commentInputWebModel.getUserId());
-		            logger.info("Comment added under post [{}]", post.getId());
-		            return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
-		        }
-		} catch (Exception e) {
-			logger.error("Error at addComment() -> {}", e.getMessage(), e);
-		}
-		return null;
-	}
+			    }} catch (Exception e) {
+			        logger.error("Error at addComment() -> {}", e.getMessage(), e);
+			    }
+			    return null;
+			}
 	
 	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId) {
 	    try {
-	        // Fetch sender and receiver details
-	        User userFromDB = userRepository.findById(senderId).orElse(null);
-	        User receiver = userRepository.findById(receiverId).orElse(null);
+	        // Step 1: Validate users
+	        Optional<User> senderOpt = userRepository.findById(senderId);
+	        Optional<User> receiverOpt = userRepository.findById(receiverId);
 
-	        if (userFromDB == null || receiver == null) {
+	        if (senderOpt.isEmpty() || receiverOpt.isEmpty()) {
 	            logger.warn("❗ Sender or Receiver not found. Notification not sent.");
 	            return;
 	        }
 
-	        // Create in-app notification
-	        InAppNotification notification = InAppNotification.builder()
-	                .senderId(senderId)
-	                .receiverId(receiverId)
-	                .title(title)
-	                .message(messageBody)
-	                .userType(userType)                // e.g., "COMMENT_LIKE", "POST_LIKE"
-	                .id(refId)                         
-	                 .adminReview(userFromDB.getAdminReview())
-	                .Profession(userFromDB.getUserType())
-	                .isRead(false)
-	                .createdBy(senderId)
-	                .createdOn(new Date())
-	                .build();
+	        User sender = senderOpt.get();
+	        User receiver = receiverOpt.get();
 
-	        inAppNotificationRepo.save(notification);
-	        logger.info("✅ In-app notification saved for user ID {}", receiverId);
+	        // Step 2: Save In-App Notification
+	        InAppNotification inAppNotification = InAppNotification.builder()
+	            .senderId(senderId)
+	            .receiverId(receiverId)
+	            .title(title)
+	            .message(messageBody)
+	            .userType(userType)               
+	            .id(refId)                   
+	            .adminReview(sender.getAdminReview())
+	            .Profession(sender.getUserType()) 
+	            .isRead(false)
+	            .isDeleted(false)
+	            .createdBy(senderId)
+	            .createdOn(new Date())
+	            .build();
 
-	        // Send Firebase push notification if device token exists
+	        inAppNotificationRepository.save(inAppNotification);
+	        logger.info("✅ In-app notification saved for receiver ID: {}", receiverId);
+
+	        // Step 3: Send Push Notification via Firebase
 	        String deviceToken = receiver.getFirebaseDeviceToken();
-            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-                try {
-                    Message message = Message.builder()
-                        .setNotification(Notification.builder()
-                            .setTitle(title)
-                            .setBody(messageBody)
-                            .build())
-                      .putData("refId", String.valueOf(refId))
-                        .setToken(deviceToken)
-                        .build();
-                    FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
-                    
-                    String response = FirebaseMessaging.getInstance(firebaseApp).send(message);
-                    logger.info("Successfully sent push notification: " + response);
-                } catch (FirebaseMessagingException e) {
-                    logger.error("Failed to send push notification", e);
-                }
+
+	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+	            try {
+	                FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
+
+	                Message firebaseMessage = Message.builder()
+	                    .setNotification(Notification.builder()
+	                        .setTitle(title)
+	                        .setBody(messageBody)
+	                        .build())
+	                    .putData("type", userType)
+	                    .putData("refId", String.valueOf(refId))
+	                    .putData("senderId", String.valueOf(senderId))
+	                    .putData("receiverId", String.valueOf(receiverId))
+	                    .setToken(deviceToken)
+	                    .build();
+
+	                String firebaseResponse = FirebaseMessaging.getInstance(firebaseApp).send(firebaseMessage);
+	                logger.info("✅ Push notification sent successfully: {}", firebaseResponse);
+
+	            } catch (FirebaseMessagingException e) {
+	                logger.error("❌ Firebase push notification failed: {}", e.getMessage(), e);
+	            }
 	        } else {
-	            logger.warn("⚠️ No Firebase token found for user ID: {}", receiverId);
+	            logger.warn("⚠️ No Firebase token available for receiver ID: {}", receiverId);
 	        }
 
 	    } catch (Exception e) {
-	        logger.error("❌ Error sending notification to user ID {}: {}", receiverId, e.getMessage(), e);
+	        logger.error("❌ Exception in sendNotification(): {}", e.getMessage(), e);
 	    }
 	}
+
+
 
 
 

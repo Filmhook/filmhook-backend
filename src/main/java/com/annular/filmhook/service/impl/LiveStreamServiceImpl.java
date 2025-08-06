@@ -63,34 +63,31 @@ public class LiveStreamServiceImpl implements LiveStreamService {
             liveDetailsRepository.save(liveDetails);
 
             // Fetch all active users
-            List<User> activeUsers = userRepository.findAllActiveUsers();
-
-            Optional<User> userbyId = userRepository.findById(liveDetails.getUserId());
-            String Profession = userbyId.get().getUserType();
-            Float adminReview = userbyId.get().getAdminReview();
-            
+            List<User> activeUsers = userRepository.findAllActiveUsers();     
             
             // Define notification details
             String notificationTitle = "New Live Stream Started!";
             String notificationMessage = "A new live stream has started on channel: " + liveDetails.getChannelName();
-
-            // Send notifications to all active users
+            User sender = userRepository.findById(liveDetails.getUserId())
+                    .orElseThrow(() -> new RuntimeException("Sender not found"));
+           
             for (User user : activeUsers) {
             	
                 // Check if the user is the one who started the live stream
                 if (!user.getUserId().equals(liveDetails.getUserId()) && user.getStatus() && user.getFirebaseDeviceToken() != null) {
-                 
+ 
             	// Save in-app notification
                     InAppNotification inAppNotification = InAppNotification.builder()
                             .senderId(liveDetails.getUserId())
                             .receiverId(user.getUserId())
                             .title(notificationTitle)
                             .userType("Live")
-                            .adminReview(user.getAdminReview())
-                            .Profession(user.getUserType())
+                            .adminReview(sender.getAdminReview())
+                            .Profession(sender.getUserType())
                             .message(notificationMessage)
                             .createdOn(new Date())
                             .isRead(false)
+                            .isDeleted(false)
                             .id(liveDetails.getLiveChannelId())
                             .createdBy(liveDetails.getUserId())
                             .build();

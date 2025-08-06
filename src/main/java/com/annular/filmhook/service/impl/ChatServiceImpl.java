@@ -5,6 +5,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -186,7 +187,7 @@ public class ChatServiceImpl implements ChatService {
 	                .build();
 
 	            chatRepository.save(chat);
-
+	            // Save media files if present
 	            if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
 	                FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
 	                    .userId(chatWebModel.getUserId())
@@ -253,7 +254,38 @@ public class ChatServiceImpl implements ChatService {
 //	                    logger.warn("Receiver user not found for id: " + chatWebModel.getChatReceiverId());
 //	                }
 //	            }
+	            
+	            // ✅ Firebase Push Notification
+	            Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
+	            if (receiverOptional.isPresent()) {
+	                User receiver = receiverOptional.get();
+	                String deviceToken = receiver.getFirebaseDeviceToken();
 
+	                if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+	                    String notificationTitle = user.getName();
+	                    String notificationMessage = chatWebModel.getMessage();  // Push actual message like "Hi", "Bye", etc.
+
+	                    try {
+	                        Message message = Message.builder()
+	                                .setNotification(Notification.builder()
+	                                        .setTitle(notificationTitle)
+	                                        .setBody(notificationMessage)
+	                                        .build())
+	                                .putData("chatId", String.valueOf(chat.getChatId()))
+	                                .setToken(deviceToken)
+	                                .build();
+
+	                        String response = FirebaseMessaging.getInstance().send(message);
+	                        logger.info("Successfully sent push notification: " + response);
+
+	                    } catch (FirebaseMessagingException e) {
+	                        logger.error("Failed to send push notification", e);
+	                    }
+
+	                } else {
+	                    logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
+	                }
+	            }
 	            return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
 	        } else {
 	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Failed", "Sender user not found"));
@@ -819,9 +851,33 @@ public class ChatServiceImpl implements ChatService {
 	    try {
 	        Integer userId = userDetails.userInfo().getId();
 
-	        // Date range: from 30 days ago to now
+	        // Get user
+	        Optional<User> userOptional = userRepository.findById(userId);
+	        if (!userOptional.isPresent()) {
+	            return new Response(0, "User not found", null);
+	        }
+
+	        User user = userOptional.get();
+
+	        // Get last notification open time
+	        Date lastOpenedTime = user.getLastNotificationOpenTime();
+	        if (lastOpenedTime == null) {
+	            Calendar cal = Calendar.getInstance();
+	            cal.set(2000, Calendar.JANUARY, 1); // set default old date
+	            lastOpenedTime = cal.getTime();
+	        }
+
+	        // ✅ Make final for lambda
+	        final Date finalLastOpenedTime = lastOpenedTime;
+
+	        // Reset open time to now
+	        Date now = new Date();
+	        user.setLastNotificationOpenTime(now);
+	        userRepository.save(user); // Save immediately to avoid stale time
+
+	        // Set 30-day filter range
 	        Calendar calendar = Calendar.getInstance();
-	        Date endDate = calendar.getTime(); // now
+	        Date endDate = calendar.getTime();
 	        calendar.add(Calendar.DAY_OF_MONTH, -30);
 	        Date startDate = calendar.getTime();
 
@@ -829,38 +885,44 @@ public class ChatServiceImpl implements ChatService {
 
 	        Page<InAppNotification> pageResult = inAppNotificationRepository
 	                .findByReceiverIdAndCreatedOnBetweenAndIsDeletedFalseOrderByCreatedOnDesc(
-	                        userId, startDate, endDate, pageable
-	                );
+	                        userId, startDate, endDate, pageable);
 
 	        List<InAppNotification> notifications = pageResult.getContent();
 
 	        if (notifications.isEmpty()) {
-	            return new Response(0, "No Notifications", "No notifications found for the given user ID");
+	            Map<String, Object> emptyResponse = new HashMap<>();
+	            emptyResponse.put("notifications", Collections.emptyMap());
+	            emptyResponse.put("unreadCount", 0);
+	            emptyResponse.put("unseenCount", 0); // still reset
+	            emptyResponse.put("totalPages", pageResult.getTotalPages());
+	            emptyResponse.put("currentPage", pageResult.getNumber());
+	            emptyResponse.put("totalItems", pageResult.getTotalElements());
+
+	            return new Response(0, "No Notifications", emptyResponse);
 	        }
 
+	        // Count unread
 	        long unreadCount = notifications.stream()
-	                .filter(notification -> !notification.getIsRead())
+	                .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
 	                .count();
 
-	        // Group notifications by date
+	        // Count unseen: created after lastOpenedTime
+	        long unseenCount = notifications.stream()
+	                .filter(n -> n.getCreatedOn().after(finalLastOpenedTime))
+	                .count();
+
+	        // Group by Today / Yesterday / Earlier
 	        Map<String, List<InAppNotificationWebModel>> grouped = new LinkedHashMap<>();
 	        LocalDate today = LocalDate.now(ZoneOffset.UTC);
 	        LocalDate yesterday = today.minusDays(1);
 
 	        for (InAppNotification notification : notifications) {
 	            LocalDate createdDate = notification.getCreatedOn()
-	                    .toInstant()
-	                    .atZone(ZoneOffset.UTC)
-	                    .toLocalDate();
+	                    .toInstant().atZone(ZoneOffset.UTC).toLocalDate();
 
-	            String group;
-	            if (createdDate.equals(today)) {
-	                group = "Today";
-	            } else if (createdDate.equals(yesterday)) {
-	                group = "Yesterday";
-	            } else {
-	                group = "Earlier";
-	            }
+	            String group = createdDate.equals(today) ? "Today"
+	                         : createdDate.equals(yesterday) ? "Yesterday"
+	                         : "Earlier";
 
 	            InAppNotificationWebModel dto = new InAppNotificationWebModel();
 	            dto.setInAppNotificationId(notification.getInAppNotificationId());
@@ -872,10 +934,6 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setCreatedOn(notification.getCreatedOn());
 	            dto.setIsRead(notification.getIsRead());
 	            dto.setCurrentStatus(notification.getCurrentStatus());
-
-	            Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
-	            dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
-
 	            dto.setCreatedBy(notification.getCreatedBy());
 	            dto.setUpdatedBy(notification.getUpdatedBy());
 	            dto.setUpdatedOn(notification.getUpdatedOn());
@@ -885,30 +943,32 @@ public class ChatServiceImpl implements ChatService {
 	            dto.setProfession(notification.getProfession());
 	            dto.setAdminReview(notification.getAdminReview());
 
+	            Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
+	            dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
+
+	            // Handle accept/additionalData
 	            if ("marketPlace".equals(notification.getUserType())) {
 	                marketPlaceChatRepository.findByIds(notification.getId()).ifPresentOrElse(
 	                        chat -> {
 	                            dto.setAccept(chat.getAccept());
-	                            dto.setAdditionalData(chat.getAccept() != null ? 
-	                                (chat.getAccept() ? "Accepted" : "Declined") : "null");
+	                            dto.setAdditionalData(chat.getAccept() != null ?
+	                                    (chat.getAccept() ? "Accepted" : "Declined") : "null");
 	                        },
 	                        () -> {
 	                            dto.setAccept(null);
 	                            dto.setAdditionalData("null");
-	                        }
-	                );
+	                        });
 	            } else if ("shootingLocation".equals(notification.getUserType())) {
 	                shootingLocationChatRepository.findByIds(notification.getId()).ifPresentOrElse(
 	                        chat -> {
 	                            dto.setAccept(chat.getAccept());
-	                            dto.setAdditionalData(chat.getAccept() != null ? 
-	                                (chat.getAccept() ? "Accepted" : "Declined") : "null");
+	                            dto.setAdditionalData(chat.getAccept() != null ?
+	                                    (chat.getAccept() ? "Accepted" : "Declined") : "null");
 	                        },
 	                        () -> {
 	                            dto.setAccept(null);
 	                            dto.setAdditionalData("null");
-	                        }
-	                );
+	                        });
 	            } else {
 	                dto.setAccept(null);
 	                dto.setAdditionalData("null");
@@ -917,10 +977,11 @@ public class ChatServiceImpl implements ChatService {
 	            grouped.computeIfAbsent(group, k -> new ArrayList<>()).add(dto);
 	        }
 
-	        // Build response map
+	        // Prepare final response
 	        Map<String, Object> response = new HashMap<>();
-	        response.put("notifications", grouped); // grouped by Today, Yesterday, Earlier
+	        response.put("notifications", grouped);
 	        response.put("unreadCount", unreadCount);
+	        response.put("unseenCount", unseenCount); // ✅ Add this to response
 	        response.put("totalPages", pageResult.getTotalPages());
 	        response.put("currentPage", pageResult.getNumber());
 	        response.put("totalItems", pageResult.getTotalElements());
@@ -932,6 +993,9 @@ public class ChatServiceImpl implements ChatService {
 	        return new Response(0, "Error", "An error occurred while fetching notifications");
 	    }
 	}
+
+
+
 
 	@Override
 	public Response updateInAppNotification(InAppNotificationWebModel inAppNotificationWebModel) {

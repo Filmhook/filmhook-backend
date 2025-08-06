@@ -646,6 +646,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 							.userType("SHOOTING_LOCATION_EXPIRY") // or "CLIENT", as per your system
 							.id(bookingId)
 							.isRead(false)
+							 .isDeleted(false)
 							.createdOn(new Date())
 							.createdBy(0)
 							.build();
@@ -780,6 +781,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 						.userType("SHOOTING_LOCATION_COMPLETED")
 						.id(bookingId)
 						.isRead(false)
+						 .isDeleted(false)
 						.createdOn(new Date())
 						.createdBy(0)
 						.build();

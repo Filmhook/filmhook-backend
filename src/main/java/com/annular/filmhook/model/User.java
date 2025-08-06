@@ -301,4 +301,9 @@ public class User {
 	@OneToMany(mappedBy = "user")
 	@JsonIgnore
 	private List<ShootingLocationPropertyDetails> properties;
+
+	@Column(name = "last_notification_open_time")
+	private Date lastNotificationOpenTime;
+	
+	
 }
