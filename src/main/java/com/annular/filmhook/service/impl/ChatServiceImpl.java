@@ -971,7 +971,7 @@ public class ChatServiceImpl implements ChatService {
 
 	        if (data.isPresent()) {
 	            InAppNotification notification = data.get();
-	            notification.setIsRead(false);  // Update the isRead column to false
+	            notification.setIsRead(true);  // Update the isRead column to false
 	            notification.setUpdatedOn(new Date());  // Optionally update the updatedOn column
 	            notification.setUpdatedBy(inAppNotificationWebModel.getUpdatedBy());  // Optionally update the updatedBy column
 	            

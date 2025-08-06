@@ -67,20 +67,20 @@ public class LiveStreamServiceImpl implements LiveStreamService {
             // Define notification details
             String notificationTitle = "New Live Stream Started!";
             String notificationMessage = "A new live stream has started on channel: " + liveDetails.getChannelName();
-
-            // Send notifications to all active users
+            User sender = userRepository.findById(liveDetails.getUserId())
+                    .orElseThrow(() -> new RuntimeException("Sender not found"));
+           
             for (User user : activeUsers) {
                 // Check if the user is the one who started the live stream
                 if (!user.getUserId().equals(liveDetails.getUserId()) && user.getStatus() && user.getFirebaseDeviceToken() != null) {
-                   // if(user.getUserId() == 10) {
-            	// Save in-app notification
+              
                     InAppNotification inAppNotification = InAppNotification.builder()
                             .senderId(liveDetails.getUserId())
                             .receiverId(user.getUserId())
                             .title(notificationTitle)
                             .userType("Live")
-                            .adminReview(user.getAdminReview())
-                            .Profession(user.getUserType())
+                            .adminReview(sender.getAdminReview())
+                            .Profession(sender.getUserType())
                             .message(notificationMessage)
                             .createdOn(new Date())
                             .isRead(false)
