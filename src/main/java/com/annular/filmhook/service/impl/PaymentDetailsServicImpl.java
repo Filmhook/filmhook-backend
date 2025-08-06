@@ -1,7 +1,11 @@
 package com.annular.filmhook.service.impl;
 
+import java.util.Date;
+
 import javax.mail.internet.MimeMessage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,19 +14,27 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.controller.PaymentDetailsController;
+import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.PaymentDetails;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.PaymentDetailsRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PaymentDetailsService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 
 @Service
 public class PaymentDetailsServicImpl implements PaymentDetailsService{
-	
+	   @Autowired
+	    private InAppNotificationRepository inAppNotificationRepository;
 
 	@Autowired
 	private JavaMailSender javaMailSender;
@@ -35,6 +47,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 	
 	@Autowired
 	UserRepository userRepository;
+	public static final Logger logger = LoggerFactory.getLogger(PaymentDetailsController.class);
 
     private final String key = "oXregF";
     private final String salt = "fGiczQ8QDLit7B5iEHGQ2glKXv4wKPqe";
@@ -396,6 +409,46 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             helper.setText(content.toString(), true);
 
             javaMailSender.send(message);
+            
+         // Send in-app and push notification
+            String notificationTitle = "Promotion Expiring Soon!";
+            String notificationMessage = "Hi " + user.getName() + ", your promotion will expire in 24 hours. Renew now to continue gaining visibility.";
+
+            InAppNotification notification = InAppNotification.builder()
+                    .senderId(0) // 0 or null for system/admin
+                    .receiverId(user.getUserId())
+                    .title(notificationTitle)
+                    .message(notificationMessage)
+                    .userType("PROMOTION_EXPIRY")
+                    .id(paymentId)
+                    .isRead(false)
+                    .createdOn(new Date())
+                    .createdBy(0)
+                    .build();
+
+            inAppNotificationRepository.save(notification);
+
+            // Push notification
+            String deviceToken = user.getFirebaseDeviceToken();
+            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+                try {
+                    Message firebaseMessage = Message.builder()
+                            .setNotification(Notification.builder()
+                                    .setTitle(notificationTitle)
+                                    .setBody(notificationMessage)
+                                    .build())
+                            .putData("type", "PROMOTION_EXPIRY")
+                            .putData("paymentId", String.valueOf(paymentId))
+                            .setToken(deviceToken)
+                            .build();
+
+                    String response = FirebaseMessaging.getInstance().send(firebaseMessage);
+                    logger.info("Promotion expiry push notification sent: " + response);
+                } catch (FirebaseMessagingException e) {
+                    logger.error("Error sending push notification for promotion expiry", e);
+                }
+            }
+
 
             return ResponseEntity.ok("Promotion expiry reminder email sent successfully to userId: " + userId);
         } catch (Exception e) {

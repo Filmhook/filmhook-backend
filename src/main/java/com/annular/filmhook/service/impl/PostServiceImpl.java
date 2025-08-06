@@ -25,12 +25,19 @@ import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.annular.filmhook.UserDetails;
@@ -85,6 +92,9 @@ public class PostServiceImpl implements PostService {
 	@Autowired
 	MediaFilesService mediaFilesService;
 
+	
+	@Autowired
+	private InAppNotificationRepository inAppNotificationRepo;
 	@Autowired
 	private UserRepository userRepository;
 
@@ -210,6 +220,8 @@ public class PostServiceImpl implements PostService {
 								.message("You have been tagged in a post by " + userFromDB.getName())
 								.createdOn(new Date())
 								.isRead(false)
+								 .adminReview(userFromDB.getAdminReview())
+		                            .Profession(userFromDB.getUserType())
 								.createdBy(postWebModel.getUserId())
 								.id(savedPost.getId())
 								.userType("Tagged") // Adjust as per your userType logic
@@ -624,6 +636,27 @@ public class PostServiceImpl implements PostService {
 	            }
 	            commentRepository.saveAndFlush(existingComment);
 	            totalLikes = existingComment.getLikesCount();
+	          
+	            if (likeRowToSaveOrUpdate.getStatus() &&
+					    existingComment != null &&
+					    existingComment.getCommentedBy() != null &&
+					    !existingComment.getCommentedBy().equals(likeWebModel.getUserId())) {
+
+					    User liker = userRepository.findById(likeWebModel.getUserId()).orElse(null);
+					    String likerName = liker != null ? liker.getName() : "Someone";
+
+					    logger.info("🔔 Triggering comment like notification for commentId: {}", existingComment.getCommentId());
+
+					    sendNotification(
+					        existingComment.getCommentedBy(),
+					        likeWebModel.getUserId(),
+					        "Someone Liked Your Comment",
+					        likerName + " liked your comment.",
+					        "COMMENT_LIKE",
+					        existingComment.getCommentId()
+					    );
+					
+				}
 
 	        } else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory()) && audition != null) {
 	            if (likeRowToSaveOrUpdate.getStatus()) {
@@ -641,6 +674,7 @@ public class PostServiceImpl implements PostService {
 	        logger.error("Error at addOrUpdateLike() -> {}", e.getMessage(), e);
 	        return null;
 	    }
+
 	}
 
 
@@ -659,6 +693,67 @@ public class PostServiceImpl implements PostService {
 				.updatedOn(likes.getUpdatedOn())
 				.build();
 	}
+	
+	@Scheduled(fixedRate = 1 * 60 * 1000) // every 1 minutes
+	public void sendBatchLikeNotifications() {
+	    List<Likes> unnotifiedLikes = likeRepository.findByStatusTrueAndNotifiedFalse();
+
+	    Map<Integer, List<Likes>> likesByPost = unnotifiedLikes.stream()
+	            .collect(Collectors.groupingBy(Likes::getPostId));
+
+	    for (Map.Entry<Integer, List<Likes>> entry : likesByPost.entrySet()) {
+	        Integer postId = entry.getKey();
+	        List<Likes> likes = entry.getValue();
+
+	        Posts post = postsRepository.findById(postId).orElse(null);
+	        if (post == null) continue;
+
+	        Integer postOwnerId = post.getUser().getUserId();
+
+	        List<Likes> validLikes = likes.stream()
+	                .filter(like -> !like.getLikedBy().equals(postOwnerId))
+	                .collect(Collectors.toList());
+
+	        if (validLikes.isEmpty()) continue;
+
+	        List<User> likers = userRepository.findAllById(
+	                validLikes.stream().map(Likes::getLikedBy).distinct().collect(Collectors.toList())
+	        );
+
+	        if (likers.isEmpty()) {
+	          	            continue;
+	        }
+
+	        // Create message
+	        String message;
+	        if (likers.size() == 1) {
+	            message = likers.get(0).getName() + " liked your post";
+	        } else if (likers.size() == 2) {
+	            message = likers.get(0).getName() + " and " + likers.get(1).getName() + " liked your post";
+	        } else {
+	            message = likers.get(0).getName() + ", " + likers.get(1).getName()
+	                    + " and " + (likers.size() - 2) + " others liked your post";
+	        }
+
+	        // ✅ Use existing sendNotification method
+	        sendNotification(
+	                postOwnerId, 
+	                likers.get(0).getUserId(), 
+	                "Someone Liked Your Post",
+	                message,
+	                "Like",
+	                postId 
+	        );
+
+	        // ✅ Mark likes as notified
+	        validLikes.forEach(like -> {
+	            like.setNotified(true);
+	            like.setUpdatedOn(new Date());
+	        });
+	        likeRepository.saveAll(validLikes);
+	    }
+	}
+
 
 	@Override
 	public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {
@@ -688,30 +783,117 @@ public class PostServiceImpl implements PostService {
 				postsRepository.saveAndFlush(post);
 
 				// If it's a reply to a comment, update the parent comment's reply count
-				if (!Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory())
-						&& commentInputWebModel.getCategory().equalsIgnoreCase(COMMENT)) {
+				  boolean isReply = !Utility.isNullOrBlankWithTrim(commentInputWebModel.getCategory()) &&
+		                    commentInputWebModel.getCategory().equalsIgnoreCase(COMMENT);
 
-					Integer parentCommentId = commentInputWebModel.getParentCommentId();
-					if (parentCommentId != null) {
-						Comment parent = commentRepository.findById(parentCommentId).orElse(null);
-						if (parent != null) {
-							int newReplyCount = !Utility.isNullOrZero(parent.getReplyCount())
-									? parent.getReplyCount() + 1
-											: 1;
-							parent.setReplyCount(newReplyCount);
-							commentRepository.saveAndFlush(parent);
-						}
-					}
-				}
+		            if (isReply) {
+		                Integer parentCommentId = commentInputWebModel.getParentCommentId();
+		                if (parentCommentId != null) {
+		                    Comment parent = commentRepository.findById(parentCommentId).orElse(null);
+		                    if (parent != null) {
+		                        int newReplyCount = !Utility.isNullOrZero(parent.getReplyCount()) ? parent.getReplyCount() + 1 : 1;
+		                        parent.setReplyCount(newReplyCount);
+		                        commentRepository.saveAndFlush(parent);
 
-				logger.info("Comment added under post [{}]", post.getId());
-				return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
-			}
+		                        if (!parent.getCommentedBy().equals(commentInputWebModel.getUserId())) {
+		                            User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+		                            String senderName = sender != null ? sender.getName() : "Someone";
+
+		                            sendNotification(
+		                                    parent.getCommentedBy(),
+		                                    commentInputWebModel.getUserId(),
+		                                    "Reply to Your Comment",
+		                                    senderName + " replied to your comment.",
+		                                    "COMMENT_REPLY",
+		                                    savedComment.getPostId()
+		                            );
+		                        }
+		                    }
+		                }
+		            }
+
+		            // 🔔 Always notify post owner if commenter is not the post creator
+		            if (!post.getCreatedBy().equals(commentInputWebModel.getUserId())) {
+		                User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+		                String commenterName = commenter != null ? commenter.getName() : "Someone";
+
+		                sendNotification(
+		                        post.getCreatedBy(),
+		                        commentInputWebModel.getUserId(),
+		                        "New Comment on Your Post",
+		                        commenterName + " commented on your post.",
+		                        "POST_COMMENT",
+		                        savedComment.getPostId()
+		                );
+		            }
+
+		            logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), commentInputWebModel.getUserId());
+		            logger.info("Comment added under post [{}]", post.getId());
+		            return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
+		        }
 		} catch (Exception e) {
 			logger.error("Error at addComment() -> {}", e.getMessage(), e);
 		}
 		return null;
 	}
+	
+	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId) {
+	    try {
+	        // Fetch sender and receiver details
+	        User userFromDB = userRepository.findById(senderId).orElse(null);
+	        User receiver = userRepository.findById(receiverId).orElse(null);
+
+	        if (userFromDB == null || receiver == null) {
+	            logger.warn("❗ Sender or Receiver not found. Notification not sent.");
+	            return;
+	        }
+
+	        // Create in-app notification
+	        InAppNotification notification = InAppNotification.builder()
+	                .senderId(senderId)
+	                .receiverId(receiverId)
+	                .title(title)
+	                .message(messageBody)
+	                .userType(userType)                // e.g., "COMMENT_LIKE", "POST_LIKE"
+	                .id(refId)                         
+	                 .adminReview(userFromDB.getAdminReview())
+	                .Profession(userFromDB.getUserType())
+	                .isRead(false)
+	                .createdBy(senderId)
+	                .createdOn(new Date())
+	                .build();
+
+	        inAppNotificationRepo.save(notification);
+	        logger.info("✅ In-app notification saved for user ID {}", receiverId);
+
+	        // Send Firebase push notification if device token exists
+	        String deviceToken = receiver.getFirebaseDeviceToken();
+            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+                try {
+                    Message message = Message.builder()
+                        .setNotification(Notification.builder()
+                            .setTitle(title)
+                            .setBody(messageBody)
+                            .build())
+                      .putData("refId", String.valueOf(refId))
+                        .setToken(deviceToken)
+                        .build();
+                    FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
+                    
+                    String response = FirebaseMessaging.getInstance(firebaseApp).send(message);
+                    logger.info("Successfully sent push notification: " + response);
+                } catch (FirebaseMessagingException e) {
+                    logger.error("Failed to send push notification", e);
+                }
+	        } else {
+	            logger.warn("⚠️ No Firebase token found for user ID: {}", receiverId);
+	        }
+
+	    } catch (Exception e) {
+	        logger.error("❌ Error sending notification to user ID {}: {}", receiverId, e.getMessage(), e);
+	    }
+	}
+
 
 
 	@Override

@@ -9,6 +9,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
@@ -39,6 +42,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -106,6 +111,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     BookingService bookingService;
+    
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Override
     public List<UserWebModel> getAllUsers() {
@@ -1446,15 +1454,94 @@ public class UserServiceImpl implements UserService {
         user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
         userRepository.save(user); // Save changes to the database
 
-//        // Send deactivation email
-//        boolean emailSent = sendVerificationEmail(user, false);
-//        if (!emailSent) {
-//            // Log the failure, but do not block the response
-//            System.err.println("Failed to send deactivation email to user: " + user.getEmail());
-//        }
-
+        // Send deactivation email
+        try {
+            boolean emailSent = sendVerificationEmail(user, false); // false = deactivation context
+            if (!emailSent) {
+                System.err.println("Failed to send deactivation email to user: " + user.getEmail());
+            }
+        } catch (Exception e) {
+            System.err.println("Error sending email: " + e.getMessage());
+        }
         return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
 	}
+	
+	
+	public boolean sendVerificationEmail(User user, boolean isActivation) {
+	    try {
+	        String to = user.getEmail();
+	        String name = user.getName();
+
+	        String subject = isActivation
+	                ? "✅ Your Account Has Been Activated"
+	                : "⚠️ Your Account Has Been Deactivated";
+
+	        String actionMessage = isActivation
+	                ? "Your account is now active. You can continue using all FilmHook services without interruption."
+	                : "Your account has been deactivated and you will no longer have access to FilmHook services.";
+
+	        StringBuilder content = new StringBuilder();
+	        content.append("<html><body style='font-family:Arial, sans-serif; padding:20px;'>")
+
+	            // Logo
+	            .append("<div style='text-align:center; margin-bottom:20px;'>")
+	            .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' width='170' alt='FilmHook Logo'>")
+	            .append("</div>")
+
+	            // Greeting and Message
+	            .append("<p style='font-size:12px; color:#333333;'>Hi <strong>").append(name).append("</strong>,</p>")
+	            .append("<p style='font-size:12px; color:#444444;'>").append(actionMessage).append("</p>")
+
+	            // Support Message
+	            .append("<p style='font-size:12px; color:#444444;'>If you did not request this change or think it’s a mistake, please contact our support team immediately.</p>")
+
+	            // Footer Info
+	            .append("<hr style='border:0;border-top:1px solid #e0e0e0;margin:30px 0;'>")
+	            .append("<p style='font-size:12px; color:#444444;'>Regards,<br><strong>FilmHook Team</strong><br>")
+	            .append("<a href='mailto:support@filmhook.com' style='color:#007bff;'>📧 support@filmhook.com</a><br>")
+	            .append("<a href='https://filmhook.com' style='color:#007bff;'>🌐 www.filmhook.com</a></p>")
+
+	            // App Links
+	            .append("<p style='font-size:15px;'><strong>📲 Get the App:</strong></p><p>")
+	            .append("<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'>")
+	            .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30' style='margin-right:10px;'></a>")
+	            .append("<a href='#'>")
+	            .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
+
+	            // Social Media Icons
+	            .append("<p style='font-size:15px;'><strong>📢 Follow Us:</strong></p><p>")
+	            .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='25' style='margin-right:8px;'></a>")
+	            .append("<a href='https://x.com/Filmhook_Apps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25' style='margin-right:8px;'></a>")
+	            .append("<a href='https://www.threads.net/@filmhookapps/'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25' style='margin-right:8px;'></a>")
+	            .append("<a href='https://www.instagram.com/filmhookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25' style='margin-right:8px;'></a>")
+	            .append("<a href='https://youtube.com/@film-hookapps'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='25' style='margin-right:8px;'></a>")
+	            .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25'></a>")
+	            .append("</p>")
+
+	            // Copyright
+	            .append("<p style='font-size:12px; color:#aaaaaa; text-align:center;'>")
+	            .append("This is an automated email. Please do not reply.<br>")
+	            .append("&copy; ").append(java.time.Year.now()).append(" FilmHook. All rights reserved.")
+	            .append("</p>")
+
+	            .append("</body></html>");
+
+	        MimeMessage message = mailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+	        helper.setTo(to);
+	        helper.setSubject(subject);
+	        helper.setText(content.toString(), true);
+
+	        mailSender.send(message);
+	        return true;
+
+	    } catch (MessagingException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+
 
 	@Override
 	public ResponseEntity<?> updateRerferrralcode(UserWebModel userWebModel) {

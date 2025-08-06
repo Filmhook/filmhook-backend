@@ -66,5 +66,8 @@ public class Likes {
 
     @Column(name = "liveDate")
     private String liveDate;
+    
+    @Column(name = "is_notified")
+    private Boolean notified = false;
 
 }

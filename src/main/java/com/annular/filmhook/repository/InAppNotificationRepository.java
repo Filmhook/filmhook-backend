@@ -1,10 +1,17 @@
 package com.annular.filmhook.repository;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+
+import javax.transaction.Transactional;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.InAppNotification;
@@ -20,7 +27,16 @@ public interface InAppNotificationRepository extends JpaRepository<InAppNotifica
 	@Query("SELECT n FROM InAppNotification n WHERE n.id = :marketPlaceChatId")
 	List<InAppNotification> findByChatIds(Integer marketPlaceChatId);
 
-	
+	List<InAppNotification> findByReceiverIdAndCreatedOnAfterOrderByCreatedOnDesc(Integer receiverId, Date createdOn);
+
+	  @Modifying
+	    @Transactional
+	    @Query("UPDATE InAppNotification n SET n.isDeleted = true WHERE n.inAppNotificationId IN (:ids)")
+	    void softDeleteByIds(@Param("ids") List<Integer> ids);
+	  
+	  Page<InAppNotification> findByReceiverIdAndCreatedOnBetweenAndIsDeletedFalseOrderByCreatedOnDesc(
+			    Integer receiverId, Date startDate, Date endDate, Pageable pageable);
+
 
 	
 	

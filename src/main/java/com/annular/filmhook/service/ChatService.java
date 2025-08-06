@@ -20,8 +20,10 @@ public interface ChatService {
 	Response getLastMessageById(ChatWebModel message);
 
 	Response getAllSearchByChat(String searchKey);
-
-	Response getInAppNotification();
+//
+//	Response getInAppNotification();
+	
+	Response getInAppNotification(int page, int size);
 
 	Response updateInAppNotification(InAppNotificationWebModel inAppNotificationWebModel);
 

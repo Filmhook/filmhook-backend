@@ -119,9 +119,11 @@ public class ChatController {
 	}
 
 	@GetMapping("getInAppNotification")
-	public ResponseEntity<Response> getInAppNotification() {
+	public ResponseEntity<Response> getInAppNotifications(
+	        @RequestParam(defaultValue = "0") int page,
+	        @RequestParam(defaultValue = "20") int size) {
 		try {
-			Response response = chatService.getInAppNotification();
+			Response response = chatService.getInAppNotification(page, size);
 			return ResponseEntity.ok().body(response);
 		} catch (Exception e) {
 			logger.error("Error at getInAppNotification -> {}", e.getMessage());
