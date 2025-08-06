@@ -20,19 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
-
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.ChatMediaDeleteTracker;
 import com.annular.filmhook.model.InAppNotification;
@@ -81,9 +73,6 @@ public class ChatServiceImpl implements ChatService {
 
 	@Autowired
 	UserDetails userDetails;
-
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
     
 	@Autowired
 	private UserService userService;
