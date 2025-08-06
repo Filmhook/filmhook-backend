@@ -694,7 +694,7 @@ public class PostServiceImpl implements PostService {
 				.build();
 	}
 	
-	@Scheduled(fixedRate = 5 * 60 * 1000) // every 5 minutes
+	@Scheduled(fixedRate = 1 * 60 * 1000) // every 1 minutes
 	public void sendBatchLikeNotifications() {
 	    List<Likes> unnotifiedLikes = likeRepository.findByStatusTrueAndNotifiedFalse();
 
