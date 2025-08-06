@@ -610,6 +610,7 @@ public class PostServiceImpl implements PostService {
 	                .commentId(likeWebModel.getCommentId())
 	                .auditionId(likeWebModel.getAuditionId())
 	                .likedBy(likeWebModel.getUserId())
+	                .notified(false)
 	                .status(true)
 	                .createdBy(likeWebModel.getUserId())
 	                .createdOn(new Date())
@@ -695,7 +696,7 @@ public class PostServiceImpl implements PostService {
 				.build();
 	}
 	
-	@Scheduled(fixedRate = 1 * 60 * 1000) // every 1 minutes
+	@Scheduled(fixedRate = 1 * 60 * 1000) // every 5 minutes
 	public void sendBatchLikeNotifications() {
 	    List<Likes> unnotifiedLikes = likeRepository.findByStatusTrueAndNotifiedFalse();
 
@@ -743,7 +744,7 @@ public class PostServiceImpl implements PostService {
 	                "Someone Liked Your Post",
 	                message,
 	                "Like",
-	                postId 
+	                postId  
 	        );
 
 	        // ✅ Mark likes as notified
@@ -754,7 +755,6 @@ public class PostServiceImpl implements PostService {
 	        likeRepository.saveAll(validLikes);
 	    }
 	}
-
 
 	@Override
 	public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {

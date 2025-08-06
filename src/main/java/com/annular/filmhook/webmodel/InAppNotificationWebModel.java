@@ -31,6 +31,7 @@ public class InAppNotificationWebModel {
 	private Date updatedOn;
 	private String userType;
 	private String profilePicUrl;
+	private String profilePicUrl2;
 	private Integer id;
 	private String postId;
 	private String senderName;
