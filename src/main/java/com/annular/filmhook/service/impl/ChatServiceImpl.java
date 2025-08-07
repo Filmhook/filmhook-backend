@@ -5,6 +5,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -845,55 +846,84 @@ public class ChatServiceImpl implements ChatService {
 
 
 
-	@Override
 	public Response getInAppNotification(int page, int size) {
-		try {
-			Integer userId = userDetails.userInfo().getId();
+	    try {
+	        Integer userId = userDetails.userInfo().getId();
 
-			// Date range: from 30 days ago to now
-			Calendar calendar = Calendar.getInstance();
-			Date endDate = calendar.getTime(); // now
-			calendar.add(Calendar.DAY_OF_MONTH, -30);
-			Date startDate = calendar.getTime();
+	        // Get user
+	        Optional<User> userOptional = userRepository.findById(userId);
+	        if (!userOptional.isPresent()) {
+	            return new Response(0, "User not found", null);
+	        }
 
-			Pageable pageable = PageRequest.of(page, size, Sort.by("createdOn").descending());
+	        User user = userOptional.get();
 
-			Page<InAppNotification> pageResult = inAppNotificationRepository
-					.findByReceiverIdAndCreatedOnBetweenAndIsDeletedFalseOrderByCreatedOnDesc(
-							userId, startDate, endDate, pageable
-							);
+	        // Get last notification open time
+	        Date lastOpenedTime = user.getLastNotificationOpenTime();
+	        if (lastOpenedTime == null) {
+	            Calendar cal = Calendar.getInstance();
+	            cal.set(2000, Calendar.JANUARY, 1); // set default old date
+	            lastOpenedTime = cal.getTime();
+	        }
 
-			List<InAppNotification> notifications = pageResult.getContent();
+	        // ✅ Make final for lambda
+	        final Date finalLastOpenedTime = lastOpenedTime;
 
-			if (notifications.isEmpty()) {
-				return new Response(0, "No Notifications", "No notifications found for the given user ID");
-			}
+	        // Reset open time to now
+	        Date now = new Date();
+	        user.setLastNotificationOpenTime(now);
+	        userRepository.save(user); // Save immediately to avoid stale time
 
-			long unreadCount = notifications.stream()
-					.filter(notification -> !notification.getIsRead())
-					.count();
+	        // Set 30-day filter range
+	        Calendar calendar = Calendar.getInstance();
+	        Date endDate = calendar.getTime();
+	        calendar.add(Calendar.DAY_OF_MONTH, -30);
+	        Date startDate = calendar.getTime();
 
-			// Group notifications by date
-			Map<String, List<InAppNotificationWebModel>> grouped = new LinkedHashMap<>();
-			LocalDate today = LocalDate.now(ZoneOffset.UTC);
-			LocalDate yesterday = today.minusDays(1);
+	        Pageable pageable = PageRequest.of(page, size, Sort.by("createdOn").descending());
 
-			for (InAppNotification notification : notifications) {
-				LocalDate createdDate = notification.getCreatedOn()
-						.toInstant()
-						.atZone(ZoneOffset.UTC)
-						.toLocalDate();
+	        Page<InAppNotification> pageResult = inAppNotificationRepository
+	                .findByReceiverIdAndCreatedOnBetweenAndIsDeletedFalseOrderByCreatedOnDesc(
+	                        userId, startDate, endDate, pageable);
 
-				String group;
-				if (createdDate.equals(today)) {
-					group = "Today";
-				} else if (createdDate.equals(yesterday)) {
-					group = "Yesterday";
-				} else {
-					group = "Earlier";
-				}
+	        List<InAppNotification> notifications = pageResult.getContent();
 
-				InAppNotificationWebModel dto = new InAppNotificationWebModel();
+	        if (notifications.isEmpty()) {
+	            Map<String, Object> emptyResponse = new HashMap<>();
+	            emptyResponse.put("notifications", Collections.emptyMap());
+	            emptyResponse.put("unreadCount", 0);
+	            emptyResponse.put("unseenCount", 0); // still reset
+	            emptyResponse.put("totalPages", pageResult.getTotalPages());
+	            emptyResponse.put("currentPage", pageResult.getNumber());
+	            emptyResponse.put("totalItems", pageResult.getTotalElements());
+
+	            return new Response(0, "No Notifications", emptyResponse);
+	        }
+
+	        // Count unread
+	        long unreadCount = notifications.stream()
+	                .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
+	                .count();
+
+	        // Count unseen: created after lastOpenedTime
+	        long unseenCount = notifications.stream()
+	                .filter(n -> n.getCreatedOn().after(finalLastOpenedTime))
+	                .count();
+
+	        // Group by Today / Yesterday / Earlier
+	        Map<String, List<InAppNotificationWebModel>> grouped = new LinkedHashMap<>();
+	        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+	        LocalDate yesterday = today.minusDays(1);
+
+	        for (InAppNotification notification : notifications) {
+	            LocalDate createdDate = notification.getCreatedOn()
+	                    .toInstant().atZone(ZoneOffset.UTC).toLocalDate();
+
+	            String group = createdDate.equals(today) ? "Today"
+	                         : createdDate.equals(yesterday) ? "Yesterday"
+	                         : "Earlier";
+
+	            InAppNotificationWebModel dto = new InAppNotificationWebModel();
 				dto.setInAppNotificationId(notification.getInAppNotificationId());
 				dto.setSenderId(notification.getSenderId());
 				dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
@@ -923,53 +953,55 @@ public class ChatServiceImpl implements ChatService {
 				dto.setProfession(notification.getProfession());
 				dto.setAdminReview(notification.getAdminReview());
 
-				if ("marketPlace".equals(notification.getUserType())) {
-					marketPlaceChatRepository.findByIds(notification.getId()).ifPresentOrElse(
-							chat -> {
-								dto.setAccept(chat.getAccept());
-								dto.setAdditionalData(chat.getAccept() != null ? 
-										(chat.getAccept() ? "Accepted" : "Declined") : "null");
-							},
-							() -> {
-								dto.setAccept(null);
-								dto.setAdditionalData("null");
-							}
-							);
-				} else if ("shootingLocation".equals(notification.getUserType())) {
-					shootingLocationChatRepository.findByIds(notification.getId()).ifPresentOrElse(
-							chat -> {
-								dto.setAccept(chat.getAccept());
-								dto.setAdditionalData(chat.getAccept() != null ? 
-										(chat.getAccept() ? "Accepted" : "Declined") : "null");
-							},
-							() -> {
-								dto.setAccept(null);
-								dto.setAdditionalData("null");
-							}
-							);
-				} else {
-					dto.setAccept(null);
-					dto.setAdditionalData("null");
-				}
 
-				grouped.computeIfAbsent(group, k -> new ArrayList<>()).add(dto);
-			}
+	            // Handle accept/additionalData
+	            if ("marketPlace".equals(notification.getUserType())) {
+	                marketPlaceChatRepository.findByIds(notification.getId()).ifPresentOrElse(
+	                        chat -> {
+	                            dto.setAccept(chat.getAccept());
+	                            dto.setAdditionalData(chat.getAccept() != null ?
+	                                    (chat.getAccept() ? "Accepted" : "Declined") : "null");
+	                        },
+	                        () -> {
+	                            dto.setAccept(null);
+	                            dto.setAdditionalData("null");
+	                        });
+	            } else if ("shootingLocation".equals(notification.getUserType())) {
+	                shootingLocationChatRepository.findByIds(notification.getId()).ifPresentOrElse(
+	                        chat -> {
+	                            dto.setAccept(chat.getAccept());
+	                            dto.setAdditionalData(chat.getAccept() != null ?
+	                                    (chat.getAccept() ? "Accepted" : "Declined") : "null");
+	                        },
+	                        () -> {
+	                            dto.setAccept(null);
+	                            dto.setAdditionalData("null");
+	                        });
+	            } else {
+	                dto.setAccept(null);
+	                dto.setAdditionalData("null");
+	            }
 
-			// Build response map
-			Map<String, Object> response = new HashMap<>();
-			response.put("notifications", grouped); // grouped by Today, Yesterday, Earlier
-			response.put("unreadCount", unreadCount);
-			response.put("totalPages", pageResult.getTotalPages());
-			response.put("currentPage", pageResult.getNumber());
-			response.put("totalItems", pageResult.getTotalElements());
+	            grouped.computeIfAbsent(group, k -> new ArrayList<>()).add(dto);
+	        }
 
-			return new Response(1, "Success", response);
+	        // Prepare final response
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("notifications", grouped);
+	        response.put("unreadCount", unreadCount);
+	        response.put("unseenCount", unseenCount); // ✅ Add this to response
+	        response.put("totalPages", pageResult.getTotalPages());
+	        response.put("currentPage", pageResult.getNumber());
+	        response.put("totalItems", pageResult.getTotalElements());
 
-		} catch (Exception e) {
-			logger.error("Error fetching notifications -> {}", e.getMessage(), e);
-			return new Response(0, "Error", "An error occurred while fetching notifications");
-		}
+	        return new Response(1, "Success", response);
+
+	    } catch (Exception e) {
+	        logger.error("Error fetching notifications -> {}", e.getMessage(), e);
+	        return new Response(0, "Error", "An error occurred while fetching notifications");
+	    }
 	}
+
 
 	@Override
 	public Response updateInAppNotification(InAppNotificationWebModel inAppNotificationWebModel) {

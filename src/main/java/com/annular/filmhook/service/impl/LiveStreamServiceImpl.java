@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,8 +63,8 @@ public class LiveStreamServiceImpl implements LiveStreamService {
             liveDetailsRepository.save(liveDetails);
 
             // Fetch all active users
-            List<User> activeUsers = userRepository.findAllActiveUsers();
-
+            List<User> activeUsers = userRepository.findAllActiveUsers();     
+            
             // Define notification details
             String notificationTitle = "New Live Stream Started!";
             String notificationMessage = "A new live stream has started on channel: " + liveDetails.getChannelName();
@@ -71,9 +72,11 @@ public class LiveStreamServiceImpl implements LiveStreamService {
                     .orElseThrow(() -> new RuntimeException("Sender not found"));
            
             for (User user : activeUsers) {
+            	
                 // Check if the user is the one who started the live stream
                 if (!user.getUserId().equals(liveDetails.getUserId()) && user.getStatus() && user.getFirebaseDeviceToken() != null) {
-              
+ 
+            	// Save in-app notification
                     InAppNotification inAppNotification = InAppNotification.builder()
                             .senderId(liveDetails.getUserId())
                             .receiverId(user.getUserId())

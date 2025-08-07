@@ -217,7 +217,7 @@ public class PostServiceImpl implements PostService {
 								.senderId(postWebModel.getUserId())
 								.receiverId(taggedUserId)
 								.title("You've been tagged in a post")
-								.message("You have been tagged in a post by "
+								.message("tagged you in a post.")
 								.createdOn(new Date())
 								.isRead(false)
 								 .adminReview(userFromDB.getAdminReview())
@@ -242,7 +242,6 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
-
 	@Override
 	public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
 		try {
