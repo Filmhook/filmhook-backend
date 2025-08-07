@@ -82,7 +82,5 @@ public class InAppNotification {
     
     @Column(name = "senderId2")
     private Integer senderId2;
-
-  
-    
+      
 }
