@@ -79,6 +79,9 @@ public class InAppNotification {
         
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
+    
+    @Column(name = "senderId2")
+    private Integer senderId2;
 
   
     

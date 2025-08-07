@@ -925,26 +925,35 @@ public class ChatServiceImpl implements ChatService {
 	                         : "Earlier";
 
 	            InAppNotificationWebModel dto = new InAppNotificationWebModel();
-	            dto.setInAppNotificationId(notification.getInAppNotificationId());
-	            dto.setSenderId(notification.getSenderId());
-	            dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
-	            dto.setReceiverId(notification.getReceiverId());
-	            dto.setTitle(notification.getTitle());
-	            dto.setMessage(notification.getMessage());
-	            dto.setCreatedOn(notification.getCreatedOn());
-	            dto.setIsRead(notification.getIsRead());
-	            dto.setCurrentStatus(notification.getCurrentStatus());
-	            dto.setCreatedBy(notification.getCreatedBy());
-	            dto.setUpdatedBy(notification.getUpdatedBy());
-	            dto.setUpdatedOn(notification.getUpdatedOn());
-	            dto.setUserType(notification.getUserType());
-	            dto.setId(notification.getId());
-	            dto.setPostId(notification.getPostId());
-	            dto.setProfession(notification.getProfession());
-	            dto.setAdminReview(notification.getAdminReview());
+				dto.setInAppNotificationId(notification.getInAppNotificationId());
+				dto.setSenderId(notification.getSenderId());
+				dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
+				dto.setProfilePicUrl2(userService.getProfilePicUrl(notification.getSenderId2()));
+				dto.setReceiverId(notification.getReceiverId());
+				dto.setTitle(notification.getTitle());
+				dto.setMessage(notification.getMessage());
+				dto.setCreatedOn(notification.getCreatedOn());
+				dto.setIsRead(notification.getIsRead());
+				dto.setCurrentStatus(notification.getCurrentStatus());
+				dto.setSenderId2(notification.getSenderId2());
+				Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
+				dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
 
-	            Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
-	            dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
+				if (notification.getSenderId2() != null) {
+					Optional<User> sender2 = userRepository.getByUserId(notification.getSenderId2());
+					dto.setSenderName2(sender2.map(User::getName).orElse("Unknown"));
+				} else {
+					dto.setSenderName2(null);
+				}
+				dto.setCreatedBy(notification.getCreatedBy());
+				dto.setUpdatedBy(notification.getUpdatedBy());
+				dto.setUpdatedOn(notification.getUpdatedOn());
+				dto.setUserType(notification.getUserType());
+				dto.setId(notification.getId());
+				dto.setPostId(notification.getPostId());
+				dto.setProfession(notification.getProfession());
+				dto.setAdminReview(notification.getAdminReview());
+
 
 	            // Handle accept/additionalData
 	            if ("marketPlace".equals(notification.getUserType())) {

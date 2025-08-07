@@ -317,6 +317,16 @@ public class PostServiceImpl implements PostService {
 		List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
 		return responseList.isEmpty() ? null : responseList.get(0);
 	}
+	
+	@Override
+	public PostWebModel getPostById(Integer id) {
+	    Posts post = postsRepository.findById(id).orElse(null);
+	    if (post == null) {
+	        return null;
+	    }
+	    List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
+	    return responseList.isEmpty() ? null : responseList.get(0);
+	}
 
 	private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
 		List<PostWebModel> responseList = new ArrayList<>();

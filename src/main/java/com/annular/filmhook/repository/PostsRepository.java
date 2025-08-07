@@ -45,6 +45,10 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Query("SELECT p FROM Posts p where p.id = :postId")
 	Optional<Posts> findByIds(Integer postId);
 
+  
+    @Query("SELECT p FROM Posts p where p.id = :postId")
+   	Optional<Posts> findById(Integer postId);
+    
 //    @Modifying
 //    @Query("UPDATE Posts p SET p.promoteStatus = :b WHERE p.id = :postId")
 //	void updatePromoteStatus(Integer postId, boolean b);
