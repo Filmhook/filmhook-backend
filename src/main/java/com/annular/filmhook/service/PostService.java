@@ -21,6 +21,8 @@ public interface PostService {
     List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) throws IOException;
 
     PostWebModel getPostByPostId(String postId);
+    
+    PostWebModel getPostById(Integer id);
 
     Resource getPostFile(Integer userId, String category, String fileId, String fileType);
 

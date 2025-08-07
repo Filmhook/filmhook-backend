@@ -422,6 +422,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                     .userType("PROMOTION_EXPIRY")
                     .id(paymentId)
                     .isRead(false)
+                    .isDeleted(false)
                     .createdOn(new Date())
                     .createdBy(0)
                     .build();

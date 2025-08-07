@@ -21,6 +21,7 @@ public class InAppNotificationWebModel {
 
 	private Integer inAppNotificationId;
 	private Integer senderId;
+	private Integer senderId2;
 	private Integer receiverId;
 	private String title;
 	private String message;
@@ -31,9 +32,11 @@ public class InAppNotificationWebModel {
 	private Date updatedOn;
 	private String userType;
 	private String profilePicUrl;
+	private String profilePicUrl2;
 	private Integer id;
 	private String postId;
 	private String senderName;
+	private String senderName2;
 	private Boolean accept;
 	private String additionalData;
 	private Boolean currentStatus;

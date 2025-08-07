@@ -99,6 +99,18 @@ public class PostController {
     }
 
 
+    @GetMapping("/{Id}")
+    public Response getPostsById(@PathVariable Integer Id) {
+        try {
+            PostWebModel output = postService.getPostById(Id);
+            if (output != null) return new Response(1, "Post(s) found successfully...", output);
+            else return new Response(-1, "No Post(s) available...", null);
+        } catch (Exception e) {
+            logger.error("Error at getPostsByPostId() -> {}", e.getMessage());
+        }
+        return new Response(-1, "Post files were not found...", null);
+    }
+    
     @GetMapping("/view/{postId}")
     public Response getPostsByPostId(@PathVariable String postId) {
         try {
