@@ -48,8 +48,8 @@ public class S3Util {
 	                    .type(ProfileFile.Type.CREDENTIALS)  // Specify the type!
 
 
- // .content(Paths.get("C:\\.aws\\credentials.txt")) // Your custom credentials file path
- .content(Paths.get("/home/ubuntu/.aws/credentials.txt"))
+ .content(Paths.get("C:\\.aws\\credentials.txt")) // Your custom credentials file path
+ //.content(Paths.get("/home/ubuntu/.aws/credentials.txt"))
 
 	                    .build())
 	            .build();
