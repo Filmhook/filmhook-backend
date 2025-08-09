@@ -917,7 +917,8 @@ public class PostServiceImpl implements PostService {
 			                        "Reply to Your Comment",
 			                       " replied to your comment.",
 			                        "COMMENT_REPLY",
-			                        savedComment.getCommentId()         // Use commentId for context
+			                        comment.getCommentId(), 
+			                        post.getPostId()// Use commentId for context
 			                    );
 			                }
 			            }
@@ -933,7 +934,8 @@ public class PostServiceImpl implements PostService {
 			                "New Comment on Your Post",
 			                commenterName + " commented on your post.",
 			                "POST_COMMENT",
-			                savedComment.getPostId()
+			                comment.getCommentId(),
+			                post.getPostId()
 			            );
 			        }
 
@@ -950,7 +952,7 @@ public class PostServiceImpl implements PostService {
 	
 	
 	
-	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId) {
+	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId, String postId) {
 	    try {
 	        // Step 1: Validate users
 	        Optional<User> senderOpt = userRepository.findById(senderId);
@@ -972,7 +974,7 @@ public class PostServiceImpl implements PostService {
 	            .message(messageBody)
 	            .userType(userType)               
 	            .id(refId)   
-	            
+	            .postId(postId)
 	            .adminReview(sender.getAdminReview())
 	            .Profession(sender.getUserType()) 
 	            .isRead(false)
