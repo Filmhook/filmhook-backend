@@ -274,7 +274,6 @@ public class ChatServiceImpl implements ChatService {
 									 .putData("type", "chat")
 								        .putData("chatId", String.valueOf(chat.getChatId()))
 								        .putData("senderId", String.valueOf(user.getUserId()))
-								        .putData("deepLink", "filmhook://chat?chatId=" + chat.getChatId() + "&senderId=" + user.getUserId())
 								        .setToken(deviceToken)
 									.build();
 
