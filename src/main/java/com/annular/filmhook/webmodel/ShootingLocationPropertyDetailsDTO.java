@@ -1,11 +1,13 @@
 package com.annular.filmhook.webmodel;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.model.PropertyAvailabilityDate;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -109,7 +111,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<String> videoWalkthrough;
 	
 
-	private Date createdOn;
+	private LocalDate createdOn;
 	private Integer createdBy;
 	private Boolean status;
 

@@ -271,8 +271,11 @@ public class ChatServiceImpl implements ChatService {
 											.setTitle(notificationTitle)
 											.setBody(notificationMessage)
 											.build())
-									.putData("chatId", String.valueOf(chat.getChatId()))
-									.setToken(deviceToken)
+									 .putData("type", "chat")
+								        .putData("chatId", String.valueOf(chat.getChatId()))
+								        .putData("senderId", String.valueOf(user.getUserId()))
+								        .putData("deepLink", "filmhook://chat?chatId=" + chat.getChatId() + "&senderId=" + user.getUserId())
+								        .setToken(deviceToken)
 									.build();
 
 							String response = FirebaseMessaging.getInstance().send(message);

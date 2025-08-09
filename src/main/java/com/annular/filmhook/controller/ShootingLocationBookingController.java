@@ -4,6 +4,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.ShootingLocationBooking;
 import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.model.ShootingLocationPayment;
+import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
 import com.annular.filmhook.repository.ShootingLocationPaymentRepository;
 import com.annular.filmhook.service.ShootingLocationBookingService;
@@ -12,6 +13,7 @@ import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -267,6 +269,23 @@ public class ShootingLocationBookingController {
 	    } catch (Exception e) {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 	                .body(new Response(0, "Error fetching retry details: " + e.getMessage(), null));
+	    }
+	}
+	
+	@GetMapping("/{bookingId}/property")
+	public ResponseEntity<?> getPropertyByBookingId(@PathVariable Integer bookingId) {
+	    try {
+	        ShootingLocationPropertyDetailsDTO property = bookingService.getPropertyByBookingId(bookingId);
+
+	        if (property != null) {
+	            return ResponseEntity.ok(new Response(1, "success", property));
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new Response(-1, "fail", "Property not found for given booking ID"));
+	        }
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "error", "An error occurred while fetching property details"));
 	    }
 	}
 

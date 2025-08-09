@@ -1,6 +1,8 @@
 package com.annular.filmhook.service;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.PostView;
+import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.LikeWebModel;
@@ -9,6 +11,7 @@ import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
 
 import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.util.List;
@@ -51,5 +54,10 @@ public interface PostService {
 
 	PostView trackPostView(Integer postId, Integer userId);
 
+	
+	ResponseEntity<Response> getCommentById(Integer commentId);
+	
+
+	Posts getTaggedPostById(Integer taggedId);
 
 }

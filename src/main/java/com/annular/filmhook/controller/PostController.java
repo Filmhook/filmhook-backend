@@ -2,6 +2,7 @@ package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.PostView;
+import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.service.PostService;
 
 import com.annular.filmhook.util.Utility;
@@ -37,6 +38,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -300,5 +302,22 @@ public class PostController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/comment/{commentId}")
+    public ResponseEntity<Response> getCommentById(@PathVariable Integer commentId) {
+        return postService.getCommentById(commentId);
+    }
+    
+    
+    @GetMapping("/getTaggedPost/{taggedId}")
+    public ResponseEntity<?> getTaggedPost(@PathVariable Integer taggedId) {
+        try {
+            Posts post = postService.getTaggedPostById(taggedId);
+            return ResponseEntity.ok(post);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tagged post not found");
+        }
+    }
+
 
 }

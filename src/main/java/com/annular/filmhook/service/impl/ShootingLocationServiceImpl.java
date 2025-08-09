@@ -359,7 +359,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.updatedBy(dto.getUserId())
 					.updatedOn(LocalDateTime.now())
 					.category(category)
-					 .subCategory(subCategory)
+					.subCategory(subCategory)
 					.types(type)
 					.user(user)
 					.subcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()))

@@ -38,9 +38,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
@@ -49,6 +52,7 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -900,7 +904,7 @@ public class PostServiceImpl implements PostService {
 			                        parent.getCommentedBy(),            // to
 			                        commentInputWebModel.getUserId(),                  // from
 			                        "Reply to Your Comment",
-			                        senderName + " replied to your comment.",
+			                       " replied to your comment.",
 			                        "COMMENT_REPLY",
 			                        savedComment.getCommentId()         // Use commentId for context
 			                    );
@@ -931,6 +935,9 @@ public class PostServiceImpl implements PostService {
 			    }
 			    return null;
 			}
+	
+	
+	
 	
 	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId) {
 	    try {
@@ -999,9 +1006,36 @@ public class PostServiceImpl implements PostService {
 	    }
 	}
 
+	@Override
+	public ResponseEntity<Response> getCommentById(Integer commentId) {
+	    try {
 
+	        Comment comment = commentRepository.findByCommentId(commentId)
+	                .orElseThrow(() -> new RuntimeException("Comment not found"));
 
+	        Posts post = postsRepository.findById(comment.getPostId()).orElse(null);
+	       
+	        int commentCount = (post != null && post.getCommentsCount() != null)
+	                ? post.getCommentsCount()
+	                : 0;
 
+	        CommentOutputWebModel output = this.transformCommentData(List.of(comment), commentCount).get(0);
+	    
+	        return ResponseEntity.ok(new Response(1, "success", output));
+
+	    } catch (RuntimeException e) {
+	      
+	        logger.warn("Comment not found for ID: {}", commentId);
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(new Response(-1, "fail", "Comment not found for ID: " + commentId));
+
+	    } catch (Exception e) {
+	     
+	        logger.error("Unexpected error in getCommentById(): {}", e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "error", "Internal server error occurred"));
+	    }
+	}
 
 	@Override
 	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
@@ -1055,7 +1089,6 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
-
 
 	private List<CommentOutputWebModel> transformCommentData(List<Comment> commentData, Integer totalCommentCount) {
 		List<CommentOutputWebModel> commentOutWebModelList = new ArrayList<>();
@@ -1314,6 +1347,18 @@ public class PostServiceImpl implements PostService {
 		}
 
 		return existing.orElseThrow();
+	}
+
+	@Override
+	public Posts getTaggedPostById(Integer taggedId) {
+	    Optional<PostTags> postTagOptional = postTagsRepository.findById(taggedId);
+
+	    if (postTagOptional.isPresent()) {
+	        Integer postId = postTagOptional.get().getPostId();
+	        return postsRepository.findById(postId).orElseThrow(() -> new NoSuchElementException("Post not found"));
+	    } else {
+	        throw new NoSuchElementException("Tag not found");
+	    }
 	}
 
 

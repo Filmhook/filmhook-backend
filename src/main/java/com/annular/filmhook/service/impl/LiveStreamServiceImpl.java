@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -244,4 +245,41 @@ public class LiveStreamServiceImpl implements LiveStreamService {
         }
 
     }
+    
+    @Override
+    public ResponseEntity<?> getLiveDetailsByChannelId(Integer liveChannelId) {
+        try {
+            // Fetch live channel by primary key (channel ID)
+            LiveChannel liveChannel = liveDetailsRepository.findById(liveChannelId)
+                    .orElseThrow(() -> new RuntimeException("Live details not found for channel ID: " + liveChannelId));
+
+            // Prepare response map
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("channelId", liveChannel.getLiveChannelId());
+            responseMap.put("channelName", liveChannel.getChannelName());
+            responseMap.put("userId", liveChannel.getUserId());
+            responseMap.put("token", liveChannel.getToken());
+            responseMap.put("endTime", liveChannel.getEndTime());
+            responseMap.put("startTime", liveChannel.getStartTime());
+            responseMap.put("liveDate", liveChannel.getLiveDate());
+            responseMap.put("liveIsActive", liveChannel.getLiveIsActive());
+            responseMap.put("liveId", liveChannel.getLiveId());
+
+            // Add username if available
+            User user = userRepository.findById(liveChannel.getUserId()).orElse(null);
+            responseMap.put("username", user != null ? user.getName() : "Unknown");
+
+            return ResponseEntity.ok(new Response(1, "success", responseMap));
+
+        } catch (RuntimeException e) {
+            logger.warn("Live channel not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(-1, "fail", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error fetching live details by channel ID: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "error", "Internal server error occurred"));
+        }
+    }
+
 }
