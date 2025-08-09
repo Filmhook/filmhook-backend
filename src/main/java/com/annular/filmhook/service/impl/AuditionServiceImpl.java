@@ -1445,9 +1445,9 @@ public class AuditionServiceImpl implements AuditionService {
 
 	                auditionWebModelsList.add(auditionWebModel);
 	            }
-	            response.put("Audition List", auditionWebModelsList);
+	            response.put("auditionList", auditionWebModelsList);
 	        } else {
-	            response.put("No auditions found", "");
+	            response.put("auditionList", "No auditions found");
 	        }
 	    } catch (Exception e) {
 	        logger.error("get audition by sub-category Exception -> {}", e.getMessage());

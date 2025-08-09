@@ -740,7 +740,7 @@ public class PostServiceImpl implements PostService {
 
 	            if (validLikes.isEmpty()) continue;
 
-	            sendBatchNotification(validLikes, postOwnerId, "Someone Liked Your Post", "Like", postId);
+	            sendBatchNotification(validLikes, postOwnerId, "Someone Liked Your Post", "Like", postId, post.getPostId());
 	        }
 	    }
 
@@ -759,11 +759,11 @@ public class PostServiceImpl implements PostService {
 
 	            if (validLikes.isEmpty()) continue;
 
-	            sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId);
+	            sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId, comment.getPost().getPostId());
 	        }
 	    }
 
-	    private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type, Integer refId) {
+	    private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type, Integer refId, String postId) {
 	        List<User> likers = userRepository.findAllById(
 	                validLikes.stream().map(Likes::getLikedBy).distinct().collect(Collectors.toList())
 	        );
@@ -784,7 +784,7 @@ public class PostServiceImpl implements PostService {
 	            senderId2 = likers.get(1).getUserId();
 	        }
 
-	     	            sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId);
+	     	            sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId, postId);
 	        
 
 	        validLikes.forEach(like -> {
@@ -803,7 +803,7 @@ public class PostServiceImpl implements PostService {
 	            String title,
 	            String messageBody,
 	            String userType,
-	            Integer refId
+	            Integer refId, String postId
 	    ) {
 	        try {
 	            Optional<User> senderOpt = userRepository.findById(senderId);
@@ -825,6 +825,7 @@ public class PostServiceImpl implements PostService {
 	                    .message(messageBody)
 	                    .userType(userType)
 	                    .id(refId)
+	                    .postId(postId)
 	                    .adminReview(sender.getAdminReview())
 	                    .Profession(sender.getUserType())
 	                    .isRead(false)
@@ -970,7 +971,8 @@ public class PostServiceImpl implements PostService {
 	            .title(title)
 	            .message(messageBody)
 	            .userType(userType)               
-	            .id(refId)                   
+	            .id(refId)   
+	            
 	            .adminReview(sender.getAdminReview())
 	            .Profession(sender.getUserType()) 
 	            .isRead(false)
@@ -1159,9 +1161,6 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
-
-
-
 
 	@Override
 	public ShareWebModel addShare(ShareWebModel shareWebModel) {
