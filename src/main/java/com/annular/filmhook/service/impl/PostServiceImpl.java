@@ -216,23 +216,26 @@ public class PostServiceImpl implements PostService {
 							.collect(Collectors.toList());
 					postTagsRepository.saveAllAndFlush(tagsList);
 
-					for (Integer taggedUserId : postWebModel.getTaggedUsers()) {
-						InAppNotification notification = InAppNotification.builder()
-								.senderId(postWebModel.getUserId())
-								.receiverId(taggedUserId)
-								.title("You've been tagged in a post")
-								.message("tagged you in a post.")
-								.createdOn(new Date())
-								.isRead(false)
-								 .adminReview(userFromDB.getAdminReview())
-		                            .Profession(userFromDB.getUserType())
-		                            .isDeleted(false)
-								.createdBy(postWebModel.getUserId())
-								.id(savedPost.getId())
-								.userType("Tagged") // Adjust as per your userType logic
-								.postId(savedPost.getPostId())
-								.build();
-						inAppNotificationRepository.save(notification);
+					for (PostTags tag : tagsList) {
+					    Integer taggedUserId = tag.getTaggedUser().getUserId();
+
+					    InAppNotification notification = InAppNotification.builder()
+					            .senderId(postWebModel.getUserId())
+					            .receiverId(taggedUserId)
+					            .title("You've been tagged in a post")
+					            .message(userFromDB.getName() + " tagged you in a post.")
+					            .createdOn(new Date())
+					            .isRead(false)
+					            .adminReview(userFromDB.getAdminReview())
+					            .Profession(userFromDB.getUserType())
+					            .isDeleted(false)
+					            .createdBy(postWebModel.getUserId())
+					            .id(tag.getId()) 
+					            .userType("Tagged")
+					            .postId(savedPost.getPostId())
+					            .build();
+
+					    inAppNotificationRepository.save(notification);
 					}
 
 				}
@@ -912,8 +915,8 @@ public class PostServiceImpl implements PostService {
 			                    User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
 			                    String senderName = sender != null ? sender.getName() : "Someone";
 			                    sendNotification(
-			                        parent.getCommentedBy(),            // to
-			                        commentInputWebModel.getUserId(),                  // from
+			                        parent.getCommentedBy(),            
+			                        commentInputWebModel.getUserId(),                
 			                        "Reply to Your Comment",
 			                       " replied to your comment.",
 			                        "COMMENT_REPLY",
@@ -929,8 +932,8 @@ public class PostServiceImpl implements PostService {
 			            User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
 			            String commenterName = commenter != null ? commenter.getName() : "Someone";
 			            sendNotification(
-			                post.getCreatedBy(),                         // to
-			                commentInputWebModel.getUserId(),                           // from
+			                post.getCreatedBy(),                        
+			                commentInputWebModel.getUserId(),                        
 			                "New Comment on Your Post",
 			                commenterName + " commented on your post.",
 			                "POST_COMMENT",
