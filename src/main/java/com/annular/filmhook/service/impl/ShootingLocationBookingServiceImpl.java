@@ -38,6 +38,8 @@ import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
 import com.google.api.client.util.Value;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -635,7 +637,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 					sendReminderEmail(booking);
 					String title = "Shooting Location Expiring Soon!";
 					String messageBody = "Hi " + booking.getClient().getName() +
-							", your booking will expire in 24 hours. Renew now to continue gaining visibility.";
+							", your booking will expire in 24 hours. Renew now to continue.";
 
 					// ✅ In-App Notification
 					InAppNotification notification = InAppNotification.builder()
@@ -658,11 +660,25 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 					String deviceToken = booking.getClient().getFirebaseDeviceToken();
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 						try {
+							 // FCM Notification
+			                Notification notificationData = Notification.builder()
+			                        .setTitle(title)
+			                        .setBody(messageBody)
+			                        .build();
+
+			                // Android Config
+			                AndroidNotification androidNotification = AndroidNotification.builder()
+			                        .setIcon("ic_notification")
+			                        .setColor("#FFFFFF")
+			                        .build();
+
+			                AndroidConfig androidConfig = AndroidConfig.builder()
+			                        .setNotification(androidNotification)
+			                        .build();
+							
 							Message firebaseMessage = Message.builder()
-									.setNotification(Notification.builder()
-											.setTitle(title)
-											.setBody(messageBody)
-											.build())
+									.setNotification(notificationData)
+									.setAndroidConfig(androidConfig)
 									.putData("type", "SHOOTING_LOCATION_EXPIRY")
 									.putData("refId", String.valueOf(bookingId))
 									.setToken(deviceToken)
@@ -793,34 +809,47 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 				String deviceToken = booking.getClient().getFirebaseDeviceToken();
 				if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 					try {
+						 // FCM Notification
+		                Notification notificationData = Notification.builder()
+		                        .setTitle(title)
+		                        .setBody(messageBody)
+		                        .build();
+
+		                // Android Config
+		                AndroidNotification androidNotification = AndroidNotification.builder()
+		                        .setIcon("ic_notification")
+		                        .setColor("#FFFFFF")
+		                        .build();
+
+		                AndroidConfig androidConfig = AndroidConfig.builder()
+		                        .setNotification(androidNotification)
+		                        .build();
 						Message firebaseMessage = Message.builder()
-								.setNotification(Notification.builder()
-										.setTitle(title)
-										.setBody(messageBody)
-										.build())
+								.setNotification(notificationData)
+								.setAndroidConfig(androidConfig)
 								.putData("type", "SHOOTING_LOCATION_COMPLETED")
 								.putData("refId", String.valueOf(bookingId))
 								.setToken(deviceToken)
 								.build();
 
 						String response = FirebaseMessaging.getInstance().send(firebaseMessage);
-						logger.info("📱 Push Notification Sent: {}", response);
+						logger.info("Push Notification Sent: {}", response);
 
 					} catch (FirebaseMessagingException e) {
-						logger.error("❌ Failed to send push notification to user ID {}: {}", booking.getClient().getUserId(), e.getMessage(), e);
+						logger.error("Failed to send push notification to user ID {}: {}", booking.getClient().getUserId(), e.getMessage(), e);
 					}
 				} else {
-					logger.warn("⚠️ No Firebase token found for user ID: {}", booking.getClient().getUserId());
+					logger.warn("No Firebase token found for user ID: {}", booking.getClient().getUserId());
 				}
 
 				logger.info("✅ Booking ID {} marked as COMPLETED", bookingId);
 
 				// Send completion email
 				sendCompletionEmail(booking);
-				logger.info("📩 Completion email sent to {}", clientEmail);
+				logger.info("Completion email sent to {}", clientEmail);
 
 			} catch (Exception ex) {
-				logger.error("❌ Error completing booking ID {} for email '{}': {}", bookingId, clientEmail, ex.getMessage(), ex);
+				logger.error("Error completing booking ID {} for email '{}': {}", bookingId, clientEmail, ex.getMessage(), ex);
 			}
 		}
 	}

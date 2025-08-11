@@ -241,6 +241,12 @@
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-websocket</artifactId>
 </dependency>
+<dependency>
+    <groupId>software.amazon.awssdk</groupId>
+    <artifactId>secretsmanager</artifactId>
+      <version>${aws.sdk.version}</version>
+</dependency>
+
     </dependencies>
   
     <build>

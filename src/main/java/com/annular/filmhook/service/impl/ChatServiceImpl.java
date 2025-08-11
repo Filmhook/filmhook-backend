@@ -67,6 +67,8 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.InAppNotificationWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.ChatUserWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -266,11 +268,25 @@ public class ChatServiceImpl implements ChatService {
 						String notificationMessage = chatWebModel.getMessage();  // Push actual message like "Hi", "Bye", etc.
 
 						try {
+							 // FCM Notification
+			                Notification notificationData = Notification.builder()
+			                        .setTitle(notificationTitle)
+			                        .setBody(notificationMessage)
+			                        .build();
+
+			                // Android Config
+			                AndroidNotification androidNotification = AndroidNotification.builder()
+			                        .setIcon("ic_notification")
+			                        .setColor("#FFFFFF")
+			                        .build();
+
+			                AndroidConfig androidConfig = AndroidConfig.builder()
+			                        .setNotification(androidNotification)
+			                        .build();
+							
 							Message message = Message.builder()
-									.setNotification(Notification.builder()
-											.setTitle(notificationTitle)
-											.setBody(notificationMessage)
-											.build())
+									.setNotification(notificationData)
+									.setAndroidConfig(androidConfig)
 									.putData("chatId", String.valueOf(chat.getChatId()))
 									.setToken(deviceToken)
 									.build();
