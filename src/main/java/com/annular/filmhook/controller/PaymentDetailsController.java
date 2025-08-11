@@ -23,6 +23,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PaymentDetailsService;
 import com.annular.filmhook.webmodel.LiveDetailsWebModel;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
+import com.annular.filmhook.webmodel.PromoteWebModel;
 
 @RestController
 @RequestMapping("/payment")
@@ -115,10 +116,17 @@ public class PaymentDetailsController {
         return ResponseEntity.ok(new Response(1, "Retry payment data", data));
     }
     
-    @GetMapping("/{promoteId}")
-    public ResponseEntity<?> getPromoteByPromoteId(@PathVariable Integer promoteId) {
-        logger.info("Received request to get promotion with ID: {}", promoteId);
-        return paymentDetailsService.getPromoteByPromoteId(promoteId);
+    @PostMapping("/getByPromoteId")
+    public ResponseEntity<?> getByPromoteId(@RequestBody PromoteWebModel promoteWebModel) {
+        try {
+            logger.info("getByPromoteId controller start");
+            return paymentDetailsService.getByPromoteId(promoteWebModel);
+        } catch (Exception e) {
+            logger.error("getByPromoteId  Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
     }
+
     
 }
