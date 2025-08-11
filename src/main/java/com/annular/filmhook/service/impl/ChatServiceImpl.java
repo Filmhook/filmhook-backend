@@ -938,7 +938,7 @@ public class ChatServiceImpl implements ChatService {
 				dto.setCurrentStatus(notification.getCurrentStatus());
 				dto.setSenderId2(notification.getSenderId2());
 				Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
-				dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
+				dto.setSenderName(sender.map(User::getName).orElse("Film-hook"));
 
 				if (notification.getSenderId2() != null) {
 					Optional<User> sender2 = userRepository.getByUserId(notification.getSenderId2());

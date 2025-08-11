@@ -690,7 +690,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 					sendReminderEmail(booking);
 					String title = "Shooting Location Expiring Soon!";
 					String messageBody = "Hi " + booking.getClient().getName() +
-							", your booking will expire in 24 hours. Renew now to continue gaining visibility.";
+							", your booking will expire in 24 hours. Renew now to continue.";
 
 					// ✅ In-App Notification
 					InAppNotification notification = InAppNotification.builder()
