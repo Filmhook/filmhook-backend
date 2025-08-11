@@ -43,6 +43,7 @@ public class FirebaseConfig {
 
     @PostConstruct
     public void initialize() {
+    	
         try {
             // Check if FirebaseApp is already initialized
             if (!FirebaseApp.getApps().isEmpty()) {
