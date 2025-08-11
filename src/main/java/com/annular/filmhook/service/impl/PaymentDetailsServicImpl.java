@@ -9,7 +9,6 @@ import javax.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,18 +19,15 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.controller.PaymentDetailsController;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.PaymentDetails;
-import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.PaymentDetailsRepository;
-import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PaymentDetailsService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
-import com.annular.filmhook.webmodel.PromoteWebModel;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -47,8 +43,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 	
 	@Autowired
 	private PromoteRepository promoteRepository; 
-	@Autowired
-	private PostsRepository postsRepository;
+
 	@Autowired
     private PaymentDetailsRepository paymentDetailsRepository;
 	
@@ -467,51 +462,5 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 
     
     
-    @Override
-    public ResponseEntity<?> getByPromoteId(PromoteWebModel promoteWebModel) {
-        try {
-            Integer promoteId = promoteWebModel.getPromoteId();
-
-            if (promoteId == null) {
-                return ResponseEntity.badRequest()
-                    .body(new Response(-1, "Promote ID is required", null));
-            }
-
-            Optional<Promote> promoteOptional = promoteRepository.findById(promoteId);
-            if (!promoteOptional.isPresent()) {
-                return ResponseEntity.ok()
-                    .body(new Response(-1, "Promote not found", null));
-            }
-
-            Promote promote = promoteOptional.get();
-
-            // Fetch associated Post by postId in Promote
-            Integer postId = promote.getPostId();
-            Posts post = null;
-            if (postId != null) {
-                
-				post = postsRepository.findById(postId).orElse(null);
-            }
-
-            // Build response data
-            HashMap<String, Object> responseData = new HashMap<>();
-            responseData.put("promote", promote);
-
-            if (post != null) {
-                // Assuming 'filePath' or equivalent exists in Posts entity
-                responseData.put("post", post);
-            }
-
-            logger.info("getByPromoteId method end");
-            return ResponseEntity.ok(new Response(1, "Success", responseData));
-
-        } catch (Exception e) {
-            logger.error("Error in getByPromoteId method: {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                .body(new Response(-1, "Failed to fetch promote", e.getMessage()));
-        }
-    }
-
-
+  
 }

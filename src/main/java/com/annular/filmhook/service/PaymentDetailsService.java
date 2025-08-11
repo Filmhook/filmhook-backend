@@ -3,7 +3,6 @@ package com.annular.filmhook.service;
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
-import com.annular.filmhook.webmodel.PromoteWebModel;
 
 public interface PaymentDetailsService {
 
@@ -17,6 +16,6 @@ public interface PaymentDetailsService {
 
 	ResponseEntity<?> promotionForCron(PaymentDetailsWebModel paymentDetailsWebModel);
 	
-	ResponseEntity<?> getByPromoteId(PromoteWebModel promoteWebModel);
+	
 
 }
