@@ -15,5 +15,7 @@ public interface PaymentDetailsService {
 	ResponseEntity<?> promotionFailed(PaymentDetailsWebModel paymentDetailsWebModel);
 
 	ResponseEntity<?> promotionForCron(PaymentDetailsWebModel paymentDetailsWebModel);
+	
+	ResponseEntity<?> getPromoteByPromoteId(Integer promoteId);
 
 }

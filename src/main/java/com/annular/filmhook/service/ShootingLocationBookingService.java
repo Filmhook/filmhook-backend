@@ -38,6 +38,6 @@ public interface ShootingLocationBookingService {
     String sendMessage(ShootingLocationChatDTO dto, Integer propertyId);
     List<ShootingLocationChatDTO> getChatHistory(Integer senderId, Integer receiverId);
     
-    ShootingLocationPropertyDetailsDTO getPropertyByBookingId(Integer bookingId);
+//    ShootingLocationPropertyDetailsDTO getPropertyByBookingId(Integer bookingId);
 
 }

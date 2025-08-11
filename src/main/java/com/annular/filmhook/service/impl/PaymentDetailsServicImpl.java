@@ -1,6 +1,8 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Optional;
 
 import javax.mail.internet.MimeMessage;
 
@@ -420,7 +422,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                     .title(notificationTitle)
                     .message(notificationMessage)
                     .userType("PROMOTION_EXPIRY")
-                    .id(paymentId)
+                    .id(promoteId)
                     .isRead(false)
                     .isDeleted(false)
                     .createdOn(new Date())
@@ -455,6 +457,32 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to send email: " + e.getMessage());
+        }
+    }
+
+    
+    
+    @Override
+    public ResponseEntity<?> getPromoteByPromoteId(Integer promoteId) {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            logger.info("getPromoteByPromoteId method start");
+
+            Optional<Promote> optionalPromote = promoteRepository.findByPromoteId(promoteId);
+            if (!optionalPromote.isPresent()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new Response(-1, "Promotion not found", null));
+            }
+
+            Promote promote = optionalPromote.get();
+            response.put("promoteInfo", promote);
+
+            return ResponseEntity.ok(new Response(1, "Promotion retrieved successfully", response));
+
+        } catch (Exception e) {
+            logger.error("Error retrieving promote: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(new Response(-1, "Error retrieving promotion", e.getMessage()));
         }
     }
 

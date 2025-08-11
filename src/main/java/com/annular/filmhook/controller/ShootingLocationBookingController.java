@@ -272,22 +272,22 @@ public class ShootingLocationBookingController {
 	    }
 	}
 	
-	@GetMapping("/{bookingId}/property")
-	public ResponseEntity<?> getPropertyByBookingId(@PathVariable Integer bookingId) {
-	    try {
-	        ShootingLocationPropertyDetailsDTO property = bookingService.getPropertyByBookingId(bookingId);
-
-	        if (property != null) {
-	            return ResponseEntity.ok(new Response(1, "success", property));
-	        } else {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-	                    .body(new Response(-1, "fail", "Property not found for given booking ID"));
-	        }
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1, "error", "An error occurred while fetching property details"));
-	    }
-	}
+//	@GetMapping("/{bookingId}/property")
+//	public ResponseEntity<?> getPropertyByBookingId(@PathVariable Integer bookingId) {
+//	    try {
+//	        ShootingLocationPropertyDetailsDTO property = bookingService.getPropertyByBookingId(bookingId);
+//
+//	        if (property != null) {
+//	            return ResponseEntity.ok(new Response(1, "success", property));
+//	        } else {
+//	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//	                    .body(new Response(-1, "fail", "Property not found for given booking ID"));
+//	        }
+//	    } catch (Exception e) {
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//	                .body(new Response(-1, "error", "An error occurred while fetching property details"));
+//	    }
+//	}
 
 
 }

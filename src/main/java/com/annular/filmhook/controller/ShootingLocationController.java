@@ -453,6 +453,9 @@ public class ShootingLocationController {
 		        }
 		    }
 
-
+		    @GetMapping("/{bookingId}/property")
+		    public ShootingLocationPropertyDetailsDTO getPropertyByBookingId(@PathVariable Integer bookingId) {
+		        return service.getPropertyByBookingId(bookingId);
+		    }
 }
 

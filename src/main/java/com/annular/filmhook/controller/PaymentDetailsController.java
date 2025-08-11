@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -113,7 +114,11 @@ public class PaymentDetailsController {
 
         return ResponseEntity.ok(new Response(1, "Retry payment data", data));
     }
-
-
+    
+    @GetMapping("/{promoteId}")
+    public ResponseEntity<?> getPromoteByPromoteId(@PathVariable Integer promoteId) {
+        logger.info("Received request to get promotion with ID: {}", promoteId);
+        return paymentDetailsService.getPromoteByPromoteId(promoteId);
+    }
     
 }

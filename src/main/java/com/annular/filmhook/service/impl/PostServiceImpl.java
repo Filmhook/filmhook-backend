@@ -275,46 +275,54 @@ public class PostServiceImpl implements PostService {
 	//            return null;
 	//        }
 	//    }
+
 	@Override
-	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) {
-		try {
-			// Fetch posts created by the user
-			List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
+	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize, Integer highlightPostId) {
+	    try {
+	        // Fetch posts created by the user
+	        List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
 
-			// Convert userId to String for querying tagged posts
-			String userIdString = userId.toString();
+	        // Fetch tagged posts
+	        String userIdString = userId.toString();
+	        List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
 
-			// Fetch posts where the user is tagged
-			List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
+	        // Combine and remove duplicates
+	        Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
+	        combinedPostsSet.addAll(taggedPosts);
+	        List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
 
-			// Combine both lists and remove duplicates
-			Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
-			combinedPostsSet.addAll(taggedPosts);
+	        // Sorting logic
+	        combinedPostsList.sort(Comparator
+	            .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder()))
+	            .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
 
-			// Transform the combined list of posts to PostWebModel
-			List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
-			// Sort the posts by creation date (or any other attribute)
-			//combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
-			// Sort the posts first by promote flag, then by creation date
-			combinedPostsList.sort(Comparator
-					.comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
-					.thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
+	        // If highlightPostId is passed → move it to the top
+	        if (highlightPostId != null) {
+	            Posts highlighted = combinedPostsList.stream()
+	                    .filter(post -> post.getPostId().equals(highlightPostId))
+	                    .findFirst()
+	                    .orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
 
-			// Apply pagination
-			int totalPosts = combinedPostsList.size();
-			int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
-			int toIndex = Math.min(fromIndex + pageSize, totalPosts);
+	            if (highlighted != null) {
+	                combinedPostsList.remove(highlighted);
+	                combinedPostsList.add(0, highlighted);
+	            }
+	        }
 
-			List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
 
-			return this.transformPostsDataToPostWebModel(paginatedPosts);
+	        // Pagination
+	        int totalPosts = combinedPostsList.size();
+	        int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
+	        int toIndex = Math.min(fromIndex + pageSize, totalPosts);
 
-			// return this.transformPostsDataToPostWebModel(combinedPostsList);
-		} catch (Exception e) {
-			logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
-			e.printStackTrace();
-			return null;
-		}
+	        List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
+
+	        return this.transformPostsDataToPostWebModel(paginatedPosts);
+
+	    } catch (Exception e) {
+	        logger.error("Error at getPostsByUserId() -> {}", e.getMessage(), e);
+	        return null;
+	    }
 	}
 
 	@Override
