@@ -822,7 +822,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 			try {
 				booking.setStatus(BookingStatus.COMPLETED);
 				bookingRepo.save(booking);
-				String title = "Your Shooting Location Booking is Now Completed";
+				String title = "Your Shooting Location is Now Completed";
 				String messageBody = "Hi " + booking.getClient().getName() +
 						", your booking at " + booking.getProperty().getPropertyName() +" has been successfully completed. " +
 						"Thank you for choosing us! We hope to see you again.";

@@ -2219,6 +2219,15 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	                }
 	            }
 	        }
+	        
+	        List<PropertyAvailabilityDTO> availabilityDates = availabilityRepository.findByPropertyId(propertyId)
+	                .stream()
+	                .map(avail -> PropertyAvailabilityDTO.builder()
+	                        .propertyId(propertyId)
+	                        .startDate(avail.getStartDate())
+	                        .endDate(avail.getEndDate())
+	                        .build())
+	                .collect(Collectors.toList());
 
 	        // 10. Reviews
 	        List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyId(propertyId)
@@ -2324,6 +2333,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	                .categoryId(property.getCategory() != null ? property.getCategory().getId() : null)
 	                .subCategoryId(property.getSubCategory() != null ? property.getSubCategory().getId() : null)
 	                .typesId(property.getTypes() != null ? property.getTypes().getId() : null)
+	                .availabilityDates(availabilityDates)
 	                .userId(userId)
 	                .build();
 
