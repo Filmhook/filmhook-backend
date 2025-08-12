@@ -414,7 +414,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             
          // Send in-app and push notification
             String notificationTitle = "Promotion Expiring Soon!";
-            String notificationMessage = "Hi " + user.getName() + ", your promotion will expire in 24 hours. Renew now to continue gaining visibility.";
+            String notificationMessage = "Hi " + user.getName() + ", your promotion will expire in 24 hours. Renew now to continue.";
 
             InAppNotification notification = InAppNotification.builder()
                     .senderId(0) // 0 or null for system/admin
@@ -423,6 +423,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                     .message(notificationMessage)
                     .userType("PROMOTION_EXPIRY")
                     .id(promoteId)
+                    .postId(String.valueOf(promoteData.getPostId()))
                     .isRead(false)
                     .isDeleted(false)
                     .createdOn(new Date())
