@@ -50,7 +50,7 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
 
 
 
-
+    Optional<ShootingLocationBooking> findById(Integer bookingId);
 
 
 }

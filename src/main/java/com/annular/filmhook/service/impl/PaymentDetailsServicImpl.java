@@ -1,12 +1,15 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Optional;
 
 import javax.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -17,10 +20,12 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.controller.PaymentDetailsController;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.PaymentDetails;
+import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.PaymentDetailsRepository;
+import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PaymentDetailsService;
@@ -37,7 +42,8 @@ import com.google.firebase.messaging.Notification;
 public class PaymentDetailsServicImpl implements PaymentDetailsService{
 	   @Autowired
 	    private InAppNotificationRepository inAppNotificationRepository;
-
+	   @Autowired
+	   PostsRepository postsRepository;
 	@Autowired
 	private JavaMailSender javaMailSender;
 	
@@ -155,6 +161,14 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content.toString(), true);
+            
+			Posts promotedPost = postsRepository.findById(promoteData.getPostId())
+                    .orElseThrow(() -> new RuntimeException("Post not found with ID: " + promoteData.getPostId()));
+
+            promotedPost.setStatus(true); 
+            promotedPost.setPromoteFlag(true);
+            promotedPost.setPromoteStatus(true);
+            postsRepository.save(promotedPost);
 
             javaMailSender.send(message);
             return ResponseEntity.ok("Promotion email sent successfully to userId: " + userId);
@@ -414,7 +428,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             
          // Send in-app and push notification
             String notificationTitle = "Promotion Expiring Soon!";
-            String notificationMessage = "Hi " + user.getName() + ", your promotion will expire in 24 hours. Renew now to continue gaining visibility.";
+            String notificationMessage = "Hi " + user.getName() + ", your promotion will expire in 24 hours. Renew now to continue.";
 
             InAppNotification notification = InAppNotification.builder()
                     .senderId(0) // 0 or null for system/admin
@@ -422,7 +436,8 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                     .title(notificationTitle)
                     .message(notificationMessage)
                     .userType("PROMOTION_EXPIRY")
-                    .id(paymentId)
+                    .id(promoteId)
+                    .postId(String.valueOf(promoteData.getPostId()))
                     .isRead(false)
                     .isDeleted(false)
                     .createdOn(new Date())
@@ -473,4 +488,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
         }
     }
 
+    
+    
+  
 }

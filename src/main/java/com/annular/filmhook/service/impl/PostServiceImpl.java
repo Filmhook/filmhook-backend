@@ -40,9 +40,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
@@ -51,6 +54,7 @@ import java.util.HashMap;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -214,23 +218,26 @@ public class PostServiceImpl implements PostService {
 							.collect(Collectors.toList());
 					postTagsRepository.saveAllAndFlush(tagsList);
 
-					for (Integer taggedUserId : postWebModel.getTaggedUsers()) {
-						InAppNotification notification = InAppNotification.builder()
-								.senderId(postWebModel.getUserId())
-								.receiverId(taggedUserId)
-								.title("You've been tagged in a post")
-								.message("tagged you in a post.")
-								.createdOn(new Date())
-								.isRead(false)
-								 .adminReview(userFromDB.getAdminReview())
-		                            .Profession(userFromDB.getUserType())
-		                            .isDeleted(false)
-								.createdBy(postWebModel.getUserId())
-								.id(savedPost.getId())
-								.userType("Tagged") // Adjust as per your userType logic
-								.postId(savedPost.getPostId())
-								.build();
-						inAppNotificationRepository.save(notification);
+					for (PostTags tag : tagsList) {
+					    Integer taggedUserId = tag.getTaggedUser().getUserId();
+
+					    InAppNotification notification = InAppNotification.builder()
+					            .senderId(postWebModel.getUserId())
+					            .receiverId(taggedUserId)
+					            .title("You've been tagged in a post")
+					            .message(userFromDB.getName() + " tagged you in a post.")
+					            .createdOn(new Date())
+					            .isRead(false)
+					            .adminReview(userFromDB.getAdminReview())
+					            .Profession(userFromDB.getUserType())
+					            .isDeleted(false)
+					            .createdBy(postWebModel.getUserId())
+					            .id(tag.getId()) 
+					            .userType("Tagged")
+					            .postId(savedPost.getPostId())
+					            .build();
+
+					    inAppNotificationRepository.save(notification);
 					}
 
 				}
@@ -270,46 +277,54 @@ public class PostServiceImpl implements PostService {
 	//            return null;
 	//        }
 	//    }
+
 	@Override
-	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize) {
-		try {
-			// Fetch posts created by the user
-			List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
+	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize, Integer highlightPostId) {
+	    try {
+	        // Fetch posts created by the user
+	        List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
 
-			// Convert userId to String for querying tagged posts
-			String userIdString = userId.toString();
+	        // Fetch tagged posts
+	        String userIdString = userId.toString();
+	        List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
 
-			// Fetch posts where the user is tagged
-			List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
+	        // Combine and remove duplicates
+	        Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
+	        combinedPostsSet.addAll(taggedPosts);
+	        List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
 
-			// Combine both lists and remove duplicates
-			Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
-			combinedPostsSet.addAll(taggedPosts);
+	        // Sorting logic
+	        combinedPostsList.sort(Comparator
+	            .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder()))
+	            .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
 
-			// Transform the combined list of posts to PostWebModel
-			List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
-			// Sort the posts by creation date (or any other attribute)
-			//combinedPostsList.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
-			// Sort the posts first by promote flag, then by creation date
-			combinedPostsList.sort(Comparator
-					.comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // PromoteFlag: false (or null) first, true last
-					.thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
+	        // If highlightPostId is passed → move it to the top
+	        if (highlightPostId != null) {
+	            Posts highlighted = combinedPostsList.stream()
+	                    .filter(post -> post.getPostId().equals(highlightPostId))
+	                    .findFirst()
+	                    .orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
 
-			// Apply pagination
-			int totalPosts = combinedPostsList.size();
-			int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
-			int toIndex = Math.min(fromIndex + pageSize, totalPosts);
+	            if (highlighted != null) {
+	                combinedPostsList.remove(highlighted);
+	                combinedPostsList.add(0, highlighted);
+	            }
+	        }
 
-			List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
 
-			return this.transformPostsDataToPostWebModel(paginatedPosts);
+	        // Pagination
+	        int totalPosts = combinedPostsList.size();
+	        int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
+	        int toIndex = Math.min(fromIndex + pageSize, totalPosts);
 
-			// return this.transformPostsDataToPostWebModel(combinedPostsList);
-		} catch (Exception e) {
-			logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
-			e.printStackTrace();
-			return null;
-		}
+	        List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
+
+	        return this.transformPostsDataToPostWebModel(paginatedPosts);
+
+	    } catch (Exception e) {
+	        logger.error("Error at getPostsByUserId() -> {}", e.getMessage(), e);
+	        return null;
+	    }
 	}
 
 	@Override
@@ -738,7 +753,7 @@ public class PostServiceImpl implements PostService {
 
 	            if (validLikes.isEmpty()) continue;
 
-	            sendBatchNotification(validLikes, postOwnerId, "Someone Liked Your Post", "Like", postId);
+	            sendBatchNotification(validLikes, postOwnerId, "Someone Liked Your Post", "Like", postId, post.getPostId());
 	        }
 	    }
 
@@ -757,11 +772,11 @@ public class PostServiceImpl implements PostService {
 
 	            if (validLikes.isEmpty()) continue;
 
-	            sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId);
+	            sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId, comment.getPost().getPostId());
 	        }
 	    }
 
-	    private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type, Integer refId) {
+	    private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type, Integer refId, String postId) {
 	        List<User> likers = userRepository.findAllById(
 	                validLikes.stream().map(Likes::getLikedBy).distinct().collect(Collectors.toList())
 	        );
@@ -782,7 +797,7 @@ public class PostServiceImpl implements PostService {
 	            senderId2 = likers.get(1).getUserId();
 	        }
 
-	     	            sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId);
+	     	            sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId, postId);
 	        
 
 	        validLikes.forEach(like -> {
@@ -801,7 +816,7 @@ public class PostServiceImpl implements PostService {
 	            String title,
 	            String messageBody,
 	            String userType,
-	            Integer refId
+	            Integer refId, String postId
 	    ) {
 	        try {
 	            Optional<User> senderOpt = userRepository.findById(senderId);
@@ -823,6 +838,7 @@ public class PostServiceImpl implements PostService {
 	                    .message(messageBody)
 	                    .userType(userType)
 	                    .id(refId)
+	                    .postId(postId)
 	                    .adminReview(sender.getAdminReview())
 	                    .Profession(sender.getUserType())
 	                    .isRead(false)
@@ -921,12 +937,13 @@ public class PostServiceImpl implements PostService {
 			                    User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
 			                    String senderName = sender != null ? sender.getName() : "Someone";
 			                    sendNotification(
-			                        parent.getCommentedBy(),            // to
-			                        commentInputWebModel.getUserId(),                  // from
+			                        parent.getCommentedBy(),            
+			                        commentInputWebModel.getUserId(),                
 			                        "Reply to Your Comment",
-			                        senderName + " replied to your comment.",
+			                       " replied to your comment.",
 			                        "COMMENT_REPLY",
-			                        savedComment.getCommentId()         // Use commentId for context
+			                        comment.getCommentId(), 
+			                        post.getPostId()// Use commentId for context
 			                    );
 			                }
 			            }
@@ -937,12 +954,13 @@ public class PostServiceImpl implements PostService {
 			            User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
 			            String commenterName = commenter != null ? commenter.getName() : "Someone";
 			            sendNotification(
-			                post.getCreatedBy(),                         // to
-			                commentInputWebModel.getUserId(),                           // from
+			                post.getCreatedBy(),                        
+			                commentInputWebModel.getUserId(),                        
 			                "New Comment on Your Post",
 			                commenterName + " commented on your post.",
 			                "POST_COMMENT",
-			                savedComment.getPostId()
+			                comment.getCommentId(),
+			                post.getPostId()
 			            );
 			        }
 
@@ -956,7 +974,10 @@ public class PostServiceImpl implements PostService {
 			    return null;
 			}
 	
-	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId) {
+	
+	
+	
+	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId, String postId) {
 	    try {
 	        // Step 1: Validate users
 	        Optional<User> senderOpt = userRepository.findById(senderId);
@@ -977,7 +998,8 @@ public class PostServiceImpl implements PostService {
 	            .title(title)
 	            .message(messageBody)
 	            .userType(userType)               
-	            .id(refId)                   
+	            .id(refId)   
+	            .postId(postId)
 	            .adminReview(sender.getAdminReview())
 	            .Profession(sender.getUserType()) 
 	            .isRead(false)
@@ -1036,9 +1058,36 @@ public class PostServiceImpl implements PostService {
 	    }
 	}
 
+	@Override
+	public ResponseEntity<Response> getCommentById(Integer commentId) {
+	    try {
 
+	        Comment comment = commentRepository.findByCommentId(commentId)
+	                .orElseThrow(() -> new RuntimeException("Comment not found"));
 
+	        Posts post = postsRepository.findById(comment.getPostId()).orElse(null);
+	       
+	        int commentCount = (post != null && post.getCommentsCount() != null)
+	                ? post.getCommentsCount()
+	                : 0;
 
+	        CommentOutputWebModel output = this.transformCommentData(List.of(comment), commentCount).get(0);
+	    
+	        return ResponseEntity.ok(new Response(1, "success", output));
+
+	    } catch (RuntimeException e) {
+	      
+	        logger.warn("Comment not found for ID: {}", commentId);
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(new Response(-1, "fail", "Comment not found for ID: " + commentId));
+
+	    } catch (Exception e) {
+	     
+	        logger.error("Unexpected error in getCommentById(): {}", e.getMessage(), e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "error", "Internal server error occurred"));
+	    }
+	}
 
 	@Override
 	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
@@ -1092,7 +1141,6 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
-
 
 	private List<CommentOutputWebModel> transformCommentData(List<Comment> commentData, Integer totalCommentCount) {
 		List<CommentOutputWebModel> commentOutWebModelList = new ArrayList<>();
@@ -1153,9 +1201,6 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
-
-
-
 
 	@Override
 	public ShareWebModel addShare(ShareWebModel shareWebModel) {
@@ -1351,6 +1396,18 @@ public class PostServiceImpl implements PostService {
 		}
 
 		return existing.orElseThrow();
+	}
+
+	@Override
+	public Posts getTaggedPostById(Integer taggedId) {
+	    Optional<PostTags> postTagOptional = postTagsRepository.findById(taggedId);
+
+	    if (postTagOptional.isPresent()) {
+	        Integer postId = postTagOptional.get().getPostId();
+	        return postsRepository.findById(postId).orElseThrow(() -> new NoSuchElementException("Post not found"));
+	    } else {
+	        throw new NoSuchElementException("Tag not found");
+	    }
 	}
 
 

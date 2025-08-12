@@ -11,6 +11,7 @@ import com.annular.filmhook.model.ShootingLocationPayment;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 
 
 public interface ShootingLocationBookingService {
@@ -37,7 +38,6 @@ public interface ShootingLocationBookingService {
     String sendMessage(ShootingLocationChatDTO dto, Integer propertyId);
     List<ShootingLocationChatDTO> getChatHistory(Integer senderId, Integer receiverId);
     
- 
-
+//    ShootingLocationPropertyDetailsDTO getPropertyByBookingId(Integer bookingId);
 
 }

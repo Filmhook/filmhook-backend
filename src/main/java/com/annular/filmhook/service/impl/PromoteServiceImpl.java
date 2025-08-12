@@ -85,7 +85,7 @@ public class PromoteServiceImpl implements PromoteService {
             promote.setTotalCost(promoteWebModel.getTotalCost());
             promote.setTaxFee(promoteWebModel.getTaxFee());
             promote.setSgst(promoteWebModel.getSgst());
-            promote.setStatus(true); // Set the status from the request
+            promote.setStatus(true); 
             promote.setUpdatedOn(new Date());
             promote.setUpdatedBy(userId);
             promote.setMultimediaId(promoteWebModel.getMultimediaId());
