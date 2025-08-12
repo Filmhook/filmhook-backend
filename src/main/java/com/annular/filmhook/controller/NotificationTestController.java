@@ -18,9 +18,7 @@ public class NotificationTestController {
 	 public ResponseEntity<String> sendNotification(			   
 			    @RequestParam String deviceToken) {
 	        try {
-	            // FCM device token for testing
-	          //  String deviceToken = "YOUR_DEVICE_FCM_TOKEN";
-
+	        
 	            // Create the notification payload
 	            Notification notification = Notification.builder()
 	                    .setTitle("Test Notification")

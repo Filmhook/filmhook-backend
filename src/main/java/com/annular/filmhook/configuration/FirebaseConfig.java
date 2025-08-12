@@ -40,9 +40,10 @@
 //}
 
 package com.annular.filmhook.configuration;
+
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.auth.oauth2.GoogleCredentials;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -67,7 +68,9 @@ public class FirebaseConfig {
 
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-                System.out.println("✅ Firebase initialized from " + firebaseConfigPath);
+                System.out.println("Firebase initialized from " + firebaseConfigPath);
+            } else {
+                System.out.println("FirebaseApp already initialized.");
             }
         }
     }
