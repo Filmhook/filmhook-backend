@@ -897,14 +897,12 @@ public class PostServiceImpl implements PostService {
 	                try {
 
 	          
-	                	 String bodyText;
-	                     if (senderId2 != null) {
-	                         Optional<User> sender2Opt = userRepository.findById(senderId2);
-	                         String senderName2 = sender2Opt.map(User::getName).orElse("Someone");
-	                         bodyText = sender.getName() + " and " + senderName2 + " " + messageBody;
-	                     } else {
-	                         bodyText = sender.getName() + " " + messageBody;
-	                     }
+	                    String bodyText;
+	                    if (senderId2 != null) {
+	                        bodyText = senderId + " " + senderId2 + " " + messageBody;
+	                    } else {
+	                        bodyText = senderId + " " + messageBody;
+	                    }
 
 	                	 // FCM Notification
 		                Notification notificationData = Notification.builder()
@@ -928,7 +926,6 @@ public class PostServiceImpl implements PostService {
 
 	                            .putData("type", userType)
 	                            .putData("refId", String.valueOf(refId))
-	                            .putData("postId", postId)
 	                            .putData("senderId", String.valueOf(senderId))
 	                            .putData("receiverId", String.valueOf(receiverId))
 	                            .setToken(deviceToken)
@@ -1072,12 +1069,10 @@ public class PostServiceImpl implements PostService {
 
 	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	            try {
-	            	
-	            	  String bodyText =sender.getName() + " " + messageBody;
 	            	   // Create the notification payload
 	                Notification notification = Notification.builder()
 	                        .setTitle(title)
-	                        .setBody(bodyText)
+	                        .setBody(messageBody)
 	                        .build();
 
 	                // Android-specific settings
@@ -1093,7 +1088,6 @@ public class PostServiceImpl implements PostService {
 	                    .setNotification(notification)
 	                    .putData("type", userType)
 	                    .putData("refId", String.valueOf(refId))
-	                    .putData("postId", postId)
 	                    .putData("senderId", String.valueOf(senderId))
 	                    .putData("receiverId", String.valueOf(receiverId))
 	                    .setAndroidConfig(androidConfig)
