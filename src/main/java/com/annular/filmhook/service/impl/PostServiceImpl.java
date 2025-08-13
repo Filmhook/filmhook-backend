@@ -853,11 +853,16 @@ public class PostServiceImpl implements PostService {
 	            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	                try {
 	                    FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
-
+	                    String bodyText;
+	                    if (senderId2 != null) {
+	                        bodyText = senderId + " " + senderId2 + " " + messageBody;
+	                    } else {
+	                        bodyText = senderId + " " + messageBody;
+	                    }
 	                    Message firebaseMessage = Message.builder()
 	                            .setNotification(Notification.builder()
 	                                    .setTitle(title)
-	                                    .setBody(messageBody)
+	                                    .setBody(bodyText)
 	                                    .build())
 	                            .putData("type", userType)
 	                            .putData("refId", String.valueOf(refId))
@@ -1003,11 +1008,12 @@ public class PostServiceImpl implements PostService {
 	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	            try {
 	                FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
-
+	                String bodyText = senderId + " " + messageBody;
+                    
 	                Message firebaseMessage = Message.builder()
 	                    .setNotification(Notification.builder()
 	                        .setTitle(title)
-	                        .setBody(messageBody)
+	                        .setBody(bodyText)
 	                        .build())
 	                    .putData("type", userType)
 	                    .putData("refId", String.valueOf(refId))

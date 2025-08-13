@@ -36,7 +36,7 @@ public interface AuditionRepository extends JpaRepository<Audition, Integer> {
     @Query("SELECT COUNT(a) FROM Audition a " +
     	       "WHERE a.auditionSubCategory = :subId " +
     	       "AND a.auditionIsactive = true " +
-    	       "AND a.paymentStatus = 'success'")
+    		"AND LOWER(a.paymentStatus) = 'success'")
     	int countBySubCategoryWithSuccessPayment(@Param("subId") Integer subId);
 
     long countByAuditionCategoryAndPaymentStatusAndAuditionIsactive(Integer auditionCategory, String paymentStatus, Boolean auditionIsactive);

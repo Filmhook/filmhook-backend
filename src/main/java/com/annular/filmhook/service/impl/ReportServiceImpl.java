@@ -99,18 +99,54 @@ public class ReportServiceImpl implements ReportService {
     public ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel) {
         HashMap<String, Object> response = new HashMap<>();
         try {
+        	   Integer reporterId = userDetails.userInfo().getId();
+               Integer postId = reportPostWebModel.getPostId();
+               String reason = reportPostWebModel.getReason();
+        	
+
+            // 1. Validate reason
+            if (reason == null || reason.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "Report reason cannot be empty", null));
+            }
+
+            // Optional: sanitize reason to avoid HTML/script injection
+            reason = reason.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+            // 2. Validate post exists
+            Optional<Posts> optionalPost = postsRepository.findById(postId);
+            if (!optionalPost.isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "Post not found", null));
+            }
+
+            Posts post = optionalPost.get();
+
+            // 3. Prevent self-reporting
+            if (post.getUser().getUserId().equals(reporterId)) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "You cannot report your own post", null));
+            }
+
+            // 4. Prevent duplicate report from the same user
+            boolean alreadyReported = reportRepository.existsByUserIdAndPostId(reporterId, postId);
+            if (alreadyReported) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "You have already reported this post", null));
+            }
+            
             ReportPost reportPost = new ReportPost();
-            reportPost.setUserId(userDetails.userInfo().getId());
-            reportPost.setPostId(reportPostWebModel.getPostId());
-            reportPost.setReason(reportPostWebModel.getReason());
-            reportPost.setStatus(false); // Assuming initially report status is false
-            reportPost.setCreatedBy(userDetails.userInfo().getId()); // Assuming user who reports is the creator
+            reportPost.setUserId(reporterId);
+            reportPost.setPostId(postId);
+            reportPost.setReason(reason);
+            reportPost.setStatus(false);
+            reportPost.setCreatedBy(reporterId);
             reportRepository.save(reportPost);
 
             // Step 1: Get Post details
-            Optional<Posts> optionalPost = postsRepository.findById(reportPostWebModel.getPostId());
-            if (optionalPost.isPresent()) {
-                Posts post = optionalPost.get();
+//            Optional<Posts> optionalPost = postsRepository.findById(reportPostWebModel.getPostId());
+//            if (optionalPost.isPresent()) {
+//                Posts post = optionalPost.get();
 
             Integer postOwnerId = post.getUser().getUserId();
             Optional<User> optionalUser = userRepository.findById(postOwnerId);
@@ -160,17 +196,18 @@ public class ReportServiceImpl implements ReportService {
                 helper.setSubject(subject);
                 helper.setText(content.toString(), true);
                 javaMailSender.send(message);
+            
             }
-        }
-            response.put("reportInfo", reportPost);
-            logger.info("addMethod method end");
-            return ResponseEntity.ok(new Response(1, "Add ReportPost successfully", response));
-        } catch (Exception e) {
-            logger.error("Error setting reportPost {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error setting reportPost", e.getMessage()));
-        }
-    }
+        response.put("reportInfo", reportPost);
+        logger.info("addPostReport method end");
+        return ResponseEntity.ok(new Response(1, "Report submitted successfully", response));
 
+    } catch (Exception e) {
+        logger.error("Error in addPostReport: {}", e.getMessage());
+        return ResponseEntity.internalServerError()
+                .body(new Response(-1, "Error submitting report", e.getMessage()));
+    }
+}
     @Override
     public ResponseEntity<?> getAllPostReport(ReportPostWebModel reportPostWebModel) {
         try {
@@ -606,7 +643,7 @@ public class ReportServiceImpl implements ReportService {
                             userRepository.save(user);
                         }
                     }
-                    
+                    break;
                 default: // Warning (case 0 and any other values)
                     subject = "⚠️ Content Warning Notice from The Film-hook Team";
                     body = String.format(
