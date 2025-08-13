@@ -923,7 +923,7 @@ public class PostServiceImpl implements PostService {
 		                        .build();
 	                	
 	                    Message firebaseMessage = Message.builder()
-//	                            .setNotification(notificationData)
+	                            .setNotification(notificationData)
 	                            .setAndroidConfig(androidConfig)
 
 	                            .putData("type", userType)
@@ -1011,7 +1011,7 @@ public class PostServiceImpl implements PostService {
 			                post.getCreatedBy(),                        
 			                commentInputWebModel.getUserId(),                        
 			                "New Comment on Your Post",
-			                " commented on your post.",
+			                commenterName + " commented on your post.",
 			                "POST_COMMENT",
 			                comment.getCommentId(),
 			                post.getPostId()
@@ -1090,7 +1090,7 @@ public class PostServiceImpl implements PostService {
 	                        .setNotification(androidNotification)
 	                        .build();
 	                Message firebaseMessage = Message.builder()
-//	                    .setNotification(notification)
+	                    .setNotification(notification)
 	                    .putData("type", userType)
 	                    .putData("refId", String.valueOf(refId))
 	                    .putData("postId", postId)
