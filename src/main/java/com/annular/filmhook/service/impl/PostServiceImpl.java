@@ -26,6 +26,8 @@ import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -852,18 +854,35 @@ public class PostServiceImpl implements PostService {
 
 	            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	                try {
-	                    FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
+
+	          
 	                    String bodyText;
 	                    if (senderId2 != null) {
 	                        bodyText = senderId + " " + senderId2 + " " + messageBody;
 	                    } else {
 	                        bodyText = senderId + " " + messageBody;
 	                    }
+
+	                	 // FCM Notification
+		                Notification notificationData = Notification.builder()
+		                        .setTitle(title)
+		                        .setBody(bodyText)
+		                        .build();
+
+		                // Android Config
+		                AndroidNotification androidNotification = AndroidNotification.builder()
+		                        .setIcon("ic_notification")
+		                        .setColor("#FFFFFF")
+		                        .build();
+
+		                AndroidConfig androidConfig = AndroidConfig.builder()
+		                        .setNotification(androidNotification)
+		                        .build();
+	                	
 	                    Message firebaseMessage = Message.builder()
-	                            .setNotification(Notification.builder()
-	                                    .setTitle(title)
-	                                    .setBody(bodyText)
-	                                    .build())
+	                            .setNotification(notificationData)
+	                            .setAndroidConfig(androidConfig)
+
 	                            .putData("type", userType)
 	                            .putData("refId", String.valueOf(refId))
 	                            .putData("senderId", String.valueOf(senderId))
@@ -871,7 +890,7 @@ public class PostServiceImpl implements PostService {
 	                            .setToken(deviceToken)
 	                            .build();
 
-	                    String firebaseResponse = FirebaseMessaging.getInstance(firebaseApp).send(firebaseMessage);
+	                    String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
 	                    logger.info("Push notification sent successfully: {}", firebaseResponse);
 
 	                } catch (FirebaseMessagingException e) {
@@ -1004,36 +1023,50 @@ public class PostServiceImpl implements PostService {
 
 	        // Step 3: Send Push Notification via Firebase
 	        String deviceToken = receiver.getFirebaseDeviceToken();
+	        
+	     
 
 	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	            try {
-	                FirebaseApp firebaseApp = FirebaseApp.getInstance("Film-Hook");
-	                String bodyText = senderId + " " + messageBody;
-                    
-	                Message firebaseMessage = Message.builder()
-	                    .setNotification(Notification.builder()
+	            	
+	            	  String bodyText = senderId + " " + messageBody;
+	            	   // Create the notification payload
+	                Notification notification = Notification.builder()
 	                        .setTitle(title)
 	                        .setBody(bodyText)
-	                        .build())
+	                        .build();
+
+	                // Android-specific settings
+	                AndroidNotification androidNotification = AndroidNotification.builder()
+	                        .setIcon("ic_notification") // matches Android app drawable
+	                        .setColor("#FFFFFF") // optional tint
+	                        .build();
+
+	                AndroidConfig androidConfig = AndroidConfig.builder()
+	                        .setNotification(androidNotification)
+	                        .build();
+	                Message firebaseMessage = Message.builder()
+	                    .setNotification(notification)
 	                    .putData("type", userType)
 	                    .putData("refId", String.valueOf(refId))
 	                    .putData("senderId", String.valueOf(senderId))
 	                    .putData("receiverId", String.valueOf(receiverId))
+	                    .setAndroidConfig(androidConfig)
 	                    .setToken(deviceToken)
 	                    .build();
 
-	                String firebaseResponse = FirebaseMessaging.getInstance(firebaseApp).send(firebaseMessage);
-	                logger.info("✅ Push notification sent successfully: {}", firebaseResponse);
+	                String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
+	                logger.info("Push notification sent successfully: {}", firebaseResponse);
 
 	            } catch (FirebaseMessagingException e) {
-	                logger.error("❌ Firebase push notification failed: {}", e.getMessage(), e);
+	                logger.error("Firebase push notification failed: {}", e.getMessage(), e);
 	            }
 	        } else {
-	            logger.warn("⚠️ No Firebase token available for receiver ID: {}", receiverId);
+	            logger.warn("No Firebase token available for receiver ID: {}", receiverId);
 	        }
 
 	    } catch (Exception e) {
-	        logger.error("❌ Exception in sendNotification(): {}", e.getMessage(), e);
+	        logger.error("Exception in sendNotification(): {}", e.getMessage(), e);
 	    }
 	}
 

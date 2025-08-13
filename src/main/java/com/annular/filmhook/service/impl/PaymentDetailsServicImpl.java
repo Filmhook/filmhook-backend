@@ -31,6 +31,8 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PaymentDetailsService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -448,11 +450,24 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
             String deviceToken = user.getFirebaseDeviceToken();
             if (deviceToken != null && !deviceToken.trim().isEmpty()) {
                 try {
+                	 // FCM Notification
+	                Notification notificationData = Notification.builder()
+	                        .setTitle(notificationTitle)
+	                        .setBody(notificationMessage)
+	                        .build();
+
+	                // Android Config
+	                AndroidNotification androidNotification = AndroidNotification.builder()
+	                        .setIcon("ic_notification")
+	                        .setColor("#FFFFFF")
+	                        .build();
+
+	                AndroidConfig androidConfig = AndroidConfig.builder()
+	                        .setNotification(androidNotification)
+	                        .build();
                     Message firebaseMessage = Message.builder()
-                            .setNotification(Notification.builder()
-                                    .setTitle(notificationTitle)
-                                    .setBody(notificationMessage)
-                                    .build())
+                            .setNotification(notificationData)
+                            .setAndroidConfig(androidConfig)
                             .putData("type", "PROMOTION_EXPIRY")
                             .putData("paymentId", String.valueOf(paymentId))
                             .setToken(deviceToken)

@@ -13,6 +13,8 @@ import com.annular.filmhook.service.NotificationService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.NotificationWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -111,6 +113,7 @@ public class NotificationServiceImpl implements NotificationService {
 	                .message(messageBody)
 	                .userType(userType)
 	                .id(refId)
+	                .isDeleted(false)
 	                .isRead(false)
 	                .createdOn(new Date())
 	                .createdBy(senderId)
@@ -119,17 +122,32 @@ public class NotificationServiceImpl implements NotificationService {
 	        inAppNotificationRepository.save(notification);
 
 	        // Send Firebase Push Notification
+
 	        String deviceToken = receiver.getFirebaseDeviceToken();
 	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	            try {
+	            	 // FCM Notification
+	                Notification notificationData = Notification.builder()
+	                        .setTitle(title)
+	                        .setBody(messageBody)
+	                        .build();
+
+	                // Android Config
+	                AndroidNotification androidNotification = AndroidNotification.builder()
+	                        .setIcon("ic_notification")
+	                        .setColor("#FFFFFF")
+	                        .build();
+
+	                AndroidConfig androidConfig = AndroidConfig.builder()
+	                        .setNotification(androidNotification)
+	                        .build();
+	            	
 	                Message firebaseMessage = Message.builder()
-	                        .setNotification(Notification.builder()
-	                                .setTitle(title)
-	                                .setBody(messageBody)
-	                                .build())
+	                		 .setToken(deviceToken)
+	                        .setNotification(notificationData)
+	                        .setAndroidConfig(androidConfig)
 	                        .putData("type", userType)
-	                        .putData("refId", String.valueOf(refId))
-	                        .setToken(deviceToken)
+	                        .putData("refId", String.valueOf(refId))	                       
 	                        .build();
 
 	                String response = FirebaseMessaging.getInstance().send(firebaseMessage);
