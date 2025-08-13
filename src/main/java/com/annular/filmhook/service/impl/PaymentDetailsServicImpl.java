@@ -470,6 +470,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                             .setAndroidConfig(androidConfig)
                             .putData("type", "PROMOTION_EXPIRY")
                             .putData("paymentId", String.valueOf(paymentId))
+                            .putData("postId", String.valueOf(promoteData.getPostId()))
                             .setToken(deviceToken)
                             .build();
 

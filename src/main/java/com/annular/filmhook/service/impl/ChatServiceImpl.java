@@ -289,7 +289,7 @@ public class ChatServiceImpl implements ChatService {
 									.setAndroidConfig(androidConfig)
 									.putData("chatId", String.valueOf(chat.getChatId()))									
 									.putData("type", "chat")
-									.putData("chatId", String.valueOf(chat.getChatId()))
+									.putData("profilePic", userService.getProfilePicUrl(userId))
 									.putData("senderId", String.valueOf(user.getUserId()))
 									.setToken(deviceToken)
 									.build();
