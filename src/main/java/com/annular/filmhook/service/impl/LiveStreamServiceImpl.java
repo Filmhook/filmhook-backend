@@ -69,7 +69,7 @@ public class LiveStreamServiceImpl implements LiveStreamService {
 
             // 3️⃣ Notification Details
             String notificationTitle = "New Live Stream Started!";
-            String notificationMessage = "A new live stream has started on channel: " + liveDetails.getChannelName();
+            String notificationMessage = " is going live. Don’t miss it!";
 
             // 4️⃣ Send Notification to All Users
             for (User user : allUsers) {

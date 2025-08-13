@@ -1011,7 +1011,7 @@ public class PostServiceImpl implements PostService {
 			                post.getCreatedBy(),                        
 			                commentInputWebModel.getUserId(),                        
 			                "New Comment on Your Post",
-			                commenterName + " commented on your post.",
+			                " commented on your post.",
 			                "POST_COMMENT",
 			                comment.getCommentId(),
 			                post.getPostId()
