@@ -923,7 +923,7 @@ public class PostServiceImpl implements PostService {
 		                        .build();
 	                	
 	                    Message firebaseMessage = Message.builder()
-	                            .setNotification(notificationData)
+//	                            .setNotification(notificationData)
 	                            .setAndroidConfig(androidConfig)
 
 	                            .putData("type", userType)
@@ -1090,7 +1090,7 @@ public class PostServiceImpl implements PostService {
 	                        .setNotification(androidNotification)
 	                        .build();
 	                Message firebaseMessage = Message.builder()
-	                    .setNotification(notification)
+//	                    .setNotification(notification)
 	                    .putData("type", userType)
 	                    .putData("refId", String.valueOf(refId))
 	                    .putData("postId", postId)
