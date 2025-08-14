@@ -265,7 +265,16 @@ public class ChatServiceImpl implements ChatService {
 
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 						String notificationTitle = user.getName();
-						String notificationMessage = chatWebModel.getMessage();  // Push actual message like "Hi", "Bye", etc.
+						 List<String> unreadMessages = chatRepository
+		                            .findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
+
+		                    // Add the current message if not already present
+		                    if (!unreadMessages.contains(chatWebModel.getMessage())) {
+		                        unreadMessages.add(chatWebModel.getMessage());
+		                    }
+
+		                    // Combine into single notification body
+		                    String notificationMessage = String.join("\n", unreadMessages);  // Push actual message like "Hi", "Bye", etc.
 
 						try {
 							// FCM Notification
@@ -277,7 +286,7 @@ public class ChatServiceImpl implements ChatService {
 							// Android Config
 							AndroidNotification androidNotification = AndroidNotification.builder()
 									.setIcon("ic_notification")
-									.setColor("#FFFFFF")
+									.setColor("#4d79ff")
 									.build();
 
 							AndroidConfig androidConfig = AndroidConfig.builder()

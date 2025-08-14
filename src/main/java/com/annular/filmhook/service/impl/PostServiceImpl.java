@@ -13,7 +13,7 @@ import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.PostTags;
 import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.model.MediaFileCategory;
-import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+
 import com.annular.filmhook.model.FollowersRequest;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.util.CalendarUtil;
@@ -252,7 +252,7 @@ public class PostServiceImpl implements PostService {
 
 		                        AndroidNotification androidNotification = AndroidNotification.builder()
 		                                .setIcon("ic_notification")
-		                                .setColor("#FFFFFF")
+		                                .setColor("#4d79ff")
 		                                .build();
 
 		                        AndroidConfig androidConfig = AndroidConfig.builder()
@@ -913,7 +913,7 @@ public class PostServiceImpl implements PostService {
 		                // Android Config
 		                AndroidNotification androidNotification = AndroidNotification.builder()
 		                        .setIcon("ic_notification")
-		                        .setColor("#4d79ff")
+		                        .setColor("#FFFFFF")
 		                        .build();
 
 		                AndroidConfig androidConfig = AndroidConfig.builder()
@@ -1079,7 +1079,7 @@ public class PostServiceImpl implements PostService {
 	                // Android-specific settings
 	                AndroidNotification androidNotification = AndroidNotification.builder()
 	                        .setIcon("ic_notification") // matches Android app drawable
-	                        .setColor("#4d79ff") // optional tint
+	                        .setColor("#FFFFFF") // optional tint
 	                        .build();
 
 	                AndroidConfig androidConfig = AndroidConfig.builder()
