@@ -899,9 +899,11 @@ public class PostServiceImpl implements PostService {
 	          
 	                    String bodyText;
 	                    if (senderId2 != null) {
-	                        bodyText = senderId + " " + senderId2 + " " + messageBody;
+	                    	Optional<User> sender2Opt = userRepository.findById(senderId2);
+	                        String sender2Name = sender2Opt.map(User::getName).orElse("Someone");
+	                        bodyText = sender.getName() + " & " + sender2Name + " " + messageBody;
 	                    } else {
-	                        bodyText = senderId + " " + messageBody;
+	                        bodyText = sender.getName() + " " + messageBody;
 	                    }
 
 	                	 // FCM Notification
@@ -923,10 +925,10 @@ public class PostServiceImpl implements PostService {
 	                    Message firebaseMessage = Message.builder()
 	                            .setNotification(notificationData)
 	                            .setAndroidConfig(androidConfig)
-
 	                            .putData("type", userType)
 	                            .putData("refId", String.valueOf(refId))
 	                            .putData("senderId", String.valueOf(senderId))
+	                            .putData("postId", postId)        
 	                            .putData("receiverId", String.valueOf(receiverId))
 	                            .setToken(deviceToken)
 	                            .build();
@@ -1008,7 +1010,7 @@ public class PostServiceImpl implements PostService {
 			                post.getCreatedBy(),                        
 			                commentInputWebModel.getUserId(),                        
 			                "New Comment on Your Post",
-			                commenterName + " commented on your post.",
+			                " commented on your post.",
 			                "POST_COMMENT",
 			                comment.getCommentId(),
 			                post.getPostId()
@@ -1069,10 +1071,11 @@ public class PostServiceImpl implements PostService {
 
 	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	            try {
+	            	String bodyText = sender.getName() + " " + messageBody;
 	            	   // Create the notification payload
 	                Notification notification = Notification.builder()
 	                        .setTitle(title)
-	                        .setBody(messageBody)
+	                        .setBody(bodyText)
 	                        .build();
 
 	                // Android-specific settings
@@ -1090,6 +1093,7 @@ public class PostServiceImpl implements PostService {
 	                    .putData("refId", String.valueOf(refId))
 	                    .putData("senderId", String.valueOf(senderId))
 	                    .putData("receiverId", String.valueOf(receiverId))
+	                    .putData("postId", postId)
 	                    .setAndroidConfig(androidConfig)
 	                    .setToken(deviceToken)
 	                    .build();
