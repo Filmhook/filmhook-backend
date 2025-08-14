@@ -913,7 +913,7 @@ public class PostServiceImpl implements PostService {
 		                // Android Config
 		                AndroidNotification androidNotification = AndroidNotification.builder()
 		                        .setIcon("ic_notification")
-		                        .setColor("#FFFFFF")
+		                        .setColor("#4d79ff")
 		                        .build();
 
 		                AndroidConfig androidConfig = AndroidConfig.builder()
@@ -1079,7 +1079,7 @@ public class PostServiceImpl implements PostService {
 	                // Android-specific settings
 	                AndroidNotification androidNotification = AndroidNotification.builder()
 	                        .setIcon("ic_notification") // matches Android app drawable
-	                        .setColor("#FFFFFF") // optional tint
+	                        .setColor("#4d79ff") // optional tint
 	                        .build();
 
 	                AndroidConfig androidConfig = AndroidConfig.builder()
