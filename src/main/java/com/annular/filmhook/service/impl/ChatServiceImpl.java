@@ -264,28 +264,31 @@ public class ChatServiceImpl implements ChatService {
 					String deviceToken = receiver.getFirebaseDeviceToken();
 
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-						String notificationTitle = user.getName();
-						  List<String> unreadMessages = chatRepository
-			                        .findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
+						
 
-			                // Add the current message if not in the list
-			                if (!unreadMessages.contains(chatWebModel.getMessage())) {
-			                    unreadMessages.add(chatWebModel.getMessage());
-			                }
+						// 1️⃣ Get unread messages from this sender to this receiver
+						List<String> unreadMessages = chatRepository
+								.findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
 
-			                // Latest message for collapsed view
-			                String latestMessage = chatWebModel.getMessage();
+						// Add the current message if not already in the list
+						if (!unreadMessages.contains(chatWebModel.getMessage())) {
+							unreadMessages.add(chatWebModel.getMessage());
+						}
 
-			                // Join unread messages into one payload string
-			                String allUnread = String.join("||", unreadMessages);
+						// 2️⃣ Latest message for compact notification view
+						String latestMessage = chatWebModel.getMessage();
+
+						// 3️⃣ Combine all unread messages into a single string for payload
+						String allUnread = String.join("||", unreadMessages);
+
 						try {
-							// FCM Notification
+							// Build FCM Notification
 							Notification notificationData = Notification.builder()
-									.setTitle(notificationTitle)
-									.setBody(latestMessage)
+									.setTitle(user.getName()) 
+									.setBody(latestMessage)  
 									.build();
 
-							// Android Config
+							// Android-specific notification settings
 							AndroidNotification androidNotification = AndroidNotification.builder()
 									.setIcon("ic_notification")
 									.setColor("#4d79ff")
@@ -295,14 +298,15 @@ public class ChatServiceImpl implements ChatService {
 									.setNotification(androidNotification)
 									.build();
 
+							// Build and send FCM message
 							Message message = Message.builder()
 									.setNotification(notificationData)
 									.setAndroidConfig(androidConfig)
-									.putData("chatId", String.valueOf(chat.getChatId()))									
+									.putData("chatId", String.valueOf(chat.getChatId()))
 									.putData("type", "chat")
 									.putData("profilePic", userService.getProfilePicUrl(userId))
 									.putData("senderId", String.valueOf(user.getUserId()))
-									.putData("allUnread", allUnread) 
+									.putData("allUnread", allUnread) // For expanded view
 									.setToken(deviceToken)
 									.build();
 
