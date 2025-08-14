@@ -265,22 +265,24 @@ public class ChatServiceImpl implements ChatService {
 
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 						String notificationTitle = user.getName();
-						 List<String> unreadMessages = chatRepository
-		                            .findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
+						  List<String> unreadMessages = chatRepository
+			                        .findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
 
-		                    // Add the current message if not already present
-		                    if (!unreadMessages.contains(chatWebModel.getMessage())) {
-		                        unreadMessages.add(chatWebModel.getMessage());
-		                    }
+			                // Add the current message if not in the list
+			                if (!unreadMessages.contains(chatWebModel.getMessage())) {
+			                    unreadMessages.add(chatWebModel.getMessage());
+			                }
 
-		                    // Combine into single notification body
-		                    String notificationMessage = String.join("\n", unreadMessages);  // Push actual message like "Hi", "Bye", etc.
+			                // Latest message for collapsed view
+			                String latestMessage = chatWebModel.getMessage();
 
+			                // Join unread messages into one payload string
+			                String allUnread = String.join("||", unreadMessages);
 						try {
 							// FCM Notification
 							Notification notificationData = Notification.builder()
 									.setTitle(notificationTitle)
-									.setBody(notificationMessage)
+									.setBody(latestMessage)
 									.build();
 
 							// Android Config
@@ -300,6 +302,7 @@ public class ChatServiceImpl implements ChatService {
 									.putData("type", "chat")
 									.putData("profilePic", userService.getProfilePicUrl(userId))
 									.putData("senderId", String.valueOf(user.getUserId()))
+									.putData("allUnread", allUnread) 
 									.setToken(deviceToken)
 									.build();
 
