@@ -27,6 +27,8 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.LiveStreamService;
 import com.annular.filmhook.webmodel.LiveDetailsWebModel;
 import com.annular.filmhook.webmodel.LiveStreamCommentWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -70,6 +72,8 @@ public class LiveStreamServiceImpl implements LiveStreamService {
             // 3️⃣ Notification Details
             String notificationTitle = "New Live Stream Started!";
             String notificationMessage = " is going live. Don’t miss it!";
+            User sender = userRepository.findById(liveDetails.getUserId()).orElse(null);
+            String senderName = (sender != null) ? sender.getName() : "Someone";
 
             // 4️⃣ Send Notification to All Users
             for (User user : allUsers) {
@@ -99,16 +103,31 @@ public class LiveStreamServiceImpl implements LiveStreamService {
 
                     // Send Push Notification (only if token exists)
                     if (user.getFirebaseDeviceToken() != null && !user.getFirebaseDeviceToken().trim().isEmpty()) {
-                        Message message = Message.builder()
-                                .setNotification(Notification.builder()
-                                        .setTitle(notificationTitle)
-                                        .setBody(notificationMessage)
-                                        .build())
-                                .putData("LiveDetailsId", String.valueOf(liveDetails.getLiveChannelId()))
+                        Notification firebaseNotification = Notification.builder()
+                                .setTitle(notificationTitle)
+                                .setBody(senderName + notificationMessage)
+                                .build();
+
+                        AndroidNotification androidNotification = AndroidNotification.builder()
+                                .setIcon("ic_notification")
+                                .setColor("#4d79ff")
+                                .build();
+
+                        AndroidConfig androidConfig = AndroidConfig.builder()
+                                .setNotification(androidNotification)
+                                .build();
+
+                        Message firebaseMessage = Message.builder()
+                                .setNotification(firebaseNotification)
+                                .putData("type", "Live")
+                                .putData("LiveChannelId", String.valueOf(liveDetails.getLiveChannelId()))
+                                .putData("senderId", String.valueOf(liveDetails.getUserId()))
+                                .putData("receiverId", String.valueOf(user.getUserId()))
+                                .setAndroidConfig(androidConfig)
                                 .setToken(user.getFirebaseDeviceToken())
                                 .build();
 
-                        String response = FirebaseMessaging.getInstance().send(message);
+                        String response = FirebaseMessaging.getInstance().send(firebaseMessage);
                         logger.info("Push notification sent to userId {}: {}", user.getUserId(), response);
                     } else {
                         logger.warn("User {} has no Firebase token. Skipping push notification.", user.getUserId());
