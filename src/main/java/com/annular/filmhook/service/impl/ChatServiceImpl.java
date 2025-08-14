@@ -308,6 +308,8 @@ public class ChatServiceImpl implements ChatService {
 									.putData("senderId", String.valueOf(user.getUserId()))
 									.putData("senderName", senderName) 
 		                            .putData("allUnread", allUnread)   
+		                            .putData("userType", user.getUserType())
+		                            .putData("adminReview", String.valueOf(user.getAdminReview()))
 		                            .putData("groupKey", "filmhook_chat")  
 									.setToken(deviceToken)
 									.build();
@@ -330,7 +332,7 @@ public class ChatServiceImpl implements ChatService {
 		} catch (Exception e) {
 			logger.error("Error occurred while saving message", e);
 			return ResponseEntity.internalServerError().body(new Response(0, "Failed", "An error occurred while saving message"));
-		}
+		}	
 	}
 
 	// Full Java code for getAllUser in ChatServiceImpl
@@ -823,8 +825,7 @@ public class ChatServiceImpl implements ChatService {
 		try {
 			Integer loggedInUserId = userDetails.userInfo().getId();
 			String loggedInUserType = userDetails.userInfo().getUserType();
-			Float loggedInAdminReview = userDetails.userInfo().getAdminReview();
-
+			
 			List<User> users;
 
 			if ("public User".equalsIgnoreCase(loggedInUserType)) {
