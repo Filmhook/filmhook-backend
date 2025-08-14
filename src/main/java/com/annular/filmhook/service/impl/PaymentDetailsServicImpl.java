@@ -459,7 +459,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 	                // Android Config
 	                AndroidNotification androidNotification = AndroidNotification.builder()
 	                        .setIcon("ic_notification")
-	                        .setColor("#FFFFFF")
+	                        .setColor("#4d79ff")
 	                        .build();
 
 	                AndroidConfig androidConfig = AndroidConfig.builder()
@@ -470,6 +470,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                             .setAndroidConfig(androidConfig)
                             .putData("type", "PROMOTION_EXPIRY")
                             .putData("paymentId", String.valueOf(paymentId))
+                            .putData("postId", String.valueOf(promoteData.getPostId()))
                             .setToken(deviceToken)
                             .build();
 

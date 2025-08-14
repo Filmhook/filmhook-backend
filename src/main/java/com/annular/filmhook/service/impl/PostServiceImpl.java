@@ -13,7 +13,7 @@ import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.PostTags;
 import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.model.MediaFileCategory;
-import com.annular.filmhook.model.FilmProfessionPermanentDetail;
+
 import com.annular.filmhook.model.FollowersRequest;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.util.CalendarUtil;
@@ -25,7 +25,6 @@ import com.annular.filmhook.webmodel.LinkWebModel;
 import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.AndroidConfig;
 import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -39,7 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.repository.CrudRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -99,8 +98,7 @@ public class PostServiceImpl implements PostService {
 	@Autowired
 	MediaFilesService mediaFilesService;
 	
-	@Autowired
-	private InAppNotificationRepository inAppNotificationRepo;
+
 	@Autowired
 	private UserRepository userRepository;
 
@@ -238,9 +236,50 @@ public class PostServiceImpl implements PostService {
 					            .build();
 
 					    inAppNotificationRepository.save(notification);
-					}
+					    
+					    // Send Firebase push notification
+		                User receiver = userService.getUser(taggedUserId).orElse(null);
+		                if (receiver != null && receiver.getFirebaseDeviceToken() != null && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
+		                    try {
+		                        String deviceToken = receiver.getFirebaseDeviceToken();
+		                        String title = "You've been tagged!";
+		                        String messageBody = userFromDB.getName() + " tagged you in a post.";
 
-				}
+		                        Notification firebaseNotification = Notification.builder()
+		                                .setTitle(title)
+		                                .setBody(messageBody)
+		                                .build();
+
+		                        AndroidNotification androidNotification = AndroidNotification.builder()
+		                                .setIcon("ic_notification")
+		                                .setColor("#4d79ff")
+		                                .build();
+
+		                        AndroidConfig androidConfig = AndroidConfig.builder()
+		                                .setNotification(androidNotification)
+		                                .build();
+
+		                        Message firebaseMessage = Message.builder()
+		                                .setNotification(firebaseNotification)
+		                                .putData("type", "Tagged")
+		                                .putData("refId", String.valueOf(savedPost.getId()))
+		                                .putData("postId", savedPost.getPostId())
+		                                .putData("senderId", String.valueOf(postWebModel.getUserId()))
+		                                .putData("receiverId", String.valueOf(taggedUserId))
+		                                .setAndroidConfig(androidConfig)
+		                                .setToken(deviceToken)
+		                                .build();
+
+		                        String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
+		                        logger.info("Push notification sent successfully: {}", firebaseResponse);
+
+		                    } catch (FirebaseMessagingException e) {
+		                        logger.error("Firebase push notification failed: {}", e.getMessage(), e);
+		                    }
+		                }
+		            }
+		        }
+
 
 				List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
 				return responseList.isEmpty() ? null : responseList.get(0);
@@ -854,10 +893,21 @@ public class PostServiceImpl implements PostService {
 
 	            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	                try {
+
+	          
+	                    String bodyText;
+	                    if (senderId2 != null) {
+	                    	Optional<User> sender2Opt = userRepository.findById(senderId2);
+	                        String sender2Name = sender2Opt.map(User::getName).orElse("Someone");
+	                        bodyText = sender.getName() + " & " + sender2Name + " " + messageBody;
+	                    } else {
+	                        bodyText = sender.getName() + " " + messageBody;
+	                    }
+
 	                	 // FCM Notification
 		                Notification notificationData = Notification.builder()
 		                        .setTitle(title)
-		                        .setBody(messageBody)
+		                        .setBody(bodyText)
 		                        .build();
 
 		                // Android Config
@@ -876,6 +926,7 @@ public class PostServiceImpl implements PostService {
 	                            .putData("type", userType)
 	                            .putData("refId", String.valueOf(refId))
 	                            .putData("senderId", String.valueOf(senderId))
+	                            .putData("postId", postId)        
 	                            .putData("receiverId", String.valueOf(receiverId))
 	                            .setToken(deviceToken)
 	                            .build();
@@ -957,7 +1008,7 @@ public class PostServiceImpl implements PostService {
 			                post.getCreatedBy(),                        
 			                commentInputWebModel.getUserId(),                        
 			                "New Comment on Your Post",
-			                commenterName + " commented on your post.",
+			                " commented on your post.",
 			                "POST_COMMENT",
 			                comment.getCommentId(),
 			                post.getPostId()
@@ -1018,10 +1069,11 @@ public class PostServiceImpl implements PostService {
 
 	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 	            try {
+	            	String bodyText = sender.getName() + " " + messageBody;
 	            	   // Create the notification payload
 	                Notification notification = Notification.builder()
 	                        .setTitle(title)
-	                        .setBody(messageBody)
+	                        .setBody(bodyText)
 	                        .build();
 
 	                // Android-specific settings
@@ -1039,6 +1091,7 @@ public class PostServiceImpl implements PostService {
 	                    .putData("postId", postId)
 	                    .putData("senderId", String.valueOf(senderId))
 	                    .putData("receiverId", String.valueOf(receiverId))
+	                    .putData("postId", postId)
 	                    .setAndroidConfig(androidConfig)
 	                    .setToken(deviceToken)
 	                    .build();

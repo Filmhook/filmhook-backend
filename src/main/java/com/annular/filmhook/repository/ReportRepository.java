@@ -33,6 +33,7 @@ public interface ReportRepository extends JpaRepository<ReportPost, Integer> {
 List<ReportPost> findOldSuspendedReports(@Param("sevenDaysAgo") Date sevenDaysAgo);
 
 
+	boolean existsByUserIdAndPostId(Integer userId, Integer postId);
 
 
 

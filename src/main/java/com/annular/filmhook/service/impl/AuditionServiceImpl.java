@@ -525,12 +525,16 @@ public class AuditionServiceImpl implements AuditionService {
 	                : ""
 	        );
 
-	        //  Moved inside the loop — calculate success count per auditionDetails
-	        long successCount = auditionRepository.countByAuditionCategoryAndPaymentStatusAndAuditionIsactive(
-	                auditionDetails.getAuditionDetailsId(), "SUCCESS", true);
-	            
+	        // Get all subcategories for this category
+	        List<AuditionSubDetails> subCategories =
+	                auditionSubDetailsRepository.findByAuditionDetails_AuditionDetailsId(auditionDetails.getAuditionDetailsId());
 
-	            response.put("counts", successCount);
+	        // Sum up counts from all subcategories
+	        long totalCount = subCategories.stream()
+	                .mapToLong(sub -> auditionRepository.countBySubCategoryWithSuccessPayment(sub.getSubId()))
+	                .sum();
+
+	        response.put("counts", totalCount);
 
 	        return response;
 	    }).collect(Collectors.toList());

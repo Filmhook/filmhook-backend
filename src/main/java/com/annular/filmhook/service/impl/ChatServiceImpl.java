@@ -264,33 +264,49 @@ public class ChatServiceImpl implements ChatService {
 					String deviceToken = receiver.getFirebaseDeviceToken();
 
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-						String notificationTitle = user.getName();
-						String notificationMessage = chatWebModel.getMessage();  // Push actual message like "Hi", "Bye", etc.
+						
+
+						// 1️⃣ Get unread messages from this sender to this receiver
+						List<String> unreadMessages = chatRepository
+								.findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
+
+						// Add the current message if not already in the list
+						if (!unreadMessages.contains(chatWebModel.getMessage())) {
+							unreadMessages.add(chatWebModel.getMessage());
+						}
+
+						// 2️⃣ Latest message for compact notification view
+						String latestMessage = chatWebModel.getMessage();
+
+						// 3️⃣ Combine all unread messages into a single string for payload
+						String allUnread = String.join("||", unreadMessages);
 
 						try {
-							// FCM Notification
+							// Build FCM Notification
 							Notification notificationData = Notification.builder()
-									.setTitle(notificationTitle)
-									.setBody(notificationMessage)
+									.setTitle(user.getName()) 
+									.setBody(latestMessage)  
 									.build();
 
-							// Android Config
+							// Android-specific notification settings
 							AndroidNotification androidNotification = AndroidNotification.builder()
 									.setIcon("ic_notification")
-									.setColor("#FFFFFF")
+									.setColor("#4d79ff")
 									.build();
 
 							AndroidConfig androidConfig = AndroidConfig.builder()
 									.setNotification(androidNotification)
 									.build();
 
+							// Build and send FCM message
 							Message message = Message.builder()
 									.setNotification(notificationData)
 									.setAndroidConfig(androidConfig)
-									.putData("chatId", String.valueOf(chat.getChatId()))									
-									.putData("type", "chat")
 									.putData("chatId", String.valueOf(chat.getChatId()))
+									.putData("type", "chat")
+									.putData("profilePic", userService.getProfilePicUrl(userId))
 									.putData("senderId", String.valueOf(user.getUserId()))
+									.putData("allUnread", allUnread) // For expanded view
 									.setToken(deviceToken)
 									.build();
 
