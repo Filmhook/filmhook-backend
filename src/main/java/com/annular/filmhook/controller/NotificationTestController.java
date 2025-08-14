@@ -43,6 +43,9 @@ public class NotificationTestController {
 	                    .putData("type", "chat") // custom data for navigation
 	                    .putData("chatUserId", "12345") // dynamic value for chat
 	                    .putData("click_action", "FLUTTER_NOTIFICATION_CLICK")
+	                    .putData("PPppp", "12345") 
+	                    .putData("dddddd", "12345") 
+	                    
 	                    .build();
 
 	            // Send notification

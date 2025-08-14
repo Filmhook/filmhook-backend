@@ -1036,7 +1036,7 @@ public class PostServiceImpl implements PostService {
 	                Message firebaseMessage = Message.builder()
 	                    .setNotification(notification)
 	                    .putData("type", userType)
-	                    .putData("refId", String.valueOf(refId))
+	                    .putData("postId", postId)
 	                    .putData("senderId", String.valueOf(senderId))
 	                    .putData("receiverId", String.valueOf(receiverId))
 	                    .setAndroidConfig(androidConfig)
