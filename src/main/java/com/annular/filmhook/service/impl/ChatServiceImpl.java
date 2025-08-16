@@ -264,7 +264,7 @@ public class ChatServiceImpl implements ChatService {
 					String deviceToken = receiver.getFirebaseDeviceToken();
 
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-						
+						 String senderName = user.getName();
 
 						// 1️⃣ Get unread messages from this sender to this receiver
 						List<String> unreadMessages = chatRepository
@@ -306,7 +306,11 @@ public class ChatServiceImpl implements ChatService {
 									.putData("type", "chat")
 									.putData("profilePic", userService.getProfilePicUrl(userId))
 									.putData("senderId", String.valueOf(user.getUserId()))
-									.putData("allUnread", allUnread) // For expanded view
+									.putData("senderName", senderName) 
+		                            .putData("allUnread", allUnread)   
+		                            .putData("userType", user.getUserType())
+		                            .putData("adminReview", String.valueOf(user.getAdminReview()))
+		                            .putData("groupKey", "filmhook_chat")  
 									.setToken(deviceToken)
 									.build();
 
@@ -328,7 +332,7 @@ public class ChatServiceImpl implements ChatService {
 		} catch (Exception e) {
 			logger.error("Error occurred while saving message", e);
 			return ResponseEntity.internalServerError().body(new Response(0, "Failed", "An error occurred while saving message"));
-		}
+		}	
 	}
 
 	// Full Java code for getAllUser in ChatServiceImpl
@@ -821,8 +825,7 @@ public class ChatServiceImpl implements ChatService {
 		try {
 			Integer loggedInUserId = userDetails.userInfo().getId();
 			String loggedInUserType = userDetails.userInfo().getUserType();
-			Float loggedInAdminReview = userDetails.userInfo().getAdminReview();
-
+			
 			List<User> users;
 
 			if ("public User".equalsIgnoreCase(loggedInUserType)) {
