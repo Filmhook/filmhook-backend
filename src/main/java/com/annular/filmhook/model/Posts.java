@@ -58,6 +58,9 @@ public class Posts {
 
     @Column(name = "likes_count", nullable = false, columnDefinition = "int default 0")
     private Integer likesCount;
+    
+    @Column(name = "unlikes_count", nullable = false, columnDefinition = "int default 0")
+    private Integer unlikesCount = 0;
 
     @Column(name = "comments_count", nullable = false, columnDefinition = "int default 0")
     private Integer commentsCount;

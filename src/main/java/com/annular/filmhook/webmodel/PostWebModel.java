@@ -43,7 +43,10 @@ public class PostWebModel {
     private Integer followersCount;
     private Boolean likeStatus;
     private Integer likeId;
-    private Boolean pinStatus;
+    private Integer UnlikesCount; 
+    private Boolean UnlikeStatus;
+    private Boolean pinMediaStatus;
+    private Boolean pinProfileStatus;
     private String elapsedTime;
 
     private Date createdOn;

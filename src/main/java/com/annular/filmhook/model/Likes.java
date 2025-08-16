@@ -69,5 +69,8 @@ public class Likes {
     
     @Column(name = "is_notified")
     private Boolean notified = false;
+    
+    @Column(name = "reaction_type")
+    private String reactionType; // "LIKE" or "UNLIKE"
 
 }

@@ -57,5 +57,50 @@ public class NotificationTestController {
 	            return ResponseEntity.status(500).body("Error sending notification: " + e.getMessage());
 	        }
 	    }
+	 
+	 @PostMapping("/chat")
+	 public ResponseEntity<String> sendChatNotification(
+	         @RequestParam String deviceToken,
+	         @RequestParam String senderId,
+	         @RequestParam String senderName,
+	         @RequestParam String messages // Example: "Hello||Hi||How are you"
+	 ) {
+	     try {
+	         // Create the notification payload
+	         Notification notification = Notification.builder()
+	                 .setTitle(senderName) // Sender name as title
+	                 .setBody("New message from " + senderName)
+	                 .build();
+
+	         // Android settings
+	         AndroidNotification androidNotification = AndroidNotification.builder()
+	                 .setIcon("ic_notification")
+	                 .setColor("#4d79ff")
+	                 .build();
+
+	         AndroidConfig androidConfig = AndroidConfig.builder()
+	                 .setNotification(androidNotification)
+	                 .build();
+
+	         // Build FCM message with grouped chat data
+	         Message message = Message.builder()
+	                 .setToken(deviceToken)
+	                 .setNotification(notification)
+	                 .setAndroidConfig(androidConfig)
+	                 .putData("type", "chat")
+	                 .putData("senderId", senderId) // Group key for Android / thread-id for iOS
+	                 .putData("title", senderName)
+	                 .putData("allUnread", messages) // Messages joined by ||
+	                 .build();
+
+	         String response = FirebaseMessaging.getInstance().send(message);
+	         return ResponseEntity.ok("Chat notification sent: " + response);
+
+	     } catch (Exception e) {
+	         e.printStackTrace();
+	         return ResponseEntity.status(500)
+	                 .body("Error sending chat notification: " + e.getMessage());
+	     }
+	 }
 }
 

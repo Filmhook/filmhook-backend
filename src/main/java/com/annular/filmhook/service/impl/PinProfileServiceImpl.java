@@ -302,7 +302,7 @@ public class PinProfileServiceImpl implements PinProfileService {
                 .postId(post.getPostId()) // Unique id of each post
                 .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                 .description(post.getDescription())
-                .pinStatus(pinStatus)
+                .pinMediaStatus(pinStatus)
                 .userType(post.getUser().getUserType())
                 .likeCount(post.getLikesCount())
                 .shareCount(post.getSharesCount())
