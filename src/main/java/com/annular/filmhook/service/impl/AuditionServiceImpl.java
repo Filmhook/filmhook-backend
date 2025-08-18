@@ -1453,7 +1453,7 @@ public class AuditionServiceImpl implements AuditionService {
 	        } else {
 	            response.put("auditionList", "No auditions found");
 	        }
-	    } catch (Exception e) {
+	    } catch (Exception e) {	
 	        logger.error("get audition by sub-category Exception -> {}", e.getMessage());
 	        e.printStackTrace();
 	        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));

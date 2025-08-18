@@ -41,6 +41,12 @@ public class ReportPost {
 
     @Column(name = "reason")
     private String reason;
+    
+    @Column(name = "subject")
+    private String subject;
+    
+//    @Column(name = "current_address")
+//    private String currentAddress;
 
     @Column(name = "status")
     private Boolean status;
@@ -58,7 +64,7 @@ public class ReportPost {
     @Column(name = "updated_on")
     @CreationTimestamp
     private Date updatedOn;
-    
+       
     @Column(name = "notificationCount")
     private Boolean notificationCount;
     
