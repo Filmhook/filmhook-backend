@@ -13,6 +13,7 @@ public class ReportPostWebModel {
     private Integer userId; // primary key of user table
     private Integer postId; // primary key of posts table
     private String reason;
+    private String subject;                                                                                            
     private Integer deletePostSuspension;
     private String postTitle;
     private String emailId;

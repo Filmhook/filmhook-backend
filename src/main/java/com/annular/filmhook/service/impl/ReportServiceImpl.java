@@ -156,6 +156,9 @@ public class ReportServiceImpl implements ReportService {
                 String userEmail = postOwner.getEmail();
                 String subject = "Important: Your Post Has Been Reported on Film-Hook";
 
+                
+                String postLink = "https://film-hookapps.com/report/" + postId;
+                
                 // Step 3: Email Content
                 StringBuilder content = new StringBuilder();
                 content.append("<html><body>")
@@ -164,9 +167,15 @@ public class ReportServiceImpl implements ReportService {
                         .append("</div>")
                         .append("<p>Dear ").append(postOwner.getName()).append(",</p>")
                         .append("<p>We have received a report against your post on <strong>Film-Hook Apps</strong>.</p>")
+                        .append("<p><strong> Subject: </strong> ").append(reportPostWebModel.getSubject()).append("</p>")
                         .append("<p><strong>Reported Reason:</strong> ").append(reportPostWebModel.getReason()).append("</p>")
-                        .append("<p>Please note that if your post is found to be violating our community guidelines, it will be <strong>automatically deleted within 24 hours</strong>.</p>")
-                        .append("<p>If you believe this was a mistake, please contact our support team immediately.</p>")
+//                        .append("<p>Please note that if your post is found to be violating our community guidelines, it will be <strong>automatically deleted within 24 hours</strong>.</p>")
+//                        .append("<p>If you believe this was a mistake, please contact our support team immediately.</p>")
+                        .append("<p>To view the reported post, ")
+                        .append("<a href='").append(postLink).append("' target='_blank' style='color:#1a73e8; font-weight:bold;'>click here</a>.</p>")
+                        .append("<p>Our moderation team will now review this report in accordance with our community guidelines. ")
+                        .append("No immediate action has been taken on your post at this stage. If any action becomes necessary, you will be notified promptly.</p>")
+                        .append("<p>If you believe this report was made in error, you may reach out to our support team and submit an appeal to provide additional information or clarification.</p>")
                         .append("<br><p>Best Regards,</p>")
                         .append("<p><b>Film-Hook Apps Team</b></p>")
                         .append("<p>📧 <a href='mailto:support@film-hookapps.com'>support@film-hookapps.com</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Website</a></p>")
@@ -186,7 +195,7 @@ public class ReportServiceImpl implements ReportService {
                         .append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP' target='_blank'>")
                         .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30'></a>")
                         .append("<a href='https://www.linkedin.com/in/film-hook-68666a353' target='_blank'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linedIn.jpeg' width='30'></a>")
+                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linkedIn.jpeg' width='30'></a>")
                         .append("</p>")
                         .append("</body></html>");
                 // Step 4: Send Email
