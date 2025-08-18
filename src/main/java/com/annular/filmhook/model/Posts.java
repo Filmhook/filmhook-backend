@@ -59,6 +59,7 @@ public class Posts {
     @Column(name = "likes_count", nullable = false, columnDefinition = "int default 0")
     private Integer likesCount;
     
+    @Builder.Default
     @Column(name = "unlikes_count", nullable = false, columnDefinition = "int default 0")
     private Integer unlikesCount = 0;
 
