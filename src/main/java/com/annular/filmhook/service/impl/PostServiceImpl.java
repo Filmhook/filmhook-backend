@@ -1082,7 +1082,7 @@ public class PostServiceImpl implements PostService {
 	            	String bodyText = sender.getName() + " " + messageBody;
 	            	   // Create the notification payload
 	                Notification notification = Notification.builder()
-	                        .setTitle(title)
+//	                        .setTitle(title)
 	                        .setBody(bodyText)
 	                        .build();
 
