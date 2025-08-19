@@ -247,7 +247,7 @@ public class ReportServiceImpl implements ReportService {
                         .map(Likes::getStatus)
                         .orElse(false);
 
-                boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
+                boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
                         .map(UserProfilePin::isStatus)
                         .orElse(false);
 
@@ -258,7 +258,7 @@ public class ReportServiceImpl implements ReportService {
                         .postId(post.getPostId())
                         .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                         .description(post.getDescription())
-                        .pinStatus(pinStatus)
+                        .pinMediaStatus(pinMediaStatus)
                         .likeCount(post.getLikesCount())
                         .shareCount(post.getSharesCount())
                         .commentCount(post.getCommentsCount())
@@ -345,7 +345,7 @@ public class ReportServiceImpl implements ReportService {
                         .map(Likes::getStatus)
                         .orElse(false);
 
-                boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
+                boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
                         .map(UserProfilePin::isStatus)
                         .orElse(false);
 
@@ -356,7 +356,7 @@ public class ReportServiceImpl implements ReportService {
                         .postId(post.getPostId())
                         .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                         .description(post.getDescription())
-                        .pinStatus(pinStatus)
+                        .pinMediaStatus(pinMediaStatus)
                         .likeCount(post.getLikesCount())
                         .shareCount(post.getSharesCount())
                         .commentCount(post.getCommentsCount())
@@ -454,7 +454,7 @@ public class ReportServiceImpl implements ReportService {
                 boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
                     .map(Likes::getStatus).orElse(false);
 
-                boolean pinStatus = pinProfileRepository.findByPinProfileIdAndUserId(
+                boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(
                     post.getUser().getUserId(), userId).map(UserProfilePin::isStatus).orElse(false);
 
                 PostWebModel postWebModels = PostWebModel.builder()
@@ -464,7 +464,7 @@ public class ReportServiceImpl implements ReportService {
                     .postId(post.getPostId())
                     .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                     .description(post.getDescription())
-                    .pinStatus(pinStatus)
+                    .pinMediaStatus(pinMediaStatus)
                     .likeCount(post.getLikesCount())
                     .shareCount(post.getSharesCount())
                     .commentCount(post.getCommentsCount())

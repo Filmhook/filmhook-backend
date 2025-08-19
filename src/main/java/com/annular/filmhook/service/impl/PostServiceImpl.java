@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.UserMediaPin;
 import com.annular.filmhook.model.UserProfilePin;
 import com.annular.filmhook.model.VisitPage;
 import com.annular.filmhook.model.Posts;
@@ -71,6 +72,7 @@ import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.LinkRepository;
+import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.AuditionRepository;
 import com.annular.filmhook.repository.CommentRepository;
@@ -107,6 +109,9 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	PinProfileRepository pinProfileRepository;
+	
+	@Autowired
+	PinMediaRepository pinMediaRepository;
 
 	@Autowired
 	UserService userService;
@@ -412,14 +417,32 @@ public class PostServiceImpl implements PostService {
 					List<FollowersRequest> followersList = friendRequestRepository
 							.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
-					// Likes
+					// Likes & Unlikes for logged-in user
 					Boolean likeStatus = false;
+					Boolean unlikeStatus = false;
 					Integer latestLikeId = null;
+
 					if (finalLoggedInUser != null) {
-						Optional<Likes> likesList = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
-						likeStatus = likesList.map(Likes::getStatus).orElse(false);
-						latestLikeId = likesList.map(Likes::getLikeId).orElse(null);
+					    Optional<Likes> reactionOpt = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
+					    if (reactionOpt.isPresent()) {
+					        Likes r = reactionOpt.get();
+					        latestLikeId = r.getLikeId();
+
+					        // Use reactionType instead of only status
+					        if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
+					            likeStatus = true;
+					            unlikeStatus = false;
+					        } else if ("UNLIKE".equalsIgnoreCase(r.getReactionType())) {
+					            likeStatus = false;
+					            unlikeStatus = true;
+					        }
+					    }
 					}
+
+					// Count total likes/unlikes
+					Long totalLikesCount = likeRepository.countByPostIdAndReactionType(post.getId(), "LIKE");
+					Long totalUnlikesCount = likeRepository.countByPostIdAndReactionType(post.getId(), "UNLIKE");
+
 
 					// Pin Status
 					Boolean pinStatus = false;
@@ -428,6 +451,14 @@ public class PostServiceImpl implements PostService {
 						pinStatus = userData.map(UserProfilePin::isStatus).orElse(false);
 					}
 
+					Boolean pinMediaStatus = false;
+					if (finalLoggedInUser != null) {
+					    Optional<UserMediaPin> userData =
+					        pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId());
+
+					    pinMediaStatus = userData.isPresent();   // only true if actively pinned
+					}
+					
 					// Promote
 					boolean isPromoted = promoteRepository.existsByPostIdAndStatus(post.getId(), true);
 					Optional<Promote> promoteDetailsOpt = promoteRepository.findByPostIds(post.getId());
@@ -461,9 +492,12 @@ public class PostServiceImpl implements PostService {
 							.adminReview(post.getUser().getAdminReview())
 							.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
 							.description(post.getDescription())
-							.pinStatus(pinStatus)
+							.pinMediaStatus(pinMediaStatus)
+							.pinProfileStatus(pinStatus)
 							.userType(post.getUser().getUserType())
-							.likeCount(post.getLikesCount())
+							.likeCount(totalLikesCount.intValue())  
+							  .UnlikesCount(totalUnlikesCount.intValue()) 
+							  .UnlikeStatus(unlikeStatus)  
 							.shareCount(post.getSharesCount())
 							.commentCount(post.getCommentsCount())
 							.promoteFlag(post.getPromoteFlag())
@@ -634,132 +668,108 @@ public class PostServiceImpl implements PostService {
 	        Audition audition = null;
 	        Comment existingComment = null;
 
-	        // Handle post and audition separately
+	        // --- Validate category targets ---
 	        if (POST.equalsIgnoreCase(likeWebModel.getCategory())) {
 	            post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
 	            if (post == null) return null;
 	        } else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory())) {
 	            audition = auditionRepository.findById(likeWebModel.getAuditionId()).orElse(null);
 	            if (audition == null) return null;
-	        }
-
-	        if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
-	            existingComment = likeWebModel.getCommentId() != null ?
-	                    commentRepository.findById(likeWebModel.getCommentId()).orElse(null) : null;
+	        } else if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
+	            existingComment = likeWebModel.getCommentId() != null
+	                    ? commentRepository.findById(likeWebModel.getCommentId()).orElse(null)
+	                    : null;
 	            if (existingComment == null) return null;
 	        }
 
-	        // Check if like exists already
+	        // --- Find existing like/unlike record ---
 	        Likes existingLike;
 	        if (!Utility.isNullObject(likeWebModel.getLikeId())) {
 	            existingLike = likeRepository.findById(likeWebModel.getLikeId()).orElse(null);
 	        } else {
 	            existingLike = likeRepository.findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionId(
-	                likeWebModel.getCategory(),
-	                likeWebModel.getUserId(),
-	                likeWebModel.getPostId(),
-	                likeWebModel.getCommentId(),
-	                likeWebModel.getAuditionId()
+	                    likeWebModel.getCategory(),
+	                    likeWebModel.getUserId(),
+	                    likeWebModel.getPostId(),
+	                    likeWebModel.getCommentId(),
+	                    likeWebModel.getAuditionId()
 	            ).orElse(null);
 	        }
 
 	        if (existingLike != null) {
+	            // Update reaction type directly (LIKE or UNLIKE)
+	            existingLike.setReactionType(likeWebModel.getReactionType());
+	            existingLike.setStatus("LIKE".equalsIgnoreCase(likeWebModel.getReactionType())); // status = true for like, false for unlike
+	            existingLike.setUpdatedBy(likeWebModel.getUserId());
+	            existingLike.setUpdatedOn(new Date());
 	            likeRowToSaveOrUpdate = existingLike;
-	            likeRowToSaveOrUpdate.setStatus(!existingLike.getStatus());
-	            likeRowToSaveOrUpdate.setUpdatedBy(likeWebModel.getUserId());
-	            likeRowToSaveOrUpdate.setUpdatedOn(new Date());
 	        } else {
+	            // Insert new record
 	            likeRowToSaveOrUpdate = Likes.builder()
-	                .category(likeWebModel.getCategory())
-	                .postId(likeWebModel.getPostId())
-	                .commentId(likeWebModel.getCommentId())
-	                .auditionId(likeWebModel.getAuditionId())
-	                .likedBy(likeWebModel.getUserId())
-	                .notified(false)
-	                .status(true)
-	                .createdBy(likeWebModel.getUserId())
-	                .createdOn(new Date())
-	                .build();
+	                    .category(likeWebModel.getCategory())
+	                    .postId(likeWebModel.getPostId())
+	                    .commentId(likeWebModel.getCommentId())
+	                    .auditionId(likeWebModel.getAuditionId())
+	                    .likedBy(likeWebModel.getUserId())
+	                    .reactionType(likeWebModel.getReactionType())
+	                    .status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType()))
+	                    .notified(false)
+	                    .createdBy(likeWebModel.getUserId())
+	                    .createdOn(new Date())
+	                    .build();
 	        }
 
 	        Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
 
-	        Integer totalLikes = 0;
+	        // --- Count likes & unlikes ---
+	        Integer totalLikes = likeRepository.countByReactionType(
+	                likeWebModel.getCategory(),
+	                likeWebModel.getPostId(),
+	                likeWebModel.getCommentId(),
+	                likeWebModel.getAuditionId(),
+	                "LIKE"
+	        );
 
-	        if (POST.equalsIgnoreCase(likeWebModel.getCategory()) && post != null) {
-	            if (likeRowToSaveOrUpdate.getStatus()) {
-	                post.setLikesCount(post.getLikesCount() != null ? post.getLikesCount() + 1 : 1);
-	            } else {
-	                post.setLikesCount(post.getLikesCount() != null ? Math.max(0, post.getLikesCount() - 1) : 0);
-	            }
-	            postsRepository.saveAndFlush(post);
-	            totalLikes = post.getLikesCount();
+	        Integer totalUnlikes = likeRepository.countByReactionType(
+	                likeWebModel.getCategory(),
+	                likeWebModel.getPostId(),
+	                likeWebModel.getCommentId(),
+	                likeWebModel.getAuditionId(),
+	                "UNLIKE"
+	        );
 
-	        } else if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory()) && existingComment != null) {
-	            if (likeRowToSaveOrUpdate.getStatus()) {
-	                existingComment.setLikesCount(existingComment.getLikesCount() != null ? existingComment.getLikesCount() + 1 : 1);
-	            } else {
-	                existingComment.setLikesCount(existingComment.getLikesCount() != null ? Math.max(0, existingComment.getLikesCount() - 1) : 0);
-	            }
-	            commentRepository.saveAndFlush(existingComment);
-	            totalLikes = existingComment.getLikesCount();
-	          
-//	            if (likeRowToSaveOrUpdate.getStatus() &&
-//					    existingComment != null &&
-//					    existingComment.getCommentedBy() != null &&
-//					    !existingComment.getCommentedBy().equals(likeWebModel.getUserId())) {
-//
-//					    User liker = userRepository.findById(likeWebModel.getUserId()).orElse(null);
-//					    String likerName = liker != null ? liker.getName() : "Someone";
-//
-//					    logger.info("🔔 Triggering comment like notification for commentId: {}", existingComment.getCommentId());
-//
-//					    sendNotification(
-//					        existingComment.getCommentedBy(),
-//					        likeWebModel.getUserId(),
-//					        "Someone Liked Your Comment",
-//					        likerName + " liked your comment.",
-//					        "COMMENT_LIKE",
-//					        existingComment.getCommentId()
-//					    );
-//					
-//				}
+	        logger.info("Like count [{}], Unlike count [{}] for category [{}]",
+	                totalLikes, totalUnlikes, likeWebModel.getCategory());
 
-	        } else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory()) && audition != null) {
-	            if (likeRowToSaveOrUpdate.getStatus()) {
-	                audition.setLikesCount(audition.getLikesCount() != null ? audition.getLikesCount() + 1 : 1);
-	            } else {
-	                audition.setLikesCount(audition.getLikesCount() != null ? Math.max(0, audition.getLikesCount() - 1) : 0);
-	            }
-	            auditionRepository.saveAndFlush(audition);
-	            totalLikes = audition.getLikesCount();
-	        }
+	        return this.transformLikeData(savedLike, totalLikes, totalUnlikes, likeWebModel.getUserId());
 
-	        logger.info("Like count for category [{}] is [{}]", likeWebModel.getCategory(), totalLikes);
-	        return this.transformLikeData(savedLike, totalLikes);
 	    } catch (Exception e) {
 	        logger.error("Error at addOrUpdateLike() -> {}", e.getMessage(), e);
 	        return null;
 	    }
-
 	}
 
 
-	private LikeWebModel transformLikeData(Likes likes, Integer totalCount) {
-		return LikeWebModel.builder()
-				.likeId(likes.getLikeId())
-				.category(likes.getCategory())
-				.postId(likes.getPostId())
-				.commentId(likes.getCommentId())
-				.userId(likes.getLikedBy())
-				.totalLikesCount(totalCount)
-				.status(likes.getStatus())
-				.createdBy(likes.getCreatedBy())
-				.createdOn(likes.getCreatedOn())
-				.updatedBy(likes.getUpdatedBy())
-				.updatedOn(likes.getUpdatedOn())
-				.build();
+
+	private LikeWebModel transformLikeData(Likes likes, Integer totalLikes, Integer totalUnlikes, Integer loggedInUserId) {
+	    return LikeWebModel.builder()
+	            .likeId(likes.getLikeId())
+	            .category(likes.getCategory())
+	            .postId(likes.getPostId())
+	            .commentId(likes.getCommentId())
+	            .userId(likes.getLikedBy())
+	            .totalLikesCount(totalLikes)
+	            .totalUnlikesCount(totalUnlikes)
+	            .status(likes.getStatus())
+	            .isLiked(likes.getStatus() != null && likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
+	            .isUnliked(likes.getStatus() != null && !likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
+	            .createdBy(likes.getCreatedBy())
+	            .createdOn(likes.getCreatedOn())
+	            .updatedBy(likes.getUpdatedBy())
+	            .updatedOn(likes.getUpdatedOn())
+	            .build();
 	}
+
 	
 	 @Scheduled(fixedRate = 1 * 60 * 1000) // every 1 minute
 	    public void sendBatchLikeNotifications() {
@@ -1088,7 +1098,7 @@ public class PostServiceImpl implements PostService {
 	                Message firebaseMessage = Message.builder()
 	                    .setNotification(notification)
 	                    .putData("type", userType)
-	                    .putData("refId", String.valueOf(refId))
+	                    .putData("postId", postId)
 	                    .putData("senderId", String.valueOf(senderId))
 	                    .putData("receiverId", String.valueOf(receiverId))
 	                    .putData("postId", postId)
