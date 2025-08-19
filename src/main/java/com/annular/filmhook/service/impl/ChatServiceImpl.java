@@ -81,6 +81,8 @@ public class ChatServiceImpl implements ChatService {
 	UserRepository userRepository;
 
 	@Autowired
+	MediaFilesRepository mediaFileRepository;
+	@Autowired
 	ChatRepository chatRepository;
 
 	@Autowired
@@ -270,23 +272,41 @@ public class ChatServiceImpl implements ChatService {
 						List<String> unreadMessages = chatRepository
 								.findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
 
-						// Add the current message if not already in the list
-						if (!unreadMessages.contains(chatWebModel.getMessage())) {
-							unreadMessages.add(chatWebModel.getMessage());
+						String latestMessage;
+						String imageUrl = null;
+
+						
+						// After saving chat + media files
+						List<MediaFiles> savedFiles = mediaFileRepository.findByCategoryAndCategoryRefId(
+						        MediaFileCategory.Chat, chat.getChatId());
+
+						if (!savedFiles.isEmpty()) {
+						    imageUrl = savedFiles.get(0).getFilePath();  // ✅ first uploaded file URL
+						    latestMessage = "📷 Photo";                 // Placeholder text in notification
+						} else {
+						    latestMessage = chatWebModel.getMessage();
 						}
 
-						// 2️⃣ Latest message for compact notification view
-						String latestMessage = chatWebModel.getMessage();
+					        // Add current latestMessage if not already present
+					        if (!unreadMessages.contains(latestMessage)) {
+					            unreadMessages.add(latestMessage);
+					        }
 
 						// 3️⃣ Combine all unread messages into a single string for payload
 						String allUnread = String.join("||", unreadMessages);
 
 						try {
 							// Build FCM Notification
-							Notification notificationData = Notification.builder()
-									.setTitle(user.getName()) 
-									.setBody(latestMessage)  
-									.build();
+							  Notification.Builder notificationBuilder = Notification.builder()
+					                    .setTitle(senderName)
+					                    .setBody(latestMessage);
+
+					            // If photo exists, add image URL to FCM notification
+					            if (imageUrl != null) {
+					                notificationBuilder.setImage(imageUrl);
+					            }
+
+						  Notification notificationData = notificationBuilder.build();
 
 							// Android-specific notification settings
 							AndroidNotification androidNotification = AndroidNotification.builder()
