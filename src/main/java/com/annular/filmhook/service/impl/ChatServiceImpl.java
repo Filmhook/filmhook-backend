@@ -285,15 +285,27 @@ public class ChatServiceImpl implements ChatService {
 						    imageUrl = firstFile.getFilePath();
 						    mediaType = firstFile.getFileType();
 
-						    if (firstFile.getFileType().equalsIgnoreCase("IMAGE")) {
+						    String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
+
+						    if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg") 
+						        || fileType.endsWith(".png") || fileType.endsWith(".webp")) {
+						        
 						        latestMessage = "📷 Photo";
-						    } else if (firstFile.getFileType().equalsIgnoreCase("VIDEO")) {
+
+						    } else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov") 
+						               || fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
+						        
 						        latestMessage = "🎥 Video";
-						    } else if (firstFile.getFileType().equalsIgnoreCase("POST")) {
+
+						    } else if (fileType.contains("post")) {
+						        
 						        latestMessage = "📌 Shared Post";
+
 						    } else {
-						        latestMessage = "📎 Attachment";
+						        
+						        latestMessage = "📎 Attachment";  
 						    }
+
 						} else {
 						    latestMessage = chatWebModel.getMessage();
 						}

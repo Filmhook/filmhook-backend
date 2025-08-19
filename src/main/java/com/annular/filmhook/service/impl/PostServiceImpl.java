@@ -99,7 +99,7 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	MediaFilesService mediaFilesService;
-	
+
 
 	@Autowired
 	private UserRepository userRepository;
@@ -109,7 +109,7 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	PinProfileRepository pinProfileRepository;
-	
+
 	@Autowired
 	PinMediaRepository pinMediaRepository;
 
@@ -222,68 +222,69 @@ public class PostServiceImpl implements PostService {
 					postTagsRepository.saveAllAndFlush(tagsList);
 
 					for (PostTags tag : tagsList) {
-					    Integer taggedUserId = tag.getTaggedUser().getUserId();
+						Integer taggedUserId = tag.getTaggedUser().getUserId();
 
-					    InAppNotification notification = InAppNotification.builder()
-					            .senderId(postWebModel.getUserId())
-					            .receiverId(taggedUserId)
-					            .title("You've been tagged in a post")
-					            .message(userFromDB.getName() + " tagged you in a post.")
-					            .createdOn(new Date())
-					            .isRead(false)
-					            .adminReview(userFromDB.getAdminReview())
-					            .Profession(userFromDB.getUserType())
-					            .isDeleted(false)
-					            .createdBy(postWebModel.getUserId())
-					            .id(tag.getId()) 
-					            .userType("Tagged")
-					            .postId(savedPost.getPostId())
-					            .build();
+						InAppNotification notification = InAppNotification.builder()
+								.senderId(postWebModel.getUserId())
+								.receiverId(taggedUserId)
+								.title("You've been tagged in a post")
+								.message( " tagged you in a post.")
+								.createdOn(new Date())
+								.isRead(false)
+								.adminReview(userFromDB.getAdminReview())
+								.Profession(userFromDB.getUserType())
+								.isDeleted(false)
+								.createdBy(postWebModel.getUserId())
+								.id(tag.getId()) 
+								.userType("Tagged")
+								.postId(savedPost.getPostId())
+								.build();
 
-					    inAppNotificationRepository.save(notification);
-					    
-					    // Send Firebase push notification
-		                User receiver = userService.getUser(taggedUserId).orElse(null);
-		                if (receiver != null && receiver.getFirebaseDeviceToken() != null && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
-		                    try {
-		                        String deviceToken = receiver.getFirebaseDeviceToken();
-		                        String title = "You've been tagged!";
-		                        String messageBody = userFromDB.getName() + " tagged you in a post.";
+						inAppNotificationRepository.save(notification);
 
-		                        Notification firebaseNotification = Notification.builder()
-		                                .setTitle(title)
-		                                .setBody(messageBody)
-		                                .build();
+						// Send Firebase push notification
+						User receiver = userService.getUser(taggedUserId).orElse(null);
+						if (receiver != null && receiver.getFirebaseDeviceToken() != null && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
+							try {
+								String deviceToken = receiver.getFirebaseDeviceToken();
+								String title = "You've been tagged!";
+								String messageBody = userFromDB.getName() + " tagged you in a post.";
 
-		                        AndroidNotification androidNotification = AndroidNotification.builder()
-		                                .setIcon("ic_notification")
-		                                .setColor("#4d79ff")
-		                                .build();
+								Notification firebaseNotification = Notification.builder()
+										//		                                .setTitle(title)
+										.setTitle(messageBody)
+										//		                                .setBody(messageBody)
+										.build();
 
-		                        AndroidConfig androidConfig = AndroidConfig.builder()
-		                                .setNotification(androidNotification)
-		                                .build();
+								AndroidNotification androidNotification = AndroidNotification.builder()
+										.setIcon("ic_notification")
+										.setColor("#4d79ff")
+										.build();
 
-		                        Message firebaseMessage = Message.builder()
-		                                .setNotification(firebaseNotification)
-		                                .putData("type", "Tagged")
-		                                .putData("refId", String.valueOf(savedPost.getId()))
-		                                .putData("postId", savedPost.getPostId())
-		                                .putData("senderId", String.valueOf(postWebModel.getUserId()))
-		                                .putData("receiverId", String.valueOf(taggedUserId))
-		                                .setAndroidConfig(androidConfig)
-		                                .setToken(deviceToken)
-		                                .build();
+								AndroidConfig androidConfig = AndroidConfig.builder()
+										.setNotification(androidNotification)
+										.build();
 
-		                        String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
-		                        logger.info("Push notification sent successfully: {}", firebaseResponse);
+								Message firebaseMessage = Message.builder()
+										.setNotification(firebaseNotification)
+										.putData("type", "Tagged")
+										.putData("refId", String.valueOf(savedPost.getId()))
+										.putData("postId", savedPost.getPostId())
+										.putData("senderId", String.valueOf(postWebModel.getUserId()))
+										.putData("receiverId", String.valueOf(taggedUserId))
+										.setAndroidConfig(androidConfig)
+										.setToken(deviceToken)
+										.build();
 
-		                    } catch (FirebaseMessagingException e) {
-		                        logger.error("Firebase push notification failed: {}", e.getMessage(), e);
-		                    }
-		                }
-		            }
-		        }
+								String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
+								logger.info("Push notification sent successfully: {}", firebaseResponse);
+
+							} catch (FirebaseMessagingException e) {
+								logger.error("Firebase push notification failed: {}", e.getMessage(), e);
+							}
+						}
+					}
+				}
 
 
 				List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
@@ -324,51 +325,51 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize, Integer highlightPostId) {
-	    try {
-	        // Fetch posts created by the user
-	        List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
+		try {
+			// Fetch posts created by the user
+			List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
 
-	        // Fetch tagged posts
-	        String userIdString = userId.toString();
-	        List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
+			// Fetch tagged posts
+			String userIdString = userId.toString();
+			List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
 
-	        // Combine and remove duplicates
-	        Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
-	        combinedPostsSet.addAll(taggedPosts);
-	        List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
+			// Combine and remove duplicates
+			Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
+			combinedPostsSet.addAll(taggedPosts);
+			List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
 
-	        // Sorting logic
-	        combinedPostsList.sort(Comparator
-	            .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder()))
-	            .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
+			// Sorting logic
+			combinedPostsList.sort(Comparator
+					.comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder()))
+					.thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
 
-	        // If highlightPostId is passed → move it to the top
-	        if (highlightPostId != null) {
-	            Posts highlighted = combinedPostsList.stream()
-	                    .filter(post -> post.getPostId().equals(highlightPostId))
-	                    .findFirst()
-	                    .orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
+			// If highlightPostId is passed → move it to the top
+			if (highlightPostId != null) {
+				Posts highlighted = combinedPostsList.stream()
+						.filter(post -> post.getPostId().equals(highlightPostId))
+						.findFirst()
+						.orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
 
-	            if (highlighted != null) {
-	                combinedPostsList.remove(highlighted);
-	                combinedPostsList.add(0, highlighted);
-	            }
-	        }
+				if (highlighted != null) {
+					combinedPostsList.remove(highlighted);
+					combinedPostsList.add(0, highlighted);
+				}
+			}
 
 
-	        // Pagination
-	        int totalPosts = combinedPostsList.size();
-	        int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
-	        int toIndex = Math.min(fromIndex + pageSize, totalPosts);
+			// Pagination
+			int totalPosts = combinedPostsList.size();
+			int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
+			int toIndex = Math.min(fromIndex + pageSize, totalPosts);
 
-	        List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
+			List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
 
-	        return this.transformPostsDataToPostWebModel(paginatedPosts);
+			return this.transformPostsDataToPostWebModel(paginatedPosts);
 
-	    } catch (Exception e) {
-	        logger.error("Error at getPostsByUserId() -> {}", e.getMessage(), e);
-	        return null;
-	    }
+		} catch (Exception e) {
+			logger.error("Error at getPostsByUserId() -> {}", e.getMessage(), e);
+			return null;
+		}
 	}
 
 	@Override
@@ -377,15 +378,15 @@ public class PostServiceImpl implements PostService {
 		List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
 		return responseList.isEmpty() ? null : responseList.get(0);
 	}
-	
+
 	@Override
 	public PostWebModel getPostById(Integer id) {
-	    Posts post = postsRepository.findById(id).orElse(null);
-	    if (post == null) {
-	        return null;
-	    }
-	    List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
-	    return responseList.isEmpty() ? null : responseList.get(0);
+		Posts post = postsRepository.findById(id).orElse(null);
+		if (post == null) {
+			return null;
+		}
+		List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(post));
+		return responseList.isEmpty() ? null : responseList.get(0);
 	}
 
 	private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
@@ -423,20 +424,20 @@ public class PostServiceImpl implements PostService {
 					Integer latestLikeId = null;
 
 					if (finalLoggedInUser != null) {
-					    Optional<Likes> reactionOpt = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
-					    if (reactionOpt.isPresent()) {
-					        Likes r = reactionOpt.get();
-					        latestLikeId = r.getLikeId();
+						Optional<Likes> reactionOpt = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
+						if (reactionOpt.isPresent()) {
+							Likes r = reactionOpt.get();
+							latestLikeId = r.getLikeId();
 
-					        // Use reactionType instead of only status
-					        if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
-					            likeStatus = true;
-					            unlikeStatus = false;
-					        } else if ("UNLIKE".equalsIgnoreCase(r.getReactionType())) {
-					            likeStatus = false;
-					            unlikeStatus = true;
-					        }
-					    }
+							// Use reactionType instead of only status
+							if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
+								likeStatus = true;
+								unlikeStatus = false;
+							} else if ("UNLIKE".equalsIgnoreCase(r.getReactionType())) {
+								likeStatus = false;
+								unlikeStatus = true;
+							}
+						}
 					}
 
 					// Count total likes/unlikes
@@ -453,12 +454,12 @@ public class PostServiceImpl implements PostService {
 
 					Boolean pinMediaStatus = false;
 					if (finalLoggedInUser != null) {
-					    Optional<UserMediaPin> userData =
-					        pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId());
+						Optional<UserMediaPin> userData =
+								pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId());
 
-					    pinMediaStatus = userData.isPresent();   // only true if actively pinned
+						pinMediaStatus = userData.isPresent();   // only true if actively pinned
 					}
-					
+
 					// Promote
 					boolean isPromoted = promoteRepository.existsByPostIdAndStatus(post.getId(), true);
 					Optional<Promote> promoteDetailsOpt = promoteRepository.findByPostIds(post.getId());
@@ -496,8 +497,8 @@ public class PostServiceImpl implements PostService {
 							.pinProfileStatus(pinStatus)
 							.userType(post.getUser().getUserType())
 							.likeCount(totalLikesCount.intValue())  
-							  .UnlikesCount(totalUnlikesCount.intValue()) 
-							  .UnlikeStatus(unlikeStatus)  
+							.UnlikesCount(totalUnlikesCount.intValue()) 
+							.UnlikeStatus(unlikeStatus)  
 							.shareCount(post.getSharesCount())
 							.commentCount(post.getCommentsCount())
 							.promoteFlag(post.getPromoteFlag())
@@ -662,300 +663,300 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
-	    try {
-	        Likes likeRowToSaveOrUpdate;
-	        Posts post = null;
-	        Audition audition = null;
-	        Comment existingComment = null;
+		try {
+			Likes likeRowToSaveOrUpdate;
+			Posts post = null;
+			Audition audition = null;
+			Comment existingComment = null;
 
-	        // --- Validate category targets ---
-	        if (POST.equalsIgnoreCase(likeWebModel.getCategory())) {
-	            post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
-	            if (post == null) return null;
-	        } else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory())) {
-	            audition = auditionRepository.findById(likeWebModel.getAuditionId()).orElse(null);
-	            if (audition == null) return null;
-	        } else if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
-	            existingComment = likeWebModel.getCommentId() != null
-	                    ? commentRepository.findById(likeWebModel.getCommentId()).orElse(null)
-	                    : null;
-	            if (existingComment == null) return null;
-	        }
+			// --- Validate category targets ---
+			if (POST.equalsIgnoreCase(likeWebModel.getCategory())) {
+				post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
+				if (post == null) return null;
+			} else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory())) {
+				audition = auditionRepository.findById(likeWebModel.getAuditionId()).orElse(null);
+				if (audition == null) return null;
+			} else if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
+				existingComment = likeWebModel.getCommentId() != null
+						? commentRepository.findById(likeWebModel.getCommentId()).orElse(null)
+								: null;
+				if (existingComment == null) return null;
+			}
 
-	        // --- Find existing like/unlike record ---
-	        Likes existingLike;
-	        if (!Utility.isNullObject(likeWebModel.getLikeId())) {
-	            existingLike = likeRepository.findById(likeWebModel.getLikeId()).orElse(null);
-	        } else {
-	            existingLike = likeRepository.findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionId(
-	                    likeWebModel.getCategory(),
-	                    likeWebModel.getUserId(),
-	                    likeWebModel.getPostId(),
-	                    likeWebModel.getCommentId(),
-	                    likeWebModel.getAuditionId()
-	            ).orElse(null);
-	        }
+			// --- Find existing like/unlike record ---
+			Likes existingLike;
+			if (!Utility.isNullObject(likeWebModel.getLikeId())) {
+				existingLike = likeRepository.findById(likeWebModel.getLikeId()).orElse(null);
+			} else {
+				existingLike = likeRepository.findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionId(
+						likeWebModel.getCategory(),
+						likeWebModel.getUserId(),
+						likeWebModel.getPostId(),
+						likeWebModel.getCommentId(),
+						likeWebModel.getAuditionId()
+						).orElse(null);
+			}
 
-	        if (existingLike != null) {
-	            // Update reaction type directly (LIKE or UNLIKE)
-	            existingLike.setReactionType(likeWebModel.getReactionType());
-	            existingLike.setStatus("LIKE".equalsIgnoreCase(likeWebModel.getReactionType())); // status = true for like, false for unlike
-	            existingLike.setUpdatedBy(likeWebModel.getUserId());
-	            existingLike.setUpdatedOn(new Date());
-	            likeRowToSaveOrUpdate = existingLike;
-	        } else {
-	            // Insert new record
-	            likeRowToSaveOrUpdate = Likes.builder()
-	                    .category(likeWebModel.getCategory())
-	                    .postId(likeWebModel.getPostId())
-	                    .commentId(likeWebModel.getCommentId())
-	                    .auditionId(likeWebModel.getAuditionId())
-	                    .likedBy(likeWebModel.getUserId())
-	                    .reactionType(likeWebModel.getReactionType())
-	                    .status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType()))
-	                    .notified(false)
-	                    .createdBy(likeWebModel.getUserId())
-	                    .createdOn(new Date())
-	                    .build();
-	        }
+			if (existingLike != null) {
+				// Update reaction type directly (LIKE or UNLIKE)
+				existingLike.setReactionType(likeWebModel.getReactionType());
+				existingLike.setStatus("LIKE".equalsIgnoreCase(likeWebModel.getReactionType())); // status = true for like, false for unlike
+				existingLike.setUpdatedBy(likeWebModel.getUserId());
+				existingLike.setUpdatedOn(new Date());
+				likeRowToSaveOrUpdate = existingLike;
+			} else {
+				// Insert new record
+				likeRowToSaveOrUpdate = Likes.builder()
+						.category(likeWebModel.getCategory())
+						.postId(likeWebModel.getPostId())
+						.commentId(likeWebModel.getCommentId())
+						.auditionId(likeWebModel.getAuditionId())
+						.likedBy(likeWebModel.getUserId())
+						.reactionType(likeWebModel.getReactionType())
+						.status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType()))
+						.notified(false)
+						.createdBy(likeWebModel.getUserId())
+						.createdOn(new Date())
+						.build();
+			}
 
-	        Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
+			Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
 
-	        // --- Count likes & unlikes ---
-	        Integer totalLikes = likeRepository.countByReactionType(
-	                likeWebModel.getCategory(),
-	                likeWebModel.getPostId(),
-	                likeWebModel.getCommentId(),
-	                likeWebModel.getAuditionId(),
-	                "LIKE"
-	        );
+			// --- Count likes & unlikes ---
+			Integer totalLikes = likeRepository.countByReactionType(
+					likeWebModel.getCategory(),
+					likeWebModel.getPostId(),
+					likeWebModel.getCommentId(),
+					likeWebModel.getAuditionId(),
+					"LIKE"
+					);
 
-	        Integer totalUnlikes = likeRepository.countByReactionType(
-	                likeWebModel.getCategory(),
-	                likeWebModel.getPostId(),
-	                likeWebModel.getCommentId(),
-	                likeWebModel.getAuditionId(),
-	                "UNLIKE"
-	        );
+			Integer totalUnlikes = likeRepository.countByReactionType(
+					likeWebModel.getCategory(),
+					likeWebModel.getPostId(),
+					likeWebModel.getCommentId(),
+					likeWebModel.getAuditionId(),
+					"UNLIKE"
+					);
 
-	        logger.info("Like count [{}], Unlike count [{}] for category [{}]",
-	                totalLikes, totalUnlikes, likeWebModel.getCategory());
+			logger.info("Like count [{}], Unlike count [{}] for category [{}]",
+					totalLikes, totalUnlikes, likeWebModel.getCategory());
 
-	        return this.transformLikeData(savedLike, totalLikes, totalUnlikes, likeWebModel.getUserId());
+			return this.transformLikeData(savedLike, totalLikes, totalUnlikes, likeWebModel.getUserId());
 
-	    } catch (Exception e) {
-	        logger.error("Error at addOrUpdateLike() -> {}", e.getMessage(), e);
-	        return null;
-	    }
+		} catch (Exception e) {
+			logger.error("Error at addOrUpdateLike() -> {}", e.getMessage(), e);
+			return null;
+		}
 	}
 
 
 
 	private LikeWebModel transformLikeData(Likes likes, Integer totalLikes, Integer totalUnlikes, Integer loggedInUserId) {
-	    return LikeWebModel.builder()
-	            .likeId(likes.getLikeId())
-	            .category(likes.getCategory())
-	            .postId(likes.getPostId())
-	            .commentId(likes.getCommentId())
-	            .userId(likes.getLikedBy())
-	            .totalLikesCount(totalLikes)
-	            .totalUnlikesCount(totalUnlikes)
-	            .status(likes.getStatus())
-	            .isLiked(likes.getStatus() != null && likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
-	            .isUnliked(likes.getStatus() != null && !likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
-	            .createdBy(likes.getCreatedBy())
-	            .createdOn(likes.getCreatedOn())
-	            .updatedBy(likes.getUpdatedBy())
-	            .updatedOn(likes.getUpdatedOn())
-	            .build();
+		return LikeWebModel.builder()
+				.likeId(likes.getLikeId())
+				.category(likes.getCategory())
+				.postId(likes.getPostId())
+				.commentId(likes.getCommentId())
+				.userId(likes.getLikedBy())
+				.totalLikesCount(totalLikes)
+				.totalUnlikesCount(totalUnlikes)
+				.status(likes.getStatus())
+				.isLiked(likes.getStatus() != null && likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
+				.isUnliked(likes.getStatus() != null && !likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
+				.createdBy(likes.getCreatedBy())
+				.createdOn(likes.getCreatedOn())
+				.updatedBy(likes.getUpdatedBy())
+				.updatedOn(likes.getUpdatedOn())
+				.build();
 	}
 
-	
-	 @Scheduled(fixedRate = 1 * 60 * 1000) // every 1 minute
-	    public void sendBatchLikeNotifications() {
-	        List<Likes> unnotifiedLikes = likeRepository.findByStatusTrueAndNotifiedFalse();
 
-	        Map<Integer, List<Likes>> likesByPost = unnotifiedLikes.stream()
-	                .filter(like -> like.getPostId() != null && like.getCommentId() == null) // Only post likes
-	                .collect(Collectors.groupingBy(Likes::getPostId));
+	@Scheduled(fixedRate = 1 * 60 * 1000) // every 1 minute
+	public void sendBatchLikeNotifications() {
+		List<Likes> unnotifiedLikes = likeRepository.findByStatusTrueAndNotifiedFalse();
 
-	        Map<Integer, List<Likes>> likesByComment = unnotifiedLikes.stream()
-	                .filter(like -> like.getCommentId() != null) // All comment likes
-	                .collect(Collectors.groupingBy(Likes::getCommentId));
+		Map<Integer, List<Likes>> likesByPost = unnotifiedLikes.stream()
+				.filter(like -> like.getPostId() != null && like.getCommentId() == null) // Only post likes
+				.collect(Collectors.groupingBy(Likes::getPostId));
 
-	        processPostLikeNotifications(likesByPost);
-	        processCommentLikeNotifications(likesByComment);
-	    }
+		Map<Integer, List<Likes>> likesByComment = unnotifiedLikes.stream()
+				.filter(like -> like.getCommentId() != null) // All comment likes
+				.collect(Collectors.groupingBy(Likes::getCommentId));
 
-	    private void processPostLikeNotifications(Map<Integer, List<Likes>> likesByPost) {
-	        for (Map.Entry<Integer, List<Likes>> entry : likesByPost.entrySet()) {
-	            Integer postId = entry.getKey();
-	            List<Likes> likes = entry.getValue();
+		processPostLikeNotifications(likesByPost);
+		processCommentLikeNotifications(likesByComment);
+	}
 
-	            Posts post = postsRepository.findById(postId).orElse(null);
-	            if (post == null) continue;
+	private void processPostLikeNotifications(Map<Integer, List<Likes>> likesByPost) {
+		for (Map.Entry<Integer, List<Likes>> entry : likesByPost.entrySet()) {
+			Integer postId = entry.getKey();
+			List<Likes> likes = entry.getValue();
 
-	            Integer postOwnerId = post.getUser().getUserId();
-	            List<Likes> validLikes = likes.stream()
-	                    .filter(like -> !like.getLikedBy().equals(postOwnerId))
-	                    .collect(Collectors.toList());
+			Posts post = postsRepository.findById(postId).orElse(null);
+			if (post == null) continue;
 
-	            if (validLikes.isEmpty()) continue;
+			Integer postOwnerId = post.getUser().getUserId();
+			List<Likes> validLikes = likes.stream()
+					.filter(like -> !like.getLikedBy().equals(postOwnerId))
+					.collect(Collectors.toList());
 
-	            sendBatchNotification(validLikes, postOwnerId, "Someone Liked Your Post", "Like", postId, post.getPostId());
-	        }
-	    }
+			if (validLikes.isEmpty()) continue;
 
-	    private void processCommentLikeNotifications(Map<Integer, List<Likes>> likesByComment) {
-	        for (Map.Entry<Integer, List<Likes>> entry : likesByComment.entrySet()) {
-	            Integer commentId = entry.getKey();
-	            List<Likes> likes = entry.getValue();
+			sendBatchNotification(validLikes, postOwnerId, "Someone Liked Your Post", "Like", postId, post.getPostId());
+		}
+	}
 
-	            Comment comment = commentRepository.findById(commentId).orElse(null);
-	            if (comment == null) continue;
+	private void processCommentLikeNotifications(Map<Integer, List<Likes>> likesByComment) {
+		for (Map.Entry<Integer, List<Likes>> entry : likesByComment.entrySet()) {
+			Integer commentId = entry.getKey();
+			List<Likes> likes = entry.getValue();
 
-	            Integer commentOwnerId = comment.getCommentedBy();
-	            List<Likes> validLikes = likes.stream()
-	                    .filter(like -> !like.getLikedBy().equals(commentOwnerId))
-	                    .collect(Collectors.toList());
+			Comment comment = commentRepository.findById(commentId).orElse(null);
+			if (comment == null) continue;
 
-	            if (validLikes.isEmpty()) continue;
+			Integer commentOwnerId = comment.getCommentedBy();
+			List<Likes> validLikes = likes.stream()
+					.filter(like -> !like.getLikedBy().equals(commentOwnerId))
+					.collect(Collectors.toList());
 
-	            sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId, comment.getPost().getPostId());
-	        }
-	    }
+			if (validLikes.isEmpty()) continue;
 
-	    private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type, Integer refId, String postId) {
-	        List<User> likers = userRepository.findAllById(
-	                validLikes.stream().map(Likes::getLikedBy).distinct().collect(Collectors.toList())
-	        );
+			sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId, comment.getPost().getPostId());
+		}
+	}
 
-	        if (likers.isEmpty()) return;
+	private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type, Integer refId, String postId) {
+		List<User> likers = userRepository.findAllById(
+				validLikes.stream().map(Likes::getLikedBy).distinct().collect(Collectors.toList())
+				);
 
-	        String message;
-	        Integer senderId = likers.get(0).getUserId();
-	        Integer senderId2 = null;
+		if (likers.isEmpty()) return;
 
-	        if (likers.size() == 1) {
-	            message =  " liked your " + (type.equals("Like") ? "post" : "comment");
-	        } else if (likers.size() == 2) {
-	            senderId2 = likers.get(1).getUserId();
-	            message = " liked your " + (type.equals("Like") ? "post" : "comment");
-	        } else {
-	            message = " and " + (likers.size() - 2) + " others liked your " + (type.equals("Like") ? "post" : "comment");
-	            senderId2 = likers.get(1).getUserId();
-	        }
+		String message;
+		Integer senderId = likers.get(0).getUserId();
+		Integer senderId2 = null;
 
-	     	            sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId, postId);
-	        
+		if (likers.size() == 1) {
+			message =  " liked your " + (type.equals("Like") ? "post" : "comment");
+		} else if (likers.size() == 2) {
+			senderId2 = likers.get(1).getUserId();
+			message = " liked your " + (type.equals("Like") ? "post" : "comment");
+		} else {
+			message = " and " + (likers.size() - 2) + " others liked your " + (type.equals("Like") ? "post" : "comment");
+			senderId2 = likers.get(1).getUserId();
+		}
 
-	        validLikes.forEach(like -> {
-	            like.setNotified(true);
-	            like.setUpdatedOn(new Date());
-	        });
-	        logger.info("SenderId1: {}, SenderId2: {}", senderId, senderId2);
+		sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId, postId);
 
-	        likeRepository.saveAll(validLikes);
-	    }
 
-	    private void sendLikeNotificationWithOptionalSecondSender(
-	            Integer receiverId,
-	            Integer senderId,
-	            Integer senderId2,
-	            String title,
-	            String messageBody,
-	            String userType,
-	            Integer refId, String postId
-	    ) {
-	        try {
-	            Optional<User> senderOpt = userRepository.findById(senderId);
-	            Optional<User> receiverOpt = userRepository.findById(receiverId);
+		validLikes.forEach(like -> {
+			like.setNotified(true);
+			like.setUpdatedOn(new Date());
+		});
+		logger.info("SenderId1: {}, SenderId2: {}", senderId, senderId2);
 
-	            if (senderOpt.isEmpty() || receiverOpt.isEmpty()) {
-	                logger.warn("Sender or Receiver not found. Notification not sent.");
-	                return;
-	            }
+		likeRepository.saveAll(validLikes);
+	}
 
-	            User sender = senderOpt.get();
-	            User receiver = receiverOpt.get();
+	private void sendLikeNotificationWithOptionalSecondSender(
+			Integer receiverId,
+			Integer senderId,
+			Integer senderId2,
+			String title,
+			String messageBody,
+			String userType,
+			Integer refId, String postId
+			) {
+		try {
+			Optional<User> senderOpt = userRepository.findById(senderId);
+			Optional<User> receiverOpt = userRepository.findById(receiverId);
 
-	            InAppNotification inAppNotification = InAppNotification.builder()
-	                    .senderId(senderId)
-	                    .senderId2(senderId2)
-	                    .receiverId(receiverId)
-	                    .title(title)
-	                    .message(messageBody)
-	                    .userType(userType)
-	                    .id(refId)
-	                    .postId(postId)
-	                    .adminReview(sender.getAdminReview())
-	                    .Profession(sender.getUserType())
-	                    .isRead(false)
-	                    .isDeleted(false)
-	                    .createdBy(senderId)
-	                    .createdOn(new Date())
-	                    .build();
+			if (senderOpt.isEmpty() || receiverOpt.isEmpty()) {
+				logger.warn("Sender or Receiver not found. Notification not sent.");
+				return;
+			}
 
-	            inAppNotificationRepository.save(inAppNotification);
-	            logger.info(" In-app notification saved for receiver ID: {}", receiverId);
-	          
-	            String deviceToken = receiver.getFirebaseDeviceToken();
+			User sender = senderOpt.get();
+			User receiver = receiverOpt.get();
 
-	            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-	                try {
+			InAppNotification inAppNotification = InAppNotification.builder()
+					.senderId(senderId)
+					.senderId2(senderId2)
+					.receiverId(receiverId)
+					.title(title)
+					.message(messageBody)
+					.userType(userType)
+					.id(refId)
+					.postId(postId)
+					.adminReview(sender.getAdminReview())
+					.Profession(sender.getUserType())
+					.isRead(false)
+					.isDeleted(false)
+					.createdBy(senderId)
+					.createdOn(new Date())
+					.build();
 
-	          
-	                    String bodyText;
-	                    if (senderId2 != null) {
-	                    	Optional<User> sender2Opt = userRepository.findById(senderId2);
-	                        String sender2Name = sender2Opt.map(User::getName).orElse("Someone");
-	                        bodyText = sender.getName() + " & " + sender2Name + " " + messageBody;
-	                    } else {
-	                        bodyText = sender.getName() + " " + messageBody;
-	                    }
+			inAppNotificationRepository.save(inAppNotification);
+			logger.info(" In-app notification saved for receiver ID: {}", receiverId);
 
-	                	 // FCM Notification
-		                Notification notificationData = Notification.builder()
-		                        //.setTitle(title)
-		                        .setBody(bodyText)
-		                        .build();
+			String deviceToken = receiver.getFirebaseDeviceToken();
 
-		                // Android Config
-		                AndroidNotification androidNotification = AndroidNotification.builder()
-		                        .setIcon("ic_notification")
-		                        .setColor("#FFFFFF")
-		                        .build();
+			if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+				try {
 
-		                AndroidConfig androidConfig = AndroidConfig.builder()
-		                        .setNotification(androidNotification)
-		                        .build();
-	                	
-	                    Message firebaseMessage = Message.builder()
-	                            .setNotification(notificationData)
-	                            .setAndroidConfig(androidConfig)
-	                            .putData("type", userType)
-	                            .putData("refId", String.valueOf(refId))
-	                            .putData("senderId", String.valueOf(senderId))
-	                            .putData("postId", postId)        
-	                            .putData("receiverId", String.valueOf(receiverId))
-	                            .setToken(deviceToken)
-	                            .build();
 
-	                    String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
-	                    logger.info("Push notification sent successfully: {}", firebaseResponse);
+					String bodyText;
+					if (senderId2 != null) {
+						Optional<User> sender2Opt = userRepository.findById(senderId2);
+						String sender2Name = sender2Opt.map(User::getName).orElse("Someone");
+						bodyText = sender.getName() + " & " + sender2Name + " " + messageBody;
+					} else {
+						bodyText = sender.getName() + " " + messageBody;
+					}
 
-	                } catch (FirebaseMessagingException e) {
-	                    logger.error(" Firebase push notification failed: {}", e.getMessage(), e);
-	                }
-	            } else {
-	                logger.warn("No Firebase token available for receiver ID: {}", receiverId);
-	            }
+					// FCM Notification
+					Notification notificationData = Notification.builder()
+						//	.setTitle(title)
+							.setBody(bodyText)
+							.build();
 
-	        } catch (Exception e) {
-	            logger.error("Exception in sendNotification(): {}", e.getMessage(), e);
-	        }
-	    }
-	
+					// Android Config
+					AndroidNotification androidNotification = AndroidNotification.builder()
+							.setIcon("ic_notification")
+							.setColor("#FFFFFF")
+							.build();
+
+					AndroidConfig androidConfig = AndroidConfig.builder()
+							.setNotification(androidNotification)
+							.build();
+
+					Message firebaseMessage = Message.builder()
+							.setNotification(notificationData)
+							.setAndroidConfig(androidConfig)
+							.putData("type", userType)
+							.putData("refId", String.valueOf(refId))
+							.putData("senderId", String.valueOf(senderId))
+							.putData("postId", postId)        
+							.putData("receiverId", String.valueOf(receiverId))
+							.setToken(deviceToken)
+							.build();
+
+					String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
+					logger.info("Push notification sent successfully: {}", firebaseResponse);
+
+				} catch (FirebaseMessagingException e) {
+					logger.error(" Firebase push notification failed: {}", e.getMessage(), e);
+				}
+			} else {
+				logger.warn("No Firebase token available for receiver ID: {}", receiverId);
+			}
+
+		} catch (Exception e) {
+			logger.error("Exception in sendNotification(): {}", e.getMessage(), e);
+		}
+	}
+
 
 	@Override
 	public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {
@@ -984,172 +985,172 @@ public class PostServiceImpl implements PostService {
 				post.setCommentsCount(newPostCommentCount);
 				postsRepository.saveAndFlush(post);
 
-				 boolean isReply = COMMENT.equalsIgnoreCase(commentInputWebModel.getCategory());
-			        Integer parentCommentId = commentInputWebModel.getParentCommentId();
-				 
-				  if (isReply && parentCommentId != null) {
-			            Comment parent = commentRepository.findById(parentCommentId).orElse(null);
-			            if (parent != null) {
-			                parent.setReplyCount((parent.getReplyCount() == null ? 0 : parent.getReplyCount()) + 1);
-			                commentRepository.saveAndFlush(parent);
+				boolean isReply = COMMENT.equalsIgnoreCase(commentInputWebModel.getCategory());
+				Integer parentCommentId = commentInputWebModel.getParentCommentId();
 
-			                // Notify parent comment owner (if not replying to self!)
-			                if (!parent.getCommentedBy().equals(commentInputWebModel.getUserId())) {
-			                    User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
-			                    String senderName = sender != null ? sender.getName() : "Someone";
-			                    sendNotification(
-			                        parent.getCommentedBy(),            
-			                        commentInputWebModel.getUserId(),                
-			                        "Reply to Your Comment",
-			                       " replied to your comment.",
-			                        "COMMENT_REPLY",
-			                        comment.getCommentId(), 
-			                        post.getPostId()// Use commentId for context
-			                    );
-			                }
-			            }
-			        }
+				if (isReply && parentCommentId != null) {
+					Comment parent = commentRepository.findById(parentCommentId).orElse(null);
+					if (parent != null) {
+						parent.setReplyCount((parent.getReplyCount() == null ? 0 : parent.getReplyCount()) + 1);
+						commentRepository.saveAndFlush(parent);
 
-			        // 4. Always notify post owner if commenter is not the post owner
-			        if (!post.getCreatedBy().equals(commentInputWebModel.getUserId())) {
-			            User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
-			            String commenterName = commenter != null ? commenter.getName() : "Someone";
-			            sendNotification(
-			                post.getCreatedBy(),                        
-			                commentInputWebModel.getUserId(),                        
-			                "New Comment on Your Post",
-			                " commented on your post.",
-			                "POST_COMMENT",
-			                comment.getCommentId(),
-			                post.getPostId()
-			            );
-			        }
+						// Notify parent comment owner (if not replying to self!)
+						if (!parent.getCommentedBy().equals(commentInputWebModel.getUserId())) {
+							User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+							String senderName = sender != null ? sender.getName() : "Someone";
+							sendNotification(
+									parent.getCommentedBy(),            
+									commentInputWebModel.getUserId(),                
+									"Reply to Your Comment",
+									" replied to your comment.",
+									"COMMENT_REPLY",
+									comment.getCommentId(), 
+									post.getPostId()// Use commentId for context
+									);
+						}
+					}
+				}
 
-			        logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), commentInputWebModel.getUserId());
-			        logger.info("Comment added to post [{}]", post.getId());
-			        return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
+				// 4. Always notify post owner if commenter is not the post owner
+				if (!post.getCreatedBy().equals(commentInputWebModel.getUserId())) {
+					User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+					String commenterName = commenter != null ? commenter.getName() : "Someone";
+					sendNotification(
+							post.getCreatedBy(),                        
+							commentInputWebModel.getUserId(),                        
+							"New Comment on Your Post",
+							" commented on your post.",
+							"POST_COMMENT",
+							comment.getCommentId(),
+							post.getPostId()
+							);
+				}
 
-			    }} catch (Exception e) {
-			        logger.error("Error at addComment() -> {}", e.getMessage(), e);
-			    }
-			    return null;
+				logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), commentInputWebModel.getUserId());
+				logger.info("Comment added to post [{}]", post.getId());
+				return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
+
+			}} catch (Exception e) {
+				logger.error("Error at addComment() -> {}", e.getMessage(), e);
 			}
-	
-	
-	
-	
+		return null;
+	}
+
+
+
+
 	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId, String postId) {
-	    try {
-	        // Step 1: Validate users
-	        Optional<User> senderOpt = userRepository.findById(senderId);
-	        Optional<User> receiverOpt = userRepository.findById(receiverId);
+		try {
+			// Step 1: Validate users
+			Optional<User> senderOpt = userRepository.findById(senderId);
+			Optional<User> receiverOpt = userRepository.findById(receiverId);
 
-	        if (senderOpt.isEmpty() || receiverOpt.isEmpty()) {
-	            logger.warn("❗ Sender or Receiver not found. Notification not sent.");
-	            return;
-	        }
+			if (senderOpt.isEmpty() || receiverOpt.isEmpty()) {
+				logger.warn("❗ Sender or Receiver not found. Notification not sent.");
+				return;
+			}
 
-	        User sender = senderOpt.get();
-	        User receiver = receiverOpt.get();
+			User sender = senderOpt.get();
+			User receiver = receiverOpt.get();
 
-	        // Step 2: Save In-App Notification
-	        InAppNotification inAppNotification = InAppNotification.builder()
-	            .senderId(senderId)
-	            .receiverId(receiverId)
-	            .title(title)
-	            .message(messageBody)
-	            .userType(userType)               
-	            .id(refId)   
-	            .postId(postId)
-	            .adminReview(sender.getAdminReview())
-	            .Profession(sender.getUserType()) 
-	            .isRead(false)
-	            .isDeleted(false)
-	            .createdBy(senderId)
-	            .createdOn(new Date())
-	            .build();
+			// Step 2: Save In-App Notification
+			InAppNotification inAppNotification = InAppNotification.builder()
+					.senderId(senderId)
+					.receiverId(receiverId)
+					.title(title)
+					.message(messageBody)
+					.userType(userType)               
+					.id(refId)   
+					.postId(postId)
+					.adminReview(sender.getAdminReview())
+					.Profession(sender.getUserType()) 
+					.isRead(false)
+					.isDeleted(false)
+					.createdBy(senderId)
+					.createdOn(new Date())
+					.build();
 
-	        inAppNotificationRepository.save(inAppNotification);
-	        logger.info("In-app notification saved for receiver ID: {}", receiverId);
+			inAppNotificationRepository.save(inAppNotification);
+			logger.info("In-app notification saved for receiver ID: {}", receiverId);
 
-	        // Step 3: Send Push Notification via Firebase
-	        String deviceToken = receiver.getFirebaseDeviceToken();
-	        
-	     
+			// Step 3: Send Push Notification via Firebase
+			String deviceToken = receiver.getFirebaseDeviceToken();
 
-	        if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-	            try {
-	            	String bodyText = sender.getName() + " " + messageBody;
-	            	   // Create the notification payload
-	                Notification notification = Notification.builder()
-	                        .setTitle(bodyText)
-//	                        .setBody(bodyText)
-	                        .build();
 
-	                // Android-specific settings
-	                AndroidNotification androidNotification = AndroidNotification.builder()
-	                        .setIcon("ic_notification") // matches Android app drawable
-	                        .setColor("#FFFFFF") // optional tint
-	                        .build();
 
-	                AndroidConfig androidConfig = AndroidConfig.builder()
-	                        .setNotification(androidNotification)
-	                        .build();
-	                Message firebaseMessage = Message.builder()
-	                    .setNotification(notification)
-	                    .putData("type", userType)
-	                    .putData("postId", postId)
-	                    .putData("senderId", String.valueOf(senderId))
-	                    .putData("receiverId", String.valueOf(receiverId))
-	                    .putData("postId", postId)
-	                    .setAndroidConfig(androidConfig)
-	                    .setToken(deviceToken)
-	                    .build();
+			if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+				try {
+					String bodyText = sender.getName() + " " + messageBody;
+					// Create the notification payload
+					Notification notification = Notification.builder()
+							.setTitle(bodyText)
+							//	                        .setBody(bodyText)
+							.build();
 
-	                String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
-	                logger.info("Push notification sent successfully: {}", firebaseResponse);
+					// Android-specific settings
+					AndroidNotification androidNotification = AndroidNotification.builder()
+							.setIcon("ic_notification") // matches Android app drawable
+							.setColor("#FFFFFF") // optional tint
+							.build();
 
-	            } catch (FirebaseMessagingException e) {
-	                logger.error("Firebase push notification failed: {}", e.getMessage(), e);
-	            }
-	        } else {
-	            logger.warn("No Firebase token available for receiver ID: {}", receiverId);
-	        }
+					AndroidConfig androidConfig = AndroidConfig.builder()
+							.setNotification(androidNotification)
+							.build();
+					Message firebaseMessage = Message.builder()
+							.setNotification(notification)
+							.putData("type", userType)
+							.putData("postId", postId)
+							.putData("senderId", String.valueOf(senderId))
+							.putData("receiverId", String.valueOf(receiverId))
+							.putData("postId", postId)
+							.setAndroidConfig(androidConfig)
+							.setToken(deviceToken)
+							.build();
 
-	    } catch (Exception e) {
-	        logger.error("Exception in sendNotification(): {}", e.getMessage(), e);
-	    }
+					String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
+					logger.info("Push notification sent successfully: {}", firebaseResponse);
+
+				} catch (FirebaseMessagingException e) {
+					logger.error("Firebase push notification failed: {}", e.getMessage(), e);
+				}
+			} else {
+				logger.warn("No Firebase token available for receiver ID: {}", receiverId);
+			}
+
+		} catch (Exception e) {
+			logger.error("Exception in sendNotification(): {}", e.getMessage(), e);
+		}
 	}
 
 	@Override
 	public ResponseEntity<Response> getCommentById(Integer commentId) {
-	    try {
+		try {
 
-	        Comment comment = commentRepository.findByCommentId(commentId)
-	                .orElseThrow(() -> new RuntimeException("Comment not found"));
+			Comment comment = commentRepository.findByCommentId(commentId)
+					.orElseThrow(() -> new RuntimeException("Comment not found"));
 
-	        Posts post = postsRepository.findById(comment.getPostId()).orElse(null);
-	       
-	        int commentCount = (post != null && post.getCommentsCount() != null)
-	                ? post.getCommentsCount()
-	                : 0;
+			Posts post = postsRepository.findById(comment.getPostId()).orElse(null);
 
-	        CommentOutputWebModel output = this.transformCommentData(List.of(comment), commentCount).get(0);
-	    
-	        return ResponseEntity.ok(new Response(1, "success", output));
+			int commentCount = (post != null && post.getCommentsCount() != null)
+					? post.getCommentsCount()
+							: 0;
 
-	    } catch (RuntimeException e) {
-	      
-	        logger.warn("Comment not found for ID: {}", commentId);
-	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-	                .body(new Response(-1, "fail", "Comment not found for ID: " + commentId));
+			CommentOutputWebModel output = this.transformCommentData(List.of(comment), commentCount).get(0);
 
-	    } catch (Exception e) {
-	     
-	        logger.error("Unexpected error in getCommentById(): {}", e.getMessage(), e);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1, "error", "Internal server error occurred"));
-	    }
+			return ResponseEntity.ok(new Response(1, "success", output));
+
+		} catch (RuntimeException e) {
+
+			logger.warn("Comment not found for ID: {}", commentId);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(new Response(-1, "fail", "Comment not found for ID: " + commentId));
+
+		} catch (Exception e) {
+
+			logger.error("Unexpected error in getCommentById(): {}", e.getMessage(), e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "error", "Internal server error occurred"));
+		}
 	}
 
 	@Override
@@ -1463,14 +1464,14 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public Posts getTaggedPostById(Integer taggedId) {
-	    Optional<PostTags> postTagOptional = postTagsRepository.findById(taggedId);
+		Optional<PostTags> postTagOptional = postTagsRepository.findById(taggedId);
 
-	    if (postTagOptional.isPresent()) {
-	        Integer postId = postTagOptional.get().getPostId();
-	        return postsRepository.findById(postId).orElseThrow(() -> new NoSuchElementException("Post not found"));
-	    } else {
-	        throw new NoSuchElementException("Tag not found");
-	    }
+		if (postTagOptional.isPresent()) {
+			Integer postId = postTagOptional.get().getPostId();
+			return postsRepository.findById(postId).orElseThrow(() -> new NoSuchElementException("Post not found"));
+		} else {
+			throw new NoSuchElementException("Tag not found");
+		}
 	}
 
 
