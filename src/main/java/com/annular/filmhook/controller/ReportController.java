@@ -27,6 +27,14 @@ public class ReportController {
     public ResponseEntity<?> addPostReport(@RequestBody ReportPostWebModel reportPostWebModel) {
         try {
             logger.info("addPostReport controller start");
+            
+            if (reportPostWebModel.getPageNo() == null) {
+                reportPostWebModel.setPageNo(0);
+            }
+            if (reportPostWebModel.getPageSize() == null) {
+                reportPostWebModel.setPageSize(20);
+            }
+            
             return reportService.addPostReport(reportPostWebModel);
         } catch (Exception e) {
             logger.error("addPostReport Method Exception -> {}", e.getMessage());
