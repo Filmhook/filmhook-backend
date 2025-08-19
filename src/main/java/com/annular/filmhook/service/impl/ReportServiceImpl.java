@@ -86,7 +86,9 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     LikeRepository likeRepository;
-
+    
+    @Autowired
+    PostServiceImpl postServiceImpl;
     @Autowired
     FriendRequestRepository friendRequestRepository;
 
@@ -205,8 +207,35 @@ public class ReportServiceImpl implements ReportService {
                 helper.setSubject(subject);
                 helper.setText(content.toString(), true);
                 javaMailSender.send(message);
-            
+                
+                String ownerTitle = "⚠ Your post has been reported!";
+                String ownerMessage = "Reason: " + reason;
+           
+			postServiceImpl.sendNotification(
+                        postOwnerId,            
+                        reporterId,              
+                        ownerTitle,
+                        ownerMessage,
+                        "POST_REPORT",           
+                        reportPost.getPostId(),     
+                        String.valueOf(postId)   
+                );
             }
+
+            // 7. Notify Reporter (Confirmation)
+            String reporterTitle = "✅ Report submitted successfully";
+            String reporterMessage = "You reported post #" + postId + " for: " + reason;
+            postServiceImpl.sendNotification(
+                    reporterId,              
+                    postOwnerId,             
+                    reporterTitle,
+                    reporterMessage,
+                    "REPORT_CONFIRMATION",   
+                    reportPost.getPostId(),
+                    String.valueOf(postId)
+            );
+            
+            
         response.put("reportInfo", reportPost);
         logger.info("addPostReport method end");
         return ResponseEntity.ok(new Response(1, "Report submitted successfully", response));

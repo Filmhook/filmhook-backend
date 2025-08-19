@@ -1038,7 +1038,7 @@ public class PostServiceImpl implements PostService {
 	
 	
 	
-	private void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId, String postId) {
+	public void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId, String postId) {
 	    try {
 	        // Step 1: Validate users
 	        Optional<User> senderOpt = userRepository.findById(senderId);
