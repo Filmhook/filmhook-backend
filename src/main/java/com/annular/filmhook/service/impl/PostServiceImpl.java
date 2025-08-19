@@ -916,7 +916,7 @@ public class PostServiceImpl implements PostService {
 
 	                	 // FCM Notification
 		                Notification notificationData = Notification.builder()
-		                        .setTitle(title)
+		                        //.setTitle(title)
 		                        .setBody(bodyText)
 		                        .build();
 

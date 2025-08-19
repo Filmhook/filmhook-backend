@@ -274,15 +274,26 @@ public class ChatServiceImpl implements ChatService {
 
 						String latestMessage;
 						String imageUrl = null;
-
+						String mediaType = "TEXT";
 						
 						// After saving chat + media files
 						List<MediaFiles> savedFiles = mediaFileRepository.findByCategoryAndCategoryRefId(
 						        MediaFileCategory.Chat, chat.getChatId());
 
 						if (!savedFiles.isEmpty()) {
-						    imageUrl = savedFiles.get(0).getFilePath();  // ✅ first uploaded file URL
-						    latestMessage = "📷 Photo";                 // Placeholder text in notification
+						    MediaFiles firstFile = savedFiles.get(0);
+						    imageUrl = firstFile.getFilePath();
+						    mediaType = firstFile.getFileType();
+
+						    if (firstFile.getFileType().equalsIgnoreCase("IMAGE")) {
+						        latestMessage = "📷 Photo";
+						    } else if (firstFile.getFileType().equalsIgnoreCase("VIDEO")) {
+						        latestMessage = "🎥 Video";
+						    } else if (firstFile.getFileType().equalsIgnoreCase("POST")) {
+						        latestMessage = "📌 Shared Post";
+						    } else {
+						        latestMessage = "📎 Attachment";
+						    }
 						} else {
 						    latestMessage = chatWebModel.getMessage();
 						}
@@ -330,7 +341,9 @@ public class ChatServiceImpl implements ChatService {
 		                            .putData("allUnread", allUnread)   
 		                            .putData("userType", user.getUserType())
 		                            .putData("adminReview", String.valueOf(user.getAdminReview()))
-		                            .putData("groupKey", "filmhook_chat")  
+		                            .putData("groupKey", "filmhook_chat") 
+		                            .putData("mediaType", mediaType)  
+		                            .putData("mediaUrl", imageUrl != null ? imageUrl : "")
 									.setToken(deviceToken)
 									.build();
 
