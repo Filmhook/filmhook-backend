@@ -4,13 +4,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.service.ReportService;
 import com.annular.filmhook.webmodel.ReportPostWebModel;
 
@@ -24,18 +27,16 @@ public class ReportController {
     public static final Logger logger = LoggerFactory.getLogger(ReportController.class);
 
     @PostMapping("/addPostReport")
-    public ResponseEntity<?> addPostReport(@RequestBody ReportPostWebModel reportPostWebModel) {
+    public ResponseEntity<?> addPostReport(@RequestBody ReportPostWebModel reportPostWebModel, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         try {
             logger.info("addPostReport controller start");
-            
-            if (reportPostWebModel.getPageNo() == null) {
-                reportPostWebModel.setPageNo(0);
+            if (userDetails == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new Response(-1, "Authentication required", null));
             }
-            if (reportPostWebModel.getPageSize() == null) {
-                reportPostWebModel.setPageSize(20);
-            }
+          
             
-            return reportService.addPostReport(reportPostWebModel);
+            return reportService.addPostReport(reportPostWebModel, userDetails.getId());
         } catch (Exception e) {
             logger.error("addPostReport Method Exception -> {}", e.getMessage());
             e.printStackTrace();

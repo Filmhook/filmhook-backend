@@ -98,10 +98,10 @@ public class ReportServiceImpl implements ReportService {
     private static final Logger logger = LoggerFactory.getLogger(ReportServiceImpl.class);
 
     @Override
-    public ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel) {
+    public ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel, Integer reporterId) {
         HashMap<String, Object> response = new HashMap<>();
         try {
-        	   Integer reporterId = userDetails.userInfo().getId();
+//        	   Integer reporterId = userDetails.userInfo().getId();
                Integer postId = reportPostWebModel.getPostId();
                String reason = reportPostWebModel.getReason();     	
               String subject=reportPostWebModel.getSubject();
@@ -261,7 +261,7 @@ public class ReportServiceImpl implements ReportService {
 
             for (ReportPost reportPost : reportPosts) {
                 Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
-                if (post == null) continue;
+
 
                 List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 

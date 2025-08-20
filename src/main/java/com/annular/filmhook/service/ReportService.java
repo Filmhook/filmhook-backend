@@ -6,7 +6,7 @@ import com.annular.filmhook.webmodel.ReportPostWebModel;
 
 public interface ReportService {
 
-    ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel);
+	 ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel, Integer reporterId);
 
     ResponseEntity<?> getAllPostReport(ReportPostWebModel postWebModel);
 

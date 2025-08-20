@@ -1239,4 +1239,60 @@ public class ChatServiceImpl implements ChatService {
 		}
 	}
 
+	
+	@Override
+	public ResponseEntity<?> editMessage(Integer chatId, String newMessage) {
+	    try {
+	        logger.info("Edit Message Method Start for ChatId: {}", chatId);
+
+	        Integer userId = userDetails.userInfo().getId();
+	        Optional<User> userOptional = userRepository.findById(userId);
+
+	        if (userOptional.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                    .body("User not found");
+	        }
+
+	        Optional<Chat> chatOptional = chatRepository.findById(chatId);
+	        if (chatOptional.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body("Chat message not found");
+	        }
+
+	        Chat chat = chatOptional.get();
+
+	        // ✅ Only sender can edit
+	        if (!chat.getChatSenderId().equals(userId)) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("You are not allowed to edit this message");
+	        }
+
+	        // ✅ Allow edit only within 15 minutes
+	        long timeDiff = new Date().getTime() - chat.getTimeStamp().getTime();
+	        long allowedMillis = 15 * 60 * 1000; // 15 minutes
+
+	        if (timeDiff > allowedMillis) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("Edit time expired");
+	        }
+
+	        // ✅ Update message
+	        chat.setMessage(newMessage);
+	        chat.setEdited(true);
+	        chat.setEditedOn(new Date());
+
+	        chatRepository.save(chat);
+
+	        return ResponseEntity.ok("Message updated successfully");
+
+	    } catch (Exception e) {
+	        logger.error("Error while editing message", e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("An error occurred while editing the message");
+	    }
+	}
+
+	
+	
+	
 }
