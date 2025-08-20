@@ -689,6 +689,8 @@ public class ChatServiceImpl implements ChatService {
 							.storyMediaUrl(storyMedia != null ? storyMedia.getFilePath() : null)
 							.storyMediaType(storyMedia != null ? storyMedia.getFileType() : null)
 							.replyType(chat.getReplyType())
+							.edited(chat.getEdited())
+							.editedOn(chat.getEditedOn())
 							.isDeletedForEveryone(chat.getIsDeletedForEveryone())
 							.build();
 
@@ -1269,7 +1271,7 @@ public class ChatServiceImpl implements ChatService {
 
 	        // ✅ Allow edit only within 15 minutes
 	        long timeDiff = new Date().getTime() - chat.getTimeStamp().getTime();
-	        long allowedMillis = 15 * 60 * 1000; // 15 minutes
+	        long allowedMillis = 60 * 60 * 1000; // 1 hr
 
 	        if (timeDiff > allowedMillis) {
 	            return ResponseEntity.status(HttpStatus.FORBIDDEN)

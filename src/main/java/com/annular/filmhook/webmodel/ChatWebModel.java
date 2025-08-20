@@ -50,6 +50,8 @@ public class ChatWebModel {
     private String storyMediaType;
     private String deleteType;
     private Boolean isDeletedForEveryone;
+    private Boolean edited;
+    private Date editedOn;
    
     
 }
