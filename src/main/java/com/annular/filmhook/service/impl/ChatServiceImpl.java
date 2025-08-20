@@ -81,6 +81,8 @@ public class ChatServiceImpl implements ChatService {
 	UserRepository userRepository;
 
 	@Autowired
+	MediaFilesRepository mediaFileRepository;
+	@Autowired
 	ChatRepository chatRepository;
 
 	@Autowired
@@ -270,28 +272,69 @@ public class ChatServiceImpl implements ChatService {
 						List<String> unreadMessages = chatRepository
 								.findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
 
-						// Add the current message if not already in the list
-						if (!unreadMessages.contains(chatWebModel.getMessage())) {
-							unreadMessages.add(chatWebModel.getMessage());
+						String latestMessage;
+						String imageUrl = null;
+						String mediaType = "TEXT";
+						
+						// After saving chat + media files
+						List<MediaFiles> savedFiles = mediaFileRepository.findByCategoryAndCategoryRefId(
+						        MediaFileCategory.Chat, chat.getChatId());
+
+						if (!savedFiles.isEmpty()) {
+						    MediaFiles firstFile = savedFiles.get(0);
+						    imageUrl = firstFile.getFilePath();
+						    mediaType = firstFile.getFileType();
+
+						    String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
+
+						    if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg") 
+						        || fileType.endsWith(".png") || fileType.endsWith(".webp")) {
+						        
+						        latestMessage = "📷 Photo";
+
+						    } else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov") 
+						               || fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
+						        
+						        latestMessage = "🎥 Video";
+
+						    } else if (fileType.contains("post")) {
+						        
+						        latestMessage = "📌 Shared Post";
+
+						    } else {
+						        
+						        latestMessage = "📎 Attachment";  
+						    }
+
+						} else {
+						    latestMessage = chatWebModel.getMessage();
 						}
 
-						// 2️⃣ Latest message for compact notification view
-						String latestMessage = chatWebModel.getMessage();
+					        // Add current latestMessage if not already present
+					        if (!unreadMessages.contains(latestMessage)) {
+					            unreadMessages.add(latestMessage);
+					        }
 
 						// 3️⃣ Combine all unread messages into a single string for payload
 						String allUnread = String.join("||", unreadMessages);
 
 						try {
 							// Build FCM Notification
-							Notification notificationData = Notification.builder()
-									.setTitle(user.getName()) 
-									.setBody(latestMessage)  
-									.build();
+							  Notification.Builder notificationBuilder = Notification.builder()
+					                    .setTitle(senderName)
+					                    .setBody(latestMessage);
+
+					            // If photo exists, add image URL to FCM notification
+					            if (imageUrl != null) {
+					                notificationBuilder.setImage(imageUrl);
+					            }
+
+						  Notification notificationData = notificationBuilder.build();
 
 							// Android-specific notification settings
 							AndroidNotification androidNotification = AndroidNotification.builder()
 									.setIcon("ic_notification")
-									.setColor("#4d79ff")
+									.setColor("#00A2E8")
 									.build();
 
 							AndroidConfig androidConfig = AndroidConfig.builder()
@@ -310,7 +353,9 @@ public class ChatServiceImpl implements ChatService {
 		                            .putData("allUnread", allUnread)   
 		                            .putData("userType", user.getUserType())
 		                            .putData("adminReview", String.valueOf(user.getAdminReview()))
-		                            .putData("groupKey", "filmhook_chat")  
+		                            .putData("groupKey", "filmhook_chat") 
+		                            .putData("mediaType", mediaType)  
+		                            .putData("mediaUrl", imageUrl != null ? imageUrl : "")
 									.setToken(deviceToken)
 									.build();
 
@@ -644,6 +689,8 @@ public class ChatServiceImpl implements ChatService {
 							.storyMediaUrl(storyMedia != null ? storyMedia.getFilePath() : null)
 							.storyMediaType(storyMedia != null ? storyMedia.getFileType() : null)
 							.replyType(chat.getReplyType())
+							.edited(chat.getEdited())
+							.editedOn(chat.getEditedOn())
 							.isDeletedForEveryone(chat.getIsDeletedForEveryone())
 							.build();
 
@@ -1194,4 +1241,60 @@ public class ChatServiceImpl implements ChatService {
 		}
 	}
 
+	
+	@Override
+	public ResponseEntity<?> editMessage(Integer chatId, String newMessage) {
+	    try {
+	        logger.info("Edit Message Method Start for ChatId: {}", chatId);
+
+	        Integer userId = userDetails.userInfo().getId();
+	        Optional<User> userOptional = userRepository.findById(userId);
+
+	        if (userOptional.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                    .body("User not found");
+	        }
+
+	        Optional<Chat> chatOptional = chatRepository.findById(chatId);
+	        if (chatOptional.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body("Chat message not found");
+	        }
+
+	        Chat chat = chatOptional.get();
+
+	        // ✅ Only sender can edit
+	        if (!chat.getChatSenderId().equals(userId)) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("You are not allowed to edit this message");
+	        }
+
+	        // ✅ Allow edit only within 15 minutes
+	        long timeDiff = new Date().getTime() - chat.getTimeStamp().getTime();
+	        long allowedMillis = 60 * 60 * 1000; // 1 hr
+
+	        if (timeDiff > allowedMillis) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("Edit time expired");
+	        }
+
+	        // ✅ Update message
+	        chat.setMessage(newMessage);
+	        chat.setEdited(true);
+	        chat.setEditedOn(new Date());
+
+	        chatRepository.save(chat);
+
+	        return ResponseEntity.ok("Message updated successfully");
+
+	    } catch (Exception e) {
+	        logger.error("Error while editing message", e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("An error occurred while editing the message");
+	    }
+	}
+
+	
+	
+	
 }

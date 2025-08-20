@@ -104,7 +104,7 @@ public class LiveStreamServiceImpl implements LiveStreamService {
                     // Send Push Notification (only if token exists)
                     if (user.getFirebaseDeviceToken() != null && !user.getFirebaseDeviceToken().trim().isEmpty()) {
                         Notification firebaseNotification = Notification.builder()
-                                .setTitle(notificationTitle)
+                              //  .setTitle(notificationTitle)
                                 .setBody(senderName + notificationMessage)
                                 .build();
 

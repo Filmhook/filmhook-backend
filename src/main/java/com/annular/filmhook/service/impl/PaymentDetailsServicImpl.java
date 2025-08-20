@@ -459,7 +459,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 	                // Android Config
 	                AndroidNotification androidNotification = AndroidNotification.builder()
 	                        .setIcon("ic_notification")
-	                        .setColor("#4d79ff")
+	                        .setColor("#00A2E8")
 	                        .build();
 
 	                AndroidConfig androidConfig = AndroidConfig.builder()

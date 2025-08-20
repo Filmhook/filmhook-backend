@@ -98,14 +98,13 @@ public class ReportServiceImpl implements ReportService {
     private static final Logger logger = LoggerFactory.getLogger(ReportServiceImpl.class);
 
     @Override
-    public ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel) {
+    public ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel, Integer reporterId) {
         HashMap<String, Object> response = new HashMap<>();
         try {
-        	   Integer reporterId = userDetails.userInfo().getId();
+//        	   Integer reporterId = userDetails.userInfo().getId();
                Integer postId = reportPostWebModel.getPostId();
-               String reason = reportPostWebModel.getReason();
-        	
-
+               String reason = reportPostWebModel.getReason();     	
+              String subject=reportPostWebModel.getSubject();
             // 1. Validate reason
             if (reason == null || reason.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -141,6 +140,7 @@ public class ReportServiceImpl implements ReportService {
             reportPost.setUserId(reporterId);
             reportPost.setPostId(postId);
             reportPost.setReason(reason);
+            reportPost.setSubject(subject);
             reportPost.setStatus(false);
             reportPost.setCreatedBy(reporterId);
             reportRepository.save(reportPost);
@@ -156,7 +156,7 @@ public class ReportServiceImpl implements ReportService {
             if (optionalUser.isPresent()) {
                 User postOwner = optionalUser.get();
                 String userEmail = postOwner.getEmail();
-                String subject = "Important: Your Post Has Been Reported on Film-Hook";
+                String Emailsubject = "Important: Your Post Has Been Reported on Film-Hook";
 
                 
                 String postLink = "https://film-hookapps.com/report/" + postId;
@@ -197,24 +197,24 @@ public class ReportServiceImpl implements ReportService {
                         .append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP' target='_blank'>")
                         .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30'></a>")
                         .append("<a href='https://www.linkedin.com/in/film-hook-68666a353' target='_blank'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linkedIn.jpeg' width='30'></a>")
+                        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25'></a>")
                         .append("</p>")
                         .append("</body></html>");
                 // Step 4: Send Email
                 MimeMessage message = javaMailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true);
                 helper.setTo(userEmail);
-                helper.setSubject(subject);
+                helper.setSubject(Emailsubject);
                 helper.setText(content.toString(), true);
                 javaMailSender.send(message);
                 
                 String ownerTitle = "⚠ Your post has been reported!";
-                String ownerMessage = "Reason: " + reason;
+                String ownerMessage ="⚠ Your post has been reported!";
            
 			postServiceImpl.sendNotification(
                         postOwnerId,            
                         reporterId,              
-                        ownerTitle,
+                        ownerTitle, 
                         ownerMessage,
                         "POST_REPORT",           
                         reportPost.getPostId(),     
@@ -224,7 +224,7 @@ public class ReportServiceImpl implements ReportService {
 
             // 7. Notify Reporter (Confirmation)
             String reporterTitle = "✅ Report submitted successfully";
-            String reporterMessage = "You reported post #" + postId + " for: " + reason;
+            String reporterMessage = "✅ Your report has been submitted successfully.";
             postServiceImpl.sendNotification(
                     reporterId,              
                     postOwnerId,             
@@ -261,7 +261,7 @@ public class ReportServiceImpl implements ReportService {
 
             for (ReportPost reportPost : reportPosts) {
                 Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
-                if (post == null) continue;
+
 
                 List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
@@ -610,7 +610,7 @@ public class ReportServiceImpl implements ReportService {
         try {
             System.out.println("emailId>>>>>>>>>>>>>>>> " + model.getEmailId());
             String to = model.getEmailId();
-            String subject = "";
+            String Emailsubject = "";
             String body = "";
 
             // Validate email address
@@ -630,7 +630,7 @@ public class ReportServiceImpl implements ReportService {
 
             switch (actionType) {
                 case 1: // Temporary Suspension
-                    subject = "🚫 Temporary Account Suspension Notice from The Film-hook Team";
+                	Emailsubject = "🚫 Temporary Account Suspension Notice from The Film-hook Team";
                     body = String.format(
                         "Dear %s,\n\n" +
                         "We regret to inform you that due to a serious violation of our community standards, " +
@@ -652,7 +652,7 @@ public class ReportServiceImpl implements ReportService {
                     break;
                     
                 case 2: // Permanent Deletion
-                    subject = "❗ Account Termination Notice from Film-hook Team";
+                	Emailsubject = "❗ Account Termination Notice from Film-hook Team";
                     body = String.format(
                         "Dear %s,\n\n" +
                         "Your account on the Film-hook platform has been permanently terminated due to repeated " +
@@ -683,7 +683,7 @@ public class ReportServiceImpl implements ReportService {
                     }
                     break;
                 default: // Warning (case 0 and any other values)
-                    subject = "⚠️ Content Warning Notice from The Film-hook Team";
+                	Emailsubject = "⚠️ Content Warning Notice from The Film-hook Team";
                     body = String.format(
                         "Dear %s,\n\n" +
                         "We are writing to inform you that a recent post on your Film-hook account has been reported " +
@@ -708,7 +708,7 @@ public class ReportServiceImpl implements ReportService {
             // Create and send email
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(to);
-            message.setSubject(subject);
+            message.setSubject(Emailsubject);
             message.setText(body);
             message.setFrom("Filmhookmediaapps@gmail.com");
             

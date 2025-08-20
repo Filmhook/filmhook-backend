@@ -16,7 +16,6 @@ import ws.schild.jave.info.VideoSize;
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-
 "/usr/bin/cwebp",
 //"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 
