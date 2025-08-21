@@ -188,9 +188,19 @@ public class ChatServiceImpl implements ChatService {
 						.chatCreatedOn(new Date())
 						.storyId(chatWebModel.getStoryId())
 						.replyType(chatWebModel.getStoryId() != null ? "story" : "normal")
+						 .replyToMessageId(chatWebModel.getReplyToMessageId())
 						.build();
+				
+				
 
 				chatRepository.save(chat);
+				
+				//optional
+				Chat replyMessage = null;
+				if (chatWebModel.getReplyToMessageId() != null) {
+				    replyMessage = chatRepository.findById(chatWebModel.getReplyToMessageId())
+				                     .orElse(null);
+				}
 				// Save media files if present
 				if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
 					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
@@ -694,7 +704,21 @@ public class ChatServiceImpl implements ChatService {
 							.isDeletedForEveryone(chat.getIsDeletedForEveryone())
 							.build();
 
-
+					// 👉 Fetch replied message if present
+					if (chat.getReplyToMessageId() != null) {
+					    chatRepository.findById(chat.getReplyToMessageId()).ifPresent(replyMsg -> {
+					        chatWebModel.setReplyToMessage(
+					            new ChatWebModel.ReplyMessageDTO(   // ✅ use nested DTO instead of full ChatWebModel
+					                replyMsg.getChatId(),
+					                replyMsg.getChatSenderId(),
+					                Boolean.TRUE.equals(replyMsg.getIsDeletedForEveryone())
+					                        ? "🚫 This message was deleted"
+					                        : replyMsg.getMessage(),
+					                replyMsg.getUserAccountName()
+					            )
+					        );
+					    });
+					}
 
 					// Update read status if the current user is the receiver
 					if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
