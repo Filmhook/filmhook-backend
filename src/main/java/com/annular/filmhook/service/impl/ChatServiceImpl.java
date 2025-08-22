@@ -707,6 +707,12 @@ public class ChatServiceImpl implements ChatService {
 					// 👉 Fetch replied message if present
 					if (chat.getReplyToMessageId() != null) {
 					    chatRepository.findById(chat.getReplyToMessageId()).ifPresent(replyMsg -> {
+					    	  List<FileOutputWebModel> replyMediaFiles = mediaFilesService
+					                  .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, replyMsg.getChatId());
+
+					          FileOutputWebModel replyMedia = !replyMediaFiles.isEmpty() ? replyMediaFiles.get(0) : null;
+					    	
+					    	
 					        chatWebModel.setReplyToMessage(
 					            new ChatWebModel.ReplyMessageDTO(   // ✅ use nested DTO instead of full ChatWebModel
 					                replyMsg.getChatId(),
@@ -714,7 +720,9 @@ public class ChatServiceImpl implements ChatService {
 					                Boolean.TRUE.equals(replyMsg.getIsDeletedForEveryone())
 					                        ? "🚫 This message was deleted"
 					                        : replyMsg.getMessage(),
-					                replyMsg.getUserAccountName()
+					                replyMsg.getUserAccountName(),
+					                replyMedia != null ? replyMedia.getFilePath() : null,   
+					                        replyMedia != null ? replyMedia.getFileType() : null  
 					            )
 					        );
 					    });

@@ -67,5 +67,7 @@ public class ChatWebModel {
            private Integer chatSenderId;
            private String message;
            private String userAccountName;
+           private String mediaUrl;   
+           private String mediaType; 
        }
    }
