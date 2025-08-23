@@ -40,7 +40,7 @@ public class AuditionDetails {
 	private Integer auditionDetailsId;
 
 	@Column(name = "audition_details_Name")
-	private String auditionDetailsName; // Audition Id from audition table is saved, to have this loosely coupled
+	private String auditionDetailsName; 
 
 	@Column(name = "audition_details_createdby")
 	private Integer auditionDetailsCreatedBy;
@@ -55,9 +55,6 @@ public class AuditionDetails {
 	@Column(name = "icon_file_path")
 	private String filePath;
 	
-	@Column(name = "counts")
-	private Integer counts;
-
 	@Column(name = "audition_details_updatedon")
 	@CreationTimestamp
 	private Date auditionDetailsUpdatedOn;

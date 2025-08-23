@@ -84,6 +84,9 @@ public class Chat {
     private Boolean edited = false;
     private Date editedOn;
     
+    @Column(name = "reply_to_message_id")
+    private Integer replyToMessageId;
+    
     @Column(name = "story_id")
     private String storyId;
     
