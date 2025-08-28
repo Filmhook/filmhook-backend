@@ -31,7 +31,6 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	 private UserRepository userRepository;
 	 
     @Override
-   
     public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
       
         User user = userRepository.findById(dto.getUserId())
@@ -72,7 +71,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
                     .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
 
             if (!logoFiles.isEmpty()) {
-                dto.setLogoFilesOutput(logoFiles); // make sure DTO has this field
+                dto.setLogoFilesOutput(logoFiles); 
+
             }
 
             return dto;
@@ -99,8 +99,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
     
     @Override
 	public List<AuditionCompanyDetailsDTO> getAllActivePendingCompanies() {
-	    List<AuditionCompanyDetails> companies =
-	            companyRepository.findByStatusTrueAndVerificationStatus(AuditionCompanyDetails.VerificationStatus.PENDING);
+	    List<AuditionCompanyDetails> companies = companyRepository.findByStatusTrueAndVerificationStatus(AuditionCompanyDetails.VerificationStatus.PENDING);
 
 	    return companies.stream().map(company -> {
 	        AuditionCompanyDetailsDTO dto = AuditionConverter.toCompanyDTO(company);

@@ -36,7 +36,16 @@ public class Promote {
 
 	@Column(name = "status")
 	private Boolean status;
-
+	
+    @Column(name = "company_type")
+    private String companyType;
+    
+    @Column(name = "company_name")
+    private String companyName;
+    
+    @Column(name = "brand_name")
+    private String brandName;
+	
 	@Column(name = "created_by")
 	private Integer createdBy;
 

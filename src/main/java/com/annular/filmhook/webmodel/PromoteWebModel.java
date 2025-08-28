@@ -30,7 +30,10 @@ public class PromoteWebModel {
     private Integer cgst;
     private Boolean promoteStatus;
     private Boolean promoteFlag;
-
+ 
+    private String companyType; 
+    private String companyName;
+    private String brandName;
 
     private Integer sgst;
     private Integer price;
