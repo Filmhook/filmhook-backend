@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.VisitPage;
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.PromoteWebModel;
 
@@ -37,5 +38,7 @@ public interface PromoteService {
 	ResponseEntity<?> getVisitTypeByWhatsApp();
 
 	ResponseEntity<?> updatePromoteStatus(PromoteWebModel promoteWebModel);
+	
+	VisitPage addVisitPage(VisitPage visitPage);
 
 }

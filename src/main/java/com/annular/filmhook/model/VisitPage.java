@@ -56,5 +56,7 @@ public class VisitPage {
 	    @Column(name = "visitType")
 	    private String visitType;
 
+	    @Column(name = "category")
+	    private String category;
 
 }

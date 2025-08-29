@@ -37,6 +37,7 @@ public class PromoteController {
     @Autowired
     PromoteService promoteService;
 
+    
     @Autowired
     PostService postService;
     
@@ -226,6 +227,12 @@ public class PromoteController {
             e.printStackTrace();
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
+    }
+    
+    @PostMapping("/add")
+    public ResponseEntity<VisitPage> addVisitPage(@RequestBody VisitPage visitPage) {
+        VisitPage savedVisitPage = promoteService.addVisitPage(visitPage);
+        return ResponseEntity.ok(savedVisitPage);
     }
 }
 

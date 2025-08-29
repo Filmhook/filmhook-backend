@@ -262,7 +262,7 @@ public class PromoteServiceImpl implements PromoteService {
 				Posts posts = Posts.builder()
 						.postId(UUID.randomUUID().toString()) // Unique post ID
 						.user(userFromDB)
-						.status(false) // Default status to false
+						.status(false)
 						.likesCount(0)
 						.promoteFlag(true) // Set promoteFlag to true for promotion
 						.promoteStatus(true) // Set promoteStatus to true for a new promotion
@@ -585,6 +585,12 @@ public class PromoteServiceImpl implements PromoteService {
 		// Returning a response if the post is not found
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found.");
 	}
+	
+ 
+    @Override
+    public VisitPage addVisitPage(VisitPage visitPage) {
+        return visitPageRepository.save(visitPage);
+    }
 
 
 }
