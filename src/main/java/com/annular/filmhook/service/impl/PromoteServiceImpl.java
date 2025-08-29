@@ -25,7 +25,9 @@ import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.VisitPage;
+import com.annular.filmhook.model.VisitePageCategory;
 import com.annular.filmhook.repository.PromoteRepository;
+import com.annular.filmhook.repository.VisitPageCategoryRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PromoteService;
@@ -48,6 +50,8 @@ public class PromoteServiceImpl implements PromoteService {
 
 	@Autowired
 	PostsRepository postRepository;
+	@Autowired
+    VisitPageCategoryRepository categoryRepository;
 
 	@Autowired
 	VisitPageRepository  visitPageRepository;
@@ -432,11 +436,12 @@ public class PromoteServiceImpl implements PromoteService {
 				Promote promotion = optionalPromotion.get();
 
 				// Update the fields with values from the request
-				;
+				
 				promotion.setSelectOption(request.getSelectOption());
-				promotion.setWhatsAppNumber(request.getWhatsAppNumber());
-				promotion.setWebSiteLink(request.getWebSiteLink()); // Assuming this field exists in the Promote entity
+				promotion.setContactNumber(request.getContactNumber());
+				promotion.setWebSiteLink(request.getWebSiteLink()); 
 
+				
 				// Save the updated promotion back to the repository
 				promoteRepository.save(promotion);
 
@@ -467,9 +472,9 @@ public class PromoteServiceImpl implements PromoteService {
 
 			if (optionalPost.isPresent()) {
 				Posts post = optionalPost.get();
-				String description = post.getDescription(); // Assuming 'getDescription()' method exists
+				String description = post.getDescription(); 
 
-				response.put("description", description); // Return the description in the response
+				response.put("description", description); 
 				return ResponseEntity.ok(response);
 			} else {
 				response.put("error", "Post not found");
@@ -591,6 +596,14 @@ public class PromoteServiceImpl implements PromoteService {
     public VisitPage addVisitPage(VisitPage visitPage) {
         return visitPageRepository.save(visitPage);
     }
-
-
+    @Override
+    public List<VisitPage> getPagesByCategoryId(Integer categoryId) {
+        return visitPageRepository.findByCategory_CategoryId(categoryId);
+    }
+    
+    @Override
+    // Get all categories
+    public List<VisitePageCategory> getAllCategories() {
+        return categoryRepository.findAll();
+    }
 }

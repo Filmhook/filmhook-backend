@@ -43,7 +43,7 @@ public class PromoteWebModel {
     List<MultipartFile> files;
     private String visitPage;    
     private String webSiteLink;
-    private String whatsAppNumber;
+    private String contactNumber;
     private Integer selectOption;
 
 }

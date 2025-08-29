@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.VisitPage;
+import com.annular.filmhook.model.VisitePageCategory;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.PromoteService;
@@ -233,6 +235,19 @@ public class PromoteController {
     public ResponseEntity<VisitPage> addVisitPage(@RequestBody VisitPage visitPage) {
         VisitPage savedVisitPage = promoteService.addVisitPage(visitPage);
         return ResponseEntity.ok(savedVisitPage);
+    }
+    
+    
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<VisitPage>> getPagesByCategory(@PathVariable Integer categoryId) {
+        return ResponseEntity.ok(promoteService.getPagesByCategoryId(categoryId));
+    }
+
+    
+    
+    @GetMapping("/getAllCategory")
+    public ResponseEntity<List<VisitePageCategory>> getAllCategories() {
+        return ResponseEntity.ok(promoteService.getAllCategories());
     }
 }
 

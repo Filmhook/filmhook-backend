@@ -495,7 +495,13 @@ public class PostServiceImpl implements PostService {
 
 					LocalDateTime createdOn = LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
 					String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+					VisitPage visitPageEntity = null;
+					if (promoteDetails != null && promoteDetails.getVisitPage() != null) {
+					    Integer visitPageId = Integer.parseInt(promoteDetails.getVisitPage());
+					    visitPageEntity = visitPageRepository.findById(visitPageId).orElse(null);
+					}
 
+					
 					PostWebModel postWebModel = PostWebModel.builder()
 							.id(post.getId())
 							.userId(post.getUser().getUserId())
@@ -532,11 +538,13 @@ public class PostServiceImpl implements PostService {
 							.promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
 							.numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
 							.amount(promoteDetails != null ? promoteDetails.getAmount() : null)
-							.whatsAppNumber(promoteDetails != null ? promoteDetails.getWhatsAppNumber() : null)
+							.contactNumber(promoteDetails != null ? promoteDetails.getContactNumber() : null)
 							.webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
 							.selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
 							.visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
+							.visitType(visitPageEntity != null ? visitPageEntity.getVisitType() : null)
 							.visitPageData(fetchVisitPageData(promoteDetails))
+							.visitType(fetchVisitPageType(promoteDetails))
 							.viewsCount(post.getViewsCount())
 							.build();
 
@@ -560,7 +568,14 @@ public class PostServiceImpl implements PostService {
 		}
 		return null; // Return null if no data is available
 	}
-
+	private String fetchVisitPageType(Promote promoteDetails) {
+		if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
+			// Assuming selectedOption is a foreign key that refers to VisitPage
+			Optional<VisitPage> visitPageOpt = visitPageRepository.findById(promoteDetails.getSelectOption());
+			return visitPageOpt.map(VisitPage::getVisitType).orElse(null); // Fetching the data field
+		}
+		return null;
+	}
 
 	private String generatePostUrl(String postId) {
 		return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";

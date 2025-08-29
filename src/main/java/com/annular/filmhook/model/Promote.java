@@ -105,10 +105,15 @@ public class Promote {
 	@Column(name = "selectOption")
 	private Integer selectOption;
 
-	@Column(name = "whatsappNumber")
-	private String whatsAppNumber;
+//	@Column(name = "whatsappNumber")
+//	private String whatsAppNumber;
+	
+	@Column(name = "contact_number")
+	private String contactNumber;
 	
 	@Column(name = "websiteLink")
 	private String webSiteLink;
+	
+	
 
 }
