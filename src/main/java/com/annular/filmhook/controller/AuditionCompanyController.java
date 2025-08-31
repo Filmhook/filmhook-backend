@@ -1,0 +1,81 @@
+package com.annular.filmhook.controller;
+
+import java.util.Arrays;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.annular.filmhook.Response;
+import com.annular.filmhook.service.AuditionCompanyService;
+import com.annular.filmhook.validator.AuditionCompanyDetailsValidator;
+import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+
+@RestController
+@RequestMapping("/api/companies")
+public class AuditionCompanyController {
+
+    @Autowired
+    private AuditionCompanyService companyService;
+
+    @Autowired
+    private AuditionCompanyDetailsValidator companyValidator;
+
+    /**
+     * Save Company Details
+     */
+    @PostMapping(consumes = {"multipart/form-data"}, path = "/saveAuditionCompany")
+    public ResponseEntity<?> saveCompany(
+            @RequestPart("company") AuditionCompanyDetailsDTO dto,
+            @RequestPart(value = "logoFiles", required = false) MultipartFile[] logoFiles) {
+
+        // Attach files
+        if (logoFiles != null && logoFiles.length > 0) {
+            dto.setLogoFiles(Arrays.asList(logoFiles));
+        }
+
+        // Validate DTO
+        BindingResult bindingResult = new BeanPropertyBindingResult(dto, "auditionCompanyDetailsDTO");
+        companyValidator.validate(dto, bindingResult);
+
+        if (bindingResult.hasErrors()) {
+            StringBuilder errors = new StringBuilder();
+            bindingResult.getAllErrors().forEach(error ->
+                    errors.append(error.getDefaultMessage()).append("; ")
+            );
+            return ResponseEntity.badRequest().body(new Response(0, "Validation failed", errors.toString()));
+        }
+
+        // Save company
+        AuditionCompanyDetailsDTO saved = companyService.saveCompany(dto);
+
+        return ResponseEntity.ok(new Response(1, "Success", saved));
+    }
+    
+    
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getCompanyByUserId(@PathVariable Integer userId) {
+        // Simply call the service without validation
+    	 List<AuditionCompanyDetailsDTO> companyDTO = companyService.getCompaniesByUserId(userId);
+        return ResponseEntity.ok(new Response(1, "Success", companyDTO));
+    }
+      
+    
+    @GetMapping("/getAllCompanies")
+    public ResponseEntity<?> getAllCompanies() {
+        List<AuditionCompanyDetailsDTO> companies = companyService.getAllCompanies();
+        return ResponseEntity.ok(new Response(1, "Success", companies));
+    }
+    
+    
+    @GetMapping("/activeAndPendingAudition")
+    public ResponseEntity<List<AuditionCompanyDetailsDTO>> getActivePendingCompanies() {
+        List<AuditionCompanyDetailsDTO> companies = companyService.getAllActivePendingCompanies();
+        return ResponseEntity.ok(companies);
+    }
+}
