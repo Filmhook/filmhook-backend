@@ -104,7 +104,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
                     .orElseThrow(() -> new RuntimeException("Promotion not found for payment ID: " + paymentId));
 
             // Step 3: Update promotion status
-            promote.setPromotionStatus("SUCCESS"); // or "ACTIVE", "SUCCESS" etc. depending on your logic
+            promote.setPromotionStatus("SUCCESS"); 
             paymentDetailsRepository.save(promote);
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));

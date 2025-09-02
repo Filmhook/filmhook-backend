@@ -394,7 +394,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                 .promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
                 .numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
                 .amount(promoteDetails != null ? promoteDetails.getAmount() : null)
-                .whatsAppNumber(promoteDetails != null ? promoteDetails.getWhatsAppNumber() : null)
+                .contactNumber(promoteDetails != null ? promoteDetails.getContactNumber() : null)
                 .webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
                 .selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
                 .visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)

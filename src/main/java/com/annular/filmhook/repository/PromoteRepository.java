@@ -30,6 +30,8 @@ public interface PromoteRepository extends JpaRepository<Promote, Integer> {
 
 	@Query("SELECT p FROM Promote p WHERE p.postId = :postId AND p.status = true")
 	Optional<Promote> findByPostIds(@Param("postId") Integer postId);
+	
+	 List<Promote> findByUserIdAndStatus(Integer userId, boolean status);
 
 
 }

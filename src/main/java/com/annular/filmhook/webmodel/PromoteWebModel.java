@@ -30,7 +30,12 @@ public class PromoteWebModel {
     private Integer cgst;
     private Boolean promoteStatus;
     private Boolean promoteFlag;
-
+ 
+    private String companyType; 
+    private String companyName;
+    private String brandName;
+    private MultipartFile companyLogo;
+    private String nation;
 
     private Integer sgst;
     private Integer price;
@@ -40,7 +45,7 @@ public class PromoteWebModel {
     List<MultipartFile> files;
     private String visitPage;    
     private String webSiteLink;
-    private String whatsAppNumber;
+    private String contactNumber;
     private Integer selectOption;
 
 }

@@ -67,10 +67,11 @@ public class PostWebModel {
     private Integer promoteId;
     private Integer numberOfDays;
     private Integer amount;
-    private String whatsAppNumber;
+    private String contactNumber;
     private String webSiteLink;
     private Integer selectOption;
     private String visitPage;
+//    private String visitType;
     // Add visitPageData field
     private String visitPageData;
     private Integer viewsCount;
