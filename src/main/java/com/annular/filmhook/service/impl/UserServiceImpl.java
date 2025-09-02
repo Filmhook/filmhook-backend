@@ -1182,7 +1182,7 @@ public class UserServiceImpl implements UserService {
         if (!professionPermanentDataList.isEmpty()) {
             return professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
         } else {
-            return Collections.singleton("Public User");
+            return Collections.singleton("");
         }
     }
 
@@ -1341,6 +1341,8 @@ public class UserServiceImpl implements UserService {
 	                    userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
 	                    userDetails.put("userName", userData.getName());
 	                    userDetails.put("professionNames", getProfessionNames(userData.getUserId()));
+	                    loggedInUserDetails.put("userType", userData.getUserType());
+	    	            loggedInUserDetails.put("review", userData.getAdminReview());
 
 	                    nearbyUsersList.add(userDetails);
 	                }
