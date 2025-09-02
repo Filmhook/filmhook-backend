@@ -108,6 +108,12 @@ public class Promote {
 //	@Column(name = "whatsappNumber")
 //	private String whatsAppNumber;
 	
+	@Column(name = "nation")
+	private String nation;
+
+	@Column(name = "company_logo")
+	private String companyLogo;
+	
 	@Column(name = "contact_number")
 	private String contactNumber;
 	

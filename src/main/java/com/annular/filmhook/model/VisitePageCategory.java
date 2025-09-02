@@ -39,9 +39,9 @@ public class VisitePageCategory {
 
 	    @Column(name = "category_name", nullable = false)
 	    private String categoryName;
-
-	    @Column(name = "status")
-	    private boolean status;
+	    
+	    @Column(name = "visitType")
+	    private String visitType;
 
 	    @Column(name = "created_by")
 	    private Integer createdBy;

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -149,8 +150,8 @@ public class PromoteController {
         }
     }
     
-    @PostMapping("/addVisitPage")
-    public ResponseEntity<?> addVisitPage(@RequestBody PromoteWebModel promoteWebModel) {
+    @PostMapping(value = "/addVisitPage", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<?> addVisitPage(@ModelAttribute PromoteWebModel promoteWebModel)  {
         try {
             logger.info("addVisitPage controller start");
             return promoteService.addVisitPage(promoteWebModel);
@@ -160,18 +161,18 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
-    
-    @GetMapping("/getVisitType")
-    public ResponseEntity<?> getVisitType() {
-        try {
-            logger.info("getVisitType controller start");
-            return promoteService.getVisitType();
-        } catch (Exception e) {
-            logger.error("getVisitType  Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
-        }
-    }
+//    
+//    @GetMapping("/getVisitType")
+//    public ResponseEntity<?> getVisitType() {
+//        try {
+//            logger.info("getVisitType controller start");
+//            return promoteService.getVisitType();
+//        } catch (Exception e) {
+//            logger.error("getVisitType  Method Exception -> {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+//        }
+//    }
 
     @PostMapping("/selectPromoteOption")
     public ResponseEntity<?> selectPromoteOption(@RequestBody PromoteWebModel promoteWebModel) {
@@ -207,17 +208,17 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
-    @GetMapping("/getVisitTypeByWhatsApp")
-    public ResponseEntity<?> getVisitTypeByWhatsApp() {
-        try {
-            logger.info("getVisitTypeByWhatsApp controller start");
-            return promoteService.getVisitTypeByWhatsApp();
-        } catch (Exception e) {
-            logger.error("getVisitTypeByWhatsApp  Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
-        }
-    }
+//    @GetMapping("/getVisitTypeByWhatsApp")
+//    public ResponseEntity<?> getVisitTypeByWhatsApp() {
+//        try {
+//            logger.info("getVisitTypeByWhatsApp controller start");
+//            return promoteService.getVisitTypeByWhatsApp();
+//        } catch (Exception e) {
+//            logger.error("getVisitTypeByWhatsApp  Method Exception -> {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+//        }
+//    }
     
     @PostMapping("/updatePromoteStatus")
     public ResponseEntity<?> updatePromoteStatus(@RequestBody PromoteWebModel promoteWebModel) {
@@ -248,6 +249,31 @@ public class PromoteController {
     @GetMapping("/getAllCategory")
     public ResponseEntity<List<VisitePageCategory>> getAllCategories() {
         return ResponseEntity.ok(promoteService.getAllCategories());
+    }
+    
+    
+    @GetMapping("/getWebsiteCategories")
+    public ResponseEntity<?> getWebsiteCategories() {
+        try {
+            logger.info("getWebsiteCategories controller start");
+            return promoteService.getWebsiteCategories();
+        } catch (Exception e) {
+            logger.error("getWebsiteCategories Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+        }
+    }
+    
+    @GetMapping("/getWhatsAppCategories")
+    public ResponseEntity<?> getWhatsAppCategories() {
+        try {
+            logger.info("getWhatsAppCategories controller start");
+            return promoteService.getWhatsAppCategories();
+        } catch (Exception e) {
+            logger.error("getWhatsAppCategories Method Exception -> {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Fail", "Unable to fetch WhatsApp categories"));
+        }
     }
 }
 

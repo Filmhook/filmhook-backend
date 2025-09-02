@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -47,7 +48,7 @@ public class PromoteServiceImpl implements PromoteService {
 
 	@Autowired
 	UserDetails userDetails;
-
+	
 	@Autowired
 	PostsRepository postRepository;
 	@Autowired
@@ -251,178 +252,319 @@ public class PromoteServiceImpl implements PromoteService {
 		}
 	}
 
+//	@Override
+//	public ResponseEntity<HashMap<String, Object>> addPromotes(PromoteWebModel promoteWebModel) {
+//		HashMap<String, Object> response = new HashMap<>();
+//		try {
+//			logger.info("addPromote method start");
+//
+//			// Retrieve user details
+//			Integer userId = userDetails.userInfo().getId();
+//			User userFromDB = userService.getUser(promoteWebModel.getUserId()).orElse(null);
+//
+//			if (userFromDB != null) {
+//				// Build and save the Post entity
+//				Posts posts = Posts.builder()
+//						.postId(UUID.randomUUID().toString()) // Unique post ID
+//						.user(userFromDB)
+//						.status(false)
+//						.likesCount(0)
+//						.promoteFlag(true) // Set promoteFlag to true for promotion
+//						.promoteStatus(true) // Set promoteStatus to true for a new promotion
+//						.createdOn(new Date())
+//						.createdBy(userId)
+//						.sharesCount(0)
+//						.commentsCount(0) // Initialize comments count
+//						.build();
+//
+//				// Save the post to the database
+//				Posts savedPost = postsRepository.saveAndFlush(posts);
+//
+//				// If the PromoteWebModel contains files, save them in the media_files table
+//				if (!Utility.isNullOrEmptyList(promoteWebModel.getFiles())) {
+//					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+//							.userId(promoteWebModel.getUserId()) // Set the user ID
+//							.category(MediaFileCategory.Post) // Post category
+//							.categoryRefId(savedPost.getId()) // Link media to the saved post
+//							.files(promoteWebModel.getFiles()) // File list from PromoteWebModel
+//							.build();
+//
+//					// Save media files in the database
+//					mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+//				}
+//
+//				// Create a response HashMap with only postId, id, and userId
+//				response.put("postId", savedPost.getPostId());
+//				response.put("id", savedPost.getId());
+//				response.put("userId", savedPost.getUser().getUserId());
+//
+//				// Return the response HashMap
+//				return ResponseEntity.ok(response);
+//			} else {
+//				// Handle user not found scenario by returning a bad request
+//				response.put("error", "User not found");
+//				return ResponseEntity.badRequest().body(response);
+//			}
+//
+//		} catch (Exception e) {
+//			// Log the error for debugging
+//			logger.error("Error in addPromote method: ", e);
+//			response.put("error", "Failed to add promote due to server error");
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//		}
+//	}
+	
 	@Override
 	public ResponseEntity<HashMap<String, Object>> addPromotes(PromoteWebModel promoteWebModel) {
-		HashMap<String, Object> response = new HashMap<>();
-		try {
-			logger.info("addPromote method start");
+	    HashMap<String, Object> response = new HashMap<>();
+	    try {
+	        logger.info("addPromotes method start");
 
-			// Retrieve user details
-			Integer userId = userDetails.userInfo().getId();
-			User userFromDB = userService.getUser(promoteWebModel.getUserId()).orElse(null);
+	        // ✅ Check if postId is passed
+	        if (promoteWebModel.getPostId() == null) {
+	            response.put("error", "postId is required to upload media");
+	            return ResponseEntity.badRequest().body(response);
+	        }
 
-			if (userFromDB != null) {
-				// Build and save the Post entity
-				Posts posts = Posts.builder()
-						.postId(UUID.randomUUID().toString()) // Unique post ID
-						.user(userFromDB)
-						.status(false)
-						.likesCount(0)
-						.promoteFlag(true) // Set promoteFlag to true for promotion
-						.promoteStatus(true) // Set promoteStatus to true for a new promotion
-						.createdOn(new Date())
-						.createdBy(userId)
-						.sharesCount(0)
-						.commentsCount(0) // Initialize comments count
-						.build();
+	        Optional<Posts> optionalPost = postsRepository.findByPostId(promoteWebModel.getPostId());
+	        if (optionalPost.isEmpty()) {
+	            response.put("error", "Invalid postId, post not found");
+	            return ResponseEntity.badRequest().body(response);
+	        }
 
-				// Save the post to the database
-				Posts savedPost = postsRepository.saveAndFlush(posts);
+	        Posts post = optionalPost.get();
+	        User userFromDB = post.getUser();
 
-				// If the PromoteWebModel contains files, save them in the media_files table
-				if (!Utility.isNullOrEmptyList(promoteWebModel.getFiles())) {
-					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-							.userId(promoteWebModel.getUserId()) // Set the user ID
-							.category(MediaFileCategory.Post) // Post category
-							.categoryRefId(savedPost.getId()) // Link media to the saved post
-							.files(promoteWebModel.getFiles()) // File list from PromoteWebModel
-							.build();
+	        // ✅ Handle media upload
+	        if (!Utility.isNullOrEmptyList(promoteWebModel.getFiles())) {
+	            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                    .userId(userFromDB.getUserId())
+	                    .category(MediaFileCategory.Post)
+	                    .categoryRefId(post.getId())
+	                    .files(promoteWebModel.getFiles())
+	                    .build();
 
-					// Save media files in the database
-					mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
-				}
+	            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+	        } else {
+	            response.put("warning", "No media files provided");
+	        }
 
-				// Create a response HashMap with only postId, id, and userId
-				response.put("postId", savedPost.getPostId());
-				response.put("id", savedPost.getId());
-				response.put("userId", savedPost.getUser().getUserId());
+	        response.put("status", "success");
+	        response.put("message", "Media uploaded successfully");
+	        response.put("postId", post.getPostId());
 
-				// Return the response HashMap
-				return ResponseEntity.ok(response);
-			} else {
-				// Handle user not found scenario by returning a bad request
-				response.put("error", "User not found");
-				return ResponseEntity.badRequest().body(response);
-			}
+	        return ResponseEntity.ok(response);
 
-		} catch (Exception e) {
-			// Log the error for debugging
-			logger.error("Error in addPromote method: ", e);
-			response.put("error", "Failed to add promote due to server error");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-		}
+	    } catch (Exception e) {
+	        logger.error("Error in addPromotes method: ", e);
+	        response.put("error", "Failed to upload media due to server error");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
 	}
 
+	
+
+
+//	@Override
+//	public ResponseEntity<?> addVisitPage(PromoteWebModel promoteWebModel) {
+//		HashMap<String, Object> response = new HashMap<>();
+//		HashMap<String, Object> responseData = new HashMap<>(); // Additional response data
+//
+//		try {
+//			logger.info("addVisitPage method start");
+//
+//			// Retrieve user ID from the context
+//			Integer userId = userDetails.userInfo().getId();
+//
+//			// Check if a promotion already exists for the given postId
+//			Promote existingPromotion = promoteRepository.findByPostId(promoteWebModel.getPostId());
+//
+//			if (existingPromotion != null) {
+//				// Update the existing promotion with new values from promoteWebModel
+//				existingPromotion.setUserId(userId);
+//				existingPromotion.setVisitPage(promoteWebModel.getVisitPage());
+//				existingPromotion.setUpdatedBy(userId); // Set the user who updated
+//				existingPromotion.setUpdatedOn(new Date());
+//				existingPromotion.setBrandName(promoteWebModel.getBrandName());
+//				existingPromotion.setCompanyType(promoteWebModel.getCompanyType());
+//
+//				// ✅ If companyType is NOT "Individual", update companyName
+//				if (!"Individual".equalsIgnoreCase(promoteWebModel.getCompanyType())) {
+//					existingPromotion.setCompanyName(promoteWebModel.getCompanyName());
+//				} else {
+//					existingPromotion.setCompanyName(null); 
+//				}
+//				//existingPromotion.setStatus(true);             
+//				promoteRepository.save(existingPromotion);
+//
+//				responseData.put("promotionId", existingPromotion.getPromoteId());
+//				responseData.put("postId", existingPromotion.getPostId());
+//				responseData.put("userId", existingPromotion.getUserId());
+//				responseData.put("visitPage", existingPromotion.getVisitPage());
+//				response.put("message", "Promotion record updated successfully");
+//			} else {
+//				// Create a new Promote entity
+//				Promote promote = Promote.builder()
+//						//.status(true) // Set to true or as needed
+//						.createdBy(userId) // Set the user who created the promotion
+//						.userId(userId)
+//						.postId(promoteWebModel.getPostId())
+//						.visitPage(promoteWebModel.getVisitPage()) .brandName(promoteWebModel.getBrandName())
+//						.companyType(promoteWebModel.getCompanyType())
+//						.companyName(
+//								!"Individual".equalsIgnoreCase(promoteWebModel.getCompanyType()) 
+//								? promoteWebModel.getCompanyName() 
+//										: null
+//								)
+//						// Set other necessary fields from promoteWebModel if needed
+//						.build();
+//
+//				// Save the new Promote entity to the database
+//				promoteRepository.save(promote);
+//
+//				responseData.put("promotionId", promote.getPromoteId());
+//				responseData.put("postId", promote.getPostId());
+//				responseData.put("userId", promote.getUserId());
+//				responseData.put("visitPage", promote.getVisitPage());
+//				response.put("message", "New promotion record created successfully");
+//			}
+//
+//			// Add status and response data to the final response
+//			response.put("status", "success");
+//			response.put("response", responseData); // Include detailed response data
+//
+//			return ResponseEntity.ok(response);
+//
+//		} catch (Exception e) {
+//			// Log the error for debugging
+//			logger.error("Error in addVisitPage method: ", e);
+//			response.put("status", "error");
+//			response.put("message", "Failed to add/update promotion due to server error");
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//		}
+//	}
+
+	
 	@Override
 	public ResponseEntity<?> addVisitPage(PromoteWebModel promoteWebModel) {
-		HashMap<String, Object> response = new HashMap<>();
-		HashMap<String, Object> responseData = new HashMap<>(); // Additional response data
+	    HashMap<String, Object> response = new HashMap<>();
+	    HashMap<String, Object> responseData = new HashMap<>();
 
-		try {
-			logger.info("addVisitPage method start");
+	    try {
+	        logger.info("addVisitPage method start");
 
-			// Retrieve user ID from the context
-			Integer userId = userDetails.userInfo().getId();
+	        Integer userId = userDetails.userInfo().getId();
+	        User userFromDB = userService.getUser(promoteWebModel.getUserId()).orElse(null);
+	        String companyType = promoteWebModel.getCompanyType();
+	        String companyName = promoteWebModel.getCompanyName();
 
-			// Check if a promotion already exists for the given postId
-			Promote existingPromotion = promoteRepository.findByPostId(promoteWebModel.getPostId());
+	        if (userFromDB == null) {
+	            response.put("status", "error");
+	            response.put("message", "User not found");
+	            return ResponseEntity.badRequest().body(response);
+	        }
 
-			if (existingPromotion != null) {
-				// Update the existing promotion with new values from promoteWebModel
-				existingPromotion.setUserId(userId);
-				existingPromotion.setVisitPage(promoteWebModel.getVisitPage());
-				existingPromotion.setUpdatedBy(userId); // Set the user who updated
-				existingPromotion.setUpdatedOn(new Date());
-				existingPromotion.setBrandName(promoteWebModel.getBrandName());
-				existingPromotion.setCompanyType(promoteWebModel.getCompanyType());
+	        // ✅ Step 1: Create a Post first
+	        Posts post = Posts.builder()
+	                .postId(UUID.randomUUID().toString())
+	                .user(userFromDB)
+	                .status(false)
+	                .likesCount(0)
+	                .promoteFlag(true)
+	                .promoteStatus(true)
+	                .createdOn(new Date())
+	                .createdBy(userId)
+	                .sharesCount(0)
+	                .commentsCount(0)
+	                .build();
 
-				// ✅ If companyType is NOT "Individual", update companyName
-				if (!"Individual".equalsIgnoreCase(promoteWebModel.getCompanyType())) {
-					existingPromotion.setCompanyName(promoteWebModel.getCompanyName());
-				} else {
-					existingPromotion.setCompanyName(null); 
-				}
-				//existingPromotion.setStatus(true);             
-				promoteRepository.save(existingPromotion);
+	        Posts savedPost = postsRepository.saveAndFlush(post);
 
-				responseData.put("promotionId", existingPromotion.getPromoteId());
-				responseData.put("postId", existingPromotion.getPostId());
-				responseData.put("userId", existingPromotion.getUserId());
-				responseData.put("visitPage", existingPromotion.getVisitPage());
-				response.put("message", "Promotion record updated successfully");
-			} else {
-				// Create a new Promote entity
-				Promote promote = Promote.builder()
-						//.status(true) // Set to true or as needed
-						.createdBy(userId) // Set the user who created the promotion
-						.userId(userId)
-						.postId(promoteWebModel.getPostId())
-						.visitPage(promoteWebModel.getVisitPage()) .brandName(promoteWebModel.getBrandName())
-						.companyType(promoteWebModel.getCompanyType())
-						.companyName(
-								!"Individual".equalsIgnoreCase(promoteWebModel.getCompanyType()) 
-								? promoteWebModel.getCompanyName() 
-										: null
-								)
-						// Set other necessary fields from promoteWebModel if needed
-						.build();
+	        // ✅ Step 2: Create Promote record linked to post
+	        Promote promote = Promote.builder()
+	                .postId(savedPost.getId())
+	                .userId(userId)
+	                .visitPage(promoteWebModel.getVisitPage())
+	                //.visitType(promoteWebModel.getVisitType())
+	                .brandName(promoteWebModel.getBrandName())
+	                .companyType(promoteWebModel.getCompanyType())
+	                .companyName("Individual".equalsIgnoreCase(companyType) ? null : companyName)
+	                .nation(promoteWebModel.getNation())  
+	                .createdBy(userId)
+	                .createdOn(new Date())
+	                .build();
 
-				// Save the new Promote entity to the database
-				promoteRepository.save(promote);
+	        // ✅ Save company logo if provided
+	        if (promoteWebModel.getCompanyLogo() != null && !promoteWebModel.getCompanyLogo().isEmpty()) {
+	            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                    .userId(userFromDB.getUserId())
+	                    .category(MediaFileCategory.Promote) 
+	                    .categoryRefId(savedPost.getId())      
+	                    .files(List.of(promoteWebModel.getCompanyLogo()))
+	                    .build();
 
-				responseData.put("promotionId", promote.getPromoteId());
-				responseData.put("postId", promote.getPostId());
-				responseData.put("userId", promote.getUserId());
-				responseData.put("visitPage", promote.getVisitPage());
-				response.put("message", "New promotion record created successfully");
-			}
+	            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
 
-			// Add status and response data to the final response
-			response.put("status", "success");
-			response.put("response", responseData); // Include detailed response data
+	            // store the logo file name (or service could return file path/URL)
+	            promote.setCompanyLogo(promoteWebModel.getCompanyLogo().getOriginalFilename());
+	        }
 
-			return ResponseEntity.ok(response);
+	        // ✅ Save Promote record
+	        Promote savedPromotion = promoteRepository.save(promote);
 
-		} catch (Exception e) {
-			// Log the error for debugging
-			logger.error("Error in addVisitPage method: ", e);
-			response.put("status", "error");
-			response.put("message", "Failed to add/update promotion due to server error");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-		}
+	        // ✅ Response
+	        responseData.put("promotionId", savedPromotion.getPromoteId());
+	        responseData.put("postId", savedPost.getId());
+	        responseData.put("userId", savedPromotion.getUserId());
+	        responseData.put("visitPage", savedPromotion.getVisitPage());
+	        responseData.put("nation", savedPromotion.getNation());
+	        responseData.put("companyLogo", savedPromotion.getCompanyLogo());
+
+	        response.put("status", "success");
+	        response.put("response", responseData);
+
+	        return ResponseEntity.ok(response);
+
+	    } catch (Exception e) {
+	        logger.error("Error in addVisitPage method: ", e);
+	        response.put("status", "error");
+	        response.put("message", "Failed to add promotion due to server error");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
 	}
 
-	@Override
-	public ResponseEntity<?> getVisitType() {
-		Map<String, Object> response = new HashMap<>();
 
-		try {
-			// Fetch all VisitPage entries
-			List<VisitPage> allVisitPages = visitPageRepository.findAll();
-
-			// Filter entries where visitType is 'website'
-			List<Map<String, Object>> websiteVisitPages = allVisitPages.stream()
-					.filter(visitPage -> "website".equals(visitPage.getVisitType()))
-					.map(visitPage -> {
-						// Create a map to store visitPageId and data only
-						Map<String, Object> filteredData = new HashMap<>();
-						filteredData.put("visitPageId", visitPage.getVisitPageId());
-						filteredData.put("data", visitPage.getData());
-						return filteredData;
-					})
-					.collect(Collectors.toList());
-
-			// Return the filtered list
-			response.put("websiteVisitPages", websiteVisitPages);
-			return ResponseEntity.ok(response);
-
-		} catch (Exception e) {
-			// Log and handle errors
-			e.printStackTrace();
-			response.put("error", "Failed to retrieve visit types due to server error");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-		}
-	}
+//	@Override
+//	public ResponseEntity<?> getVisitType() {
+//		Map<String, Object> response = new HashMap<>();
+//
+//		try {
+//			// Fetch all VisitPage entries
+//			List<VisitPage> allVisitPages = visitPageRepository.findAll();
+//
+//			// Filter entries where visitType is 'website'
+//			List<Map<String, Object>> websiteVisitPages = allVisitPages.stream()
+//					.filter(visitPage -> "website".equals(visitPage.getVisitType()))
+//					.map(visitPage -> {
+//						// Create a map to store visitPageId and data only
+//						Map<String, Object> filteredData = new HashMap<>();
+//						filteredData.put("visitPageId", visitPage.getVisitPageId());
+//						filteredData.put("data", visitPage.getData());
+//						return filteredData;
+//					})
+//					.collect(Collectors.toList());
+//
+//			// Return the filtered list
+//			response.put("websiteVisitPages", websiteVisitPages);
+//			return ResponseEntity.ok(response);
+//
+//		} catch (Exception e) {
+//			// Log and handle errors
+//			e.printStackTrace();
+//			response.put("error", "Failed to retrieve visit types due to server error");
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//		}
+//	}
 
 	@Override
 	public ResponseEntity<?> selectPromoteOption(PromoteWebModel request) {
@@ -521,38 +663,38 @@ public class PromoteServiceImpl implements PromoteService {
 	}
 
 
-	@Override
-	public ResponseEntity<?> getVisitTypeByWhatsApp() {
-
-		Map<String, Object> response = new HashMap<>();
-
-		try {
-			// Fetch all VisitPage entries
-			List<VisitPage> allVisitPages = visitPageRepository.findAll();
-
-			// Filter entries where visitType is 'website'
-			List<Map<String, Object>> websiteVisitPages = allVisitPages.stream()
-					.filter(visitPage -> "Whatsapp".equals(visitPage.getVisitType()))
-					.map(visitPage -> {
-						// Create a map to store visitPageId and data only
-						Map<String, Object> filteredData = new HashMap<>();
-						filteredData.put("visitPageId", visitPage.getVisitPageId());
-						filteredData.put("data", visitPage.getData());
-						return filteredData;
-					})
-					.collect(Collectors.toList());
-
-			// Return the filtered list
-			response.put("websiteVisitPages", websiteVisitPages);
-			return ResponseEntity.ok(response);
-
-		} catch (Exception e) {
-			// Log and handle errors
-			e.printStackTrace();
-			response.put("error", "Failed to retrieve visit types due to server error");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-		}
-	}
+//	@Override
+//	public ResponseEntity<?> getVisitTypeByWhatsApp() {
+//
+//		Map<String, Object> response = new HashMap<>();
+//
+//		try {
+//			// Fetch all VisitPage entries
+//			List<VisitPage> allVisitPages = visitPageRepository.findAll();
+//
+//			// Filter entries where visitType is 'website'
+//			List<Map<String, Object>> websiteVisitPages = allVisitPages.stream()
+//					.filter(visitPage -> "Whatsapp".equalsIgnoreCase(visitPage.getVisitType()))
+//					.map(visitPage -> {
+//						// Create a map to store visitPageId and data only
+//						Map<String, Object> filteredData = new HashMap<>();
+//						filteredData.put("visitPageId", visitPage.getVisitPageId());
+//						filteredData.put("data", visitPage.getData());
+//						return filteredData;
+//					})
+//					.collect(Collectors.toList());
+//
+//			// Return the filtered list
+//			response.put("websiteVisitPages", websiteVisitPages);
+//			return ResponseEntity.ok(response);
+//
+//		} catch (Exception e) {
+//			// Log and handle errors
+//			e.printStackTrace();
+//			response.put("error", "Failed to retrieve visit types due to server error");
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//		}
+//	}
 
 
 	@Override
@@ -606,4 +748,68 @@ public class PromoteServiceImpl implements PromoteService {
     public List<VisitePageCategory> getAllCategories() {
         return categoryRepository.findAll();
     }
+    
+    @Override
+    public ResponseEntity<?> getWebsiteCategories() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+           
+			// Fetch all categories
+            List<VisitePageCategory> allCategories = categoryRepository.findAll();
+
+            // Filter only categories where visitType = "website"
+            List<Map<String, Object>> websiteCategories = allCategories.stream()
+                    .filter(category -> "website".equalsIgnoreCase(category.getVisitType()))
+                    .map(category -> {
+                        Map<String, Object> filteredData = new HashMap<>();
+                        filteredData.put("categoryId", category.getCategoryId());
+                        filteredData.put("categoryName", category.getCategoryName());
+                        filteredData.put("visitType", category.getVisitType());
+                        return filteredData;
+                    })
+                    .collect(Collectors.toList());
+
+            // Return response
+            response.put("websiteCategories", websiteCategories);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("error", "Failed to fetch website categories due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @Override
+    public ResponseEntity<?> getWhatsAppCategories() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Fetch all categories
+            List<VisitePageCategory> allCategories = categoryRepository.findAll();
+
+            // Filter only categories where visitType = "Whatsapp"
+            List<Map<String, Object>> whatsappCategories = allCategories.stream()
+                    .filter(category -> "Whatsapp".equalsIgnoreCase(category.getVisitType()))
+                    .map(category -> {
+                        Map<String, Object> filteredData = new HashMap<>();
+                        filteredData.put("categoryId", category.getCategoryId());
+                        filteredData.put("categoryName", category.getCategoryName());
+                        filteredData.put("visitType", category.getVisitType());
+                        return filteredData;
+                    })
+                    .collect(Collectors.toList());
+
+            // Return response
+            response.put("whatsappCategories", whatsappCategories);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("error", "Failed to fetch WhatsApp categories due to server error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 }

@@ -34,6 +34,8 @@ public class PromoteWebModel {
     private String companyType; 
     private String companyName;
     private String brandName;
+    private MultipartFile companyLogo;
+    private String nation;
 
     private Integer sgst;
     private Integer price;

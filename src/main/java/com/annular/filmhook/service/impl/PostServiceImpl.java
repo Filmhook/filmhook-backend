@@ -542,9 +542,9 @@ public class PostServiceImpl implements PostService {
 							.webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
 							.selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
 							.visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
-							.visitType(visitPageEntity != null ? visitPageEntity.getVisitType() : null)
+//							.visitType(visitPageEntity != null ? visitPageEntity.getVisitType() : null)
 							.visitPageData(fetchVisitPageData(promoteDetails))
-							.visitType(fetchVisitPageType(promoteDetails))
+//							.visitType(fetchVisitPageType(promoteDetails))
 							.viewsCount(post.getViewsCount())
 							.build();
 
@@ -568,14 +568,14 @@ public class PostServiceImpl implements PostService {
 		}
 		return null; // Return null if no data is available
 	}
-	private String fetchVisitPageType(Promote promoteDetails) {
-		if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
-			// Assuming selectedOption is a foreign key that refers to VisitPage
-			Optional<VisitPage> visitPageOpt = visitPageRepository.findById(promoteDetails.getSelectOption());
-			return visitPageOpt.map(VisitPage::getVisitType).orElse(null); // Fetching the data field
-		}
-		return null;
-	}
+//	private String fetchVisitPageType(Promote promoteDetails) {
+//		if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
+//			// Assuming selectedOption is a foreign key that refers to VisitPage
+//			Optional<VisitPage> visitPageOpt = visitPageRepository.findById(promoteDetails.getSelectOption());
+//			return visitPageOpt.map(VisitPage::getVisitType).orElse(null); // Fetching the data field
+//		}
+//		return null;
+//	}
 
 	private String generatePostUrl(String postId) {
 		return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";

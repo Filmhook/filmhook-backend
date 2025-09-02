@@ -47,7 +47,7 @@ import lombok.AllArgsConstructor;
 		    @CreationTimestamp
 		    @Column(name = "created_on")
 		    private Date createdOn;
-	
+	  
 		    @Column(name = "updated_by")
 		    private Integer updatedBy;
 	
@@ -57,9 +57,6 @@ import lombok.AllArgsConstructor;
 		    
 		    @Column(name ="data")
 		    private String data;
-		    
-		    @Column(name = "visitType")
-		    private String visitType;
 	
 		    @JsonBackReference
 		    @ManyToOne(fetch = FetchType.LAZY)

@@ -29,7 +29,7 @@ public interface PromoteService {
 
 	ResponseEntity<?> addVisitPage(PromoteWebModel promoteWebModel);
 
-	ResponseEntity<?> getVisitType();
+//	ResponseEntity<?> getVisitType();
 
 	ResponseEntity<?> selectPromoteOption(PromoteWebModel promoteWebModel);
 
@@ -37,12 +37,16 @@ public interface PromoteService {
 
 	ResponseEntity<?> updateDescriptionByPostId(PostWebModel postWebModel);
 
-	ResponseEntity<?> getVisitTypeByWhatsApp();
+//	ResponseEntity<?> getVisitTypeByWhatsApp();
 
 	ResponseEntity<?> updatePromoteStatus(PromoteWebModel promoteWebModel);
 	
 	VisitPage addVisitPage(VisitPage visitPage);
 	List<VisitPage> getPagesByCategoryId(Integer categoryId);
 	List<VisitePageCategory> getAllCategories();
+	
+	 ResponseEntity<?> getWebsiteCategories();
+	 
+	 ResponseEntity<?> getWhatsAppCategories();
 
 }

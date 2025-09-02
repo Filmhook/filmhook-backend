@@ -71,7 +71,7 @@ public class PostWebModel {
     private String webSiteLink;
     private Integer selectOption;
     private String visitPage;
-    private String visitType;
+//    private String visitType;
     // Add visitPageData field
     private String visitPageData;
     private Integer viewsCount;
