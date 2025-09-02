@@ -9,14 +9,16 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Posts;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PostsRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.repository.JpaRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -45,7 +47,8 @@ public class PromoteServiceImpl implements PromoteService {
 
 	@Autowired
 	PromoteRepository promoteRepository;
-
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
 	@Autowired
 	UserDetails userDetails;
 	
@@ -316,52 +319,66 @@ public class PromoteServiceImpl implements PromoteService {
 	
 	@Override
 	public ResponseEntity<HashMap<String, Object>> addPromotes(PromoteWebModel promoteWebModel) {
-	    HashMap<String, Object> response = new HashMap<>();
-	    try {
-	        logger.info("addPromotes method start");
+		  HashMap<String, Object> response = new HashMap<>();
+		    try {
+		        logger.info("addPromotes method start");
 
-	        // ✅ Check if postId is passed
-	        if (promoteWebModel.getPostId() == null) {
-	            response.put("error", "postId is required to upload media");
-	            return ResponseEntity.badRequest().body(response);
-	        }
+		        // ✅ Check if postId is passed
+		        if (promoteWebModel.getPostId() == null) {
+		            response.put("error", "postId is required to upload media");
+		            return ResponseEntity.badRequest().body(response);
+		        }
 
-	        Optional<Posts> optionalPost = postsRepository.findByPostId(promoteWebModel.getPostId());
-	        if (optionalPost.isEmpty()) {
-	            response.put("error", "Invalid postId, post not found");
-	            return ResponseEntity.badRequest().body(response);
-	        }
+		        Optional<Posts> optionalPost = postsRepository.findByPostId(promoteWebModel.getPostId());
+		        if (optionalPost.isEmpty()) {
+		            response.put("error", "Invalid postId, post not found");
+		            return ResponseEntity.badRequest().body(response);
+		        }
 
-	        Posts post = optionalPost.get();
-	        User userFromDB = post.getUser();
+		        Posts post = optionalPost.get();
+		        User userFromDB = post.getUser();
 
-	        // ✅ Handle media upload
-	        if (!Utility.isNullOrEmptyList(promoteWebModel.getFiles())) {
-	            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-	                    .userId(userFromDB.getUserId())
-	                    .category(MediaFileCategory.Post)
-	                    .categoryRefId(post.getId())
-	                    .files(promoteWebModel.getFiles())
-	                    .build();
+		        
+				// ✅ Check if media already exists for this post
+		        List<MediaFiles> existingMedia = mediaFilesRepository.findByCategoryAndCategoryRefId(
+		                MediaFileCategory.Post, post.getId());
 
-	            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
-	        } else {
-	            response.put("warning", "No media files provided");
-	        }
+		        if (existingMedia != null && !existingMedia.isEmpty()) {
+		            // 🔹 If already media present, return existing instead of adding new
+		            response.put("status", "success");
+		            response.put("message", "Media already exists for this post");
+		            response.put("postId", post.getPostId());
+		            response.put("media", existingMedia);
+		            return ResponseEntity.ok(response);
+		        }
 
-	        response.put("status", "success");
-	        response.put("message", "Media uploaded successfully");
-	        response.put("postId", post.getPostId());
+		        // ✅ If no existing media, upload new ones if provided
+		        if (!Utility.isNullOrEmptyList(promoteWebModel.getFiles())) {
+		            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+		                    .userId(userFromDB.getUserId())
+		                    .category(MediaFileCategory.Post)
+		                    .categoryRefId(post.getId())
+		                    .files(promoteWebModel.getFiles())
+		                    .build();
 
-	        return ResponseEntity.ok(response);
+		            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
 
-	    } catch (Exception e) {
-	        logger.error("Error in addPromotes method: ", e);
-	        response.put("error", "Failed to upload media due to server error");
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	    }
-	}
+		            response.put("status", "success");
+		            response.put("message", "Media uploaded successfully");
+		            response.put("postId", post.getPostId());
+		            return ResponseEntity.ok(response);
 
+		        } else {
+		            response.put("warning", "No media files provided and no existing media found");
+		            return ResponseEntity.badRequest().body(response);
+		        }
+
+		    } catch (Exception e) {
+		        logger.error("Error in addPromotes method: ", e);
+		        response.put("error", "Failed to upload media due to server error");
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		    }
+		}
 	
 
 
@@ -447,90 +464,109 @@ public class PromoteServiceImpl implements PromoteService {
 	
 	@Override
 	public ResponseEntity<?> addVisitPage(PromoteWebModel promoteWebModel) {
-	    HashMap<String, Object> response = new HashMap<>();
-	    HashMap<String, Object> responseData = new HashMap<>();
+		  Map<String, Object> response = new HashMap<>();
+		    Map<String, Object> responseData = new HashMap<>();
 
-	    try {
-	        logger.info("addVisitPage method start");
+		    try {
+		        logger.info("addOrPromotePost method start");
 
-	        Integer userId = userDetails.userInfo().getId();
-	        User userFromDB = userService.getUser(promoteWebModel.getUserId()).orElse(null);
-	        String companyType = promoteWebModel.getCompanyType();
-	        String companyName = promoteWebModel.getCompanyName();
+		        Integer userId = userDetails.userInfo().getId();
+		        User userFromDB = userService.getUser(promoteWebModel.getUserId()).orElse(null);
 
-	        if (userFromDB == null) {
-	            response.put("status", "error");
-	            response.put("message", "User not found");
-	            return ResponseEntity.badRequest().body(response);
-	        }
+		        if (userFromDB == null) {
+		            response.put("status", "error");
+		            response.put("message", "User not found");
+		            return ResponseEntity.badRequest().body(response);
+		        }
 
-	        // ✅ Step 1: Create a Post first
-	        Posts post = Posts.builder()
-	                .postId(UUID.randomUUID().toString())
-	                .user(userFromDB)
-	                .status(false)
-	                .likesCount(0)
-	                .promoteFlag(true)
-	                .promoteStatus(true)
-	                .createdOn(new Date())
-	                .createdBy(userId)
-	                .sharesCount(0)
-	                .commentsCount(0)
-	                .build();
+		        Posts post;
 
-	        Posts savedPost = postsRepository.saveAndFlush(post);
+		        // ✅ Case 1: If postId is provided, use existing post
+		        if (promoteWebModel.getPostId() != null) {
+		            post = postsRepository.findById(promoteWebModel.getPostId()).orElse(null);
 
-	        // ✅ Step 2: Create Promote record linked to post
-	        Promote promote = Promote.builder()
-	                .postId(savedPost.getId())
-	                .userId(userId)
-	                .visitPage(promoteWebModel.getVisitPage())
-	                //.visitType(promoteWebModel.getVisitType())
-	                .brandName(promoteWebModel.getBrandName())
-	                .companyType(promoteWebModel.getCompanyType())
-	                .companyName("Individual".equalsIgnoreCase(companyType) ? null : companyName)
-	                .nation(promoteWebModel.getNation())  
-	                .createdBy(userId)
-	                .createdOn(new Date())
-	                .build();
+		            if (post == null) {
+		                response.put("status", "error");
+		                response.put("message", "Post not found with ID: " + promoteWebModel.getPostId());
+		                return ResponseEntity.badRequest().body(response);
+		            }
 
-	        // ✅ Save company logo if provided
-	        if (promoteWebModel.getCompanyLogo() != null && !promoteWebModel.getCompanyLogo().isEmpty()) {
-	            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-	                    .userId(userFromDB.getUserId())
-	                    .category(MediaFileCategory.Promote) 
-	                    .categoryRefId(savedPost.getId())      
-	                    .files(List.of(promoteWebModel.getCompanyLogo()))
-	                    .build();
+		            // update promote flags (in case it's not marked as promoted yet)
+		            post.setPromoteFlag(false);
+		            
+		            post.setPromoteStatus(false);
+		            post.setStatus(true);
+		            postsRepository.save(post);
 
-	            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+		        } else {
+		            // ✅ Case 2: No postId → create a new post
+		            post = Posts.builder()
+		                    .postId(UUID.randomUUID().toString())
+		                    .user(userFromDB)
+		                    .status(false)
+		                    .likesCount(0)
+		                    .promoteFlag(false)
+		                    .promoteStatus(false)
+		                    .createdOn(new Date())
+		                    .createdBy(userId)
+		                    .sharesCount(0)
+		                    .commentsCount(0)
+		                    .build();
 
-	            // store the logo file name (or service could return file path/URL)
-	            promote.setCompanyLogo(promoteWebModel.getCompanyLogo().getOriginalFilename());
-	        }
+		            post = postsRepository.saveAndFlush(post);
+		        }
 
-	        // ✅ Save Promote record
-	        Promote savedPromotion = promoteRepository.save(promote);
+		        // ✅ Create or Update Promote
+		        Promote promote = Promote.builder()
+		                .postId(post.getId())
+		                .userId(userId)
+		                .visitPage(promoteWebModel.getVisitPage())
+		                .brandName(promoteWebModel.getBrandName())
+		                .companyType(promoteWebModel.getCompanyType())
+		                .companyName("Individual".equalsIgnoreCase(promoteWebModel.getCompanyType())
+		                        ? null
+		                        : promoteWebModel.getCompanyName())
+		                .nation(promoteWebModel.getNation())
+		                .createdBy(userId)
+		                .createdOn(new Date())
+		                .status(false)
+		                .build();
 
-	        // ✅ Response
-	        responseData.put("promotionId", savedPromotion.getPromoteId());
-	        responseData.put("postId", savedPost.getId());
-	        responseData.put("userId", savedPromotion.getUserId());
-	        responseData.put("visitPage", savedPromotion.getVisitPage());
-	        responseData.put("nation", savedPromotion.getNation());
-	        responseData.put("companyLogo", savedPromotion.getCompanyLogo());
+		        // ✅ Save company logo if provided
+		        if (promoteWebModel.getCompanyLogo() != null && !promoteWebModel.getCompanyLogo().isEmpty()) {
+		            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+		                    .userId(userFromDB.getUserId())
+		                    .category(MediaFileCategory.Promote)
+		                    .categoryRefId(post.getId())
+		                    .files(List.of(promoteWebModel.getCompanyLogo()))
+		                    .build();
 
-	        response.put("status", "success");
-	        response.put("response", responseData);
+		            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
 
-	        return ResponseEntity.ok(response);
+		            promote.setCompanyLogo(promoteWebModel.getCompanyLogo().getOriginalFilename());
+		        }
 
-	    } catch (Exception e) {
-	        logger.error("Error in addVisitPage method: ", e);
-	        response.put("status", "error");
-	        response.put("message", "Failed to add promotion due to server error");
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	    }
+		        Promote savedPromotion = promoteRepository.save(promote);
+
+		        // ✅ Response
+		        responseData.put("promotionId", savedPromotion.getPromoteId());
+		        responseData.put("postId", post.getId());
+		        responseData.put("userId", savedPromotion.getUserId());
+		        responseData.put("visitPage", savedPromotion.getVisitPage());
+		        responseData.put("nation", savedPromotion.getNation());
+		        responseData.put("companyLogo", savedPromotion.getCompanyLogo());
+
+		        response.put("status", "success");
+		        response.put("response", responseData);
+
+		        return ResponseEntity.ok(response);
+
+		    } catch (Exception e) {
+		        logger.error("Error in addOrPromotePost method: ", e);
+		        response.put("status", "error");
+		        response.put("message", "Failed to add or promote post due to server error");
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		    }
 	}
 
 
