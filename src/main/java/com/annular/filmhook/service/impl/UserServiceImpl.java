@@ -1341,14 +1341,13 @@ public class UserServiceImpl implements UserService {
 	                    userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
 	                    userDetails.put("userName", userData.getName());
 	                    userDetails.put("professionNames", getProfessionNames(userData.getUserId()));
-	                    loggedInUserDetails.put("userType", userData.getUserType());
-	    	            loggedInUserDetails.put("review", userData.getAdminReview());
+	                    userDetails.put("userType", userData.getUserType());
+	                    userDetails.put("review", userData.getAdminReview());
 
 	                    nearbyUsersList.add(userDetails);
 	                }
 	            });
 
-	            // Sort users by distance, excluding the logged-in user who is already at index 0
 	            nearbyUsersList.subList(1, nearbyUsersList.size()).sort(Comparator.comparing(u -> (Long) u.get("distance")));
 	            logger.info("NearBy Users count -> [{}]", nearbyUsersList.size() - 1); // Exclude the logged-in user from the count
 	            return nearbyUsersList;
