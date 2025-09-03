@@ -47,5 +47,6 @@ public class PromoteWebModel {
     private String webSiteLink;
     private String contactNumber;
     private Integer selectOption;
+	public String description;
 
 }

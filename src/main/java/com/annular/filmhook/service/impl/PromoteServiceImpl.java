@@ -604,40 +604,63 @@ public class PromoteServiceImpl implements PromoteService {
 
 	@Override
 	public ResponseEntity<?> selectPromoteOption(PromoteWebModel request) {
-		Map<String, Object> response = new HashMap<>();
+	    Map<String, Object> response = new HashMap<>();
 
-		try {
-			// Retrieve the existing promotion using promoteId
-			Optional<Promote> optionalPromotion = promoteRepository.findById(request.getPromoteId());
+	    try {
+	        // 🔹 Retrieve promotion using promoteId
+	        Optional<Promote> optionalPromotion = promoteRepository.findById(request.getPromoteId());
 
-			if (optionalPromotion.isPresent()) {
-				Promote promotion = optionalPromotion.get();
+	        if (optionalPromotion.isEmpty()) {
+	            response.put("error", "Promotion not found");
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	        }
 
-				// Update the fields with values from the request
-				
-				promotion.setSelectOption(request.getSelectOption());
-				promotion.setContactNumber(request.getContactNumber());
-				promotion.setWebSiteLink(request.getWebSiteLink()); 
+	        Promote promotion = optionalPromotion.get();
 
-				
-				// Save the updated promotion back to the repository
-				promoteRepository.save(promotion);
+	        // 🔹 Update promotion fields
+	        promotion.setSelectOption(request.getSelectOption());
+	        promotion.setContactNumber(request.getContactNumber());
+	        promotion.setWebSiteLink(request.getWebSiteLink());
 
-				// Include postId in the response
-				response.put("message", "Promotion updated successfully");
-				response.put("postId", promotion.getPostId()); // Add postId to the response
-				response.put("promoteId", promotion.getPromoteId());
-				return ResponseEntity.ok(response);
-			} else {
-				response.put("error", "Promotion not found");
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-			}
+	        promoteRepository.save(promotion);
 
-		} catch (Exception e) {
-			logger.error("Error updating promotion: ", e);
-			response.put("error", "Failed to update promotion due to server error");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-		}
+	        // 🔹 Update Post description if provided
+	        if (request.getDescription() != null && !request.getDescription().isBlank()) {
+	            postsRepository.findById(promotion.getPostId()).ifPresent(post -> {
+	                post.setDescription(request.getDescription());
+	                postsRepository.save(post);
+	            });
+	        }
+
+	        // 🔹 Save images if provided
+	        if (!Utility.isNullOrEmptyList(request.getFiles())) {
+	            postsRepository.findById(promotion.getPostId()).ifPresent(post -> {
+	                User userFromDB = post.getUser();
+
+	                FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                        .userId(userFromDB.getUserId())
+	                        .category(MediaFileCategory.Post) // Store under Post category
+	                        .categoryRefId(post.getId())      // Link with postId
+	                        .files(request.getFiles())        // Uploaded files
+	                        .build();
+
+	                mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+	                response.put("mediaStatus", "Media uploaded successfully");
+	            });
+	        }
+
+	        // 🔹 Final Response
+	        response.put("message", "Promotion updated successfully");
+	        response.put("postId", promotion.getPostId());
+	        response.put("promoteId", promotion.getPromoteId());
+
+	        return ResponseEntity.ok(response);
+
+	    } catch (Exception e) {
+	        logger.error("Error updating promotion: ", e);
+	        response.put("error", "Failed to update promotion due to server error");
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	    }
 	}
 
 	@Override
