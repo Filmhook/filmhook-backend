@@ -110,7 +110,7 @@ public class UserWebModel {
     // Output fields for view
     private FileOutputWebModel profilePicOutput;
     private String profilePicUrl;
-    private FileOutputWebModel coverPhotoOutput;
+    private List<FileOutputWebModel> coverPhotoOutput;
     private String coverPicUrl;
 
     //Pagination details
@@ -139,6 +139,9 @@ public class UserWebModel {
    	private String locationLandMark;
    	private String locationLatitude;
    	private String locationLongitude;
+   	
+   	private int followingListCount;
+   	private int followersListCount;
 
 
 }

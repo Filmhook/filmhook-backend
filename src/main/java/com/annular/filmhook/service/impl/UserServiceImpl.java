@@ -114,6 +114,8 @@ public class UserServiceImpl implements UserService {
     
     @Autowired
     private JavaMailSender mailSender;
+    @Autowired
+    FriendRequestRepository friendRequestRepository;
 
     @Override
     public List<UserWebModel> getAllUsers() {
@@ -146,6 +148,19 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
+        
+        // ✅ Followers Count (users who follow this user)
+        int followersCount = friendRequestRepository.countByFollowersRequestReceiverIdAndFollowersRequestIsActive(
+                user.getUserId(), true
+        );
+        userWebModel.setFollowersListCount(followersCount);
+
+        // ✅ Following Count (users this user follows)
+        int followingCount = friendRequestRepository.findByFollowersRequestSenderIdAndFollowersRequestIsActive(
+                user.getUserId(), true
+        ).size();
+        userWebModel.setFollowingListCount(followingCount);
+        
         if (!Utility.isNullOrBlankWithTrim(user.getDob())) {
             userWebModel.setDob(user.getDob());
             //userWebModel.setAge(calendarUtil.getAgeFromDate(user.getDob(), CalendarUtil.MYSQL_DATE_FORMAT));
@@ -214,8 +229,15 @@ public class UserServiceImpl implements UserService {
 
         userWebModel.setProfilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()));
 
-        List<FileOutputWebModel> coverPicList = mediaFilesService.getMediaFilesByCategoryAndUserId(MediaFileCategory.CoverPic, user.getUserId());
-        if (!Utility.isNullOrEmptyList(coverPicList)) userWebModel.setCoverPhotoOutput(coverPicList.get(0));
+        List<FileOutputWebModel> coverPicList = mediaFilesService.getMediaFilesByCategoryAndUserId(
+                MediaFileCategory.CoverPic, user.getUserId()
+        );
+        if (!Utility.isNullOrEmptyList(coverPicList)) {
+            userWebModel.setCoverPhotoOutput(coverPicList);  // ✅ set full list
+        } else {
+            userWebModel.setCoverPhotoOutput(new ArrayList<>()); // empty list to avoid null
+        }
+
 
         String dateString = "";
         LocalDate finalDate = LocalDate.now();
@@ -1160,7 +1182,7 @@ public class UserServiceImpl implements UserService {
         if (!professionPermanentDataList.isEmpty()) {
             return professionPermanentDataList.stream().map(FilmProfessionPermanentDetail::getProfessionName).collect(Collectors.toSet());
         } else {
-            return Collections.singleton("Public User");
+            return Collections.singleton("");
         }
     }
 
@@ -1319,12 +1341,13 @@ public class UserServiceImpl implements UserService {
 	                    userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
 	                    userDetails.put("userName", userData.getName());
 	                    userDetails.put("professionNames", getProfessionNames(userData.getUserId()));
+	                    userDetails.put("userType", userData.getUserType());
+	                    userDetails.put("review", userData.getAdminReview());
 
 	                    nearbyUsersList.add(userDetails);
 	                }
 	            });
 
-	            // Sort users by distance, excluding the logged-in user who is already at index 0
 	            nearbyUsersList.subList(1, nearbyUsersList.size()).sort(Comparator.comparing(u -> (Long) u.get("distance")));
 	            logger.info("NearBy Users count -> [{}]", nearbyUsersList.size() - 1); // Exclude the logged-in user from the count
 	            return nearbyUsersList;
