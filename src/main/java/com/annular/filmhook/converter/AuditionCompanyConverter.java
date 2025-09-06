@@ -9,7 +9,7 @@ import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 
-public class AuditionConverter {
+public class AuditionCompanyConverter {
 
     // Company → DTO
 	  public static AuditionCompanyDetails toCompanyEntity(AuditionCompanyDetailsDTO dto, User user) {
@@ -35,7 +35,7 @@ public class AuditionConverter {
                     ? dto.getVerificationStatus() 
                     : AuditionCompanyDetails.VerificationStatus.PENDING) 
 	                .user(user)
-	              .status(true)
+	              .status(false)
 	              .accessCode(null)
 	                .build();
 	    }
