@@ -4,6 +4,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
 import com.annular.filmhook.service.AuditionNewService;
+import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
 
 import java.util.List;
@@ -86,6 +87,10 @@ public class AuditionNewController {
 	        List<FilmSubProfessionResponseDTO> cart = auditionNewService.getCart(userId, companyId);
 	        return ResponseEntity.ok(cart);
 	    }
-
+	    @GetMapping("/professions")
+	    public ResponseEntity<List<FilmProfessionResponseDTO>> getAllProfessions() {
+	        logger.info("Fetching all professions");
+	        return ResponseEntity.ok(auditionNewService.getAllProfessions());
+	    }
 
 }

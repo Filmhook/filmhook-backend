@@ -14,6 +14,7 @@ import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.AuditionCartItemsRepository;
+import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.MovieCategoryRepository;
 import com.annular.filmhook.repository.MovieSubCategoryRepository;
@@ -21,6 +22,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionNewService;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
 @Service
 public class AuditionNewServiceImpl implements AuditionNewService {
@@ -37,6 +39,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	private AuditionCartItemsRepository auditionCartItemsRepository;
 	 @Autowired
 	    UserRepository userRepository;
+	 @Autowired
+	 private FilmProfessionRepository filmProfessionRepository;
 
 
 	public List<MovieCategory> getAllCategories() {
@@ -146,6 +150,36 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	            )
 	            .collect(Collectors.toList());
 	}
+	
+	@Override
+	public List<FilmProfessionResponseDTO> getAllProfessions() {
+	    return filmProfessionRepository.findAll()
+	            .stream()
+	            .map(profession -> {
+	                // sum all counts of subProfessions for this profession
+	                long totalCount = auditionCartItemsRepository
+	                        .findAll()
+	                        .stream()
+	                        .filter(item -> item.getSubProfession().getProfession().getFilmProfessionId()
+	                                .equals(profession.getFilmProfessionId()))
+	                        .mapToLong(item -> item.getCount() != null ? item.getCount() : 0)
+	                        .sum();
+
+	                return FilmProfessionResponseDTO.builder()
+	                        .id(profession.getFilmProfessionId())
+	                        .professionName(profession.getProfessionName())
+	                        .iconFilePath(
+	                                !Utility.isNullOrBlankWithTrim(profession.getFilePath())
+	                                        ? s3Util.generateS3FilePath(profession.getFilePath())
+	                                        : ""
+	                        )
+	                        .count(totalCount)
+	                        .build();
+	            })
+	            .collect(Collectors.toList());
+	}
+	
+	
 
 
 

@@ -22,4 +22,5 @@ public interface FilmSubProfessionRepository extends JpaRepository<FilmSubProfes
 
     List<FilmSubProfession> findAllBySubProfessionName(String upperCase);
 
+
 }
