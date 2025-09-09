@@ -325,61 +325,61 @@ public class PostServiceImpl implements PostService {
 
 	@Override
 	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize, Integer highlightPostId) {
-	    try {
-	        // Fetch posts created by the user
-	        List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
+		try {
+			// Fetch posts created by the user
+			List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
 
-	        // Fetch tagged posts
-	        String userIdString = userId.toString();
-	        List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
+			// Fetch tagged posts
+			String userIdString = userId.toString();
+			List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
 
-	        // Fetch promoted posts
-	        List<Promote> promotedEntities = promoteRepository.findByUserIdAndStatus(userId, true);
-	        List<Posts> promotedPosts = promotedEntities.stream()
-	                .map(Promote::getPostId)                  // get postId from promote
-	                .filter(Objects::nonNull)
-	                .map(postId -> postsRepository.findById(postId).orElse(null)) // fetch Posts by id
-	                .filter(Objects::nonNull)
-	                .collect(Collectors.toList());
+			// Fetch promoted posts
+			List<Promote> promotedEntities = promoteRepository.findByUserIdAndStatus(userId, true);
+			List<Posts> promotedPosts = promotedEntities.stream()
+					.map(Promote::getPostId)                  // get postId from promote
+					.filter(Objects::nonNull)
+					.map(postId -> postsRepository.findById(postId).orElse(null)) // fetch Posts by id
+					.filter(Objects::nonNull)
+					.collect(Collectors.toList());
 
-	        // Combine all posts and remove duplicates
-	        Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
-	        combinedPostsSet.addAll(taggedPosts);
-	        combinedPostsSet.addAll(promotedPosts);
+			// Combine all posts and remove duplicates
+			Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
+			combinedPostsSet.addAll(taggedPosts);
+			combinedPostsSet.addAll(promotedPosts);
 
-	        List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
+			List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
 
-	        // Sorting: promoted first, then newest createdOn
-	        combinedPostsList.sort(Comparator
-	                .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.reverseOrder()))
-	                .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
+			// Sorting: promoted first, then newest createdOn
+			combinedPostsList.sort(Comparator
+					.comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.reverseOrder()))
+					.thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
 
-	        // If highlightPostId is passed → move it to the top
-	        if (highlightPostId != null) {
-	            Posts highlighted = combinedPostsList.stream()
-	                    .filter(post -> post.getPostId().equals(highlightPostId))
-	                    .findFirst()
-	                    .orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
+			// If highlightPostId is passed → move it to the top
+			if (highlightPostId != null) {
+				Posts highlighted = combinedPostsList.stream()
+						.filter(post -> post.getPostId().equals(highlightPostId))
+						.findFirst()
+						.orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
 
-	            if (highlighted != null) {
-	                combinedPostsList.remove(highlighted);
-	                combinedPostsList.add(0, highlighted);
-	            }
-	        }
+				if (highlighted != null) {
+					combinedPostsList.remove(highlighted);
+					combinedPostsList.add(0, highlighted);
+				}
+			}
 
-	        // Pagination
-	        int totalPosts = combinedPostsList.size();
-	        int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
-	        int toIndex = Math.min(fromIndex + pageSize, totalPosts);
+			// Pagination
+			int totalPosts = combinedPostsList.size();
+			int fromIndex = Math.min((pageNo - 1) * pageSize, totalPosts);
+			int toIndex = Math.min(fromIndex + pageSize, totalPosts);
 
-	        List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
+			List<Posts> paginatedPosts = combinedPostsList.subList(fromIndex, toIndex);
 
-	        return this.transformPostsDataToPostWebModel(paginatedPosts);
+			return this.transformPostsDataToPostWebModel(paginatedPosts);
 
-	    } catch (Exception e) {
-	        logger.error("Error at getPostsByUserId() -> {}", e.getMessage(), e);
-	        return null;
-	    }
+		} catch (Exception e) {
+			logger.error("Error at getPostsByUserId() -> {}", e.getMessage(), e);
+			return null;
+		}
 	}
 
 
@@ -497,11 +497,18 @@ public class PostServiceImpl implements PostService {
 					String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
 					VisitPage visitPageEntity = null;
 					if (promoteDetails != null && promoteDetails.getVisitPage() != null) {
-					    Integer visitPageId = Integer.parseInt(promoteDetails.getVisitPage());
-					    visitPageEntity = visitPageRepository.findById(visitPageId).orElse(null);
+						Integer visitPageId = Integer.parseInt(promoteDetails.getVisitPage());
+						visitPageEntity = visitPageRepository.findById(visitPageId).orElse(null);
 					}
 
-					
+					List<FileOutputWebModel> logoFiles = new ArrayList<>();
+					if (promoteDetails != null) {
+						logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+								MediaFileCategory.Promote, 
+								post.getId() 
+								);
+					}
+
 					PostWebModel postWebModel = PostWebModel.builder()
 							.id(post.getId())
 							.userId(post.getUser().getUserId())
@@ -542,10 +549,11 @@ public class PostServiceImpl implements PostService {
 							.webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
 							.selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
 							.visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
-//							.visitType(visitPageEntity != null ? visitPageEntity.getVisitType() : null)
 							.visitPageData(fetchVisitPageData(promoteDetails))
-//							.visitType(fetchVisitPageType(promoteDetails))
 							.viewsCount(post.getViewsCount())
+							.companyName(promoteDetails != null ? promoteDetails.getCompanyName() : null)
+							.brandName(promoteDetails != null ? promoteDetails.getBrandName() : null)
+							.companyLogoFiles(logoFiles) 
 							.build();
 
 					responseList.add(postWebModel);
@@ -568,14 +576,7 @@ public class PostServiceImpl implements PostService {
 		}
 		return null; // Return null if no data is available
 	}
-//	private String fetchVisitPageType(Promote promoteDetails) {
-//		if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
-//			// Assuming selectedOption is a foreign key that refers to VisitPage
-//			Optional<VisitPage> visitPageOpt = visitPageRepository.findById(promoteDetails.getSelectOption());
-//			return visitPageOpt.map(VisitPage::getVisitType).orElse(null); // Fetching the data field
-//		}
-//		return null;
-//	}
+
 
 	private String generatePostUrl(String postId) {
 		return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";
@@ -943,7 +944,7 @@ public class PostServiceImpl implements PostService {
 
 					// FCM Notification
 					Notification notificationData = Notification.builder()
-						//	.setTitle(title)
+							//	.setTitle(title)
 							.setBody(bodyText)
 							.build();
 

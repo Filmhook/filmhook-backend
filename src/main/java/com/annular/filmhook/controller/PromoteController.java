@@ -174,17 +174,17 @@ public class PromoteController {
 //        }
 //    }
 
-    @PostMapping("/selectPromoteOption")
-    public ResponseEntity<?> selectPromoteOption(@RequestBody PromoteWebModel promoteWebModel) {
+    @PostMapping(value = "/selectPromoteOption", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> selectPromoteOption(@ModelAttribute PromoteWebModel promoteWebModel) {
         try {
             logger.info("selectPromoteOption controller start");
             return promoteService.selectPromoteOption(promoteWebModel);
         } catch (Exception e) {
-            logger.error("updatePromote  Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
+            logger.error("updatePromote Method Exception -> {}", e.getMessage(), e);
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
+
     
     @PostMapping("/getDescriptionByPostId")
     public ResponseEntity<?> getDescriptionByPostId(@RequestBody PostWebModel postWebModel) {
