@@ -1,7 +1,9 @@
 package com.annular.filmhook.controller;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.service.AuditionCompanyService;
 import com.annular.filmhook.validator.AuditionCompanyDetailsValidator;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
@@ -78,4 +81,28 @@ public class AuditionCompanyController {
         List<AuditionCompanyDetailsDTO> companies = companyService.getAllActivePendingCompanies();
         return ResponseEntity.ok(companies);
     }
+    
+    @PutMapping("/{companyId}/verify")
+    public ResponseEntity<?> verifyCompany(@PathVariable Integer companyId, @RequestParam boolean approved) {
+        AuditionCompanyDetails updatedCompany = companyService.updateVerificationStatus(companyId, approved);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("companyId", updatedCompany.getId());
+        response.put("verificationStatus", updatedCompany.getVerificationStatus());
+        response.put("message", approved ? "Company verification SUCCESS" : "Company verification FAILED");
+
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/StatusChange")
+    public ResponseEntity<Response> continueCompany(
+    		@RequestParam Integer companyId,
+            @RequestParam Integer userId) {
+
+        AuditionCompanyDetailsDTO updatedCompany = 
+        		companyService.markCompanyAsContinued(companyId, userId);
+
+        return ResponseEntity.ok(new Response(1, "Success", updatedCompany));
+    }
+
 }

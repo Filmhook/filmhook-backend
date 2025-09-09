@@ -9,7 +9,7 @@ import com.annular.filmhook.model.User;
 import java.util.List;
 import java.util.Optional;
 
-public interface AuditionCompanyRepository extends JpaRepository<AuditionCompanyDetails, Long> {
+public interface AuditionCompanyRepository extends JpaRepository<AuditionCompanyDetails, Integer> {
     Optional<AuditionCompanyDetails> findByAccessCode(String accessCode);
     List<AuditionCompanyDetails> findAllByUser(User user);
     List<AuditionCompanyDetails> findByStatusTrue();

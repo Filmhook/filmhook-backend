@@ -434,10 +434,10 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		try {
 			if (!Utility.isNullOrEmptyList(mediaFiles)) {
 				mediaFiles.forEach(mediaFile -> {
-					mediaFile.setStatus(false); // 1. Deactivating the MediaFiles
+					mediaFile.setStatus(false); 
 					mediaFilesRepository.saveAndFlush(mediaFile);
-					fileUtil.deleteFile(mediaFile.getFilePath() + mediaFile.getFileType()); // 2. Deleting the S3
-																							// Objects
+					fileUtil.deleteFile(mediaFile.getFilePath() + mediaFile.getFileType());
+																							
 				});
 			}
 		} catch (Exception e) {
