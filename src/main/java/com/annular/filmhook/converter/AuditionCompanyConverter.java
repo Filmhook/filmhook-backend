@@ -164,6 +164,7 @@ public class AuditionCompanyConverter {
 	// Entity → DTO
 	public static AuditionNewProjectWebModel toDto(AuditionNewProject entity) {
 		AuditionNewProjectWebModel dto = new AuditionNewProjectWebModel();
+		dto.setId(entity.getId());
 		dto.setProductionCompanyName(entity.getProductionCompanyName());
 		dto.setProjectTitle(entity.getProjectTitle());
 		dto.setCountry(entity.getCountry());
@@ -193,6 +194,7 @@ public class AuditionCompanyConverter {
 	// TeamNeed Entity → DTO
 	public static AuditionNewTeamNeedWebModel toDto(AuditionNewTeamNeed entity) {
 		AuditionNewTeamNeedWebModel dto = new AuditionNewTeamNeedWebModel();
+		dto.setId(entity.getId());
 		dto.setRole(entity.getRole());
 		dto.setCount(entity.getCount());
 		dto.setCharacterName(entity.getCharacterName());

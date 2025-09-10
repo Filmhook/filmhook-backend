@@ -1,5 +1,6 @@
 package com.annular.filmhook.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,8 @@ public interface AuditionNewTeamNeedRepository extends JpaRepository<AuditionNew
     List<AuditionNewTeamNeed> findAllBySubProfessionId(@Param("subProfessionId") Integer subProfessionId);
     
     List<AuditionNewTeamNeed> findAllByProjectId(Integer projectId);
+    
+    @Query("SELECT tn FROM AuditionNewTeamNeed tn WHERE tn.status = true AND tn.project.shootEndDate <= :today")
+    List<AuditionNewTeamNeed> findExpiredTeamNeeds(@Param("today") LocalDate today);
+
 }

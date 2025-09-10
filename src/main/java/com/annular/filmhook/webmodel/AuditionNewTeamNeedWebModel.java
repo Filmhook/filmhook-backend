@@ -13,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuditionNewTeamNeedWebModel {
-//    private Integer id;
+   private Integer id;
     private String role;
     private Integer count;
     private String characterName;
@@ -39,4 +39,7 @@ public class AuditionNewTeamNeedWebModel {
     private Integer updatedBy;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+    private Boolean liked;     
+    private Integer likeCount;
+    private int totalViews;
 }

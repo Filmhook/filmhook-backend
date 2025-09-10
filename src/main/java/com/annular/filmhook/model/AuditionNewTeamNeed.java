@@ -94,6 +94,9 @@ public class AuditionNewTeamNeed {
     @Column(name = "work_days")
     private Integer workDays;
     
+    @Column(name = "views")
+    private Integer views = 0;
+    
     private Boolean status;
     private Integer createdBy;
     private Integer updatedBy;

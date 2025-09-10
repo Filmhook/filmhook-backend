@@ -4,6 +4,8 @@ package com.annular.filmhook.controller;
 
 import java.util.List;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,7 +36,7 @@ import com.annular.filmhook.validator.AuditionProjectValidator;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 
 @RestController
-@RequestMapping("/api/auditionProjects")
+@RequestMapping("/audition")
 public class AuditionNewController {
 	public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 	
@@ -44,9 +47,9 @@ public class AuditionNewController {
     
     
     
-    @PostMapping(value = "/saveAudition", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<?> createProject(
-            @RequestPart("dto") AuditionNewProjectWebModel dto,
+            @RequestPart("auditionDetails") AuditionNewProjectWebModel dto,
             @RequestPart(value = "profilePictureFiles", required = false) List<MultipartFile> files) {
 
         // Attach files
@@ -104,15 +107,15 @@ public class AuditionNewController {
         }
     }
 
-    @GetMapping("/ByCompany/{companyId}")
-    public ResponseEntity<?> getProjectsByCompanyId(@PathVariable Integer companyId) {
+    @GetMapping("/ByCompany")
+    public ResponseEntity<?> getProjectsByCompanyId(@RequestParam Integer companyId, @RequestParam(required = false) Integer teamNeedId) {
         try {
             if (companyId == null || companyId <= 0) {
                 return ResponseEntity.badRequest()
                         .body(new Response(0, "Invalid companyId. Must be greater than 0.", null));
             }
 
-            List<AuditionNewProjectWebModel> projects = projectService.getProjectsByCompanyId(companyId);
+            List<AuditionNewProjectWebModel> projects = projectService.getProjectsByCompanyIdAndTeamNeed(companyId, teamNeedId);
 
             if (projects.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -127,7 +130,49 @@ public class AuditionNewController {
         }
     }
 
+    @PostMapping("/toggleLike/{teamNeedId}")
+    public ResponseEntity<Response> toggleTeamNeedLike(
+            @PathVariable Integer teamNeedId,
+            @RequestParam Integer userId) {
+        try {
+            String result = projectService.toggleTeamNeedLike(teamNeedId, userId);
+            return ResponseEntity.ok(new Response(1, result, null));
+
+        } catch (IllegalArgumentException e) {
+            // Missing or invalid input
+            return ResponseEntity.badRequest()
+                    .body(new Response(-1, e.getMessage(), null));
+
+        } catch (EntityNotFoundException e) {
+            // TeamNeed or User not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(-1, e.getMessage(), null));
+
+        } catch (IllegalStateException e) {
+            // TeamNeed inactive
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Response(-1, e.getMessage(), null));
+
+        } catch (Exception e) {
+ 
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Something went wrong. Please try again.", null));
+        }
+    }
+
     
+    @PostMapping("/addView/{teamNeedId}")
+    public ResponseEntity<Response> addView(
+            @PathVariable Integer teamNeedId,
+            @RequestParam Integer userId) {
+        try {
+        	projectService.addView(teamNeedId, userId);
+            long views = projectService.getViewCount(teamNeedId);
+            return ResponseEntity.ok(new Response(1, "View added", views));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new Response(-1, "Failed to add view: " + e.getMessage(), ""));
+        }
+    }
     
     
     

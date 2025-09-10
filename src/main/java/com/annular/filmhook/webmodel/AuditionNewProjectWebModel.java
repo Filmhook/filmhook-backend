@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuditionNewProjectWebModel {
-//    private Integer id;
+  private Integer id;
     private String productionCompanyName;
     private String projectTitle;
     private String country;
