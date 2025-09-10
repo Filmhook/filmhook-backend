@@ -34,9 +34,9 @@
 	    private String accessCode; 
 	    private VerificationStatus verificationStatus;
 	    private Boolean status;
-	    private String createdBy;
+	    private Integer createdBy;
 	    private List<FileOutputWebModel> logoFilesOutput;
-	    private String updatedBy;
+	    private Integer updatedBy;
 	    private LocalDateTime createdDate;
 	    private LocalDateTime updatedDate;
 	}
