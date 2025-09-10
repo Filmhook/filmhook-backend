@@ -24,7 +24,18 @@ public interface AuditionNewTeamNeedRepository extends JpaRepository<AuditionNew
     
     List<AuditionNewTeamNeed> findAllByProjectId(Integer projectId);
     
+
     @Query("SELECT tn FROM AuditionNewTeamNeed tn WHERE tn.status = true AND tn.project.shootEndDate <= :today")
     List<AuditionNewTeamNeed> findExpiredTeamNeeds(@Param("today") LocalDate today);
+
+    @Query("SELECT t FROM AuditionNewTeamNeed t WHERE t.subProfession.subProfessionId = :subProfessionId AND t.status = true")
+    List<AuditionNewTeamNeed> findActiveBySubProfessionId(@Param("subProfessionId") Integer subProfessionId);
+    
+    @Query("SELECT t FROM AuditionNewTeamNeed t " +
+    	       "WHERE t.profession.filmProfessionId = :professionId " +
+    	       "AND t.status = true")
+    	List<AuditionNewTeamNeed> findActiveByProfessionId(@Param("professionId") Integer professionId);
+
+
 
 }

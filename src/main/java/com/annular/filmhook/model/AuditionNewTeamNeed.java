@@ -115,5 +115,9 @@ public class AuditionNewTeamNeed {
     @JoinColumn(name = "sub_profession_id", referencedColumnName = "sub_profession_id")
     private FilmSubProfession subProfession;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profession_id", referencedColumnName = "film_profession_id")
+    private FilmProfession profession;
+    
     
 }
