@@ -78,7 +78,7 @@ public class AuditionCompanyController {
     
     @GetMapping("/activeAndPendingAudition")
     public ResponseEntity<List<AuditionCompanyDetailsDTO>> getActivePendingCompanies() {
-        List<AuditionCompanyDetailsDTO> companies = companyService.getAllActivePendingCompanies();
+        List<AuditionCompanyDetailsDTO> companies = companyService.getAllPendingCompanies();
         return ResponseEntity.ok(companies);
     }
     

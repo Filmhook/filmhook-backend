@@ -142,8 +142,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
     } 
     
     @Override
-	public List<AuditionCompanyDetailsDTO> getAllActivePendingCompanies() {
-	    List<AuditionCompanyDetails> companies = companyRepository.findByStatusTrueAndVerificationStatus(AuditionCompanyDetails.VerificationStatus.PENDING);
+	public List<AuditionCompanyDetailsDTO> getAllPendingCompanies() {
+	    List<AuditionCompanyDetails> companies = companyRepository.findByStatusFalseAndVerificationStatus(AuditionCompanyDetails.VerificationStatus.PENDING);
 
 	    return companies.stream().map(company -> {
 	        AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);

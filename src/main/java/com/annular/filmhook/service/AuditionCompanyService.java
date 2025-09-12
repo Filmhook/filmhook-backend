@@ -12,7 +12,7 @@ public interface AuditionCompanyService {
 	 AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto);
 	 List<AuditionCompanyDetailsDTO> getCompaniesByUserId(Integer userId);
 	 List<AuditionCompanyDetailsDTO> getAllCompanies();
-	 List<AuditionCompanyDetailsDTO> getAllActivePendingCompanies();
+	 List<AuditionCompanyDetailsDTO> getAllPendingCompanies();
 	 AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved);
 	 AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId);
 	 

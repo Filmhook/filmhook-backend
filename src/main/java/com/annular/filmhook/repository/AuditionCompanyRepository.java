@@ -13,7 +13,7 @@ public interface AuditionCompanyRepository extends JpaRepository<AuditionCompany
     Optional<AuditionCompanyDetails> findByAccessCode(String accessCode);
     List<AuditionCompanyDetails> findAllByUser(User user);
     List<AuditionCompanyDetails> findByStatusTrue();
-    List<AuditionCompanyDetails> findByStatusTrueAndVerificationStatus(AuditionCompanyDetails.VerificationStatus status);
+    List<AuditionCompanyDetails> findByStatusFalseAndVerificationStatus(AuditionCompanyDetails.VerificationStatus status);
 
 
 }
