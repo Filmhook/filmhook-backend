@@ -19,6 +19,8 @@ public interface AuditionCompanyService {
 	 AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId);
 	 AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request);
 	 Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode);
+	 
+	 AuditionCompanyDetailsDTO getCompanyById(Integer companyId);
 //	    AuditionCompanyDetailsDTO updateCompany(Long id, AuditionCompanyDetailsDTO dto);
 //
 //	    AuditionCompanyDetailsDTO getCompanyById(Long id);

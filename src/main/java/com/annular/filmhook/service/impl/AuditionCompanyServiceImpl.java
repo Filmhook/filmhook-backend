@@ -341,6 +341,27 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 
 	        return "No companies found. Please provide FilmHookCode, designation, and access code.";
 	    }
+	    
+	    
+	    @Override
+	    public AuditionCompanyDetailsDTO getCompanyById(Integer companyId) {
+	        AuditionCompanyDetails company = companyRepository.findById(companyId)
+	                .orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
+
+	        AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
+
+	        // Attach logo files
+	        List<FileOutputWebModel> logoFiles = mediaFilesService
+	                .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+
+	        if (!logoFiles.isEmpty()) {
+	            dto.setLogoFilesOutput(logoFiles);
+	        }
+
+	        return dto;
+	    }
+
+	    
 
 } 
 

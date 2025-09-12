@@ -142,4 +142,15 @@ public class AuditionCompanyController {
         }
     }
 
+    
+    @GetMapping("/Auditioncompany/{companyId}")
+    public ResponseEntity<Response> getCompanyById(@PathVariable Integer companyId) {
+        try {
+            AuditionCompanyDetailsDTO dto = companyService.getCompanyById(companyId);
+            return ResponseEntity.ok(new Response(1, "Success", dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new Response(-1, e.getMessage(), null));
+        }
+    }
+
 }
