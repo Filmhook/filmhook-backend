@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -14,10 +14,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.service.AuditionCompanyService;
+import com.annular.filmhook.service.impl.UserDetailsServiceImpl;
 import com.annular.filmhook.validator.AuditionCompanyDetailsValidator;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 
 @RestController
 @RequestMapping("/api/companies")
@@ -28,6 +34,11 @@ public class AuditionCompanyController {
 
     @Autowired
     private AuditionCompanyDetailsValidator companyValidator;
+    
+    @Autowired
+	private  UserDetails userDetails;
+    @Autowired
+    private UserRepository userRepository;
 
     /**
      * Save Company Details
@@ -103,6 +114,43 @@ public class AuditionCompanyController {
         		companyService.markCompanyAsContinued(companyId, userId);
 
         return ResponseEntity.ok(new Response(1, "Success", updatedCompany));
+    }
+
+    
+    @PostMapping("/assignAccessCode")
+    public ResponseEntity<AuditionUserCompanyRoleDTO> assignAccess(@RequestBody AuditionUserCompanyRoleDTO request) {
+        return ResponseEntity.ok(companyService.assignAccess(request));
+    }
+    
+    @PostMapping("/AuditionLogin")
+    public ResponseEntity<Response> postAudition(
+            @RequestParam(required = false) String filmHookCode,
+            @RequestParam(required = false) String designation,
+            @RequestParam(required = false) String accessCode) {
+
+        // ✅ Get current logged-in user
+        Integer userId = userDetails.userInfo().getId();
+        User loggedUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        try {
+            Object result = companyService.handleAuditionAccess(loggedUser, filmHookCode, designation, accessCode);
+            return ResponseEntity.ok(new Response(1, "Success", result));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new Response(-1, e.getMessage(), null));
+        }
+    }
+
+    
+    @GetMapping("/Auditioncompany/{companyId}")
+    public ResponseEntity<Response> getCompanyById(@PathVariable Integer companyId) {
+        try {
+            AuditionCompanyDetailsDTO dto = companyService.getCompanyById(companyId);
+            return ResponseEntity.ok(new Response(1, "Success", dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new Response(-1, e.getMessage(), null));
+        }
     }
 
 }

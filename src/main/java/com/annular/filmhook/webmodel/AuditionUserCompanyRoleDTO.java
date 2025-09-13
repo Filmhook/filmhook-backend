@@ -10,13 +10,15 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class AuditionUserCompanyRoleDTO {
-    private Long id;
-    private Long userId;
-    private Long companyId;
+   
+    private Integer id;
+    private Integer ownerId;
+    private Integer companyId;
+    private Integer assignedUserId;
     private String designation;
-    private String status;
-    private String createdBy;
+    private String accessKey;
+    private Boolean status;
     private LocalDateTime createdDate;
-    private String updatedBy;
-    private LocalDateTime updatedDate;
+    private String filmHookCode;
+    private Boolean isOwner;
 }

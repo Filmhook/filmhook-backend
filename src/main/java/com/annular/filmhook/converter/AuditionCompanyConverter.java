@@ -241,25 +241,62 @@ public class AuditionCompanyConverter {
 
 
 
-	// UserCompanyRole → DTO
-	public static AuditionUserCompanyRoleDTO toRoleDTO(AuditionUserCompanyRole entity) {
-		if (entity == null) return null;
-		return AuditionUserCompanyRoleDTO.builder()
-				.id(entity.getId())
-				.userId(entity.getUserId())
-				.companyId(entity.getCompanyId())
-				.designation(entity.getDesignation())
-				.build();
+	// UserCompanyRole 
+	
+	// Convert Request DTO → Entity
+	public static AuditionUserCompanyRole toEntity(
+	        AuditionUserCompanyRoleDTO dto,
+	        User owner,
+	        User assignedUser,
+	        AuditionCompanyDetails company,
+	        String accessKey
+	) {
+	    return AuditionUserCompanyRole.builder()
+	            .owner(owner)
+	            .company(company)
+	            .assignedUser(assignedUser)
+	            .designation(dto.getDesignation())
+	            .filmHookCode(dto.getFilmHookCode()) 
+	            .accessKey(accessKey)
+	            .status(true)
+	            .createdBy(dto.getOwnerId())
+	            .createdDate(java.time.LocalDateTime.now())
+	            .build();
 	}
 
-	// DTO → UserCompanyRole
-	public static AuditionUserCompanyRole toRoleEntity(AuditionUserCompanyRoleDTO dto) {
-		if (dto == null) return null;
-		return AuditionUserCompanyRole.builder()
-				.id(dto.getId())
-				.userId(dto.getUserId())
-				.companyId(dto.getCompanyId())
-				.designation(dto.getDesignation())
-				.build();
+	// Convert Entity → Response DTO
+	public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity) {
+	
+	    return AuditionUserCompanyRoleDTO.builder()
+	    		  .id(entity.getId())
+	              .ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null) // ✅ ownerId
+	              .assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null) // ✅ assignedUserId
+	              .companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
+	              .filmHookCode(entity.getFilmHookCode()) // ✅ FH code
+	              .designation(entity.getDesignation())
+	              .accessKey(entity.getAccessKey())
+	              .status(entity.getStatus())
+	              .isOwner(false)
+	              .createdDate(entity.getCreatedDate())
+	              .build();
 	}
+	
+	   public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity, User loggedUser) {
+	        boolean isOwner = entity.getOwner() != null && entity.getOwner().getUserId().equals(loggedUser.getUserId());
+
+	        return AuditionUserCompanyRoleDTO.builder()
+	                .id(entity.getId())
+	                .ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null)
+	                .assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null)
+	                .companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
+	                .filmHookCode(entity.getFilmHookCode())
+	                .designation(entity.getDesignation())
+	                .accessKey(entity.getAccessKey())
+	                .status(entity.getStatus())
+	                .isOwner(isOwner)
+	                .createdDate(entity.getCreatedDate())
+	                .build();
+	    }
+
+
 }

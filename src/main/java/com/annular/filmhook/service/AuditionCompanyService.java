@@ -5,7 +5,9 @@ package com.annular.filmhook.service;
 import java.util.List;
 
 import com.annular.filmhook.model.AuditionCompanyDetails;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 
 
 public interface AuditionCompanyService {
@@ -15,7 +17,10 @@ public interface AuditionCompanyService {
 	 List<AuditionCompanyDetailsDTO> getAllPendingCompanies();
 	 AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved);
 	 AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId);
+	 AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request);
+	 Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode);
 	 
+	 AuditionCompanyDetailsDTO getCompanyById(Integer companyId);
 //	    AuditionCompanyDetailsDTO updateCompany(Long id, AuditionCompanyDetailsDTO dto);
 //
 //	    AuditionCompanyDetailsDTO getCompanyById(Long id);
