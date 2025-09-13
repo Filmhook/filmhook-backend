@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -152,5 +153,17 @@ public class AuditionCompanyController {
             return ResponseEntity.badRequest().body(new Response(-1, e.getMessage(), null));
         }
     }
-
+    
+    @DeleteMapping("/remove-access/{AccessId}")
+    public ResponseEntity<Response> removeAccess(@PathVariable Integer AccessId) {
+    	try {
+        companyService.removeAccess(AccessId);
+        return ResponseEntity.ok(new Response(1, "Success","Access removed successfully"));
+        
+    } catch (RuntimeException e) {
+        return ResponseEntity.badRequest().body(new Response(-1, e.getMessage(), null));
+    }
+    }
+    
+    
 }

@@ -2,6 +2,7 @@ package com.annular.filmhook.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -204,43 +205,73 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 
 	@Override
 	public AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request) {
-		User owner = userRepository.findById(request.getOwnerId())
-				.orElseThrow(() -> new RuntimeException("Owner not found"));
 
-		AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
-				.orElseThrow(() -> new RuntimeException("Company not found"));
+	    // 1️⃣ Validate owner
+	    User owner = userRepository.findById(request.getOwnerId())
+	            .orElseThrow(() -> new RuntimeException("Owner not found"));
 
-		User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
-				.orElseThrow(() -> new RuntimeException(
-						"Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
-						));
+	    // 2️⃣ Validate company
+	    AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
+	            .orElseThrow(() -> new RuntimeException("Company not found"));
 
-		// ✅ Check if already exists for same company + user
-		boolean alreadyAssigned = roleRepository.existsByCompanyAndAssignedUser(company, assignedUser);
-		if (alreadyAssigned) {
-			throw new RuntimeException("Access already assigned to this user for the given company");
-		}
+	    // 3️⃣ Validate assigned user
+	    User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
+	            .orElseThrow(() -> new RuntimeException(
+	                    "Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
+	            ));
 
-		// ✅ Generate Access Key
-		String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
-				? request.getAccessKey()
-						: UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+	    // 4️⃣ Check if role exists (even soft-deleted)
+	    Optional<AuditionUserCompanyRole> existingRoleOpt =
+	            roleRepository.findByCompanyAndAssignedUser(company, assignedUser);
 
-		AuditionUserCompanyRole role = AuditionCompanyConverter
-				.toEntity(request, owner, assignedUser, company, accessKey);
+	    if (existingRoleOpt.isPresent()) {
+	        AuditionUserCompanyRole existingRole = existingRoleOpt.get();
 
-		role = roleRepository.save(role);
-		sendAssignAccessEmails(owner, assignedUser, company, accessKey);
+	        if (Boolean.TRUE.equals(existingRole.getStatus())) {
+	            // Active → block
+	            throw new RuntimeException("Access already assigned to this user for the given company");
+	        } else {
+	            // Inactive → reactivate instead of creating new
+	            existingRole.setStatus(true);
+	            existingRole.setDesignation(request.getDesignation());
+	            existingRole.setAccessKey(
+	                    (request.getAccessKey() != null && !request.getAccessKey().isBlank())
+	                            ? request.getAccessKey()
+	                            : UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+	            );
+	            existingRole.setCreatedBy(request.getOwnerId());
+	            existingRole.setCreatedDate(LocalDateTime.now());
 
-		return AuditionCompanyConverter.toDto(role);
+	            AuditionUserCompanyRole reactivated = roleRepository.save(existingRole);
+	            sendAssignAccessEmails(owner, assignedUser, company, reactivated.getAccessKey(), reactivated.getDesignation());
+
+	            return AuditionCompanyConverter.toDto(reactivated);
+	        }
+	    }
+
+	    // 5️⃣ Create new role if none exists
+	    String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
+	            ? request.getAccessKey()
+	            : UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+	    AuditionUserCompanyRole newRole = AuditionCompanyConverter
+	            .toEntity(request, owner, assignedUser, company, accessKey);
+
+	    newRole = roleRepository.save(newRole);
+	    sendAssignAccessEmails(owner, assignedUser, company, accessKey, request.getDesignation());
+
+	    return AuditionCompanyConverter.toDto(newRole);
 	}
 
+
+
 	@Async
-	public void sendAssignAccessEmails(User owner, User assignedUser, AuditionCompanyDetails company, String accessKey) {
+	public void sendAssignAccessEmails(User owner, User assignedUser, AuditionCompanyDetails company, String accessKey,String designation) {
 		// Email to Assigned User
 		String assignedSubject = "Access Granted for Company: " + company.getCompanyName();
 		String assignedContent = "<p>You have been granted access to the company <b>" + company.getCompanyName() + "</b>.</p>"
-				+ "<p><b>Access Key:</b> " + accessKey + "</p>"
+			       + "<p><b>Designation:</b> " + designation + "</p>"
+		            + "<p><b>Access Key:</b> " + accessKey + "</p>"
 				+ "<p>Use this key to log in and manage your assigned company roles.</p>";
 		mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
 
@@ -248,6 +279,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 		String ownerSubject = "Access Assigned Successfully";
 		String ownerContent = "<p>You have successfully assigned access to user <b>" + assignedUser.getName() + "</b> "
 				+ "for your company <b>" + company.getCompanyName() + "</b>.</p>"
+						 + "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>Access Key:</b> " + accessKey + "</p>";
 		mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
 	}
@@ -263,6 +295,9 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 
 	        AuditionUserCompanyRole role = roleRepository.findByFilmHookCode(filmHookCode)
 	                .orElseThrow(() -> new RuntimeException("Company not found with FilmHookCode: " + filmHookCode));
+	        if (role.getStatus() == null || !role.getStatus()) {
+	            throw new RuntimeException("Access revoked or inactive for this company");
+	        }
 
 	        // Owner bypass
 	        if (role.getOwner() != null && role.getOwner().getUserId().equals(loggedUser.getUserId())) {
@@ -361,7 +396,18 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	        return dto;
 	    }
 
-	    
+	    @Override
+	    public void removeAccess(Integer roleId) {
+	        AuditionUserCompanyRole role = roleRepository.findById(roleId)
+	                .orElseThrow(() -> new RuntimeException("Access not found with ID: " + roleId));
+
+	        if (!role.getStatus()) {
+	            throw new RuntimeException("Access already removed");
+	        }
+
+	        role.setStatus(false);
+	        roleRepository.save(role);
+	    }
 
 } 
 
