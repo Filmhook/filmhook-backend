@@ -39,6 +39,7 @@ public class AuditionCompanyConverter {
 				? dto.getVerificationStatus() 
 						: AuditionCompanyDetails.VerificationStatus.PENDING) 
 				.user(user)
+				.deleted(false)
 				.status(false)
 				.accessCode(null)
 				.build();
