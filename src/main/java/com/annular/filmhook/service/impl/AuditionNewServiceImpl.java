@@ -340,29 +340,37 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count) {
-		FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
-				.orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
+	    // ✅ Check SubProfession
+	    FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
+	            .orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
 
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+	    // ✅ Check User
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-		AuditionCartItems existingItem = auditionCartItemsRepository
-				.findByUserAndCompanyIdAndSubProfession(user, companyId, subProfession)
-				.orElse(null);
+		// ✅ Find the company
+		AuditionCompanyDetails company = companyRepository.findById(companyId)
+				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
 
-		if (existingItem != null) {
-			existingItem.setCount(existingItem.getCount() + count);
-			auditionCartItemsRepository.save(existingItem);
-		} else {
-			AuditionCartItems cartItem = AuditionCartItems.builder()
-					.user(user)
-					.companyId(companyId)
-					.subProfession(subProfession)
-					.count(count)
-					.build();
-			auditionCartItemsRepository.save(cartItem);
-		}
+	    // ✅ Check existing cart item
+	    AuditionCartItems existingItem = auditionCartItemsRepository
+	            .findByUserAndCompanyIdAndSubProfession(user, companyId, subProfession)
+	            .orElse(null);
+
+	    if (existingItem != null) {
+	        existingItem.setCount(count);
+	        auditionCartItemsRepository.save(existingItem);
+	    } else {
+	        AuditionCartItems cartItem = AuditionCartItems.builder()
+	                .user(user)
+	                .companyId(company.getId()) // safer to set from entity
+	                .subProfession(subProfession)
+	                .count(count)
+	                .build();
+	        auditionCartItemsRepository.save(cartItem);
+	    }
 	}
+
 
 
 
