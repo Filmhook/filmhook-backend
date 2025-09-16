@@ -113,7 +113,7 @@ public class AuditionCompanyConverter {
 				.auditionProfilePicture(dto.getAuditionProfilePicture())
 				.company(company)
 				.build();
-
+ 
 		if (dto.getTeamNeeds() != null) {
 			List<AuditionNewTeamNeed> teamNeeds = dto.getTeamNeeds().stream()
 					.map(teamDto -> toEntity(teamDto, project, userId))
@@ -213,6 +213,9 @@ public class AuditionCompanyConverter {
 		dto.setSalary(entity.getSalary());
 		dto.setSalaryType(entity.getSalaryType());
 		dto.setPaymentMode(entity.getPaymentMode());
+		dto.setCreatedDate(entity.getCreatedDate());
+		dto.setStatus(entity.getStatus());	
+		dto.setCreatedBy(entity.getCreatedBy());
 		dto.setWorkDays(entity.getWorkDays());
 		dto.setFacilitiesProvided(entity.getFacilitiesProvided());
 		if (entity.getSubProfession() != null) {
