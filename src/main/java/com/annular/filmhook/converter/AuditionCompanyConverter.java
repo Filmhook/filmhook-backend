@@ -149,9 +149,14 @@ public class AuditionCompanyConverter {
 				.status(false)  
 				.createdBy(userId)   
 				.createdDate(LocalDateTime.now())
-
 				.project(project)
 				.build();
+		  // ✅ map professionId → FilmProfession entity
+	    if (dto.getProfessionId() != null) {
+	        FilmProfession profession = new FilmProfession();
+	        profession.setFilmProfessionId(dto.getProfessionId());
+	        entity.setProfession(profession);
+	    }
 
 		if (dto.getSubProfessionId() != null) {
 			FilmSubProfession subProfession = new FilmSubProfession();
@@ -221,6 +226,10 @@ public class AuditionCompanyConverter {
 		if (entity.getSubProfession() != null) {
 			dto.setSubProfessionId(entity.getSubProfession().getSubProfessionId());
 		}
+		if (entity.getProfession() != null) {
+		    dto.setProfessionId(entity.getProfession().getFilmProfessionId());
+		}
+
 
 		return dto;
 

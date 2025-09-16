@@ -229,7 +229,7 @@ public class AuditionNewController {
     }
 
     
-    @PostMapping("/addView/{teamNeedId}")
+    @PostMapping("/addView")
     public ResponseEntity<Response> addView(
     		@RequestParam Integer teamNeedId,
             @RequestParam Integer userId) {
