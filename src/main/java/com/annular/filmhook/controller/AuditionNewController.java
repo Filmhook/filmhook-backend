@@ -198,7 +198,7 @@ public class AuditionNewController {
 	        return ResponseEntity.ok(projectService.getAllProfessions());
 	    }
 
-    @PostMapping("/toggleLike/{teamNeedId}")
+    @PostMapping("/toggleLike")
     public ResponseEntity<Response> toggleTeamNeedLike(
             @RequestParam Integer teamNeedId,
             @RequestParam Integer userId) {
