@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -9,8 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
 import com.annular.filmhook.model.AuditionCompanyDetails;
+import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
 import com.annular.filmhook.model.AuditionUserCompanyRole;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.User;
@@ -18,6 +21,7 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.AuditionCompanyRepository;
 import com.annular.filmhook.repository.AuditionUserCompanyRoleRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.service.AuditionCompanyService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.util.MailNotification;
@@ -37,7 +41,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	private UserRepository userRepository;
 	@Autowired
 	private MailNotification mailNotification; 
-
+	@Autowired
+	private  UserDetails userDetails;
 	@Autowired
 	private AuditionUserCompanyRoleRepository roleRepository;
 
@@ -75,6 +80,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 			entity.setGovtVerificationLink(dto.getGovtVerificationLink());
 			entity.setUpdatedBy(user.getUserId());
 			entity.setUpdatedDate(now);
+			entity.setStatus(false);
+			entity.setVerificationStatus(VerificationStatus.PENDING);
 
 			// ✅ Handle logo update: delete existing and upload new
 			if (dto.getLogoFiles() != null) {
@@ -110,28 +117,40 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 
 	@Override
 	public List<AuditionCompanyDetailsDTO> getCompaniesByUserId(Integer userId) {
-		// Fetch the user
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+	    // Fetch the user
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-		// Fetch all companies
-		List<AuditionCompanyDetails> companies = companyRepository.findAllByUser(user);
+	    // Fetch all companies that are not deleted
+	    List<AuditionCompanyDetails> companies = companyRepository.findAllByUserAndDeletedFalse(user);
 
-		// Convert each company to DTO
-		return companies.stream().map(company -> {
-			AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
+	    // Sort: SUCCESS first, then others
+	    companies.sort((c1, c2) -> {
+	        if (c1.getVerificationStatus() == AuditionCompanyDetails.VerificationStatus.SUCCESS &&
+	            c2.getVerificationStatus() != AuditionCompanyDetails.VerificationStatus.SUCCESS) {
+	            return -1;
+	        } else if (c1.getVerificationStatus() != AuditionCompanyDetails.VerificationStatus.SUCCESS &&
+	                   c2.getVerificationStatus() == AuditionCompanyDetails.VerificationStatus.SUCCESS) {
+	            return 1; 
+	        } else {
+	            return 0;
+	        }
+	    });
 
-			// Fetch logo files
-			List<FileOutputWebModel> logoFiles = mediaFilesService
-					.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+	    // Convert each company to DTO
+	    return companies.stream().map(company -> {
+	        AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
 
-			if (!logoFiles.isEmpty()) {
-				dto.setLogoFilesOutput(logoFiles); 
+	        // Fetch logo files
+	        List<FileOutputWebModel> logoFiles = mediaFilesService
+	                .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
 
-			}
+	        if (!logoFiles.isEmpty()) {
+	            dto.setLogoFilesOutput(logoFiles);
+	        }
 
-			return dto;
-		}).toList();
+	        return dto;
+	    }).toList();
 	}
 
 	@Override
@@ -153,25 +172,37 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	} 
 
 	@Override
-	public List<AuditionCompanyDetailsDTO> getAllPendingCompanies() {
-		  List<AuditionCompanyDetails> companies =
-		            companyRepository.findByStatusFalseAndVerificationStatus(AuditionCompanyDetails.VerificationStatus.PENDING);
+	public List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
+	        AuditionCompanyDetails.VerificationStatus verificationStatus) {
 
-		return companies.stream().map(company -> {
-			AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
+	    List<AuditionCompanyDetails> companies;
 
-			// Fetch only logo files
-			List<FileOutputWebModel> logoFiles = mediaFilesService
-					.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+	    if (verificationStatus == AuditionCompanyDetails.VerificationStatus.SUCCESS) {
+	        // Success → status = true
+	        companies = companyRepository.findByVerificationStatusAndStatusAndDeletedFalse(
+	                AuditionCompanyDetails.VerificationStatus.SUCCESS, true);
+	    } else if (verificationStatus == AuditionCompanyDetails.VerificationStatus.PENDING ||
+	               verificationStatus == AuditionCompanyDetails.VerificationStatus.FAILED) {
+	        // Pending/Failed → status = false
+	        companies = companyRepository.findByVerificationStatusAndStatusAndDeletedFalse(
+	                verificationStatus, false);
+	    } else {
+	        companies = new ArrayList<>();
+	    }
 
-			if (!logoFiles.isEmpty()) {
-				dto.setLogoFilesOutput(logoFiles);
-			}
+	    return companies.stream().map(company -> {
+	        AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
 
-			return dto;
-		}).toList();
+	        List<FileOutputWebModel> logoFiles = mediaFilesService
+	                .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+
+	        if (!logoFiles.isEmpty()) {
+	            dto.setLogoFilesOutput(logoFiles);
+	        }
+
+	        return dto;
+	    }).toList();
 	}
-
 
 	@Override
 	public AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved) {
@@ -206,61 +237,61 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	@Override
 	public AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request) {
 
-	    // 1️⃣ Validate owner
-	    User owner = userRepository.findById(request.getOwnerId())
-	            .orElseThrow(() -> new RuntimeException("Owner not found"));
+		// 1️⃣ Validate owner
+		User owner = userRepository.findById(request.getOwnerId())
+				.orElseThrow(() -> new RuntimeException("Owner not found"));
 
-	    // 2️⃣ Validate company
-	    AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
-	            .orElseThrow(() -> new RuntimeException("Company not found"));
+		// 2️⃣ Validate company
+		AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
+				.orElseThrow(() -> new RuntimeException("Company not found"));
 
-	    // 3️⃣ Validate assigned user
-	    User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
-	            .orElseThrow(() -> new RuntimeException(
-	                    "Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
-	            ));
+		// 3️⃣ Validate assigned user
+		User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
+				.orElseThrow(() -> new RuntimeException(
+						"Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
+						));
 
-	    // 4️⃣ Check if role exists (even soft-deleted)
-	    Optional<AuditionUserCompanyRole> existingRoleOpt =
-	            roleRepository.findByCompanyAndAssignedUser(company, assignedUser);
+		// 4️⃣ Check if role exists (even soft-deleted)
+		Optional<AuditionUserCompanyRole> existingRoleOpt =
+				roleRepository.findByCompanyAndAssignedUser(company, assignedUser);
 
-	    if (existingRoleOpt.isPresent()) {
-	        AuditionUserCompanyRole existingRole = existingRoleOpt.get();
+		if (existingRoleOpt.isPresent()) {
+			AuditionUserCompanyRole existingRole = existingRoleOpt.get();
 
-	        if (Boolean.TRUE.equals(existingRole.getStatus())) {
-	            // Active → block
-	            throw new RuntimeException("Access already assigned to this user for the given company");
-	        } else {
-	            // Inactive → reactivate instead of creating new
-	            existingRole.setStatus(true);
-	            existingRole.setDesignation(request.getDesignation());
-	            existingRole.setAccessKey(
-	                    (request.getAccessKey() != null && !request.getAccessKey().isBlank())
-	                            ? request.getAccessKey()
-	                            : UUID.randomUUID().toString().substring(0, 8).toUpperCase()
-	            );
-	            existingRole.setCreatedBy(request.getOwnerId());
-	            existingRole.setCreatedDate(LocalDateTime.now());
+			if (Boolean.TRUE.equals(existingRole.getStatus())) {
+				// Active → block
+				throw new RuntimeException("Access already assigned to this user for the given company");
+			} else {
+				// Inactive → reactivate instead of creating new
+				existingRole.setStatus(true);
+				existingRole.setDesignation(request.getDesignation());
+				existingRole.setAccessKey(
+						(request.getAccessKey() != null && !request.getAccessKey().isBlank())
+						? request.getAccessKey()
+								: UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+						);
+				existingRole.setCreatedBy(request.getOwnerId());
+				existingRole.setCreatedDate(LocalDateTime.now());
 
-	            AuditionUserCompanyRole reactivated = roleRepository.save(existingRole);
-	            sendAssignAccessEmails(owner, assignedUser, company, reactivated.getAccessKey(), reactivated.getDesignation());
+				AuditionUserCompanyRole reactivated = roleRepository.save(existingRole);
+				sendAssignAccessEmails(owner, assignedUser, company, reactivated.getAccessKey(), reactivated.getDesignation());
 
-	            return AuditionCompanyConverter.toDto(reactivated);
-	        }
-	    }
+				return AuditionCompanyConverter.toDto(reactivated);
+			}
+		}
 
-	    // 5️⃣ Create new role if none exists
-	    String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
-	            ? request.getAccessKey()
-	            : UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+		// 5️⃣ Create new role if none exists
+		String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
+				? request.getAccessKey()
+						: UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-	    AuditionUserCompanyRole newRole = AuditionCompanyConverter
-	            .toEntity(request, owner, assignedUser, company, accessKey);
+		AuditionUserCompanyRole newRole = AuditionCompanyConverter
+				.toEntity(request, owner, assignedUser, company, accessKey);
 
-	    newRole = roleRepository.save(newRole);
-	    sendAssignAccessEmails(owner, assignedUser, company, accessKey, request.getDesignation());
+		newRole = roleRepository.save(newRole);
+		sendAssignAccessEmails(owner, assignedUser, company, accessKey, request.getDesignation());
 
-	    return AuditionCompanyConverter.toDto(newRole);
+		return AuditionCompanyConverter.toDto(newRole);
 	}
 
 
@@ -270,8 +301,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 		// Email to Assigned User
 		String assignedSubject = "Access Granted for Company: " + company.getCompanyName();
 		String assignedContent = "<p>You have been granted access to the company <b>" + company.getCompanyName() + "</b>.</p>"
-			       + "<p><b>Designation:</b> " + designation + "</p>"
-		            + "<p><b>Access Key:</b> " + accessKey + "</p>"
+				+ "<p><b>Designation:</b> " + designation + "</p>"
+				+ "<p><b>Access Key:</b> " + accessKey + "</p>"
 				+ "<p>Use this key to log in and manage your assigned company roles.</p>";
 		mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
 
@@ -279,135 +310,162 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 		String ownerSubject = "Access Assigned Successfully";
 		String ownerContent = "<p>You have successfully assigned access to user <b>" + assignedUser.getName() + "</b> "
 				+ "for your company <b>" + company.getCompanyName() + "</b>.</p>"
-						 + "<p><b>Designation:</b> " + designation + "</p>"
+				+ "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>Access Key:</b> " + accessKey + "</p>";
 		mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
 	}
-	
-	
+
+
 
 	public AuditionUserCompanyRoleDTO validateCompanyAccessByFilmHookId(
-	            Integer userId,
-	            String filmHookCode,
-	            String designation,
-	            String accessCode,
-	            User loggedUser) {
+			Integer userId,
+			String filmHookCode,
+			String designation,
+			String accessCode,
+			User loggedUser) {
 
-	        AuditionUserCompanyRole role = roleRepository.findByFilmHookCode(filmHookCode)
-	                .orElseThrow(() -> new RuntimeException("Company not found with FilmHookCode: " + filmHookCode));
-	        if (role.getStatus() == null || !role.getStatus()) {
-	            throw new RuntimeException("Access revoked or inactive for this company");
-	        }
+	    AuditionUserCompanyRole role = roleRepository
+	            .findByFilmHookCodeAndDesignationAndAccessKeyIgnoreCaseAndStatusTrue(filmHookCode, designation, accessCode)
+	            .orElseThrow(() -> new RuntimeException("No active role found matching FilmHookCode, designation, and access code"));
+		if (role.getStatus() == null || !role.getStatus()) {
+			throw new RuntimeException("Access revoked or inactive for this company");
+		}
 
-	        // Owner bypass
-	        if (role.getOwner() != null && role.getOwner().getUserId().equals(loggedUser.getUserId())) {
-	            AuditionUserCompanyRoleDTO dto = AuditionCompanyConverter.toDto(role);
-	            dto.setIsOwner(true);
-	            return dto;
-	        }
+		// Owner bypass
+		if (role.getOwner() != null && role.getOwner().getUserId().equals(loggedUser.getUserId())) {
+			AuditionUserCompanyRoleDTO dto = AuditionCompanyConverter.toDto(role);
+			dto.setIsOwner(true);
+			return dto;
+		}
 
-	        // Assigned user validation
-	        if (!role.getAssignedUser().getUserId().equals(loggedUser.getUserId())) {
-	            throw new RuntimeException("You don’t have access to this company");
-	        }
+		// Assigned user validation
+		if (!role.getAssignedUser().getUserId().equals(loggedUser.getUserId())) {
+			throw new RuntimeException("You don’t have access to this company");
+		}
 
-	        if (!role.getDesignation().equals(designation)) {
-	            throw new RuntimeException("Designation mismatch");
-	        }
+		if (!role.getDesignation().equals(designation)) {
+			throw new RuntimeException("Designation mismatch");
+		}
 
-	        if (!role.getAccessKey().equalsIgnoreCase(accessCode)) {
-	            throw new RuntimeException("Access code mismatch");
-	        }
+		if (!role.getAccessKey().equalsIgnoreCase(accessCode)) {
+			throw new RuntimeException("Access code mismatch");
+		}
 
-	        AuditionUserCompanyRoleDTO dto = AuditionCompanyConverter.toDto(role);
-	        dto.setIsOwner(false);
-	        return dto;
-	    }
+		AuditionUserCompanyRoleDTO dto = AuditionCompanyConverter.toDto(role);
+		dto.setIsOwner(false);
+		return dto;
+	}
 
-	    // ✅ Get all companies created by user (PENDING or SUCCESS verification)
-	    public List<AuditionCompanyDetailsDTO> getAllCompaniesByOwner(Integer ownerId) {
-	        User owner = userRepository.findById(ownerId)
-	                .orElseThrow(() -> new RuntimeException("Owner not found with ID: " + ownerId));
+	// ✅ Get all companies created by user (PENDING or SUCCESS verification)
+	public List<AuditionCompanyDetailsDTO> getAllCompaniesByOwner(Integer ownerId) {
+		User owner = userRepository.findById(ownerId)
+				.orElseThrow(() -> new RuntimeException("Owner not found with ID: " + ownerId));
 
-	       
-			List<AuditionCompanyDetails> companies = companyRepository.findByUserAndVerificationStatusIn(
-	                owner, List.of(AuditionCompanyDetails.VerificationStatus.PENDING, 
-	                               AuditionCompanyDetails.VerificationStatus.SUCCESS)
-	        );
 
-	        return companies.stream()
-	                .map(company -> {
-	                    AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
+		List<AuditionCompanyDetails> companies = companyRepository.findByUserAndVerificationStatusIn(
+				owner, List.of(AuditionCompanyDetails.VerificationStatus.PENDING, 
+						AuditionCompanyDetails.VerificationStatus.SUCCESS)
+				);
 
-	                    // Fetch only logo files
-	                    List<FileOutputWebModel> logoFiles = mediaFilesService
-	                            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+		return companies.stream()
+				.map(company -> {
+					AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
 
-	                    if (!logoFiles.isEmpty()) {
-	                        dto.setLogoFilesOutput(logoFiles);
-	                    }
+					// Fetch only logo files
+					List<FileOutputWebModel> logoFiles = mediaFilesService
+							.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
 
-	                    return dto;
-	                }).toList();
-	    }
+					if (!logoFiles.isEmpty()) {
+						dto.setLogoFilesOutput(logoFiles);
+					}
 
-	    // ✅ Combined method for login / access
-	    @Override
-	    public Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode) {
+					return dto;
+				}).toList();
+	}
 
-	        // 1️⃣ If filmHookCode, designation, accessCode are provided → validate role/company login
-	        if (filmHookCode != null && designation != null && accessCode != null) {
-	            // This will return only the company the user has access to via role or owner
-	            return validateCompanyAccessByFilmHookId(
-	                    loggedUser.getUserId(),
-	                    filmHookCode,
-	                    designation,
-	                    accessCode,
-	                    loggedUser
-	            );
-	        }
+	// ✅ Combined method for login / access
+	@Override
+	public Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode) {
 
-	        // 2️⃣ Otherwise → fetch all companies owned by the user (PENDING or SUCCESS verification)
-	        List<AuditionCompanyDetailsDTO> ownedCompanies = getAllCompaniesByOwner(loggedUser.getUserId());
+		// 1️⃣ If filmHookCode, designation, accessCode are provided → validate role/company login
+		if (filmHookCode != null && designation != null && accessCode != null) {
+			// This will return only the company the user has access to via role or owner
+			return validateCompanyAccessByFilmHookId(
+					loggedUser.getUserId(),
+					filmHookCode,
+					designation,
+					accessCode,
+					loggedUser
+					);
+		}
 
-	        if (!ownedCompanies.isEmpty()) {
-	            return ownedCompanies;
-	        }
+		// 2️⃣ Otherwise → fetch all companies owned by the user (PENDING or SUCCESS verification)
+		List<AuditionCompanyDetailsDTO> ownedCompanies = getAllCompaniesByOwner(loggedUser.getUserId());
 
-	        return "No companies found. Please provide FilmHookCode, designation, and access code.";
-	    }
-	    
-	    
-	    @Override
-	    public AuditionCompanyDetailsDTO getCompanyById(Integer companyId) {
-	        AuditionCompanyDetails company = companyRepository.findById(companyId)
-	                .orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
+		if (!ownedCompanies.isEmpty()) {
+			return ownedCompanies;
+		}
 
-	        AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
+		return "No companies found. Please provide FilmHookCode, designation, and access code.";
+	}
 
-	        // Attach logo files
-	        List<FileOutputWebModel> logoFiles = mediaFilesService
-	                .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
 
-	        if (!logoFiles.isEmpty()) {
-	            dto.setLogoFilesOutput(logoFiles);
-	        }
+	@Override
+	public AuditionCompanyDetailsDTO getCompanyById(Integer companyId) {
+		AuditionCompanyDetails company = companyRepository.findById(companyId)
+				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
 
-	        return dto;
-	    }
+		AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
 
-	    @Override
-	    public void removeAccess(Integer roleId) {
-	        AuditionUserCompanyRole role = roleRepository.findById(roleId)
-	                .orElseThrow(() -> new RuntimeException("Access not found with ID: " + roleId));
+		// Attach logo files
+		List<FileOutputWebModel> logoFiles = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
 
-	        if (!role.getStatus()) {
-	            throw new RuntimeException("Access already removed");
-	        }
+		if (!logoFiles.isEmpty()) {
+			dto.setLogoFilesOutput(logoFiles);
+		}
 
-	        role.setStatus(false);
-	        roleRepository.save(role);
-	    }
+		return dto;
+	}
+
+	@Override
+	public void removeAccess(Integer roleId) {
+		AuditionUserCompanyRole role = roleRepository.findById(roleId)
+				.orElseThrow(() -> new RuntimeException("Access not found with ID: " + roleId));
+
+		if (!role.getStatus()) {
+			throw new RuntimeException("Access already removed");
+		}
+
+		role.setStatus(false);
+		roleRepository.save(role);
+	}
+
+	@Override
+	public void softDeleteCompany(Integer companyId) {
+		
+		Integer userId = userDetails.userInfo().getId();
+
+		// ✅ Fetch User entity
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+		// ✅ Fetch company
+		AuditionCompanyDetails company = companyRepository.findById(companyId)
+				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
+
+		// ✅ Ensure only creator can delete
+		if (!company.getUser().getUserId().equals(user.getUserId())) {
+			throw new RuntimeException("You are not authorized to delete this company");
+		}
+
+		// ✅ Soft delete
+	    company.setDeleted(true);
+	    company.setUpdatedBy(user.getUserId());
+	    company.setUpdatedDate(LocalDateTime.now());
+
+		companyRepository.save(company);
+	}
 
 } 
 

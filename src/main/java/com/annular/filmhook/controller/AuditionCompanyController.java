@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,11 +89,22 @@ public class AuditionCompanyController {
     }
     
     
-    @GetMapping("/activeAndPendingAudition")
-    public ResponseEntity<List<AuditionCompanyDetailsDTO>> getActivePendingCompanies() {
-        List<AuditionCompanyDetailsDTO> companies = companyService.getAllPendingCompanies();
+  
+    @GetMapping("/getByVerificationStatus")
+    public ResponseEntity<List<AuditionCompanyDetailsDTO>> getCompaniesByVerificationStatus(
+            @RequestParam(name = "verificationStatus", defaultValue = "PENDING") String verificationStatus) {
+
+        AuditionCompanyDetails.VerificationStatus statusEnum;
+        try {
+            statusEnum = AuditionCompanyDetails.VerificationStatus.valueOf(verificationStatus.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesByVerificationStatus(statusEnum);
         return ResponseEntity.ok(companies);
     }
+
     
     @PutMapping("/{companyId}/verify")
     public ResponseEntity<?> verifyCompany(@PathVariable Integer companyId, @RequestParam boolean approved) {
@@ -165,5 +177,13 @@ public class AuditionCompanyController {
     }
     }
     
+    @DeleteMapping("/deleteCompany/{companyId}")
+    public ResponseEntity<Response> deleteCompany(
+            @PathVariable Integer companyId) {
+
+        companyService.softDeleteCompany(companyId);
+        return ResponseEntity.ok(new Response(1, "Success","Company deleted successfully"));
+    }
+
     
 }

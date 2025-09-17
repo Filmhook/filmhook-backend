@@ -34,6 +34,7 @@ public class AuditionNewTeamNeedWebModel {
     private Integer workDays;
     private List<String> facilitiesProvided;
     private Integer subProfessionId;
+    private Integer professionId;
     private Boolean status;
     private Integer createdBy;
     private Integer updatedBy;

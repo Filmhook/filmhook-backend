@@ -27,4 +27,10 @@ public interface AuditionUserCompanyRoleRepository extends JpaRepository<Auditio
             User assignedUser,
             Boolean status
     );
+    
+    Optional<AuditionUserCompanyRole> findByFilmHookCodeAndDesignationAndAccessKeyIgnoreCaseAndStatusTrue(
+            String filmHookCode,
+            String designation,
+            String accessKey
+    );
 }

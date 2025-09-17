@@ -42,8 +42,7 @@ public class AuditionNewController {
 	 AuditionProjectValidator projectValidator;
     @Autowired
     private AuditionNewService projectService;
-    
-    
+
     
     @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<?> createProject(
@@ -128,15 +127,14 @@ public class AuditionNewController {
         }
     }
     
-    @Autowired
-	AuditionNewService auditionNewService;
+  
 
 
 	@GetMapping("/categories")
 	public ResponseEntity<?> getCategories() {
 		try {
 			logger.info("Fetching movie categories");
-			List<MovieCategory> categories = auditionNewService.getAllCategories();
+			List<MovieCategory> categories = projectService.getAllCategories();
 			return ResponseEntity.ok(categories);
 		} catch (Exception e) {
 			logger.error("Error in getCategories: {}", e.getMessage(), e);
@@ -148,7 +146,7 @@ public class AuditionNewController {
 	public ResponseEntity<?> getSubCategories(@PathVariable Integer id) {
 		try {
 			logger.info("Fetching subcategories for category id: {}", id);
-			List<MovieSubCategory> subCategories = auditionNewService.getSubCategories(id);
+			List<MovieSubCategory> subCategories = projectService.getSubCategories(id);
 			return ResponseEntity.ok(subCategories);
 		} catch (Exception e) {
 			logger.error("Error in getSubCategories: {}", e.getMessage(), e);
@@ -159,7 +157,7 @@ public class AuditionNewController {
 	    public ResponseEntity<?> getAllSubProfessions() {
 	        try {
 	            logger.info("Fetching all film sub professions");
-	            List<FilmSubProfessionResponseDTO> subProfessions = auditionNewService.getAllSubProfessions();
+	            List<FilmSubProfessionResponseDTO> subProfessions = projectService.getAllSubProfessions();
 	            return ResponseEntity.ok(subProfessions);
 	        } catch (Exception e) {
 	            logger.error("Error in getAllSubProfessions: {}", e.getMessage(), e);
@@ -172,7 +170,7 @@ public class AuditionNewController {
 	        try {
 	            logger.info("Fetching sub professions for professionId: {}", professionId);
 	            List<FilmSubProfessionResponseDTO> subProfessions =
-	                    auditionNewService.getSubProfessionsByProfessionId(professionId);
+	            		projectService.getSubProfessionsByProfessionId(professionId);
 	            return ResponseEntity.ok(subProfessions);
 	        } catch (Exception e) {
 	            logger.error("Error in getSubProfessionsByProfessionId: {}", e.getMessage(), e);
@@ -184,25 +182,25 @@ public class AuditionNewController {
 	                                              @RequestParam Integer companyId,
 	                                              @RequestParam Integer subProfessionId,
 	                                              @RequestParam Integer count) {
-	        auditionNewService.addToCart(userId, companyId, subProfessionId, count);
+	    	projectService.addToCart(userId, companyId, subProfessionId, count);
 	        return ResponseEntity.ok(new Response(1, "Cart updated successfully", null));
 	    }
 
 	    @GetMapping("/cart")
 	    public ResponseEntity<?> getCart(@RequestParam Integer userId,
 	                                     @RequestParam Integer companyId) {
-	        List<FilmSubProfessionResponseDTO> cart = auditionNewService.getCart(userId, companyId);
+	        List<FilmSubProfessionResponseDTO> cart = projectService.getCart(userId, companyId);
 	        return ResponseEntity.ok(cart);
 	    }
 	    @GetMapping("/professions")
 	    public ResponseEntity<List<FilmProfessionResponseDTO>> getAllProfessions() {
 	        logger.info("Fetching all professions");
-	        return ResponseEntity.ok(auditionNewService.getAllProfessions());
+	        return ResponseEntity.ok(projectService.getAllProfessions());
 	    }
 
-    @PostMapping("/toggleLike/{teamNeedId}")
+    @PostMapping("/toggleLike")
     public ResponseEntity<Response> toggleTeamNeedLike(
-            @PathVariable Integer teamNeedId,
+            @RequestParam Integer teamNeedId,
             @RequestParam Integer userId) {
         try {
             String result = projectService.toggleTeamNeedLike(teamNeedId, userId);
@@ -231,9 +229,9 @@ public class AuditionNewController {
     }
 
     
-    @PostMapping("/addView/{teamNeedId}")
+    @PostMapping("/addView")
     public ResponseEntity<Response> addView(
-            @PathVariable Integer teamNeedId,
+    		@RequestParam Integer teamNeedId,
             @RequestParam Integer userId) {
         try {
         	projectService.addView(teamNeedId, userId);

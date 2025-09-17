@@ -15,6 +15,11 @@ public interface AuditionCompanyRepository extends JpaRepository<AuditionCompany
     List<AuditionCompanyDetails> findByStatusTrue();
     List<AuditionCompanyDetails> findByStatusFalseAndVerificationStatus(AuditionCompanyDetails.VerificationStatus verificationStatus);
     List<AuditionCompanyDetails> findByUserAndVerificationStatusIn(User user, List<AuditionCompanyDetails.VerificationStatus> statuses);
+    List<AuditionCompanyDetails> findAllByUserAndDeletedFalse(User user);
+
+    List<AuditionCompanyDetails> findByVerificationStatusAndStatusAndDeletedFalse(
+            AuditionCompanyDetails.VerificationStatus verificationStatus, Boolean status);
+
 
 
 

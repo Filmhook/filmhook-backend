@@ -39,6 +39,7 @@ public class AuditionCompanyConverter {
 				? dto.getVerificationStatus() 
 						: AuditionCompanyDetails.VerificationStatus.PENDING) 
 				.user(user)
+				.deleted(false)
 				.status(false)
 				.accessCode(null)
 				.build();
@@ -112,7 +113,7 @@ public class AuditionCompanyConverter {
 				.auditionProfilePicture(dto.getAuditionProfilePicture())
 				.company(company)
 				.build();
-
+ 
 		if (dto.getTeamNeeds() != null) {
 			List<AuditionNewTeamNeed> teamNeeds = dto.getTeamNeeds().stream()
 					.map(teamDto -> toEntity(teamDto, project, userId))
@@ -148,9 +149,14 @@ public class AuditionCompanyConverter {
 				.status(false)  
 				.createdBy(userId)   
 				.createdDate(LocalDateTime.now())
-
 				.project(project)
 				.build();
+		  // ✅ map professionId → FilmProfession entity
+	    if (dto.getProfessionId() != null) {
+	        FilmProfession profession = new FilmProfession();
+	        profession.setFilmProfessionId(dto.getProfessionId());
+	        entity.setProfession(profession);
+	    }
 
 		if (dto.getSubProfessionId() != null) {
 			FilmSubProfession subProfession = new FilmSubProfession();
@@ -212,11 +218,18 @@ public class AuditionCompanyConverter {
 		dto.setSalary(entity.getSalary());
 		dto.setSalaryType(entity.getSalaryType());
 		dto.setPaymentMode(entity.getPaymentMode());
+		dto.setCreatedDate(entity.getCreatedDate());
+		dto.setStatus(entity.getStatus());	
+		dto.setCreatedBy(entity.getCreatedBy());
 		dto.setWorkDays(entity.getWorkDays());
 		dto.setFacilitiesProvided(entity.getFacilitiesProvided());
 		if (entity.getSubProfession() != null) {
 			dto.setSubProfessionId(entity.getSubProfession().getSubProfessionId());
 		}
+		if (entity.getProfession() != null) {
+		    dto.setProfessionId(entity.getProfession().getFilmProfessionId());
+		}
+
 
 		return dto;
 
