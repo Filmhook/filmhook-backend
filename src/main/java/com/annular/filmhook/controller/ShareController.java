@@ -118,4 +118,19 @@ public class ShareController {
                     .replace("\"", "&quot;")
                     .replace("'", "&#39;");
     }
+    
+    @GetMapping("/audition-post/{companyId}/{teamLeadId}")
+    public ResponseEntity<String> shareAudition(
+            @PathVariable Integer companyId,
+            @PathVariable Integer teamLeadId) {
+
+        // ✅ You can fetch data from DB, or just return a link for now
+        String deepLink = "https://www.filmhookapps.com/audition-post/" 
+                            + companyId + "/" + teamLeadId;
+
+        return ResponseEntity.ok(deepLink);
+    }
+    
+    
+    
 }
