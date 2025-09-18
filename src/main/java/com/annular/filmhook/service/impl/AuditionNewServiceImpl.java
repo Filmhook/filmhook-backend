@@ -382,6 +382,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		// ✅ Check user from DB
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+		// ✅ Find the company
+				AuditionCompanyDetails company = companyRepository.findById(companyId)
+						.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
 
 		// ✅ Fetch cart items for user + company
 		List<AuditionCartItems> cartItems = auditionCartItemsRepository.findByUserAndCompanyId(user, companyId);
@@ -411,7 +414,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmProfessionResponseDTO> getAllProfessions() {
-		List<FilmProfession> professions = filmProfessionRepository.findAll(); // make type explicit
+		 List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+		List<FilmProfession> professions = filmProfessionRepository.findByFilmProfessionIdNotIn(excludedIds); // make type explicit
 
 		return professions.stream()
 				.map((FilmProfession profession) -> {
