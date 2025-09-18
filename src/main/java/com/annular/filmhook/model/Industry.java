@@ -72,8 +72,8 @@ public class Industry {
     private byte[] image;
 
     @ToString.Exclude
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "country_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id", insertable = false, updatable = false)
     private Country country;
 
     @Column(name = "icon_file_path")
