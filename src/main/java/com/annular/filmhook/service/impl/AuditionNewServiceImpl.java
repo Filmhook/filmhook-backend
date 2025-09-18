@@ -2,6 +2,7 @@ package com.annular.filmhook.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -297,11 +298,13 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmSubProfessionResponseDTO> getAllSubProfessions() {
-		return filmSubProfessionRepository.findAll()
-				.stream()
-				.map(this::mapToDTO)
-				.collect(Collectors.toList());
+	    List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+	    return filmSubProfessionRepository.findByProfession_FilmProfessionIdNotIn(excludedIds)
+	            .stream()
+	            .map(this::mapToDTO)
+	            .collect(Collectors.toList());
 	}
+
 
 	@Override
 	public List<FilmSubProfessionResponseDTO> getSubProfessionsByProfessionId(Integer professionId) {
@@ -319,7 +322,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		List<AuditionNewTeamNeed> activeNeeds = teamNeedRepository.findActiveBySubProfessionId(sub.getSubProfessionId());
 
 		return FilmSubProfessionResponseDTO.builder()
-				.id(sub.getSubProfessionId())
+				.subProfessionId(sub.getSubProfessionId())
 				.subProfessionName(sub.getSubProfessionName())
 				.professionName(sub.getProfession().getProfessionName())
 				.filmProfessionId(sub.getProfession().getFilmProfessionId())
@@ -390,7 +393,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 		return cartItems.stream()
 				.map(item -> FilmSubProfessionResponseDTO.builder()
-						.id(item.getSubProfession().getSubProfessionId())
+						.subProfessionId(item.getSubProfession().getSubProfessionId())
 						.subProfessionName(item.getSubProfession().getSubProfessionName())
 						.professionName(item.getSubProfession().getProfession().getProfessionName())
 						.filmProfessionId(item.getSubProfession().getProfession().getFilmProfessionId())
