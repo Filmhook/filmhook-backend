@@ -108,14 +108,14 @@ public class AuditionNewController {
     }
 
     @GetMapping("/ByCompany")
-    public ResponseEntity<?> getProjectsByCompanyId(@RequestParam Integer companyId, @RequestParam(required = false) Integer teamNeedId) {
+    public ResponseEntity<?> getProjectsByCompanyId(@RequestParam Integer companyId, @RequestParam(required = false) Integer teamNeedId, @RequestParam Integer professionId) {
         try {
             if (companyId == null || companyId <= 0) {
                 return ResponseEntity.badRequest()
                         .body(new Response(0, "Invalid companyId. Must be greater than 0.", null));
             }
 
-            List<AuditionNewProjectWebModel> projects = projectService.getProjectsByCompanyIdAndTeamNeed(companyId, teamNeedId);
+            List<AuditionNewProjectWebModel> projects = projectService.getProjectsByCompanyIdAndTeamNeed(companyId, teamNeedId, professionId);
 
             if (projects.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -290,5 +290,30 @@ public class AuditionNewController {
         return projectService.calculateAuditionPayment(projectId, userId, selectedDays);
     }
 
+    
+    @DeleteMapping("/deleteAuditionTeamNeed")
+    public ResponseEntity<Response> deleteTeamNeed(
+            @RequestParam Integer teamNeedId,
+            @RequestParam Integer userId,
+            @RequestParam Integer companyId) {
+        try {
+            projectService.softDeleteTeamNeed(teamNeedId, userId, companyId);
+            return ResponseEntity.ok(new Response(1, "Audition deleted successfully", null));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new Response(-1, e.getMessage(), null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(-1, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Something went wrong. Please try again.", null));
+        }
+    }
+    
+    @PostMapping("/expireNow")
+    public ResponseEntity<Response> expireNow() {
+    	projectService.updateExpiredPaymentsAndProjects();
+        return ResponseEntity.ok(new Response(1, "Expired projects updated successfully", null));
+    }
     
 }

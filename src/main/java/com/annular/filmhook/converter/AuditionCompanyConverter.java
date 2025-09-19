@@ -112,6 +112,8 @@ public class AuditionCompanyConverter {
 				.shootEndDate(dto.getShootEndDate())
 				.projectDescription(dto.getProjectDescription())
 				.status(false)
+				.createdBy(userId) 
+				.createdOn(LocalDateTime.now())
 				.auditionProfilePicture(dto.getAuditionProfilePicture())
 				.company(company)
 				.build();
@@ -129,7 +131,6 @@ public class AuditionCompanyConverter {
 	// TeamNeed DTO → Entity
 	public static AuditionNewTeamNeed toEntity(AuditionNewTeamNeedWebModel dto, AuditionNewProject project, Integer userId) {
 		AuditionNewTeamNeed entity = AuditionNewTeamNeed.builder()
-				.role(dto.getRole())
 				.count(dto.getCount())
 				.characterName(dto.getCharacterName())
 				.gender(dto.getGender())
@@ -171,6 +172,7 @@ public class AuditionCompanyConverter {
 
 	// Entity → DTO
 	public static AuditionNewProjectWebModel toDto(AuditionNewProject entity) {
+		
 		AuditionNewProjectWebModel dto = new AuditionNewProjectWebModel();
 		dto.setId(entity.getId());
 		dto.setProductionCompanyName(entity.getProductionCompanyName());
@@ -188,7 +190,7 @@ public class AuditionCompanyConverter {
 		dto.setProjectDescription(entity.getProjectDescription());
 		dto.setAuditionProfilePicture(entity.getAuditionProfilePicture());
 		dto.setCompanyId(entity.getCompany().getId());
-
+		dto.setGstNumber(entity.getCompany().getGstNumber());
 		if (entity.getTeamNeeds() != null) {
 			List<AuditionNewTeamNeedWebModel> teamDtos = entity.getTeamNeeds().stream()
 					.map(AuditionCompanyConverter::toDto)
@@ -196,6 +198,12 @@ public class AuditionCompanyConverter {
 			dto.setTeamNeeds(teamDtos);
 		}
 
+		    // ✅ Sum all counts from team needs
+		 int totalCount = entity.getTeamNeeds().stream()
+		            .mapToInt(tn -> tn.getCount() != null ? tn.getCount() : 0)
+		            .sum();
+		    dto.setTotalTeamNeedCount(totalCount);
+		
 		return dto;
 	}
 
@@ -203,7 +211,6 @@ public class AuditionCompanyConverter {
 	public static AuditionNewTeamNeedWebModel toDto(AuditionNewTeamNeed entity) {
 		AuditionNewTeamNeedWebModel dto = new AuditionNewTeamNeedWebModel();
 		dto.setId(entity.getId());
-		dto.setRole(entity.getRole());
 		dto.setCount(entity.getCount());
 		dto.setCharacterName(entity.getCharacterName());
 		dto.setGender(entity.getGender());

@@ -2,6 +2,7 @@ package com.annular.filmhook.webmodel;
 
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -33,8 +34,11 @@ public class AuditionNewProjectWebModel {
     private List<AuditionNewTeamNeedWebModel> teamNeeds;
     private List<MultipartFile> profilePictureFiles;
     private List<FileOutputWebModel> profilePictureFilesOutput;
-    
+    private String gstNumber;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private List<FileOutputWebModel> logoFiles;
-
+    private String expiryDate;  
+    private String expiryTime;
+    private Integer totalTeamNeedCount;
+    private String filmHookCode;
 }

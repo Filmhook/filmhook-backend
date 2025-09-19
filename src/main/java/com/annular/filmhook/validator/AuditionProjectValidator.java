@@ -41,10 +41,7 @@ public class AuditionProjectValidator implements Validator {
             for (int i = 0; i < projectDto.getTeamNeeds().size(); i++) {
                 AuditionNewTeamNeedWebModel teamNeed = projectDto.getTeamNeeds().get(i);
 
-                if (CustomValidator.isEmpty(teamNeed.getRole())) {
-                    errors.rejectValue("teamNeeds[" + i + "].role", BAD_REQUEST_ERROR_CD, "Role is required");
-                }
-                if (teamNeed.getSubProfessionId() == null) {
+                           if (teamNeed.getSubProfessionId() == null) {
                     errors.rejectValue("teamNeeds[" + i + "].subProfessionId", BAD_REQUEST_ERROR_CD,
                             "Sub Profession ID is required");
                 }

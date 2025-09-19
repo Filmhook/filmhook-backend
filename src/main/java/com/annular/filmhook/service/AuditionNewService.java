@@ -22,7 +22,7 @@ public interface AuditionNewService {
 	List<FilmProfessionResponseDTO> getAllProfessions();
 	AuditionNewProject createProject(AuditionNewProjectWebModel projectDto);
 	List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId);
-	List<AuditionNewProjectWebModel> getProjectsByCompanyIdAndTeamNeed(Integer companyId, Integer teamNeedId);
+	List<AuditionNewProjectWebModel> getProjectsByCompanyIdAndTeamNeed(Integer companyId, Integer teamNeedId,Integer professionId);
 	String toggleTeamNeedLike(Integer teamNeedId, Integer userId);
 	void addView(Integer teamNeedId, Integer userId);
 	int getViewCount(Integer teamNeedId);
@@ -32,6 +32,9 @@ public interface AuditionNewService {
 	ResponseEntity<?> paymentFailure(String txnid, String errorMessage);
 	ResponseEntity<?> getPaymentByTxnid(String txnid);
 	AuditionPaymentDTO calculateAuditionPayment(Integer projectId, Integer userId, Integer selectedDays);
+	void softDeleteTeamNeed(Integer teamNeedId, Integer userId, Integer companyId);
+	
+	void updateExpiredPaymentsAndProjects();
 }
 
 
