@@ -4,7 +4,11 @@ import java.io.InputStream;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
 import java.util.Date;
+
+import java.util.Arrays;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -368,11 +372,13 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmSubProfessionResponseDTO> getAllSubProfessions() {
-		return filmSubProfessionRepository.findAll()
-				.stream()
-				.map(this::mapToDTO)
-				.collect(Collectors.toList());
+	    List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+	    return filmSubProfessionRepository.findByProfession_FilmProfessionIdNotIn(excludedIds)
+	            .stream()
+	            .map(this::mapToDTO)
+	            .collect(Collectors.toList());
 	}
+
 
 	@Override
 	public List<FilmSubProfessionResponseDTO> getSubProfessionsByProfessionId(Integer professionId) {
@@ -390,7 +396,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		List<AuditionNewTeamNeed> activeNeeds = teamNeedRepository.findActiveBySubProfessionId(sub.getSubProfessionId());
 
 		return FilmSubProfessionResponseDTO.builder()
-				.id(sub.getSubProfessionId())
+				.subProfessionId(sub.getSubProfessionId())
 				.subProfessionName(sub.getSubProfessionName())
 				.professionName(sub.getProfession().getProfessionName())
 				.filmProfessionId(sub.getProfession().getFilmProfessionId())
@@ -450,6 +456,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		// ✅ Check user from DB
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+		// ✅ Find the company
+				AuditionCompanyDetails company = companyRepository.findById(companyId)
+						.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
 
 		// ✅ Fetch cart items for user + company
 		List<AuditionCartItems> cartItems = auditionCartItemsRepository.findByUserAndCompanyId(user, companyId);
@@ -461,7 +470,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 		return cartItems.stream()
 				.map(item -> FilmSubProfessionResponseDTO.builder()
-						.id(item.getSubProfession().getSubProfessionId())
+						.subProfessionId(item.getSubProfession().getSubProfessionId())
 						.subProfessionName(item.getSubProfession().getSubProfessionName())
 						.professionName(item.getSubProfession().getProfession().getProfessionName())
 						.filmProfessionId(item.getSubProfession().getProfession().getFilmProfessionId())
@@ -479,7 +488,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmProfessionResponseDTO> getAllProfessions() {
-		List<FilmProfession> professions = filmProfessionRepository.findAll(); // make type explicit
+		 List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+		List<FilmProfession> professions = filmProfessionRepository.findByFilmProfessionIdNotIn(excludedIds); // make type explicit
 
 		return professions.stream()
 				.map((FilmProfession profession) -> {

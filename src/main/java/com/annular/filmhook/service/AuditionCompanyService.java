@@ -20,11 +20,9 @@ public interface AuditionCompanyService {
 	 AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved);
 	 AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId);
 	 AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request);
-	 Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode);
-	 
+	 Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode);	 
 	 AuditionCompanyDetailsDTO getCompanyById(Integer companyId);
 	 void removeAccess(Integer roleId);
 	 void softDeleteCompany(Integer companyId);
-	 
 
 }

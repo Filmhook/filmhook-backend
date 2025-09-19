@@ -6,6 +6,7 @@ import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -71,8 +72,8 @@ public class Industry {
     private byte[] image;
 
     @ToString.Exclude
-    @ManyToOne
-    @JoinColumn(name = "country_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id", insertable = false, updatable = false)
     private Country country;
 
     @Column(name = "icon_file_path")

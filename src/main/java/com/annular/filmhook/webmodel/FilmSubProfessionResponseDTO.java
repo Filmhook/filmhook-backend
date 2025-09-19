@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FilmSubProfessionResponseDTO {
-    private Integer id;
+    private Integer subProfessionId;
     private String subProfessionName;
     private String professionName;
     private Integer filmProfessionId;
