@@ -1,6 +1,7 @@
 package com.annular.filmhook.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -17,6 +18,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import com.annular.filmhook.util.StringListConverter;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -85,9 +87,16 @@ public class AuditionNewProject {
     
     @Column(name = "audition_profile_picture")
     private String auditionProfilePicture;
+    
+    private Boolean status;
+    private Integer createdBy;
+    private Integer updatedBy;
+    private LocalDateTime createdOn;
+    private LocalDateTime updatedDate;
 
     // Relationship
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<AuditionNewTeamNeed> teamNeeds;
     
      @ManyToOne(fetch = FetchType.LAZY)

@@ -10,6 +10,7 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
+import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 
@@ -110,10 +111,11 @@ public class AuditionCompanyConverter {
 				.shootStartDate(dto.getShootStartDate())
 				.shootEndDate(dto.getShootEndDate())
 				.projectDescription(dto.getProjectDescription())
+				.status(false)
 				.auditionProfilePicture(dto.getAuditionProfilePicture())
 				.company(company)
 				.build();
- 
+
 		if (dto.getTeamNeeds() != null) {
 			List<AuditionNewTeamNeed> teamNeeds = dto.getTeamNeeds().stream()
 					.map(teamDto -> toEntity(teamDto, project, userId))
@@ -146,17 +148,17 @@ public class AuditionCompanyConverter {
 				.paymentMode(dto.getPaymentMode())
 				.workDays(dto.getWorkDays())
 				.facilitiesProvided(dto.getFacilitiesProvided())
-				.status(false)  
+				.status(true)  
 				.createdBy(userId)   
 				.createdDate(LocalDateTime.now())
 				.project(project)
 				.build();
-		  // ✅ map professionId → FilmProfession entity
-	    if (dto.getProfessionId() != null) {
-	        FilmProfession profession = new FilmProfession();
-	        profession.setFilmProfessionId(dto.getProfessionId());
-	        entity.setProfession(profession);
-	    }
+		// ✅ map professionId → FilmProfession entity
+		if (dto.getProfessionId() != null) {
+			FilmProfession profession = new FilmProfession();
+			profession.setFilmProfessionId(dto.getProfessionId());
+			entity.setProfession(profession);
+		}
 
 		if (dto.getSubProfessionId() != null) {
 			FilmSubProfession subProfession = new FilmSubProfession();
@@ -227,7 +229,7 @@ public class AuditionCompanyConverter {
 			dto.setSubProfessionId(entity.getSubProfession().getSubProfessionId());
 		}
 		if (entity.getProfession() != null) {
-		    dto.setProfessionId(entity.getProfession().getFilmProfessionId());
+			dto.setProfessionId(entity.getProfession().getFilmProfessionId());
 		}
 
 
@@ -255,61 +257,108 @@ public class AuditionCompanyConverter {
 
 
 	// UserCompanyRole 
-	
+
 	// Convert Request DTO → Entity
 	public static AuditionUserCompanyRole toEntity(
-	        AuditionUserCompanyRoleDTO dto,
-	        User owner,
-	        User assignedUser,
-	        AuditionCompanyDetails company,
-	        String accessKey
-	) {
-	    return AuditionUserCompanyRole.builder()
-	            .owner(owner)
-	            .company(company)
-	            .assignedUser(assignedUser)
-	            .designation(dto.getDesignation())
-	            .filmHookCode(dto.getFilmHookCode()) 
-	            .accessKey(accessKey)
-	            .status(true)
-	            .createdBy(dto.getOwnerId())
-	            .createdDate(java.time.LocalDateTime.now())
-	            .build();
+			AuditionUserCompanyRoleDTO dto,
+			User owner,
+			User assignedUser,
+			AuditionCompanyDetails company,
+			String accessKey
+			) {
+		return AuditionUserCompanyRole.builder()
+				.owner(owner)
+				.company(company)
+				.assignedUser(assignedUser)
+				.designation(dto.getDesignation())
+				.filmHookCode(dto.getFilmHookCode()) 
+				.accessKey(accessKey)
+				.status(true)
+				.createdBy(dto.getOwnerId())
+				.createdDate(java.time.LocalDateTime.now())
+				.build();
 	}
 
 	// Convert Entity → Response DTO
 	public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity) {
-	
-	    return AuditionUserCompanyRoleDTO.builder()
-	    		  .id(entity.getId())
-	              .ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null) // ✅ ownerId
-	              .assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null) // ✅ assignedUserId
-	              .companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
-	              .filmHookCode(entity.getFilmHookCode()) // ✅ FH code
-	              .designation(entity.getDesignation())
-	              .accessKey(entity.getAccessKey())
-	              .status(entity.getStatus())
-	              .isOwner(false)
-	              .createdDate(entity.getCreatedDate())
-	              .build();
+
+		return AuditionUserCompanyRoleDTO.builder()
+				.id(entity.getId())
+				.ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null) // ✅ ownerId
+				.assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null) // ✅ assignedUserId
+				.companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
+				.filmHookCode(entity.getFilmHookCode()) // ✅ FH code
+				.designation(entity.getDesignation())
+				.accessKey(entity.getAccessKey())
+				.status(entity.getStatus())
+				.isOwner(false)
+				.createdDate(entity.getCreatedDate())
+				.build();
 	}
-	
-	   public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity, User loggedUser) {
-	        boolean isOwner = entity.getOwner() != null && entity.getOwner().getUserId().equals(loggedUser.getUserId());
 
-	        return AuditionUserCompanyRoleDTO.builder()
-	                .id(entity.getId())
-	                .ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null)
-	                .assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null)
-	                .companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
-	                .filmHookCode(entity.getFilmHookCode())
-	                .designation(entity.getDesignation())
-	                .accessKey(entity.getAccessKey())
-	                .status(entity.getStatus())
-	                .isOwner(isOwner)
-	                .createdDate(entity.getCreatedDate())
-	                .build();
-	    }
+	public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity, User loggedUser) {
+		boolean isOwner = entity.getOwner() != null && entity.getOwner().getUserId().equals(loggedUser.getUserId());
 
+		return AuditionUserCompanyRoleDTO.builder()
+				.id(entity.getId())
+				.ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null)
+				.assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null)
+				.companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
+				.filmHookCode(entity.getFilmHookCode())
+				.designation(entity.getDesignation())
+				.accessKey(entity.getAccessKey())
+				.status(entity.getStatus())
+				.isOwner(isOwner)
+				.createdDate(entity.getCreatedDate())
+				.build();
+	}
+
+	//	   AuditionPayment
+
+	public static AuditionPayment toEntity(AuditionPaymentWebModel dto, AuditionNewProject project, User user) {
+//		int teamNeedsCount = project.getTeamNeeds().stream()
+//				.mapToInt(AuditionNewTeamNeed::getCount)
+//				.sum();
+
+
+//		double totalAmount = teamNeedsCount * dto.getSelectedDays() * 20.0;
+		LocalDateTime now = LocalDateTime.now();
+
+		// Success/expiry date based on selectedDays
+		LocalDateTime successDate = now;
+		LocalDateTime expiryDate = null;
+		if (dto.getSelectedDays() != null && dto.getSelectedDays() > 0) {
+			expiryDate = now.plusDays(dto.getSelectedDays());
+		}
+
+		return AuditionPayment.builder()
+				.project(project)
+				.user(user)
+				.txnid(dto.getTxnid())
+				.totalAmount(dto.getTotalAmount())
+				.totalTeamNeeds(dto.getTotalTeamNeed())
+				.selectedDays(dto.getSelectedDays())
+				.paymentStatus("PENDING")
+				.createdBy(user.getUserId())
+				.createdOn(now)
+				.successDateTime(successDate)
+				.expiryDateTime(expiryDate)
+				.build();
+	}
+
+	public static AuditionPaymentWebModel toWebModel(AuditionPayment entity) {
+		AuditionPaymentWebModel dto = new AuditionPaymentWebModel();
+		dto.setAuditionPaymentId(entity.getAuditionPaymentId());
+		dto.setProjectId(entity.getProject().getId());
+		dto.setUserId(entity.getUser().getUserId());
+		dto.setSelectedDays(entity.getSelectedDays());
+		dto.setTxnid(entity.getTxnid());
+		dto.setPaymentStatus(entity.getPaymentStatus());
+		dto.setReason(entity.getReason());
+		dto.setPaymentHash(entity.getPaymentHash());
+		dto.setTotalAmount(entity.getTotalAmount());
+		dto.setTotalTeamNeed(entity.getTotalTeamNeeds());
+		return dto;
+	}
 
 }

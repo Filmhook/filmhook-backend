@@ -30,8 +30,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
 import com.annular.filmhook.model.AuditionNewProject;
+import com.annular.filmhook.model.AuditionPayment;
 import com.annular.filmhook.validator.AuditionProjectValidator;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
+import com.annular.filmhook.webmodel.AuditionPaymentDTO;
+import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
 
 @RestController
 @RequestMapping("/audition")
@@ -242,6 +245,50 @@ public class AuditionNewController {
         }
     }
     
+    @PostMapping("/createPayment")
+    public ResponseEntity<Response> createPayment(@RequestBody AuditionPaymentWebModel webModel) {
+        try {
+            AuditionPayment payment = projectService.createPayment(webModel);
+
+          
+            AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+
+            return ResponseEntity.ok(new Response(1, "Payment created successfully", responseWebModel));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new Response(-1, e.getMessage(), null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(-1, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "Something went wrong. Please try again.", null));
+        }
+    }
+
+    @PostMapping("/successAudition")
+    public ResponseEntity<?> paymentSuccess(@RequestParam String txnid) {
+        return projectService.paymentSuccess(txnid);
+    }
     
+    @PostMapping("/failureAudition")
+    public ResponseEntity<?> paymentFailure(@RequestParam String txnid,
+                                            @RequestParam(required = false) String errorMessage) {
+        return projectService.paymentFailure(txnid, errorMessage != null ? errorMessage : "Unknown error");
+    }
+    
+    @GetMapping("/payment/{txnid}")
+    public ResponseEntity<?> getPaymentDetails(@PathVariable String txnid) {
+        return projectService.getPaymentByTxnid(txnid);
+    }
+
+    @GetMapping("/auditionPayments")
+    public AuditionPaymentDTO calculatePayment(
+            @RequestParam Integer projectId,
+            @RequestParam Integer userId,
+            @RequestParam Integer selectedDays
+    ) {
+        return projectService.calculateAuditionPayment(projectId, userId, selectedDays);
+    }
+
     
 }
