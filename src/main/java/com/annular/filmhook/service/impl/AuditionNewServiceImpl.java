@@ -96,10 +96,11 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 @Service
 public class AuditionNewServiceImpl implements AuditionNewService {
-	 private static final Logger logger = LoggerFactory.getLogger(AuditionNewServiceImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(AuditionNewServiceImpl.class);
 	@Autowired
 	private AuditionProjectRepository projectRepository;
 
@@ -112,13 +113,13 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	MovieCategoryRepository categoryRepo;
 
 	@Autowired
-	  InAppNotificationRepository inAppNotificationRepository;
-	
+	InAppNotificationRepository inAppNotificationRepository;
+
 	@Autowired
 	MovieSubCategoryRepository subCategoryRepo;
 	@Autowired
-	  PricingConfigRepository pricingConfigRepository;
-	
+	PricingConfigRepository pricingConfigRepository;
+
 	@Autowired
 	private FilmSubProfessionRepository filmSubProfessionRepository;
 
@@ -133,8 +134,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	@Autowired
 	private FilmProfessionRepository filmProfessionRepository;
 	@Autowired
-	 UserOfferRepository userOfferRepository;
-	
+	UserOfferRepository userOfferRepository;
+
 	@Autowired
 	private AuditionViewRepository auditionViewRepository;
 	@Autowired
@@ -181,238 +182,241 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId) {
-	    Integer userId = userDetails.userInfo().getId();
+		Integer userId = userDetails.userInfo().getId();
 
-	    User user = userRepository.findById(userId)
-	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-	    List<AuditionNewTeamNeed> teamNeeds = teamNeedRepository.findAllBySubProfessionId(subProfessionId);
+		List<AuditionNewTeamNeed> teamNeeds = teamNeedRepository.findAllBySubProfessionId(subProfessionId);
 
-	    return teamNeeds.stream()
-	            // ✅ Only include teamNeeds where status = true
-	            .filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
-	            // ✅ Project must be active
-	            .filter(teamNeed -> teamNeed.getProject() != null && Boolean.TRUE.equals(teamNeed.getProject().getStatus()))
-	            .map(AuditionNewTeamNeed::getProject)
-	            .distinct()
-	            .map(project -> {
-	                // 🔹 Convert entity → DTO
-	                AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
-	               
-	                if (user.getFilmHookCode() != null) {
-	                    dto.setFilmHookCode(user.getFilmHookCode());
-	                }
-	                	                
-	            	// ✅ Attach project expiry date
-	                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-	                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
-	                
-	                Optional<AuditionPayment> paymentOpt = paymentRepository
-	                        .findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
-	                
-	                paymentOpt.ifPresent(payment -> {
-	                    LocalDateTime expiry = payment.getExpiryDateTime();
-	                    if (expiry != null) {
-	                        dto.setExpiryDate(expiry.format(dateFormatter));
-	                        dto.setExpiryTime(expiry.format(timeFormatter));
-	                    }
-	                });
-	                
-	                // 🔹 Fetch profile pictures
-	                List<FileOutputWebModel> profilePictures = mediaFilesService
-	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
-	                if (profilePictures != null && !profilePictures.isEmpty()) {
-	                    dto.setProfilePictureFilesOutput(profilePictures);
-	                }
+		return teamNeeds.stream()
+				// ✅ Only include teamNeeds where status = true
+				.filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
+				// ✅ Project must be active
+				.filter(teamNeed -> teamNeed.getProject() != null && Boolean.TRUE.equals(teamNeed.getProject().getStatus()))
+				.map(AuditionNewTeamNeed::getProject)
+				.distinct()
+				.map(project -> {
+					// 🔹 Convert entity → DTO
+					AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
 
-	                // 🔹 Fetch company logo
-	                AuditionCompanyDetails company = project.getCompany();
-	                if (company != null) {
-	                    List<FileOutputWebModel> companyLogos = mediaFilesService
-	                            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
-	                    if (companyLogos != null && !companyLogos.isEmpty()) {
-	                        dto.setLogoFiles(companyLogos);
-	                    }
-	                }
+					if (user.getFilmHookCode() != null) {
+						dto.setFilmHookCode(user.getFilmHookCode());
+					}
 
-	                // ✅ Only active teamNeeds for this project + subProfession
-	                List<AuditionNewTeamNeedWebModel> activeTeamNeeds = project.getTeamNeeds().stream()
-	                        .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
-	                        .filter(tn -> tn.getSubProfession() != null
-	                                && tn.getSubProfession().getSubProfessionId().equals(subProfessionId))
-	                        .map(tn -> {
-	                            AuditionNewTeamNeedWebModel tnDto = AuditionCompanyConverter.toDto(tn);
+					// ✅ Attach project expiry date
+					DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+					DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
 
-	                        
-	                            // 🔹 Check if user liked this teamNeed
-	                            boolean liked = likesRepository
-	                                    .findByCategoryAndAuditionIdAndLikedBy("TEAM_NEED", tn.getId(), user.getUserId())
-	                                    .map(Likes::getStatus)
-	                                    .orElse(false);
-	                            tnDto.setLiked(liked);
+					Optional<AuditionPayment> paymentOpt = paymentRepository
+							.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
 
-	                            // 🔹 Count total likes
-	                            int totalLikes = likesRepository.countByCategoryAndAuditionIdAndStatus(
-	                                    "TEAM_NEED", tn.getId(), true);
-	                            tnDto.setLikeCount(totalLikes);
+					paymentOpt.ifPresent(payment -> {
+						LocalDateTime expiry = payment.getExpiryDateTime();
+						if (expiry != null) {
+							dto.setExpiryDate(expiry.format(dateFormatter));
+							dto.setExpiryTime(expiry.format(timeFormatter));
+						}
+					});
 
-	                            // 🔹 Count views
-	                            int totalViews = auditionViewRepository.countByTeamNeedId(tn.getId());
-	                            tnDto.setTotalViews(totalViews);
+					// 🔹 Fetch profile pictures
+					List<FileOutputWebModel> profilePictures = mediaFilesService
+							.getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
+					if (profilePictures != null && !profilePictures.isEmpty()) {
+						dto.setProfilePictureFilesOutput(profilePictures);
+					}
 
-	                            return tnDto;
-	                        })
-	                        .collect(Collectors.toList());
+					// 🔹 Fetch company logo
+					AuditionCompanyDetails company = project.getCompany();
+					if (company != null) {
+						List<FileOutputWebModel> companyLogos = mediaFilesService
+								.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+						if (companyLogos != null && !companyLogos.isEmpty()) {
+							dto.setLogoFiles(companyLogos);
+						}
+					}
 
-	                // ❌ Skip this project if it has no active teamNeeds
-	                if (activeTeamNeeds.isEmpty()) {
-	                    return null;
-	                }
+					// ✅ Only active teamNeeds for this project + subProfession
+					List<AuditionNewTeamNeedWebModel> activeTeamNeeds = project.getTeamNeeds().stream()
+							.filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+							.filter(tn -> tn.getSubProfession() != null
+							&& tn.getSubProfession().getSubProfessionId().equals(subProfessionId))
+							.map(tn -> {
+								AuditionNewTeamNeedWebModel tnDto = AuditionCompanyConverter.toDto(tn);
 
-	                dto.setTeamNeeds(activeTeamNeeds);
-	                return dto;
-	            })
-	            // Remove nulls (projects without active posts)
-	            .filter(Objects::nonNull)
-	            .collect(Collectors.toList());
+
+								// 🔹 Check if user liked this teamNeed
+								boolean liked = likesRepository
+										.findByCategoryAndAuditionIdAndLikedBy("TEAM_NEED", tn.getId(), user.getUserId())
+										.map(Likes::getStatus)
+										.orElse(false);
+								tnDto.setLiked(liked);
+
+								// 🔹 Count total likes
+								int totalLikes = likesRepository.countByCategoryAndAuditionIdAndStatus(
+										"TEAM_NEED", tn.getId(), true);
+								tnDto.setLikeCount(totalLikes);
+
+								// 🔹 Count views
+								int totalViews = auditionViewRepository.countByTeamNeedId(tn.getId());
+								tnDto.setTotalViews(totalViews);
+
+								return tnDto;
+							})
+							.collect(Collectors.toList());
+
+					// ❌ Skip this project if it has no active teamNeeds
+					if (activeTeamNeeds.isEmpty()) {
+						return null;
+					}
+
+					dto.setTeamNeeds(activeTeamNeeds);
+					return dto;
+				})
+				// Remove nulls (projects without active posts)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
 	}
 
 
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsByCompanyIdAndTeamNeed(Integer companyId, Integer teamNeedId,Integer professionId) {
-	 
-	    Integer userId = userDetails.userInfo().getId();
-	    User user = userRepository.findById(userId)
-	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-	  
-	    List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
+		Integer userId = userDetails.userInfo().getId();
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-	    // ✅ Fetch company logos (once)
-	    List<FileOutputWebModel> companyLogos = mediaFilesService
-	            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, companyId);
 
-	    // ✅ Convert projects to DTOs
-	    List<AuditionNewProjectWebModel> projectDtos = projects.stream()
-	          
-	            .filter(project -> Boolean.TRUE.equals(project.getStatus()))
-	            .map(project -> {
-	              
-	                List<AuditionNewTeamNeed> activeTeamNeeds = project.getTeamNeeds().stream()
-	                        .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
-	                        .filter(tn -> tn.getProfession().getFilmProfessionId().equals(professionId))
-	                        .collect(Collectors.toList());
+		List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
 
-	           
-	                if (activeTeamNeeds.isEmpty()) {
-	                    return null;
-	                }
+		// ✅ Fetch company logos (once)
+		List<FileOutputWebModel> companyLogos = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, companyId);
 
-	                AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
-	                
-	                if (user.getFilmHookCode() != null) {
-	                    dto.setFilmHookCode(user.getFilmHookCode());
-	                }
+		// ✅ Convert projects to DTOs
+		List<AuditionNewProjectWebModel> projectDtos = projects.stream()
+
+				.filter(project -> Boolean.TRUE.equals(project.getStatus()))
+				.map(project -> {
+
+					List<AuditionNewTeamNeed> activeTeamNeeds = project.getTeamNeeds().stream()
+							.filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+							.filter(tn -> tn.getProfession().getFilmProfessionId().equals(professionId))
+							.collect(Collectors.toList());
+
+
+					if (activeTeamNeeds.isEmpty()) {
+						return null;
+					}
+
+					AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+
+					if (user.getFilmHookCode() != null) {
+						dto.setFilmHookCode(user.getFilmHookCode());
+					}
 					// ✅ Attach project expiry date
-	                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-	                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
-	                
-	                Optional<AuditionPayment> paymentOpt = paymentRepository
-	                        .findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
-	                
-	                paymentOpt.ifPresent(payment -> {
-	                    LocalDateTime expiry = payment.getExpiryDateTime();
-	                    if (expiry != null) {
-	                        dto.setExpiryDate(expiry.format(dateFormatter));
-	                        dto.setExpiryTime(expiry.format(timeFormatter));
-	                    }
-	                });
 
-	                
-	                
-	                //  Convert teamNeeds to DTOs with likes & views
-	                List<AuditionNewTeamNeedWebModel> teamNeedDtos = activeTeamNeeds.stream()
-	                        .map(tn -> {
-	                            AuditionNewTeamNeedWebModel tnDto = AuditionCompanyConverter.toDto(tn);
 
-	                          
-	                            boolean liked = likesRepository
-	                                    .findByCategoryAndAuditionIdAndLikedBy("TEAM_NEED", tn.getId(), userId)
-	                                    .map(Likes::getStatus)
-	                                    .orElse(false);
-	                            tnDto.setLiked(liked);
 
-	                    
-	                            int totalLikes = likesRepository.countByCategoryAndAuditionIdAndStatus(
-	                                    "TEAM_NEED", tn.getId(), true
-	                            );
-	                            tnDto.setLikeCount(totalLikes);
+					Optional<AuditionPayment> paymentOpt = paymentRepository
+							.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
 
-	                         
-	                            int totalViews = auditionViewRepository.countByTeamNeedId(tn.getId());
-	                            tnDto.setTotalViews(totalViews);
-	                            Optional<FilmProfession> professionOpt = filmProfessionRepository.findById(tn.getProfession().getFilmProfessionId());
+
+					paymentOpt.ifPresent(payment -> {
+						LocalDateTime expiry = payment.getExpiryDateTime();
+						if (expiry != null) {
+							ZonedDateTime istTime = expiry.atZone(ZoneId.of("UTC"))
+									.withZoneSameInstant(ZoneId.of("Asia/Kolkata"));
+							dto.setExpiryTime(istTime.format(DateTimeFormatter.ofPattern("hh:mm a")));
+							dto.setExpiryDate(istTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+						}
+					});
+
+
+
+					//  Convert teamNeeds to DTOs with likes & views
+					List<AuditionNewTeamNeedWebModel> teamNeedDtos = activeTeamNeeds.stream()
+							.map(tn -> {
+								AuditionNewTeamNeedWebModel tnDto = AuditionCompanyConverter.toDto(tn);
+
+
+								boolean liked = likesRepository
+										.findByCategoryAndAuditionIdAndLikedBy("TEAM_NEED", tn.getId(), userId)
+										.map(Likes::getStatus)
+										.orElse(false);
+								tnDto.setLiked(liked);
+
+
+								int totalLikes = likesRepository.countByCategoryAndAuditionIdAndStatus(
+										"TEAM_NEED", tn.getId(), true
+										);
+								tnDto.setLikeCount(totalLikes);
+
+
+								int totalViews = auditionViewRepository.countByTeamNeedId(tn.getId());
+								tnDto.setTotalViews(totalViews);
+								Optional<FilmProfession> professionOpt = filmProfessionRepository.findById(tn.getProfession().getFilmProfessionId());
 								Optional<FilmSubProfession> subProfessionOpt = filmSubProfessionRepository.findById(tn.getSubProfession().getSubProfessionId());
 
 								String professionName = professionOpt.map(FilmProfession::getProfessionName)
-								                                     .orElse("Unknown Profession");
+										.orElse("Unknown Profession");
 
 								String subProfessionName = subProfessionOpt.map(FilmSubProfession::getSubProfessionName)
-								                                           .orElse("Unknown SubProfession");
-								
+										.orElse("Unknown SubProfession");
+
 								tnDto.setProfessionName(professionName);
 								tnDto.setSubProfessionName(subProfessionName);
 
-	                            return tnDto;
-	                        })
-	                        .collect(Collectors.toList());
+								return tnDto;
+							})
+							.collect(Collectors.toList());
 
-	                dto.setTeamNeeds(teamNeedDtos);
+					dto.setTeamNeeds(teamNeedDtos);
 
-	                // ✅ Add profile picture
-	                List<FileOutputWebModel> profilePictures = mediaFilesService
-	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
-	                if (profilePictures != null && !profilePictures.isEmpty()) {
-	                    dto.setProfilePictureFilesOutput(profilePictures);
-	                }
+					// ✅ Add profile picture
+					List<FileOutputWebModel> profilePictures = mediaFilesService
+							.getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
+					if (profilePictures != null && !profilePictures.isEmpty()) {
+						dto.setProfilePictureFilesOutput(profilePictures);
+					}
 
-	            
-	                if (companyLogos != null && !companyLogos.isEmpty()) {
-	                    dto.setLogoFiles(companyLogos);
-	                }
 
-	                return dto;
-	            })
-	            //  Remove skipped projects
-	            .filter(Objects::nonNull)
-	            .collect(Collectors.toList());
+					if (companyLogos != null && !companyLogos.isEmpty()) {
+						dto.setLogoFiles(companyLogos);
+					}
 
-	    // ✅ Reorder so that the project containing given teamNeedId comes first
-	    if (teamNeedId != null) {
-	        projectDtos.sort((p1, p2) -> {
-	            boolean p1HasTeamNeed = p1.getTeamNeeds().stream().anyMatch(tn -> tn.getId().equals(teamNeedId));
-	            boolean p2HasTeamNeed = p2.getTeamNeeds().stream().anyMatch(tn -> tn.getId().equals(teamNeedId));
+					return dto;
+				})
+				//  Remove skipped projects
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
 
-	            if (p1HasTeamNeed && !p2HasTeamNeed) return -1;
-	            if (!p1HasTeamNeed && p2HasTeamNeed) return 1;
-	            return 0;
-	        });
+		// ✅ Reorder so that the project containing given teamNeedId comes first
+		if (teamNeedId != null) {
+			projectDtos.sort((p1, p2) -> {
+				boolean p1HasTeamNeed = p1.getTeamNeeds().stream().anyMatch(tn -> tn.getId().equals(teamNeedId));
+				boolean p2HasTeamNeed = p2.getTeamNeeds().stream().anyMatch(tn -> tn.getId().equals(teamNeedId));
 
-	        // 🔹 Also reorder teamNeeds inside each project
-	        projectDtos.forEach(project -> {
-	            project.setTeamNeeds(
-	                project.getTeamNeeds().stream()
-	                    .sorted((tn1, tn2) -> {
-	                        if (tn1.getId().equals(teamNeedId)) return -1;
-	                        if (tn2.getId().equals(teamNeedId)) return 1;
-	                        return 0;
-	                    })
-	                    .collect(Collectors.toList())
-	            );
-	        });
-	    }
-	  
-	    return projectDtos;
+				if (p1HasTeamNeed && !p2HasTeamNeed) return -1;
+				if (!p1HasTeamNeed && p2HasTeamNeed) return 1;
+				return 0;
+			});
+
+			// 🔹 Also reorder teamNeeds inside each project
+			projectDtos.forEach(project -> {
+				project.setTeamNeeds(
+						project.getTeamNeeds().stream()
+						.sorted((tn1, tn2) -> {
+							if (tn1.getId().equals(teamNeedId)) return -1;
+							if (tn2.getId().equals(teamNeedId)) return 1;
+							return 0;
+						})
+						.collect(Collectors.toList())
+						);
+			});
+		}
+
+		return projectDtos;
 	}
 
 	public List<MovieCategory> getAllCategories() {
@@ -426,11 +430,11 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmSubProfessionResponseDTO> getAllSubProfessions() {
-	    List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
-	    return filmSubProfessionRepository.findByProfession_FilmProfessionIdNotIn(excludedIds)
-	            .stream()
-	            .map(this::mapToDTO)
-	            .collect(Collectors.toList());
+		List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+		return filmSubProfessionRepository.findByProfession_FilmProfessionIdNotIn(excludedIds)
+				.stream()
+				.map(this::mapToDTO)
+				.collect(Collectors.toList());
 	}
 
 
@@ -494,7 +498,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		} else {
 			AuditionCartItems cartItem = AuditionCartItems.builder()
 					.user(user)
-					.companyId(company.getId()) // safer to set from entity
+					.companyId(company.getId()) 
 					.subProfession(subProfession)
 					.count(count)
 					.build();
@@ -511,8 +515,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 		// ✅ Find the company
-				AuditionCompanyDetails company = companyRepository.findById(companyId)
-						.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
+		AuditionCompanyDetails company = companyRepository.findById(companyId)
+				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
 
 		// ✅ Fetch cart items for user + company
 		List<AuditionCartItems> cartItems = auditionCartItemsRepository.findByUserAndCompanyId(user, companyId);
@@ -542,8 +546,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmProfessionResponseDTO> getAllProfessions() {
-		 List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
-		List<FilmProfession> professions = filmProfessionRepository.findByFilmProfessionIdNotIn(excludedIds); // make type explicit
+		List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+		List<FilmProfession> professions = filmProfessionRepository.findByFilmProfessionIdNotIn(excludedIds); 
 
 		return professions.stream()
 				.map((FilmProfession profession) -> {
@@ -640,483 +644,483 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
-	    // 1️⃣ Fetch project
-	    AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
-	            .orElseThrow(() -> new RuntimeException("Project not found"));
+		// 1️⃣ Fetch project
+		AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
+				.orElseThrow(() -> new RuntimeException("Project not found"));
 
-	    // 2️⃣ Fetch user
-	    User user = userRepository.findById(webModel.getUserId())
-	            .orElseThrow(() -> new RuntimeException("User not found"));
+		// 2️⃣ Fetch user
+		User user = userRepository.findById(webModel.getUserId())
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-	    // 3️⃣ Generate txnid if not passed
-	    if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
-	        String txnid;
-	        do {
-	            txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
-	        } while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
-	        webModel.setTxnid(txnid);
-	    } else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
-	        throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
-	    }
+		// 3️⃣ Generate txnid if not passed
+		if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
+			String txnid;
+			do {
+				txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+			} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
+			webModel.setTxnid(txnid);
+		} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
+			throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
+		}
 
-	    // 4️⃣ Convert to entity
-	    AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
+		// 4️⃣ Convert to entity
+		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
 
-	    // 5️⃣ Generate payment hash
-	    String hash = HashGenerator.generateHash(
-	            key,
-	            payment.getTxnid(),
-	            payment.getTotalAmount().toString(),
-	            "Audition Project",
-	            user.getName(),
-	            user.getEmail(),
-	            salt
-	    );
-	    payment.setPaymentHash(hash);
+		// 5️⃣ Generate payment hash
+		String hash = HashGenerator.generateHash(
+				key,
+				payment.getTxnid(),
+				payment.getTotalAmount().toString(),
+				"Audition Project",
+				user.getName(),
+				user.getEmail(),
+				salt
+				);
+		payment.setPaymentHash(hash);
 
-	    // 6️⃣ Save payment
-	    return paymentRepository.save(payment);
+		// 6️⃣ Save payment
+		return paymentRepository.save(payment);
 	}
 	@Override
-    public ResponseEntity<?> paymentSuccess(String txnid) {
-        try {
-            // 1️⃣ Fetch payment
-            AuditionPayment payment = paymentRepository.findByTxnid(txnid)
-                    .orElseThrow(() -> new RuntimeException("Payment not found"));
+	public ResponseEntity<?> paymentSuccess(String txnid) {
+		try {
+			// 1️⃣ Fetch payment
+			AuditionPayment payment = paymentRepository.findByTxnid(txnid)
+					.orElseThrow(() -> new RuntimeException("Payment not found"));
 
-            // 2️⃣ Update payment status
-            payment.setPaymentStatus("SUCCESS");
-            LocalDateTime now = LocalDateTime.now();
-            payment.setSuccessDateTime(now);
-            if (payment.getSelectedDays() != null) {
-                payment.setExpiryDateTime(now.plusDays(payment.getSelectedDays()));
-            }
+			// 2️⃣ Update payment status
+			payment.setPaymentStatus("SUCCESS");
+			LocalDateTime now = LocalDateTime.now();
+			payment.setSuccessDateTime(now);
+			if (payment.getSelectedDays() != null) {
+				payment.setExpiryDateTime(now.plusDays(payment.getSelectedDays()));
+			}
 
-            // 3️⃣ Update project status
-            AuditionNewProject project = payment.getProject();
-            project.setStatus(true); 
-            projectRepository.save(project);
+			// 3️⃣ Update project status
+			AuditionNewProject project = payment.getProject();
+			project.setStatus(true); 
+			projectRepository.save(project);
 
-            // 4️⃣ Save payment
-            paymentRepository.save(payment);
+			// 4️⃣ Save payment
+			paymentRepository.save(payment);
 
-            // 5️⃣ Generate PDF invoice
-            byte[] invoicePdf = generateAuditionInvoicePdf(payment);
+			// 5️⃣ Generate PDF invoice
+			byte[] invoicePdf = generateAuditionInvoicePdf(payment);
 
-            // 6️⃣ Send email with PDF
-            String subject = "Audition Payment Successful!";
-            String content = "<html><body style='font-family:Verdana;font-size:12px;'>"
-                    + "<h2>Payment Successful!</h2>"
-                    + "<p>Dear <b>" + payment.getUser().getName() + "</b>,</p>"
-                    + "<p>Your payment for the project <b>'" + project.getProjectTitle() + "'</b> has been received successfully.</p>"
-                    + "<h3>Payment & Project Details:</h3>"
-                    + "<table cellpadding='5' cellspacing='0' border='1' style='border-collapse:collapse;'>"
-                    + "<tr><td><b>Transaction ID</b></td><td>" + payment.getTxnid() + "</td></tr>"
-                    + "<tr><td><b>Total Amount Paid</b></td><td>₹ " + String.format("%.2f", payment.getTotalAmount()) + "</td></tr>"
-                    + "<tr><td><b>Selected Days</b></td><td>" + (payment.getSelectedDays() != null ? payment.getSelectedDays() : "N/A") + "</td></tr>"
-                    + "<tr><td><b>Expiry Date</b></td><td>" + (payment.getExpiryDateTime() != null ? payment.getExpiryDateTime().toLocalDate() : "N/A") + "</td></tr>"
-                    + "<tr><td><b>Team Needs</b></td><td>" + payment.getTotalTeamNeeds() + "</td></tr>"
-                    + "<tr><td><b>Payment Status</b></td><td>" + payment.getPaymentStatus() + "</td></tr>"
-                    + "</table>"
-                    + "<p>Please keep this information for your records.</p>"
-                                       + "</body></html>";
+			// 6️⃣ Send email with PDF
+			String subject = "Audition Payment Successful!";
+			String content = "<html><body style='font-family:Verdana;font-size:12px;'>"
+					+ "<h2>Payment Successful!</h2>"
+					+ "<p>Dear <b>" + payment.getUser().getName() + "</b>,</p>"
+					+ "<p>Your payment for the project <b>'" + project.getProjectTitle() + "'</b> has been received successfully.</p>"
+					+ "<h3>Payment & Project Details:</h3>"
+					+ "<table cellpadding='5' cellspacing='0' border='1' style='border-collapse:collapse;'>"
+					+ "<tr><td><b>Transaction ID</b></td><td>" + payment.getTxnid() + "</td></tr>"
+					+ "<tr><td><b>Total Amount Paid</b></td><td>₹ " + String.format("%.2f", payment.getTotalAmount()) + "</td></tr>"
+					+ "<tr><td><b>Selected Days</b></td><td>" + (payment.getSelectedDays() != null ? payment.getSelectedDays() : "N/A") + "</td></tr>"
+					+ "<tr><td><b>Expiry Date</b></td><td>" + (payment.getExpiryDateTime() != null ? payment.getExpiryDateTime().toLocalDate() : "N/A") + "</td></tr>"
+					+ "<tr><td><b>Team Needs</b></td><td>" + payment.getTotalTeamNeeds() + "</td></tr>"
+					+ "<tr><td><b>Payment Status</b></td><td>" + payment.getPaymentStatus() + "</td></tr>"
+					+ "</table>"
+					+ "<p>Please keep this information for your records.</p>"
+					+ "</body></html>";
 
-            mailNotification.sendEmailWithAttachment(
-                    payment.getUser().getName(),
-                    payment.getUser().getEmail(),
-                    subject,
-                    content,
-                    invoicePdf,
-                    "AuditionInvoice.pdf"
-            );
+			mailNotification.sendEmailWithAttachment(
+					payment.getUser().getName(),
+					payment.getUser().getEmail(),
+					subject,
+					content,
+					invoicePdf,
+					"AuditionInvoice.pdf"
+					);
 
 
-            // 7️⃣ Send in-app notification
-            sendInAppNotification(payment,
-                    "Audition Payment Successful",
-                    "Your audition payment was successful!");
+			// 7️⃣ Send in-app notification
+			sendInAppNotification(payment,
+					"Audition Payment Successful",
+					"Your audition payment was successful!");
 
-            // 8️⃣ Return response
-            AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
-            return ResponseEntity.ok(new Response(1, "Payment successful", responseWebModel));
+			// 8️⃣ Return response
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			return ResponseEntity.ok(new Response(1, "Payment successful", responseWebModel));
 
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new Response(-1, e.getMessage(), null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response(-1, "Something went wrong: " + e.getMessage(), null));
-        }
-    }
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(new Response(-1, e.getMessage(), null));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Something went wrong: " + e.getMessage(), null));
+		}
+	}
 
-    // --- In-App Notification ---
+	// --- In-App Notification ---
 	private void sendInAppNotification(AuditionPayment payment, String title, String message)  {
-        User user = payment.getUser();
-
-        InAppNotification notification = InAppNotification.builder()
-                .senderId(0)
-                .receiverId(user.getUserId())
-                .title(title)
-                .message(message)
-                .createdOn(new Date())
-                .isRead(false)
-                .adminReview(user.getAdminReview())
-                .Profession(user.getUserType())
-                .isDeleted(false)
-                .createdBy(user.getUserId())
-                .userType("Payment")
-                .build();
-
-        inAppNotificationRepository.save(notification);
-    }
-
-    // --- Generate PDF Invoice ---
-    private byte[] generateAuditionInvoicePdf(AuditionPayment payment) {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            pdf.setDefaultPageSize(PageSize.A4);
-            Document doc = new Document(pdf);
-            doc.setMargins(36, 36, 36, 36);
-
-            DeviceRgb blue = new DeviceRgb(41, 86, 184);
-            DeviceRgb gray = new DeviceRgb(200, 200, 200);
-
-            // Logo
-            InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
-            Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
-                    .scaleToFit(120, 60)
-                    .setHorizontalAlignment(HorizontalAlignment.CENTER);
-            doc.add(logo);
-
-            // Title
-            doc.add(new Paragraph("TAX INVOICE")
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setFontSize(18)
-                    .setBold()
-                    .setFontColor(blue)
-                    .setMarginBottom(10));
-
-            // Issuer & Invoice Info Table
-            Table infoTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
-                    .setWidth(UnitValue.createPercentValue(100))
-                    .setMarginTop(10);
-
-            infoTable.addCell(getPlainCell("Invoice To:\n" + payment.getUser().getName() + "\n" + payment.getUser().getEmail()));
-            infoTable.addCell(getPlainCell("Issued by: FilmHook Pvt. Ltd.\nGSTIN: 29ABCDE1234F2Z5\nBangalore\n+91-9876543210"));
-
-            infoTable.addCell(getPlainCell("Transaction ID: " + payment.getTxnid()));
-            infoTable.addCell(getPlainCell("Invoice Date: " + LocalDate.now()));
-
-            infoTable.addCell(getPlainCell("Service: Audition Project\n" + payment.getProject().getProjectTitle()));
-            infoTable.addCell(getPlainCell("Team Needs: " + payment.getTotalTeamNeeds() +
-                    "\nSelected Days: " + (payment.getSelectedDays() != null ? payment.getSelectedDays() : "N/A") +
-                    "\nExpiry Date: " + (payment.getExpiryDateTime() != null ? payment.getExpiryDateTime().toLocalDate() : "N/A")));
-
-            doc.add(infoTable);
-
-            // Divider
-            doc.add(new Paragraph("\n").setFontColor(gray));
-
-            // Amount Table
-            Table amountTable = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
-                    .setWidth(UnitValue.createPercentValue(100))
-                    .setMarginTop(20);
-
-            amountTable.addHeaderCell(new Cell().add(new Paragraph("Description").setBold()));
-            amountTable.addHeaderCell(new Cell().add(new Paragraph("Amount (₹)").setBold()).setTextAlignment(TextAlignment.RIGHT));
-
-            amountTable.addCell(new Cell().add(new Paragraph("Audition Project Fee")));
-            amountTable.addCell(new Cell().add(new Paragraph(String.format("%.2f", payment.getTotalAmount()))).setTextAlignment(TextAlignment.RIGHT));
-
-            // Total Row
-            amountTable.addCell(new Cell().add(new Paragraph("Total").setBold()));
-            amountTable.addCell(new Cell().add(new Paragraph(String.format("%.2f", payment.getTotalAmount())).setBold())
-                    .setTextAlignment(TextAlignment.RIGHT));
-
-            doc.add(amountTable);
-
-            // Payment Status & Notes
-            doc.add(new Paragraph("\nPayment Status: " + payment.getPaymentStatus())
-                    .setBold()
-                    .setMarginTop(15));
-
-            doc.add(new Paragraph("Notes:")
-                    .setBold()
-                    .setMarginTop(10));
-            doc.add(new Paragraph("1. This invoice is generated automatically by FilmHook.\n" +
-                    "2. Please contact support for any issues regarding payment or service.\n" +
-                    "3. Keep this invoice for your records."));
-
-            // Footer
-            doc.add(new Paragraph("\nFilmHook Pvt. Ltd., Bangalore - www.filmhook.com")
-                    .setTextAlignment(TextAlignment.CENTER)
-                    .setFontSize(10)
-                    .setFontColor(gray)
-                    .setMarginTop(50));
-
-            doc.close();
-            return baos.toByteArray();
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate audition invoice PDF", e);
-        }
-    }
-
-    // --- Helper Cell ---
-    private Cell getPlainCell(String text) {
-        return new Cell().add(new Paragraph(text).setFontSize(10)).setPadding(5);
-    }
-    
-    
-    @Override
-    public ResponseEntity<?> paymentFailure(String txnid, String errorMessage) {
-        try {
-            // 1️⃣ Fetch payment
-            AuditionPayment payment = paymentRepository.findByTxnid(txnid)
-                    .orElseThrow(() -> new RuntimeException("Payment not found"));
-
-            // 2️⃣ Update payment status
-            payment.setPaymentStatus("FAILED");
-            payment.setCreatedOn(LocalDateTime.now());
-            payment.setReason(errorMessage);
-
-            // 3️⃣ Save payment
-            paymentRepository.save(payment);
-
-         // 4️⃣ Send email notification
-            String subject = "Audition Payment Failed!";
-            String content = "<html><body style='font-family:Verdana;font-size:12px;'>"
-                    + "<p>We regret to inform you that your payment for the project <b>'"
-                    + payment.getProject().getProjectTitle() + "'</b> could not be processed.</p>"
-                    + "<h3>Details:</h3>"
-                    + "<table cellpadding='5' cellspacing='0' border='1' style='border-collapse:collapse;'>"
-                    + "<tr><td><b>Transaction ID</b></td><td>" + payment.getTxnid() + "</td></tr>"
-                    + "<tr><td><b>Total Amount</b></td><td>₹ " + String.format("%.2f", payment.getTotalAmount()) + "</td></tr>"
-                    + "<tr><td><b>Status</b></td><td>FAILED ❌</td></tr>"
-                    + "<tr><td><b>Reason</b></td><td>" + errorMessage + "</td></tr>"
-                    + "</table>"
-                    + "<p>You may retry the payment by clicking the link below:</p>"
-                    + "<p><a href='https://filmhookapps.com/retry-payment/" + payment.getTxnid() + "' "
-                    + "style='background:#007bff;color:#fff;padding:8px 12px;text-decoration:none;"
-                    + "border-radius:4px;'>🔄 Retry Payment</a></p>"
-                    + "<p>If the amount was deducted, it will be refunded by your bank.</p>"
-                    + "</body></html>";
-
-            mailNotification.sendEmail(
-                    payment.getUser().getName(),
-                    payment.getUser().getEmail(),
-                    subject,
-                    content
-            );
-
-            // 5️⃣ Send in-app notification
-            sendInAppNotification(payment,
-                    "Audition Payment Failed",
-                    "Your audition payment has failed. Reason: " + errorMessage);
-
-            // 6️⃣ Return response
-            AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
-            return ResponseEntity.ok(new Response(-1, "Payment failed", responseWebModel));
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new Response(-1, e.getMessage(), null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response(-1, "Something went wrong: " + e.getMessage(), null));
-        }
-    }
-
-    @Override
-    public ResponseEntity<?> getPaymentByTxnid(String txnid) {
-        try {
-            // Fetch payment
-            AuditionPayment payment = paymentRepository.findByTxnid(txnid)
-                    .orElseThrow(() -> new RuntimeException("Payment not found"));
-
-            // Convert to WebModel / DTO
-            AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
-
-            //  Return success response
-            return ResponseEntity.ok(new Response(1, "Payment details fetched successfully", responseWebModel));
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new Response(-1, e.getMessage(), null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response(-1, "Something went wrong: " + e.getMessage(), null));
-        }
-    }
-
-    @Override
-    public AuditionPaymentDTO calculateAuditionPayment(Integer projectId, Integer userId, Integer selectedDays) {
-        // Fetch pricing config
-        PricingConfig config = pricingConfigRepository.findActiveConfigByService(ServiceType.AUDITION)
-                .orElseThrow(() -> new RuntimeException("No pricing config found for AUDITION"));
-
-        double baseRate = config.getBaseRate() != null ? config.getBaseRate() : 0.0;
-        int gstPercentage = config.getGstPercentage() != null ? config.getGstPercentage() : 0;
-
-        // Fetch project
-        AuditionNewProject project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
-
-        int totalTeamNeed = project.getTeamNeeds().stream()
-                .mapToInt(AuditionNewTeamNeed::getCount)
-                .sum();
-
-        //Offer-related fields (
-        Double finalRatePerPost = null;
-        Double discountedAmount = null;
-        Double discountPercentage = null;
-
-        // Apply user-specific offer
-        Optional<UserOffer> offerOpt = userOfferRepository
-                .findFirstByUserIdAndServiceTypeAndActiveIsTrueAndValidTillAfterOrderByValidTillDesc(
-                        userId, ServiceType.AUDITION, LocalDateTime.now());
-
-        if (offerOpt.isPresent()) {
-            UserOffer offer = offerOpt.get();
-            finalRatePerPost = baseRate;
-
-            // Custom rate (if defined)
-            if (offer.getCustomRate() != null) {
-                finalRatePerPost = offer.getCustomRate();
-            }
-
-            // Discount 
-            if (offer.getDiscountPercentage() != null) {
-                discountPercentage = offer.getDiscountPercentage();
-                finalRatePerPost = finalRatePerPost - (finalRatePerPost * (discountPercentage / 100.0));
-            }
-
-            discountedAmount = totalTeamNeed * selectedDays * finalRatePerPost;
-        }
-
-        // Base amount
-        double baseAmount = totalTeamNeed * selectedDays * baseRate;
-
-        // Total amount including GST
-        double amountForCalculation = discountedAmount != null ? discountedAmount : baseAmount;
-        double totalAmount = amountForCalculation + (amountForCalculation * gstPercentage / 100.0);
-
-        // Role breakdown
-        Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
-                .collect(Collectors.toMap(
-                        tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
-                        AuditionNewTeamNeed::getCount,
-                        Integer::sum
-                ));
-
-        // Build response DTO
-        return AuditionPaymentDTO.builder()
-                .projectId(projectId)
-                .selectedDays(selectedDays)
-                .totalTeamNeed(totalTeamNeed)
-                .amountPerPost(baseRate)
-                .finalRatePerPost(finalRatePerPost)
-                .baseAmount(baseAmount)
-                .discountedAmount(discountedAmount) 
-                .discountPercentage(discountPercentage) 
-                .gstPercentage(gstPercentage)
-                .totalAmount(totalAmount)
-                .roleBreakdown(roleBreakdown)
-                .build();
-    }
-@Override
-    public void softDeleteTeamNeed(Integer teamNeedId, Integer userId, Integer companyId) {
-        AuditionNewTeamNeed teamNeed = teamNeedRepository.findByIdAndStatusTrue(teamNeedId)
-                .orElseThrow(() -> new RuntimeException("Audition not found or already deleted"));
-
-      
-        Integer ownerCompanyId = teamNeed.getProject().getCompany().getId();
-        if (!ownerCompanyId.equals(companyId)) {
-            throw new RuntimeException("You are not authorized to delete this Audition");
-        }
-
-    
-        teamNeed.setStatus(false);
-        teamNeed.setUpdatedBy(userId);
-        teamNeed.setUpdatedDate(LocalDateTime.now());
-
-        teamNeedRepository.save(teamNeed);
-    }
-
-@Override
-@Scheduled(fixedRate = 300000) // every 5 minutes
-public void updateExpiredPaymentsAndProjects() {
-    LocalDateTime now = LocalDateTime.now();
-
-    List<AuditionPayment> expiredPayments =
-            paymentRepository.findByPaymentStatusAndExpiryDateTimeBefore("SUCCESS", now);
-
-    logger.info("Found {} Audition expired ", expiredPayments.size());
-
-    for (AuditionPayment payment : expiredPayments) {
-        if ("EXPIRED".equals(payment.getPaymentStatus())) {
-            logger.debug("Skipping payment {} (already expired)", payment.getAuditionPaymentId());
-            continue;
-        }
-
-        payment.setPaymentStatus("EXPIRED");
-        paymentRepository.save(payment);
-        logger.info("Marked payment {} as EXPIRED", payment.getAuditionPaymentId());
-
-        AuditionNewProject project = payment.getProject();
-
-        boolean hasActivePayment = paymentRepository
-                .existsByProjectAndPaymentStatusAndExpiryDateTimeAfter(project, "SUCCESS", now);
-
-        if (!hasActivePayment) {
-            project.setStatus(false);
-            projectRepository.save(project);
-            logger.info("Project {} marked as inactive (no active payments)", project.getId());
-
-        
-            sendExpiryEmail(payment);
-
-            sendInAppNotification(
-                    payment,
-                    "Project Expired",
-                    "Your project '" + project.getProjectTitle() + "' has expired. Please renew."
-            );
-            logger.info("Notifications sent for expired project '{}'", project.getProjectTitle());
-        }
-    }
-}
-
-
-private void sendExpiryEmail(AuditionPayment payment) {
-    AuditionNewProject project = payment.getProject();
-    String subject = "Audition Project Expired " + project.getProjectTitle();
-
-    String content = "<html><body style='font-family:Arial, sans-serif; font-size:14px; color:#333;'>"
-            + "<div style='max-width:600px; margin:auto; padding:20px; border:1px solid #e0e0e0; border-radius:8px;'>"
-            + "<h2 style='color:#2E86C1;'>Audition Project Expired</h2>"
-            + "<p>Dear <b>" + payment.getUser().getName() + "</b>,</p>"
-            + "<p>We would like to inform you that your subscription for the audition project <b>'" 
-            + project.getProjectTitle() + "'</b> has expired on <b>" 
-            + payment.getExpiryDateTime().toLocalDate() + "</b>.</p>"
-            + "<p>To continue participating in this audition and accessing related opportunities, please renew your subscription at your earliest convenience.</p>"
-            + "<p>If you have any questions or need assistance, feel free to contact our support team.</p>"
-          
+		User user = payment.getUser();
+
+		InAppNotification notification = InAppNotification.builder()
+				.senderId(0)
+				.receiverId(user.getUserId())
+				.title(title)
+				.message(message)
+				.createdOn(new Date())
+				.isRead(false)
+				.adminReview(user.getAdminReview())
+				.Profession(user.getUserType())
+				.isDeleted(false)
+				.createdBy(user.getUserId())
+				.userType("Payment")
+				.build();
+
+		inAppNotificationRepository.save(notification);
+	}
+
+	// --- Generate PDF Invoice ---
+	private byte[] generateAuditionInvoicePdf(AuditionPayment payment) {
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+			PdfWriter writer = new PdfWriter(baos);
+			PdfDocument pdf = new PdfDocument(writer);
+			pdf.setDefaultPageSize(PageSize.A4);
+			Document doc = new Document(pdf);
+			doc.setMargins(36, 36, 36, 36);
+
+			DeviceRgb blue = new DeviceRgb(41, 86, 184);
+			DeviceRgb gray = new DeviceRgb(200, 200, 200);
+
+			// Logo
+			InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+			Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
+					.scaleToFit(120, 60)
+					.setHorizontalAlignment(HorizontalAlignment.CENTER);
+			doc.add(logo);
+
+			// Title
+			doc.add(new Paragraph("TAX INVOICE")
+					.setTextAlignment(TextAlignment.CENTER)
+					.setFontSize(18)
+					.setBold()
+					.setFontColor(blue)
+					.setMarginBottom(10));
+
+			// Issuer & Invoice Info Table
+			Table infoTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
+					.setWidth(UnitValue.createPercentValue(100))
+					.setMarginTop(10);
+
+			infoTable.addCell(getPlainCell("Invoice To:\n" + payment.getUser().getName() + "\n" + payment.getUser().getEmail()));
+			infoTable.addCell(getPlainCell("Issued by: FilmHook Pvt. Ltd.\nGSTIN: 29ABCDE1234F2Z5\nBangalore\n+91-9876543210"));
+
+			infoTable.addCell(getPlainCell("Transaction ID: " + payment.getTxnid()));
+			infoTable.addCell(getPlainCell("Invoice Date: " + LocalDate.now()));
+
+			infoTable.addCell(getPlainCell("Service: Audition Project\n" + payment.getProject().getProjectTitle()));
+			infoTable.addCell(getPlainCell("Team Needs: " + payment.getTotalTeamNeeds() +
+					"\nSelected Days: " + (payment.getSelectedDays() != null ? payment.getSelectedDays() : "N/A") +
+					"\nExpiry Date: " + (payment.getExpiryDateTime() != null ? payment.getExpiryDateTime().toLocalDate() : "N/A")));
+
+			doc.add(infoTable);
+
+			// Divider
+			doc.add(new Paragraph("\n").setFontColor(gray));
+
+			// Amount Table
+			Table amountTable = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
+					.setWidth(UnitValue.createPercentValue(100))
+					.setMarginTop(20);
+
+			amountTable.addHeaderCell(new Cell().add(new Paragraph("Description").setBold()));
+			amountTable.addHeaderCell(new Cell().add(new Paragraph("Amount (₹)").setBold()).setTextAlignment(TextAlignment.RIGHT));
+
+			amountTable.addCell(new Cell().add(new Paragraph("Audition Project Fee")));
+			amountTable.addCell(new Cell().add(new Paragraph(String.format("%.2f", payment.getTotalAmount()))).setTextAlignment(TextAlignment.RIGHT));
+
+			// Total Row
+			amountTable.addCell(new Cell().add(new Paragraph("Total").setBold()));
+			amountTable.addCell(new Cell().add(new Paragraph(String.format("%.2f", payment.getTotalAmount())).setBold())
+					.setTextAlignment(TextAlignment.RIGHT));
+
+			doc.add(amountTable);
+
+			// Payment Status & Notes
+			doc.add(new Paragraph("\nPayment Status: " + payment.getPaymentStatus())
+					.setBold()
+					.setMarginTop(15));
+
+			doc.add(new Paragraph("Notes:")
+					.setBold()
+					.setMarginTop(10));
+			doc.add(new Paragraph("1. This invoice is generated automatically by FilmHook.\n" +
+					"2. Please contact support for any issues regarding payment or service.\n" +
+					"3. Keep this invoice for your records."));
+
+			// Footer
+			doc.add(new Paragraph("\nFilmHook Pvt. Ltd., Bangalore - www.filmhook.com")
+					.setTextAlignment(TextAlignment.CENTER)
+					.setFontSize(10)
+					.setFontColor(gray)
+					.setMarginTop(50));
+
+			doc.close();
+			return baos.toByteArray();
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to generate audition invoice PDF", e);
+		}
+	}
+
+	// --- Helper Cell ---
+	private Cell getPlainCell(String text) {
+		return new Cell().add(new Paragraph(text).setFontSize(10)).setPadding(5);
+	}
+
+
+	@Override
+	public ResponseEntity<?> paymentFailure(String txnid, String errorMessage) {
+		try {
+			// 1️⃣ Fetch payment
+			AuditionPayment payment = paymentRepository.findByTxnid(txnid)
+					.orElseThrow(() -> new RuntimeException("Payment not found"));
+
+			// 2️⃣ Update payment status
+			payment.setPaymentStatus("FAILED");
+			payment.setCreatedOn(LocalDateTime.now());
+			payment.setReason(errorMessage);
+
+			// 3️⃣ Save payment
+			paymentRepository.save(payment);
+
+			// 4️⃣ Send email notification
+			String subject = "Audition Payment Failed!";
+			String content = "<html><body style='font-family:Verdana;font-size:12px;'>"
+					+ "<p>We regret to inform you that your payment for the project <b>'"
+					+ payment.getProject().getProjectTitle() + "'</b> could not be processed.</p>"
+					+ "<h3>Details:</h3>"
+					+ "<table cellpadding='5' cellspacing='0' border='1' style='border-collapse:collapse;'>"
+					+ "<tr><td><b>Transaction ID</b></td><td>" + payment.getTxnid() + "</td></tr>"
+					+ "<tr><td><b>Total Amount</b></td><td>₹ " + String.format("%.2f", payment.getTotalAmount()) + "</td></tr>"
+					+ "<tr><td><b>Status</b></td><td>FAILED ❌</td></tr>"
+					+ "<tr><td><b>Reason</b></td><td>" + errorMessage + "</td></tr>"
+					+ "</table>"
+					+ "<p>You may retry the payment by clicking the link below:</p>"
+					+ "<p><a href='https://filmhookapps.com/retry-payment/" + payment.getTxnid() + "' "
+					+ "style='background:#007bff;color:#fff;padding:8px 12px;text-decoration:none;"
+					+ "border-radius:4px;'>🔄 Retry Payment</a></p>"
+					+ "<p>If the amount was deducted, it will be refunded by your bank.</p>"
+					+ "</body></html>";
+
+			mailNotification.sendEmail(
+					payment.getUser().getName(),
+					payment.getUser().getEmail(),
+					subject,
+					content
+					);
+
+			// 5️⃣ Send in-app notification
+			sendInAppNotification(payment,
+					"Audition Payment Failed",
+					"Your audition payment has failed. Reason: " + errorMessage);
+
+			// 6️⃣ Return response
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			return ResponseEntity.ok(new Response(-1, "Payment failed", responseWebModel));
+
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(new Response(-1, e.getMessage(), null));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Something went wrong: " + e.getMessage(), null));
+		}
+	}
+
+	@Override
+	public ResponseEntity<?> getPaymentByTxnid(String txnid) {
+		try {
+			// Fetch payment
+			AuditionPayment payment = paymentRepository.findByTxnid(txnid)
+					.orElseThrow(() -> new RuntimeException("Payment not found"));
+
+			// Convert to WebModel / DTO
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+
+			//  Return success response
+			return ResponseEntity.ok(new Response(1, "Payment details fetched successfully", responseWebModel));
+
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(new Response(-1, e.getMessage(), null));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Something went wrong: " + e.getMessage(), null));
+		}
+	}
+
+	@Override
+	public AuditionPaymentDTO calculateAuditionPayment(Integer projectId, Integer userId, Integer selectedDays) {
+		// Fetch pricing config
+		PricingConfig config = pricingConfigRepository.findActiveConfigByService(ServiceType.AUDITION)
+				.orElseThrow(() -> new RuntimeException("No pricing config found for AUDITION"));
+
+		double baseRate = config.getBaseRate() != null ? config.getBaseRate() : 0.0;
+		int gstPercentage = config.getGstPercentage() != null ? config.getGstPercentage() : 0;
+
+		// Fetch project
+		AuditionNewProject project = projectRepository.findById(projectId)
+				.orElseThrow(() -> new RuntimeException("Project not found"));
+
+		int totalTeamNeed = project.getTeamNeeds().stream()
+				.mapToInt(AuditionNewTeamNeed::getCount)
+				.sum();
+
+		//Offer-related fields (
+		Double finalRatePerPost = null;
+		Double discountedAmount = null;
+		Double discountPercentage = null;
+
+		// Apply user-specific offer
+		Optional<UserOffer> offerOpt = userOfferRepository
+				.findFirstByUserIdAndServiceTypeAndActiveIsTrueAndValidTillAfterOrderByValidTillDesc(
+						userId, ServiceType.AUDITION, LocalDateTime.now());
+
+		if (offerOpt.isPresent()) {
+			UserOffer offer = offerOpt.get();
+			finalRatePerPost = baseRate;
+
+			// Custom rate (if defined)
+			if (offer.getCustomRate() != null) {
+				finalRatePerPost = offer.getCustomRate();
+			}
+
+			// Discount 
+			if (offer.getDiscountPercentage() != null) {
+				discountPercentage = offer.getDiscountPercentage();
+				finalRatePerPost = finalRatePerPost - (finalRatePerPost * (discountPercentage / 100.0));
+			}
+
+			discountedAmount = totalTeamNeed * selectedDays * finalRatePerPost;
+		}
+
+		// Base amount
+		double baseAmount = totalTeamNeed * selectedDays * baseRate;
+
+		// Total amount including GST
+		double amountForCalculation = discountedAmount != null ? discountedAmount : baseAmount;
+		double totalAmount = amountForCalculation + (amountForCalculation * gstPercentage / 100.0);
+
+		// Role breakdown
+		Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
+				.collect(Collectors.toMap(
+						tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
+								AuditionNewTeamNeed::getCount,
+								Integer::sum
+						));
+
+		// Build response DTO
+		return AuditionPaymentDTO.builder()
+				.projectId(projectId)
+				.selectedDays(selectedDays)
+				.totalTeamNeed(totalTeamNeed)
+				.amountPerPost(baseRate)
+				.finalRatePerPost(finalRatePerPost)
+				.baseAmount(baseAmount)
+				.discountedAmount(discountedAmount) 
+				.discountPercentage(discountPercentage) 
+				.gstPercentage(gstPercentage)
+				.totalAmount(totalAmount)
+				.roleBreakdown(roleBreakdown)
+				.build();
+	}
+	@Override
+	public void softDeleteTeamNeed(Integer teamNeedId, Integer userId, Integer companyId) {
+		AuditionNewTeamNeed teamNeed = teamNeedRepository.findByIdAndStatusTrue(teamNeedId)
+				.orElseThrow(() -> new RuntimeException("Audition not found or already deleted"));
+
+
+		Integer ownerCompanyId = teamNeed.getProject().getCompany().getId();
+		if (!ownerCompanyId.equals(companyId)) {
+			throw new RuntimeException("You are not authorized to delete this Audition");
+		}
+
+
+		teamNeed.setStatus(false);
+		teamNeed.setUpdatedBy(userId);
+		teamNeed.setUpdatedDate(LocalDateTime.now());
+
+		teamNeedRepository.save(teamNeed);
+	}
+
+	@Override
+	@Scheduled(fixedRate = 300000) // every 5 minutes
+	public void updateExpiredPaymentsAndProjects() {
+		LocalDateTime now = LocalDateTime.now();
+
+		List<AuditionPayment> expiredPayments =
+				paymentRepository.findByPaymentStatusAndExpiryDateTimeBefore("SUCCESS", now);
+
+		logger.info("Found {} Audition expired ", expiredPayments.size());
+
+		for (AuditionPayment payment : expiredPayments) {
+			if ("EXPIRED".equals(payment.getPaymentStatus())) {
+				logger.debug("Skipping payment {} (already expired)", payment.getAuditionPaymentId());
+				continue;
+			}
+
+			payment.setPaymentStatus("EXPIRED");
+			paymentRepository.save(payment);
+			logger.info("Marked payment {} as EXPIRED", payment.getAuditionPaymentId());
+
+			AuditionNewProject project = payment.getProject();
+
+			boolean hasActivePayment = paymentRepository
+					.existsByProjectAndPaymentStatusAndExpiryDateTimeAfter(project, "SUCCESS", now);
+
+			if (!hasActivePayment) {
+				project.setStatus(false);
+				projectRepository.save(project);
+				logger.info("Project {} marked as inactive (no active payments)", project.getId());
+
+
+				sendExpiryEmail(payment);
+
+				sendInAppNotification(
+						payment,
+						"Project Expired",
+						"Your project '" + project.getProjectTitle() + "' has expired. Please renew."
+						);
+				logger.info("Notifications sent for expired project '{}'", project.getProjectTitle());
+			}
+		}
+	}
+
+
+	private void sendExpiryEmail(AuditionPayment payment) {
+		AuditionNewProject project = payment.getProject();
+		String subject = "Audition Project Expired " + project.getProjectTitle();
+
+		String content = "<html><body style='font-family:Arial, sans-serif; font-size:14px; color:#333;'>"
+				+ "<div style='max-width:600px; margin:auto; padding:20px; border:1px solid #e0e0e0; border-radius:8px;'>"
+				+ "<h2 style='color:#2E86C1;'>Audition Project Expired</h2>"
+				+ "<p>Dear <b>" + payment.getUser().getName() + "</b>,</p>"
+				+ "<p>We would like to inform you that your subscription for the audition project <b>'" 
+				+ project.getProjectTitle() + "'</b> has expired on <b>" 
+				+ payment.getExpiryDateTime().toLocalDate() + "</b>.</p>"
+				+ "<p>To continue participating in this audition and accessing related opportunities, please renew your subscription at your earliest convenience.</p>"
+				+ "<p>If you have any questions or need assistance, feel free to contact our support team.</p>"
+
             + "</body></html>";
 
-    try {
-        mailNotification.sendEmail(
-                payment.getUser().getName(),
-                payment.getUser().getEmail(),
-                subject,
-                content
-        );
-        logger.info("Expiry email sent to {} for project {}", payment.getUser().getEmail(), project.getProjectTitle());
-    } catch (Exception e) {
-        logger.error("Failed to send expiry email to {} for project {}",
-                payment.getUser().getEmail(), project.getProjectTitle(), e);
-    }
-}
+		try {
+			mailNotification.sendEmail(
+					payment.getUser().getName(),
+					payment.getUser().getEmail(),
+					subject,
+					content
+					);
+			logger.info("Expiry email sent to {} for project {}", payment.getUser().getEmail(), project.getProjectTitle());
+		} catch (Exception e) {
+			logger.error("Failed to send expiry email to {} for project {}",
+					payment.getUser().getEmail(), project.getProjectTitle(), e);
+		}
+	}
 
 }

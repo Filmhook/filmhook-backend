@@ -5,8 +5,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import javax.persistence.Column;
+import javax.persistence.Convert;
+
 import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.util.StringListConverter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
@@ -25,7 +29,7 @@ public class AuditionNewProjectWebModel {
     private List<String> platforms;
     private List<String> movieTypes;
     private List<String> themeMovieTypes;
-    private List<String> shootLocations;
+
     private LocalDate shootStartDate;
     private LocalDate shootEndDate;
     private String projectDescription;
@@ -41,4 +45,8 @@ public class AuditionNewProjectWebModel {
     private String expiryTime;
     private Integer totalTeamNeedCount;
     private String filmHookCode;
+    private List<String> nationalShootLocations;
+    private List<String> interNationalShootLocations; 
+    private String auditionFullAddress;
+    private String locationWebsite;
 }

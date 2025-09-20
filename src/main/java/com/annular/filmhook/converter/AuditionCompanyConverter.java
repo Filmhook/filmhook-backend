@@ -107,7 +107,10 @@ public class AuditionCompanyConverter {
 				.platforms(dto.getPlatforms())
 				.movieTypes(dto.getMovieTypes())
 				.themeMovieTypes(dto.getThemeMovieTypes())
-				.shootLocations(dto.getShootLocations())
+				.auditionAddress(dto.getAuditionFullAddress())
+				.locationWebsite(dto.getLocationWebsite())
+				.interNationalShootLocations(dto.getInterNationalShootLocations())
+				.nationalShootLocations(dto.getNationalShootLocations())
 				.shootStartDate(dto.getShootStartDate())
 				.shootEndDate(dto.getShootEndDate())
 				.projectDescription(dto.getProjectDescription())
@@ -172,7 +175,7 @@ public class AuditionCompanyConverter {
 
 	// Entity → DTO
 	public static AuditionNewProjectWebModel toDto(AuditionNewProject entity) {
-		
+
 		AuditionNewProjectWebModel dto = new AuditionNewProjectWebModel();
 		dto.setId(entity.getId());
 		dto.setProductionCompanyName(entity.getProductionCompanyName());
@@ -184,9 +187,12 @@ public class AuditionCompanyConverter {
 		dto.setPlatforms(entity.getPlatforms());
 		dto.setMovieTypes(entity.getMovieTypes());
 		dto.setThemeMovieTypes(entity.getThemeMovieTypes());
-		dto.setShootLocations(entity.getShootLocations());
 		dto.setShootStartDate(entity.getShootStartDate());
 		dto.setShootEndDate(entity.getShootEndDate());
+		dto.setAuditionFullAddress(entity.getAuditionAddress());
+		dto.setLocationWebsite(entity.getLocationWebsite());
+		dto.setInterNationalShootLocations(entity.getInterNationalShootLocations());
+		dto.setNationalShootLocations(entity.getNationalShootLocations());
 		dto.setProjectDescription(entity.getProjectDescription());
 		dto.setAuditionProfilePicture(entity.getAuditionProfilePicture());
 		dto.setCompanyId(entity.getCompany().getId());
@@ -198,12 +204,12 @@ public class AuditionCompanyConverter {
 			dto.setTeamNeeds(teamDtos);
 		}
 
-		    // ✅ Sum all counts from team needs
-		 int totalCount = entity.getTeamNeeds().stream()
-		            .mapToInt(tn -> tn.getCount() != null ? tn.getCount() : 0)
-		            .sum();
-		    dto.setTotalTeamNeedCount(totalCount);
-		
+		// ✅ Sum all counts from team needs
+		int totalCount = entity.getTeamNeeds().stream()
+				.mapToInt(tn -> tn.getCount() != null ? tn.getCount() : 0)
+				.sum();
+		dto.setTotalTeamNeedCount(totalCount);
+
 		return dto;
 	}
 
@@ -323,12 +329,12 @@ public class AuditionCompanyConverter {
 	//	   AuditionPayment
 
 	public static AuditionPayment toEntity(AuditionPaymentWebModel dto, AuditionNewProject project, User user) {
-//		int teamNeedsCount = project.getTeamNeeds().stream()
-//				.mapToInt(AuditionNewTeamNeed::getCount)
-//				.sum();
+		//		int teamNeedsCount = project.getTeamNeeds().stream()
+		//				.mapToInt(AuditionNewTeamNeed::getCount)
+		//				.sum();
 
 
-//		double totalAmount = teamNeedsCount * dto.getSelectedDays() * 20.0;
+		//		double totalAmount = teamNeedsCount * dto.getSelectedDays() * 20.0;
 		LocalDateTime now = LocalDateTime.now();
 
 		// Success/expiry date based on selectedDays

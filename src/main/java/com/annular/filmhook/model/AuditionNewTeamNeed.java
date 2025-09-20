@@ -98,6 +98,7 @@ public class AuditionNewTeamNeed {
     @Column(name = "views")
     private Integer views = 0;
     
+    
     private Boolean status;
     private Integer createdBy;
     private Integer updatedBy;

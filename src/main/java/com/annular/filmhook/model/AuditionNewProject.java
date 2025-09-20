@@ -73,8 +73,15 @@ public class AuditionNewProject {
     private List<String> themeMovieTypes;
 
     @Convert(converter = StringListConverter.class)
-    @Column(name = "shoot_locations")
-    private List<String> shootLocations;
+    @Column(name = "national_shoot_locations")
+    private List<String> nationalShootLocations;
+    
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "international_shoot_locations")
+    private List<String> interNationalShootLocations;
+    
+    private String auditionAddress;
+    private String locationWebsite;
 
     @Column(name = "shoot_start_date")
     private LocalDate shootStartDate;
