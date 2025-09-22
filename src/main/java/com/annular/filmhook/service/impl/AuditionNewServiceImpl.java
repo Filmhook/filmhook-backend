@@ -70,6 +70,7 @@ import com.annular.filmhook.repository.PricingConfigRepository;
 import com.annular.filmhook.repository.UserOfferRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionNewService;
+import com.annular.filmhook.service.HashService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.util.MailNotification;
@@ -148,6 +149,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	private MailNotification mailNotification;
 	@Autowired
 	private MediaFilesService mediaFilesService;
+	@Autowired
+	private HashService hashService;
 
 	@Value("${payment.key}")
 	private String key;
@@ -666,17 +669,16 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		// 4️⃣ Convert to entity
 		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
 
-		// 5️⃣ Generate payment hash
-		String hash = HashGenerator.generateHash(
-				key,
-				payment.getTxnid(),
-				payment.getTotalAmount().toString(),
-				"Audition Project",
-				user.getFirstName(),
-				user.getEmail(),
-				salt
-				);
-		payment.setPaymentHash(hash);
+		 // 5️⃣ Generate payment hash using HashService
+	    String hash = hashService.generateHash(
+	            payment.getTxnid(),
+	            payment.getTotalAmount().toString(),
+	            "Audition Project",
+	            user.getFirstName(),
+	            user.getEmail()
+	    );
+	    payment.setPaymentHash(hash);
+
 
 		// 6️⃣ Save payment
 		return paymentRepository.save(payment);
