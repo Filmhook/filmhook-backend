@@ -156,6 +156,7 @@ public class AuditionCompanyConverter {
 				.createdBy(userId)   
 				.createdDate(LocalDateTime.now())
 				.project(project)
+				.dateOfShoot(dto.getDateOfShoot())
 				.build();
 		// ✅ map professionId → FilmProfession entity
 		if (dto.getProfessionId() != null) {
@@ -238,6 +239,7 @@ public class AuditionCompanyConverter {
 		dto.setCreatedBy(entity.getCreatedBy());
 		dto.setWorkDays(entity.getWorkDays());
 		dto.setFacilitiesProvided(entity.getFacilitiesProvided());
+		dto.setDateOfShoot(entity.getDateOfShoot());
 		if (entity.getSubProfession() != null) {
 			dto.setSubProfessionId(entity.getSubProfession().getSubProfessionId());
 		}

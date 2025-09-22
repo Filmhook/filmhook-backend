@@ -1,5 +1,6 @@
 package com.annular.filmhook.webmodel;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -45,4 +46,6 @@ public class AuditionNewTeamNeedWebModel {
     private int totalViews;
     private String professionName;
     private String subProfessionName;
+    
+    private LocalDate dateOfShoot;
 }
