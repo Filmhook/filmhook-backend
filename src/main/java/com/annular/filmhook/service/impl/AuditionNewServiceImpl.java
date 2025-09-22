@@ -644,43 +644,48 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
-		// 1️⃣ Fetch project
-		AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
-				.orElseThrow(() -> new RuntimeException("Project not found"));
+	    // Fetch project
+	    AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
+	            .orElseThrow(() -> new RuntimeException("Project not found"));
 
-		// 2️⃣ Fetch user
-		User user = userRepository.findById(webModel.getUserId())
-				.orElseThrow(() -> new RuntimeException("User not found"));
+	    //  Fetch user
+	    User user = userRepository.findById(webModel.getUserId())
+	            .orElseThrow(() -> new RuntimeException("User not found"));
 
-		// 3️⃣ Generate txnid if not passed
-		if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
-			String txnid;
-			do {
-				txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
-			} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
-			webModel.setTxnid(txnid);
-		} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
-			throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
-		}
+	    // Generate txnid if not passed
+	    if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
+	        String txnid;
+	        do {
+	            txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+	        } while (paymentRepository.existsByTxnid(txnid));
+	        webModel.setTxnid(txnid);
+	    } else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
+	        throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
+	    }
 
-		// 4️⃣ Convert to entity
-		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
+	    //  Convert to entity
+	    AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
 
-		// 5️⃣ Generate payment hash
-		String hash = HashGenerator.generateHash(
-				key,
-				payment.getTxnid(),
-				payment.getTotalAmount().toString(),
-				"Audition Project",
-				user.getFirstName(),
-				user.getEmail(),
-				salt
-				);
-		payment.setPaymentHash(hash);
+	    // Format amount to 2 decimal places (important for PayU)
+	    String amountStr = String.format("%.2f", payment.getTotalAmount());
 
-		// 6️⃣ Save payment
-		return paymentRepository.save(payment);
+	    // Generate payment hash 
+	    String hash = HashGenerator.generateHash(
+	            key.trim(),                    
+	            payment.getTxnid().trim(),       
+	            amountStr,                      
+	            project.getProjectTitle().trim(),
+	            user.getFirstName().trim(),      
+	            user.getEmail().trim(),        
+	            salt.trim()                     
+	    );
+
+	    payment.setPaymentHash(hash);
+
+	    //  Save payment
+	    return paymentRepository.save(payment);
 	}
+
 	@Override
 	public ResponseEntity<?> paymentSuccess(String txnid) {
 		try {
