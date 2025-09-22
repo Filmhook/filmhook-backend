@@ -672,7 +672,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				payment.getTxnid(),
 				payment.getTotalAmount().toString(),
 				"Audition Project",
-				user.getName(),
+				user.getFirstName(),
 				user.getEmail(),
 				salt
 				);
