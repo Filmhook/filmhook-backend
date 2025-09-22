@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.io.InputStream;
+
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +23,8 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.Document;
+
+import javax.annotation.PostConstruct;
 import javax.persistence.EntityNotFoundException;
 
 import org.slf4j.Logger;
@@ -82,7 +85,8 @@ import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
-import com.google.api.client.util.Value;
+import org.springframework.beans.factory.annotation.Value;
+
 
 
 import com.itextpdf.io.image.ImageDataFactory;
@@ -149,10 +153,10 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	@Autowired
 	private MediaFilesService mediaFilesService;
 
-	@Value("${payment.key}")
+	@Value("${payu.key}")
 	private String key;
 
-	@Value("${payment.salt}")
+	@Value("${payu.salt}")
 	private String salt;
 	@Override
 	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
@@ -552,9 +556,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		return professions.stream()
 				.map((FilmProfession profession) -> {
 					List<AuditionNewTeamNeed> activeNeeds =
-							  teamNeedRepository.findActiveByProfessionIdAndProjectStatus(profession.getFilmProfessionId());
+							teamNeedRepository.findActiveByProfessionIdAndProjectStatus(profession.getFilmProfessionId());
 
-	                Long activeCount = (activeNeeds != null) ? (long) activeNeeds.size() : 0;
+					Long activeCount = (activeNeeds != null) ? (long) activeNeeds.size() : 0;
 
 					return FilmProfessionResponseDTO.builder()
 							.id(profession.getFilmProfessionId())
@@ -644,48 +648,43 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
-	    // Fetch project
-	    AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
-	            .orElseThrow(() -> new RuntimeException("Project not found"));
+		// 1️⃣ Fetch project
+		AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
+				.orElseThrow(() -> new RuntimeException("Project not found"));
 
-	    //  Fetch user
-	    User user = userRepository.findById(webModel.getUserId())
-	            .orElseThrow(() -> new RuntimeException("User not found"));
+		// 2️⃣ Fetch user
+		User user = userRepository.findById(webModel.getUserId())
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-	    // Generate txnid if not passed
-	    if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
-	        String txnid;
-	        do {
-	            txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
-	        } while (paymentRepository.existsByTxnid(txnid));
-	        webModel.setTxnid(txnid);
-	    } else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
-	        throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
-	    }
+		// 3️⃣ Generate txnid if not passed
+		if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
+			String txnid;
+			do {
+				txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+			} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
+			webModel.setTxnid(txnid);
+		} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
+			throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
+		}
 
-	    //  Convert to entity
-	    AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
+		// 4️⃣ Convert to entity
+		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
+		String amountStr = String.format("%.2f", payment.getTotalAmount());
+		// 5️⃣ Generate payment hash
+		String hash = HashGenerator.generateHash(
+				key,
+				payment.getTxnid(),
+				amountStr,
+				project.getProjectTitle().trim(),
+				user.getFirstName().trim(),
+				user.getEmail().trim(),
+				salt
+				);
+		payment.setPaymentHash(hash);
 
-	    // Format amount to 2 decimal places (important for PayU)
-	    String amountStr = String.format("%.2f", payment.getTotalAmount());
-
-	    // Generate payment hash 
-	    String hash = HashGenerator.generateHash(
-	            key.trim(),                    
-	            payment.getTxnid().trim(),       
-	            amountStr,                      
-	            project.getProjectTitle().trim(),
-	            user.getFirstName().trim(),      
-	            user.getEmail().trim(),        
-	            salt.trim()                     
-	    );
-
-	    payment.setPaymentHash(hash);
-
-	    //  Save payment
-	    return paymentRepository.save(payment);
+		// 6️⃣ Save payment
+		return paymentRepository.save(payment);
 	}
-
 	@Override
 	public ResponseEntity<?> paymentSuccess(String txnid) {
 		try {
@@ -1127,5 +1126,6 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					payment.getUser().getEmail(), project.getProjectTitle(), e);
 		}
 	}
+
 
 }
