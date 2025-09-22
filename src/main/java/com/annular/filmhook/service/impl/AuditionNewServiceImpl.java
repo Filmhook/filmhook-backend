@@ -451,7 +451,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	private FilmSubProfessionResponseDTO mapToDTO(FilmSubProfession sub) {
 
-		List<AuditionNewTeamNeed> activeNeeds = teamNeedRepository.findActiveBySubProfessionId(sub.getSubProfessionId());
+		List<AuditionNewTeamNeed> activeNeeds = teamNeedRepository.findActiveBySubProfessionIdAndProjectStatus(sub.getSubProfessionId());
 
 		return FilmSubProfessionResponseDTO.builder()
 				.subProfessionId(sub.getSubProfessionId())
@@ -552,9 +552,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		return professions.stream()
 				.map((FilmProfession profession) -> {
 					List<AuditionNewTeamNeed> activeNeeds =
-							teamNeedRepository.findActiveByProfessionId(profession.getFilmProfessionId());
+							  teamNeedRepository.findActiveByProfessionIdAndProjectStatus(profession.getFilmProfessionId());
 
-					Long activeCount = (activeNeeds != null) ? (long) activeNeeds.size() : 0;
+	                Long activeCount = (activeNeeds != null) ? (long) activeNeeds.size() : 0;
 
 					return FilmProfessionResponseDTO.builder()
 							.id(profession.getFilmProfessionId())
