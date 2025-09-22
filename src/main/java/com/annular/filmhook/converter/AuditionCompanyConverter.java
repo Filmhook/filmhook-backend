@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.annular.filmhook.model.*;
+import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
@@ -96,43 +97,53 @@ public class AuditionCompanyConverter {
 	// ======================
 
 	// DTO → Entity
-	public static AuditionNewProject toEntity(AuditionNewProjectWebModel dto, AuditionCompanyDetails company, Integer userId) {
-		AuditionNewProject project = AuditionNewProject.builder()
-				.productionCompanyName(dto.getProductionCompanyName())
-				.projectTitle(dto.getProjectTitle())
-				.country(dto.getCountry())
-				.industries(dto.getIndustries())
-				.dubbedCountry(dto.getDubbedCountry())
-				.dubbedIndustries(dto.getDubbedIndustries())
-				.platforms(dto.getPlatforms())
-				.movieTypes(dto.getMovieTypes())
-				.themeMovieTypes(dto.getThemeMovieTypes())
-				.auditionAddress(dto.getAuditionFullAddress())
-				.locationWebsite(dto.getLocationWebsite())
-				.interNationalShootLocations(dto.getInterNationalShootLocations())
-				.nationalShootLocations(dto.getNationalShootLocations())
-				.shootStartDate(dto.getShootStartDate())
-				.shootEndDate(dto.getShootEndDate())
-				.projectDescription(dto.getProjectDescription())
-				.status(false)
-				.createdBy(userId) 
-				.createdOn(LocalDateTime.now())
-				.auditionProfilePicture(dto.getAuditionProfilePicture())
-				.company(company)
-				.build();
+	   public static AuditionNewProject toEntity(
+	            AuditionNewProjectWebModel dto,
+	            AuditionCompanyDetails company,
+	            Integer userId,
+	            FilmSubProfessionRepository subProfessionRepo) {
 
-		if (dto.getTeamNeeds() != null) {
-			List<AuditionNewTeamNeed> teamNeeds = dto.getTeamNeeds().stream()
-					.map(teamDto -> toEntity(teamDto, project, userId))
-					.collect(Collectors.toList());
-			project.setTeamNeeds(teamNeeds);
-		}
+	        AuditionNewProject project = AuditionNewProject.builder()
+	                .productionCompanyName(dto.getProductionCompanyName())
+	                .projectTitle(dto.getProjectTitle())
+	                .country(dto.getCountry())
+	                .industries(dto.getIndustries())
+	                .dubbedCountry(dto.getDubbedCountry())
+	                .dubbedIndustries(dto.getDubbedIndustries())
+	                .platforms(dto.getPlatforms())
+	                .movieTypes(dto.getMovieTypes())
+	                .themeMovieTypes(dto.getThemeMovieTypes())
+	                .auditionAddress(dto.getAuditionFullAddress())
+	                .locationWebsite(dto.getLocationWebsite())
+	                .interNationalShootLocations(dto.getInterNationalShootLocations())
+	                .nationalShootLocations(dto.getNationalShootLocations())
+	                .shootStartDate(dto.getShootStartDate())
+	                .shootEndDate(dto.getShootEndDate())
+	                .projectDescription(dto.getProjectDescription())
+	                .status(false)
+	                .createdBy(userId)
+	                .createdOn(LocalDateTime.now())
+	                .auditionProfilePicture(dto.getAuditionProfilePicture())
+	                .company(company)
+	                .build();
 
-		return project;
-	}
+	        // Map TeamNeeds
+	        if (dto.getTeamNeeds() != null) {
+	            List<AuditionNewTeamNeed> teamNeeds = dto.getTeamNeeds().stream()
+	                    .map(teamDto -> toEntity(teamDto, project, userId, subProfessionRepo))
+	                    .collect(Collectors.toList());
+	            project.setTeamNeeds(teamNeeds);
+	        }
+
+	        return project;
+	    }
 
 	// TeamNeed DTO → Entity
-	public static AuditionNewTeamNeed toEntity(AuditionNewTeamNeedWebModel dto, AuditionNewProject project, Integer userId) {
+	        public static AuditionNewTeamNeed toEntity(
+	                AuditionNewTeamNeedWebModel dto,
+	                AuditionNewProject project,
+	                Integer userId,
+	                FilmSubProfessionRepository subProfessionRepo) {
 		AuditionNewTeamNeed entity = AuditionNewTeamNeed.builder()
 				.count(dto.getCount())
 				.characterName(dto.getCharacterName())
@@ -165,12 +176,14 @@ public class AuditionCompanyConverter {
 			entity.setProfession(profession);
 		}
 
-		if (dto.getSubProfessionId() != null) {
-			FilmSubProfession subProfession = new FilmSubProfession();
-			subProfession.setSubProfessionId(dto.getSubProfessionId());
-			entity.setSubProfession(subProfession);
-			entity.setRole(subProfession.getSubProfessionName());
-		}
+		 if (dto.getSubProfessionId() != null) {
+		        FilmSubProfession subProfession = subProfessionRepo
+		                .findById(dto.getSubProfessionId())
+		                .orElseThrow(() -> new RuntimeException("SubProfession not found"));
+
+		        entity.setSubProfession(subProfession);
+		        entity.setRole(subProfession.getSubProfessionName());
+		    }
 
 		return entity;
 	}

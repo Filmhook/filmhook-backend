@@ -173,7 +173,12 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
 
 		// ✅ Convert DTO → Entity (with userId)
-		AuditionNewProject project = AuditionCompanyConverter.toEntity(projectDto, company, userId);
+		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
+		            projectDto,
+		            company,
+		            userId,
+		            filmSubProfessionRepository // <-- important!
+		    );
 
 		// ✅ Save project
 		AuditionNewProject savedProject = projectRepository.save(project);
