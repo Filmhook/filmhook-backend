@@ -1126,11 +1126,11 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					payment.getUser().getEmail(), project.getProjectTitle(), e);
 		}
 	}
-	@PostConstruct
-	public void testProperties() {
-		System.out.println(">>> payment.key = " + key);
-		System.out.println(">>> payment.salt = " + salt);
-	}
+//	@PostConstruct
+//	public void testProperties() {
+//		System.out.println(">>> payment.key = " + key);
+//		System.out.println(">>> payment.salt = " + salt);
+//	}
 
 
 }

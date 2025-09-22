@@ -15,7 +15,7 @@ import lombok.*;
 @AllArgsConstructor
 public class AuditionNewTeamNeedWebModel {
    private Integer id;
-  
+  private String role;
     private Integer count;
     private String characterName;
     private String gender;

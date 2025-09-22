@@ -169,6 +169,7 @@ public class AuditionCompanyConverter {
 			FilmSubProfession subProfession = new FilmSubProfession();
 			subProfession.setSubProfessionId(dto.getSubProfessionId());
 			entity.setSubProfession(subProfession);
+			entity.setRole(subProfession.getSubProfessionName());
 		}
 
 		return entity;
@@ -218,6 +219,7 @@ public class AuditionCompanyConverter {
 	public static AuditionNewTeamNeedWebModel toDto(AuditionNewTeamNeed entity) {
 		AuditionNewTeamNeedWebModel dto = new AuditionNewTeamNeedWebModel();
 		dto.setId(entity.getId());
+		dto.setRole(entity.getRole());
 		dto.setCount(entity.getCount());
 		dto.setCharacterName(entity.getCharacterName());
 		dto.setGender(entity.getGender());

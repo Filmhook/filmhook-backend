@@ -16,8 +16,7 @@ public class HashGenerator {
         // Print key and salt values
         System.out.println("Key: " + key);
         System.out.println("Salt: " + salt);
-        String input = key + "|" + txnid + "|" + amount + "|" + productinfo + "|" + firstname + "|" + email
-                     + "||||||||||" + salt;
+        String input = key + "|" + txnid + "|" + amount + "|" + productinfo + "|" + firstname + "|" + email + "|||||||||||" +salt;
         return sha512(input);
     }
 
