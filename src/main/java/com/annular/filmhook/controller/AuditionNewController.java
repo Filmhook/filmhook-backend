@@ -265,12 +265,12 @@ public class AuditionNewController {
         }
     }
 
-    @PostMapping("/successAudition")
+    @PostMapping("/paymentSuccess")
     public ResponseEntity<?> paymentSuccess(@RequestParam String txnid) {
         return projectService.paymentSuccess(txnid);
     }
     
-    @PostMapping("/failureAudition")
+    @PostMapping("/paymentFailure")
     public ResponseEntity<?> paymentFailure(@RequestParam String txnid,
                                             @RequestParam(required = false) String errorMessage) {
         return projectService.paymentFailure(txnid, errorMessage != null ? errorMessage : "Unknown error");
