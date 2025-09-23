@@ -245,7 +245,7 @@ public class AuditionNewController {
         }
     }
     
-    @PostMapping("/createPayment")
+    @PostMapping("/payment-failure")
     public ResponseEntity<Response> createPayment(@RequestBody AuditionPaymentWebModel webModel) {
         try {
             AuditionPayment payment = projectService.createPayment(webModel);
@@ -265,7 +265,7 @@ public class AuditionNewController {
         }
     }
 
-    @PostMapping("/paymentSuccess")
+    @PostMapping("/payment-success")
     public ResponseEntity<?> paymentSuccess(@RequestParam String txnid) {
         return projectService.paymentSuccess(txnid);
     }
