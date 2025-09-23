@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.service.MediaFilesService;
@@ -16,7 +18,7 @@ import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 
 public class AuditionCompanyConverter {
-
+	
 	// Company → DTO
 	public static AuditionCompanyDetails toCompanyEntity(AuditionCompanyDetailsDTO dto, User user) {
 		if (dto == null) return null;
@@ -376,7 +378,7 @@ public class AuditionCompanyConverter {
 				.build();
 	}
 
-	public static AuditionPaymentWebModel toWebModel(AuditionPayment entity) {
+	public static AuditionPaymentWebModel toWebModel(AuditionPayment entity, String key) {
 		AuditionPaymentWebModel dto = new AuditionPaymentWebModel();
 		dto.setAuditionPaymentId(entity.getAuditionPaymentId());
 		dto.setProjectId(entity.getProject().getId());
@@ -388,6 +390,7 @@ public class AuditionCompanyConverter {
 		dto.setPaymentHash(entity.getPaymentHash());
 		dto.setTotalAmount(entity.getTotalAmount());
 		dto.setTotalTeamNeed(entity.getTotalTeamNeeds());
+dto.setKey(key);
 		return dto;
 	}
 

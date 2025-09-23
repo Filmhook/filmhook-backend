@@ -651,47 +651,47 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		return auditionViewRepository.countByTeamNeedId(teamNeedId);
 	}
 
-	@Override
-	public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
-		// 1️⃣ Fetch project
-		AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
-				.orElseThrow(() -> new RuntimeException("Project not found"));
-
-		// 2️⃣ Fetch user
-		User user = userRepository.findById(webModel.getUserId())
-				.orElseThrow(() -> new RuntimeException("User not found"));
-
-		// 3️⃣ Generate txnid if not passed
-		if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
-			String txnid;
-			do {
-				txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
-			} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
-			webModel.setTxnid(txnid);
-		} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
-			throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
+		@Override
+		public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
+			// 1️⃣ Fetch project
+			AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
+					.orElseThrow(() -> new RuntimeException("Project not found"));
+	
+			// 2️⃣ Fetch user
+			User user = userRepository.findById(webModel.getUserId())
+					.orElseThrow(() -> new RuntimeException("User not found"));
+	
+			// 3️⃣ Generate txnid if not passed
+			if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
+				String txnid;
+				do {
+					txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+				} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
+				webModel.setTxnid(txnid);
+			} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
+				throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
+			}
+	
+			// 4️⃣ Convert to entity
+			AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
+			String amountStr = String.format("%.2f", webModel.getTotalAmount());
+			// 5️⃣ Generate payment hash
+			String hash = HashGenerator.generateHash(
+					key,
+					webModel.getTxnid(),
+					amountStr,
+					webModel.getProductinfo(),
+					webModel.getFirstname(),
+					webModel.getEmail(),
+					salt
+					);
+			payment.setPaymentHash(hash);
+			
+			webModel.setKey(key);
+	
+			// 6️⃣ Save payment
+			return paymentRepository.save(payment);
 		}
-
-		// 4️⃣ Convert to entity
-		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
-		String amountStr = String.format("%.2f", webModel.getTotalAmount());
-		// 5️⃣ Generate payment hash
-		String hash = HashGenerator.generateHash(
-				key,
-				webModel.getTxnid(),
-				amountStr,
-				webModel.getProductinfo(),
-				webModel.getFirstname(),
-				webModel.getEmail(),
-				salt
-				);
-		payment.setPaymentHash(hash);
-		
-		webModel.setKey(key);
-
-		// 6️⃣ Save payment
-		return paymentRepository.save(payment);
-	}
 	@Override
 	public ResponseEntity<?> paymentSuccess(String txnid) {
 		try {
@@ -752,7 +752,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					"Your audition payment was successful!");
 
 			// 8️⃣ Return response
-			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 			return ResponseEntity.ok(new Response(1, "Payment successful", responseWebModel));
 
 		} catch (RuntimeException e) {
@@ -932,7 +932,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					"Your audition payment has failed. Reason: " + errorMessage);
 
 			// 6️⃣ Return response
-			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 			return ResponseEntity.ok(new Response(-1, "Payment failed", responseWebModel));
 
 		} catch (RuntimeException e) {
@@ -952,7 +952,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					.orElseThrow(() -> new RuntimeException("Payment not found"));
 
 			// Convert to WebModel / DTO
-			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 
 			//  Return success response
 			return ResponseEntity.ok(new Response(1, "Payment details fetched successfully", responseWebModel));
