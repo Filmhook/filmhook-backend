@@ -674,15 +674,15 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 		// 4️⃣ Convert to entity
 		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
-		String amountStr = String.format("%.2f", payment.getTotalAmount());
+		String amountStr = String.format("%.2f", webModel.getTotalAmount());
 		// 5️⃣ Generate payment hash
 		String hash = HashGenerator.generateHash(
 				key,
-				payment.getTxnid(),
+				webModel.getTxnid(),
 				amountStr,
-				project.getProjectTitle().trim(),
-				user.getFirstName().trim(),
-				user.getEmail().trim(),
+				webModel.getProductinfo(),
+				webModel.getFirstname(),
+				webModel.getEmail(),
 				salt
 				);
 		payment.setPaymentHash(hash);

@@ -13,4 +13,7 @@ public class AuditionPaymentWebModel {
     private String paymentHash;
    private Double totalAmount;
    private Integer totalTeamNeed;
+	private String productinfo;
+	private String firstname;
+	private String email;
 }
