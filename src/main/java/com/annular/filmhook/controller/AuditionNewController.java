@@ -245,7 +245,7 @@ public class AuditionNewController {
         }
     }
     
-    @PostMapping("/payment-failure")
+    @PostMapping("/createPayment")
     public ResponseEntity<Response> createPayment(@RequestBody AuditionPaymentWebModel webModel) {
         try {
             AuditionPayment payment = projectService.createPayment(webModel);
@@ -270,7 +270,7 @@ public class AuditionNewController {
         return projectService.paymentSuccess(txnid);
     }
     
-    @PostMapping("/paymentFailure")
+    @PostMapping("/payment-failure")
     public ResponseEntity<?> paymentFailure(@RequestParam String txnid,
                                             @RequestParam(required = false) String errorMessage) {
         return projectService.paymentFailure(txnid, errorMessage != null ? errorMessage : "Unknown error");
