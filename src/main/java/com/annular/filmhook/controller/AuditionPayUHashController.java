@@ -39,7 +39,7 @@ public class AuditionPayUHashController {
 
         // Format: key|txnid|amount|productinfo|firstname|email||||||||||salt
         String hashString = merchantKey + "|" + txnid + "|" + amount + "|" + productinfo + "|" + firstname + "|" + email + "|||||||||||" + merchantSalt;
-
+        System.out.println("hashString");
         String hash = hashCal("SHA-512", hashString);
 
         Map<String, String> response = new HashMap<>();
@@ -96,11 +96,11 @@ public class AuditionPayUHashController {
 
             auditionService.updatePaymentStatus(txnid, status, mihpayid, amount);
 
-            System.out.println("✔️ Payment failure status updated successfully.");
+            System.out.println("Payment failure status updated successfully.");
 
             return ResponseEntity.ok("");
         } catch (Exception e) {
-            System.err.println("❌ Error handling payment failure:");
+            System.err.println("Error handling payment failure:");
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Internal error: " + e.getMessage());

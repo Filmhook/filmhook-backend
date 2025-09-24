@@ -131,6 +131,16 @@ public class ShareController {
         return ResponseEntity.ok(deepLink);
     }
     
+    @GetMapping("/retry-payment/{txnId}")
+    public ResponseEntity<String> shareAuditionPayment(
+            @PathVariable Integer txnId) {
+
+        // ✅ You can fetch data from DB, or just return a link for now
+        String deepLink = "https://www.filmhookapps.com/retry-payment/" 
+                            + txnId;
+
+        return ResponseEntity.ok(deepLink);
+    }
     
     
 }

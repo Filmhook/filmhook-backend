@@ -18,7 +18,6 @@ public class HashService {
      * Generate a hash for PayU payment request
      */
     public String generateHash(String txnid, String amount, String productinfo, String firstname, String email) {
-    	
         String hashString = merchantKey + "|" + txnid + "|" + amount + "|" + productinfo + "|" + firstname + "|" + email + "|||||||||||" + merchantSalt;
         return hashCal("SHA-512", hashString);
     }

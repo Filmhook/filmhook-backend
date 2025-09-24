@@ -27,6 +27,7 @@ import javax.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -83,8 +84,6 @@ import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
-import com.google.api.client.util.Value;
-
 
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.io.source.ByteArrayOutputStream;
@@ -152,10 +151,10 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	@Autowired
 	private HashService hashService;
 
-	@Value("${payment.key}")
+	@Value("${payu.key}")
 	private String key;
 
-	@Value("${payment.salt}")
+	@Value("${payu.salt}")
 	private String salt;
 	@Override
 	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
@@ -677,8 +676,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	            user.getFirstName(),
 	            user.getEmail()
 	    );
-	    payment.setPaymentHash(hash);
-
+		payment.setPaymentHash(hash);
 
 		// 6️⃣ Save payment
 		return paymentRepository.save(payment);
