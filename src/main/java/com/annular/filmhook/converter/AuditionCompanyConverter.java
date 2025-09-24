@@ -5,7 +5,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import com.annular.filmhook.model.*;
+import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
@@ -96,7 +99,12 @@ public class AuditionCompanyConverter {
 	// ======================
 
 	// DTO → Entity
-	public static AuditionNewProject toEntity(AuditionNewProjectWebModel dto, AuditionCompanyDetails company, Integer userId) {
+	public static AuditionNewProject toEntity(
+			AuditionNewProjectWebModel dto,
+			AuditionCompanyDetails company,
+			Integer userId,
+			FilmSubProfessionRepository subProfessionRepo) {
+
 		AuditionNewProject project = AuditionNewProject.builder()
 				.productionCompanyName(dto.getProductionCompanyName())
 				.projectTitle(dto.getProjectTitle())
@@ -115,15 +123,16 @@ public class AuditionCompanyConverter {
 				.shootEndDate(dto.getShootEndDate())
 				.projectDescription(dto.getProjectDescription())
 				.status(false)
-				.createdBy(userId) 
+				.createdBy(userId)
 				.createdOn(LocalDateTime.now())
 				.auditionProfilePicture(dto.getAuditionProfilePicture())
 				.company(company)
 				.build();
 
+		// Map TeamNeeds
 		if (dto.getTeamNeeds() != null) {
 			List<AuditionNewTeamNeed> teamNeeds = dto.getTeamNeeds().stream()
-					.map(teamDto -> toEntity(teamDto, project, userId))
+					.map(teamDto -> toEntity(teamDto, project, userId, subProfessionRepo))
 					.collect(Collectors.toList());
 			project.setTeamNeeds(teamNeeds);
 		}
@@ -132,7 +141,11 @@ public class AuditionCompanyConverter {
 	}
 
 	// TeamNeed DTO → Entity
-	public static AuditionNewTeamNeed toEntity(AuditionNewTeamNeedWebModel dto, AuditionNewProject project, Integer userId) {
+	public static AuditionNewTeamNeed toEntity(
+			AuditionNewTeamNeedWebModel dto,
+			AuditionNewProject project,
+			Integer userId,
+			FilmSubProfessionRepository subProfessionRepo) {
 		AuditionNewTeamNeed entity = AuditionNewTeamNeed.builder()
 				.count(dto.getCount())
 				.characterName(dto.getCharacterName())
@@ -166,9 +179,12 @@ public class AuditionCompanyConverter {
 		}
 
 		if (dto.getSubProfessionId() != null) {
-			FilmSubProfession subProfession = new FilmSubProfession();
-			subProfession.setSubProfessionId(dto.getSubProfessionId());
+			FilmSubProfession subProfession = subProfessionRepo
+					.findById(dto.getSubProfessionId())
+					.orElseThrow(() -> new RuntimeException("SubProfession not found"));
+
 			entity.setSubProfession(subProfession);
+			entity.setRole(subProfession.getSubProfessionName());
 		}
 
 		return entity;
@@ -218,6 +234,7 @@ public class AuditionCompanyConverter {
 	public static AuditionNewTeamNeedWebModel toDto(AuditionNewTeamNeed entity) {
 		AuditionNewTeamNeedWebModel dto = new AuditionNewTeamNeedWebModel();
 		dto.setId(entity.getId());
+		dto.setRole(entity.getRole());
 		dto.setCount(entity.getCount());
 		dto.setCharacterName(entity.getCharacterName());
 		dto.setGender(entity.getGender());
@@ -356,12 +373,11 @@ public class AuditionCompanyConverter {
 				.paymentStatus("PENDING")
 				.createdBy(user.getUserId())
 				.createdOn(now)
-				.successDateTime(successDate)
 				.expiryDateTime(expiryDate)
 				.build();
 	}
 
-	public static AuditionPaymentWebModel toWebModel(AuditionPayment entity) {
+	public static AuditionPaymentWebModel toWebModel(AuditionPayment entity, String key) {
 		AuditionPaymentWebModel dto = new AuditionPaymentWebModel();
 		dto.setAuditionPaymentId(entity.getAuditionPaymentId());
 		dto.setProjectId(entity.getProject().getId());
@@ -373,6 +389,7 @@ public class AuditionCompanyConverter {
 		dto.setPaymentHash(entity.getPaymentHash());
 		dto.setTotalAmount(entity.getTotalAmount());
 		dto.setTotalTeamNeed(entity.getTotalTeamNeeds());
+		dto.setKey(key);
 		return dto;
 	}
 

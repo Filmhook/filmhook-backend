@@ -14,6 +14,7 @@ import javax.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -40,7 +41,8 @@ import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
 @RequestMapping("/audition")
 public class AuditionNewController {
 	public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-	
+	@Value("${payu.key}")
+	private String key;
 	 @Autowired
 	 AuditionProjectValidator projectValidator;
     @Autowired
@@ -251,7 +253,7 @@ public class AuditionNewController {
             AuditionPayment payment = projectService.createPayment(webModel);
 
           
-            AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+            AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 
             return ResponseEntity.ok(new Response(1, "Payment created successfully", responseWebModel));
         } catch (IllegalArgumentException e) {
@@ -265,12 +267,12 @@ public class AuditionNewController {
         }
     }
 
-    @PostMapping("/successAudition")
+    @PostMapping("/payment-success")
     public ResponseEntity<?> paymentSuccess(@RequestParam String txnid) {
         return projectService.paymentSuccess(txnid);
     }
     
-    @PostMapping("/failureAudition")
+    @PostMapping("/payment-failure")
     public ResponseEntity<?> paymentFailure(@RequestParam String txnid,
                                             @RequestParam(required = false) String errorMessage) {
         return projectService.paymentFailure(txnid, errorMessage != null ? errorMessage : "Unknown error");

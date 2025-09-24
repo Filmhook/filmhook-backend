@@ -85,7 +85,7 @@ public class WebSecurityConfig {
                                         "/v3/api-docs/**",
                                         "/v2/api-docs",   // for old swagger
                                         "/swagger-resources/**",
-                                        "/webjars/**")
+                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/retry-payment/**","/audition/retry-payment/**", "/audition-post/**")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()

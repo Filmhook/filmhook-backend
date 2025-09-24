@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.io.InputStream;
+
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +23,8 @@ import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.Document;
+
+import javax.annotation.PostConstruct;
 import javax.persistence.EntityNotFoundException;
 
 import org.slf4j.Logger;
@@ -71,7 +74,6 @@ import com.annular.filmhook.repository.PricingConfigRepository;
 import com.annular.filmhook.repository.UserOfferRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionNewService;
-import com.annular.filmhook.service.HashService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.util.MailNotification;
@@ -84,7 +86,6 @@ import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
-
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.io.source.ByteArrayOutputStream;
 import com.itextpdf.kernel.colors.DeviceRgb;
@@ -148,8 +149,6 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	private MailNotification mailNotification;
 	@Autowired
 	private MediaFilesService mediaFilesService;
-	@Autowired
-	private HashService hashService;
 
 	@Value("${payu.key}")
 	private String key;
@@ -171,7 +170,12 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
 
 		// ✅ Convert DTO → Entity (with userId)
-		AuditionNewProject project = AuditionCompanyConverter.toEntity(projectDto, company, userId);
+		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
+		            projectDto,
+		            company,
+		            userId,
+		            filmSubProfessionRepository // <-- important!
+		    );
 
 		// ✅ Save project
 		AuditionNewProject savedProject = projectRepository.save(project);
@@ -554,9 +558,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		return professions.stream()
 				.map((FilmProfession profession) -> {
 					List<AuditionNewTeamNeed> activeNeeds =
-							  teamNeedRepository.findActiveByProfessionIdAndProjectStatus(profession.getFilmProfessionId());
+							teamNeedRepository.findActiveByProfessionIdAndProjectStatus(profession.getFilmProfessionId());
 
-	                Long activeCount = (activeNeeds != null) ? (long) activeNeeds.size() : 0;
+					Long activeCount = (activeNeeds != null) ? (long) activeNeeds.size() : 0;
 
 					return FilmProfessionResponseDTO.builder()
 							.id(profession.getFilmProfessionId())
@@ -644,43 +648,48 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		return auditionViewRepository.countByTeamNeedId(teamNeedId);
 	}
 
-	@Override
-	public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
-		// 1️⃣ Fetch project
-		AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
-				.orElseThrow(() -> new RuntimeException("Project not found"));
+		@Override
+		public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
+			// 1️⃣ Fetch project
+			AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
+					.orElseThrow(() -> new RuntimeException("Project not found"));
+	
+			// 2️⃣ Fetch user
+			User user = userRepository.findById(webModel.getUserId())
+					.orElseThrow(() -> new RuntimeException("User not found"));
+	
+			// 3️⃣ Generate txnid if not passed
+			if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
+				String txnid;
+				do {
+					txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+				} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
+				webModel.setTxnid(txnid);
+			} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
+				throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
+			}
+	
+			// 4️⃣ Convert to entity
+			AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
+			String amountStr = String.format("%.2f", webModel.getTotalAmount());
+			// 5️⃣ Generate payment hash
+			String hash = HashGenerator.generateHash(
+					key,
+					webModel.getTxnid(),
+					amountStr,
+					webModel.getProductinfo(),
+					webModel.getFirstname(),
+					webModel.getEmail(),
+					salt
+					);
+			payment.setPaymentHash(hash);
+			
 
-		// 2️⃣ Fetch user
-		User user = userRepository.findById(webModel.getUserId())
-				.orElseThrow(() -> new RuntimeException("User not found"));
-
-		// 3️⃣ Generate txnid if not passed
-		if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
-			String txnid;
-			do {
-				txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
-			} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
-			webModel.setTxnid(txnid);
-		} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
-			throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
+	
+			// 6️⃣ Save payment
+			return paymentRepository.save(payment);
 		}
 
-		// 4️⃣ Convert to entity
-		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
-
-		 // 5️⃣ Generate payment hash using HashService
-	    String hash = hashService.generateHash(
-	            payment.getTxnid(),
-	            payment.getTotalAmount().toString(),
-	            "Audition Project",
-	            user.getFirstName(),
-	            user.getEmail()
-	    );
-		payment.setPaymentHash(hash);
-
-		// 6️⃣ Save payment
-		return paymentRepository.save(payment);
-	}
 	@Override
 	public ResponseEntity<?> paymentSuccess(String txnid) {
 		try {
@@ -741,7 +750,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					"Your audition payment was successful!");
 
 			// 8️⃣ Return response
-			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 			return ResponseEntity.ok(new Response(1, "Payment successful", responseWebModel));
 
 		} catch (RuntimeException e) {
@@ -902,7 +911,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					+ "<tr><td><b>Reason</b></td><td>" + errorMessage + "</td></tr>"
 					+ "</table>"
 					+ "<p>You may retry the payment by clicking the link below:</p>"
-					+ "<p><a href='https://filmhookapps.com/retry-payment/" + payment.getTxnid() + "' "
+					+ "<p><a href='https://filmhookapps.com/audition/retry-payment/" + payment.getTxnid() + "' "
 					+ "style='background:#007bff;color:#fff;padding:8px 12px;text-decoration:none;"
 					+ "border-radius:4px;'>🔄 Retry Payment</a></p>"
 					+ "<p>If the amount was deducted, it will be refunded by your bank.</p>"
@@ -921,7 +930,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					"Your audition payment has failed. Reason: " + errorMessage);
 
 			// 6️⃣ Return response
-			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 			return ResponseEntity.ok(new Response(-1, "Payment failed", responseWebModel));
 
 		} catch (RuntimeException e) {
@@ -941,7 +950,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					.orElseThrow(() -> new RuntimeException("Payment not found"));
 
 			// Convert to WebModel / DTO
-			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment);
+			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 
 			//  Return success response
 			return ResponseEntity.ok(new Response(1, "Payment details fetched successfully", responseWebModel));
@@ -1122,5 +1131,11 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					payment.getUser().getEmail(), project.getProjectTitle(), e);
 		}
 	}
+//	@PostConstruct
+//	public void testProperties() {
+//		System.out.println(">>> payment.key = " + key);
+//		System.out.println(">>> payment.salt = " + salt);
+//	}
+
 
 }
