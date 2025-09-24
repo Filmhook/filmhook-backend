@@ -687,7 +687,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					);
 			payment.setPaymentHash(hash);
 			
-			webModel.setKey(key);
+
 	
 			// 6️⃣ Save payment
 			return paymentRepository.save(payment);
