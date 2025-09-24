@@ -246,7 +246,11 @@
     <artifactId>secretsmanager</artifactId>
       <version>${aws.sdk.version}</version>
 </dependency>
-
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-ui</artifactId>
+    <version>1.6.15</version> <!-- ✅ stable for Spring Boot 2.7 -->
+</dependency>
     </dependencies>
   
     <build>
