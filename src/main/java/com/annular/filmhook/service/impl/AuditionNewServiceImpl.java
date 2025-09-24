@@ -913,7 +913,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					+ "<tr><td><b>Reason</b></td><td>" + errorMessage + "</td></tr>"
 					+ "</table>"
 					+ "<p>You may retry the payment by clicking the link below:</p>"
-					+ "<p><a href='https://filmhookapps.com/retry-payment/" + payment.getTxnid() + "' "
+					+ "<p><a href='https://filmhookapps.com/audition/retry-payment/" + payment.getTxnid() + "' "
 					+ "style='background:#007bff;color:#fff;padding:8px 12px;text-decoration:none;"
 					+ "border-radius:4px;'>🔄 Retry Payment</a></p>"
 					+ "<p>If the amount was deducted, it will be refunded by your bank.</p>"

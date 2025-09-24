@@ -131,7 +131,7 @@ public class ShareController {
 		return ResponseEntity.ok(deepLink);
 	}
 
-	@GetMapping("/retry-payment/{txnId}")
+	@GetMapping("/audition/retry-payment/{txnId}")
 
 	public ResponseEntity<String> shareAuditionPayment(
 
