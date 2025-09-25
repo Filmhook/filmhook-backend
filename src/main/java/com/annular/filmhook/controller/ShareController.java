@@ -119,14 +119,15 @@ public class ShareController {
 				.replace("'", "&#39;");
 	}
 
-	@GetMapping("/audition-post/{companyId}/{teamLeadId}")
+	@GetMapping("/audition-post/{companyId}/{teamLeadId}/{professionId}")
 	public ResponseEntity<String> shareAudition(
 			@PathVariable Integer companyId,
-			@PathVariable Integer teamLeadId) {
+			@PathVariable Integer teamLeadId,
+			@PathVariable Integer professionId) {
 
 		// ✅ You can fetch data from DB, or just return a link for now
 		String deepLink = "https://www.filmhookapps.com/audition-post/" 
-				+ companyId + "/" + teamLeadId;
+				+ companyId + "/" + teamLeadId + "/"+ professionId;
 
 		return ResponseEntity.ok(deepLink);
 	}
