@@ -393,6 +393,7 @@ public class AuditionCompanyConverter {
 		  dto.setFirstname(entity.getUser().getFirstName());
 		    dto.setEmail(entity.getUser().getEmail());
 		    dto.setProductinfo("Audition Booking");
+		    dto.setPhoneNumber(entity.getUser().getPhoneNumber());
 		return dto;
 	}
 
