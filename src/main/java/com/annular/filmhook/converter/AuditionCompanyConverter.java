@@ -390,6 +390,9 @@ public class AuditionCompanyConverter {
 		dto.setTotalAmount(entity.getTotalAmount());
 		dto.setTotalTeamNeed(entity.getTotalTeamNeeds());
 		dto.setKey(key);
+		  dto.setFirstname(entity.getUser().getFirstName());
+		    dto.setEmail(entity.getUser().getEmail());
+		    dto.setProductinfo("Audition Booking");
 		return dto;
 	}
 

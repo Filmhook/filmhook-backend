@@ -26,6 +26,7 @@ import com.itextpdf.layout.Document;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityNotFoundException;
+import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -675,11 +676,11 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 			// 5️⃣ Generate payment hash
 			String hash = HashGenerator.generateHash(
 					key,
-					webModel.getTxnid(),
+					payment.getTxnid(),
 					amountStr,
-					webModel.getProductinfo(),
-					webModel.getFirstname(),
-					webModel.getEmail(),
+				"Audition Booking",
+					user.getFirstName(),
+					user.getEmail(),
 					salt
 					);
 			payment.setPaymentHash(hash);
@@ -945,13 +946,21 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	@Override
 	public ResponseEntity<?> getPaymentByTxnid(String txnid) {
 		try {
+			// ✅ Get currently logged-in user's ID
+			Integer userId = userDetails.userInfo().getId();
+
+			// ✅ Fetch User entity
+			User user = userRepository.findById(userId)
+					.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
 			// Fetch payment
 			AuditionPayment payment = paymentRepository.findByTxnid(txnid)
 					.orElseThrow(() -> new RuntimeException("Payment not found"));
 
 			// Convert to WebModel / DTO
 			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
-
+		
+			
 			//  Return success response
 			return ResponseEntity.ok(new Response(1, "Payment details fetched successfully", responseWebModel));
 
@@ -1057,7 +1066,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 		teamNeedRepository.save(teamNeed);
 	}
-
+	@Transactional
 	@Override
 	@Scheduled(fixedRate = 300000) // every 5 minutes
 	public void updateExpiredPaymentsAndProjects() {
