@@ -17,4 +17,5 @@ public class AuditionPaymentWebModel {
 	private String firstname;
 	private String email;
 	private String key;
+	private String PhoneNumber;
 }

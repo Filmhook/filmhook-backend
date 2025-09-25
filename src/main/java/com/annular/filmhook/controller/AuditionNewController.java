@@ -3,6 +3,8 @@ package com.annular.filmhook.controller;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionNewService;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
@@ -47,6 +49,8 @@ public class AuditionNewController {
 	 AuditionProjectValidator projectValidator;
     @Autowired
     private AuditionNewService projectService;
+    @Autowired
+  private UserRepository userRepository;
 
     
     @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
@@ -251,7 +255,9 @@ public class AuditionNewController {
     public ResponseEntity<Response> createPayment(@RequestBody AuditionPaymentWebModel webModel) {
         try {
             AuditionPayment payment = projectService.createPayment(webModel);
-
+	
+			
+			// 2️⃣ Fetch user
           
             AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
 
@@ -310,12 +316,6 @@ public class AuditionNewController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Response(-1, "Something went wrong. Please try again.", null));
         }
-    }
-    
-    @PostMapping("/expireNow")
-    public ResponseEntity<Response> expireNow() {
-    	projectService.updateExpiredPaymentsAndProjects();
-        return ResponseEntity.ok(new Response(1, "Expired projects updated successfully", null));
     }
     
 }
