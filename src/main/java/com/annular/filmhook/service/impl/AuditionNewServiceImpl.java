@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import java.util.Date;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -156,36 +156,36 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Value("${payu.salt}")
 	private String salt;
-	@Override
-	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
-
-		// ✅ Get currently logged-in user's ID
-		Integer userId = userDetails.userInfo().getId();
-
-		// ✅ Fetch User entity
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-
-		// ✅ Find the company
-		AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
-				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
-
-		// ✅ Convert DTO → Entity (with userId)
-		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
-		            projectDto,
-		            company,
-		            userId,
-		            filmSubProfessionRepository // <-- important!
-		    );
-
-		// ✅ Save project
-		AuditionNewProject savedProject = projectRepository.save(project);
-
-		// ✅ Handle profile picture upload
-		AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
-
-		return savedProject;
-	}
+//	@Override
+//	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
+//
+//		// ✅ Get currently logged-in user's ID
+//		Integer userId = userDetails.userInfo().getId();
+//
+//		// ✅ Fetch User entity
+//		User user = userRepository.findById(userId)
+//				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+//
+//		// ✅ Find the company
+//		AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
+//				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
+//
+//		// ✅ Convert DTO → Entity (with userId)
+//		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
+//		            projectDto,
+//		            company,
+//		            userId,
+//		            filmSubProfessionRepository // <-- important!
+//		    );
+//
+//		// ✅ Save project
+//		AuditionNewProject savedProject = projectRepository.save(project);
+//
+//		// ✅ Handle profile picture upload
+//		AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
+//
+//		return savedProject;
+//	}
 
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId) {
@@ -1145,6 +1145,73 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 //		System.out.println(">>> payment.key = " + key);
 //		System.out.println(">>> payment.salt = " + salt);
 //	}
+
+	
+	@Override
+	public AuditionNewProject saveOrUpdateProject(AuditionNewProjectWebModel projectDto) {
+
+	    Integer userId = userDetails.userInfo().getId();
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+	    AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
+	            .orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
+
+	    AuditionNewProject project;
+
+	    if (projectDto.getId() != null) {
+	        // 🔄 UPDATE
+	        project = projectRepository.findById(projectDto.getId())
+	                .orElseThrow(() -> new RuntimeException("Project not found with ID: " + projectDto.getId()));
+
+	        AuditionCompanyConverter.updateEntityFromDto(project, projectDto, company, userId, filmSubProfessionRepository);
+
+	        // ✅ Ensure teamNeeds list is initialized
+	        if (project.getTeamNeeds() == null) {
+	            project.setTeamNeeds(new ArrayList<>());
+	        }
+
+	        // Map existing teamNeeds by ID
+	        Map<Integer, AuditionNewTeamNeed> existingTeamNeedsMap = project.getTeamNeeds().stream()
+	                .filter(tn -> tn.getId() != null)
+	                .collect(Collectors.toMap(AuditionNewTeamNeed::getId, tn -> tn));
+
+	        // Process incoming teamNeeds from DTO
+	        if (projectDto.getTeamNeeds() != null) {
+	            for (AuditionNewTeamNeedWebModel teamDto : projectDto.getTeamNeeds()) {
+	                if (teamDto.getId() != null && existingTeamNeedsMap.containsKey(teamDto.getId())) {
+	                    // 🔄 Update existing
+	                    AuditionNewTeamNeed existing = existingTeamNeedsMap.get(teamDto.getId());
+	                    AuditionCompanyConverter.updateTeamNeedEntity(existing, teamDto, filmSubProfessionRepository);
+	                    existing.setStatus(true); // make sure it's active
+	                    existingTeamNeedsMap.remove(teamDto.getId());
+	                } else {
+	                    // ➕ New team need
+	                    AuditionNewTeamNeed newTeamNeed = AuditionCompanyConverter.toEntity(teamDto, project, userId, filmSubProfessionRepository);
+	                    newTeamNeed.setStatus(true);
+	                    project.getTeamNeeds().add(newTeamNeed);
+	                }
+	            }
+	        }
+
+	        // ❌ Soft delete leftover team needs (not in DTO)
+	        for (AuditionNewTeamNeed leftover : existingTeamNeedsMap.values()) {
+	            leftover.setStatus(false);
+	        }
+
+	    } else {
+	        // ➕ CREATE
+	        project = AuditionCompanyConverter.toEntity(projectDto, company, userId, filmSubProfessionRepository);
+	    }
+
+	    // ✅ Save project
+	    AuditionNewProject savedProject = projectRepository.save(project);
+
+	    // ✅ Handle profile picture upload
+	    AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
+
+	    return savedProject;
+	}
 
 
 }

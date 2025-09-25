@@ -20,7 +20,7 @@ public interface AuditionNewService {
 	List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId);
 	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);
 	List<FilmProfessionResponseDTO> getAllProfessions();
-	AuditionNewProject createProject(AuditionNewProjectWebModel projectDto);
+//	AuditionNewProject createProject(AuditionNewProjectWebModel projectDto);
 	List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId);
 	List<AuditionNewProjectWebModel> getProjectsByCompanyIdAndTeamNeed(Integer companyId, Integer teamNeedId,Integer professionId);
 	String toggleTeamNeedLike(Integer teamNeedId, Integer userId);
@@ -35,6 +35,7 @@ public interface AuditionNewService {
 	void softDeleteTeamNeed(Integer teamNeedId, Integer userId, Integer companyId);
 	
 	void updateExpiredPaymentsAndProjects();
+	AuditionNewProject saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
 }
 
 
