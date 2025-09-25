@@ -1,4 +1,4 @@
-package com.annular.filmhook.model;
+	package com.annular.filmhook.model;
 
 import java.sql.Date;
 
@@ -37,7 +37,7 @@ public class AuditionRoles {
     @Column(name = "audition_role_id")
     private Integer auditionRoleId;
 
-    //@Column(name = "audition_role_desc")
+
     @Column(name = "audition_role_desc", length = 1000)
     private String auditionRoleDesc;
 

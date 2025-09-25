@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.Data;
 
 @Data
@@ -50,6 +52,22 @@ public class ChatWebModel {
     private String storyMediaType;
     private String deleteType;
     private Boolean isDeletedForEveryone;
+    private Boolean edited;
+    private Date editedOn;
+       private Integer replyToMessageId;
+       
+       private ReplyMessageDTO replyToMessage;  // ✅ nested reply DTO
+
    
-    
-}
+       @Data
+       @AllArgsConstructor
+       @NoArgsConstructor
+       public static class ReplyMessageDTO {
+           private Integer chatId;
+           private Integer chatSenderId;
+           private String message;
+           private String userAccountName;
+           private String mediaUrl;   
+           private String mediaType; 
+       }
+   }

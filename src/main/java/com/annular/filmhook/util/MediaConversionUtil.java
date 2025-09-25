@@ -16,7 +16,6 @@ import ws.schild.jave.info.VideoSize;
 public class MediaConversionUtil {
 	public static void convertToWebP(String inputPath, String outputPath) throws IOException, InterruptedException {
 	    ProcessBuilder processBuilder = new ProcessBuilder(
-
 "/usr/bin/cwebp",
 //"C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe",
 
@@ -36,10 +35,9 @@ public class MediaConversionUtil {
 	}
 
 	public static void convertToWebM(String inputPath, String outputPath) throws IOException, InterruptedException {
-    
 //String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
     
-   String ffmpegPath= "/usr/bin/ffmpeg";
+String ffmpegPath= "/usr/bin/ffmpeg";
 
 
       ProcessBuilder builder = new ProcessBuilder(

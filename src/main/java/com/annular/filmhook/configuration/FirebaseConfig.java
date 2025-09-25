@@ -1,59 +1,79 @@
+//package com.annular.filmhook.configuration;
+//
+//import com.google.auth.oauth2.GoogleCredentials;
+//import com.google.firebase.FirebaseApp;
+//import com.google.firebase.FirebaseOptions;
+//
+//import javax.annotation.PostConstruct;
+//
+//import org.springframework.context.annotation.Configuration;
+//
+//import java.io.FileInputStream;
+//import java.io.IOException;
+//
+//@Configuration
+//public class FirebaseConfig {
+//
+//    @PostConstruct
+//    public void initialize() {
+//        try {
+//            String firebaseConfigPath = System.getenv("FIREBASE_CONFIG_PATH");
+//            if (firebaseConfigPath == null) {
+//                throw new RuntimeException("FIREBASE_CONFIG_PATH environment variable not set.");
+//            }
+//
+//            FileInputStream serviceAccount = new FileInputStream(firebaseConfigPath);
+//
+//            FirebaseOptions options = FirebaseOptions.builder()
+//                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+//                    .build();
+//
+//            if (FirebaseApp.getApps().isEmpty()) {
+//                FirebaseApp.initializeApp(options);
+//            }
+//
+//            System.out.println("Firebase initialized successfully.");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//}
 
 package com.annular.filmhook.configuration;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.messaging.FirebaseMessaging;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.FileInputStream;
 import java.io.IOException;
 
-@Configuration
+@Component
 public class FirebaseConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(FirebaseConfig.class);
-
-    @Value("${app.firebase-configuration-file}")
-    private String firebaseConfigPath;
-
-    private FirebaseOptions getFirebaseOptions() throws IOException {
-        logger.info("FireBase config path -> {}", firebaseConfigPath);
-        Resource resource = new ClassPathResource(firebaseConfigPath);
-        return FirebaseOptions
-                .builder()
-                .setCredentials(GoogleCredentials.fromStream(resource.getInputStream()))
-                .build();
-    }
-
-    @Bean
-    FirebaseMessaging firebaseMessaging() throws IOException {
-        FirebaseApp app = FirebaseApp.initializeApp(this.getFirebaseOptions(), "Film-Hook");
-        return FirebaseMessaging.getInstance(app);
-    }
-
     @PostConstruct
-    public void initialize() {
-        try {
-            // Check if FirebaseApp is already initialized
-            if (!FirebaseApp.getApps().isEmpty()) {
-                logger.info("Firebase application is already initialized");
-                return;
+    public void init() throws IOException {
+        String firebaseConfigPath = System.getenv("FIREBASE_CONFIG_PATH");
+
+        if (firebaseConfigPath == null || firebaseConfigPath.isEmpty()) {
+            throw new IllegalStateException("FIREBASE_CONFIG_PATH environment variable is not set");
+        }
+
+        try (FileInputStream serviceAccount = new FileInputStream(firebaseConfigPath)) {
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .build();
+
+            if (FirebaseApp.getApps().isEmpty()) {
+                FirebaseApp.initializeApp(options);
+                System.out.println("Firebase initialized from " + firebaseConfigPath);
+            } else {
+                System.out.println("FirebaseApp already initialized.");
             }
-            FirebaseApp.initializeApp(this.getFirebaseOptions()); // Initialize FirebaseApp
-            logger.info("Firebase application has been initialized");
-        } catch (IOException e) {
-            logger.error("Error initializing Firebase: {}", e.getMessage());
         }
     }
 
 }
+

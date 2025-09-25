@@ -22,5 +22,7 @@ public enum MediaFileCategory {
     govermentId,
     shootingLocationImage,
     shootingLocationImageProof,
-    AuditionScript
+    AuditionScript,
+    Promote,
+    AuditionProfilePicture,
 }

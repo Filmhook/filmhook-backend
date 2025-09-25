@@ -81,7 +81,11 @@ public class Chat {
     @Column(name = "is_deleted_for_everyone")
     private Boolean isDeletedForEveryone = false;
 
-
+    private Boolean edited = false;
+    private Date editedOn;
+    
+    @Column(name = "reply_to_message_id")
+    private Integer replyToMessageId;
     
     @Column(name = "story_id")
     private String storyId;

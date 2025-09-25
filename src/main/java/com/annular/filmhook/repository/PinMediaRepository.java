@@ -15,7 +15,7 @@ public interface PinMediaRepository extends JpaRepository<UserMediaPin, Integer>
     @Query("select um from UserMediaPin um where um.userId=:id and um.status=true")
     List<UserMediaPin> findByUserId(Integer id);
 
-    @Query("select um from UserMediaPin um where um.userId = :userId and um.pinMediaId = :pinMediaId")
+    @Query("select um from UserMediaPin um where um.userId = :userId and um.pinMediaId = :pinMediaId and um.status=true")
     Optional<UserMediaPin> findByUserIdAndPinMediaId(Integer userId, Integer pinMediaId);
 
 }

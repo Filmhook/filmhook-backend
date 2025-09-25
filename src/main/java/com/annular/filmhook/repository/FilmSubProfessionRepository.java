@@ -21,5 +21,9 @@ public interface FilmSubProfessionRepository extends JpaRepository<FilmSubProfes
     List<FilmSubProfession> getSubProfessionByProfessionIds(List<FilmProfession> professionList);
 
     List<FilmSubProfession> findAllBySubProfessionName(String upperCase);
+    
+    // exclude multiple FilmProfession IDs
+    List<FilmSubProfession> findByProfession_FilmProfessionIdNotIn(List<Integer> professionIds);
+
 
 }

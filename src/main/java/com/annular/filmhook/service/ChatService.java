@@ -32,5 +32,7 @@ public interface ChatService {
 	Response updateOnlineStatus(UserWebModel userWebModel);
 	
 	Response deleteChatProfile(Integer currentUserId, Integer targetUserId);
+	
+	ResponseEntity<?> editMessage(Integer chatId, String newMessage) ;
 
 }

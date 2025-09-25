@@ -6,10 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,8 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.LiveStreamService;
 import com.annular.filmhook.webmodel.LiveDetailsWebModel;
 import com.annular.filmhook.webmodel.LiveStreamCommentWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -62,65 +66,89 @@ public class LiveStreamServiceImpl implements LiveStreamService {
 
             liveDetailsRepository.save(liveDetails);
 
-            // Fetch all active users
-            List<User> activeUsers = userRepository.findAllActiveUsers();     
-            
-            // Define notification details
+            // 2️⃣ Fetch ALL Users
+            List<User> allUsers = userRepository.findAll();
+
+            // 3️⃣ Notification Details
             String notificationTitle = "New Live Stream Started!";
-            String notificationMessage = "A new live stream has started on channel: " + liveDetails.getChannelName();
-            User sender = userRepository.findById(liveDetails.getUserId())
-                    .orElseThrow(() -> new RuntimeException("Sender not found"));
-           
-            for (User user : activeUsers) {
-            	
-                // Check if the user is the one who started the live stream
-                if (!user.getUserId().equals(liveDetails.getUserId()) && user.getStatus() && user.getFirebaseDeviceToken() != null) {
- 
-            	// Save in-app notification
+            String notificationMessage = " is going live. Don’t miss it!";
+            User sender = userRepository.findById(liveDetails.getUserId()).orElse(null);
+            String senderName = (sender != null) ? sender.getName() : "Someone";
+
+            // 4️⃣ Send Notification to All Users
+            for (User user : allUsers) {
+                try {
+                    // Skip the live starter (optional, remove this if they should also get it)
+                    if (user.getUserId().equals(liveDetails.getUserId())) {
+                        continue;
+                    }
+
+                    // Save In-App Notification
                     InAppNotification inAppNotification = InAppNotification.builder()
                             .senderId(liveDetails.getUserId())
                             .receiverId(user.getUserId())
                             .title(notificationTitle)
                             .userType("Live")
-                            .adminReview(sender.getAdminReview())
-                            .Profession(sender.getUserType())
                             .message(notificationMessage)
                             .createdOn(new Date())
                             .isRead(false)
                             .isDeleted(false)
+                            .adminReview(user.getAdminReview())
+                            .Profession(user.getUserType())
                             .id(liveDetails.getLiveChannelId())
                             .createdBy(liveDetails.getUserId())
                             .build();
+
                     inAppNotificationRepository.save(inAppNotification);
 
-                    // Send push notification
-                    Message message = Message.builder()
-                            .setNotification(Notification.builder()
-                                    .setTitle(notificationTitle)
-                                    .setBody(notificationMessage)
-                                    .build())
-                            .putData("LiveDetailsId", Integer.toString(liveDetails.getLiveChannelId())) // Add LiveId to data
-                            .setToken(user.getFirebaseDeviceToken()) // Set the receiver's device token
-                            .build();
+                    // Send Push Notification (only if token exists)
+                    if (user.getFirebaseDeviceToken() != null && !user.getFirebaseDeviceToken().trim().isEmpty()) {
+                        Notification firebaseNotification = Notification.builder()
+                              //  .setTitle(notificationTitle)
+                                .setBody(senderName + notificationMessage)
+                                .build();
 
-                    try {
-                        String response = FirebaseMessaging.getInstance().send(message);
-                        logger.info("Successfully sent message: " + response);
-                    } catch (FirebaseMessagingException e) {
-                        logger.error("Failed to send push notification: " + e.getMessage());
+                        AndroidNotification androidNotification = AndroidNotification.builder()
+                                .setIcon("ic_notification")
+                                .setColor("#4d79ff")
+                                .build();
+
+                        AndroidConfig androidConfig = AndroidConfig.builder()
+                                .setNotification(androidNotification)
+                                .build();
+
+                        Message firebaseMessage = Message.builder()
+                                .setNotification(firebaseNotification)
+                                .putData("type", "Live")
+                                .putData("LiveChannelId", String.valueOf(liveDetails.getLiveChannelId()))
+                                .putData("senderId", String.valueOf(liveDetails.getUserId()))
+                                .putData("receiverId", String.valueOf(user.getUserId()))
+                                .setAndroidConfig(androidConfig)
+                                .setToken(user.getFirebaseDeviceToken())
+                                .build();
+
+                        String response = FirebaseMessaging.getInstance().send(firebaseMessage);
+                        logger.info("Push notification sent to userId {}: {}", user.getUserId(), response);
+                    } else {
+                        logger.warn("User {} has no Firebase token. Skipping push notification.", user.getUserId());
                     }
+
+                } catch (FirebaseMessagingException e) {
+                    logger.error("Push notification failed for userId {}: {}", user.getUserId(), e.getMessage());
+                } catch (Exception ex) {
+                    logger.error("Error sending notification to userId {}: {}", user.getUserId(), ex.getMessage());
                 }
             }
 
-            // Return a success response
-            return ResponseEntity.ok(new Response(1, "Live Details saved Successfully", liveDetails));
+            // 5️⃣ Return Success
+            return ResponseEntity.ok(new Response(1, "Live Details saved successfully", liveDetails));
+
         } catch (Exception e) {
-            // Handle any exceptions or errors
-            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to save live details", e.getMessage()));
+            logger.error("Failed to save live details: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(new Response(-1, "Failed to save live details", e.getMessage()));
         }
     }
-
-
     @Override
     public ResponseEntity<?> getLiveDetails() {
         try {
@@ -244,4 +272,41 @@ public class LiveStreamServiceImpl implements LiveStreamService {
         }
 
     }
+    
+    @Override
+    public ResponseEntity<?> getLiveDetailsByChannelId(Integer liveChannelId) {
+        try {
+            // Fetch live channel by primary key (channel ID)
+            LiveChannel liveChannel = liveDetailsRepository.findById(liveChannelId)
+                    .orElseThrow(() -> new RuntimeException("Live details not found for channel ID: " + liveChannelId));
+
+            // Prepare response map
+            Map<String, Object> responseMap = new HashMap<>();
+            responseMap.put("channelId", liveChannel.getLiveChannelId());
+            responseMap.put("channelName", liveChannel.getChannelName());
+            responseMap.put("userId", liveChannel.getUserId());
+            responseMap.put("token", liveChannel.getToken());
+            responseMap.put("endTime", liveChannel.getEndTime());
+            responseMap.put("startTime", liveChannel.getStartTime());
+            responseMap.put("liveDate", liveChannel.getLiveDate());
+            responseMap.put("liveIsActive", liveChannel.getLiveIsActive());
+            responseMap.put("liveId", liveChannel.getLiveId());
+
+            // Add username if available
+            User user = userRepository.findById(liveChannel.getUserId()).orElse(null);
+            responseMap.put("username", user != null ? user.getName() : "Unknown");
+
+            return ResponseEntity.ok(new Response(1, "success", responseMap));
+
+        } catch (RuntimeException e) {
+            logger.warn("Live channel not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Response(-1, "fail", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error fetching live details by channel ID: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(-1, "error", "Internal server error occurred"));
+        }
+    }
+
 }

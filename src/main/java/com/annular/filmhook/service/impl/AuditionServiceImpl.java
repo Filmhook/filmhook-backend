@@ -525,12 +525,16 @@ public class AuditionServiceImpl implements AuditionService {
 	                : ""
 	        );
 
-	        //  Moved inside the loop — calculate success count per auditionDetails
-	        long successCount = auditionRepository.countByAuditionCategoryAndPaymentStatusAndAuditionIsactive(
-	                auditionDetails.getAuditionDetailsId(), "SUCCESS", true);
-	            
+	        // Get all subcategories for this category
+	        List<AuditionSubDetails> subCategories =
+	                auditionSubDetailsRepository.findByAuditionDetails_AuditionDetailsId(auditionDetails.getAuditionDetailsId());
 
-	            response.put("counts", successCount);
+	        // Sum up counts from all subcategories
+	        long totalCount = subCategories.stream()
+	                .mapToLong(sub -> auditionRepository.countBySubCategoryWithSuccessPayment(sub.getSubId()))
+	                .sum();
+
+	        response.put("counts", totalCount);
 
 	        return response;
 	    }).collect(Collectors.toList());
@@ -1445,11 +1449,11 @@ public class AuditionServiceImpl implements AuditionService {
 
 	                auditionWebModelsList.add(auditionWebModel);
 	            }
-	            response.put("Audition List", auditionWebModelsList);
+	            response.put("auditionList", auditionWebModelsList);
 	        } else {
-	            response.put("No auditions found", "");
+	            response.put("auditionList", "No auditions found");
 	        }
-	    } catch (Exception e) {
+	    } catch (Exception e) {	
 	        logger.error("get audition by sub-category Exception -> {}", e.getMessage());
 	        e.printStackTrace();
 	        return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));

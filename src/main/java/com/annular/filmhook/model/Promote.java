@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -35,7 +36,16 @@ public class Promote {
 
 	@Column(name = "status")
 	private Boolean status;
-
+	
+    @Column(name = "company_type")
+    private String companyType;
+    
+    @Column(name = "company_name")
+    private String companyName;
+    
+    @Column(name = "brand_name")
+    private String brandName;
+	
 	@Column(name = "created_by")
 	private Integer createdBy;
 
@@ -50,8 +60,11 @@ public class Promote {
 	@CreationTimestamp
 	private Date updatedOn;
 
-	// @Column(name = "start_date") private LocalDate startDate;
-	// @Column(name = "end_date") private LocalDate endDate;
+	@Column(name = "start_date") 
+	private LocalDate startDate;
+	
+	 @Column(name = "end_date")
+	 private LocalDate endDate;
 
 	@Column(name = "number_of_days")
 	private Integer numberOfDays;
@@ -92,10 +105,21 @@ public class Promote {
 	@Column(name = "selectOption")
 	private Integer selectOption;
 
-	@Column(name = "whatsappNumber")
-	private String whatsAppNumber;
+//	@Column(name = "whatsappNumber")
+//	private String whatsAppNumber;
+	
+	@Column(name = "nation")
+	private String nation;
+
+	@Column(name = "company_logo")
+	private String companyLogo;
+	
+	@Column(name = "contact_number")
+	private String contactNumber;
 	
 	@Column(name = "websiteLink")
 	private String webSiteLink;
+	
+	
 
 }

@@ -6,8 +6,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+
 import java.time.temporal.ChronoUnit;
+
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
@@ -15,29 +16,45 @@ import com.annular.filmhook.controller.ShootingLocationBookingController;
 
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationPaymentConverter;
+
 import com.annular.filmhook.model.BookingStatus;
+
 import com.annular.filmhook.model.InAppNotification;
+
 import com.annular.filmhook.model.PropertyAvailabilityDate;
 import com.annular.filmhook.model.ShootingLocationBooking;
 import com.annular.filmhook.model.ShootingLocationChat;
+
 import com.annular.filmhook.model.ShootingLocationPayment;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
+
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.InAppNotificationRepository;
+import com.annular.filmhook.repository.MultiMediaFileRepository;
 import com.annular.filmhook.repository.PropertyAvailabilityDateRepository;
+import com.annular.filmhook.repository.PropertyLikeRepository;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
+import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationChatRepository;
 import com.annular.filmhook.repository.ShootingLocationPaymentRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
+import com.annular.filmhook.repository.ShootingLocationPropertyReviewRepository;
+import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
+import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepository;
+import com.annular.filmhook.repository.ShootingLocationTypesRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.ShootingLocationBookingService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.util.NumberToWordsConverter;
-import com.annular.filmhook.util.NumberToWordsConverter;
+import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
+
 import com.annular.filmhook.webmodel.ShootingLocationChatDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPayURequest;
-import com.google.api.client.util.Value;
+
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -46,7 +63,8 @@ import com.google.firebase.messaging.Notification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -56,11 +74,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-
-import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -71,7 +87,7 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
 
 import com.itextpdf.layout.element.Image;
-import com.itextpdf.io.image.ImageData;
+
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
@@ -88,7 +104,7 @@ import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import java.net.URL;
-import java.net.URLEncoder;
+
 
 @Service
 public class ShootingLocationBookingServiceImpl implements ShootingLocationBookingService {
@@ -115,7 +131,34 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Autowired
 	private PropertyAvailabilityDateRepository availabilityRepo;
+	private ShootingLocationTypesRepository typesRepo;
 
+	@Autowired
+	private PropertyLikeRepository likeRepository;
+
+	@Autowired
+	private ShootingLocationCategoryRepository categoryRepo;
+
+	@Autowired
+	private ShootingLocationSubcategoryRepository subcategoryRepo;
+
+	@Autowired
+	private  ShootingLocationSubcategorySelectionRepository selectionRepo;
+
+	@Autowired
+	private ShootingLocationPropertyDetailsRepository propertyDetailsRepository;
+
+	@Autowired
+	MultiMediaFileRepository multiMediaFilesRepository;
+
+	@Autowired 
+	ShootingLocationPropertyReviewRepository propertyReviewRepository;
+
+	@Autowired
+	AwsS3Service awsS3Service;
+
+	@Autowired
+	S3Util s3Util;
 	@Autowired
 	private ShootingLocationChatRepository chatRepo;
 
@@ -635,7 +678,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 					sendReminderEmail(booking);
 					String title = "Shooting Location Expiring Soon!";
 					String messageBody = "Hi " + booking.getClient().getName() +
-							", your booking will expire in 24 hours. Renew now to continue gaining visibility.";
+							", your booking will expire in 24 hours. Renew now to continue.";
 
 					// ✅ In-App Notification
 					InAppNotification notification = InAppNotification.builder()
@@ -646,7 +689,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 							.userType("SHOOTING_LOCATION_EXPIRY") // or "CLIENT", as per your system
 							.id(bookingId)
 							.isRead(false)
-							 .isDeleted(false)
+							.isDeleted(false)
 							.createdOn(new Date())
 							.createdBy(0)
 							.build();
@@ -658,11 +701,25 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 					String deviceToken = booking.getClient().getFirebaseDeviceToken();
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 						try {
+							// FCM Notification
+							Notification notificationData = Notification.builder()
+									.setTitle(title)
+									.setBody(messageBody)
+									.build();
+
+							// Android Config
+							AndroidNotification androidNotification = AndroidNotification.builder()
+									.setIcon("ic_notification")
+									.setColor("#4d79ff")
+									.build();
+
+							AndroidConfig androidConfig = AndroidConfig.builder()
+									.setNotification(androidNotification)
+									.build();
+
 							Message firebaseMessage = Message.builder()
-									.setNotification(Notification.builder()
-											.setTitle(title)
-											.setBody(messageBody)
-											.build())
+									.setNotification(notificationData)
+									.setAndroidConfig(androidConfig)
 									.putData("type", "SHOOTING_LOCATION_EXPIRY")
 									.putData("refId", String.valueOf(bookingId))
 									.setToken(deviceToken)
@@ -767,10 +824,10 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 			try {
 				booking.setStatus(BookingStatus.COMPLETED);
 				bookingRepo.save(booking);
-				String title = "Your Shooting Location Booking is Now Completed";
-					String messageBody = "Hi " + booking.getClient().getName() +
-							", your booking at " + booking.getProperty().getPropertyName() +" has been successfully completed. " +
-							"Thank you for choosing us! We hope to see you again.";
+				String title = "Your Shooting Location is Now Completed";
+				String messageBody = "Hi " + booking.getClient().getName() +
+						", your booking at " + booking.getProperty().getPropertyName() +" has been successfully completed. " +
+						"Thank you for choosing us! We hope to see you again.";
 
 				// In-App Notification
 				InAppNotification notification = InAppNotification.builder()
@@ -780,8 +837,9 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 						.message(messageBody)
 						.userType("SHOOTING_LOCATION_COMPLETED")
 						.id(bookingId)
+						//.postId(booking.getProperty().getId())
 						.isRead(false)
-						 .isDeleted(false)
+						.isDeleted(false)
 						.createdOn(new Date())
 						.createdBy(0)
 						.build();
@@ -793,34 +851,47 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 				String deviceToken = booking.getClient().getFirebaseDeviceToken();
 				if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 					try {
+						// FCM Notification
+						Notification notificationData = Notification.builder()
+								.setTitle(title)
+								.setBody(messageBody)
+								.build();
+
+						// Android Config
+						AndroidNotification androidNotification = AndroidNotification.builder()
+								.setIcon("ic_notification")
+								.setColor("#4d79ff")
+								.build();
+
+						AndroidConfig androidConfig = AndroidConfig.builder()
+								.setNotification(androidNotification)
+								.build();
 						Message firebaseMessage = Message.builder()
-								.setNotification(Notification.builder()
-										.setTitle(title)
-										.setBody(messageBody)
-										.build())
+								.setNotification(notificationData)
+								.setAndroidConfig(androidConfig)
 								.putData("type", "SHOOTING_LOCATION_COMPLETED")
 								.putData("refId", String.valueOf(bookingId))
 								.setToken(deviceToken)
 								.build();
 
 						String response = FirebaseMessaging.getInstance().send(firebaseMessage);
-						logger.info("📱 Push Notification Sent: {}", response);
+						logger.info("Push Notification Sent: {}", response);
 
 					} catch (FirebaseMessagingException e) {
-						logger.error("❌ Failed to send push notification to user ID {}: {}", booking.getClient().getUserId(), e.getMessage(), e);
+						logger.error("Failed to send push notification to user ID {}: {}", booking.getClient().getUserId(), e.getMessage(), e);
 					}
 				} else {
-					logger.warn("⚠️ No Firebase token found for user ID: {}", booking.getClient().getUserId());
+					logger.warn("No Firebase token found for user ID: {}", booking.getClient().getUserId());
 				}
 
 				logger.info("✅ Booking ID {} marked as COMPLETED", bookingId);
 
 				// Send completion email
 				sendCompletionEmail(booking);
-				logger.info("📩 Completion email sent to {}", clientEmail);
+				logger.info("Completion email sent to {}", clientEmail);
 
 			} catch (Exception ex) {
-				logger.error("❌ Error completing booking ID {} for email '{}': {}", bookingId, clientEmail, ex.getMessage(), ex);
+				logger.error("Error completing booking ID {} for email '{}': {}", bookingId, clientEmail, ex.getMessage(), ex);
 			}
 		}
 	}
@@ -1020,7 +1091,224 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 				.build();
 
 
+
 	}
+
+	//	@Override
+	//	public ShootingLocationPropertyDetailsDTO getPropertyByBookingId(Integer bookingId) {
+	//		// Step 1: Get booking
+	//		ShootingLocationBooking booking = bookingRepository.findById(bookingId)
+	//				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+	//
+	//		// Step 2: Get property from booking
+	//		ShootingLocationPropertyDetails property = propertyRepository.findById(booking.getProperty().getId())
+	//				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+	//
+	//		// Step 3: Extract image, video, and govt ID URLs
+	//		List<String> imageUrls = new ArrayList<>();
+	//		List<String> videoUrls = new ArrayList<>();
+	//		List<String> governmentIdUrls = new ArrayList<>();
+	//		if (property.getMediaFiles() != null) {
+	//			for (ShootingLocationImages file : property.getMediaFiles()) {
+	//				if (file.getCategory() != null) {
+	//					switch (file.getCategory()) {
+	//					case "shootingLocationImage":
+	//						imageUrls.add(file.getFilePath());
+	//						break;
+	//					case "Video":
+	//						videoUrls.add(file.getFilePath());
+	//						break;
+	//					case "govermentId":
+	//						governmentIdUrls.add(file.getFilePath());
+	//						break;
+	//					}
+	//				}
+	//			}
+	//		}
+	//
+	//		// Step 4: Map related data (Business, Bank, Category, etc.)
+	//		BusinessInformationDTO businessInfoDTO = null;
+	//		if (property.getBusinessInformation() != null) {
+	//			BusinessInformation b = property.getBusinessInformation();
+	//			businessInfoDTO = BusinessInformationDTO.builder()
+	//					.id(b.getId())
+	//					.businessName(b.getBusinessName())
+	//					.businessType(b.getBusinessType())
+	//					.businessLocation(b.getBusinessLocation())
+	//					.panOrGSTNumber(b.getPanOrGSTNumber())
+	//					.location(b.getLocation())
+	//					.addressLine1(b.getAddressLine1())
+	//					.addressLine2(b.getAddressLine2())
+	//					.addressLine3(b.getAddressLine3())
+	//					.state(b.getState())
+	//					.postalCode(b.getPostalCode())
+	//					.build();
+	//		}
+	//
+	//		BankDetailsDTO bankDetailsDTO = null;
+	//		if (property.getBankDetails() != null) {
+	//			BankDetails bank = property.getBankDetails();
+	//			bankDetailsDTO = BankDetailsDTO.builder()
+	//					.id(bank.getId())
+	//					.beneficiaryName(bank.getBeneficiaryName())
+	//					.mobileNumber(bank.getMobileNumber())
+	//					.accountNumber(bank.getAccountNumber())
+	//					.confirmAccountNumber(bank.getConfirmAccountNumber())
+	//					.ifscCode(bank.getIfscCode())
+	//					.build();
+	//		}
+	//
+	//		ShootingLocationCategoryDTO categoryDTO = null;
+	//		if (property.getCategory() != null) {
+	//			ShootingLocationCategory category = categoryRepo.findById(property.getCategory().getId()).orElse(null);
+	//			if (category != null) {
+	//				categoryDTO = ShootingLocationCategoryDTO.builder()
+	//						.id(category.getId())
+	//						.name(category.getName())
+	//						.build();
+	//			}
+	//		}
+	//
+	//		ShootingLocationSubcategoryDTO subcategoryDTO = null;
+	//		if (property.getSubCategory() != null) {
+	//			ShootingLocationSubcategory subCategory = subcategoryRepo.findById(property.getSubCategory().getId()).orElse(null);
+	//			if (subCategory != null) {
+	//				subcategoryDTO = ShootingLocationSubcategoryDTO.builder()
+	//						.id(subCategory.getId())
+	//						.name(subCategory.getName())
+	//						.description(subCategory.getDescription())
+	//						.build();
+	//			}
+	//		}
+	//
+	//		ShootingLocationTypeDTO typeDTO = null;
+	//		if (property.getTypes() != null) {
+	//			ShootingLocationTypes types = typesRepo.findById(property.getTypes().getId()).orElse(null);
+	//			if (types != null) {
+	//				typeDTO = ShootingLocationTypeDTO.builder()
+	//						.id(types.getId())
+	//						.name(types.getName())
+	//						.description(types.getDescription())
+	//						.build();
+	//			}
+	//		}
+	//
+	//		ShootingLocationSubcategorySelectionDTO subcategorySelectionDTO = null;
+	//		if (property.getSubcategorySelection() != null) {
+	//			ShootingLocationSubcategorySelection shooting = property.getSubcategorySelection();
+	//			subcategorySelectionDTO = ShootingLocationSubcategorySelectionDTO.builder()
+	//					.entireProperty(shooting.getEntireProperty())
+	//					.singleProperty(shooting.getSingleProperty())
+	//					.build();
+	//		}
+	//
+	//		// Step 5: Reviews and rating
+	//		List<ShootingLocationPropertyReviewDTO> reviews = propertyReviewRepository.findByPropertyId(property.getId())
+	//				.stream()
+	//				.map(review -> ShootingLocationPropertyReviewDTO.builder()
+	//						.propertyId(review.getProperty().getId())
+	//						.userId(review.getUser().getUserId())
+	//						.rating(review.getRating())
+	//						.reviewText(review.getReviewText())
+	//						.userName(review.getUser().getName())
+	//						.build())
+	//				.collect(Collectors.toList());
+	//
+	//		double avgRating = reviews.stream()
+	//				.mapToInt(ShootingLocationPropertyReviewDTO::getRating)
+	//				.average()
+	//				.orElse(0.0);
+	//
+	//		// Step 6: Populate DTO
+	//		ShootingLocationPropertyDetailsDTO dto = new ShootingLocationPropertyDetailsDTO();
+	//
+	//		dto.setId(property.getId());
+	//		dto.setFirstName(property.getFirstName());
+	//		dto.setMiddleName(property.getMiddleName());
+	//		dto.setLastName(property.getLastName());
+	//		dto.setCitizenship(property.getCitizenship());
+	//		dto.setPlaceOfBirth(property.getPlaceOfBirth());
+	//		dto.setPropertyName(property.getPropertyName());
+	//		dto.setLocation(property.getLocation());
+	//		dto.setDateOfBirth(property.getDateOfBirth());
+	//		dto.setProofOfIdentity(property.getProofOfIdentity());
+	//		dto.setCountryOfIssued(property.getCountryOfIssued());
+	//		dto.setNumberOfPeopleAllowed(property.getNumberOfPeopleAllowed());
+	//		dto.setTotalArea(property.getTotalArea());
+	//		dto.setSelectedUnit(property.getSelectedUnit());
+	//		dto.setNumberOfRooms(property.getNumberOfRooms());
+	//		dto.setNumberOfFloor(property.getNumberOfFloor());
+	//		dto.setCeilingHeight(property.getCeilingHeight());
+	//		dto.setOutdoorFeatures(property.getOutdoorFeatures());
+	//		dto.setArchitecturalStyle(property.getArchitecturalStyle());
+	//		dto.setVintage(property.getVintage());
+	//		dto.setIndustrial(property.getIndustrial());
+	//		dto.setTraditional(property.getTraditional());
+	//		dto.setPowerSupply(property.getPowerSupply());
+	//		dto.setBakupGeneratorsAndVoltage(property.getBakupGeneratorsAndVoltage());
+	//		dto.setWifi(property.getWifi());
+	//		dto.setAirConditionAndHeating(property.getAirConditionAndHeating());
+	//		dto.setNumberOfWashrooms(property.getNumberOfWashrooms());
+	//		dto.setRestrooms(property.getRestrooms());
+	//		dto.setWaterSupply(property.getWaterSupply());
+	//		dto.setChangingRooms(property.getChangingRooms());
+	//		dto.setKitchen(property.getKitchen());
+	//		dto.setFurnitureAndProps(property.getFurnitureAndProps());
+	//		dto.setNeutralLightingConditions(property.getNeutralLightingConditions());
+	//		dto.setArtificialLightingAvailability(property.getArtificialLightingAvailability());
+	//		dto.setParkingCapacity(property.getParkingCapacity());
+	//		dto.setDroneUsage(property.getDroneUsage());
+	//		dto.setFirearms(property.getFirearms());
+	//		dto.setActionScenes(property.getActionScenes());
+	//		dto.setSecurity(property.getSecurity());
+	//		dto.setStructuralModification(property.getStructuralModification());
+	//		dto.setTemporary(property.getTemporary());
+	//		dto.setDressing(property.getDressing());
+	//		dto.setPermissions(property.getPermissions());
+	//		dto.setNoiseRestrictions(property.getNoiseRestrictions());
+	//		dto.setShootingTiming(property.getShootingTiming());
+	//		dto.setInsuranceRequired(property.getInsuranceRequired());
+	//		dto.setLegalAgreements(property.getLegalAgreements());
+	//		dto.setGovtLicenseAndPermissions(property.getGovtLicenseAndPermissions());
+	//		dto.setRoadAccessAndCondition(property.getRoadAccessAndCondition());
+	//		dto.setPublicTransport(property.getPublicTransport());
+	//		dto.setNearestAirportOrRailway(property.getNearestAirportOrRailway());
+	//		dto.setAccommodationNearby(property.getAccommodationNearby());
+	//		dto.setFoodAndCatering(property.getFoodAndCatering());
+	//		dto.setEmergencyServicesNearby(property.getEmergencyServicesNearby());
+	//		dto.setRentalCost(property.getRentalCost());
+	//		dto.setSecurityDeposit(property.getSecurityDeposit());
+	//		dto.setAdditionalCharges(property.getAdditionalCharges());
+	//		dto.setPaymentModelsAccepted(property.getPaymentModelsAccepted());
+	//		dto.setCancellationPolicy(property.getCancellationPolicy());
+	//		dto.setDescription(property.getDescription());
+	//		dto.setPriceCustomerPay(property.getPriceCustomerPay());
+	//		dto.setDiscount20Percent(property.isDiscount20Percent());
+	//		dto.setBusinessOwner(property.isBusinessOwner());
+	//		dto.setHighQualityPhotos(property.getHighQualityPhotos());
+	//		dto.setVideoWalkthrough(property.getVideoWalkthrough());
+	//		//   dto.setCreatedOn(property.getCreatedOn());
+	//		dto.setCreatedBy(property.getCreatedBy());
+	//		dto.setStatus(property.getStatus());
+	//		//  dto.setAvailabilityDates(property.getAvailabilityDates());
+	//		dto.setTypeLocation(property.getTypeLocation());
+	//		dto.setLocationLink(property.getLocationLink());
+	//
+	//		// Attach additional mapped info
+	//		dto.setImageUrls(imageUrls);
+	//		dto.setVideoUrls(videoUrls);
+	//		dto.setGovernmentIdUrls(governmentIdUrls);
+	//		dto.setBusinessInformation(businessInfoDTO);
+	//		dto.setBankDetailsDTO(bankDetailsDTO);
+	//		dto.setCategory(categoryDTO);
+	//		dto.setSubCategory(subcategoryDTO);
+	//		dto.setType(typeDTO);
+	//		dto.setSubcategorySelectionDTO(subcategorySelectionDTO);
+	//		dto.setReviews(reviews);
+	//		dto.setAverageRating(avgRating);
+	//
+	//		return dto;
+	//	}
 
 }
 

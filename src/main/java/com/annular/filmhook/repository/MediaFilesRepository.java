@@ -49,5 +49,5 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 			    FileStatus fileStatus
 			);
 
-
+	  List<MediaFiles> findByCategoryAndCategoryRefId(MediaFileCategory category, Integer categoryRefId);
 }

@@ -72,7 +72,7 @@ public class WebSecurityConfig {
                 .and()
                 .authorizeRequests(
                         (authorize) -> authorize
-                                .antMatchers("/og/post/view/**","/media/**","/","/.well-known/**","/user/register","/industryUser/deleteTemporaryDetails", "/user/verifyEmailOtp", "/user/changePassword", "/user/getAddressListOnSignUp", "/user/emailNotification",
+                                .antMatchers("/og/post/view/**","/media/**","/report/**","/","/.well-known/**","/user/register","/industryUser/deleteTemporaryDetails", "/user/verifyEmailOtp", "/user/changePassword", "/user/getAddressListOnSignUp", "/user/emailNotification",
                                         "/user/login", "/user/logins", "/Film/getProfessionList", "/Film/getProfessionMapList", "/industryUser/getTemporaryDuplicateDetails",
                                         "/user/refreshToken", "/user/forgotPassword", "/admin/adminRegister", "/admin/updateRegister", "/user/getNewAddressListOnSignUp",
                                         "/user/changeUserPassword", "/user/verifyUser", "/admin/deleteRegister", "/admin/getRegister",
@@ -80,7 +80,12 @@ public class WebSecurityConfig {
                                         "/api/printName", "/industryUser/getDetails", "/industryUser/addTemporaryDetails","/user/saveCoverPhotos",
                                         "/industryUser/getTemporaryDetails", "/industryUser/addIndustryUserPermanentDetails","/user/saveProfilePhotos",
                                         "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag","/industryUser/saveOneMinuteVideo","/user/updateRerferrralcode","/industryUser/saveGovermentIdProof","/api/shooting-location/types",
-                                        "/payment/payment-failure", "/payment/payment-success","/deeplink/**","/retry-payment/**")
+                                        "/payment/payment-failure", "/payment/payment-success","/deeplink/**","/retry-payment/**", "/audition-post/**",  "/swagger-ui.html",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**",
+                                        "/v2/api-docs",   // for old swagger
+                                        "/swagger-resources/**",
+                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/retry-payment/**","/audition/retry-payment/**", "/audition-post/**")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()

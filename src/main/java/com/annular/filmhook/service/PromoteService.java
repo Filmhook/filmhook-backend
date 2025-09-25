@@ -1,10 +1,13 @@
 package com.annular.filmhook.service;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.VisitPage;
+import com.annular.filmhook.model.VisitePageCategory;
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.PromoteWebModel;
 
@@ -26,7 +29,7 @@ public interface PromoteService {
 
 	ResponseEntity<?> addVisitPage(PromoteWebModel promoteWebModel);
 
-	ResponseEntity<?> getVisitType();
+//	ResponseEntity<?> getVisitType();
 
 	ResponseEntity<?> selectPromoteOption(PromoteWebModel promoteWebModel);
 
@@ -34,8 +37,16 @@ public interface PromoteService {
 
 	ResponseEntity<?> updateDescriptionByPostId(PostWebModel postWebModel);
 
-	ResponseEntity<?> getVisitTypeByWhatsApp();
+//	ResponseEntity<?> getVisitTypeByWhatsApp();
 
 	ResponseEntity<?> updatePromoteStatus(PromoteWebModel promoteWebModel);
+	
+	VisitPage addVisitPage(VisitPage visitPage);
+	List<VisitPage> getPagesByCategoryId(Integer categoryId);
+	List<VisitePageCategory> getAllCategories();
+	
+	 ResponseEntity<?> getWebsiteCategories();
+	 
+	 ResponseEntity<?> getWhatsAppCategories();
 
 }

@@ -97,11 +97,7 @@ public class Audition {
 	@CreationTimestamp
 	private LocalDateTime auditionUpdatedOn;
 
-	//	@ToString.Exclude
-	//	@ManyToOne
-	//	@JoinColumn(name = "user_id")
-	//	private User user;
-	//	
+	
 	@Column(name = "startDate")
 	private String startDate;
 

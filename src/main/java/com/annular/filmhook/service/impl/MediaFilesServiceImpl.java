@@ -154,7 +154,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 
 						// ✅ Generate thumbnail from video
 
-				//	String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+	//	String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 						String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
 				String ffmpegPath = "/usr/bin/ffmpeg";
 						String inputPath = convertedFile.getAbsolutePath();
@@ -434,10 +434,10 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		try {
 			if (!Utility.isNullOrEmptyList(mediaFiles)) {
 				mediaFiles.forEach(mediaFile -> {
-					mediaFile.setStatus(false); // 1. Deactivating the MediaFiles
+					mediaFile.setStatus(false); 
 					mediaFilesRepository.saveAndFlush(mediaFile);
-					fileUtil.deleteFile(mediaFile.getFilePath() + mediaFile.getFileType()); // 2. Deleting the S3
-																							// Objects
+					fileUtil.deleteFile(mediaFile.getFilePath() + mediaFile.getFileType());
+																							
 				});
 			}
 		} catch (Exception e) {

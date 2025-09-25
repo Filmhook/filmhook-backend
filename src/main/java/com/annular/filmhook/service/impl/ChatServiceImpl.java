@@ -67,6 +67,8 @@ import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.InAppNotificationWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.ChatUserWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -78,6 +80,8 @@ public class ChatServiceImpl implements ChatService {
 	@Autowired
 	UserRepository userRepository;
 
+	@Autowired
+	MediaFilesRepository mediaFileRepository;
 	@Autowired
 	ChatRepository chatRepository;
 
@@ -184,9 +188,19 @@ public class ChatServiceImpl implements ChatService {
 						.chatCreatedOn(new Date())
 						.storyId(chatWebModel.getStoryId())
 						.replyType(chatWebModel.getStoryId() != null ? "story" : "normal")
+						 .replyToMessageId(chatWebModel.getReplyToMessageId())
 						.build();
+				
+				
 
 				chatRepository.save(chat);
+				
+				//optional
+				Chat replyMessage = null;
+				if (chatWebModel.getReplyToMessageId() != null) {
+				    replyMessage = chatRepository.findById(chatWebModel.getReplyToMessageId())
+				                     .orElse(null);
+				}
 				// Save media files if present
 				if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
 					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
@@ -262,16 +276,96 @@ public class ChatServiceImpl implements ChatService {
 					String deviceToken = receiver.getFirebaseDeviceToken();
 
 					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-						String notificationTitle = user.getName();
-						String notificationMessage = chatWebModel.getMessage();  // Push actual message like "Hi", "Bye", etc.
+						 String senderName = user.getName();
+
+						// 1️⃣ Get unread messages from this sender to this receiver
+						List<String> unreadMessages = chatRepository
+								.findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
+
+						String latestMessage;
+						String imageUrl = null;
+						String mediaType = "TEXT";
+						
+						// After saving chat + media files
+						List<MediaFiles> savedFiles = mediaFileRepository.findByCategoryAndCategoryRefId(
+						        MediaFileCategory.Chat, chat.getChatId());
+
+						if (!savedFiles.isEmpty()) {
+						    MediaFiles firstFile = savedFiles.get(0);
+						    imageUrl = firstFile.getFilePath();
+						    mediaType = firstFile.getFileType();
+
+						    String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
+
+						    if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg") 
+						        || fileType.endsWith(".png") || fileType.endsWith(".webp")) {
+						        
+						        latestMessage = "📷 Photo";
+
+						    } else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov") 
+						               || fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
+						        
+						        latestMessage = "🎥 Video";
+
+						    } else if (fileType.contains("post")) {
+						        
+						        latestMessage = "📌 Shared Post";
+
+						    } else {
+						        
+						        latestMessage = "📎 Attachment";  
+						    }
+
+						} else {
+						    latestMessage = chatWebModel.getMessage();
+						}
+
+					        // Add current latestMessage if not already present
+					        if (!unreadMessages.contains(latestMessage)) {
+					            unreadMessages.add(latestMessage);
+					        }
+
+						// 3️⃣ Combine all unread messages into a single string for payload
+						String allUnread = String.join("||", unreadMessages);
 
 						try {
+							// Build FCM Notification
+							  Notification.Builder notificationBuilder = Notification.builder()
+					                    .setTitle(senderName)
+					                    .setBody(latestMessage);
+
+					            // If photo exists, add image URL to FCM notification
+					            if (imageUrl != null) {
+					                notificationBuilder.setImage(imageUrl);
+					            }
+
+						  Notification notificationData = notificationBuilder.build();
+
+							// Android-specific notification settings
+							AndroidNotification androidNotification = AndroidNotification.builder()
+									.setIcon("ic_notification")
+									.setColor("#00A2E8")
+									.build();
+
+							AndroidConfig androidConfig = AndroidConfig.builder()
+									.setNotification(androidNotification)
+									.build();
+
+							// Build and send FCM message
 							Message message = Message.builder()
-									.setNotification(Notification.builder()
-											.setTitle(notificationTitle)
-											.setBody(notificationMessage)
-											.build())
+									.setNotification(notificationData)
+									.setAndroidConfig(androidConfig)
 									.putData("chatId", String.valueOf(chat.getChatId()))
+									.putData("type", "chat")
+									.putData("profilePic", userService.getProfilePicUrl(userId))
+									.putData("senderId", String.valueOf(user.getUserId()))
+									.putData("senderName", senderName) 
+		                            .putData("allUnread", allUnread)   
+		                            .putData("userType", user.getUserType())
+		                            .putData("adminReview", String.valueOf(user.getAdminReview()))
+		                            .putData("groupKey", "filmhook_chat") 
+		                            .putData("mediaType", mediaType)  
+		                            .putData("mediaUrl", imageUrl != null ? imageUrl : "")
 									.setToken(deviceToken)
 									.build();
 
@@ -293,7 +387,7 @@ public class ChatServiceImpl implements ChatService {
 		} catch (Exception e) {
 			logger.error("Error occurred while saving message", e);
 			return ResponseEntity.internalServerError().body(new Response(0, "Failed", "An error occurred while saving message"));
-		}
+		}	
 	}
 
 	// Full Java code for getAllUser in ChatServiceImpl
@@ -605,10 +699,34 @@ public class ChatServiceImpl implements ChatService {
 							.storyMediaUrl(storyMedia != null ? storyMedia.getFilePath() : null)
 							.storyMediaType(storyMedia != null ? storyMedia.getFileType() : null)
 							.replyType(chat.getReplyType())
+							.edited(chat.getEdited())
+							.editedOn(chat.getEditedOn())
 							.isDeletedForEveryone(chat.getIsDeletedForEveryone())
 							.build();
 
+					// 👉 Fetch replied message if present
+					if (chat.getReplyToMessageId() != null) {
+					    chatRepository.findById(chat.getReplyToMessageId()).ifPresent(replyMsg -> {
+					    	  List<FileOutputWebModel> replyMediaFiles = mediaFilesService
+					                  .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, replyMsg.getChatId());
 
+					          FileOutputWebModel replyMedia = !replyMediaFiles.isEmpty() ? replyMediaFiles.get(0) : null;
+					    	
+					    	
+					        chatWebModel.setReplyToMessage(
+					            new ChatWebModel.ReplyMessageDTO(   // ✅ use nested DTO instead of full ChatWebModel
+					                replyMsg.getChatId(),
+					                replyMsg.getChatSenderId(),
+					                Boolean.TRUE.equals(replyMsg.getIsDeletedForEveryone())
+					                        ? "🚫 This message was deleted"
+					                        : replyMsg.getMessage(),
+					                replyMsg.getUserAccountName(),
+					                replyMedia != null ? replyMedia.getFilePath() : null,   
+					                        replyMedia != null ? replyMedia.getFileType() : null  
+					            )
+					        );
+					    });
+					}
 
 					// Update read status if the current user is the receiver
 					if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
@@ -786,8 +904,7 @@ public class ChatServiceImpl implements ChatService {
 		try {
 			Integer loggedInUserId = userDetails.userInfo().getId();
 			String loggedInUserType = userDetails.userInfo().getUserType();
-			Float loggedInAdminReview = userDetails.userInfo().getAdminReview();
-
+			
 			List<User> users;
 
 			if ("public User".equalsIgnoreCase(loggedInUserType)) {
@@ -847,83 +964,83 @@ public class ChatServiceImpl implements ChatService {
 
 
 	public Response getInAppNotification(int page, int size) {
-	    try {
-	        Integer userId = userDetails.userInfo().getId();
+		try {
+			Integer userId = userDetails.userInfo().getId();
 
-	        // Get user
-	        Optional<User> userOptional = userRepository.findById(userId);
-	        if (!userOptional.isPresent()) {
-	            return new Response(0, "User not found", null);
-	        }
+			// Get user
+			Optional<User> userOptional = userRepository.findById(userId);
+			if (!userOptional.isPresent()) {
+				return new Response(0, "User not found", null);
+			}
 
-	        User user = userOptional.get();
+			User user = userOptional.get();
 
-	        // Get last notification open time
-	        Date lastOpenedTime = user.getLastNotificationOpenTime();
-	        if (lastOpenedTime == null) {
-	            Calendar cal = Calendar.getInstance();
-	            cal.set(2000, Calendar.JANUARY, 1); // set default old date
-	            lastOpenedTime = cal.getTime();
-	        }
+			// Get last notification open time
+			Date lastOpenedTime = user.getLastNotificationOpenTime();
+			if (lastOpenedTime == null) {
+				Calendar cal = Calendar.getInstance();
+				cal.set(2000, Calendar.JANUARY, 1); // set default old date
+				lastOpenedTime = cal.getTime();
+			}
 
-	        // ✅ Make final for lambda
-	        final Date finalLastOpenedTime = lastOpenedTime;
+			// ✅ Make final for lambda
+			final Date finalLastOpenedTime = lastOpenedTime;
 
-	        // Reset open time to now
-	        Date now = new Date();
-	        user.setLastNotificationOpenTime(now);
-	        userRepository.save(user); // Save immediately to avoid stale time
+			// Reset open time to now
+			Date now = new Date();
+			user.setLastNotificationOpenTime(now);
+			userRepository.save(user); // Save immediately to avoid stale time
 
-	        // Set 30-day filter range
-	        Calendar calendar = Calendar.getInstance();
-	        Date endDate = calendar.getTime();
-	        calendar.add(Calendar.DAY_OF_MONTH, -30);
-	        Date startDate = calendar.getTime();
+			// Set 30-day filter range
+			Calendar calendar = Calendar.getInstance();
+			Date endDate = calendar.getTime();
+			calendar.add(Calendar.DAY_OF_MONTH, -30);
+			Date startDate = calendar.getTime();
 
-	        Pageable pageable = PageRequest.of(page, size, Sort.by("createdOn").descending());
+			Pageable pageable = PageRequest.of(page, size, Sort.by("createdOn").descending());
 
-	        Page<InAppNotification> pageResult = inAppNotificationRepository
-	                .findByReceiverIdAndCreatedOnBetweenAndIsDeletedFalseOrderByCreatedOnDesc(
-	                        userId, startDate, endDate, pageable);
+			Page<InAppNotification> pageResult = inAppNotificationRepository
+					.findByReceiverIdAndCreatedOnBetweenAndIsDeletedFalseOrderByCreatedOnDesc(
+							userId, startDate, endDate, pageable);
 
-	        List<InAppNotification> notifications = pageResult.getContent();
+			List<InAppNotification> notifications = pageResult.getContent();
 
-	        if (notifications.isEmpty()) {
-	            Map<String, Object> emptyResponse = new HashMap<>();
-	            emptyResponse.put("notifications", Collections.emptyMap());
-	            emptyResponse.put("unreadCount", 0);
-	            emptyResponse.put("unseenCount", 0); // still reset
-	            emptyResponse.put("totalPages", pageResult.getTotalPages());
-	            emptyResponse.put("currentPage", pageResult.getNumber());
-	            emptyResponse.put("totalItems", pageResult.getTotalElements());
+			if (notifications.isEmpty()) {
+				Map<String, Object> emptyResponse = new HashMap<>();
+				emptyResponse.put("notifications", Collections.emptyMap());
+				emptyResponse.put("unreadCount", 0);
+				emptyResponse.put("unseenCount", 0); // still reset
+				emptyResponse.put("totalPages", pageResult.getTotalPages());
+				emptyResponse.put("currentPage", pageResult.getNumber());
+				emptyResponse.put("totalItems", pageResult.getTotalElements());
 
-	            return new Response(0, "No Notifications", emptyResponse);
-	        }
+				return new Response(0, "No Notifications", emptyResponse);
+			}
 
-	        // Count unread
-	        long unreadCount = notifications.stream()
-	                .filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
-	                .count();
+			// Count unread
+			long unreadCount = notifications.stream()
+					.filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
+					.count();
 
-	        // Count unseen: created after lastOpenedTime
-	        long unseenCount = notifications.stream()
-	                .filter(n -> n.getCreatedOn().after(finalLastOpenedTime))
-	                .count();
+			// Count unseen: created after lastOpenedTime
+			long unseenCount = notifications.stream()
+					.filter(n -> n.getCreatedOn().after(finalLastOpenedTime))
+					.count();
 
-	        // Group by Today / Yesterday / Earlier
-	        Map<String, List<InAppNotificationWebModel>> grouped = new LinkedHashMap<>();
-	        LocalDate today = LocalDate.now(ZoneOffset.UTC);
-	        LocalDate yesterday = today.minusDays(1);
+			// Group by Today / Yesterday / Earlier
+			Map<String, List<InAppNotificationWebModel>> grouped = new LinkedHashMap<>();
+			LocalDate today = LocalDate.now(ZoneOffset.UTC);
+			LocalDate yesterday = today.minusDays(1);
 
-	        for (InAppNotification notification : notifications) {
-	            LocalDate createdDate = notification.getCreatedOn()
-	                    .toInstant().atZone(ZoneOffset.UTC).toLocalDate();
+			for (InAppNotification notification : notifications) {
+				LocalDate createdDate = notification.getCreatedOn()
+						.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
 
-	            String group = createdDate.equals(today) ? "Today"
-	                         : createdDate.equals(yesterday) ? "Yesterday"
-	                         : "Earlier";
+				String group = createdDate.equals(today) ? "Today"
+						: createdDate.equals(yesterday) ? "Yesterday"
+								: "Earlier";
 
-	            InAppNotificationWebModel dto = new InAppNotificationWebModel();
+				InAppNotificationWebModel dto = new InAppNotificationWebModel();
 				dto.setInAppNotificationId(notification.getInAppNotificationId());
 				dto.setSenderId(notification.getSenderId());
 				dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
@@ -936,7 +1053,7 @@ public class ChatServiceImpl implements ChatService {
 				dto.setCurrentStatus(notification.getCurrentStatus());
 				dto.setSenderId2(notification.getSenderId2());
 				Optional<User> sender = userRepository.getByUserId(notification.getSenderId());
-				dto.setSenderName(sender.map(User::getName).orElse("Unknown"));
+				dto.setSenderName(sender.map(User::getName).orElse("Film-hook"));
 
 				if (notification.getSenderId2() != null) {
 					Optional<User> sender2 = userRepository.getByUserId(notification.getSenderId2());
@@ -954,52 +1071,52 @@ public class ChatServiceImpl implements ChatService {
 				dto.setAdminReview(notification.getAdminReview());
 
 
-	            // Handle accept/additionalData
-	            if ("marketPlace".equals(notification.getUserType())) {
-	                marketPlaceChatRepository.findByIds(notification.getId()).ifPresentOrElse(
-	                        chat -> {
-	                            dto.setAccept(chat.getAccept());
-	                            dto.setAdditionalData(chat.getAccept() != null ?
-	                                    (chat.getAccept() ? "Accepted" : "Declined") : "null");
-	                        },
-	                        () -> {
-	                            dto.setAccept(null);
-	                            dto.setAdditionalData("null");
-	                        });
-	            } else if ("shootingLocation".equals(notification.getUserType())) {
-	                shootingLocationChatRepository.findByIds(notification.getId()).ifPresentOrElse(
-	                        chat -> {
-	                            dto.setAccept(chat.getAccept());
-	                            dto.setAdditionalData(chat.getAccept() != null ?
-	                                    (chat.getAccept() ? "Accepted" : "Declined") : "null");
-	                        },
-	                        () -> {
-	                            dto.setAccept(null);
-	                            dto.setAdditionalData("null");
-	                        });
-	            } else {
-	                dto.setAccept(null);
-	                dto.setAdditionalData("null");
-	            }
+				// Handle accept/additionalData
+				if ("marketPlace".equals(notification.getUserType())) {
+					marketPlaceChatRepository.findByIds(notification.getId()).ifPresentOrElse(
+							chat -> {
+								dto.setAccept(chat.getAccept());
+								dto.setAdditionalData(chat.getAccept() != null ?
+										(chat.getAccept() ? "Accepted" : "Declined") : "null");
+							},
+							() -> {
+								dto.setAccept(null);
+								dto.setAdditionalData("null");
+							});
+				} else if ("shootingLocation".equals(notification.getUserType())) {
+					shootingLocationChatRepository.findByIds(notification.getId()).ifPresentOrElse(
+							chat -> {
+								dto.setAccept(chat.getAccept());
+								dto.setAdditionalData(chat.getAccept() != null ?
+										(chat.getAccept() ? "Accepted" : "Declined") : "null");
+							},
+							() -> {
+								dto.setAccept(null);
+								dto.setAdditionalData("null");
+							});
+				} else {
+					dto.setAccept(null);
+					dto.setAdditionalData("null");
+				}
 
-	            grouped.computeIfAbsent(group, k -> new ArrayList<>()).add(dto);
-	        }
+				grouped.computeIfAbsent(group, k -> new ArrayList<>()).add(dto);
+			}
 
-	        // Prepare final response
-	        Map<String, Object> response = new HashMap<>();
-	        response.put("notifications", grouped);
-	        response.put("unreadCount", unreadCount);
-	        response.put("unseenCount", unseenCount); // ✅ Add this to response
-	        response.put("totalPages", pageResult.getTotalPages());
-	        response.put("currentPage", pageResult.getNumber());
-	        response.put("totalItems", pageResult.getTotalElements());
+			// Prepare final response
+			Map<String, Object> response = new HashMap<>();
+			response.put("notifications", grouped);
+			response.put("unreadCount", unreadCount);
+			response.put("unseenCount", unseenCount); // ✅ Add this to response
+			response.put("totalPages", pageResult.getTotalPages());
+			response.put("currentPage", pageResult.getNumber());
+			response.put("totalItems", pageResult.getTotalElements());
 
-	        return new Response(1, "Success", response);
+			return new Response(1, "Success", response);
 
-	    } catch (Exception e) {
-	        logger.error("Error fetching notifications -> {}", e.getMessage(), e);
-	        return new Response(0, "Error", "An error occurred while fetching notifications");
-	    }
+		} catch (Exception e) {
+			logger.error("Error fetching notifications -> {}", e.getMessage(), e);
+			return new Response(0, "Error", "An error occurred while fetching notifications");
+		}
 	}
 
 
@@ -1156,4 +1273,60 @@ public class ChatServiceImpl implements ChatService {
 		}
 	}
 
+	
+	@Override
+	public ResponseEntity<?> editMessage(Integer chatId, String newMessage) {
+	    try {
+	        logger.info("Edit Message Method Start for ChatId: {}", chatId);
+
+	        Integer userId = userDetails.userInfo().getId();
+	        Optional<User> userOptional = userRepository.findById(userId);
+
+	        if (userOptional.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                    .body("User not found");
+	        }
+
+	        Optional<Chat> chatOptional = chatRepository.findById(chatId);
+	        if (chatOptional.isEmpty()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body("Chat message not found");
+	        }
+
+	        Chat chat = chatOptional.get();
+
+	        // ✅ Only sender can edit
+	        if (!chat.getChatSenderId().equals(userId)) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("You are not allowed to edit this message");
+	        }
+
+	        // ✅ Allow edit only within 15 minutes
+	        long timeDiff = new Date().getTime() - chat.getTimeStamp().getTime();
+	        long allowedMillis = 60 * 60 * 1000; // 1 hr
+
+	        if (timeDiff > allowedMillis) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("Edit time expired");
+	        }
+
+	        // ✅ Update message
+	        chat.setMessage(newMessage);
+	        chat.setEdited(true);
+	        chat.setEditedOn(new Date());
+
+	        chatRepository.save(chat);
+
+	        return ResponseEntity.ok("Message updated successfully");
+
+	    } catch (Exception e) {
+	        logger.error("Error while editing message", e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("An error occurred while editing the message");
+	    }
+	}
+
+	
+	
+	
 }
