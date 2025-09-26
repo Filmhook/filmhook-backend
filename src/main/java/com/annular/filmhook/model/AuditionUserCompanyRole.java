@@ -47,5 +47,8 @@ public class AuditionUserCompanyRole {
     
     private String filmHookCode;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean deleted = false;
 }
 

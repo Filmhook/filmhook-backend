@@ -426,7 +426,12 @@ public class AuditionCompanyConverter {
 				.status(entity.getStatus())
 				.isOwner(false)
 				.createdDate(entity.getCreatedDate())
-				.build();
+			      .assignedUserName(entity.getAssignedUser() != null ? entity.getAssignedUser().getFirstName() + " " + entity.getAssignedUser().getLastName() : null)
+		            .assignedUserEmail(entity.getAssignedUser() != null ? entity.getAssignedUser().getEmail() : null)
+		            .ownerName(entity.getOwner() != null ? entity.getOwner().getFirstName() + " " + entity.getOwner().getLastName() : null)
+		            .ownerEmail(entity.getOwner() != null ? entity.getOwner().getEmail() : null)
+		            .build();
+				
 	}
 
 	public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity, User loggedUser) {

@@ -24,5 +24,8 @@ public interface AuditionCompanyService {
 	 AuditionCompanyDetailsDTO getCompanyById(Integer companyId);
 	 void removeAccess(Integer roleId);
 	 void softDeleteCompany(Integer companyId);
+	 
+	 List<AuditionUserCompanyRoleDTO> getAssignedUsersByOwnerAndCompany(Integer ownerId, Integer companyId);
+	 void deleteUserAccess(Integer roleId);
 
 }

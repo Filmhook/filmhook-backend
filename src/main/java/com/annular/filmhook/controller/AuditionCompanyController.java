@@ -185,5 +185,21 @@ public class AuditionCompanyController {
         return ResponseEntity.ok(new Response(1, "Success","Company deleted successfully"));
     }
 
+    @GetMapping("/assigned")
+    public ResponseEntity<List<AuditionUserCompanyRoleDTO>> getAssignedUsersByOwnerAndCompany(
+            @RequestParam Integer ownerId,
+            @RequestParam Integer companyId) {
+
+        List<AuditionUserCompanyRoleDTO> assignedUsers =
+        		companyService.getAssignedUsersByOwnerAndCompany(ownerId, companyId);
+
+        return ResponseEntity.ok(assignedUsers);
+    }
+    
+    @DeleteMapping("/user")
+    public ResponseEntity<Response> deleteUserAccess(@RequestParam Integer roleId) {
+    	companyService.deleteUserAccess(roleId);
+    	return ResponseEntity.ok(new Response(1, "Success","User access deleted permanently"));
+    }
     
 }

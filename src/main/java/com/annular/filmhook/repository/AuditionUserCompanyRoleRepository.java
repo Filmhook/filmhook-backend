@@ -33,4 +33,8 @@ public interface AuditionUserCompanyRoleRepository extends JpaRepository<Auditio
             String designation,
             String accessKey
     );
+    
+    List<AuditionUserCompanyRole> findByOwner_UserIdAndCompany_IdAndDeletedFalse(Integer ownerId, Integer companyId);
+
+
 }

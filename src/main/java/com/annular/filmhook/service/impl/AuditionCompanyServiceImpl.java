@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
@@ -467,5 +469,42 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 		companyRepository.save(company);
 	}
 
+	@Override
+    public List<AuditionUserCompanyRoleDTO> getAssignedUsersByOwnerAndCompany(Integer ownerId, Integer companyId) {
+        List<AuditionUserCompanyRole> roles =
+                roleRepository.findByOwner_UserIdAndCompany_IdAndDeletedFalse(ownerId, companyId);
+
+        return roles.stream()
+                .map(AuditionCompanyConverter::toDto)
+                .collect(Collectors.toList());
+    }
+	
+	
+	@Transactional
+	@Override
+	public void deleteUserAccess(Integer roleId) {
+		   Integer userId = userDetails.userInfo().getId(); // currently logged-in user
+
+		   
+		    AuditionUserCompanyRole role = roleRepository.findById(roleId)
+		            .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
+
+	
+		    if (Boolean.TRUE.equals(role.getDeleted())) {
+		        throw new RuntimeException("Access is already deleted for this user.");
+		    }
+
+		    if (!role.getOwner().getUserId().equals(userId)) {
+		        throw new RuntimeException("You are not authorized to delete this access.");
+		    }
+
+	    role.setDeleted(true);      
+	    role.setStatus(false);       
+	    role.setUpdatedDate(LocalDateTime.now());
+
+	    roleRepository.save(role);
+	}
+
+	
 } 
 
