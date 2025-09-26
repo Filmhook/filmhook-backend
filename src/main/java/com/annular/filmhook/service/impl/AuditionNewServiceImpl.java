@@ -1148,7 +1148,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	
 	@Override
-	public AuditionNewProject saveOrUpdateProject(AuditionNewProjectWebModel projectDto) {
+	public AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto) {
 
 	    Integer userId = userDetails.userInfo().getId();
 	    User user = userRepository.findById(userId)
@@ -1164,9 +1164,10 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	        project = projectRepository.findById(projectDto.getId())
 	                .orElseThrow(() -> new RuntimeException("Project not found with ID: " + projectDto.getId()));
 
+	        // Update base fields
 	        AuditionCompanyConverter.updateEntityFromDto(project, projectDto, company, userId, filmSubProfessionRepository);
 
-	        // ✅ Ensure teamNeeds list is initialized
+	        // ✅ Ensure teamNeeds list exists
 	        if (project.getTeamNeeds() == null) {
 	            project.setTeamNeeds(new ArrayList<>());
 	        }
@@ -1183,10 +1184,10 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	                    // 🔄 Update existing
 	                    AuditionNewTeamNeed existing = existingTeamNeedsMap.get(teamDto.getId());
 	                    AuditionCompanyConverter.updateTeamNeedEntity(existing, teamDto, filmSubProfessionRepository);
-	                    existing.setStatus(true); // make sure it's active
+	                    existing.setStatus(true);
 	                    existingTeamNeedsMap.remove(teamDto.getId());
 	                } else {
-	                    // ➕ New team need
+	                    // ➕ Add new
 	                    AuditionNewTeamNeed newTeamNeed = AuditionCompanyConverter.toEntity(teamDto, project, userId, filmSubProfessionRepository);
 	                    newTeamNeed.setStatus(true);
 	                    project.getTeamNeeds().add(newTeamNeed);
@@ -1204,14 +1205,17 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	        project = AuditionCompanyConverter.toEntity(projectDto, company, userId, filmSubProfessionRepository);
 	    }
 
-	    // ✅ Save project
+	    // ✅ Save entity
 	    AuditionNewProject savedProject = projectRepository.save(project);
 
-	    // ✅ Handle profile picture upload
+	 // ✅ Handle profile picture upload
 	    AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
 
-	    return savedProject;
+	    // ✅ Return DTO, not entity
+	    return AuditionCompanyConverter.toDto(savedProject);
 	}
 
 
 }
+
+

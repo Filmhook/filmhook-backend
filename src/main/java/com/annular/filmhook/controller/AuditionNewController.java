@@ -343,7 +343,7 @@ public class AuditionNewController {
 
         try {
             // ✅ Save or update project
-            AuditionNewProject savedProject = projectService.saveOrUpdateProject(projectDto);
+            AuditionNewProjectWebModel savedProject = projectService.saveOrUpdateProject(projectDto);
 
             return ResponseEntity.ok(
                     Response.builder()

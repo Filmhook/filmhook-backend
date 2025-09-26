@@ -35,7 +35,7 @@ public interface AuditionNewService {
 	void softDeleteTeamNeed(Integer teamNeedId, Integer userId, Integer companyId);
 	
 	void updateExpiredPaymentsAndProjects();
-	AuditionNewProject saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
+	AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
 }
 
 
