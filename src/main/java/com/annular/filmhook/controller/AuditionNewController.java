@@ -361,5 +361,29 @@ public class AuditionNewController {
                             .build()
                     );
         }
+        
+        
     }
+    
+    @GetMapping("/ByCompany/{companyId}")
+    public ResponseEntity<?> getProjectsByCompanyId(@PathVariable Integer companyId) {
+        try {
+            if (companyId == null || companyId <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "Invalid companyId. Must be greater than 0.", null));
+            }
+
+            List<AuditionNewProjectWebModel> projects = projectService.getProjectsByCompanyId(companyId);
+
+            if (projects.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new Response(0, "No Audition found for companyId: " + companyId, null));
+            }
+
+            return ResponseEntity.ok(new Response(1, "Success", projects));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(0, "Something went wrong while fetching projects.", null));
+        }}
 }

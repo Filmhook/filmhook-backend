@@ -36,6 +36,7 @@ public interface AuditionNewService {
 	
 	void updateExpiredPaymentsAndProjects();
 	AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
+	List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId);
 }
 
 

@@ -1215,7 +1215,62 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	    return AuditionCompanyConverter.toDto(savedProject);
 	}
 
+	  @Override
+	    public List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId) {
+	        // Fetch projects belonging to this company
+	        List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
 
+	        // 🔹 Fetch company logo 
+	        List<FileOutputWebModel> companyLogos = mediaFilesService
+	                .getMediaFilesByCategoryAndRefId(
+	                        MediaFileCategory.Audition, 
+	                        companyId
+	                );
+
+	        return projects.stream()
+	                .map(project -> {
+	                    // Fetch teamNeeds for this project where status = true
+	                    List<AuditionNewTeamNeed> activeTeamNeeds = teamNeedRepository.findAllByProjectId(project.getId())
+	                            .stream()
+	                            .filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
+	                            .collect(Collectors.toList());
+
+	                    // If no active teamNeeds → skip this project
+	                    if (activeTeamNeeds.isEmpty()) {
+	                        return null;
+	                    }
+
+	                    // Convert entity → DTO
+	                    AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+
+	                    // Set only active teamNeeds
+	                    dto.setTeamNeeds(
+	                            activeTeamNeeds.stream()
+	                                    .map(AuditionCompanyConverter::toDto)
+	                                    .collect(Collectors.toList())
+	                    );
+
+	                    // 🔹 Set profile pictures for project
+	                    List<FileOutputWebModel> profilePictures = mediaFilesService
+	                            .getMediaFilesByCategoryAndRefId(
+	                                    MediaFileCategory.AuditionProfilePicture,
+	                                    project.getId()
+	                            );
+
+	                    if (profilePictures != null && !profilePictures.isEmpty()) {
+	                        dto.setProfilePictureFilesOutput(profilePictures);
+	                    }
+
+	                    // 🔹 Attach company logo (same for all projects in this company)
+	                    if (companyLogos != null && !companyLogos.isEmpty()) {
+	                        dto.setLogoFiles(companyLogos); // 👈 add this field in DTO
+	                    }
+
+	                    return dto;
+	                })
+	                .filter(Objects::nonNull)
+	                .collect(Collectors.toList());
+	    }
 }
 
 
