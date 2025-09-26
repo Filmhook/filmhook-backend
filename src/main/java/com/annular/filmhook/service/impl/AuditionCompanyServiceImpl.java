@@ -239,63 +239,73 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	@Override
 	public AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request) {
 
-		// 1️⃣ Validate owner
-		User owner = userRepository.findById(request.getOwnerId())
-				.orElseThrow(() -> new RuntimeException("Owner not found"));
+	    // Validate owner
+	    User owner = userRepository.findById(request.getOwnerId())
+	            .orElseThrow(() -> new RuntimeException("Owner not found"));
 
-		// 2️⃣ Validate company
-		AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
-				.orElseThrow(() -> new RuntimeException("Company not found"));
+	    // Validate company
+	    AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
+	            .orElseThrow(() -> new RuntimeException("Company not found"));
 
-		// 3️⃣ Validate assigned user
-		User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
-				.orElseThrow(() -> new RuntimeException(
-						"Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
-						));
+	    //  Validate assigned user
+	    User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
+	            .orElseThrow(() -> new RuntimeException(
+	                    "Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
+	            ));
 
-		// 4️⃣ Check if role exists (even soft-deleted)
-		Optional<AuditionUserCompanyRole> existingRoleOpt =
-				roleRepository.findByCompanyAndAssignedUser(company, assignedUser);
+	    //  Check if role exists (even soft-deleted)
+	    Optional<AuditionUserCompanyRole> existingRoleOpt =
+	            roleRepository.findByCompanyAndAssignedUser(company, assignedUser);
 
-		if (existingRoleOpt.isPresent()) {
-			AuditionUserCompanyRole existingRole = existingRoleOpt.get();
+	    if (existingRoleOpt.isPresent()) {
+	        AuditionUserCompanyRole existingRole = existingRoleOpt.get();
 
-			if (Boolean.TRUE.equals(existingRole.getStatus())) {
-				// Active → block
-				throw new RuntimeException("Access already assigned to this user for the given company");
-			} else {
-				// Inactive → reactivate instead of creating new
-				existingRole.setStatus(true);
-				existingRole.setDesignation(request.getDesignation());
-				existingRole.setAccessKey(
-						(request.getAccessKey() != null && !request.getAccessKey().isBlank())
-						? request.getAccessKey()
-								: UUID.randomUUID().toString().substring(0, 8).toUpperCase()
-						);
-				existingRole.setCreatedBy(request.getOwnerId());
-				existingRole.setCreatedDate(LocalDateTime.now());
+	        // Case A: Active & not deleted → block
+	        if (Boolean.TRUE.equals(existingRole.getStatus()) && Boolean.FALSE.equals(existingRole.getDeleted())) {
+	            throw new RuntimeException("Access already assigned to this user for the given company");
+	        }
 
-				AuditionUserCompanyRole reactivated = roleRepository.save(existingRole);
-				sendAssignAccessEmails(owner, assignedUser, company, reactivated.getAccessKey(), reactivated.getDesignation());
+	        // Case B: Inactive & not deleted → reactivate
+	        if (Boolean.FALSE.equals(existingRole.getStatus()) && Boolean.FALSE.equals(existingRole.getDeleted())) {
+	            existingRole.setStatus(true);
+	            existingRole.setDesignation(request.getDesignation());
+	            existingRole.setAccessKey(
+	                    (request.getAccessKey() != null && !request.getAccessKey().isBlank())
+	                            ? request.getAccessKey()
+	                            : UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+	            );
+	            existingRole.setUpdatedBy(request.getOwnerId());
+	            existingRole.setUpdatedDate(LocalDateTime.now());
 
-				return AuditionCompanyConverter.toDto(reactivated);
-			}
-		}
+	            AuditionUserCompanyRole reactivated = roleRepository.save(existingRole);
+	            sendAssignAccessEmails(owner, assignedUser, company, reactivated.getAccessKey(), reactivated.getDesignation());
 
-		// 5️⃣ Create new role if none exists
-		String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
-				? request.getAccessKey()
-						: UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+	            return AuditionCompanyConverter.toDto(reactivated);
+	        }
 
-		AuditionUserCompanyRole newRole = AuditionCompanyConverter
-				.toEntity(request, owner, assignedUser, company, accessKey);
+	        // Case C: Deleted → skip reactivation and create new instead
+	        if (Boolean.TRUE.equals(existingRole.getDeleted())) {
+	           
+	        }
+	    }
 
-		newRole = roleRepository.save(newRole);
-		sendAssignAccessEmails(owner, assignedUser, company, accessKey, request.getDesignation());
+	    // Create new role if none exists OR deleted = true
+	    String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
+	            ? request.getAccessKey()
+	            : UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-		return AuditionCompanyConverter.toDto(newRole);
+	    AuditionUserCompanyRole newRole = AuditionCompanyConverter
+	            .toEntity(request, owner, assignedUser, company, accessKey);
+
+	    newRole.setDeleted(false);
+	    newRole.setStatus(true);
+
+	    newRole = roleRepository.save(newRole);
+
+	    sendAssignAccessEmails(owner, assignedUser, company, accessKey, request.getDesignation());
+
+	    return AuditionCompanyConverter.toDto(newRole);
 	}
-
 
 
 	@Async
@@ -327,7 +337,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 			User loggedUser) {
 
 	    AuditionUserCompanyRole role = roleRepository
-	            .findByFilmHookCodeAndDesignationAndAccessKeyIgnoreCaseAndStatusTrue(filmHookCode, designation, accessCode)
+	            .findByFilmHookCodeAndDesignationAndAccessKeyIgnoreCaseAndStatusTrueAndDeletedFalse(filmHookCode, designation, accessCode)
 	            .orElseThrow(() -> new RuntimeException("No active role found matching FilmHookCode, designation, and access code"));
 		if (role.getStatus() == null || !role.getStatus()) {
 			throw new RuntimeException("Access revoked or inactive for this company");

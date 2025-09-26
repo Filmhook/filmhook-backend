@@ -35,7 +35,7 @@ public class AuditionUserCompanyRole {
 
     private String designation;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String accessKey;
 
     private Boolean status; // ACTIVE, INACTIVE, REVOKED
