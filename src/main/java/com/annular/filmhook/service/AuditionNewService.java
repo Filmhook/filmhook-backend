@@ -1,13 +1,15 @@
 package com.annular.filmhook.service;
 import java.util.List;
+import org.springframework.lang.Nullable;
 
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
+
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
-import com.annular.filmhook.model.AuditionNewProject;
+
 import com.annular.filmhook.model.AuditionPayment;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
@@ -36,7 +38,7 @@ public interface AuditionNewService {
 	
 	void updateExpiredPaymentsAndProjects();
 	AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
-	List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId);
+	List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status);
 }
 
 

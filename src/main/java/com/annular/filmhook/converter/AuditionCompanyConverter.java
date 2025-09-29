@@ -1,23 +1,23 @@
-package com.annular.filmhook.converter;
-
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Value;
-
-import com.annular.filmhook.model.*;
-import com.annular.filmhook.repository.FilmSubProfessionRepository;
-import com.annular.filmhook.service.MediaFilesService;
-import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
-import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
-import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
-import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
-import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
-import com.annular.filmhook.webmodel.FileInputWebModel;
-
-public class AuditionCompanyConverter {
+	package com.annular.filmhook.converter;
+	
+	
+	import java.time.LocalDateTime;
+	import java.util.List;
+	import java.util.stream.Collectors;
+	
+	import org.springframework.beans.factory.annotation.Value;
+	
+	import com.annular.filmhook.model.*;
+	import com.annular.filmhook.repository.FilmSubProfessionRepository;
+	import com.annular.filmhook.service.MediaFilesService;
+	import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+	import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
+	import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
+	import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
+	import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
+	import com.annular.filmhook.webmodel.FileInputWebModel;
+	
+	public class AuditionCompanyConverter {
 
 	// Company → DTO
 	public static AuditionCompanyDetails toCompanyEntity(AuditionCompanyDetailsDTO dto, User user) {
@@ -207,6 +207,7 @@ public class AuditionCompanyConverter {
 		dto.setShootStartDate(entity.getShootStartDate());
 		dto.setShootEndDate(entity.getShootEndDate());
 		dto.setAuditionFullAddress(entity.getAuditionAddress());
+		dto.setStatus(entity.getStatus());
 		dto.setLocationWebsite(entity.getLocationWebsite());
 		dto.setInterNationalShootLocations(entity.getInterNationalShootLocations());
 		dto.setNationalShootLocations(entity.getNationalShootLocations());

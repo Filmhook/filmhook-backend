@@ -25,6 +25,12 @@ public interface AuditionPaymentRepository extends JpaRepository<AuditionPayment
 	    );
 	    
 	    Optional<AuditionPayment> findTopByProjectIdOrderByExpiryDateTimeDesc(Integer projectId);
+	
+	    List<AuditionPayment> findAllByProjectId(Integer projectId);
+
+
+	    List<AuditionPayment> findAllByProjectIdAndPaymentStatus(Integer projectId, String paymentStatus);
+	
 }
 
 

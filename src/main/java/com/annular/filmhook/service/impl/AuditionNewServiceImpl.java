@@ -1,7 +1,8 @@
 package com.annular.filmhook.service.impl;
 
 import java.io.InputStream;
-
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -35,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -1024,14 +1027,22 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		// Total amount including GST
 		double amountForCalculation = discountedAmount != null ? discountedAmount : baseAmount;
 		double totalAmount = amountForCalculation + (amountForCalculation * gstPercentage / 100.0);
+		
+		
+	    BigDecimal bdBaseAmount = BigDecimal.valueOf(baseAmount).setScale(2, RoundingMode.HALF_UP);
+	    BigDecimal bdDiscountedAmount = discountedAmount != null ? 
+	            BigDecimal.valueOf(discountedAmount).setScale(2, RoundingMode.HALF_UP) : null;
+	    BigDecimal bdFinalRatePerPost = finalRatePerPost != null ? 
+	            BigDecimal.valueOf(finalRatePerPost).setScale(2, RoundingMode.HALF_UP) : null;
+	    BigDecimal bdTotalAmount = BigDecimal.valueOf(totalAmount).setScale(2, RoundingMode.HALF_UP);
 
-		// Role breakdown
-		Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
-				.collect(Collectors.toMap(
-						tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
-								AuditionNewTeamNeed::getCount,
-								Integer::sum
-						));
+	    // Role breakdown
+	    Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
+	            .collect(Collectors.toMap(
+	                    tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
+	                    AuditionNewTeamNeed::getCount,
+	                    Integer::sum
+	            ));
 
 		// Build response DTO
 		return AuditionPaymentDTO.builder()
@@ -1214,63 +1225,81 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	    // ✅ Return DTO, not entity
 	    return AuditionCompanyConverter.toDto(savedProject);
 	}
+	
+	
+	@Override
+	public List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status) {
+	    List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
 
-	  @Override
-	    public List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId) {
-	        // Fetch projects belonging to this company
-	        List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
+	    List<FileOutputWebModel> companyLogos = mediaFilesService
+	            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, companyId);
 
-	        // 🔹 Fetch company logo 
-	        List<FileOutputWebModel> companyLogos = mediaFilesService
-	                .getMediaFilesByCategoryAndRefId(
-	                        MediaFileCategory.Audition, 
-	                        companyId
+	    return projects.stream()
+	            .map(project -> {
+	                // 🔹 Get latest payment (if any)
+	                Optional<AuditionPayment> paymentOpt =
+	                        paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
+
+	                String paymentStatus = paymentOpt.map(AuditionPayment::getPaymentStatus)
+	                                                 .orElse("No Payment");
+
+	                // 🔹 If status filter is given, skip if it doesn’t match
+	                if (status != null && !status.isEmpty() && !status.equalsIgnoreCase(paymentStatus)) {
+	                    return null;
+	                }
+
+	                // 🔹 Only include projects with active teamNeeds
+	                List<AuditionNewTeamNeed> activeTeamNeeds = teamNeedRepository.findAllByProjectId(project.getId())
+	                        .stream()
+	                        .filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
+	                        .collect(Collectors.toList());
+
+	                if (activeTeamNeeds.isEmpty()) {
+	                    return null;
+	                }
+
+	                // 🔹 Convert entity → DTO
+	                AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+
+	                // Attach expiry date/time if available
+	                paymentOpt.ifPresent(payment -> {
+	                    LocalDateTime expiry = payment.getExpiryDateTime();
+	                    if (expiry != null) {
+	                        ZonedDateTime istTime = expiry.atZone(ZoneId.of("UTC"))
+	                                .withZoneSameInstant(ZoneId.of("Asia/Kolkata"));
+	                        dto.setExpiryTime(istTime.format(DateTimeFormatter.ofPattern("hh:mm a")));
+	                        dto.setExpiryDate(istTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+	                    }
+	                });
+
+	                dto.setPaymentStatus(paymentStatus);
+
+	                // Attach teamNeeds
+	                dto.setTeamNeeds(
+	                        activeTeamNeeds.stream()
+	                                .map(AuditionCompanyConverter::toDto)
+	                                .collect(Collectors.toList())
 	                );
 
-	        return projects.stream()
-	                .map(project -> {
-	                    // Fetch teamNeeds for this project where status = true
-	                    List<AuditionNewTeamNeed> activeTeamNeeds = teamNeedRepository.findAllByProjectId(project.getId())
-	                            .stream()
-	                            .filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
-	                            .collect(Collectors.toList());
+	                // Attach profile pictures
+	                List<FileOutputWebModel> profilePictures = mediaFilesService
+	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
+	                if (profilePictures != null && !profilePictures.isEmpty()) {
+	                    dto.setProfilePictureFilesOutput(profilePictures);
+	                }
 
-	                    // If no active teamNeeds → skip this project
-	                    if (activeTeamNeeds.isEmpty()) {
-	                        return null;
-	                    }
+	                // Attach company logo
+	                if (companyLogos != null && !companyLogos.isEmpty()) {
+	                    dto.setLogoFiles(companyLogos);
+	                }
 
-	                    // Convert entity → DTO
-	                    AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+	                return dto;
+	            })
+	            .filter(Objects::nonNull)
+	            .collect(Collectors.toList());
+	}
 
-	                    // Set only active teamNeeds
-	                    dto.setTeamNeeds(
-	                            activeTeamNeeds.stream()
-	                                    .map(AuditionCompanyConverter::toDto)
-	                                    .collect(Collectors.toList())
-	                    );
 
-	                    // 🔹 Set profile pictures for project
-	                    List<FileOutputWebModel> profilePictures = mediaFilesService
-	                            .getMediaFilesByCategoryAndRefId(
-	                                    MediaFileCategory.AuditionProfilePicture,
-	                                    project.getId()
-	                            );
-
-	                    if (profilePictures != null && !profilePictures.isEmpty()) {
-	                        dto.setProfilePictureFilesOutput(profilePictures);
-	                    }
-
-	                    // 🔹 Attach company logo (same for all projects in this company)
-	                    if (companyLogos != null && !companyLogos.isEmpty()) {
-	                        dto.setLogoFiles(companyLogos); // 👈 add this field in DTO
-	                    }
-
-	                    return dto;
-	                })
-	                .filter(Objects::nonNull)
-	                .collect(Collectors.toList());
-	    }
 }
 
 
