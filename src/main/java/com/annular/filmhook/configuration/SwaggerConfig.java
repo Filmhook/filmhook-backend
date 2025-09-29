@@ -16,7 +16,7 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("Film-hook Mediaapps Pvt Ltd- API")
                         .version("1.0.0")
-                        .description("API documentation for my project")
+                        .description("API DOCUMENTATION")
                         .contact(new Contact()
                                 .name("Dinesh & Harshitha")
                                 .email("dineshfilmhook@gmail.com"))

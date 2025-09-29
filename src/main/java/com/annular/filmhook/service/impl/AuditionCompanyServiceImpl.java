@@ -478,7 +478,6 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 
 		companyRepository.save(company);
 	}
-
 	@Override
     public List<AuditionUserCompanyRoleDTO> getAssignedUsersByOwnerAndCompany(Integer ownerId, Integer companyId) {
         List<AuditionUserCompanyRole> roles =
@@ -515,6 +514,23 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	    roleRepository.save(role);
 	}
 
-	
+
+	 @Override
+	    public List<AuditionCompanyDetailsDTO> getCompaniesForLoggedInUser(Integer userId) {
+	        List<AuditionCompanyDetails> companies = companyRepository.findCompaniesForUser(userId);
+
+	        return companies.stream().map(company -> {
+	            List<FileOutputWebModel> logoFiles =
+	                    mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+
+	            return AuditionCompanyDetailsDTO.builder()
+	                    .id(company.getId())
+	                    .companyName(company.getCompanyName())
+	                    .logoFilesOutput(logoFiles)
+	                    .build();
+	        }).collect(Collectors.toList());
+	    }
+
+
 } 
 

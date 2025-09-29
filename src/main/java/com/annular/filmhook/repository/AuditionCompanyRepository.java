@@ -2,6 +2,8 @@ package com.annular.filmhook.repository;
 
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.User;
@@ -19,6 +21,12 @@ public interface AuditionCompanyRepository extends JpaRepository<AuditionCompany
 
     List<AuditionCompanyDetails> findByVerificationStatusAndStatusAndDeletedFalse(
             AuditionCompanyDetails.VerificationStatus verificationStatus, Boolean status);
+    
+    @Query("SELECT DISTINCT c " +
+            "FROM AuditionCompanyDetails c " +
+            "LEFT JOIN AuditionUserCompanyRole r ON r.company = c " +
+            "WHERE c.user.id = :userId OR r.assignedUser.id = :userId")
+     List<AuditionCompanyDetails> findCompaniesForUser(@Param("userId") Integer userId);
 
 
 
