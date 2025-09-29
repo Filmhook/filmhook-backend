@@ -184,6 +184,18 @@ public class AuditionCompanyController {
         companyService.softDeleteCompany(companyId);
         return ResponseEntity.ok(new Response(1, "Success","Company deleted successfully"));
     }
+    
+    @GetMapping("/companyDetails")
+    public ResponseEntity<List<AuditionCompanyDetailsDTO>> getMyCompanies(
+            @AuthenticationPrincipal UserDetailsImpl loggedInUser) {
+
+        Integer userId = loggedInUser.getId(); // from your custom UserDetailsImpl
+        List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesForLoggedInUser(userId);
+
+        return ResponseEntity.ok(companies);
+    }
+    
+    
 
     
 }

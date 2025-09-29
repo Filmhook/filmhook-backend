@@ -50,7 +50,7 @@ public class AuditionNewController {
     @Autowired
     private AuditionNewService projectService;
     @Autowired
-  private UserRepository userRepository;
+    private UserRepository userRepository;
 
     
     @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
