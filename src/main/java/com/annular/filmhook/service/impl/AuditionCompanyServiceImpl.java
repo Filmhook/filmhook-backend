@@ -503,7 +503,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	@Transactional
 	@Override
 	public void deleteUserAccess(List<Integer> roleIds) {
-		  Integer userId = userDetails.userInfo().getId(); // currently logged-in user
+		  Integer userId = userDetails.userInfo().getId();
 
 		    for (Integer roleId : roleIds) {
 		        AuditionUserCompanyRole role = roleRepository.findById(roleId)

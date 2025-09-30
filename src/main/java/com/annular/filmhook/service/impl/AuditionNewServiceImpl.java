@@ -297,7 +297,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
 
-		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalse(companyId);
+		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
 
 		// ✅ Fetch company logos (once)
 		List<FileOutputWebModel> companyLogos = mediaFilesService
@@ -1229,7 +1229,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status) {
-		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalse(companyId);
+		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
 
 
 	    List<FileOutputWebModel> companyLogos = mediaFilesService
