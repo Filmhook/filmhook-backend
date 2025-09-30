@@ -365,17 +365,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 								int totalViews = auditionViewRepository.countByTeamNeedId(tn.getId());
 								tnDto.setTotalViews(totalViews);
-								Optional<FilmProfession> professionOpt = filmProfessionRepository.findById(tn.getProfession().getFilmProfessionId());
-								Optional<FilmSubProfession> subProfessionOpt = filmSubProfessionRepository.findById(tn.getSubProfession().getSubProfessionId());
-
-								String professionName = professionOpt.map(FilmProfession::getProfessionName)
-										.orElse("Unknown Profession");
-
-								String subProfessionName = subProfessionOpt.map(FilmSubProfession::getSubProfessionName)
-										.orElse("Unknown SubProfession");
-
-								tnDto.setProfessionName(professionName);
-								tnDto.setSubProfessionName(subProfessionName);
+								
 
 								return tnDto;
 							})

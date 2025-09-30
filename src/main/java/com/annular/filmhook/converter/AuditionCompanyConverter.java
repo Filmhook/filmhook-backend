@@ -1,23 +1,27 @@
-	package com.annular.filmhook.converter;
-	
-	
-	import java.time.LocalDateTime;
-	import java.util.List;
-	import java.util.stream.Collectors;
-	
-	import org.springframework.beans.factory.annotation.Value;
-	
-	import com.annular.filmhook.model.*;
-	import com.annular.filmhook.repository.FilmSubProfessionRepository;
-	import com.annular.filmhook.service.MediaFilesService;
-	import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
-	import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
-	import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
-	import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
-	import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
-	import com.annular.filmhook.webmodel.FileInputWebModel;
-	
-	public class AuditionCompanyConverter {
+package com.annular.filmhook.converter;
+
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+
+import com.annular.filmhook.model.*;
+import com.annular.filmhook.repository.FilmProfessionRepository;
+import com.annular.filmhook.repository.FilmSubProfessionRepository;
+import com.annular.filmhook.service.MediaFilesService;
+import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
+import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
+import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
+import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
+import com.annular.filmhook.webmodel.FileInputWebModel;
+
+public class AuditionCompanyConverter {
+
 
 	// Company → DTO
 	public static AuditionCompanyDetails toCompanyEntity(AuditionCompanyDetailsDTO dto, User user) {
@@ -260,11 +264,13 @@
 		dto.setDateOfShoot(entity.getDateOfShoot());
 		if (entity.getSubProfession() != null) {
 			dto.setSubProfessionId(entity.getSubProfession().getSubProfessionId());
+			dto.setSubProfessionName(entity.getSubProfession().getSubProfessionName());
+			;
 		}
 		if (entity.getProfession() != null) {
 			dto.setProfessionId(entity.getProfession().getFilmProfessionId());
+			dto.setProfessionName(entity.getProfession().getProfessionName());
 		}
-
 
 		return dto;
 
@@ -286,107 +292,107 @@
 			mediaFilesService.saveMediaFiles(fileInputWebModel, user);
 		}
 	}
-	
+
 	public static void handleProjectProfilePictureFile1(
-	        AuditionNewProjectWebModel dto,
-	        AuditionNewProject savedEntity,
-	        User user,
-	        MediaFilesService mediaFilesService) {
+			AuditionNewProjectWebModel dto,
+			AuditionNewProject savedEntity,
+			User user,
+			MediaFilesService mediaFilesService) {
 
-	    if (dto != null && dto.getProfilePictureFiles() != null && !dto.getProfilePictureFiles().isEmpty()) {
+		if (dto != null && dto.getProfilePictureFiles() != null && !dto.getProfilePictureFiles().isEmpty()) {
 
-	        // ✅ Clear old files 
-	    	   mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
-	                   MediaFileCategory.AuditionProfilePicture,
-	                   List.of(savedEntity.getId()) // wrap single ID in a list
-	           );
-	        // ✅ Save new files
-	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-	                .userId(user.getUserId())
-	                .category(MediaFileCategory.AuditionProfilePicture)
-	                .categoryRefId(savedEntity.getId())
-	                .files(dto.getProfilePictureFiles())
-	                .build();
+			// ✅ Clear old files 
+			mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
+					MediaFileCategory.AuditionProfilePicture,
+					List.of(savedEntity.getId()) // wrap single ID in a list
+					);
+			// ✅ Save new files
+			FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+					.userId(user.getUserId())
+					.category(MediaFileCategory.AuditionProfilePicture)
+					.categoryRefId(savedEntity.getId())
+					.files(dto.getProfilePictureFiles())
+					.build();
 
-	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
-	    }
+			mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+		}
 	}
 
 
 
 
-	
+
 	// ✅ Update Project Entity from DTO (no overwrite of audit fields)
 	public static void updateEntityFromDto(
-	        AuditionNewProject entity,
-	        AuditionNewProjectWebModel dto,
-	        AuditionCompanyDetails company,
-	        Integer userId,
-	        FilmSubProfessionRepository subProfessionRepo) {
+			AuditionNewProject entity,
+			AuditionNewProjectWebModel dto,
+			AuditionCompanyDetails company,
+			Integer userId,
+			FilmSubProfessionRepository subProfessionRepo) {
 
-	    entity.setProductionCompanyName(dto.getProductionCompanyName());
-	    entity.setProjectTitle(dto.getProjectTitle());
-	    entity.setCountry(dto.getCountry());
-	    entity.setIndustries(dto.getIndustries());
-	    entity.setDubbedCountry(dto.getDubbedCountry());
-	    entity.setDubbedIndustries(dto.getDubbedIndustries());
-	    entity.setPlatforms(dto.getPlatforms());
-	    entity.setMovieTypes(dto.getMovieTypes());
-	    entity.setThemeMovieTypes(dto.getThemeMovieTypes());
-	    entity.setAuditionAddress(dto.getAuditionFullAddress());
-	    entity.setLocationWebsite(dto.getLocationWebsite());
-	    entity.setInterNationalShootLocations(dto.getInterNationalShootLocations());
-	    entity.setNationalShootLocations(dto.getNationalShootLocations());
-	    entity.setShootStartDate(dto.getShootStartDate());
-	    entity.setShootEndDate(dto.getShootEndDate());
-	    entity.setProjectDescription(dto.getProjectDescription());
-	    entity.setAuditionProfilePicture(dto.getAuditionProfilePicture());
-	    entity.setCompany(company);
+		entity.setProductionCompanyName(dto.getProductionCompanyName());
+		entity.setProjectTitle(dto.getProjectTitle());
+		entity.setCountry(dto.getCountry());
+		entity.setIndustries(dto.getIndustries());
+		entity.setDubbedCountry(dto.getDubbedCountry());
+		entity.setDubbedIndustries(dto.getDubbedIndustries());
+		entity.setPlatforms(dto.getPlatforms());
+		entity.setMovieTypes(dto.getMovieTypes());
+		entity.setThemeMovieTypes(dto.getThemeMovieTypes());
+		entity.setAuditionAddress(dto.getAuditionFullAddress());
+		entity.setLocationWebsite(dto.getLocationWebsite());
+		entity.setInterNationalShootLocations(dto.getInterNationalShootLocations());
+		entity.setNationalShootLocations(dto.getNationalShootLocations());
+		entity.setShootStartDate(dto.getShootStartDate());
+		entity.setShootEndDate(dto.getShootEndDate());
+		entity.setProjectDescription(dto.getProjectDescription());
+		entity.setAuditionProfilePicture(dto.getAuditionProfilePicture());
+		entity.setCompany(company);
 
-	    // Do NOT reset createdBy/createdOn
-	    entity.setUpdatedBy(userId);
-	    entity.setUpdatedDate(LocalDateTime.now());
+		// Do NOT reset createdBy/createdOn
+		entity.setUpdatedBy(userId);
+		entity.setUpdatedDate(LocalDateTime.now());
 	}
 	public static void updateTeamNeedEntity(
-	        AuditionNewTeamNeed entity,
-	        AuditionNewTeamNeedWebModel dto,
-	        FilmSubProfessionRepository subProfessionRepo) {
+			AuditionNewTeamNeed entity,
+			AuditionNewTeamNeedWebModel dto,
+			FilmSubProfessionRepository subProfessionRepo) {
 
-	    entity.setCount(dto.getCount());
-	    entity.setCharacterName(dto.getCharacterName());
-	    entity.setGender(dto.getGender());
-	    entity.setAgeFrom(dto.getAgeFrom());
-	    entity.setAgeTo(dto.getAgeTo());
-	    entity.setEthnicity(dto.getEthnicity());
-	    entity.setHeightMin(dto.getHeightMin());
-	    entity.setHeightMax(dto.getHeightMax());
-	    entity.setBodyType(dto.getBodyType());
-	    entity.setRegionalDemonyms(dto.getRegionalDemonyms());
-	    entity.setOpportunity(dto.getOpportunity());
-	    entity.setExperienceYears(dto.getExperienceYears());
-	    entity.setRolesResponsibilities(dto.getRolesResponsibilities());
-	    entity.setSalary(dto.getSalary());
-	    entity.setSalaryType(dto.getSalaryType());
-	    entity.setPaymentMode(dto.getPaymentMode());
-	    entity.setWorkDays(dto.getWorkDays());
-	    entity.setFacilitiesProvided(dto.getFacilitiesProvided());
-	    entity.setDateOfShoot(dto.getDateOfShoot());
+		entity.setCount(dto.getCount());
+		entity.setCharacterName(dto.getCharacterName());
+		entity.setGender(dto.getGender());
+		entity.setAgeFrom(dto.getAgeFrom());
+		entity.setAgeTo(dto.getAgeTo());
+		entity.setEthnicity(dto.getEthnicity());
+		entity.setHeightMin(dto.getHeightMin());
+		entity.setHeightMax(dto.getHeightMax());
+		entity.setBodyType(dto.getBodyType());
+		entity.setRegionalDemonyms(dto.getRegionalDemonyms());
+		entity.setOpportunity(dto.getOpportunity());
+		entity.setExperienceYears(dto.getExperienceYears());
+		entity.setRolesResponsibilities(dto.getRolesResponsibilities());
+		entity.setSalary(dto.getSalary());
+		entity.setSalaryType(dto.getSalaryType());
+		entity.setPaymentMode(dto.getPaymentMode());
+		entity.setWorkDays(dto.getWorkDays());
+		entity.setFacilitiesProvided(dto.getFacilitiesProvided());
+		entity.setDateOfShoot(dto.getDateOfShoot());
 
-	    // update profession/subProfession
-	    if (dto.getProfessionId() != null) {
-	        FilmProfession profession = new FilmProfession();
-	        profession.setFilmProfessionId(dto.getProfessionId());
-	        entity.setProfession(profession);
-	    }
+		// update profession/subProfession
+		if (dto.getProfessionId() != null) {
+			FilmProfession profession = new FilmProfession();
+			profession.setFilmProfessionId(dto.getProfessionId());
+			entity.setProfession(profession);
+		}
 
-	    if (dto.getSubProfessionId() != null) {
-	        FilmSubProfession subProfession = subProfessionRepo.findById(dto.getSubProfessionId())
-	                .orElseThrow(() -> new RuntimeException("SubProfession not found"));
-	        entity.setSubProfession(subProfession);
-	        entity.setRole(subProfession.getSubProfessionName());
-	    }
+		if (dto.getSubProfessionId() != null) {
+			FilmSubProfession subProfession = subProfessionRepo.findById(dto.getSubProfessionId())
+					.orElseThrow(() -> new RuntimeException("SubProfession not found"));
+			entity.setSubProfession(subProfession);
+			entity.setRole(subProfession.getSubProfessionName());
+		}
 
-	    entity.setStatus(true); // mark active on update
+		entity.setStatus(true); // mark active on update
 	}
 
 
@@ -427,12 +433,12 @@
 				.status(entity.getStatus())
 				.isOwner(false)
 				.createdDate(entity.getCreatedDate())
-			      .assignedUserName(entity.getAssignedUser() != null ? entity.getAssignedUser().getFirstName() + " " + entity.getAssignedUser().getLastName() : null)
-		            .assignedUserEmail(entity.getAssignedUser() != null ? entity.getAssignedUser().getEmail() : null)
-		            .ownerName(entity.getOwner() != null ? entity.getOwner().getFirstName() + " " + entity.getOwner().getLastName() : null)
-		            .ownerEmail(entity.getOwner() != null ? entity.getOwner().getEmail() : null)
-		            .build();
-				
+				.assignedUserName(entity.getAssignedUser() != null ? entity.getAssignedUser().getFirstName() + " " + entity.getAssignedUser().getLastName() : null)
+				.assignedUserEmail(entity.getAssignedUser() != null ? entity.getAssignedUser().getEmail() : null)
+				.ownerName(entity.getOwner() != null ? entity.getOwner().getFirstName() + " " + entity.getOwner().getLastName() : null)
+				.ownerEmail(entity.getOwner() != null ? entity.getOwner().getEmail() : null)
+				.build();
+
 	}
 
 	public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity, User loggedUser) {
@@ -503,7 +509,7 @@
 		dto.setPhoneNumber(entity.getUser().getPhoneNumber());
 		return dto;
 	}
-	
-	
+
+
 
 }
