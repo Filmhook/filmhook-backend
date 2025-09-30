@@ -22,10 +22,10 @@ public interface AuditionCompanyService {
 	 AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request);
 	 Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode);	 
 	 AuditionCompanyDetailsDTO getCompanyById(Integer companyId);
-	 void removeAccess(Integer roleId);
+	 void removeAccess(List<Integer> roleId);
 	 void softDeleteCompany(Integer companyId);
 	 List<AuditionUserCompanyRoleDTO> getAssignedUsersByOwnerAndCompany(Integer ownerId, Integer companyId);
-	 void deleteUserAccess(Integer roleId);
+	 void deleteUserAccess(List<Integer> roleIds) ;
 	 List<AuditionCompanyDetailsDTO> getCompaniesForLoggedInUser(Integer userId);
 
 

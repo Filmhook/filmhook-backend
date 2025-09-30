@@ -394,5 +394,15 @@ public class AuditionNewController {
                     .body(new Response(0, "Something went wrong while fetching projects.", null));
         }
     }
+    
+    
+    @DeleteMapping("/deleteProject")
+    public ResponseEntity<Response> deleteProject(
+    		@RequestParam Integer projectId,
+            @RequestParam Integer userId) {
+
+        String message = projectService.softDeleteProject(projectId, userId);
+        return ResponseEntity.ok(new Response(1, message, null));
+    }
 
 }

@@ -25,4 +25,5 @@ public class AuditionUserCompanyRoleDTO {
     private String assignedUserEmail;
     private String ownerName;
     private String ownerEmail;
+    private String assignedUserProfilePicture;
 }

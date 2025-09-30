@@ -26,6 +26,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.service.AuditionCompanyService;
 import com.annular.filmhook.service.MediaFilesService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
@@ -47,7 +48,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	private  UserDetails userDetails;
 	@Autowired
 	private AuditionUserCompanyRoleRepository roleRepository;
-
+	@Autowired
+	  private UserService userService;
 	@Override
 	public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 		User user = userRepository.findById(dto.getUserId())
@@ -441,17 +443,25 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	}
 
 	@Override
-	public void removeAccess(Integer roleId) {
-		AuditionUserCompanyRole role = roleRepository.findById(roleId)
-				.orElseThrow(() -> new RuntimeException("Access not found with ID: " + roleId));
+	public void removeAccess(List<Integer> roleIds) {
+		  Integer userId = userDetails.userInfo().getId(); // currently logged-in user
 
-		if (!role.getStatus()) {
-			throw new RuntimeException("Access already removed");
-		}
+		    for (Integer roleId : roleIds) {
+		        AuditionUserCompanyRole role = roleRepository.findById(roleId)
+		                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
+
+	
+		    if (Boolean.TRUE.equals(role.getDeleted())) {
+		        throw new RuntimeException("Access is already deleted for this user.");
+		    }
+
+		    if (!role.getOwner().getUserId().equals(userId)) {
+		        throw new RuntimeException("You are not authorized to delete this access.");
+		    }
 
 		role.setStatus(false);
 		roleRepository.save(role);
-	}
+	}}
 
 	@Override
 	public void softDeleteCompany(Integer companyId) {
@@ -478,25 +488,26 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 
 		companyRepository.save(company);
 	}
-	@Override
-    public List<AuditionUserCompanyRoleDTO> getAssignedUsersByOwnerAndCompany(Integer ownerId, Integer companyId) {
-        List<AuditionUserCompanyRole> roles =
-                roleRepository.findByOwner_UserIdAndCompany_IdAndDeletedFalse(ownerId, companyId);
+@Override
+	public List<AuditionUserCompanyRoleDTO> getAssignedUsersByOwnerAndCompany(Integer ownerId, Integer companyId) {
+	    List<AuditionUserCompanyRole> roles =
+	            roleRepository.findByOwner_UserIdAndCompany_IdAndDeletedFalse(ownerId, companyId);
 
-        return roles.stream()
-                .map(AuditionCompanyConverter::toDto)
-                .collect(Collectors.toList());
-    }
+	    return roles.stream()
+	            .map(role -> AuditionCompanyConverter.toDto(role, userService))
+	            .collect(Collectors.toList());
+	}
+
 	
 	
 	@Transactional
 	@Override
-	public void deleteUserAccess(Integer roleId) {
-		   Integer userId = userDetails.userInfo().getId(); // currently logged-in user
+	public void deleteUserAccess(List<Integer> roleIds) {
+		  Integer userId = userDetails.userInfo().getId(); // currently logged-in user
 
-		   
-		    AuditionUserCompanyRole role = roleRepository.findById(roleId)
-		            .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
+		    for (Integer roleId : roleIds) {
+		        AuditionUserCompanyRole role = roleRepository.findById(roleId)
+		                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
 
 	
 		    if (Boolean.TRUE.equals(role.getDeleted())) {
@@ -512,6 +523,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	    role.setUpdatedDate(LocalDateTime.now());
 
 	    roleRepository.save(role);
+		    }
 	}
 
 

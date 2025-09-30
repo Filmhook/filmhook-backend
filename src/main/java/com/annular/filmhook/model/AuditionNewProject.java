@@ -101,6 +101,13 @@ public class AuditionNewProject {
     private Integer updatedBy;
     private LocalDateTime createdOn;
     private LocalDateTime updatedDate;
+    
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
+    
+    private LocalDateTime deletedOn;
+    private Integer deletedBy;
 
     // Relationship
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)

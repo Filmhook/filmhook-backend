@@ -166,10 +166,10 @@ public class AuditionCompanyController {
         }
     }
     
-    @DeleteMapping("/remove-access/{AccessId}")
-    public ResponseEntity<Response> removeAccess(@PathVariable Integer AccessId) {
+    @DeleteMapping("/remove-access")
+    public ResponseEntity<Response> removeAccess(@RequestBody List<Integer> AccessIds) {
     	try {
-        companyService.removeAccess(AccessId);
+        companyService.removeAccess(AccessIds);
         return ResponseEntity.ok(new Response(1, "Success","Access removed successfully"));
         
     } catch (RuntimeException e) {
@@ -208,9 +208,9 @@ public class AuditionCompanyController {
         return ResponseEntity.ok(assignedUsers);
     }
     
-    @DeleteMapping("/user")
-    public ResponseEntity<Response> deleteUserAccess(@RequestParam Integer roleId) {
-    	companyService.deleteUserAccess(roleId);
+    @DeleteMapping("/deleteUser")
+    public ResponseEntity<Response> deleteUserAccess(@RequestBody List<Integer> roleIds) {
+    	companyService.deleteUserAccess(roleIds);
     	return ResponseEntity.ok(new Response(1, "Success","User access deleted permanently"));
     }
     
