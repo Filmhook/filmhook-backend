@@ -10,7 +10,8 @@
 	import com.annular.filmhook.model.*;
 	import com.annular.filmhook.repository.FilmSubProfessionRepository;
 	import com.annular.filmhook.service.MediaFilesService;
-	import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 	import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 	import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
 	import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
@@ -435,21 +436,36 @@
 				
 	}
 
-	public static AuditionUserCompanyRoleDTO toDto(AuditionUserCompanyRole entity, User loggedUser) {
-		boolean isOwner = entity.getOwner() != null && entity.getOwner().getUserId().equals(loggedUser.getUserId());
+	public static AuditionUserCompanyRoleDTO toDto(
+	        AuditionUserCompanyRole entity,
+	        UserService userService) {
 
-		return AuditionUserCompanyRoleDTO.builder()
-				.id(entity.getId())
-				.ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null)
-				.assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null)
-				.companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
-				.filmHookCode(entity.getFilmHookCode())
-				.designation(entity.getDesignation())
-				.accessKey(entity.getAccessKey())
-				.status(entity.getStatus())
-				.isOwner(isOwner)
-				.createdDate(entity.getCreatedDate())
-				.build();
+	    AuditionUserCompanyRoleDTO dto = AuditionUserCompanyRoleDTO.builder()
+	            .id(entity.getId())
+	            .ownerId(entity.getOwner() != null ? entity.getOwner().getUserId() : null)
+	            .assignedUserId(entity.getAssignedUser() != null ? entity.getAssignedUser().getUserId() : null)
+	            .companyId(entity.getCompany() != null ? entity.getCompany().getId() : null)
+	            .filmHookCode(entity.getFilmHookCode())
+	            .designation(entity.getDesignation())
+	            .accessKey(entity.getAccessKey())
+	            .status(entity.getStatus())
+	            .isOwner(false)
+	            .createdDate(entity.getCreatedDate())
+	            .assignedUserName(entity.getAssignedUser() != null ? 
+	                    entity.getAssignedUser().getFirstName() + " " + entity.getAssignedUser().getLastName() : null)
+	            .assignedUserEmail(entity.getAssignedUser() != null ? entity.getAssignedUser().getEmail() : null)
+	            .ownerName(entity.getOwner() != null ? 
+	                    entity.getOwner().getFirstName() + " " + entity.getOwner().getLastName() : null)
+	            .ownerEmail(entity.getOwner() != null ? entity.getOwner().getEmail() : null)
+	            .build();
+
+	    // ✅ Attach assigned user profile picture using userService
+	    if (entity.getAssignedUser() != null) {
+	        String profilePicUrl = userService.getProfilePicUrl(entity.getAssignedUser().getUserId());
+	        dto.setAssignedUserProfilePicture(profilePicUrl);
+	    }
+
+	    return dto;
 	}
 
 	//	   AuditionPayment

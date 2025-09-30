@@ -297,7 +297,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
 
-		List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
+		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalse(companyId);
 
 		// ✅ Fetch company logos (once)
 		List<FileOutputWebModel> companyLogos = mediaFilesService
@@ -1229,7 +1229,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status) {
-	    List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
+		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalse(companyId);
+
 
 	    List<FileOutputWebModel> companyLogos = mediaFilesService
 	            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, companyId);
@@ -1298,6 +1299,31 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	            .filter(Objects::nonNull)
 	            .collect(Collectors.toList());
 	}
+
+	
+	@Override
+	 public String softDeleteProject(Integer projectId, Integer userId) {
+		         AuditionNewProject project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+		                 .orElseThrow(() -> new RuntimeException("Project not found or already deleted"));
+
+		         // ✅ Only owner or project creator can delete
+		         Integer companyOwnerId = project.getCompany().getUser().getUserId(); 
+		         Integer projectCreatorId = project.getCreatedBy();
+
+		         if (!userId.equals(companyOwnerId) && !userId.equals(projectCreatorId)) {
+		             throw new RuntimeException("You are not authorized to delete this project");
+		         }
+
+		         project.setIsDeleted(true);
+		         project.setStatus(false);
+		         project.setDeletedBy(userId);
+		         project.setDeletedOn(LocalDateTime.now());
+
+		         projectRepository.save(project);
+
+		         return "Project deleted successfully.";
+		     }
+
 
 
 }
