@@ -1232,7 +1232,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	                        paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
 
 	                String paymentStatus = paymentOpt.map(AuditionPayment::getPaymentStatus)
-	                                                 .orElse("PAY NOW");
+	                                                 .orElse("PENDING");
 
 	                // 🔹 If status filter is given, skip if it doesn’t match
 	                if (status != null && !status.isEmpty() && !status.equalsIgnoreCase(paymentStatus)) {
