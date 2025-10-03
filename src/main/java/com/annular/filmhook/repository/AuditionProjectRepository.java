@@ -14,7 +14,7 @@ public interface AuditionProjectRepository extends JpaRepository<AuditionNewProj
 	
 //	List<AuditionNewProject> findAllByCompanyId(Integer companyId);
 	
-	List<AuditionNewProject> findAllByCompanyIdAndIsDeletedFalse(Integer companyId);
+	List<AuditionNewProject> findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(Integer companyId);
 
 	 Optional<AuditionNewProject> findByIdAndIsDeletedFalse(Integer id);
 

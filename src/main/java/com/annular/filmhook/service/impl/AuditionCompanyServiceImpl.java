@@ -503,7 +503,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	@Transactional
 	@Override
 	public void deleteUserAccess(List<Integer> roleIds) {
-		  Integer userId = userDetails.userInfo().getId(); // currently logged-in user
+		  Integer userId = userDetails.userInfo().getId();
 
 		    for (Integer roleId : roleIds) {
 		        AuditionUserCompanyRole role = roleRepository.findById(roleId)
@@ -542,7 +542,68 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	                    .build();
 	        }).collect(Collectors.toList());
 	    }
+	 
+	 
 
+	 @Override
+	 public AuditionUserCompanyRoleDTO editAccess(Integer roleId, AuditionUserCompanyRoleDTO request) {
+	     Integer userId = userDetails.userInfo().getId();
 
+	     // Fetch role
+	     AuditionUserCompanyRole role = roleRepository.findById(roleId)
+	             .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
+
+	     // Authorization check
+	     if (!role.getOwner().getUserId().equals(userId)) {
+	         throw new RuntimeException("You are not authorized to edit this access.");
+	     }
+
+	     if (Boolean.TRUE.equals(role.getDeleted())) {
+	         throw new RuntimeException("This access has been deleted and cannot be edited.");
+	     }
+
+	     // ✅ Only update designation + accessKey
+	     if (request.getDesignation() != null && !request.getDesignation().isBlank()) {
+	         role.setDesignation(request.getDesignation());
+	     }
+
+	     if (request.getAccessKey() != null && !request.getAccessKey().isBlank()) {
+	         role.setAccessKey(request.getAccessKey());
+	     }
+
+	     role.setUpdatedBy(userId);
+	     role.setUpdatedDate(LocalDateTime.now());
+
+	     AuditionUserCompanyRole updatedRole = roleRepository.save(role);
+
+	     sendEditedAccessEmails(
+	             role.getOwner(), 
+	             role.getAssignedUser(), 
+	             role.getCompany(), 
+	             role.getAccessKey(), 
+	             role.getDesignation()
+	     );
+
+	     return AuditionCompanyConverter.toDto(updatedRole);
+	 }   // ✅ Send Email Notifications after update
+	 
+	 @Async
+	 public void sendEditedAccessEmails(User owner, User assignedUser, AuditionCompanyDetails company, 
+	                                    String accessKey, String designation) {
+	     // Email to Assigned User
+	     String assignedSubject = "Access Updated for Company: " + company.getCompanyName();
+	     String assignedContent = "<p>Your access details for company <b>" + company.getCompanyName() + "</b> have been updated.</p>"
+	             + "<p><b>Designation:</b> " + designation + "</p>"
+	             + "<p><b>New Access Key:</b> " + accessKey + "</p>";
+	     mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
+
+	     // Email to Owner
+	     String ownerSubject = "Access Updated Successfully";
+	     String ownerContent = "<p>You have successfully updated the access for user <b>" + assignedUser.getName() + "</b> "
+	             + "in your company <b>" + company.getCompanyName() + "</b>.</p>"
+	             + "<p><b>Updated Designation:</b> " + designation + "</p>"
+	             + "<p><b>Updated Access Key:</b> " + accessKey + "</p>";
+	     mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
+	 }
 } 
 
