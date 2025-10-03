@@ -253,8 +253,6 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 							&& tn.getSubProfession().getSubProfessionId().equals(subProfessionId))
 							.map(tn -> {
 								AuditionNewTeamNeedWebModel tnDto = AuditionCompanyConverter.toDto(tn);
-
-
 								// 🔹 Check if user liked this teamNeed
 								boolean liked = likesRepository
 										.findByCategoryAndAuditionIdAndLikedBy("TEAM_NEED", tn.getId(), user.getUserId())
