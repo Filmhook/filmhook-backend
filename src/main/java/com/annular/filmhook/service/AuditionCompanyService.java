@@ -27,6 +27,7 @@ public interface AuditionCompanyService {
 	 List<AuditionUserCompanyRoleDTO> getAssignedUsersByOwnerAndCompany(Integer ownerId, Integer companyId);
 	 void deleteUserAccess(List<Integer> roleIds) ;
 	 List<AuditionCompanyDetailsDTO> getCompaniesForLoggedInUser(Integer userId);
+	 AuditionUserCompanyRoleDTO editAccess(Integer roleId, AuditionUserCompanyRoleDTO request);
 
 
 }

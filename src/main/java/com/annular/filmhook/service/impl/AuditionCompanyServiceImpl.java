@@ -542,7 +542,42 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	                    .build();
 	        }).collect(Collectors.toList());
 	    }
+	 
+	 
 
+	 @Override
+	 public AuditionUserCompanyRoleDTO editAccess(Integer roleId, AuditionUserCompanyRoleDTO request) {
+	     Integer userId = userDetails.userInfo().getId();
+
+	     // Fetch role
+	     AuditionUserCompanyRole role = roleRepository.findById(roleId)
+	             .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
+
+	     // Authorization check
+	     if (!role.getOwner().getUserId().equals(userId)) {
+	         throw new RuntimeException("You are not authorized to edit this access.");
+	     }
+
+	     if (Boolean.TRUE.equals(role.getDeleted())) {
+	         throw new RuntimeException("This access has been deleted and cannot be edited.");
+	     }
+
+	     // ✅ Only update designation + accessKey
+	     if (request.getDesignation() != null && !request.getDesignation().isBlank()) {
+	         role.setDesignation(request.getDesignation());
+	     }
+
+	     if (request.getAccessKey() != null && !request.getAccessKey().isBlank()) {
+	         role.setAccessKey(request.getAccessKey());
+	     }
+
+	     role.setUpdatedBy(userId);
+	     role.setUpdatedDate(LocalDateTime.now());
+
+	     AuditionUserCompanyRole updatedRole = roleRepository.save(role);
+
+	     return AuditionCompanyConverter.toDto(updatedRole);
+	 }
 
 } 
 

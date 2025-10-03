@@ -214,4 +214,13 @@ public class AuditionCompanyController {
     	return ResponseEntity.ok(new Response(1, "Success","User access deleted permanently"));
     }
     
+    @PutMapping("/editAccessCode/{roleId}")
+    public ResponseEntity<AuditionUserCompanyRoleDTO> editAccess(
+            @PathVariable Integer roleId,
+            @RequestBody AuditionUserCompanyRoleDTO request) {
+        return ResponseEntity.ok(companyService.editAccess(roleId, request));
+    }
+
+    
+    
 }
