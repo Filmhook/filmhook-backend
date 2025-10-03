@@ -576,8 +576,34 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 
 	     AuditionUserCompanyRole updatedRole = roleRepository.save(role);
 
-	     return AuditionCompanyConverter.toDto(updatedRole);
-	 }
+	     sendEditedAccessEmails(
+	             role.getOwner(), 
+	             role.getAssignedUser(), 
+	             role.getCompany(), 
+	             role.getAccessKey(), 
+	             role.getDesignation()
+	     );
 
+	     return AuditionCompanyConverter.toDto(updatedRole);
+	 }   // ✅ Send Email Notifications after update
+	 
+	 @Async
+	 public void sendEditedAccessEmails(User owner, User assignedUser, AuditionCompanyDetails company, 
+	                                    String accessKey, String designation) {
+	     // Email to Assigned User
+	     String assignedSubject = "Access Updated for Company: " + company.getCompanyName();
+	     String assignedContent = "<p>Your access details for company <b>" + company.getCompanyName() + "</b> have been updated.</p>"
+	             + "<p><b>Designation:</b> " + designation + "</p>"
+	             + "<p><b>New Access Key:</b> " + accessKey + "</p>";
+	     mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
+
+	     // Email to Owner
+	     String ownerSubject = "Access Updated Successfully";
+	     String ownerContent = "<p>You have successfully updated the access for user <b>" + assignedUser.getName() + "</b> "
+	             + "in your company <b>" + company.getCompanyName() + "</b>.</p>"
+	             + "<p><b>Updated Designation:</b> " + designation + "</p>"
+	             + "<p><b>Updated Access Key:</b> " + accessKey + "</p>";
+	     mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
+	 }
 } 
 
