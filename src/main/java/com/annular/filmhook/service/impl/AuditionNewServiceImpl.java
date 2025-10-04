@@ -1114,12 +1114,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	private void sendExpiryEmail(AuditionPayment payment) {
 		AuditionNewProject project = payment.getProject();
-		String subject = "Audition Project Expired " + project.getProjectTitle();
+		String subject = "Audition Project Expired ";
 
 		String content = "<html><body style='font-family:Arial, sans-serif; font-size:14px; color:#333;'>"
-				+ "<div style='max-width:600px; margin:auto; padding:20px; border:1px solid #e0e0e0; border-radius:8px;'>"
-				+ "<h2 style='color:#2E86C1;'>Audition Project Expired</h2>"
-				+ "<p>Dear <b>" + payment.getUser().getName() + "</b>,</p>"
 				+ "<p>We would like to inform you that your subscription for the audition project <b>'" 
 				+ project.getProjectTitle() + "'</b> has expired on <b>" 
 				+ payment.getExpiryDateTime().toLocalDate() + "</b>.</p>"
