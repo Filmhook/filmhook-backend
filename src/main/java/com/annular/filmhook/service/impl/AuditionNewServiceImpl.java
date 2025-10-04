@@ -1112,12 +1112,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	private void sendExpiryEmail(AuditionPayment payment) {
 		AuditionNewProject project = payment.getProject();
-		String subject = "Audition Project Expired " + project.getProjectTitle();
+		String subject = "Audition Project Expired ";
 
 		String content = "<html><body style='font-family:Arial, sans-serif; font-size:14px; color:#333;'>"
-				+ "<div style='max-width:600px; margin:auto; padding:20px; border:1px solid #e0e0e0; border-radius:8px;'>"
-				+ "<h2 style='color:#2E86C1;'>Audition Project Expired</h2>"
-				+ "<p>Dear <b>" + payment.getUser().getName() + "</b>,</p>"
 				+ "<p>We would like to inform you that your subscription for the audition project <b>'" 
 				+ project.getProjectTitle() + "'</b> has expired on <b>" 
 				+ payment.getExpiryDateTime().toLocalDate() + "</b>.</p>"
@@ -1184,6 +1181,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	                    AuditionNewTeamNeed existing = existingTeamNeedsMap.get(teamDto.getId());
 	                    AuditionCompanyConverter.updateTeamNeedEntity(existing, teamDto, filmSubProfessionRepository);
 	                    existing.setStatus(true);
+	                    existing.setUpdatedBy(userId);
+	                    existing.setUpdatedDate(LocalDateTime.now());
 	                    existingTeamNeedsMap.remove(teamDto.getId());
 	                } else {
 	                    // ➕ Add new
@@ -1230,7 +1229,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	                        paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
 
 	                String paymentStatus = paymentOpt.map(AuditionPayment::getPaymentStatus)
-	                                                 .orElse("No Payment");
+	                                                 .orElse("PENDING");
 
 	                // 🔹 If status filter is given, skip if it doesn’t match
 	                if (status != null && !status.isEmpty() && !status.equalsIgnoreCase(paymentStatus)) {
