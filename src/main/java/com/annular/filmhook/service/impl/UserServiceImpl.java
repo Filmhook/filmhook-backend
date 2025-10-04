@@ -148,6 +148,7 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
+        userWebModel.setAdminReview(user.getAdminReview());
         
         // ✅ Followers Count (users who follow this user)
         int followersCount = friendRequestRepository.countByFollowersRequestReceiverIdAndFollowersRequestIsActive(
