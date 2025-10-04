@@ -1186,6 +1186,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	                    AuditionNewTeamNeed existing = existingTeamNeedsMap.get(teamDto.getId());
 	                    AuditionCompanyConverter.updateTeamNeedEntity(existing, teamDto, filmSubProfessionRepository);
 	                    existing.setStatus(true);
+	                    existing.setUpdatedBy(userId);
+	                    existing.setUpdatedDate(LocalDateTime.now());
 	                    existingTeamNeedsMap.remove(teamDto.getId());
 	                } else {
 	                    // ➕ Add new
