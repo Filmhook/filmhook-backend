@@ -1040,12 +1040,12 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.selectedDays(selectedDays)
 				.totalTeamNeed(totalTeamNeed)
 				.amountPerPost(baseRate)
-				.finalRatePerPost(finalRatePerPost)
-				.baseAmount(baseAmount)
-				.discountedAmount(discountedAmount) 
+				.finalRatePerPost(bdFinalRatePerPost)
+				.baseAmount(bdBaseAmount)
+				.discountedAmount(bdDiscountedAmount) 
 				.discountPercentage(discountPercentage) 
 				.gstPercentage(gstPercentage)
-				.totalAmount(totalAmount)
+				.totalAmount(bdTotalAmount)
 				.roleBreakdown(roleBreakdown)
 				.build();
 	}
