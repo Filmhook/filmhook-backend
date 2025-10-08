@@ -33,7 +33,8 @@ public interface PostService {
 
     Resource getAllPostFilesByCategory(String category);
 
-    List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize);
+    //List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize);
+    List<PostWebModel> getAllUsersPosts(Integer userId, Integer pageNo, Integer pageSize);
 
     LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel);
 
@@ -61,5 +62,6 @@ public interface PostService {
 	
 
 	Posts getTaggedPostById(Integer taggedId);
+	
 
 }

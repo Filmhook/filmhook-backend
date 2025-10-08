@@ -99,8 +99,10 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	MediaFilesService mediaFilesService;
-
-
+	
+	@Autowired
+	FriendRequestRepository followersRequestRepository;
+	
 	@Autowired
 	private UserRepository userRepository;
 
@@ -634,21 +636,43 @@ public class PostServiceImpl implements PostService {
 	//    }
 
 	@Override
-	public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
+	public List<PostWebModel> getAllUsersPosts(Integer userId, Integer pageNo, Integer pageSize) {
 		try {
 			List<Posts> allPosts = postsRepository.getAllActivePosts();
 
 			if (allPosts == null || allPosts.isEmpty()) {
 				return Collections.emptyList();
 			}
+			  // Filter posts based on visibility
+	        List<Posts> visiblePosts = allPosts.stream()
+	            .filter(Objects::nonNull)
+	            .filter(post -> {
+	            	 Integer ownerId = post.getUser().getUserId();
 
+	                 // ✅ Owner can always see their own posts
+	                 if (ownerId.equals(userId)) {
+	                     return true;
+	                 }
+
+	                 // ✅ Public posts are visible to everyone
+	                 if (!Boolean.TRUE.equals(post.getPrivateOrPublic())) {
+	                     return true;
+	                 }
+	                 
+	                 return followersRequestRepository
+	                		    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(ownerId, userId, true);
+
+
+	            })
+	            .collect(Collectors.toList());
+	        
 			// Sort by createdOn (newest first)
-			allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+	        visiblePosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
 
 			List<Posts> promotedPosts = new ArrayList<>();
 			List<Posts> normalPosts = new ArrayList<>();
 
-			for (Posts post : allPosts) {
+			for (Posts post : visiblePosts) {
 				if (Boolean.TRUE.equals(post.getPromoteFlag())) {
 					promotedPosts.add(post);
 				} else {
@@ -849,7 +873,7 @@ public class PostServiceImpl implements PostService {
 
 			if (validLikes.isEmpty()) continue;
 
-			sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId, comment.getPost().getPostId());
+			sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "Comment", commentId, comment.getPost().getPostId());
 		}
 	}
 
