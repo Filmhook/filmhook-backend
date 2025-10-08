@@ -314,11 +314,14 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                 }
             }
         }
+     // Count total likes/unlikes with category filter
+        Long totalLikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
+                post.getId(), "LIKE", "Post");
 
-        Long totalLikesCount = likeRepository.countByPostIdAndReactionType(post.getId(), "LIKE");
-        Long totalUnlikesCount = likeRepository.countByPostIdAndReactionType(post.getId(), "UNLIKE");
+        Long totalUnlikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
+                post.getId(), "UNLIKE", "Post");
 
-        // Pin Status
+        // Pin Statusy
         Boolean pinStatus = false;
         if (finalLoggedInUser != null) {
             Optional<UserProfilePin> userData = pinProfileRepository

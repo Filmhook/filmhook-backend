@@ -817,7 +817,7 @@ public class UserServiceImpl implements UserService {
                         .filter(filter4 -> searchWebModel.getSubProfessionIds().contains(filter4.getFilmSubProfession().getSubProfessionId()))
                         .forEach(professionData -> {
                             User user = this.getUser(professionData.getUserId()).orElse(null);
-                            System.out.print("user"+user);
+                            System.out.print("userssss"+user);
                             if (user != null  && Boolean.TRUE.equals(user.getIndustryUserVerified())) { // Check for industryUserVerified
                                 logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
                                 Map<String, Object> map = new LinkedHashMap<>();

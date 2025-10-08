@@ -45,8 +45,8 @@ public class AuditionNewController {
 	public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 	@Value("${payu.key}")
 	private String key;
-	 @Autowired
-	 AuditionProjectValidator projectValidator;
+	@Autowired
+	AuditionProjectValidator projectValidator;
     @Autowired
     private AuditionNewService projectService;
     @Autowired

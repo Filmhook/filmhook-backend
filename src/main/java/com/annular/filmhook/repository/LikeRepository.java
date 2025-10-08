@@ -60,7 +60,10 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
     	        @Param("auditionId") Integer auditionId,
     	        @Param("reactionType") String reactionType
     	);
-    Long countByPostIdAndReactionType(Integer postId, String reactionType);
+    Long countByPostIdAndReactionTypeAndCategory(Integer postId, String reactionType, String category);
+    
+    Optional<Likes> findByCommentIdAndLikedByAndCategory(Integer commentId, Integer likedBy, String category);
+
     
     // Find like for a teamNeed (auditionId) by user
     Optional<Likes> findByCategoryAndAuditionIdAndLikedBy(String category, Integer auditionId, Integer likedBy);
