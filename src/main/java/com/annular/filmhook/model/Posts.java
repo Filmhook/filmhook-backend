@@ -100,8 +100,9 @@ public class Posts {
     @Column(name = "updated_by")
     private Integer updatedBy;
 
-    @Column(name = "privateOrPublic")
-    private Boolean privateOrPublic;
+    @Builder.Default
+    @Column(name = "privateOrPublic", nullable = false, columnDefinition = "boolean default false")
+    private Boolean privateOrPublic = false;
 
     @Column(name = "locationName")
     private String locationName;
@@ -141,5 +142,7 @@ public class Posts {
     @JsonIgnore
     private Collection<PostView> postViews;
 
-
+    public String getPostVisibility() {
+        return Boolean.TRUE.equals(this.privateOrPublic) ? "Private" : "Public";
+    }
 }
