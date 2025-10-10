@@ -544,7 +544,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmProfessionResponseDTO> getAllProfessions() {
-		List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+		List<Integer> excludedIds = Arrays.asList(1,4); // exclude Producer, Director, etc.
 		List<FilmProfession> professions = filmProfessionRepository.findByFilmProfessionIdNotIn(excludedIds); 
 
 		return professions.stream()
