@@ -72,7 +72,9 @@
 	    @Column(name = "verification_status")
 	    private VerificationStatus verificationStatus;
 	    
-	    private Boolean deleted = false; 
+	    @Builder.Default
+	    private Boolean deleted = false;
+	    
 	    private Boolean status;
 	    private Integer createdBy;
 	    private Integer updatedBy;

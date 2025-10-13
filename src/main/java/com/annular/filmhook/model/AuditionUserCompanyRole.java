@@ -1,7 +1,5 @@
 package com.annular.filmhook.model;
 
-
-
 import java.time.LocalDateTime;
 
 import javax.persistence.*;
@@ -35,7 +33,7 @@ public class AuditionUserCompanyRole {
 
     private String designation;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String accessKey;
 
     private Boolean status; // ACTIVE, INACTIVE, REVOKED
@@ -47,5 +45,8 @@ public class AuditionUserCompanyRole {
     
     private String filmHookCode;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean deleted = false;
 }
 

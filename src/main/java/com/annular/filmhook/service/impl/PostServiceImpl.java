@@ -99,8 +99,10 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	MediaFilesService mediaFilesService;
-
-
+	
+	@Autowired
+	FriendRequestRepository followersRequestRepository;
+	
 	@Autowired
 	private UserRepository userRepository;
 
@@ -451,9 +453,12 @@ public class PostServiceImpl implements PostService {
 						}
 					}
 
-					// Count total likes/unlikes
-					Long totalLikesCount = likeRepository.countByPostIdAndReactionType(post.getId(), "LIKE");
-					Long totalUnlikesCount = likeRepository.countByPostIdAndReactionType(post.getId(), "UNLIKE");
+					// Count total likes/unlikes with category filter
+					Long totalLikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
+					        post.getId(), "LIKE", "Post");
+
+					Long totalUnlikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
+					        post.getId(), "UNLIKE", "Post");
 
 
 					// Pin Status
@@ -634,21 +639,43 @@ public class PostServiceImpl implements PostService {
 	//    }
 
 	@Override
-	public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
+	public List<PostWebModel> getAllUsersPosts(Integer userId, Integer pageNo, Integer pageSize) {
 		try {
 			List<Posts> allPosts = postsRepository.getAllActivePosts();
 
 			if (allPosts == null || allPosts.isEmpty()) {
 				return Collections.emptyList();
 			}
+			  // Filter posts based on visibility
+	        List<Posts> visiblePosts = allPosts.stream()
+	            .filter(Objects::nonNull)
+	            .filter(post -> {
+	            	 Integer ownerId = post.getUser().getUserId();
 
+	                 // ✅ Owner can always see their own posts
+	                 if (ownerId.equals(userId)) {
+	                     return true;
+	                 }
+
+	                 // ✅ Public posts are visible to everyone
+	                 if (!Boolean.TRUE.equals(post.getPrivateOrPublic())) {
+	                     return true;
+	                 }
+	                 
+	                 return followersRequestRepository
+	                		    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(ownerId, userId, true);
+
+
+	            })
+	            .collect(Collectors.toList());
+	        
 			// Sort by createdOn (newest first)
-			allPosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+	        visiblePosts.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
 
 			List<Posts> promotedPosts = new ArrayList<>();
 			List<Posts> normalPosts = new ArrayList<>();
 
-			for (Posts post : allPosts) {
+			for (Posts post : visiblePosts) {
 				if (Boolean.TRUE.equals(post.getPromoteFlag())) {
 					promotedPosts.add(post);
 				} else {
@@ -849,7 +876,7 @@ public class PostServiceImpl implements PostService {
 
 			if (validLikes.isEmpty()) continue;
 
-			sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "CommentLike", commentId, comment.getPost().getPostId());
+			sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "Comment", commentId, comment.getPost().getPostId());
 		}
 	}
 
@@ -1236,52 +1263,81 @@ public class PostServiceImpl implements PostService {
 	}
 
 	private List<CommentOutputWebModel> transformCommentData(List<Comment> commentData, Integer totalCommentCount) {
-		List<CommentOutputWebModel> commentOutWebModelList = new ArrayList<>();
-		if (!Utility.isNullOrEmptyList(commentData)) {
-			commentData.stream().filter(Objects::nonNull).forEach(comment -> {
-				User user = userService.getUser(comment.getCommentedBy()).orElse(null); // Fetch user information
+    List<CommentOutputWebModel> commentOutWebModelList = new ArrayList<>();
 
-				Date createdDate = comment.getCreatedOn(); // Convert Date to LocalDateTime
-				LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
-				String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn); // Calculate elapsed time
+    if (!Utility.isNullOrEmptyList(commentData)) {
 
-				Posts post = postsRepository.findByPostId(comment.getPostId()).orElse(null);
+        // ⚡ Fetch logged-in user once
+        Integer loggedInUserTemp = null;
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetailsImpl) {
+            loggedInUserTemp = ((UserDetailsImpl) principal).getId();
+        }
+              final Integer finalLoggedInUser = loggedInUserTemp;
 
-				List<CommentOutputWebModel> childComments = null;
-				List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
-				if (!Utility.isNullOrEmptyList(dbChildComments))
-					childComments = this.transformCommentData(dbChildComments, 0);
+        commentData.stream().filter(Objects::nonNull).forEach(comment -> {
+            User user = userService.getUser(comment.getCommentedBy()).orElse(null);
+            Posts post = postsRepository.findByPostId(comment.getPostId()).orElse(null);
 
-				CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
-						.commentId(comment.getCommentId())
-						.category(comment.getCategory())
-						.postId(comment.getPostId())// I want that postId userId want in post table
-						.userId(comment.getCommentedBy())
-						.parentCommentId(comment.getParentCommentId())
-						.content(comment.getContent())
-						.totalLikesCount(comment.getLikesCount())
-						.totalCommentCount(totalCommentCount)
-						.status(comment.getStatus())
-						.userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
-						.userName(user != null ? user.getName() : "")
-						.time(elapsedTime)
-						.postUserId(post.getUser().getUserId())
-						.childComments(childComments)
-						.createdBy(comment.getCreatedBy())
-						.createdOn(comment.getCreatedOn())
-						.updatedBy(comment.getUpdatedBy())
-						.updatedOn(comment.getUpdatedOn())
-						.build();
-				commentOutWebModelList.add(commentOutputWebModel);
-			});
-		}
-		return commentOutWebModelList;
-	}
+            Date createdDate = comment.getCreatedOn();
+            LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
+            String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+
+            List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
+            List<CommentOutputWebModel> childComments = !Utility.isNullOrEmptyList(dbChildComments)
+                    ? this.transformCommentData(dbChildComments, 0)
+                    : null;
+
+            // ⚡ Fetch Like record for this comment and logged-in user
+            Likes userLike = null;
+            if (finalLoggedInUser != null) {
+                userLike = likeRepository
+                        .findByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
+                        .orElse(null);
+            }
+            
+         // ⚡ Fetch Like count for this comment (based on reactionType)
+            Integer totalLikesCount = likeRepository.countByCommentIdAndReactionTypeAndStatus(
+                    comment.getCommentId(), "LIKE", true
+            );
+           
+            CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
+                    .commentId(comment.getCommentId())
+                    .category(comment.getCategory())
+                    .postId(comment.getPostId())
+                    .userId(comment.getCommentedBy())
+                    .parentCommentId(comment.getParentCommentId())
+                    .content(comment.getContent())
+                    .totalLikesCount(totalLikesCount)
+                    .totalCommentCount(totalCommentCount)
+                    .status(comment.getStatus())
+                    .userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
+                    .userName(user != null ? user.getName() : "")
+                    .time(elapsedTime)
+                    .postUserId(post != null ? post.getUser().getUserId() : null)
+                    .childComments(childComments)
+                    .createdBy(comment.getCreatedBy())
+                    .createdOn(comment.getCreatedOn())
+                    .updatedBy(comment.getUpdatedBy())
+                    .updatedOn(comment.getUpdatedOn())
+
+                    // ⚡ Add these two new fields
+                    .likeId(userLike != null ? userLike.getLikeId() : null)
+                    .likeStatus(userLike != null ? userLike.getStatus():false)
+                    .build();
+
+            commentOutWebModelList.add(commentOutputWebModel);
+        });
+    }
+    return commentOutWebModelList;
+}
+
 
 	@Override
 	public List<CommentOutputWebModel> getComment(CommentInputWebModel commentInputWebModel) {
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
+		
 			if (post != null) {	
 				List<Comment> commentData = (List<Comment>) post.getCommentCollection();
 				// Filter comments with status true

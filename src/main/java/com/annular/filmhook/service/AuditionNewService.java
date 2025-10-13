@@ -1,13 +1,15 @@
 package com.annular.filmhook.service;
 import java.util.List;
+import org.springframework.lang.Nullable;
 
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
+
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
-import com.annular.filmhook.model.AuditionNewProject;
+
 import com.annular.filmhook.model.AuditionPayment;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
@@ -20,7 +22,7 @@ public interface AuditionNewService {
 	List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId);
 	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);
 	List<FilmProfessionResponseDTO> getAllProfessions();
-	AuditionNewProject createProject(AuditionNewProjectWebModel projectDto);
+//	AuditionNewProject createProject(AuditionNewProjectWebModel projectDto);
 	List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId);
 	List<AuditionNewProjectWebModel> getProjectsByCompanyIdAndTeamNeed(Integer companyId, Integer teamNeedId,Integer professionId);
 	String toggleTeamNeedLike(Integer teamNeedId, Integer userId);
@@ -35,6 +37,9 @@ public interface AuditionNewService {
 	void softDeleteTeamNeed(Integer teamNeedId, Integer userId, Integer companyId);
 	
 	void updateExpiredPaymentsAndProjects();
+	AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
+	List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status);
+	String softDeleteProject(Integer projectId, Integer userId);
 }
 
 

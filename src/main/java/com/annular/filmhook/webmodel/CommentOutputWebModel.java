@@ -36,6 +36,8 @@ public class CommentOutputWebModel {
 
     private String userProfilePic;
     private String userName;
+    private Integer likeId;
+    private Boolean likeStatus;
 
     private List<CommentOutputWebModel> childComments;
 }

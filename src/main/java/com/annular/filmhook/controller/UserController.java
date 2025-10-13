@@ -523,5 +523,15 @@ public class UserController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+    
+    @GetMapping("/getUserByFhid")
+    public Response getUserByFhId(@RequestParam("filmHookCode") String filmHookCode) {
+        List<UserWebModel> users = userService.getUserByFhId(filmHookCode);
+        if (!Utility.isNullOrEmptyList(users)) {
+            return new Response(1, "User(s) found successfully...", users);
+        } else {
+            return new Response(-1, "User not found...", null);
+        }
+    }
 
 }

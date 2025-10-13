@@ -18,6 +18,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import com.annular.filmhook.util.StringListConverter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.AllArgsConstructor;
@@ -100,6 +101,13 @@ public class AuditionNewProject {
     private Integer updatedBy;
     private LocalDateTime createdOn;
     private LocalDateTime updatedDate;
+    
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
+    
+    private LocalDateTime deletedOn;
+    private Integer deletedBy;
 
     // Relationship
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -108,5 +116,6 @@ public class AuditionNewProject {
     
      @ManyToOne(fetch = FetchType.LAZY)
      @JoinColumn(name = "company_id", nullable = false)
+     @JsonIgnore
      private AuditionCompanyDetails company;
 }

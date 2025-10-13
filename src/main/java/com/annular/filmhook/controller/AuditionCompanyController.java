@@ -166,10 +166,10 @@ public class AuditionCompanyController {
         }
     }
     
-    @DeleteMapping("/remove-access/{AccessId}")
-    public ResponseEntity<Response> removeAccess(@PathVariable Integer AccessId) {
+    @DeleteMapping("/remove-access")
+    public ResponseEntity<Response> removeAccess(@RequestBody List<Integer> AccessIds) {
     	try {
-        companyService.removeAccess(AccessId);
+        companyService.removeAccess(AccessIds);
         return ResponseEntity.ok(new Response(1, "Success","Access removed successfully"));
         
     } catch (RuntimeException e) {
@@ -184,6 +184,43 @@ public class AuditionCompanyController {
         companyService.softDeleteCompany(companyId);
         return ResponseEntity.ok(new Response(1, "Success","Company deleted successfully"));
     }
+    
+    @GetMapping("/companyDetails")
+    public ResponseEntity<List<AuditionCompanyDetailsDTO>> getMyCompanies(
+            @AuthenticationPrincipal UserDetailsImpl loggedInUser) {
 
+        Integer userId = loggedInUser.getId(); // from your custom UserDetailsImpl
+        List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesForLoggedInUser(userId);
+
+        return ResponseEntity.ok(companies);
+    }
+    
+    
+
+    @GetMapping("/assigned")
+    public ResponseEntity<List<AuditionUserCompanyRoleDTO>> getAssignedUsersByOwnerAndCompany(
+            @RequestParam Integer ownerId,
+            @RequestParam Integer companyId) {
+
+        List<AuditionUserCompanyRoleDTO> assignedUsers =
+        		companyService.getAssignedUsersByOwnerAndCompany(ownerId, companyId);
+
+        return ResponseEntity.ok(assignedUsers);
+    }
+    
+    @DeleteMapping("/deleteUser")
+    public ResponseEntity<Response> deleteUserAccess(@RequestBody List<Integer> roleIds) {
+    	companyService.deleteUserAccess(roleIds);
+    	return ResponseEntity.ok(new Response(1, "Success","User access deleted permanently"));
+    }
+    
+    @PutMapping("/editAccessCode/{roleId}")
+    public ResponseEntity<AuditionUserCompanyRoleDTO> editAccess(
+            @PathVariable Integer roleId,
+            @RequestBody AuditionUserCompanyRoleDTO request) {
+        return ResponseEntity.ok(companyService.editAccess(roleId, request));
+    }
+
+    
     
 }

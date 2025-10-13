@@ -1,14 +1,16 @@
 package com.annular.filmhook.service.impl;
 
 import java.io.InputStream;
-
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import java.util.Date;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -35,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -156,36 +159,36 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Value("${payu.salt}")
 	private String salt;
-	@Override
-	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
-
-		// ✅ Get currently logged-in user's ID
-		Integer userId = userDetails.userInfo().getId();
-
-		// ✅ Fetch User entity
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-
-		// ✅ Find the company
-		AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
-				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
-
-		// ✅ Convert DTO → Entity (with userId)
-		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
-		            projectDto,
-		            company,
-		            userId,
-		            filmSubProfessionRepository // <-- important!
-		    );
-
-		// ✅ Save project
-		AuditionNewProject savedProject = projectRepository.save(project);
-
-		// ✅ Handle profile picture upload
-		AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
-
-		return savedProject;
-	}
+//	@Override
+//	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
+//
+//		// ✅ Get currently logged-in user's ID
+//		Integer userId = userDetails.userInfo().getId();
+//
+//		// ✅ Fetch User entity
+//		User user = userRepository.findById(userId)
+//				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+//
+//		// ✅ Find the company
+//		AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
+//				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
+//
+//		// ✅ Convert DTO → Entity (with userId)
+//		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
+//		            projectDto,
+//		            company,
+//		            userId,
+//		            filmSubProfessionRepository // <-- important!
+//		    );
+//
+//		// ✅ Save project
+//		AuditionNewProject savedProject = projectRepository.save(project);
+//
+//		// ✅ Handle profile picture upload
+//		AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
+//
+//		return savedProject;
+//	}
 
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId) {
@@ -250,8 +253,6 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 							&& tn.getSubProfession().getSubProfessionId().equals(subProfessionId))
 							.map(tn -> {
 								AuditionNewTeamNeedWebModel tnDto = AuditionCompanyConverter.toDto(tn);
-
-
 								// 🔹 Check if user liked this teamNeed
 								boolean liked = likesRepository
 										.findByCategoryAndAuditionIdAndLikedBy("TEAM_NEED", tn.getId(), user.getUserId())
@@ -294,7 +295,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
 
-		List<AuditionNewProject> projects = projectRepository.findAllByCompanyId(companyId);
+		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
 
 		// ✅ Fetch company logos (once)
 		List<FileOutputWebModel> companyLogos = mediaFilesService
@@ -362,17 +363,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 								int totalViews = auditionViewRepository.countByTeamNeedId(tn.getId());
 								tnDto.setTotalViews(totalViews);
-								Optional<FilmProfession> professionOpt = filmProfessionRepository.findById(tn.getProfession().getFilmProfessionId());
-								Optional<FilmSubProfession> subProfessionOpt = filmSubProfessionRepository.findById(tn.getSubProfession().getSubProfessionId());
-
-								String professionName = professionOpt.map(FilmProfession::getProfessionName)
-										.orElse("Unknown Profession");
-
-								String subProfessionName = subProfessionOpt.map(FilmSubProfession::getSubProfessionName)
-										.orElse("Unknown SubProfession");
-
-								tnDto.setProfessionName(professionName);
-								tnDto.setSubProfessionName(subProfessionName);
+								
 
 								return tnDto;
 							})
@@ -553,7 +544,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	public List<FilmProfessionResponseDTO> getAllProfessions() {
-		List<Integer> excludedIds = Arrays.asList(1); // exclude Producer, Director, etc.
+		List<Integer> excludedIds = Arrays.asList(1,4); // exclude Producer, Director, etc.
 		List<FilmProfession> professions = filmProfessionRepository.findByFilmProfessionIdNotIn(excludedIds); 
 
 		return professions.stream()
@@ -1024,14 +1015,22 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		// Total amount including GST
 		double amountForCalculation = discountedAmount != null ? discountedAmount : baseAmount;
 		double totalAmount = amountForCalculation + (amountForCalculation * gstPercentage / 100.0);
+		
+		
+	    BigDecimal bdBaseAmount = BigDecimal.valueOf(baseAmount).setScale(2, RoundingMode.HALF_UP);
+	    BigDecimal bdDiscountedAmount = discountedAmount != null ? 
+	            BigDecimal.valueOf(discountedAmount).setScale(2, RoundingMode.HALF_UP) : null;
+	    BigDecimal bdFinalRatePerPost = finalRatePerPost != null ? 
+	            BigDecimal.valueOf(finalRatePerPost).setScale(2, RoundingMode.HALF_UP) : null;
+	    BigDecimal bdTotalAmount = BigDecimal.valueOf(totalAmount).setScale(2, RoundingMode.HALF_UP);
 
-		// Role breakdown
-		Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
-				.collect(Collectors.toMap(
-						tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
-								AuditionNewTeamNeed::getCount,
-								Integer::sum
-						));
+	    // Role breakdown
+	    Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
+	            .collect(Collectors.toMap(
+	                    tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
+	                    AuditionNewTeamNeed::getCount,
+	                    Integer::sum
+	            ));
 
 		// Build response DTO
 		return AuditionPaymentDTO.builder()
@@ -1039,12 +1038,12 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.selectedDays(selectedDays)
 				.totalTeamNeed(totalTeamNeed)
 				.amountPerPost(baseRate)
-				.finalRatePerPost(finalRatePerPost)
-				.baseAmount(baseAmount)
-				.discountedAmount(discountedAmount) 
+				.finalRatePerPost(bdFinalRatePerPost)
+				.baseAmount(bdBaseAmount)
+				.discountedAmount(bdDiscountedAmount) 
 				.discountPercentage(discountPercentage) 
 				.gstPercentage(gstPercentage)
-				.totalAmount(totalAmount)
+				.totalAmount(bdTotalAmount)
 				.roleBreakdown(roleBreakdown)
 				.build();
 	}
@@ -1113,12 +1112,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	private void sendExpiryEmail(AuditionPayment payment) {
 		AuditionNewProject project = payment.getProject();
-		String subject = "Audition Project Expired " + project.getProjectTitle();
+		String subject = "Audition Project Expired ";
 
 		String content = "<html><body style='font-family:Arial, sans-serif; font-size:14px; color:#333;'>"
-				+ "<div style='max-width:600px; margin:auto; padding:20px; border:1px solid #e0e0e0; border-radius:8px;'>"
-				+ "<h2 style='color:#2E86C1;'>Audition Project Expired</h2>"
-				+ "<p>Dear <b>" + payment.getUser().getName() + "</b>,</p>"
 				+ "<p>We would like to inform you that your subscription for the audition project <b>'" 
 				+ project.getProjectTitle() + "'</b> has expired on <b>" 
 				+ payment.getExpiryDateTime().toLocalDate() + "</b>.</p>"
@@ -1146,5 +1142,177 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 //		System.out.println(">>> payment.salt = " + salt);
 //	}
 
+	
+	@Override
+	public AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto) {
+
+	    Integer userId = userDetails.userInfo().getId();
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+	    AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
+	            .orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
+
+	    AuditionNewProject project;
+
+	    if (projectDto.getId() != null) {
+	        // 🔄 UPDATE
+	        project = projectRepository.findById(projectDto.getId())
+	                .orElseThrow(() -> new RuntimeException("Project not found with ID: " + projectDto.getId()));
+
+	        // Update base fields
+	        AuditionCompanyConverter.updateEntityFromDto(project, projectDto, company, userId, filmSubProfessionRepository);
+
+	        // ✅ Ensure teamNeeds list exists
+	        if (project.getTeamNeeds() == null) {
+	            project.setTeamNeeds(new ArrayList<>());
+	        }
+
+	        // Map existing teamNeeds by ID
+	        Map<Integer, AuditionNewTeamNeed> existingTeamNeedsMap = project.getTeamNeeds().stream()
+	                .filter(tn -> tn.getId() != null)
+	                .collect(Collectors.toMap(AuditionNewTeamNeed::getId, tn -> tn));
+
+	        // Process incoming teamNeeds from DTO
+	        if (projectDto.getTeamNeeds() != null) {
+	            for (AuditionNewTeamNeedWebModel teamDto : projectDto.getTeamNeeds()) {
+	                if (teamDto.getId() != null && existingTeamNeedsMap.containsKey(teamDto.getId())) {
+	                    // 🔄 Update existing
+	                    AuditionNewTeamNeed existing = existingTeamNeedsMap.get(teamDto.getId());
+	                    AuditionCompanyConverter.updateTeamNeedEntity(existing, teamDto, filmSubProfessionRepository);
+	                    existing.setStatus(true);
+	                    existing.setUpdatedBy(userId);
+	                    existing.setUpdatedDate(LocalDateTime.now());
+	                    existingTeamNeedsMap.remove(teamDto.getId());
+	                } else {
+	                    // ➕ Add new
+	                    AuditionNewTeamNeed newTeamNeed = AuditionCompanyConverter.toEntity(teamDto, project, userId, filmSubProfessionRepository);
+	                    newTeamNeed.setStatus(true);
+	                    project.getTeamNeeds().add(newTeamNeed);
+	                }
+	            }
+	        }
+
+	        // ❌ Soft delete leftover team needs (not in DTO)
+	        for (AuditionNewTeamNeed leftover : existingTeamNeedsMap.values()) {
+	            leftover.setStatus(false);
+	        }
+
+	    } else {
+	        // ➕ CREATE
+	        project = AuditionCompanyConverter.toEntity(projectDto, company, userId, filmSubProfessionRepository);
+	    }
+
+	    // ✅ Save entity
+	    AuditionNewProject savedProject = projectRepository.save(project);
+
+	 // ✅ Handle profile picture upload
+	    AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
+
+	    // ✅ Return DTO, not entity
+	    return AuditionCompanyConverter.toDto(savedProject);
+	}
+	
+	
+	@Override
+	public List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status) {
+		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
+
+
+	    List<FileOutputWebModel> companyLogos = mediaFilesService
+	            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, companyId);
+
+	    return projects.stream()
+	            .map(project -> {
+	                // 🔹 Get latest payment (if any)
+	                Optional<AuditionPayment> paymentOpt =
+	                        paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
+
+	                String paymentStatus = paymentOpt.map(AuditionPayment::getPaymentStatus)
+	                                                 .orElse("PENDING");
+
+	                // 🔹 If status filter is given, skip if it doesn’t match
+	                if (status != null && !status.isEmpty() && !status.equalsIgnoreCase(paymentStatus)) {
+	                    return null;
+	                }
+
+	                // 🔹 Only include projects with active teamNeeds
+	                List<AuditionNewTeamNeed> activeTeamNeeds = teamNeedRepository.findAllByProjectId(project.getId())
+	                        .stream()
+	                        .filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
+	                        .collect(Collectors.toList());
+
+	                if (activeTeamNeeds.isEmpty()) {
+	                    return null;
+	                }
+
+	                // 🔹 Convert entity → DTO
+	                AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+
+	                // Attach expiry date/time if available
+	                paymentOpt.ifPresent(payment -> {
+	                    LocalDateTime expiry = payment.getExpiryDateTime();
+	                    if (expiry != null) {
+	                        ZonedDateTime istTime = expiry.atZone(ZoneId.of("UTC"))
+	                                .withZoneSameInstant(ZoneId.of("Asia/Kolkata"));
+	                        dto.setExpiryTime(istTime.format(DateTimeFormatter.ofPattern("hh:mm a")));
+	                        dto.setExpiryDate(istTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+	                    }
+	                });
+
+	                dto.setPaymentStatus(paymentStatus);
+
+	                // Attach teamNeeds
+	                dto.setTeamNeeds(
+	                        activeTeamNeeds.stream()
+	                                .map(AuditionCompanyConverter::toDto)
+	                                .collect(Collectors.toList())
+	                );
+
+	                // Attach profile pictures
+	                List<FileOutputWebModel> profilePictures = mediaFilesService
+	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
+	                if (profilePictures != null && !profilePictures.isEmpty()) {
+	                    dto.setProfilePictureFilesOutput(profilePictures);
+	                }
+
+	                // Attach company logo
+	                if (companyLogos != null && !companyLogos.isEmpty()) {
+	                    dto.setLogoFiles(companyLogos);
+	                }
+
+	                return dto;
+	            })
+	            .filter(Objects::nonNull)
+	            .collect(Collectors.toList());
+	}
+
+	
+	@Override
+	 public String softDeleteProject(Integer projectId, Integer userId) {
+		         AuditionNewProject project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+		                 .orElseThrow(() -> new RuntimeException("Project not found or already deleted"));
+
+		         // ✅ Only owner or project creator can delete
+		         Integer companyOwnerId = project.getCompany().getUser().getUserId(); 
+		         Integer projectCreatorId = project.getCreatedBy();
+
+		         if (!userId.equals(companyOwnerId) && !userId.equals(projectCreatorId)) {
+		             throw new RuntimeException("You are not authorized to delete this project");
+		         }
+
+		         project.setIsDeleted(true);
+		         project.setStatus(false);
+		         project.setDeletedBy(userId);
+		         project.setDeletedOn(LocalDateTime.now());
+
+		         projectRepository.save(project);
+
+		         return "Project deleted successfully.";
+		     }
+
+
 
 }
+
+

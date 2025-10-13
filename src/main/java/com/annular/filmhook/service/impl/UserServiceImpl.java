@@ -148,6 +148,7 @@ public class UserServiceImpl implements UserService {
         userWebModel.setUserType(user.getUserType());
 
         userWebModel.setName(user.getName());
+        userWebModel.setAdminReview(user.getAdminReview());
         
         // ✅ Followers Count (users who follow this user)
         int followersCount = friendRequestRepository.countByFollowersRequestReceiverIdAndFollowersRequestIsActive(
@@ -816,7 +817,7 @@ public class UserServiceImpl implements UserService {
                         .filter(filter4 -> searchWebModel.getSubProfessionIds().contains(filter4.getFilmSubProfession().getSubProfessionId()))
                         .forEach(professionData -> {
                             User user = this.getUser(professionData.getUserId()).orElse(null);
-                            System.out.print("user"+user);
+                            System.out.print("userssss"+user);
                             if (user != null  && Boolean.TRUE.equals(user.getIndustryUserVerified())) { // Check for industryUserVerified
                                 logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
                                 Map<String, Object> map = new LinkedHashMap<>();
@@ -1695,7 +1696,32 @@ public class UserServiceImpl implements UserService {
 //	        }
 //	        return false;
 //	    }
-
+	 @Override
+	    public List<UserWebModel> getUserByFhId(String filmHookCode) {
+	        List<UserWebModel> responseList = new ArrayList<>();
+	        try {
+	            List<User> usersList = userRepository.findByFilmHookCodeContainingIgnoreCaseAndStatus(filmHookCode, true);
+	            if (!Utility.isNullOrEmptyList(usersList)) {
+	                responseList = usersList.stream()
+	                        .filter(Objects::nonNull)
+	                        .map(user -> UserWebModel.builder()
+	                                .userId(user.getUserId())
+	                                .name(user.getName())
+	                                .adminReview(user.getAdminReview())
+	                                .userType(user.getUserType())
+	                                .profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
+	                                .profilePicUrl(this.getProfilePicUrl(user.getUserId()))
+	                                .userType(user.getUserType())
+	                                .filmHookCode(user.getFilmHookCode())
+	                                .build())
+	                        .collect(Collectors.toList());
+	            }
+	        } catch (Exception e) {
+	            logger.error("Error occurred at getUserByfilmHookCode() -> {}", e.getMessage());
+	            e.printStackTrace();
+	        }
+	        return responseList;
+	    }
 
 
 

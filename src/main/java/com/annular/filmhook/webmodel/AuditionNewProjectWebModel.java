@@ -3,6 +3,7 @@ package com.annular.filmhook.webmodel;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -49,4 +50,6 @@ public class AuditionNewProjectWebModel {
     private List<String> interNationalShootLocations; 
     private String auditionFullAddress;
     private String locationWebsite;
+    private String paymentStatus;
+	public Boolean status; 
 }

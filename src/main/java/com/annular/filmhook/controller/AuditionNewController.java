@@ -45,49 +45,49 @@ public class AuditionNewController {
 	public static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 	@Value("${payu.key}")
 	private String key;
-	 @Autowired
-	 AuditionProjectValidator projectValidator;
+	@Autowired
+	AuditionProjectValidator projectValidator;
     @Autowired
     private AuditionNewService projectService;
     @Autowired
-  private UserRepository userRepository;
+    private UserRepository userRepository;
 
     
-    @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ResponseEntity<?> createProject(
-            @RequestPart("auditionDetails") AuditionNewProjectWebModel dto,
-            @RequestPart(value = "profilePictureFiles", required = false) List<MultipartFile> files) {
-
-        // Attach files
-        if (files != null && !files.isEmpty()) {
-            dto.setProfilePictureFiles(files);
-        }
-
-        // ✅ Validate DTO
-        BindingResult bindingResult = new BeanPropertyBindingResult(dto, "auditionNewProjectWebModel");
-      
-		projectValidator.validate(dto, bindingResult);
-
-        if (bindingResult.hasErrors()) {
-            StringBuilder errors = new StringBuilder();
-            bindingResult.getAllErrors().forEach(error ->
-                    errors.append(error.getDefaultMessage()).append("; ")
-            );
-            return ResponseEntity.badRequest()
-                    .body(new Response(0, "Validation failed", errors.toString()));
-        }
-
-        try {
-            // ✅ Save project
-            AuditionNewProject project = projectService.createProject(dto);
-            return ResponseEntity.ok(new Response(1, "Success", AuditionCompanyConverter.toDto(project)));
-
-        } catch (Exception ex) {
-        	logger.error("❌ Failed to create audition project", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new Response(0, "Failed to create project: " + ex.getMessage(), null));
-        }
-    }
+//    @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+//    public ResponseEntity<?> createProject(
+//            @RequestPart("auditionDetails") AuditionNewProjectWebModel dto,
+//            @RequestPart(value = "profilePictureFiles", required = false) List<MultipartFile> files) {
+//
+//        // Attach files
+//        if (files != null && !files.isEmpty()) {
+//            dto.setProfilePictureFiles(files);
+//        }
+//
+//        // ✅ Validate DTO
+//        BindingResult bindingResult = new BeanPropertyBindingResult(dto, "auditionNewProjectWebModel");
+//      
+//		projectValidator.validate(dto, bindingResult);
+//
+//        if (bindingResult.hasErrors()) {
+//            StringBuilder errors = new StringBuilder();
+//            bindingResult.getAllErrors().forEach(error ->
+//                    errors.append(error.getDefaultMessage()).append("; ")
+//            );
+//            return ResponseEntity.badRequest()
+//                    .body(new Response(0, "Validation failed", errors.toString()));
+//        }
+//
+//        try {
+//            // ✅ Save project
+//            AuditionNewProject project = projectService.createProject(dto);
+//            return ResponseEntity.ok(new Response(1, "Success", AuditionCompanyConverter.toDto(project)));
+//
+//        } catch (Exception ex) {
+//        	logger.error("❌ Failed to create audition project", ex);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(new Response(0, "Failed to create project: " + ex.getMessage(), null));
+//        }
+//    }
     
     @GetMapping("/BySubprofession/{subProfessionId}")
     public ResponseEntity<?> getProjectsBySubProfession(@PathVariable Integer subProfessionId) {
@@ -318,4 +318,91 @@ public class AuditionNewController {
         }
     }
     
+    @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<Response> saveOrUpdateProject(
+            @RequestPart("auditionDetails") AuditionNewProjectWebModel projectDto,
+            @RequestPart(value = "profilePictureFiles", required = false) List<MultipartFile> profileFiles) {
+
+        // Attach files to DTO
+        if (profileFiles != null && !profileFiles.isEmpty()) {
+            projectDto.setProfilePictureFiles(profileFiles);
+        }
+
+        // ✅ Validate DTO
+        BindingResult bindingResult = new BeanPropertyBindingResult(projectDto, "auditionNewProjectWebModel");
+        projectValidator.validate(projectDto, bindingResult);
+
+        if (bindingResult.hasErrors()) {
+            StringBuilder errors = new StringBuilder();
+            bindingResult.getAllErrors().forEach(error ->
+                    errors.append(error.getDefaultMessage()).append("; ")
+            );
+            return ResponseEntity.badRequest()
+                    .body(new Response(0, "Validation failed", errors.toString()));
+        }
+
+        try {
+            // ✅ Save or update project
+            AuditionNewProjectWebModel savedProject = projectService.saveOrUpdateProject(projectDto);
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .status(1)
+                            .message(projectDto.getId() == null ? "Project created successfully" : "Project updated successfully")
+                            .data(savedProject)
+                            .build()
+            );
+
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Response.builder()
+                            .status(0)
+                            .message("Failed to save/update project: " + ex.getMessage())
+                            .build()
+                    );
+        }
+        
+        
+    }
+    
+    @GetMapping("/ByCompanyWithStatus")
+    public ResponseEntity<?> getProjectsByCompanyId(
+    		@RequestParam Integer companyId,
+            @RequestParam(required = false) String status) { // optional status filter
+        try {
+            if (companyId == null || companyId <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "Invalid companyId. Must be greater than 0.", null));
+            }
+
+            // Fetch projects using service method with optional status
+            List<AuditionNewProjectWebModel> projects = projectService.getProjectsByCompanyId(companyId, status);
+
+            if (projects.isEmpty()) {
+                return ResponseEntity.ok(
+                        new Response(0, "No Audition found for companyId: " + companyId, null)
+                );
+            }
+
+            return ResponseEntity.ok(
+                    new Response(1, "Success", projects)
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Response(0, "Something went wrong while fetching projects.", null));
+        }
+    }
+    
+    
+    @DeleteMapping("/deleteProject")
+    public ResponseEntity<Response> deleteProject(
+    		@RequestParam Integer projectId,
+            @RequestParam Integer userId) {
+
+        String message = projectService.softDeleteProject(projectId, userId);
+        return ResponseEntity.ok(new Response(1, message, null));
+    }
+
 }

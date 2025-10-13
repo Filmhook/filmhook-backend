@@ -21,4 +21,9 @@ public class AuditionUserCompanyRoleDTO {
     private LocalDateTime createdDate;
     private String filmHookCode;
     private Boolean isOwner;
+    private String assignedUserName;
+    private String assignedUserEmail;
+    private String ownerName;
+    private String ownerEmail;
+    private String assignedUserProfilePicture;
 }
