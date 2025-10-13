@@ -139,6 +139,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("SELECT COUNT(u) FROM User u WHERE (u.notificationCount IS NULL OR u.notificationCount = false) AND u.status = true")
 	Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
 
+	List<User> findByFilmHookCodeContainingIgnoreCaseAndStatus(String filmHookCode, Boolean status);
 
 
 

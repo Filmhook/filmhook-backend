@@ -1696,7 +1696,32 @@ public class UserServiceImpl implements UserService {
 //	        }
 //	        return false;
 //	    }
-
+	 @Override
+	    public List<UserWebModel> getUserByFhId(String filmHookCode) {
+	        List<UserWebModel> responseList = new ArrayList<>();
+	        try {
+	            List<User> usersList = userRepository.findByFilmHookCodeContainingIgnoreCaseAndStatus(filmHookCode, true);
+	            if (!Utility.isNullOrEmptyList(usersList)) {
+	                responseList = usersList.stream()
+	                        .filter(Objects::nonNull)
+	                        .map(user -> UserWebModel.builder()
+	                                .userId(user.getUserId())
+	                                .name(user.getName())
+	                                .adminReview(user.getAdminReview())
+	                                .userType(user.getUserType())
+	                                .profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
+	                                .profilePicUrl(this.getProfilePicUrl(user.getUserId()))
+	                                .userType(user.getUserType())
+	                                .filmHookCode(user.getFilmHookCode())
+	                                .build())
+	                        .collect(Collectors.toList());
+	            }
+	        } catch (Exception e) {
+	            logger.error("Error occurred at getUserByfilmHookCode() -> {}", e.getMessage());
+	            e.printStackTrace();
+	        }
+	        return responseList;
+	    }
 
 
 

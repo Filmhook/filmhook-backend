@@ -1295,6 +1295,11 @@ public class PostServiceImpl implements PostService {
                         .findByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
                         .orElse(null);
             }
+            
+         // ⚡ Fetch Like count for this comment (based on reactionType)
+            Integer totalLikesCount = likeRepository.countByCommentIdAndReactionTypeAndStatus(
+                    comment.getCommentId(), "LIKE", true
+            );
            
             CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
                     .commentId(comment.getCommentId())
@@ -1303,7 +1308,7 @@ public class PostServiceImpl implements PostService {
                     .userId(comment.getCommentedBy())
                     .parentCommentId(comment.getParentCommentId())
                     .content(comment.getContent())
-                    .totalLikesCount(comment.getLikesCount())
+                    .totalLikesCount(totalLikesCount)
                     .totalCommentCount(totalCommentCount)
                     .status(comment.getStatus())
                     .userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
@@ -1332,6 +1337,7 @@ public class PostServiceImpl implements PostService {
 	public List<CommentOutputWebModel> getComment(CommentInputWebModel commentInputWebModel) {
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
+		
 			if (post != null) {	
 				List<Comment> commentData = (List<Comment>) post.getCommentCollection();
 				// Filter comments with status true

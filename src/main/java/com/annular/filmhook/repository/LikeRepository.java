@@ -70,5 +70,9 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
 
     // Count likes for a teamNeed
     Integer countByCategoryAndAuditionIdAndStatus(String category, Integer auditionId, Boolean status);
+    
+    //count by comment like 
+    Integer countByCommentIdAndReactionTypeAndStatus(Integer commentId, String reactionType, Boolean status);
+
 
 }

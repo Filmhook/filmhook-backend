@@ -91,6 +91,8 @@ public interface UserService {
 	ResponseEntity<?> getReferralCodeByUserId(Integer userId);
 
 	ResponseEntity<?> addLocation(UserWebModel userWebModel);
+
+	List<UserWebModel> getUserByFhId(String filmHookCode);
 	
 	
 
