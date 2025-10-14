@@ -292,10 +292,12 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 		try {
 
 			if (isSuccess) {
-
-				booking.setStatus(BookingStatus.CONFIRMED);
-				bookingRepository.save(booking);
+			    booking.setStatus(BookingStatus.CONFIRMED);
+			} else {
+			    booking.setStatus(BookingStatus.FAILED); 
 			}
+				bookingRepository.save(booking);
+			
 			String txnid = payment.getTxnid();
 			String customerName = payment.getFirstname();
 			String customerEmail = payment.getEmail();
