@@ -175,53 +175,55 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Override
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
-		// Check if property exists
-		ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+	    // Fetch property
+	    ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
 
-		// Check if client exists
-		User client = userRepository.findById(dto.getClientId())
-				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+	    // Fetch client
+	    User client = userRepository.findById(dto.getClientId())
+	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
 
-		LocalDate newStart = dto.getShootStartDate();
-		LocalDate newEnd = dto.getShootEndDate();
+	    LocalDate newStart = dto.getShootStartDate();
+	    LocalDate newEnd = dto.getShootEndDate();
 
-		// ✅ Step 1: Prevent overlapping CONFIRMED bookings for this property
-		List<ShootingLocationBooking> confirmedBookings = bookingRepository
-				.findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
+	    // 1️⃣ Prevent overlapping only for CONFIRMED bookings
+	    List<ShootingLocationBooking> confirmedBookings = bookingRepository
+	            .findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
 
-		for (ShootingLocationBooking existing : confirmedBookings) {
-			LocalDate existingStart = existing.getShootStartDate();
-			LocalDate existingEnd = existing.getShootEndDate();
+	    for (ShootingLocationBooking existing : confirmedBookings) {
+	        LocalDate existingStart = existing.getShootStartDate();
+	        LocalDate existingEnd = existing.getShootEndDate();
 
-			boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
-			if (overlaps) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"This property is already booked for selected dates.");
-			}
-		}
+	        boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
+	        if (overlaps) {
+	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+	                    "This property is already booked for selected dates.");
+	        }
+	    }
 
-		// ✅ Step 2: Allow same client to book again (on non-overlapping dates)
-		List<ShootingLocationBooking> clientBookings = bookingRepository
-				.findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId());
+	    // 2️⃣ Check if updating an existing booking (optional)
+	    ShootingLocationBooking bookingEntity;
+	    if (dto.getBookingId() != null) {
+	        bookingEntity = bookingRepository.findById(dto.getBookingId())
+	                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 
-		for (ShootingLocationBooking b : clientBookings) {
-			LocalDate clientStart = b.getShootStartDate();
-			LocalDate clientEnd = b.getShootEndDate();
+	        // Update fields
+	        bookingEntity.setShootStartDate(newStart);
+	        bookingEntity.setShootEndDate(newEnd);
+	        bookingEntity.setPricePerDay(dto.getPricePerDay());
+	        bookingEntity.setTotalAmount(dto.getTotalAmount());
+	        bookingEntity.setStatus(BookingStatus.PENDING);
+	    } else {
+	        // 3️⃣ Create new booking (status PENDING by default)
+	        bookingEntity = ShootingLocationBookingConverter.toEntity(dto, client, property);
+	        bookingEntity.setStatus(BookingStatus.PENDING); // New bookings start as pending
+	    }
 
-			boolean overlaps = !(newEnd.isBefore(clientStart) || newStart.isAfter(clientEnd));
-			if (overlaps) {
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-						"You already have a booking for this property on these dates.");
-			}
-		}
+	    ShootingLocationBooking saved = bookingRepository.save(bookingEntity);
 
-		// ✅ Step 3: Save new booking
-		ShootingLocationBooking entity = ShootingLocationBookingConverter.toEntity(dto, client, property);
-		ShootingLocationBooking saved = bookingRepository.save(entity);
-
-		return ShootingLocationBookingConverter.toDTO(saved);
+	    return ShootingLocationBookingConverter.toDTO(saved);
 	}
+
 	// My order
 	@Override
 	public List<ShootingLocationBookingDTO> getBookingsByClient(Integer clientId) {
@@ -294,8 +296,9 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 			if (isSuccess) {
 			    booking.setStatus(BookingStatus.CONFIRMED);
 			} else {
-			    booking.setStatus(BookingStatus.FAILED); 
+			    booking.setStatus(BookingStatus.FAILED); // or whatever enum you have for failed
 			}
+
 				bookingRepository.save(booking);
 			
 			String txnid = payment.getTxnid();
