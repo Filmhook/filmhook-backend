@@ -139,10 +139,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("SELECT COUNT(u) FROM User u WHERE (u.notificationCount IS NULL OR u.notificationCount = false) AND u.status = true")
 	Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
 
+	@Query("SELECT u FROM User u WHERE u.email = :email AND u.status = true")
+	Optional<User> findActiveUserByEmail(@Param("email") String email);
 
-
-
-
+	@Query("SELECT u FROM User u WHERE u.email = :email AND u.status = false")
+	Optional<User> findInactiveUserByEmail(@Param("email") String email);
 
 
 
