@@ -1,7 +1,5 @@
 package com.annular.filmhook.model;
 
-
-
 import java.time.LocalDateTime;
 
 import javax.persistence.*;

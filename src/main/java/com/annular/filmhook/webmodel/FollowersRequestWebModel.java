@@ -25,6 +25,8 @@ public class FollowersRequestWebModel {
     private String userGender;
     private String userType;
     private String userProfilePicUrl;
+    private Float review;
+
 
 }
 

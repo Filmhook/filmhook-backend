@@ -817,9 +817,10 @@ public class UserServiceImpl implements UserService {
                         .filter(filter4 -> searchWebModel.getSubProfessionIds().contains(filter4.getFilmSubProfession().getSubProfessionId()))
                         .forEach(professionData -> {
                             User user = this.getUser(professionData.getUserId()).orElse(null);
-                            System.out.print("user"+user);
-                            if (user != null  && Boolean.TRUE.equals(user.getIndustryUserVerified())) { // Check for industryUserVerified
-                                logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
+                            System.out.print("userssss"+user);
+                            if (user != null  && Boolean.TRUE.equals(user.getIndustryUserVerified())) { 
+                            	
+                                logger.info("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
                                 Map<String, Object> map = new LinkedHashMap<>();
 
                                 map.put("userId", user.getUserId());
@@ -832,7 +833,7 @@ public class UserServiceImpl implements UserService {
                                 FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build());
                                 map.put("userProfilePic", profilePic != null ? profilePic.getFilePath() : "");
 
-                                map.put("userRating", "9.7");
+                               
                                 map.put("experience", user.getExperience());
                                 map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
                                 map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
@@ -1696,7 +1697,32 @@ public class UserServiceImpl implements UserService {
 //	        }
 //	        return false;
 //	    }
-
+	 @Override
+	    public List<UserWebModel> getUserByFhId(String filmHookCode) {
+	        List<UserWebModel> responseList = new ArrayList<>();
+	        try {
+	            List<User> usersList = userRepository.findByFilmHookCodeContainingIgnoreCaseAndStatus(filmHookCode, true);
+	            if (!Utility.isNullOrEmptyList(usersList)) {
+	                responseList = usersList.stream()
+	                        .filter(Objects::nonNull)
+	                        .map(user -> UserWebModel.builder()
+	                                .userId(user.getUserId())
+	                                .name(user.getName())
+	                                .adminReview(user.getAdminReview())
+	                                .userType(user.getUserType())
+	                                .profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
+	                                .profilePicUrl(this.getProfilePicUrl(user.getUserId()))
+	                                .userType(user.getUserType())
+	                                .filmHookCode(user.getFilmHookCode())
+	                                .build())
+	                        .collect(Collectors.toList());
+	            }
+	        } catch (Exception e) {
+	            logger.error("Error occurred at getUserByfilmHookCode() -> {}", e.getMessage());
+	            e.printStackTrace();
+	        }
+	        return responseList;
+	    }
 
 
 
