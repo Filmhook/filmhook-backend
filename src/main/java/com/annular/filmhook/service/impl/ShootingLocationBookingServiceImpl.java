@@ -186,7 +186,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	    LocalDate newStart = dto.getShootStartDate();
 	    LocalDate newEnd = dto.getShootEndDate();
 
-	    // 1️⃣ Prevent overlapping only for CONFIRMED bookings
+	    // ✅ Step 1: Prevent overlapping only for CONFIRMED bookings
 	    List<ShootingLocationBooking> confirmedBookings = bookingRepository
 	            .findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
 
@@ -197,32 +197,43 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
 	        if (overlaps) {
 	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-	                    "This property is already booked for selected dates.");
+	                    "This property is already booked for the selected dates.");
 	        }
 	    }
 
-	    // 2️⃣ Check if updating an existing booking (optional)
-	    ShootingLocationBooking bookingEntity;
-	    if (dto.getBookingId() != null) {
-	        bookingEntity = bookingRepository.findById(dto.getBookingId())
-	                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+	    // ✅ Step 2: Check if SAME USER already has a booking for SAME PROPERTY
+	    ShootingLocationBooking existingBooking = bookingRepository
+	            .findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId())
+	            .stream()
+	            .findFirst()
+	            .orElse(null);
 
-	        // Update fields
+	    ShootingLocationBooking bookingEntity;
+	    if (existingBooking != null) {
+	        // 🔄 Update existing booking instead of creating new one
+	        bookingEntity = existingBooking;
 	        bookingEntity.setShootStartDate(newStart);
 	        bookingEntity.setShootEndDate(newEnd);
 	        bookingEntity.setPricePerDay(dto.getPricePerDay());
 	        bookingEntity.setTotalAmount(dto.getTotalAmount());
-	        bookingEntity.setStatus(BookingStatus.PENDING);
+	        if (dto.getBookingStatus() != null) {
+	            bookingEntity.setStatus(BookingStatus.valueOf(dto.getBookingStatus().toUpperCase()));
+	        } else {
+	            bookingEntity.setStatus(BookingStatus.PENDING);
+	        }
+
+	        bookingEntity.setUpdatedAt(LocalDateTime.now());
 	    } else {
-	        // 3️⃣ Create new booking (status PENDING by default)
+	        // 🆕 Create new booking if user never booked this property before
 	        bookingEntity = ShootingLocationBookingConverter.toEntity(dto, client, property);
-	        bookingEntity.setStatus(BookingStatus.PENDING); // New bookings start as pending
+	        bookingEntity.setStatus(BookingStatus.PENDING);
 	    }
 
+	    // ✅ Save and return
 	    ShootingLocationBooking saved = bookingRepository.save(bookingEntity);
-
 	    return ShootingLocationBookingConverter.toDTO(saved);
 	}
+
 
 	// My order
 	@Override
