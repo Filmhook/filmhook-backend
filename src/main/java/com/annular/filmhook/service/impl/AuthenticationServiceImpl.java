@@ -74,77 +74,93 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         HashMap<String, Object> response = new HashMap<>();
         try {
             logger.info("Register method start");
-            Optional<User> userData = userRepository.findByEmailAndUserType(userWebModel.getEmail(), userWebModel.getUserType());
-            if (userData.isEmpty()) {
-                User user = new User();
-                user.setPhoneNumber(userWebModel.getPhoneNumber());
 
-                StringBuilder name = new StringBuilder();
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName())) {
-                    user.setFirstName(userWebModel.getFirstName());
-                    name.append(userWebModel.getFirstName()).append(" ");
-                }
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName())) {
-                    user.setMiddleName(userWebModel.getMiddleName());
-                    name.append(userWebModel.getMiddleName()).append(" ");
-                }
-                if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) {
-                    user.setLastName(userWebModel.getLastName());
-                    name.append(userWebModel.getLastName());
-                }
-                user.setName(name.toString());
-
-                user.setEmail(userWebModel.getEmail());
-                user.setUserType(userWebModel.getUserType());
-                user.setMobileNumberStatus(false);
-                user.setIndustryUserVerified(false);
-                user.setDob(userWebModel.getDob());
-                user.setAdminReview((float) 0.1);
-                user.setGender(userWebModel.getGender());
-                user.setBirthPlace(userWebModel.getBirthPlace());
-                user.setLivingPlace(userWebModel.getLivingPlace());
-                user.setDistrict(userWebModel.getDistrict());
-                user.setCountryCode(userWebModel.getCountryCode());
-
-                // Generate and set FilmHook code
-                String filmHookCode = this.generateFilmHookCode();
-                user.setFilmHookCode(filmHookCode);
-
-                String encryptPwd = new BCryptPasswordEncoder().encode(userWebModel.getPassword());
-                user.setPassword(encryptPwd);
-
-                String randomCode = RandomString.make(64);
-                user.setVerificationCode(randomCode);
-
-                int otp = Integer.parseInt(Utility.generateOtp(4));
-                user.setOtp(otp);
-                CompletableFuture.runAsync(() -> {
-                    String message = "Your OTP is " + otp + " for verification";
-                    twilioConfig.smsNotification(userWebModel.getPhoneNumber(), message);
-                });
-
-                int emailOtp = Integer.parseInt(Utility.generateOtp(4));
-                user.setEmailOtp(emailOtp);
-                // boolean sendVerificationRes = this.sendVerificationEmail(user);
-                // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
-
-                user.setStatus(false);
-                user.setCreatedBy(user.getUserId());
-                user.setCreatedOn(new Date());
-                user.setUserFlag(true);
-                user = userRepository.save(user);
-                response.put("userDetails", user);
-                //response.put("verificationCode", user.getVerificationCode());
-            } else {
-                return ResponseEntity.unprocessableEntity().body(new Response(1, "This Account already exists", ""));
+            // Check active users
+            Optional<User> activeUser = userRepository.findActiveUserByEmail(userWebModel.getEmail());
+            if (activeUser.isPresent()) {
+                return ResponseEntity.unprocessableEntity()
+                        .body(new Response(1, "This Account already exists", ""));
             }
+
+            // Check inactive users
+            Optional<User> inactiveUser = userRepository.findInactiveUserByEmail(userWebModel.getEmail());
+
+            User user;
+            if (inactiveUser.isPresent()) {
+                // Reuse existing inactive user
+                user = inactiveUser.get();
+                logger.info("Reusing existing inactive user: " + user.getUserId());
+            } else {
+                // Create new user
+                user = new User();
+            }
+
+            // Set user fields
+            user.setPhoneNumber(userWebModel.getPhoneNumber());
+
+            // Build full name
+            StringBuilder name = new StringBuilder();
+            if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName())) {
+                user.setFirstName(userWebModel.getFirstName());
+                name.append(userWebModel.getFirstName()).append(" ");
+            }
+            if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName())) {
+                user.setMiddleName(userWebModel.getMiddleName());
+                name.append(userWebModel.getMiddleName()).append(" ");
+            }
+            if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) {
+                user.setLastName(userWebModel.getLastName());
+                name.append(userWebModel.getLastName());
+            }
+            user.setName(name.toString().trim());
+
+            user.setEmail(userWebModel.getEmail());
+            user.setUserType(userWebModel.getUserType());
+            user.setMobileNumberStatus(false);
+            user.setIndustryUserVerified(false);
+            user.setDob(userWebModel.getDob());
+            user.setAdminReview(0.1f);
+            user.setGender(userWebModel.getGender());
+            user.setBirthPlace(userWebModel.getBirthPlace());
+            user.setLivingPlace(userWebModel.getLivingPlace());
+            user.setDistrict(userWebModel.getDistrict());
+            user.setCountryCode(userWebModel.getCountryCode());
+
+            // Generate FilmHook code & encrypt password if new user
+            if (user.getUserId() == null) {
+                user.setFilmHookCode(this.generateFilmHookCode());
+            }
+            user.setPassword(new BCryptPasswordEncoder().encode(userWebModel.getPassword()));
+
+            // Verification codes
+            user.setVerificationCode(RandomString.make(64));
+            user.setOtp(Integer.parseInt(Utility.generateOtp(4)));
+            user.setEmailOtp(Integer.parseInt(Utility.generateOtp(4)));
+         // boolean sendVerificationRes = this.sendVerificationEmail(user);
+            // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
+            // Set status false
+            user.setStatus(false);
+
+            if (user.getCreatedOn() == null) {
+                user.setCreatedOn(new Date());
+            }
+
+            user.setUserFlag(true);
+
+            // Save user
+            user = userRepository.save(user);
+            response.put("userDetails", user);
+
             logger.info("Register method end");
+            return ResponseEntity.ok()
+                    .body(new Response(1, "User was registered in FilmHook app successfully...", response));
+
         } catch (Exception e) {
             logger.error("Register Method Exception -> {}", e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
+            return ResponseEntity.internalServerError()
+                    .body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
         }
-        return ResponseEntity.ok().body(new Response(1, "User was registered in FilmHook app successfully...", response));
     }
 
     private static final AtomicInteger counter = new AtomicInteger(1);
