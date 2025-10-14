@@ -818,8 +818,9 @@ public class UserServiceImpl implements UserService {
                         .forEach(professionData -> {
                             User user = this.getUser(professionData.getUserId()).orElse(null);
                             System.out.print("userssss"+user);
-                            if (user != null  && Boolean.TRUE.equals(user.getIndustryUserVerified())) { // Check for industryUserVerified
-                                logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
+                            if (user != null  && Boolean.TRUE.equals(user.getIndustryUserVerified())) { 
+                            	
+                                logger.info("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
                                 Map<String, Object> map = new LinkedHashMap<>();
 
                                 map.put("userId", user.getUserId());
@@ -832,7 +833,7 @@ public class UserServiceImpl implements UserService {
                                 FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build());
                                 map.put("userProfilePic", profilePic != null ? profilePic.getFilePath() : "");
 
-                                map.put("userRating", "9.7");
+                               
                                 map.put("experience", user.getExperience());
                                 map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
                                 map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
