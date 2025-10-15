@@ -35,6 +35,7 @@ import com.annular.filmhook.converter.AuditionCompanyConverter;
 import com.annular.filmhook.model.AuditionNewProject;
 import com.annular.filmhook.model.AuditionPayment;
 import com.annular.filmhook.validator.AuditionProjectValidator;
+import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
 import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
@@ -404,5 +405,13 @@ public class AuditionNewController {
         String message = projectService.softDeleteProject(projectId, userId);
         return ResponseEntity.ok(new Response(1, message, null));
     }
+    
+    @GetMapping("/AuditionCompanyPostCounts")
+    public AuditionJobPostCountDTO getCompanyPostCounts(
+            @RequestParam Integer companyId,
+            @RequestParam Integer professionId) {
 
+        return projectService.getCompanyPostCounts(companyId, professionId);
+    }
+    
 }

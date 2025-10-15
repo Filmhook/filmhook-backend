@@ -11,6 +11,7 @@ import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
 
 import com.annular.filmhook.model.AuditionPayment;
+import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
 import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
@@ -40,6 +41,8 @@ public interface AuditionNewService {
 	AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
 	List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status);
 	String softDeleteProject(Integer projectId, Integer userId);
+	  AuditionJobPostCountDTO getCompanyPostCounts(Integer companyId, Integer professionId);
+	
 }
 
 
