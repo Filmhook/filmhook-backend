@@ -292,7 +292,7 @@ public class PostController {
             if (isDeleted) {
                 return ResponseEntity.ok(new Response(1, "Success","Post deleted successfully."));
             } else {
-                return ResponseEntity.badRequest().body(new Response(-1, "fail","Failed to delete post"));
+                return ResponseEntity.ok(new Response(-1, "fail","Failed to delete post"));
             }
         } catch (Exception e) {
             logger.error("deletePostByUserId Method Exception -> {}", e.getMessage());

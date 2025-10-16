@@ -58,6 +58,7 @@ import java.util.NoSuchElementException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -1292,7 +1293,7 @@ public class PostServiceImpl implements PostService {
             Likes userLike = null;
             if (finalLoggedInUser != null) {
                 userLike = likeRepository
-                        .findByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
+                        .findFirstByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
                         .orElse(null);
             }
             
@@ -1470,35 +1471,75 @@ public class PostServiceImpl implements PostService {
 				.status(comment.getStatus())
 				.build();
 	}
-
+	
+	
 	@Override
 	public boolean deletePostByUserId(PostWebModel postWebModel) {
-		try {
-			// Find the post by its ID and user ID
-			Optional<Posts> postData = postsRepository.findByIdAndUserId(postWebModel.getMediaFilesIds(), postWebModel.getUserId());
-			if (postData.isPresent()) {
-				Posts post = postData.get();
+	    try {
+	        // Fetch all posts matching the provided IDs
+	        List<Posts> postsList = postsRepository.findAllById(postWebModel.getMediaFilesIds());
 
-				// Delete associated media files
-				mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(post.getUser().getUserId(), MediaFileCategory.Post, postWebModel.getMediaFilesIds());
+	        if (postsList == null || postsList.isEmpty()) {
+	            return false; // No posts found
+	        }
 
-				// Update post status to false
-				post.setStatus(false);
+	        Integer loggedInUserId = postWebModel.getUserId();
+	        boolean anyActionPerformed = false;
 
-				// Save the updated post
-				postsRepository.save(post);
-				return true;
-			} else {
-				return false; // Post not found
-			}
-		} catch (Exception e) {
-			// Log the exception
-			e.printStackTrace();
-			return false;
-		}
+	        // Iterate through each post
+	        for (Posts post : postsList) {
+	            Integer postOwnerId = post.getUser().getUserId();
 
+	            //  Logged-in user is the post owner → soft delete
+	            if (loggedInUserId.equals(postOwnerId)) {
+
+	                // Convert post IDs to Integer list for media deletion
+	                List<Integer> mediaFileIds = postWebModel.getMediaFilesIds().stream()
+	                        .map(Integer::valueOf)
+	                        .collect(Collectors.toList());
+
+	                // Delete associated media files
+	                mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(
+	                        postOwnerId,
+	                        MediaFileCategory.Post,
+	                        mediaFileIds
+	                );
+
+	                // Soft delete post
+	                post.setStatus(false);
+	                postsRepository.save(post);
+	                anyActionPerformed = true;
+	            }
+
+	            // Logged-in user is tagged → remove tag only
+	            else if (post.getTagUsers() != null && !post.getTagUsers().isEmpty()) {
+	                List<String> taggedIds = new ArrayList<>(Arrays.asList(post.getTagUsers().split(",")));
+	                String loggedInUserStr = String.valueOf(loggedInUserId);
+
+	                if (taggedIds.contains(loggedInUserStr)) {
+	                    taggedIds.remove(loggedInUserStr);
+	                    post.setTagUsers(String.join(",", taggedIds)); // Update string
+	                    postsRepository.save(post);
+	                    anyActionPerformed = true;
+	                }
+	            }
+
+	            //  Unauthorized user → do nothing
+	            else {
+	                System.out.println("Unauthorized delete attempt by userId: " + loggedInUserId +
+	                        " for postId: " + post.getPostId());
+	            }
+	        }
+
+	        // Return true if any delete or untag happened
+	        return anyActionPerformed;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
-
+	
 	public PostView trackPostView(Integer postId, Integer userId) {
 		Posts post = postsRepository.findById(postId)
 				.orElseThrow(() -> new RuntimeException("Post not found"));

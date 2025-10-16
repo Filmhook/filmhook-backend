@@ -545,7 +545,7 @@ public class AdminServiceImpl implements AdminService {
             if (userOptional.isEmpty()) return new Response(-1, "User not found", null); // Return an error response if user is not found
 
             User user = userOptional.get();
-            if (!status) {
+            if (status) {
                 logger.info("User id -> {}", userWebModel.getUserId());
                 user.setUserType("Industry User");
                 user.setAdminReview(userWebModel.getAdminReview());
