@@ -115,7 +115,7 @@ public class MailNotification {
             }
             
             String subject = "FilmHook Account Verification";
-            String mailContent = "<p>Your One-Time Password (OTP) to verify your FilmHook account is: <b>" + user.getFilmHookOtp() + "</b>.</p>"
+            String mailContent = "<p>Your One-Time Password (OTP) to verify your FilmHook account is: <b>" + user.getEmailOtp() + "</b>.</p>"
                                + "<p>This code is valid for a short time. Please do not share it with anyone.</p>";
             
             return this.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
