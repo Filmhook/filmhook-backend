@@ -149,11 +149,13 @@ public class UserServiceImpl implements UserService {
 				user.setPinProfileStatus(pinStatus);
 
 				// ✅ Follow status
-				Boolean followStatus = friendRequestRepository
-						.findByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
-								loggedInUserId, userId, true
-								).isPresent();
-				user.setFollowingStatus(followStatus);
+				   Boolean followStatus = friendRequestRepository
+		                    .findByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
+		                            loggedInUserId, userId, true
+		                    )
+		                    .map(request -> "Followed".equalsIgnoreCase(request.getFollowersRequestStatus()))
+		                    .orElse(false);
+		            user.setFollowingStatus(followStatus);
 			}
 		}
 		return Optional.ofNullable(user);
