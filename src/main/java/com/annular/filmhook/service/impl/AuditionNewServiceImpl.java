@@ -83,6 +83,7 @@ import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
@@ -322,10 +323,9 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					if (user.getFilmHookCode() != null) {
 						dto.setFilmHookCode(user.getFilmHookCode());
 					}
+					
+					
 					// ✅ Attach project expiry date
-
-
-
 					Optional<AuditionPayment> paymentOpt = paymentRepository
 							.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
 
@@ -1312,7 +1312,35 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		         return "Project deleted successfully.";
 		     }
 
+	 @Override
+	    public AuditionJobPostCountDTO getCompanyPostCounts(Integer companyId, Integer professionId) {
+	        List<AuditionNewProject> projects = projectRepository
+	                .findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
 
+	        // All active teamNeeds in company
+	        int activePostCount = projects.stream()
+	                .flatMap(p -> p.getTeamNeeds().stream())
+	                .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+	                .mapToInt(tn -> 1)
+	                .sum();
+
+	        // Active teamNeeds only for given professionjobPostCount
+	        int jobPostCount = projects.stream()
+	                .flatMap(p -> p.getTeamNeeds().stream())
+	                .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+	                .filter(tn -> tn.getProfession() != null &&
+	                        tn.getProfession().getFilmProfessionId().equals(professionId))
+	                .mapToInt(tn -> 1)
+	                .sum();
+
+	        AuditionJobPostCountDTO dto = new AuditionJobPostCountDTO();
+	        dto.setCompanyId(companyId);
+	        dto.setProfessionId(professionId);
+	        dto.setJobPostCount(jobPostCount);
+	        dto.setActivePostCount(activePostCount);
+
+	        return dto;
+	    }
 
 }
 
