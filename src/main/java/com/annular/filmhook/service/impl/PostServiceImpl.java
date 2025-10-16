@@ -1293,7 +1293,7 @@ public class PostServiceImpl implements PostService {
             Likes userLike = null;
             if (finalLoggedInUser != null) {
                 userLike = likeRepository
-                        .findByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
+                        .findFirstByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
                         .orElse(null);
             }
             
