@@ -110,7 +110,7 @@ public class MailNotification {
 //    }
     public boolean sendVerificationEmail(User user) {
         try {
-            if (Utility.isNullOrBlankWithTrim(user.getEmail()) || Utility.isNullOrZero(user.getFilmHookOtp())) {
+            if (Utility.isNullOrBlankWithTrim(user.getEmail()) || Utility.isNullOrZero(user.getEmailOtp())) {
                 throw new IllegalArgumentException("Email or OTP is null");
             }
             
