@@ -77,7 +77,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                     existingRequest.setFollowersRequestUpdatedBy(senderId);
                     friendRequestRepository.save(existingRequest);
 
-                    return ResponseEntity.ok("User followed successfully...");
+                    return ResponseEntity.ok("You started following this user.");
                 }
             }
 
@@ -91,7 +91,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             newRequest.setFollowersRequestIsActive(true);
             friendRequestRepository.save(newRequest);
 
-            return ResponseEntity.ok("User followed successfully...");
+            return ResponseEntity.ok("You started following this user.");
         } catch (Exception e) {
             logger.error("Error at saveFollowersRequest() -> {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
@@ -129,7 +129,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                 existingRequest.setFollowersRequestUpdatedBy(senderId);
                 friendRequestRepository.saveAndFlush(existingRequest);
 
-                return ResponseEntity.ok().body("User unfollowed successfully...");
+                return ResponseEntity.ok().body("profile unfollowed successfully...");
             }
 
             // 3️⃣ If the status is neither FOLLOWED nor UNFOLLOWED (unexpected)
