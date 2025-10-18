@@ -48,62 +48,100 @@ public class FriendRequestServiceImpl implements FriendRequestService {
             Integer senderId = followersRequestWebModel.getFollowersRequestSenderId();
             Integer receiverId = followersRequestWebModel.getFollowersRequestReceiverId();
 
-            // Check if senderId and receiverId are not null
+            // 1️⃣ Validate IDs
             if (senderId == null || receiverId == null) {
                 return ResponseEntity.badRequest().body("Sender ID or Receiver ID cannot be null");
             }
 
-            // Check if the senderId and receiverId are different
             if (senderId.equals(receiverId)) {
                 return ResponseEntity.badRequest().body("Sender ID and Receiver ID cannot be the same");
             }
 
-            // Check if the sender already sent a request to the receiver
-            FollowersRequest existingFriendRequest = friendRequestRepository.findByFollowersRequestSenderIdAndFollowersRequestReceiverId(senderId, receiverId).orElse(null);
-            if (existingFriendRequest != null) {
-                if (existingFriendRequest.getFollowersRequestStatus().equalsIgnoreCase(UNFOLLOWED)) {
-                    existingFriendRequest.setFollowersRequestStatus(FOLLOWED);
-                    friendRequestRepository.save(existingFriendRequest);
+            // 2️⃣ Check if relationship already exists
+            Optional<FollowersRequest> existingRequestOpt =
+                    friendRequestRepository.findByFollowersRequestSenderIdAndFollowersRequestReceiverId(senderId, receiverId);
+
+            if (existingRequestOpt.isPresent()) {
+                FollowersRequest existingRequest = existingRequestOpt.get();
+
+                // If already following — prevent re-follow
+                if (existingRequest.getFollowersRequestStatus().equalsIgnoreCase(FOLLOWED)) {
+                    return ResponseEntity.ok("You are already following this user.");
                 }
-            } else {
-                // If no existing request, proceed to save the new friend request
-                FollowersRequest request = new FollowersRequest();
-                request.setFollowersRequestSenderId(senderId);
-                request.setFollowersRequestReceiverId(receiverId);
-                request.setFollowersRequestStatus(FOLLOWED);
-                request.setFollowersRequestCreatedBy(senderId);
-                request.setFollowersRequestCreatedOn(new Date());
-                request.setFollowersRequestIsActive(true);
-                friendRequestRepository.save(request);
+
+                // If previously unfollowed — allow follow again
+                if (existingRequest.getFollowersRequestStatus().equalsIgnoreCase(UNFOLLOWED)) {
+                    existingRequest.setFollowersRequestStatus(FOLLOWED);
+                    existingRequest.setFollowersRequestIsActive(true);
+                    existingRequest.setFollowersRequestUpdatedOn(new Date());
+                    existingRequest.setFollowersRequestUpdatedBy(senderId);
+                    friendRequestRepository.save(existingRequest);
+
+                    return ResponseEntity.ok("User followed successfully...");
+                }
             }
-            return ResponseEntity.ok().body("User followed successfully...");
+
+            // 3️⃣ If no record found — create a new follow request
+            FollowersRequest newRequest = new FollowersRequest();
+            newRequest.setFollowersRequestSenderId(senderId);
+            newRequest.setFollowersRequestReceiverId(receiverId);
+            newRequest.setFollowersRequestStatus(FOLLOWED);
+            newRequest.setFollowersRequestCreatedBy(senderId);
+            newRequest.setFollowersRequestCreatedOn(new Date());
+            newRequest.setFollowersRequestIsActive(true);
+            friendRequestRepository.save(newRequest);
+
+            return ResponseEntity.ok("User followed successfully...");
         } catch (Exception e) {
-            logger.error("Error at saveFollowersRequest() -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("An error occurred while saving the friend request: " + e.getMessage());
+            logger.error("Error at saveFollowersRequest() -> {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body("An error occurred while saving the follower request: " + e.getMessage());
         }
     }
+
 
     @Override
     public ResponseEntity<?> updateFriendRequest(FollowersRequestWebModel followersRequestWebModel) {
         try {
             Integer senderId = followersRequestWebModel.getFollowersRequestSenderId();
             Integer receiverId = followersRequestWebModel.getFollowersRequestReceiverId();
-            if (senderId == null || receiverId == null)
-                return ResponseEntity.badRequest().body("Sender ID or Receiver ID is null");
 
-            Optional<FollowersRequest> existingFriendRequest = friendRequestRepository.findByFollowersRequestSenderIdAndFollowersRequestReceiverId(senderId, receiverId);
-            if (existingFriendRequest.isPresent()) {
-                existingFriendRequest.get().setFollowersRequestStatus(UNFOLLOWED);
-                friendRequestRepository.saveAndFlush(existingFriendRequest.get());
+            // 1️⃣ Validate IDs
+            if (senderId == null || receiverId == null)
+                return ResponseEntity.badRequest().body("Sender ID or Receiver ID cannot be null");
+
+            Optional<FollowersRequest> existingRequestOpt =
+                    friendRequestRepository.findByFollowersRequestSenderIdAndFollowersRequestReceiverId(senderId, receiverId);
+
+            if (existingRequestOpt.isEmpty()) {
+                return ResponseEntity.ok("You are not following this user.");
             }
+
+            FollowersRequest existingRequest = existingRequestOpt.get();
+
+            // 2️⃣ Check current follow status
+            if (existingRequest.getFollowersRequestStatus().equalsIgnoreCase(UNFOLLOWED)) {
+                return ResponseEntity.ok("You have already unfollowed this user.");
+            }
+            if (existingRequest.getFollowersRequestStatus().equalsIgnoreCase(FOLLOWED)) {
+                existingRequest.setFollowersRequestStatus(UNFOLLOWED);
+                existingRequest.setFollowersRequestUpdatedOn(new Date());
+                existingRequest.setFollowersRequestUpdatedBy(senderId);
+                friendRequestRepository.saveAndFlush(existingRequest);
+
+                return ResponseEntity.ok().body("User unfollowed successfully...");
+            }
+
+            // 3️⃣ If the status is neither FOLLOWED nor UNFOLLOWED (unexpected)
+            return ResponseEntity.badRequest().body("Invalid follow status for this user.");
+
         } catch (Exception e) {
-            logger.error("Error at updateFriendRequest() -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("An error occurred while updating the friend request: " + e.getMessage());
+            logger.error("Error at updateFriendRequest() -> {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body("An error occurred while updating the follow request: " + e.getMessage());
         }
-        return ResponseEntity.ok().body("Unfollowed the user successfully...");
     }
+
 
     @Override
     public ResponseEntity<?> getFriendRequest(Integer userId) {

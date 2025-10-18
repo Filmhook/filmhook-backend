@@ -920,7 +920,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 			// 5️⃣ Send in-app notification
 			sendInAppNotification(payment,
 					"Audition Payment Failed",
-					"Your audition payment has failed. Reason: " + errorMessage);
+					"Your audition payment has failed because " + errorMessage);
 
 			// 6️⃣ Return response
 			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
