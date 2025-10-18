@@ -86,6 +86,8 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     MediaFilesService mediaFilesService;
+    
+    
 
     @Autowired
     private MailNotification mailNotification;
@@ -1040,7 +1042,7 @@ public class DetailServiceImpl implements DetailService {
             user.setFilmHookOtp(otpNumber);
             userRepository.save(user);
 
-            boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
+            boolean sendVerificationRes = mailNotification.sendVerificationFilmHookOTP(user);
             if (sendVerificationRes) {
                 // If email sent successfully, return success response
                 return ResponseEntity.ok("Verification email sent successfully.");

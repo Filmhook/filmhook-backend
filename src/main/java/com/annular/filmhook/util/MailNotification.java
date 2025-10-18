@@ -14,14 +14,20 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.core.io.ByteArrayResource;
 
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.HelpAndSupport;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.UserRepository;
 
 @Component
 public class MailNotification {
 
     public static final Logger logger = LoggerFactory.getLogger(MailNotification.class);
-
+	@Autowired
+	private  UserDetails userDetails;
+    
+	@Autowired
+	private UserRepository userRepository;
     @Autowired
     private JavaMailSender javaMailSender;
     
@@ -128,6 +134,36 @@ public class MailNotification {
         }
         return false;
     }
+    
+    public boolean sendVerificationFilmHookOTP(User industryUser) {
+        try {
+        	 Integer publicUserId = userDetails.userInfo().getId();
+        	    User publicUser = userRepository.findById(publicUserId)
+        	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + publicUserId));
+
+            if (Utility.isNullOrBlankWithTrim(industryUser.getEmail()) || Utility.isNullOrBlankWithTrim(publicUser.getName())) {
+                throw new IllegalArgumentException("Industry user email or public user name is null");
+            }
+
+            String subject = "FilmHook – Industry Reference Request";
+
+            String mailContent = "<p>Dear " + industryUser.getName() + ",</p>"
+                    + "<p>The user <b>" + publicUser.getName() + "</b> is converting their FilmHook account to an industry profile.</p>"
+                    + "<p>They have entered your FilmHook code (<b>" + industryUser.getFilmHookCode() + "</b>) as their reference.</p>"
+                    + "<p>Please confirm if you can refer this user by sharing your verification OTP with them.</p>"
+                    + "<p>Your OTP: <b>" + industryUser.getFilmHookOtp() + "</b></p>"
+                    + "<br>"
+                    + "<p>Thank you,<br>Team FilmHook</p>";
+
+            return this.sendEmailSync(industryUser.getName(), industryUser.getEmail(), subject, mailContent);
+
+        } catch (Exception e) {
+            logger.error("Failed to send FilmHook industry verification mail -> industryUserId: {}", 
+                          industryUser.getUserId(), e);
+        }
+        return false;
+    }
+
 
 
     public boolean sendFilmHookQueries(HelpAndSupport dbData) {
