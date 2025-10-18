@@ -199,7 +199,7 @@ public class PinProfileServiceImpl implements PinProfileService {
                         User user = userOptional.get();
 
                         // Retrieve profile picture from mediaFiles table based on user ID
-                        List<MediaFiles> profilePicOptional = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userProfilePin.getUserId(), MediaFileCategory.ProfilePic);
+                        List<MediaFiles> profilePicOptional = mediaFilesRepository.getMediaFilesByUserIdAndCategory(pinProfileId, MediaFileCategory.ProfilePic);
 
                         LinkedHashMap<String, Object> pinData = new LinkedHashMap<>();
                         pinData.put("pinProfileId", userProfilePin.getPinProfileId());
