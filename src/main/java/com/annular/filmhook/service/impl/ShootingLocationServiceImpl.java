@@ -1133,7 +1133,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			}
 
 
-			List<ShootingLocationPropertyDetails> properties = propertyDetailsRepository.findAllByIndustryIndustryId(industryIds);
+			List<ShootingLocationPropertyDetails> properties = propertyDetailsRepository.findAllActiveByIndustryIndustryId(industryIds);
 
 			if (properties.isEmpty()) {
 				logger.info("No properties found for industryIds: {}", industryIds);

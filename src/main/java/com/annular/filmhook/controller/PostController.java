@@ -122,7 +122,7 @@ public class PostController {
         } catch (Exception e) {
             logger.error("Error at getPostsByPostId() -> {}", e.getMessage());
         }
-        return new Response(-1, "Post files were not found...", null);
+        return new Response(-1, "Unable to retrieve post details at the moment. Please try again later.", null);
     }
 
     @GetMapping("/downloadUserPostFiles")

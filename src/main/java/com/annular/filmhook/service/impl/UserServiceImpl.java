@@ -74,7 +74,10 @@ public class UserServiceImpl implements UserService {
 	AuditionProjectRepository auditionProjectRepository;
 	@Autowired
 	CalendarUtil calendarUtil;
-
+	
+	@Autowired
+	ShootingLocationPropertyDetailsRepository shootingLocationRepository;
+	
 	@Autowired
 	AuditionCompanyRepository auditionCompanyRepository;
 	
@@ -1539,6 +1542,7 @@ public class UserServiceImpl implements UserService {
 	    auditionCompanyRepository.softDeleteByUserId(userId);
 	    
 	    auditionProjectRepository.deactivateByCreatedBy(userId, userId);
+	    shootingLocationRepository.deactivateShootingPropertyByUserId(userId);
 	    
 	}
 
