@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
 import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.ApnsConfig;
 import com.google.firebase.messaging.Aps;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -70,7 +71,13 @@ public class FcmServiceImpl implements FcmService {
             // Android config
             AndroidConfig androidConfig = AndroidConfig.builder()
                     .setPriority(AndroidConfig.Priority.HIGH)
-                    .setTtl(24 * 60 * 60 * 1000) // 24 hours in ms
+                    .setTtl(24 * 60 * 60 * 1000) // 24 hours
+                    .setNotification(AndroidNotification.builder()
+                            .setTitle("Incoming Call")
+                            .setBody(request.getUserName() + " is calling you")
+                            .setChannelId("calls") // channel must exist on Android app
+                            .setClickAction("OPEN_CALL_ACTIVITY")
+                            .build())
                     .build();
 
             // iOS / APNs config
