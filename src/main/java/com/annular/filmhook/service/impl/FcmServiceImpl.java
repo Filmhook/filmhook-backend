@@ -72,12 +72,12 @@ public class FcmServiceImpl implements FcmService {
             AndroidConfig androidConfig = AndroidConfig.builder()
                     .setPriority(AndroidConfig.Priority.HIGH)
                     .setTtl(24 * 60 * 60 * 1000) // 24 hours
-                    .setNotification(AndroidNotification.builder()
-                            .setTitle("Incoming Call")
-                            .setBody(request.getUserName() + " is calling you")
-                            .setChannelId("calls") // channel must exist on Android app
-                            .setClickAction("OPEN_CALL_ACTIVITY")
-                            .build())
+//                    .setNotification(AndroidNotification.builder()
+//                            .setTitle("Incoming Call")
+//                            .setBody(request.getUserName() + " is calling you")
+//                            .setChannelId("calls") // channel must exist on Android app
+//                            .setClickAction("OPEN_CALL_ACTIVITY")
+//                            .build())
                     .build();
 
             // iOS / APNs config
