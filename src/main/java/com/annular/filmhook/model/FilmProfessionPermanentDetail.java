@@ -14,7 +14,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,10 +56,9 @@ public class FilmProfessionPermanentDetail {
     @JsonIgnore
     private IndustryUserPermanentDetails industryUserPermanentDetails;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "platform_permanent_id", nullable = false)
-    @ToString.Exclude
-    @JsonIgnore
+    @JsonBackReference("platform-profession")
     private PlatformPermanentDetail platformPermanentDetail;
 
     @ManyToOne
@@ -70,8 +71,9 @@ public class FilmProfessionPermanentDetail {
     private Integer userId;
 
     @OneToMany(mappedBy = "filmProfessionPermanentDetail", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
+    @JsonManagedReference("profession-sub")
     private List<FilmSubProfessionPermanentDetail> filmSubProfessionPermanentDetails;
+
 
     @Column(name = "status")
     private Boolean status;

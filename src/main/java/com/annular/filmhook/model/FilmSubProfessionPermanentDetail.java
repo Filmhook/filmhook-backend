@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Builder;
@@ -58,7 +59,7 @@ public class FilmSubProfessionPermanentDetail {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profession_permanent_id", nullable = false)
-    @JsonIgnore
+    @JsonBackReference("profession-sub")
     private FilmProfessionPermanentDetail filmProfessionPermanentDetail;
 
     @ToString.Exclude
