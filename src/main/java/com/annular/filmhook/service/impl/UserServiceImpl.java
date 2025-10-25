@@ -683,7 +683,156 @@ public class UserServiceImpl implements UserService {
            ]
         }*/
 		Map<String, List<Map<String, Object>>> professionUserMap = new HashMap<>();
+
+	
 		try {
+			// Example search
+			// Industry :- [KOLLYWOOD-1, MOLLYWOOD-2]
+			// Platform :- [MOVIES-1]
+			// Profession :- [ACTOR-1]
+			// SubProfession :- [HERO-1]
+
+			/*if (!Utility.isNullOrEmptyList(searchWebModel.getIndustryIds())) {
+                logger.info("Input industry search criteria -> {}", searchWebModel.getIndustryIds());
+
+                List<Industry> industryList = searchWebModel.getIndustryIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(industryId -> Industry.builder().industryId(industryId).build())
+                        .collect(Collectors.toList());
+
+//                userIndustryDetails = industryPermanentDetailsRepository.getDataByIndustryIds(industryList);
+//                if (!Utility.isNullOrEmptyList(userIndustryDetails))
+//                    userIndustryDetails.stream().map(IndustryUserPermanentDetails::getUserId).forEach(uniqueUsersSet::add);
+
+                userIndustryDetails = industryPermanentDetailsRepository.getUsersByIndustryIds(industryList);
+                if (!Utility.isNullOrEmptyList(userIndustryDetails)) uniqueUsersSet.addAll(userIndustryDetails);
+            }
+
+            if (!Utility.isNullOrBlankWithTrim(String.valueOf(searchWebModel.getPlatformId()))) {
+                logger.info("Input Platform search criteria -> {}", searchWebModel.getPlatformId());
+//                userPlatformDetails = platformPermanentDetailRepository.getDataByPlatformId(Platform.builder().platformId(searchWebModel.getPlatformId()).build());
+//                if (!Utility.isNullOrEmptyList(userPlatformDetails))
+//                    userPlatformDetails.stream().map(PlatformPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
+                userPlatformDetails = platformPermanentDetailRepository.getUsersByPlatformId(Platform.builder().platformId(searchWebModel.getPlatformId()).build());
+                if (!Utility.isNullOrEmptyList(userPlatformDetails)) uniqueUsersSet.addAll(userPlatformDetails);
+            }
+
+            if (!Utility.isNullOrEmptyList(searchWebModel.getProfessionIds())) {
+                logger.info("Input profession search criteria -> {}", searchWebModel.getProfessionIds());
+
+                List<FilmProfession> professionList = searchWebModel.getProfessionIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(professionId -> FilmProfession.builder().filmProfessionId(professionId).build())
+                        .collect(Collectors.toList());
+
+//                userProfessionDetails = filmProfessionPermanentDetailRepository.getDataByProfessionIds(professionList);
+//                if (!Utility.isNullOrEmptyList(userProfessionDetails))
+//                    userProfessionDetails.stream().map(FilmProfessionPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
+
+                userProfessionDetails = filmProfessionPermanentDetailRepository.getUsersByProfessionIds(professionList);
+                if (!Utility.isNullOrEmptyList(userProfessionDetails)) uniqueUsersSet.addAll(userProfessionDetails);
+            }
+
+            if (!Utility.isNullOrEmptyList(searchWebModel.getSubProfessionIds())) {
+                logger.info("Input sub profession search criteria -> {}", searchWebModel.getSubProfessionIds());
+
+                List<FilmSubProfession> subProfessionList = searchWebModel.getSubProfessionIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(subProfessionId -> FilmSubProfession.builder().subProfessionId(subProfessionId).build())
+                        .collect(Collectors.toList());
+
+//                userFilmSubProfessionDetails = filmSubProfessionPermanentDetailsRepository.getDataBySubProfessionIds(subProfessionList);
+//                if (!Utility.isNullOrEmptyList(userFilmSubProfessionDetails))
+//                    userFilmSubProfessionDetails.stream().map(FilmSubProfessionPermanentDetail::getUserId).forEach(uniqueUsersSet::add);
+
+                userFilmSubProfessionDetails = filmSubProfessionPermanentDetailsRepository.getUsersBySubProfessionIds(subProfessionList);
+                if (!Utility.isNullOrEmptyList(userFilmSubProfessionDetails)) uniqueUsersSet.addAll(userFilmSubProfessionDetails);
+            }
+
+            // Iterating the UserIds and preparing the output
+            if (!Utility.isNullOrEmptySet(uniqueUsersSet)) {
+                logger.info("Unique User list -> {}", uniqueUsersSet);
+                uniqueUsersSet.stream()
+                        .filter(Objects::nonNull)
+                        .map(this::getUser)
+                        .forEach(user -> user.ifPresent(userList::add)); // getting all details about the user
+
+                if (!Utility.isNullOrEmptyList(userList)) {
+                    userList.stream()
+                            .filter(Objects::nonNull)
+                            .forEach(user -> {
+                                logger.debug("User iteration -> {}", user.getName());
+                                //UserWebModel userWebModel = this.transformUserObjToUserWebModelObj(user);
+                                //List<FilmProfessionPermanentDetail> userProfessionDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(user.getUserId());
+                                List<FilmSubProfessionPermanentDetail> userProfessionDataList = filmSubProfessionPermanentDetailsRepository.getProfessionDataByUserId(user.getUserId());
+                                logger.info("SubProfession count [{}] for [{}]", userProfessionDataList.size(), user.getName());
+                                if (!Utility.isNullOrEmptyList(userProfessionDataList)) {
+                                    userProfessionDataList.stream()
+                                            .filter(Objects::nonNull)
+                                            .filter(filter1 -> searchWebModel.getIndustryIds().contains(filter1.getIndustryUserPermanentDetails().getIndustry().getIndustryId()))
+                                            .filter(filter2 -> searchWebModel.getPlatformId().equals(filter2.getPlatformPermanentDetail().getPlatform().getPlatformId()))
+                                            .filter(filter3 -> searchWebModel.getProfessionIds().contains(filter3.getFilmProfessionPermanentDetail().getFilmProfession().getFilmProfessionId()))
+                                            .filter(filter4 -> searchWebModel.getSubProfessionIds().contains(filter4.getFilmSubProfession().getSubProfessionId()))
+			 *//*.filter(filter4 ->  {
+                                                AtomicBoolean match = new AtomicBoolean(false);
+                                                if (!Utility.isNullOrEmptyList(searchWebModel.getSubProfessionIds())) {
+                                                    searchWebModel.getSubProfessionIds()
+                                                            .forEach(val ->
+                                                                    match.set(filter4.getFilmProfession().getFilmSubProfessionCollection()
+                                                                                    .stream()
+                                                                                    .anyMatch(dbVal -> dbVal.getSubProfessionId().equals(val)))
+                                                            );
+                                                } else {
+                                                    match.set(true);
+                                                }
+                                                return match.get();
+                                            })*//*
+                                            .forEach(professionData -> {
+                                                logger.debug("Profession iteration -> {}, {}", professionData.getProfessionPermanentId(), professionData.getProfessionName());
+
+                                                Map<String, Object> map = new LinkedHashMap<>();
+                                                map.put("userId", user.getUserId());
+                                                map.put("name", user.getName());
+                                                map.put("dob", CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
+
+                                                FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(professionData.getUserId()).build());
+                                                map.put("userProfilePic", profilePic != null ? profilePic.getFilePath() : "");
+
+                                                map.put("userRating", "");
+                                                map.put("experience", "");
+                                                map.put("moviesCount", professionData.getPlatformPermanentDetail().getFilmCount());
+                                                map.put("netWorth", professionData.getPlatformPermanentDetail().getNetWorth());
+
+                                                map.put("industryId", professionData.getIndustryUserPermanentDetails().getIndustry().getIndustryId());
+                                                map.put("industry", professionData.getIndustryUserPermanentDetails().getIndustriesName());
+
+                                                map.put("platformId", professionData.getPlatformPermanentDetail().getPlatform().getPlatformId());
+                                                map.put("platform", professionData.getPlatformPermanentDetail().getPlatformName());
+
+                                                map.put("filmProfessionId", professionData.getFilmProfessionPermanentDetail().getFilmProfession().getFilmProfessionId());
+                                                map.put("filmProfession", professionData.getFilmProfessionPermanentDetail().getFilmProfession().getProfessionName());
+
+                                             *//*map.put("filmSubProfession", professionData.getFilmSubProfessionPermanentDetails()
+                                                        .stream()
+                                                        .collect(Collectors.toMap(
+                                                                key -> key.getFilmSubProfession().getSubProfessionId(),
+                                                                value -> value.getFilmSubProfession().getSubProfessionName())
+                                                        )
+                                                );*//*
+
+                                                List<Map<String, Object>> finalUserList;
+                                                if (professionUserMap.get(professionData.getProfessionName()) == null) {
+                                                    finalUserList = new ArrayList<>();
+                                                } else {
+                                                    finalUserList = professionUserMap.get(professionData.getProfessionName());
+                                                }
+                                                finalUserList.add(map);
+                                                professionUserMap.put(professionData.getProfessionName(), finalUserList);
+                                            });
+                                }
+                            });
+                }
+            }*/
 
 			List<FilmSubProfessionPermanentDetail> userProfessionDataList = filmSubProfessionPermanentDetailsRepository.findAll().stream().filter(data -> data.getStatus().equals(true)).collect(Collectors.toList());
 			if (!Utility.isNullOrEmptyList(userProfessionDataList)) {

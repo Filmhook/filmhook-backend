@@ -1,6 +1,5 @@
 package com.annular.filmhook.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Builder;
@@ -11,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Table;
 import javax.persistence.Id;
 import javax.persistence.GeneratedValue;
@@ -57,9 +55,10 @@ public class FilmSubProfessionPermanentDetail {
     @JsonIgnore
     private PlatformPermanentDetail platformPermanentDetail;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "profession_permanent_id", nullable = false)
-    @JsonBackReference("profession-sub")
+    @ToString.Exclude
+    @JsonIgnore
     private FilmProfessionPermanentDetail filmProfessionPermanentDetail;
 
     @ToString.Exclude
