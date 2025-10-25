@@ -93,7 +93,7 @@ public class LiveStreamServiceImpl implements LiveStreamService {
                             .createdOn(new Date())
                             .isRead(false)
                             .isDeleted(false)
-                            .adminReview(user.getAdminReview())
+                            .adminReview(sender.getAdminReview())
                             .Profession(user.getUserType())
                             .id(liveDetails.getLiveChannelId())
                             .createdBy(liveDetails.getUserId())
