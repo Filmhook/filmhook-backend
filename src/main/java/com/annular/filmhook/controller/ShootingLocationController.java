@@ -355,24 +355,27 @@ public class ShootingLocationController {
 		  }
 
 		  @PostMapping("/review")
-		  public ResponseEntity<String> addReview(@RequestBody ShootingLocationPropertyReviewDTO propertyReviewDTO) {
+		  public ResponseEntity<ShootingLocationPropertyReviewDTO> addReview(
+		          @RequestBody ShootingLocationPropertyReviewDTO propertyReviewDTO) {
 		      try {
-		          service.saveReview(
-		              propertyReviewDTO.getPropertyId(),
-		              propertyReviewDTO.getUserId(),
-		              propertyReviewDTO.getRating(),
-		              propertyReviewDTO.getReviewText()
+		          ShootingLocationPropertyReviewDTO savedReview = service.saveReview(
+		                  propertyReviewDTO.getPropertyId(),
+		                  propertyReviewDTO.getUserId(),
+		                  propertyReviewDTO.getRating(),
+		                  propertyReviewDTO.getReviewText()
 		          );
-		          return ResponseEntity.ok("Review saved");
+
+		          return ResponseEntity.ok(savedReview); // ✅ Return the DTO, not a String
+
 		      } catch (RuntimeException e) {
-		      
 		          logger.warn("Validation failed: {}", e.getMessage());
-		          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		          return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		      } catch (Exception e) {
 		          logger.error("Error saving review", e);
-		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save review");
+		          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		      }
 		  }
+
 
 		  @GetMapping("/average-rating/{propertyId}")
 		    public ResponseEntity<?> getAverageRating(@PathVariable Integer propertyId) {
