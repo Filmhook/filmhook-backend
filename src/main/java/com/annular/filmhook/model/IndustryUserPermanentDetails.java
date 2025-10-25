@@ -14,8 +14,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import org.hibernate.annotations.CreationTimestamp;
 
 import lombok.AllArgsConstructor;
@@ -42,9 +40,8 @@ public class IndustryUserPermanentDetails {
 
     @Column(name = "industries_name")
     private String industriesName;
-    
+
     @OneToMany(mappedBy = "industryUserPermanentDetails")
-    @JsonManagedReference("industry-platform")
     private List<PlatformPermanentDetail> platformDetails;
 
     @Column(name = "user_id")

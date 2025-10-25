@@ -26,7 +26,7 @@ public interface ShootingLocationService {
 	String toggleLike(Integer propertyId, Integer userId);
 	Long countLikes(Integer propertyId);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId);
-	void saveReview(Integer propertyId, Integer userId, int rating, String reviewText);
+	ShootingLocationPropertyReviewDTO saveReview(Integer propertyId, Integer userId, int rating, String reviewText);
 	double getAverageRating(Integer propertyId);
 	List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
 	PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto);
@@ -34,5 +34,5 @@ public interface ShootingLocationService {
 	void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer userId);
 	ShootingLocationPropertyDetailsDTO getPropertyByBookingId(Integer bookingId);
-
+	
 }

@@ -50,5 +50,5 @@ public class ShootingLocationPropertyReview {
 
     @UpdateTimestamp
     private LocalDateTime updatedOn;
-}
+}    
 
