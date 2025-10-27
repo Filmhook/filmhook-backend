@@ -300,6 +300,7 @@ public class User {
 	
 	@OneToMany(mappedBy = "user")
 	@JsonIgnore
+	 @ToString.Exclude 
 	private List<ShootingLocationPropertyDetails> properties;
 
 	@Column(name = "last_notification_open_time")

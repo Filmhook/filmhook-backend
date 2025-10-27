@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import javax.transaction.Transactional;
 
 import java.util.Collections;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 import java.util.Comparator;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -68,10 +70,17 @@ public class UserServiceImpl implements UserService {
 	PinProfileRepository pinProfileRepository;
 	@Autowired
 	UserRepository userRepository;
-
+	@Autowired
+	AuditionProjectRepository auditionProjectRepository;
 	@Autowired
 	CalendarUtil calendarUtil;
-
+	
+	@Autowired
+	ShootingLocationPropertyDetailsRepository shootingLocationRepository;
+	
+	@Autowired
+	AuditionCompanyRepository auditionCompanyRepository;
+	
 	@Autowired
 	AddressListRepository addressListRepository;
 
@@ -83,7 +92,10 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	MediaFilesService mediaFilesService;
-
+	
+	@Autowired
+	PostsRepository postRepository;
+	
 	@Autowired
 	UserService userService;
 
@@ -672,19 +684,7 @@ public class UserServiceImpl implements UserService {
         }*/
 		Map<String, List<Map<String, Object>>> professionUserMap = new HashMap<>();
 
-		/*List<IndustryUserPermanentDetails> userIndustryDetails;
-        List<PlatformPermanentDetail> userPlatformDetails;
-        List<FilmProfessionPermanentDetail> userProfessionDetails;
-        List<FilmSubProfessionPermanentDetail> userFilmSubProfessionDetails;*/
-
-		/*List<Integer> userIndustryDetails;
-        List<Integer> userPlatformDetails;
-        List<Integer> userProfessionDetails;
-        List<Integer> userFilmSubProfessionDetails;
-
-        Set<Integer> uniqueUsersSet = new HashSet<>();
-        List<User> userList = new ArrayList<>();*/
-
+	
 		try {
 			// Example search
 			// Industry :- [KOLLYWOOD-1, MOLLYWOOD-2]
@@ -1416,7 +1416,7 @@ public class UserServiceImpl implements UserService {
 		}
 		//user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
 		userRepository.save(user); // Save changes to the database
-
+		
 		//	        // Send deactivation email
 		//	        boolean emailSent = sendVerificationEmail(user, false);
 		//	        if (!emailSent) {
@@ -1426,6 +1426,8 @@ public class UserServiceImpl implements UserService {
 
 		return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
 	}
+	
+
 
 	@Override
 	public ResponseEntity<?> saveDeleteReason(UserWebModel userWebModel) {
@@ -1505,7 +1507,7 @@ public class UserServiceImpl implements UserService {
 		}
 		user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
 		userRepository.save(user); // Save changes to the database
-
+		 softDeleteUserData(userId);
 		// Send deactivation email
 		try {
 			boolean emailSent = sendVerificationEmail(user, false); // false = deactivation context
@@ -1518,6 +1520,19 @@ public class UserServiceImpl implements UserService {
 		return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
 	}
 
+	
+	@Transactional
+	public void softDeleteUserData(Integer userId) {
+	   
+		// Soft delete user posts
+	    postRepository.deactivatePostsByUserId(userId);
+	    // ✅ Soft delete related audition data
+	    auditionCompanyRepository.softDeleteByUserId(userId);
+	    
+	    auditionProjectRepository.deactivateByCreatedBy(userId, userId);
+	    shootingLocationRepository.deactivateShootingPropertyByUserId(userId);
+	    
+	}
 
 	public boolean sendVerificationEmail(User user, boolean isActivation) {
 		try {

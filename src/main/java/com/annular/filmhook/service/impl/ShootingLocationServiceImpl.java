@@ -1122,6 +1122,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			return Collections.emptyList();
 		}
 	}
+	
+	
 	//===========================================
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId) {
 		logger.info("Fetching properties for industries: {}", industryIds);
@@ -1133,7 +1135,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			}
 
 
-			List<ShootingLocationPropertyDetails> properties = propertyDetailsRepository.findAllByIndustryIndustryId(industryIds);
+			List<ShootingLocationPropertyDetails> properties = propertyDetailsRepository.findAllActiveByIndustryIndustryId(industryIds);
 
 			if (properties.isEmpty()) {
 				logger.info("No properties found for industryIds: {}", industryIds);
@@ -1986,21 +1988,39 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		return likeRepository.countByProperty(property);
 	}
 
-	public void saveReview(Integer propertyId, Integer userId, int rating, String reviewText) {
-		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
-				.orElseThrow(() -> new RuntimeException("Property not found"));
+	@Override
+	public ShootingLocationPropertyReviewDTO saveReview(Integer propertyId, Integer userId, int rating, String reviewText) {
+	    // Fetch property
+	    ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
+	            .orElseThrow(() -> new RuntimeException("Property not found"));
 
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+	    // Fetch user
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
 
-		ShootingLocationPropertyReview review = ShootingLocationPropertyReview.builder()
-				.property(property)
-				.user(user)
-				.rating(rating)
-				.reviewText(reviewText)
-				.build();
+	    // Create review
+	    ShootingLocationPropertyReview review = ShootingLocationPropertyReview.builder()
+	            .property(property)
+	            .user(user)
+	            .rating(rating)
+	            .reviewText(reviewText)
+	            .build();
 
-		propertyReviewRepository.save(review);
+	    // Save review
+	    ShootingLocationPropertyReview savedReview = propertyReviewRepository.save(review);
+
+	    // Convert to DTO
+	    ShootingLocationPropertyReviewDTO dto = ShootingLocationPropertyReviewDTO.builder()
+	            .id(savedReview.getId())
+	            .propertyId(propertyId)
+	            .userId(userId)
+	            .rating(rating)
+	            .reviewText(reviewText)
+	            .userName(user.getName()) // set user name
+	            .createdOn(savedReview.getCreatedOn())
+	            .build();
+
+	    return dto;
 	}
 
 	public double getAverageRating(Integer propertyId) {

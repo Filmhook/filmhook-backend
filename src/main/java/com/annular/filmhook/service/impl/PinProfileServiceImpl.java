@@ -110,41 +110,43 @@ public class PinProfileServiceImpl implements PinProfileService {
             Integer userId = userDetails.userInfo().getId();
             Integer pinProfileId = userProfilePinWebModel.getPinProfileId();
 
-            // Check if the pin already exists for the user
-            Optional<UserProfilePin> existingPinOptional = pinProfileRepository.findByUserIdAndPinProfileId(userId, pinProfileId);
+            Optional<UserProfilePin> existingPinOptional =
+                    pinProfileRepository.findByUserIdAndPinProfileId(userId, pinProfileId);
 
             UserProfilePin userProfilePin;
+            String message;
+
             if (existingPinOptional.isPresent()) {
-                // Update the existing pin
                 userProfilePin = existingPinOptional.get();
                 userProfilePin.setUpdatedBy(userId);
 
-                // Log the existing status before updating
-                logger.info("Existing pin status before update: {}", userProfilePin.isStatus());
+                boolean newStatus = !userProfilePin.isStatus();
+                userProfilePin.setStatus(newStatus);
 
-                // Toggle the status
-                userProfilePin.setStatus(!userProfilePin.isStatus());
+                logger.info("Existing pin status before update: {}", !newStatus);
+                logger.info("Updated pin status: {}", newStatus);
 
-                // Log the updated status
-                logger.info("Updated pin status: {}", userProfilePin.isStatus());
+                message = newStatus ? "Profile pinned successfully." : "Profile unpinned successfully.";
             } else {
-                // Create a new pin
                 userProfilePin = new UserProfilePin();
                 userProfilePin.setUserId(userId);
                 userProfilePin.setPinProfileId(pinProfileId);
                 userProfilePin.setCreatedBy(userId);
                 userProfilePin.setStatus(true);
+
+                message = "Profile pinned successfully.";
             }
 
-            // Save or update the pin
             pinProfileRepository.save(userProfilePin);
+            return ResponseEntity.ok(new Response(1, "success", message));
 
-            return ResponseEntity.ok("Pin added or updated successfully");
         } catch (Exception e) {
             logger.error("Error setting addPin: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error setting addPin", e.getMessage()));
+            return ResponseEntity.internalServerError()
+                    .body(new Response(-1, "Error setting addPin", e.getMessage()));
         }
     }
+
 
 
     @Override
@@ -197,7 +199,7 @@ public class PinProfileServiceImpl implements PinProfileService {
                         User user = userOptional.get();
 
                         // Retrieve profile picture from mediaFiles table based on user ID
-                        List<MediaFiles> profilePicOptional = mediaFilesRepository.getMediaFilesByUserIdAndCategory(userProfilePin.getUserId(), MediaFileCategory.ProfilePic);
+                        List<MediaFiles> profilePicOptional = mediaFilesRepository.getMediaFilesByUserIdAndCategory(pinProfileId, MediaFileCategory.ProfilePic);
 
                         LinkedHashMap<String, Object> pinData = new LinkedHashMap<>();
                         pinData.put("pinProfileId", userProfilePin.getPinProfileId());

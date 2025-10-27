@@ -920,7 +920,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 			// 5️⃣ Send in-app notification
 			sendInAppNotification(payment,
 					"Audition Payment Failed",
-					"Your audition payment has failed. Reason: " + errorMessage);
+					"Your audition payment has failed because " + errorMessage);
 
 			// 6️⃣ Return response
 			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
@@ -1319,6 +1319,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	        // All active teamNeeds in company
 	        int activePostCount = projects.stream()
+	        		 .filter(p -> Boolean.TRUE.equals(p.getStatus()))
 	                .flatMap(p -> p.getTeamNeeds().stream())
 	                .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
 	                .mapToInt(tn -> 1)
@@ -1326,6 +1327,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	        // Active teamNeeds only for given professionjobPostCount
 	        int jobPostCount = projects.stream()
+	        		 .filter(p -> Boolean.TRUE.equals(p.getStatus()))
 	                .flatMap(p -> p.getTeamNeeds().stream())
 	                .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
 	                .filter(tn -> tn.getProfession() != null &&
