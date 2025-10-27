@@ -429,6 +429,13 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndRefIds(category, idList);
 		this.deleteMediaFiles(mediaFiles);
 	}
+	
+	@Override
+	public void deleteMediaFilesByCategoryAndIds(MediaFileCategory category, List<Integer> idList) {
+	    List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndFileIds(category, idList);
+	    this.deleteMediaFiles(mediaFiles);
+	}
+	
 
 	private void deleteMediaFiles(List<MediaFiles> mediaFiles) {
 		try {

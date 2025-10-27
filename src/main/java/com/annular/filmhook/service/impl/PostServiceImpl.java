@@ -48,6 +48,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.UUID;
 import java.util.Date;
 import java.util.HashMap;
@@ -73,6 +76,7 @@ import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.LinkRepository;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.AuditionRepository;
@@ -161,6 +165,9 @@ public class PostServiceImpl implements PostService {
 	PostViewRepository postViewRepository;
 	@Autowired
 	AuditionRepository auditionRepository;
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
+
 
 
 	private static final String POST = "Post";
@@ -299,6 +306,155 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
+@Override
+@Transactional
+public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
+    try {
+        // 🔹 Fetch existing post
+        Posts existingPost = postsRepository.findByPostId(postWebModel.getPostId());
+        if (existingPost == null) {
+            logger.error("Post not found with ID: {}", postWebModel.getPostId());
+            return null;
+        }
+
+        User userFromDB = userService.getUser(postWebModel.getUserId()).orElse(null);
+        if (userFromDB == null) {
+            logger.error("User not found for ID: {}", postWebModel.getUserId());
+            return null;
+        }
+
+        logger.info("Updating post for user: {}", userFromDB.getName());
+
+        // 🔹 Update post fields
+        existingPost.setDescription(postWebModel.getDescription());
+        existingPost.setLatitude(postWebModel.getLatitude());
+        existingPost.setLongitude(postWebModel.getLongitude());
+        existingPost.setAddress(postWebModel.getAddress());
+        existingPost.setPrivateOrPublic(postWebModel.getPrivateOrPublic());
+        existingPost.setPostLinkUrls(postWebModel.getPostLinkUrl());
+        existingPost.setLocationName(postWebModel.getLocationName());
+        existingPost.setUpdatedBy(postWebModel.getUserId());
+        existingPost.setUpdatedOn(new Date());
+
+        // 🔹 Handle tagged users
+        String taggedUserIds = (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty())
+                ? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
+                : null;
+        existingPost.setTagUsers(taggedUserIds);
+
+        // 🔹 Save updated post
+        Posts updatedPost = postsRepository.saveAndFlush(existingPost);
+
+        // 🔹 1️⃣ Delete specific old files if user removed any
+        if (postWebModel.getDeletedFileIds() != null && !postWebModel.getDeletedFileIds().isEmpty()) {
+            logger.info("Deleting files for post {}: {}", updatedPost.getId(), postWebModel.getDeletedFileIds());
+            mediaFilesService.deleteMediaFilesByCategoryAndIds(MediaFileCategory.Post, postWebModel.getDeletedFileIds());
+        }
+
+        // 🔹 2️⃣ Upload new files if provided
+        if (postWebModel.getFiles() != null && !postWebModel.getFiles().isEmpty()) {
+            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                    .userId(postWebModel.getUserId())
+                    .category(MediaFileCategory.Post)
+                    .categoryRefId(updatedPost.getId())
+                    .files(postWebModel.getFiles())
+                    .build();
+
+            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+            logger.info("Uploaded {} new files for post {}", postWebModel.getFiles().size(), updatedPost.getId());
+        }
+
+        // 🔹 3️⃣ Handle tagged users (delete old + add new)
+        postTagsRepository.deleteByPostId(updatedPost.getId());
+        if (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty()) {
+            List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
+                    .map(taggedUserId -> PostTags.builder()
+                            .postId(updatedPost.getId())
+                            .taggedUser(User.builder().userId(taggedUserId).build())
+                            .status(true)
+                            .createdBy(postWebModel.getUserId())
+                            .createdOn(new Date())
+                            .build())
+                    .collect(Collectors.toList());
+
+            postTagsRepository.saveAllAndFlush(tagsList);
+
+            // 🔹 Recreate notifications for new tagged users
+            for (PostTags tag : tagsList) {
+                Integer taggedUserId = tag.getTaggedUser().getUserId();
+
+                InAppNotification notification = InAppNotification.builder()
+                        .senderId(postWebModel.getUserId())
+                        .receiverId(taggedUserId)
+                        .title("You've been tagged! ")
+                        .message(userFromDB.getName() + " tagged you in a post update.")
+                        .createdOn(new Date())
+                        .isRead(false)
+                        .adminReview(userFromDB.getAdminReview())
+                        .Profession(userFromDB.getUserType())
+                        .isDeleted(false)
+                        .createdBy(postWebModel.getUserId())
+                        .userType("Tagged")
+                        .postId(updatedPost.getPostId())
+                        .build();
+
+                inAppNotificationRepository.save(notification);
+
+                // 🔹 Push notification (same logic you use in savePost)
+                User receiver = userService.getUser(taggedUserId).orElse(null);
+                if (receiver != null && receiver.getFirebaseDeviceToken() != null 
+                        && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
+                    try {
+                        String deviceToken = receiver.getFirebaseDeviceToken();
+                        String title = "You've been tagged!";
+                        String messageBody = userFromDB.getName() + " tagged you in an updated post.";
+
+                        Notification firebaseNotification = Notification.builder()
+                                .setTitle(messageBody)
+                                .build();
+
+                        AndroidNotification androidNotification = AndroidNotification.builder()
+                                .setIcon("ic_notification")
+                                .setColor("#00A2E8")
+                                .build();
+
+                        AndroidConfig androidConfig = AndroidConfig.builder()
+                                .setNotification(androidNotification)
+                                .build();
+
+                        Message firebaseMessage = Message.builder()
+                                .setNotification(firebaseNotification)
+                                .putData("type", "Tagged")
+                                .putData("refId", String.valueOf(updatedPost.getId()))
+                                .putData("postId", updatedPost.getPostId())
+                                .putData("senderId", String.valueOf(postWebModel.getUserId()))
+                                .putData("receiverId", String.valueOf(taggedUserId))
+                                .setAndroidConfig(androidConfig)
+                                .setToken(deviceToken)
+                                .build();
+
+                        String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
+                        logger.info("Push notification sent successfully: {}", firebaseResponse);
+                    } catch (FirebaseMessagingException e) {
+                        logger.error("Firebase push notification failed: {}", e.getMessage(), e);
+                    }
+                }
+            }
+        }
+
+        // 🔹 Final transform to WebModel
+        List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(updatedPost));
+        return responseList.isEmpty() ? null : responseList.get(0);
+
+    } catch (Exception e) {
+        logger.error("Error at updatePostWithFiles() -> {}", e.getMessage(), e);
+        e.printStackTrace();
+    }
+    return null;
+}
+
+
+	
 	@Override
 	public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
 		try {
