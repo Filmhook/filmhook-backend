@@ -32,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
@@ -354,19 +355,24 @@ public class ShootingLocationController {
 		      }
 		  }
 
-		  @PostMapping("/review")
+		  @PostMapping(value = "/review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 		  public ResponseEntity<ShootingLocationPropertyReviewDTO> addReview(
-		          @RequestBody ShootingLocationPropertyReviewDTO propertyReviewDTO) {
+		          @RequestParam Integer propertyId,
+		          @RequestParam Integer userId,
+		          @RequestParam int rating,
+		          @RequestParam (required = false) String reviewText,
+		          @RequestParam(required = false) List<MultipartFile> files) {
+
 		      try {
 		          ShootingLocationPropertyReviewDTO savedReview = service.saveReview(
-		                  propertyReviewDTO.getPropertyId(),
-		                  propertyReviewDTO.getUserId(),
-		                  propertyReviewDTO.getRating(),
-		                  propertyReviewDTO.getReviewText()
+		                  propertyId,
+		                  userId,
+		                  rating,
+		                  reviewText,
+		                  files
 		          );
 
-		          return ResponseEntity.ok(savedReview); // ✅ Return the DTO, not a String
-
+		          return ResponseEntity.ok(savedReview);
 		      } catch (RuntimeException e) {
 		          logger.warn("Validation failed: {}", e.getMessage());
 		          return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -460,5 +466,30 @@ public class ShootingLocationController {
 		    public ShootingLocationPropertyDetailsDTO getPropertyByBookingId(@PathVariable Integer bookingId) {
 		        return service.getPropertyByBookingId(bookingId);
 		    }
+		    
+		    @PutMapping(value = "/updateReview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+		    public ResponseEntity<ShootingLocationPropertyReviewDTO> updateReview(
+		    		@RequestParam Integer reviewId,
+		            @RequestParam Integer propertyId,
+		            @RequestParam Integer userId,
+		            @RequestParam int rating,
+		            @RequestParam(required = false) String reviewText,
+		            @RequestParam(required = false) List<MultipartFile> files) {
+
+		        try {
+		            ShootingLocationPropertyReviewDTO updatedReview = service.updateReview(
+		                    reviewId, propertyId, userId, rating, reviewText, files  
+		            );
+
+		            return ResponseEntity.ok(updatedReview);
+		        } catch (RuntimeException e) {
+		            logger.warn("Validation failed: {}", e.getMessage());
+		            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		        } catch (Exception e) {
+		            logger.error("Error updating review", e);
+		            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		        }
+		    }
+
 }
 

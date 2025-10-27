@@ -1,5 +1,7 @@
 package com.annular.filmhook.repository;
 
+
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,8 +25,25 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId) OR (c.chatSenderId = :receiverId AND c.chatReceiverId = :senderId) ORDER BY c.timeStamp DESC")
     List<Chat> findTopByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(Integer senderId, Integer receiverId);
 
-    @Query(value = "SELECT * FROM chat c WHERE (c.chat_sender_id=:senderId AND c.chat_receiver_id=:receiverId) OR (c.chat_sender_id=:receiverId AND c.chat_receiver_id=:senderId) ORDER BY c.time_stamp DESC LIMIT 1;", nativeQuery = true)
+    @Query(value = "SELECT * FROM chat c " +
+            "WHERE (" +
+            "   (c.chat_sender_id = :senderId AND c.chat_receiver_id = :receiverId) " +
+            "   OR (c.chat_sender_id = :receiverId AND c.chat_receiver_id = :senderId)" +
+            ") " +
+            "AND c.chat_is_active = true " +
+            "AND (" +
+            "   c.is_deleted_for_everyone = true " + // include “deleted for everyone”
+            "   OR (" +
+            "       (c.chat_sender_id = :senderId AND (c.deleted_by_sender = false OR c.deleted_by_sender IS NULL)) " +
+            "       OR (c.chat_receiver_id = :senderId AND (c.deleted_by_receiver = false OR c.deleted_by_receiver IS NULL))" +
+            "   )" +
+            ") " +
+            "ORDER BY c.time_stamp DESC LIMIT 1",
+            nativeQuery = true)
     Optional<Chat> getLatestMessage(Integer senderId, Integer receiverId);
+
+
+
 
     @Query("SELECT DISTINCT c.chatSenderId FROM Chat c WHERE c.chatReceiverId = :loggedInUserId")
     Set<Integer> findSenderIdsByReceiverId(Integer loggedInUserId);
@@ -49,7 +68,16 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     
     @Query("SELECT c.message FROM Chat c WHERE c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId AND c.receiverRead = false ORDER BY c.chatCreatedOn ASC")
     List<String> findUnreadMessagesFromSender(@Param("senderId") Integer senderId, @Param("receiverId") Integer receiverId);
-
+    @Query(value = "SELECT * FROM chat c " +
+            "WHERE ((c.chat_sender_id = :senderId AND c.chat_receiver_id = :receiverId) " +
+            "   OR (c.chat_sender_id = :receiverId AND c.chat_receiver_id = :senderId)) " +
+            "  AND c.time_stamp < :lastMessageTime " +
+            "  AND c.chat_is_active = true " +
+              "  AND ((c.chat_sender_id = :senderId AND (c.deleted_by_sender = false OR c.deleted_by_sender IS NULL)) " +
+            "    OR (c.chat_receiver_id = :senderId AND (c.deleted_by_receiver = false OR c.deleted_by_receiver IS NULL))) " +
+            "ORDER BY c.time_stamp DESC LIMIT 1",
+            nativeQuery = true)
+    Optional<Chat> findPreviousVisibleMessage(Integer senderId, Integer receiverId, Date lastMessageTime);
 
 
 }

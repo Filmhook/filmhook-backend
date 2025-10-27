@@ -3,6 +3,9 @@ package com.annular.filmhook.service;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
@@ -26,7 +29,12 @@ public interface ShootingLocationService {
 	String toggleLike(Integer propertyId, Integer userId);
 	Long countLikes(Integer propertyId);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId);
-	ShootingLocationPropertyReviewDTO saveReview(Integer propertyId, Integer userId, int rating, String reviewText);
+	public ShootingLocationPropertyReviewDTO saveReview(
+	        Integer propertyId,
+	        Integer userId,
+	        int rating,
+	        String reviewText,
+	        List<MultipartFile> files);
 	double getAverageRating(Integer propertyId);
 	List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
 	PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto);
@@ -34,5 +42,13 @@ public interface ShootingLocationService {
 	void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer userId);
 	ShootingLocationPropertyDetailsDTO getPropertyByBookingId(Integer bookingId);
+	public ShootingLocationPropertyReviewDTO updateReview(
+	        Integer reviewId,
+	        Integer propertyId,
+	        Integer userId,
+	        int rating,
+	        String reviewText,
+	        List<MultipartFile> files
+	);
 	
 }

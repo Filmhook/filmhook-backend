@@ -6,6 +6,7 @@ import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,13 +63,16 @@ import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepos
 import com.annular.filmhook.repository.ShootingLocationTypesRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AwsS3Service;
+import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.ShootingLocationService;
 
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
+import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
 import com.annular.filmhook.webmodel.BusinessInformationDTO;
+import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
@@ -116,6 +120,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	ShootingLocationBookingRepository bookingRepository;
+	
+	@Autowired
+	MediaFilesService mediaFilesService;
 
 	@Autowired
 	S3Util s3Util;
@@ -1989,16 +1996,21 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 	@Override
-	public ShootingLocationPropertyReviewDTO saveReview(Integer propertyId, Integer userId, int rating, String reviewText) {
-	    // Fetch property
+	public ShootingLocationPropertyReviewDTO saveReview(
+	        Integer propertyId,
+	        Integer userId,
+	        int rating,
+	        String reviewText,
+	        List<MultipartFile> files) {
+
+	    // 1️⃣ Fetch property and user
 	    ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
 	            .orElseThrow(() -> new RuntimeException("Property not found"));
 
-	    // Fetch user
 	    User user = userRepository.findById(userId)
 	            .orElseThrow(() -> new RuntimeException("User not found"));
 
-	    // Create review
+	    // 2️⃣ Create and save the review
 	    ShootingLocationPropertyReview review = ShootingLocationPropertyReview.builder()
 	            .property(property)
 	            .user(user)
@@ -2006,21 +2018,30 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	            .reviewText(reviewText)
 	            .build();
 
-	    // Save review
 	    ShootingLocationPropertyReview savedReview = propertyReviewRepository.save(review);
 
-	    // Convert to DTO
-	    ShootingLocationPropertyReviewDTO dto = ShootingLocationPropertyReviewDTO.builder()
+	    // Save optional photos using your existing media service
+	    if (!Utility.isNullOrEmptyList(files)) {
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(userId)
+	                .category(MediaFileCategory.ShootingLocationReview) 
+	                .categoryRefId(savedReview.getId())  
+	                .files(files)
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
+
+	    // 4️⃣ Convert to DTO
+	    return ShootingLocationPropertyReviewDTO.builder()
 	            .id(savedReview.getId())
 	            .propertyId(propertyId)
 	            .userId(userId)
 	            .rating(rating)
 	            .reviewText(reviewText)
-	            .userName(user.getName()) // set user name
+	            .userName(user.getName())
 	            .createdOn(savedReview.getCreatedOn())
 	            .build();
-
-	    return dto;
 	}
 
 	public double getAverageRating(Integer propertyId) {
@@ -2031,19 +2052,36 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.orElse(0.0);
 	}
 
+	@Override
 	public List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId) {
-		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
+	    List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId)
+	            .stream()
+	            .sorted(Comparator.comparing(ShootingLocationPropertyReview::getCreatedOn).reversed()) // ✅ latest first
+	            .collect(Collectors.toList());
 
-		return reviews.stream()
-				.map(review -> ShootingLocationPropertyReviewDTO.builder()
-						.propertyId(review.getProperty().getId().intValue())
-						.userId(review.getUser().getUserId())
-						.rating(review.getRating())
-						.reviewText(review.getReviewText())
-						.userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
-						.build())
-				.collect(Collectors.toList());
+	    return reviews.stream()
+	            .map(review -> {
+	                List<FileOutputWebModel> files = mediaFilesService
+	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocationReview, review.getId())
+	                        .stream()
+	                        .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+	                        .collect(Collectors.toList());
+
+	                return ShootingLocationPropertyReviewDTO.builder()
+	                        .id(review.getId())
+	                        .propertyId(review.getProperty().getId())
+	                        .userId(review.getUser().getUserId())
+	                        .rating(review.getRating())
+	                        .reviewText(review.getReviewText())
+	                        .userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
+	                        .createdOn(review.getCreatedOn())
+	                        .files(files)
+	                        .build();
+	            })
+	            .collect(Collectors.toList());
 	}
+
+
 
 	@Override
 	public PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto) {
@@ -2365,5 +2403,61 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			throw e;
 		}
 	}
+	
+	@Override
+	@Transactional
+	public ShootingLocationPropertyReviewDTO updateReview(
+	        Integer reviewId,
+	        Integer propertyId,
+	        Integer userId,
+	        int rating,
+	        String reviewText,
+	        List<MultipartFile> files
+	) {
+	    ShootingLocationPropertyReview review = propertyReviewRepository.findById(reviewId)
+	            .orElseThrow(() -> new RuntimeException("Review not found"));
+
+	   
+	    if (!review.getUser().getUserId().equals(userId)) {
+	        throw new RuntimeException("You can only edit your own review");
+	    }
+
+	 
+	    review.setRating(rating);
+	    review.setReviewText(reviewText);
+	    review.setUpdatedOn(LocalDateTime.now());
+	    propertyReviewRepository.save(review);
+
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    // ✅ Delete existing media files (by categoryRefId, not file IDs)
+	    mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
+	        MediaFileCategory.ShootingLocationReview,
+	        List.of(review.getId())
+	    );
+
+	    // ✅ Save new files if provided
+	    if (files != null && !files.isEmpty()) {
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(userId)
+	                .category(MediaFileCategory.ShootingLocationReview)
+	                .categoryRefId(review.getId())
+	                .files(files)
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
+
+	    return ShootingLocationPropertyReviewDTO.builder()
+	            .id(review.getId())
+	            .propertyId(propertyId)
+	            .userId(userId)
+	            .rating(rating)
+	            .reviewText(review.getReviewText())
+	            .createdOn(review.getCreatedOn())
+	            .build();
+	}
+
 
 }
