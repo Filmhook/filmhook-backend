@@ -62,6 +62,21 @@ public class PostController {
         }
         return new Response(-1, "Error occurred while saving post with files...", null);
     }
+    
+    @RequestMapping(path = "/updatePost", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response updatePost(@ModelAttribute PostWebModel inputData) {
+        try {
+            logger.info("updatePost Inputs :- {}", inputData);
+            PostWebModel updatedPost = postService.updatePostWithFiles(inputData);
+            if (updatedPost != null)
+                return new Response(1, "Post updated successfully...", updatedPost);
+        } catch (Exception e) {
+            logger.error("Error at updatePost() -> {}", e.getMessage());
+            return new Response(-1, "Error occurred while updating post with files -> {}", e.getMessage());
+        }
+        return new Response(-1, "Error occurred while updating post with files...", null);
+    }
+
 
     @GetMapping("/downloadPostFile")
     public ResponseEntity<?> downloadPostFile(@RequestParam("userId") Integer userId,

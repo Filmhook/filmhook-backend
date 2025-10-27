@@ -34,6 +34,8 @@ public interface MediaFilesService {
     	    Integer userId, MediaFileCategory category, FileStatus status
     	);
 
+	void deleteMediaFilesByCategoryAndIds(MediaFileCategory category, List<Integer> idList);
+
     
 
 }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.model.PostTags;
 
@@ -12,5 +13,7 @@ public interface PostTagsRepository extends JpaRepository<PostTags, Integer> {
 
 	
 	List<PostTags> findByTaggedUserUserIdAndStatusTrue(Integer userId);
+	  @Transactional
+	    void deleteByPostId(Integer postId);
 
 }
