@@ -212,9 +212,8 @@ public class ReportServiceImpl implements ReportService {
                 String ownerMessage ="⚠ Your post has been reported!";
            
 			postServiceImpl.sendNotification(
-					  reporterId, 
                         postOwnerId,            
-                               
+                        reporterId,              
                         ownerTitle, 
                         ownerMessage,
                         "POST_REPORT",           
@@ -227,8 +226,9 @@ public class ReportServiceImpl implements ReportService {
             String reporterTitle = "✅ Report submitted successfully";
             String reporterMessage = "✅ Your report has been submitted successfully.";
             postServiceImpl.sendNotification(
+            		 postOwnerId,
                     reporterId,              
-                    postOwnerId,             
+                                
                     reporterTitle,
                     reporterMessage,
                     "REPORT_CONFIRMATION",   
