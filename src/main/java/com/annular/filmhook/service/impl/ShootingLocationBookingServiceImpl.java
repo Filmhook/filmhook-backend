@@ -200,6 +200,11 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	                    "This property is already booked for the selected dates.");
 	        }
 	    }
+	    Double pricePerDay = property.getPriceCustomerPay();
+        long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
+        double baseAmount = pricePerDay * days;
+        double gstAmount = baseAmount * 0.18; 
+        double totalAmount = baseAmount + gstAmount;
 
 	    // ✅ Step 2: Check if SAME USER already has a booking for SAME PROPERTY
 	    ShootingLocationBooking existingBooking = bookingRepository
@@ -213,6 +218,10 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	        bookingEntity = existingBooking;
 	        bookingEntity.setShootStartDate(newStart);
 	        bookingEntity.setShootEndDate(newEnd);
+	        bookingEntity.setBaseAmount(baseAmount);
+	        bookingEntity.setPricePerDay(pricePerDay);
+	        bookingEntity.setGstAmount(gstAmount);
+	        bookingEntity.setTotalAmount(totalAmount);
 	        if (dto.getBookingStatus() != null) {
 	            bookingEntity.setStatus(BookingStatus.valueOf(dto.getBookingStatus().toUpperCase()));
 	        } else {
