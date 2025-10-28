@@ -473,7 +473,7 @@ public class ChatServiceImpl implements ChatService {
 
 	            // 🔹 Skip deleted-for-everyone messages
 	            if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
-	                latestMsg = "This was message deleted";
+	                latestMsg = "🚫 This message was deleted";
 
 	            // 🔹 Skip messages deleted by this user (sender/receiver)
 	            } else if ((loggedInUserId.equals(chat.getChatSenderId()) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||

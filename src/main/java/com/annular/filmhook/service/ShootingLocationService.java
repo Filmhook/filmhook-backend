@@ -50,5 +50,5 @@ public interface ShootingLocationService {
 	        String reviewText,
 	        List<MultipartFile> files
 	);
-	
+	String deleteReview(Integer reviewId, Integer userId);
 }

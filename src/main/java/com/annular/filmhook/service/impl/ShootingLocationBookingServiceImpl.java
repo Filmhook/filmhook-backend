@@ -207,15 +207,12 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	            .stream()
 	            .findFirst()
 	            .orElse(null);
-
 	    ShootingLocationBooking bookingEntity;
 	    if (existingBooking != null) {
 	        // 🔄 Update existing booking instead of creating new one
 	        bookingEntity = existingBooking;
 	        bookingEntity.setShootStartDate(newStart);
 	        bookingEntity.setShootEndDate(newEnd);
-	        bookingEntity.setPricePerDay(dto.getPricePerDay());
-	        bookingEntity.setTotalAmount(dto.getTotalAmount());
 	        if (dto.getBookingStatus() != null) {
 	            bookingEntity.setStatus(BookingStatus.valueOf(dto.getBookingStatus().toUpperCase()));
 	        } else {

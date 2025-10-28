@@ -2460,4 +2460,24 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 
+	@Override
+	public String deleteReview(Integer reviewId, Integer userId) {
+	    ShootingLocationPropertyReview review = propertyReviewRepository.findById(reviewId)
+	            .orElseThrow(() -> new RuntimeException("Review not found"));
+
+	    if (!review.getUser().getUserId().equals(userId)) {
+	        throw new RuntimeException("You are not authorized to delete this review");
+	    }
+
+	    mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
+	        MediaFileCategory.ShootingLocationReview,
+	        List.of(review.getId())
+	    );
+
+	    propertyReviewRepository.delete(review);
+
+	    return "Your review has been deleted successfully";
+	}
+
+	
 }

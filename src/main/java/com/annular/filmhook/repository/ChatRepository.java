@@ -32,7 +32,7 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
             ") " +
             "AND c.chat_is_active = true " +
             "AND (" +
-            "   c.is_deleted_for_everyone = true " + // include “deleted for everyone”
+            "   c.is_deleted_for_everyone = true " + 
             "   OR (" +
             "       (c.chat_sender_id = :senderId AND (c.deleted_by_sender = false OR c.deleted_by_sender IS NULL)) " +
             "       OR (c.chat_receiver_id = :senderId AND (c.deleted_by_receiver = false OR c.deleted_by_receiver IS NULL))" +

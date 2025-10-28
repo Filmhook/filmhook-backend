@@ -57,668 +57,668 @@ import com.annular.filmhook.webmodel.ReportPostWebModel;
 @Service
 public class ReportServiceImpl implements ReportService {
 
-    @Autowired
-    UserDetails userDetails;
-    
+	@Autowired
+	UserDetails userDetails;
+
 	@Autowired
 	private JavaMailSender javaMailSender;
 
-    @Autowired
-    UserService userService;
+	@Autowired
+	UserService userService;
 
-    @Autowired
-    MediaFilesService mediaFilesService;
+	@Autowired
+	MediaFilesService mediaFilesService;
 
-    @Autowired
-    PostsRepository postsRepository;
-    
-    @Autowired
-    private JavaMailSender mailSender;
+	@Autowired
+	PostsRepository postsRepository;
 
-    @Autowired
-    FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
+	@Autowired
+	private JavaMailSender mailSender;
 
-    @Autowired
-    UserRepository userRepository;
+	@Autowired
+	FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
 
-    @Autowired
-    PinProfileRepository pinProfileRepository;
+	@Autowired
+	UserRepository userRepository;
 
-    @Autowired
-    LikeRepository likeRepository;
-    
-    @Autowired
-    PostServiceImpl postServiceImpl;
-    @Autowired
-    FriendRequestRepository friendRequestRepository;
+	@Autowired
+	PinProfileRepository pinProfileRepository;
 
-    @Autowired
-    ReportRepository reportRepository;
+	@Autowired
+	LikeRepository likeRepository;
 
-    private static final Logger logger = LoggerFactory.getLogger(ReportServiceImpl.class);
+	@Autowired
+	PostServiceImpl postServiceImpl;
+	@Autowired
+	FriendRequestRepository friendRequestRepository;
 
-    @Override
-    public ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel, Integer reporterId) {
-        HashMap<String, Object> response = new HashMap<>();
-        try {
-//        	   Integer reporterId = userDetails.userInfo().getId();
-               Integer postId = reportPostWebModel.getPostId();
-               String reason = reportPostWebModel.getReason();     	
-              String subject=reportPostWebModel.getSubject();
-            // 1. Validate reason
-            if (reason == null || reason.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new Response(0, "Report reason cannot be empty", null));
-            }
+	@Autowired
+	ReportRepository reportRepository;
 
-            // Optional: sanitize reason to avoid HTML/script injection
-            reason = reason.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+	private static final Logger logger = LoggerFactory.getLogger(ReportServiceImpl.class);
 
-            // 2. Validate post exists
-            Optional<Posts> optionalPost = postsRepository.findById(postId);
-            if (!optionalPost.isPresent()) {
-                return ResponseEntity.badRequest()
-                        .body(new Response(0, "Post not found", null));
-            }
+	@Override
+	public ResponseEntity<?> addPostReport(ReportPostWebModel reportPostWebModel, Integer reporterId) {
+		HashMap<String, Object> response = new HashMap<>();
+		try {
+			//        	   Integer reporterId = userDetails.userInfo().getId();
+			Integer postId = reportPostWebModel.getPostId();
+			String reason = reportPostWebModel.getReason();     	
+			String subject=reportPostWebModel.getSubject();
+			// 1. Validate reason
+			if (reason == null || reason.trim().isEmpty()) {
+				return ResponseEntity.badRequest()
+						.body(new Response(0, "Report reason cannot be empty", null));
+			}
 
-            Posts post = optionalPost.get();
+			// Optional: sanitize reason to avoid HTML/script injection
+			reason = reason.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
-            // 3. Prevent self-reporting
-            if (post.getUser().getUserId().equals(reporterId)) {
-                return ResponseEntity.badRequest()
-                        .body(new Response(0, "You cannot report your own post", null));
-            }
+			// 2. Validate post exists
+			Optional<Posts> optionalPost = postsRepository.findById(postId);
+			if (!optionalPost.isPresent()) {
+				return ResponseEntity.badRequest()
+						.body(new Response(0, "Post not found", null));
+			}
 
-            // 4. Prevent duplicate report from the same user
-            boolean alreadyReported = reportRepository.existsByUserIdAndPostId(reporterId, postId);
-            if (alreadyReported) {
-                return ResponseEntity.badRequest()
-                        .body(new Response(0, "You have already reported this post", null));
-            }
-            
-            ReportPost reportPost = new ReportPost();
-            reportPost.setUserId(reporterId);
-            reportPost.setPostId(postId);
-            reportPost.setReason(reason);
-            reportPost.setSubject(subject);
-            reportPost.setStatus(false);
-            reportPost.setCreatedBy(reporterId);
-            reportRepository.save(reportPost);
+			Posts post = optionalPost.get();
 
-            // Step 1: Get Post details
-//            Optional<Posts> optionalPost = postsRepository.findById(reportPostWebModel.getPostId());
-//            if (optionalPost.isPresent()) {
-//                Posts post = optionalPost.get();
+			// 3. Prevent self-reporting
+			if (post.getUser().getUserId().equals(reporterId)) {
+				return ResponseEntity.badRequest()
+						.body(new Response(0, "You cannot report your own post", null));
+			}
 
-            Integer postOwnerId = post.getUser().getUserId();
-            Optional<User> optionalUser = userRepository.findById(postOwnerId);
+			// 4. Prevent duplicate report from the same user
+			boolean alreadyReported = reportRepository.existsByUserIdAndPostId(reporterId, postId);
+			if (alreadyReported) {
+				return ResponseEntity.badRequest()
+						.body(new Response(0, "You have already reported this post", null));
+			}
 
-            if (optionalUser.isPresent()) {
-                User postOwner = optionalUser.get();
-                String userEmail = postOwner.getEmail();
-                String Emailsubject = "Important: Your Post Has Been Reported on Film-Hook";
+			ReportPost reportPost = new ReportPost();
+			reportPost.setUserId(reporterId);
+			reportPost.setPostId(postId);
+			reportPost.setReason(reason);
+			reportPost.setSubject(subject);
+			reportPost.setStatus(false);
+			reportPost.setCreatedBy(reporterId);
+			reportRepository.save(reportPost);
 
-                
-                String postLink = "https://film-hookapps.com/report/" + postId;
-                
-                // Step 3: Email Content
-                StringBuilder content = new StringBuilder();
-                content.append("<html><body>")
-                        .append("<div style='text-align: center;'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' width='200' alt='FilmHook Logo'>")
-                        .append("</div>")
-                        .append("<p>Dear ").append(postOwner.getName()).append(",</p>")
-                        .append("<p>We have received a report against your post on <strong>Film-Hook Apps</strong>.</p>")
-                        .append("<p><strong> Subject: </strong> ").append(reportPostWebModel.getSubject()).append("</p>")
-                        .append("<p><strong>Reported Reason:</strong> ").append(reportPostWebModel.getReason()).append("</p>")
-//                        .append("<p>Please note that if your post is found to be violating our community guidelines, it will be <strong>automatically deleted within 24 hours</strong>.</p>")
-//                        .append("<p>If you believe this was a mistake, please contact our support team immediately.</p>")
-                        .append("<p>To view the reported post, ")
-                        .append("<a href='").append(postLink).append("' target='_blank' style='color:#1a73e8; font-weight:bold;'>click here</a>.</p>")
-                        .append("<p>Our moderation team will now review this report in accordance with our community guidelines. ")
-                        .append("No immediate action has been taken on your post at this stage. If any action becomes necessary, you will be notified promptly.</p>")
-                        .append("<p>If you believe this report was made in error, you may reach out to our support team and submit an appeal to provide additional information or clarification.</p>")
-                        .append("<br><p>Best Regards,</p>")
-                        .append("<p><b>Film-Hook Apps Team</b></p>")
-                        .append("<p>📧 <a href='mailto:support@film-hookapps.com'>support@film-hookapps.com</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Website</a></p>")
-                        .append("<p>📲 Get the App:</p>")
-                        .append("<p><a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30'></a> ")
-                        .append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
-                        .append("<p>📢 Follow Us:</p>")
-                        .append("<p>")
-                        .append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg' target='_blank'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='30'></a> ")
-                        .append("<a href='https://x.com/Filmhook_Apps?t=KQJkjwuvBzTPOaL4FzDtIA&s=08/' target='_blank'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='30'></a> ")
-                        .append("<a href='https://www.threads.net/@filmhookapps/' target='_blank'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='30'></a> ")
-                        .append("<a href='https://www.instagram.com/filmhookapps?igsh=dXdvNnB0ZGg5b2tx' target='_blank'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='30'></a> ")
-                        .append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP' target='_blank'>")
-                        .append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30'></a>")
-                        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353' target='_blank'>")
-                        .append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25'></a>")
-                        .append("</p>")
-                        .append("</body></html>");
-                // Step 4: Send Email
-                MimeMessage message = javaMailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true);
-                helper.setTo(userEmail);
-                helper.setSubject(Emailsubject);
-                helper.setText(content.toString(), true);
-                javaMailSender.send(message);
-                
-                String ownerTitle = "⚠ Your post has been reported!";
-                String ownerMessage ="⚠ Your post has been reported!";
-           
+			// Step 1: Get Post details
+			//            Optional<Posts> optionalPost = postsRepository.findById(reportPostWebModel.getPostId());
+			//            if (optionalPost.isPresent()) {
+			//                Posts post = optionalPost.get();
+
+			Integer postOwnerId = post.getUser().getUserId();
+			Optional<User> optionalUser = userRepository.findById(postOwnerId);
+
+			if (optionalUser.isPresent()) {
+				User postOwner = optionalUser.get();
+				String userEmail = postOwner.getEmail();
+				String Emailsubject = "Important: Your Post Has Been Reported on Film-Hook";
+
+
+				String postLink = "https://film-hookapps.com/report/" + postId;
+
+				// Step 3: Email Content
+				StringBuilder content = new StringBuilder();
+				content.append("<html><body>")
+				.append("<div style='text-align: center;'>")
+				.append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' width='200' alt='FilmHook Logo'>")
+				.append("</div>")
+				.append("<p>Dear ").append(postOwner.getName()).append(",</p>")
+				.append("<p>We have received a report against your post on <strong>Film-Hook Apps</strong>.</p>")
+				.append("<p><strong> Subject: </strong> ").append(reportPostWebModel.getSubject()).append("</p>")
+				.append("<p><strong>Reported Reason:</strong> ").append(reportPostWebModel.getReason()).append("</p>")
+				//                        .append("<p>Please note that if your post is found to be violating our community guidelines, it will be <strong>automatically deleted within 24 hours</strong>.</p>")
+				//                        .append("<p>If you believe this was a mistake, please contact our support team immediately.</p>")
+				.append("<p>To view the reported post, ")
+				.append("<a href='").append(postLink).append("' target='_blank' style='color:#1a73e8; font-weight:bold;'>click here</a>.</p>")
+				.append("<p>Our moderation team will now review this report in accordance with our community guidelines. ")
+				.append("No immediate action has been taken on your post at this stage. If any action becomes necessary, you will be notified promptly.</p>")
+				.append("<p>If you believe this report was made in error, you may reach out to our support team and submit an appeal to provide additional information or clarification.</p>")
+				.append("<br><p>Best Regards,</p>")
+				.append("<p><b>Film-Hook Apps Team</b></p>")
+				.append("<p>📧 <a href='mailto:support@film-hookapps.com'>support@film-hookapps.com</a> | 🌐 <a href='https://film-hookapps.com/'>Visit Website</a></p>")
+				.append("<p>📲 Get the App:</p>")
+				.append("<p><a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='30'></a> ")
+				.append("<a href='#'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='30'></a></p>")
+				.append("<p>📢 Follow Us:</p>")
+				.append("<p>")
+				.append("<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg' target='_blank'>")
+				.append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='30'></a> ")
+				.append("<a href='https://x.com/Filmhook_Apps?t=KQJkjwuvBzTPOaL4FzDtIA&s=08/' target='_blank'>")
+				.append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='30'></a> ")
+				.append("<a href='https://www.threads.net/@filmhookapps/' target='_blank'>")
+				.append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='30'></a> ")
+				.append("<a href='https://www.instagram.com/filmhookapps?igsh=dXdvNnB0ZGg5b2tx' target='_blank'>")
+				.append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='30'></a> ")
+				.append("<a href='https://youtube.com/@film-hookapps?si=oSz-bY4yt69TcThP' target='_blank'>")
+				.append("<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='30'></a>")
+				.append("<a href='https://www.linkedin.com/in/film-hook-68666a353' target='_blank'>")
+				.append("<a href='https://www.linkedin.com/in/film-hook-68666a353'><img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25'></a>")
+				.append("</p>")
+				.append("</body></html>");
+				// Step 4: Send Email
+				MimeMessage message = javaMailSender.createMimeMessage();
+				MimeMessageHelper helper = new MimeMessageHelper(message, true);
+				helper.setTo(userEmail);
+				helper.setSubject(Emailsubject);
+				helper.setText(content.toString(), true);
+				javaMailSender.send(message);
+
+				String ownerTitle = "⚠ Your post has been reported!";
+				String ownerMessage ="⚠ Your post has been reported!";
+
+				postServiceImpl.sendNotification(
+						reporterId, 
+						postOwnerId,            
+						ownerTitle, 
+						ownerMessage,
+						"POST_REPORT",           
+						reportPost.getPostId(),     
+						String.valueOf(postId)   
+						);
+			}
+
+			// 7. Notify Reporter (Confirmation)
+			String reporterTitle = "✅ Report submitted successfully";
+			String reporterMessage = "✅ Your report has been submitted successfully.";
 			postServiceImpl.sendNotification(
-                        postOwnerId,            
-                        reporterId,              
-                        ownerTitle, 
-                        ownerMessage,
-                        "POST_REPORT",           
-                        reportPost.getPostId(),     
-                        String.valueOf(postId)   
-                );
-            }
-
-            // 7. Notify Reporter (Confirmation)
-            String reporterTitle = "✅ Report submitted successfully";
-            String reporterMessage = "✅ Your report has been submitted successfully.";
-            postServiceImpl.sendNotification(
-                    reporterId,              
-                    postOwnerId,             
-                    reporterTitle,
-                    reporterMessage,
-                    "REPORT_CONFIRMATION",   
-                    reportPost.getPostId(),
-                    String.valueOf(postId)
-            );
-            
-            
-        response.put("reportInfo", reportPost);
-        logger.info("addPostReport method end");
-        return ResponseEntity.ok(new Response(1, "Report submitted successfully", response));
-
-    } catch (Exception e) {
-        logger.error("Error in addPostReport: {}", e.getMessage());
-        return ResponseEntity.internalServerError()
-                .body(new Response(-1, "Error submitting report", e.getMessage()));
-    }
-}
-    @Override
-    public ResponseEntity<?> getAllPostReport(ReportPostWebModel reportPostWebModel) {
-        try {
-            Map<String, Object> response = new HashMap<>();
-
-            Pageable paging = PageRequest.of(reportPostWebModel.getPageNo() - 1, reportPostWebModel.getPageSize());
-            Page<ReportPost> reportPosts = reportRepository.findAll(paging);
-            List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
-
-            Map<String, Object> pageDetails = new HashMap<>();
-            pageDetails.put("totalPages", reportPosts.getTotalPages());
-            pageDetails.put("totalRecords", reportPosts.getTotalElements());
-
-            for (ReportPost reportPost : reportPosts) {
-                Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
+					postOwnerId,
+					reporterId,              
+					reporterTitle,
+					reporterMessage,
+					"REPORT_CONFIRMATION",   
+					reportPost.getPostId(),
+					String.valueOf(postId)
+					);
 
 
-                List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+			response.put("reportInfo", reportPost);
+			logger.info("addPostReport method end");
+			return ResponseEntity.ok(new Response(1, "Report submitted successfully", response));
 
-                Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId()).stream()
-                        .map(FilmProfessionPermanentDetail::getProfessionName)
-                        .collect(Collectors.toSet());
+		} catch (Exception e) {
+			logger.error("Error in addPostReport: {}", e.getMessage());
+			return ResponseEntity.internalServerError()
+					.body(new Response(-1, "Error submitting report", e.getMessage()));
+		}
+	}
+	@Override
+	public ResponseEntity<?> getAllPostReport(ReportPostWebModel reportPostWebModel) {
+		try {
+			Map<String, Object> response = new HashMap<>();
 
-                List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+			Pageable paging = PageRequest.of(reportPostWebModel.getPageNo() - 1, reportPostWebModel.getPageSize());
+			Page<ReportPost> reportPosts = reportRepository.findAll(paging);
+			List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
 
-                Integer userId = userDetails.userInfo().getId();
-                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
-                        .map(Likes::getStatus)
-                        .orElse(false);
+			Map<String, Object> pageDetails = new HashMap<>();
+			pageDetails.put("totalPages", reportPosts.getTotalPages());
+			pageDetails.put("totalRecords", reportPosts.getTotalElements());
 
-                boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
-                        .map(UserProfilePin::isStatus)
-                        .orElse(false);
-
-                PostWebModel postWebModel = PostWebModel.builder()
-                        .id(post.getId())
-                        .userId(post.getUser().getUserId())
-                        .userName(post.getUser().getName())
-                        .postId(post.getPostId())
-                        .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
-                        .description(post.getDescription())
-                        .pinMediaStatus(pinMediaStatus)
-                        .likeCount(post.getLikesCount())
-                        .shareCount(post.getSharesCount())
-                        .commentCount(post.getCommentsCount())
-                        .promoteFlag(post.getPromoteFlag())
-                        .postFiles(postFiles).likeStatus(likeStatus)
-                        .privateOrPublic(post.getPrivateOrPublic())
-                        .locationName(post.getLocationName())
-                        .professionNames(professionNames)
-                        .followersCount(followersList.size())
-                        .build();
-
-                Map<String, Object> combinedDetails = new HashMap<>();
-                combinedDetails.put("postWebModel", postWebModel);
-
-                // Fetch ReportTable details
-                Optional<ReportPost> reportTableOptional = reportRepository.findById(reportPost.getReportPostId());
-                if (reportTableOptional.isPresent()) {
-                    ReportPost reportTable = reportTableOptional.get();
-                    combinedDetails.put("reportDetails", reportTable);
-                }
-                combinedDetailsList.add(combinedDetails);
-            }
-            response.put("pageDetails", pageDetails);
-            response.put("combinedDetailsList", combinedDetailsList);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error in getAllPostReport: {}", e.getMessage(), e);
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
-        }
-    }
-
-    @Override
-    public ResponseEntity<?> getByPostReportId(ReportPostWebModel reportPostWebModel) {
-        try {
-            Optional<ReportPost> optionalReportPost = reportRepository.findById(reportPostWebModel.getReportPostId());
-            if (optionalReportPost.isPresent()) {
-                ReportPost reportPost = optionalReportPost.get();
-                return ResponseEntity.ok(reportPost);
-            } else {
-                return ResponseEntity.ok().body(new Response(-1, "Report with ID " + reportPostWebModel.getReportPostId() + " not found", ""));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
-        }
-
-    }
-
-    @Override
-    public ResponseEntity<?> getAllReportsByPostId(ReportPostWebModel reportPostWebModel) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            Pageable paging = PageRequest.of(reportPostWebModel.getPageNo() - 1, reportPostWebModel.getPageSize());
-            Page<ReportPost> reportPosts = reportRepository.findAll(paging);
-
-            List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
-
-            Map<String, Object> pageDetails = new HashMap<>();
-            pageDetails.put("totalPages", reportPosts.getTotalPages());
-            pageDetails.put("totalRecords", reportPosts.getTotalElements());
-
-            Set<Integer> processedPostIds = new HashSet<>();
-
-            for (ReportPost reportPost : reportPosts) {
-                if (processedPostIds.contains(reportPost.getPostId())) continue;
-
-                processedPostIds.add(reportPost.getPostId());
-
-                Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
-                if (post == null) continue;
-
-                List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
-
-                Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId()).stream()
-                        .map(FilmProfessionPermanentDetail::getProfessionName)
-                        .collect(Collectors.toSet());
-
-                List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
-
-                Integer userId = userDetails.userInfo().getId();
-                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
-                        .map(Likes::getStatus)
-                        .orElse(false);
-
-                boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
-                        .map(UserProfilePin::isStatus)
-                        .orElse(false);
-
-                PostWebModel postWebModel = PostWebModel.builder()
-                        .id(post.getId())
-                        .userId(post.getUser().getUserId())
-                        .userName(post.getUser().getName())
-                        .postId(post.getPostId())
-                        .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
-                        .description(post.getDescription())
-                        .pinMediaStatus(pinMediaStatus)
-                        .likeCount(post.getLikesCount())
-                        .shareCount(post.getSharesCount())
-                        .commentCount(post.getCommentsCount())
-                        .promoteFlag(post.getPromoteFlag())
-                        .postFiles(postFiles)
-                        .likeStatus(likeStatus)
-                        .privateOrPublic(post.getPrivateOrPublic())
-                        .locationName(post.getLocationName())
-                        .professionNames(professionNames)
-                        .followersCount(followersList.size())
-                        .build();
-
-                Map<String, Object> combinedDetails = new HashMap<>();
-                combinedDetails.put("postWebModel", postWebModel);
-
-//				// Fetch ReportTable details and collect user IDs who reported this post
-//				List<ReportPost> reportDetailsList = reportRepository.findByPostId(reportPost.getPostId());
-//				List<Integer> reportUserIds = reportDetailsList.stream()
-//						.map(ReportPost::getUserId)
-//						.collect(Collectors.toList());
-//				long uniqueReportUserIdCount = reportDetailsList.stream().map(ReportPost::getUserId).distinct().count();
-//
-//				combinedDetails.put("reportDetails", reportDetailsList);
-//				combinedDetails.put("reportUserIds", reportUserIds);
-//				combinedDetails.put("reportUserIdCount", uniqueReportUserIdCount);
-                // Fetch ReportTable details and collect user IDs who reported this post
-                List<ReportPost> reportDetailsList = reportRepository.findByPostId(reportPost.getPostId());
-                List<Integer> reportUserIdss = reportDetailsList.stream()
-                        .map(ReportPost::getUserId)
-                        .collect(Collectors.toList());
-
-                // Fetch user details for the reportUserIds
-                List<User> users = userRepository.findAllById(reportUserIdss);
-                // Count the number of reports per user
-                List<ReportPost> postData = reportRepository.findAll();
-                Map<Integer, Long> reportCountsPerUser = postData.stream()
-                        .collect(Collectors.groupingBy(ReportPost::getUserId, Collectors.counting()));
-
-                // Create a list of maps, each containing a userId and userName
-                List<Map<String, Object>> reportUserIds = users.stream()
-                        .map(user -> {
-                            Map<String, Object> userMap = new HashMap<>();
-                            userMap.put("userId", user.getUserId());
-                            userMap.put("username", user.getName());
-                            userMap.put("reportCount", reportCountsPerUser.getOrDefault(user.getUserId(), 0L));
-                            return userMap;
-                        })
-                        .collect(Collectors.toList());
-
-                // Count unique report user IDs
-                long reportUserIdCount = reportDetailsList.stream()
-                        .map(ReportPost::getUserId)
-                        .distinct()
-                        .count();
-
-                // Add the details to combinedDetails
-                combinedDetails.put("reportDetails", reportDetailsList);
-                combinedDetails.put("reportUserIds", reportUserIds);
-                combinedDetails.put("reportUserIdCount", reportUserIdCount);
-
-                combinedDetailsList.add(combinedDetails);
-            }
-
-            response.put("pageDetails", pageDetails);
-            response.put("combinedDetailsList", combinedDetailsList);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error in getAllPostReport: {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
-        }
-    }
-    @Override
-    public ResponseEntity<?> getReportsByUserId(ReportPostWebModel postWebModel) {
-        Map<String, Object> response = new HashMap<>();
-        List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
-        try {
-            List<ReportPost> reportPosts = reportRepository.findByUserId(postWebModel.getUserId());
-            for (ReportPost reportPost : reportPosts) {
-                Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
-                if (post == null) continue;
-
-                List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-                    MediaFileCategory.Post, post.getId());
-
-                Set<String> professionNames = filmProfessionPermanentDetailRepository
-                    .getProfessionDataByUserId(post.getUser().getUserId()).stream()
-                    .map(FilmProfessionPermanentDetail::getProfessionName)
-                    .collect(Collectors.toSet());
-
-                List<FollowersRequest> followersList = friendRequestRepository
-                    .findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
-
-                Integer userId = userDetails.userInfo().getId();
-                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
-                    .map(Likes::getStatus).orElse(false);
-
-                boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(
-                    post.getUser().getUserId(), userId).map(UserProfilePin::isStatus).orElse(false);
-
-                PostWebModel postWebModels = PostWebModel.builder()
-                    .id(post.getId())
-                    .userId(post.getUser().getUserId())
-                    .userName(post.getUser().getName())
-                    .postId(post.getPostId())
-                    .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
-                    .description(post.getDescription())
-                    .pinMediaStatus(pinMediaStatus)
-                    .likeCount(post.getLikesCount())
-                    .shareCount(post.getSharesCount())
-                    .commentCount(post.getCommentsCount())
-                    .promoteFlag(post.getPromoteFlag())
-                    .postFiles(postFiles)
-                    .likeStatus(likeStatus)
-                    .privateOrPublic(post.getPrivateOrPublic())
-                    .locationName(post.getLocationName())
-                    .professionNames(professionNames)
-                    .followersCount(followersList.size())
-                    .build();
-
-                // Fetch userName for the reporter
-                Optional<User> reportUserOpt = userRepository.findById(reportPost.getUserId());
-                String reportUserName = reportUserOpt.map(User::getName).orElse("Unknown");
-
-                Map<String, Object> reportDetailsMap = new HashMap<>();
-                reportDetailsMap.put("reportPostId", reportPost.getReportPostId());
-                reportDetailsMap.put("userId", reportPost.getUserId());
-                reportDetailsMap.put("userName", reportUserName); // ✅ Added userName from User table
-                reportDetailsMap.put("postId", reportPost.getPostId());
-                reportDetailsMap.put("reason", reportPost.getReason());
-                reportDetailsMap.put("status", reportPost.getStatus());
-                reportDetailsMap.put("createdBy", reportPost.getCreatedBy());
-                reportDetailsMap.put("createdOn", reportPost.getCreatedOn());
-                reportDetailsMap.put("updatedBy", reportPost.getUpdatedBy());
-                reportDetailsMap.put("updatedOn", reportPost.getUpdatedOn());
-                reportDetailsMap.put("notificationCount", reportPost.getNotificationCount());
-                reportDetailsMap.put("deletePostSuspension", reportPost.getDeletePostSuspension());
-
-                Map<String, Object> combinedDetails = new HashMap<>();
-                combinedDetails.put("postWebModel", postWebModels);
-                combinedDetails.put("reportDetails", reportDetailsMap);
-                combinedDetailsList.add(combinedDetails);
-            }
-
-            response.put("combinedDetailsList", combinedDetailsList);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Error in getReportsByUserId: {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
-        }
-    }
+			for (ReportPost reportPost : reportPosts) {
+				Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
 
 
-    @Override
-    public ResponseEntity<?> updateReportsByDeleteAnsSuspension(ReportPostWebModel postWebModel) {
-        try {
-            // Validate input
-            if (postWebModel == null || postWebModel.getReportPostId() == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request data");
-            }
-            
-            // Store violation reason from request - this should be used in case 2
-            String violationReason = postWebModel.getViolationReason();
+				List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 
-            Optional<ReportPost> optionalReport = reportRepository.findById(postWebModel.getReportPostId());
-            if (optionalReport.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Report not found");
-            }
+				Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId()).stream()
+						.map(FilmProfessionPermanentDetail::getProfessionName)
+						.collect(Collectors.toSet());
 
-            ReportPost report = optionalReport.get();
-            report.setDeletePostSuspension(postWebModel.getDeletePostSuspension());
-            // Set updatedBy to current admin/user ID - this should come from security context
-            // report.setUpdatedBy(getCurrentUserId()); // Replace with actual current user ID
-            report.setUpdatedBy(report.getCreatedBy()); // Temporary - should be current admin
-            report.setUpdatedOn(new Date());
-            reportRepository.save(report);
+				List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
-            // Fetch post details
-            Optional<Posts> postOptional = postsRepository.findById(report.getPostId());
-            if (postOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
-            }
+				Integer userId = userDetails.userInfo().getId();
+				boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
+						.map(Likes::getStatus)
+						.orElse(false);
 
-            Posts post = postOptional.get();
-            
-            // Null safety checks for user and user details
-            if (post.getUser() == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Post user information not found");
-            }
+				boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
+						.map(UserProfilePin::isStatus)
+						.orElse(false);
 
-            // Prepare model with email-related details
-            postWebModel.setPostTitle(post.getDescription() != null ? post.getDescription() : "Untitled Post");
-            postWebModel.setUploadDate(post.getCreatedOn());
-            
-            String userEmail = post.getUser().getEmail();
-            String userName = post.getUser().getName();
-            Integer userId = post.getUser().getUserId();
-            
-            if (userEmail == null || userEmail.trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User email not found");
-            }
-            
-            postWebModel.setEmailId(userEmail);
-            postWebModel.setUserName(userName != null ? userName : "User");
-            postWebModel.setUserId(userId);
+				PostWebModel postWebModel = PostWebModel.builder()
+						.id(post.getId())
+						.userId(post.getUser().getUserId())
+						.userName(post.getUser().getName())
+						.postId(post.getPostId())
+						.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+						.description(post.getDescription())
+						.pinMediaStatus(pinMediaStatus)
+						.likeCount(post.getLikesCount())
+						.shareCount(post.getSharesCount())
+						.commentCount(post.getCommentsCount())
+						.promoteFlag(post.getPromoteFlag())
+						.postFiles(postFiles).likeStatus(likeStatus)
+						.privateOrPublic(post.getPrivateOrPublic())
+						.locationName(post.getLocationName())
+						.professionNames(professionNames)
+						.followersCount(followersList.size())
+						.build();
 
-            // Send moderation email
-            sendModerationEmail(postWebModel);
+				Map<String, Object> combinedDetails = new HashMap<>();
+				combinedDetails.put("postWebModel", postWebModel);
 
-            return ResponseEntity.ok(new Response(1, "success", "Report updated and email sent successfully"));
-            
-        } catch (Exception e) {
-            // Log the exception for debugging
-            // logger.error("Error updating report: ", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error processing request: " + e.getMessage());
-        }
-    }
+				// Fetch ReportTable details
+				Optional<ReportPost> reportTableOptional = reportRepository.findById(reportPost.getReportPostId());
+				if (reportTableOptional.isPresent()) {
+					ReportPost reportTable = reportTableOptional.get();
+					combinedDetails.put("reportDetails", reportTable);
+				}
+				combinedDetailsList.add(combinedDetails);
+			}
+			response.put("pageDetails", pageDetails);
+			response.put("combinedDetailsList", combinedDetailsList);
 
-    private void sendModerationEmail(ReportPostWebModel model) {
-        try {
-            System.out.println("emailId>>>>>>>>>>>>>>>> " + model.getEmailId());
-            String to = model.getEmailId();
-            String Emailsubject = "";
-            String body = "";
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			logger.error("Error in getAllPostReport: {}", e.getMessage(), e);
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
+		}
+	}
 
-            // Validate email address
-            if (to == null || to.trim().isEmpty()) {
-                throw new IllegalArgumentException("Recipient email address is required");
-            }
+	@Override
+	public ResponseEntity<?> getByPostReportId(ReportPostWebModel reportPostWebModel) {
+		try {
+			Optional<ReportPost> optionalReportPost = reportRepository.findById(reportPostWebModel.getReportPostId());
+			if (optionalReportPost.isPresent()) {
+				ReportPost reportPost = optionalReportPost.get();
+				return ResponseEntity.ok(reportPost);
+			} else {
+				return ResponseEntity.ok().body(new Response(-1, "Report with ID " + reportPostWebModel.getReportPostId() + " not found", ""));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
+		}
 
-            // Format upload date to readable format
-            String formattedDate = model.getUploadDate() != null
-                    ? new SimpleDateFormat("dd MMM yyyy").format(model.getUploadDate())
-                    : "N/A";
+	}
 
-            Integer actionType = model.getDeletePostSuspension();
-            if (actionType == null) {
-                actionType = 0; // default to warning
-            }
+	@Override
+	public ResponseEntity<?> getAllReportsByPostId(ReportPostWebModel reportPostWebModel) {
+		Map<String, Object> response = new HashMap<>();
+		try {
+			Pageable paging = PageRequest.of(reportPostWebModel.getPageNo() - 1, reportPostWebModel.getPageSize());
+			Page<ReportPost> reportPosts = reportRepository.findAll(paging);
 
-            switch (actionType) {
-                case 1: // Temporary Suspension
-                	Emailsubject = "🚫 Temporary Account Suspension Notice from The Film-hook Team";
-                    body = String.format(
-                        "Dear %s,\n\n" +
-                        "We regret to inform you that due to a serious violation of our community standards, " +
-                        "your account on the Film-hook platform has been temporarily suspended for a duration of one week.\n\n" +
-                        "Post Details:\n" +
-                        "- Title/Description: %s\n" +
-                        "- Date of Upload: %s\n" +
-                        "- Violation Identified: %s\n\n" +
-                        "Suspension Period: 7 days from the date of this notice. During this time, you will not be able to " +
-                        "log in or access any features of your account.\n\n" +
-                        "Please review our Community Guidelines to avoid further issues. If you believe this action was " +
-                        "taken in error, you may appeal by contacting our support team.\n\n" +
-                        "Best regards,\n" +
-                        "The Film-hook Team",
-                        model.getUserName(), 
-                        model.getPostTitle(), 
-                        formattedDate, 
-                        model.getViolationReason() != null ? model.getViolationReason() : "Policy violation");
-                    break;
-                    
-                case 2: // Permanent Deletion
-                	Emailsubject = "❗ Account Termination Notice from Film-hook Team";
-                    body = String.format(
-                        "Dear %s,\n\n" +
-                        "Your account on the Film-hook platform has been permanently terminated due to repeated " +
-                        "and/or severe violations of our community guidelines.\n\n" +
-                        "Account Information:\n" +
-                        "- Email: %s\n" +
-                        "- Reason: %s\n" +
-                        "- Final Violation Date: %s\n\n" +
-                        "This action is final and cannot be reversed. All your content and data have been " +
-                        "permanently removed from our platform.\n\n" +
-                        "If you believe this action was taken in error, you may contact our appeals team at " +
-                        "support@filmhookapps.com within 30 days of this notice.\n\n" +
-                        "Best regards,\n" +
-                        "The Film-hook Team",
-                        model.getUserName(), 
-                        model.getEmailId(), 
-                        model.getViolationReason() != null ? model.getViolationReason() : "Severe policy violation", 
-                        formattedDate);
-                    
-                    // Fetch user by ID and deactivate
-                    if (model.getUserId() != null) {
-                        Optional<User> optionalUser = userRepository.findById(model.getUserId());
-                        if (optionalUser.isPresent()) {
-                            User user = optionalUser.get();
-                            user.setStatus(false);
-                            userRepository.save(user);
-                        }
-                    }
-                    break;
-                default: // Warning (case 0 and any other values)
-                	Emailsubject = "⚠️ Content Warning Notice from The Film-hook Team";
-                    body = String.format(
-                        "Dear %s,\n\n" +
-                        "We are writing to inform you that a recent post on your Film-hook account has been reported " +
-                        "and found to potentially violate our community standards.\n\n" +
-                        "Post Details:\n" +
-                        "- Title/Description: %s\n" +
-                        "- Date of Upload: %s\n" +
-                        "- Issue Identified: %s\n\n" +
-                        "This serves as a formal warning. Please review our Community Guidelines to ensure future posts " +
-                        "comply with our standards. Repeated violations may result in temporary suspension or permanent " +
-                        "termination of your account.\n\n" +
-                        "If you have any questions or believe this warning was issued in error, please contact our support team.\n\n" +
-                        "Best regards,\n" +
-                        "The Film-hook Team",
-                        model.getUserName(), 
-                        model.getPostTitle(), 
-                        formattedDate, 
-                        model.getViolationReason() != null ? model.getViolationReason() : "Community guidelines violation");
-                    break;
-            }
+			List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
 
-            // Create and send email
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject(Emailsubject);
-            message.setText(body);
-            message.setFrom("Filmhookmediaapps@gmail.com");
-            
-            mailSender.send(message);
-            
-        } catch (Exception e) {
-            // Log email sending failure
-            // logger.error("Failed to send moderation email to: " + model.getEmailId(), e);
-            throw new RuntimeException("Failed to send notification email", e);
-        }
-    }
+			Map<String, Object> pageDetails = new HashMap<>();
+			pageDetails.put("totalPages", reportPosts.getTotalPages());
+			pageDetails.put("totalRecords", reportPosts.getTotalElements());
+
+			Set<Integer> processedPostIds = new HashSet<>();
+
+			for (ReportPost reportPost : reportPosts) {
+				if (processedPostIds.contains(reportPost.getPostId())) continue;
+
+				processedPostIds.add(reportPost.getPostId());
+
+				Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
+				if (post == null) continue;
+
+				List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
+
+				Set<String> professionNames = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(post.getUser().getUserId()).stream()
+						.map(FilmProfessionPermanentDetail::getProfessionName)
+						.collect(Collectors.toSet());
+
+				List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+
+				Integer userId = userDetails.userInfo().getId();
+				boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
+						.map(Likes::getStatus)
+						.orElse(false);
+
+				boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
+						.map(UserProfilePin::isStatus)
+						.orElse(false);
+
+				PostWebModel postWebModel = PostWebModel.builder()
+						.id(post.getId())
+						.userId(post.getUser().getUserId())
+						.userName(post.getUser().getName())
+						.postId(post.getPostId())
+						.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+						.description(post.getDescription())
+						.pinMediaStatus(pinMediaStatus)
+						.likeCount(post.getLikesCount())
+						.shareCount(post.getSharesCount())
+						.commentCount(post.getCommentsCount())
+						.promoteFlag(post.getPromoteFlag())
+						.postFiles(postFiles)
+						.likeStatus(likeStatus)
+						.privateOrPublic(post.getPrivateOrPublic())
+						.locationName(post.getLocationName())
+						.professionNames(professionNames)
+						.followersCount(followersList.size())
+						.build();
+
+				Map<String, Object> combinedDetails = new HashMap<>();
+				combinedDetails.put("postWebModel", postWebModel);
+
+				//				// Fetch ReportTable details and collect user IDs who reported this post
+				//				List<ReportPost> reportDetailsList = reportRepository.findByPostId(reportPost.getPostId());
+				//				List<Integer> reportUserIds = reportDetailsList.stream()
+						//						.map(ReportPost::getUserId)
+						//						.collect(Collectors.toList());
+				//				long uniqueReportUserIdCount = reportDetailsList.stream().map(ReportPost::getUserId).distinct().count();
+				//
+				//				combinedDetails.put("reportDetails", reportDetailsList);
+				//				combinedDetails.put("reportUserIds", reportUserIds);
+				//				combinedDetails.put("reportUserIdCount", uniqueReportUserIdCount);
+				// Fetch ReportTable details and collect user IDs who reported this post
+				List<ReportPost> reportDetailsList = reportRepository.findByPostId(reportPost.getPostId());
+				List<Integer> reportUserIdss = reportDetailsList.stream()
+						.map(ReportPost::getUserId)
+						.collect(Collectors.toList());
+
+				// Fetch user details for the reportUserIds
+				List<User> users = userRepository.findAllById(reportUserIdss);
+				// Count the number of reports per user
+				List<ReportPost> postData = reportRepository.findAll();
+				Map<Integer, Long> reportCountsPerUser = postData.stream()
+						.collect(Collectors.groupingBy(ReportPost::getUserId, Collectors.counting()));
+
+				// Create a list of maps, each containing a userId and userName
+				List<Map<String, Object>> reportUserIds = users.stream()
+						.map(user -> {
+							Map<String, Object> userMap = new HashMap<>();
+							userMap.put("userId", user.getUserId());
+							userMap.put("username", user.getName());
+							userMap.put("reportCount", reportCountsPerUser.getOrDefault(user.getUserId(), 0L));
+							return userMap;
+						})
+						.collect(Collectors.toList());
+
+				// Count unique report user IDs
+				long reportUserIdCount = reportDetailsList.stream()
+						.map(ReportPost::getUserId)
+						.distinct()
+						.count();
+
+				// Add the details to combinedDetails
+				combinedDetails.put("reportDetails", reportDetailsList);
+				combinedDetails.put("reportUserIds", reportUserIds);
+				combinedDetails.put("reportUserIdCount", reportUserIdCount);
+
+				combinedDetailsList.add(combinedDetails);
+			}
+
+			response.put("pageDetails", pageDetails);
+			response.put("combinedDetailsList", combinedDetailsList);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			logger.error("Error in getAllPostReport: {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
+		}
+	}
+	@Override
+	public ResponseEntity<?> getReportsByUserId(ReportPostWebModel postWebModel) {
+		Map<String, Object> response = new HashMap<>();
+		List<Map<String, Object>> combinedDetailsList = new ArrayList<>();
+		try {
+			List<ReportPost> reportPosts = reportRepository.findByUserId(postWebModel.getUserId());
+			for (ReportPost reportPost : reportPosts) {
+				Posts post = postsRepository.findById(reportPost.getPostId()).orElse(null);
+				if (post == null) continue;
+
+				List<FileOutputWebModel> postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+						MediaFileCategory.Post, post.getId());
+
+				Set<String> professionNames = filmProfessionPermanentDetailRepository
+						.getProfessionDataByUserId(post.getUser().getUserId()).stream()
+						.map(FilmProfessionPermanentDetail::getProfessionName)
+						.collect(Collectors.toSet());
+
+				List<FollowersRequest> followersList = friendRequestRepository
+						.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
+
+				Integer userId = userDetails.userInfo().getId();
+				boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
+						.map(Likes::getStatus).orElse(false);
+
+				boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(
+						post.getUser().getUserId(), userId).map(UserProfilePin::isStatus).orElse(false);
+
+				PostWebModel postWebModels = PostWebModel.builder()
+						.id(post.getId())
+						.userId(post.getUser().getUserId())
+						.userName(post.getUser().getName())
+						.postId(post.getPostId())
+						.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+						.description(post.getDescription())
+						.pinMediaStatus(pinMediaStatus)
+						.likeCount(post.getLikesCount())
+						.shareCount(post.getSharesCount())
+						.commentCount(post.getCommentsCount())
+						.promoteFlag(post.getPromoteFlag())
+						.postFiles(postFiles)
+						.likeStatus(likeStatus)
+						.privateOrPublic(post.getPrivateOrPublic())
+						.locationName(post.getLocationName())
+						.professionNames(professionNames)
+						.followersCount(followersList.size())
+						.build();
+
+				// Fetch userName for the reporter
+				Optional<User> reportUserOpt = userRepository.findById(reportPost.getUserId());
+						String reportUserName = reportUserOpt.map(User::getName).orElse("Unknown");
+
+						Map<String, Object> reportDetailsMap = new HashMap<>();
+						reportDetailsMap.put("reportPostId", reportPost.getReportPostId());
+						reportDetailsMap.put("userId", reportPost.getUserId());
+						reportDetailsMap.put("userName", reportUserName); // ✅ Added userName from User table
+						reportDetailsMap.put("postId", reportPost.getPostId());
+						reportDetailsMap.put("reason", reportPost.getReason());
+						reportDetailsMap.put("status", reportPost.getStatus());
+						reportDetailsMap.put("createdBy", reportPost.getCreatedBy());
+						reportDetailsMap.put("createdOn", reportPost.getCreatedOn());
+						reportDetailsMap.put("updatedBy", reportPost.getUpdatedBy());
+						reportDetailsMap.put("updatedOn", reportPost.getUpdatedOn());
+						reportDetailsMap.put("notificationCount", reportPost.getNotificationCount());
+						reportDetailsMap.put("deletePostSuspension", reportPost.getDeletePostSuspension());
+
+						Map<String, Object> combinedDetails = new HashMap<>();
+						combinedDetails.put("postWebModel", postWebModels);
+						combinedDetails.put("reportDetails", reportDetailsMap);
+						combinedDetailsList.add(combinedDetails);
+			}
+
+			response.put("combinedDetailsList", combinedDetailsList);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			logger.error("Error in getReportsByUserId: {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().body(new Response(-1, "Error retrieving post reports", e.getMessage()));
+		}
+	}
+
+
+	@Override
+	public ResponseEntity<?> updateReportsByDeleteAnsSuspension(ReportPostWebModel postWebModel) {
+		try {
+			// Validate input
+			if (postWebModel == null || postWebModel.getReportPostId() == null) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request data");
+			}
+
+			// Store violation reason from request - this should be used in case 2
+			String violationReason = postWebModel.getViolationReason();
+
+			Optional<ReportPost> optionalReport = reportRepository.findById(postWebModel.getReportPostId());
+			if (optionalReport.isEmpty()) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Report not found");
+			}
+
+			ReportPost report = optionalReport.get();
+			report.setDeletePostSuspension(postWebModel.getDeletePostSuspension());
+			// Set updatedBy to current admin/user ID - this should come from security context
+			// report.setUpdatedBy(getCurrentUserId()); // Replace with actual current user ID
+			report.setUpdatedBy(report.getCreatedBy()); // Temporary - should be current admin
+			report.setUpdatedOn(new Date());
+			reportRepository.save(report);
+
+			// Fetch post details
+			Optional<Posts> postOptional = postsRepository.findById(report.getPostId());
+			if (postOptional.isEmpty()) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Post not found");
+			}
+
+			Posts post = postOptional.get();
+
+			// Null safety checks for user and user details
+			if (post.getUser() == null) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Post user information not found");
+			}
+
+			// Prepare model with email-related details
+			postWebModel.setPostTitle(post.getDescription() != null ? post.getDescription() : "Untitled Post");
+			postWebModel.setUploadDate(post.getCreatedOn());
+
+			String userEmail = post.getUser().getEmail();
+			String userName = post.getUser().getName();
+			Integer userId = post.getUser().getUserId();
+
+			if (userEmail == null || userEmail.trim().isEmpty()) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User email not found");
+			}
+
+			postWebModel.setEmailId(userEmail);
+			postWebModel.setUserName(userName != null ? userName : "User");
+			postWebModel.setUserId(userId);
+
+			// Send moderation email
+			sendModerationEmail(postWebModel);
+
+			return ResponseEntity.ok(new Response(1, "success", "Report updated and email sent successfully"));
+
+		} catch (Exception e) {
+			// Log the exception for debugging
+			// logger.error("Error updating report: ", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Error processing request: " + e.getMessage());
+		}
+	}
+
+	private void sendModerationEmail(ReportPostWebModel model) {
+		try {
+			System.out.println("emailId>>>>>>>>>>>>>>>> " + model.getEmailId());
+			String to = model.getEmailId();
+			String Emailsubject = "";
+			String body = "";
+
+			// Validate email address
+			if (to == null || to.trim().isEmpty()) {
+				throw new IllegalArgumentException("Recipient email address is required");
+			}
+
+			// Format upload date to readable format
+			String formattedDate = model.getUploadDate() != null
+					? new SimpleDateFormat("dd MMM yyyy").format(model.getUploadDate())
+							: "N/A";
+
+			Integer actionType = model.getDeletePostSuspension();
+			if (actionType == null) {
+				actionType = 0; // default to warning
+			}
+
+			switch (actionType) {
+			case 1: // Temporary Suspension
+				Emailsubject = "🚫 Temporary Account Suspension Notice from The Film-hook Team";
+				body = String.format(
+						"Dear %s,\n\n" +
+								"We regret to inform you that due to a serious violation of our community standards, " +
+								"your account on the Film-hook platform has been temporarily suspended for a duration of one week.\n\n" +
+								"Post Details:\n" +
+								"- Title/Description: %s\n" +
+								"- Date of Upload: %s\n" +
+								"- Violation Identified: %s\n\n" +
+								"Suspension Period: 7 days from the date of this notice. During this time, you will not be able to " +
+								"log in or access any features of your account.\n\n" +
+								"Please review our Community Guidelines to avoid further issues. If you believe this action was " +
+								"taken in error, you may appeal by contacting our support team.\n\n" +
+								"Best regards,\n" +
+								"The Film-hook Team",
+								model.getUserName(), 
+								model.getPostTitle(), 
+								formattedDate, 
+								model.getViolationReason() != null ? model.getViolationReason() : "Policy violation");
+				break;
+
+			case 2: // Permanent Deletion
+				Emailsubject = "❗ Account Termination Notice from Film-hook Team";
+				body = String.format(
+						"Dear %s,\n\n" +
+								"Your account on the Film-hook platform has been permanently terminated due to repeated " +
+								"and/or severe violations of our community guidelines.\n\n" +
+								"Account Information:\n" +
+								"- Email: %s\n" +
+								"- Reason: %s\n" +
+								"- Final Violation Date: %s\n\n" +
+								"This action is final and cannot be reversed. All your content and data have been " +
+								"permanently removed from our platform.\n\n" +
+								"If you believe this action was taken in error, you may contact our appeals team at " +
+								"support@filmhookapps.com within 30 days of this notice.\n\n" +
+								"Best regards,\n" +
+								"The Film-hook Team",
+								model.getUserName(), 
+								model.getEmailId(), 
+								model.getViolationReason() != null ? model.getViolationReason() : "Severe policy violation", 
+										formattedDate);
+
+				// Fetch user by ID and deactivate
+				if (model.getUserId() != null) {
+					Optional<User> optionalUser = userRepository.findById(model.getUserId());
+					if (optionalUser.isPresent()) {
+						User user = optionalUser.get();
+						user.setStatus(false);
+						userRepository.save(user);
+					}
+				}
+				break;
+			default: // Warning (case 0 and any other values)
+				Emailsubject = "⚠️ Content Warning Notice from The Film-hook Team";
+				body = String.format(
+						"Dear %s,\n\n" +
+								"We are writing to inform you that a recent post on your Film-hook account has been reported " +
+								"and found to potentially violate our community standards.\n\n" +
+								"Post Details:\n" +
+								"- Title/Description: %s\n" +
+								"- Date of Upload: %s\n" +
+								"- Issue Identified: %s\n\n" +
+								"This serves as a formal warning. Please review our Community Guidelines to ensure future posts " +
+								"comply with our standards. Repeated violations may result in temporary suspension or permanent " +
+								"termination of your account.\n\n" +
+								"If you have any questions or believe this warning was issued in error, please contact our support team.\n\n" +
+								"Best regards,\n" +
+								"The Film-hook Team",
+								model.getUserName(), 
+								model.getPostTitle(), 
+								formattedDate, 
+								model.getViolationReason() != null ? model.getViolationReason() : "Community guidelines violation");
+				break;
+			}
+
+			// Create and send email
+			SimpleMailMessage message = new SimpleMailMessage();
+			message.setTo(to);
+			message.setSubject(Emailsubject);
+			message.setText(body);
+			message.setFrom("Filmhookmediaapps@gmail.com");
+
+			mailSender.send(message);
+
+		} catch (Exception e) {
+			// Log email sending failure
+			// logger.error("Failed to send moderation email to: " + model.getEmailId(), e);
+			throw new RuntimeException("Failed to send notification email", e);
+		}
+	}
 }
 

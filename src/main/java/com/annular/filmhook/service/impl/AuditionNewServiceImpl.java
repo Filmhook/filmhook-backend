@@ -766,8 +766,6 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				.message(message)
 				.createdOn(new Date())
 				.isRead(false)
-				.adminReview(user.getAdminReview())
-				.Profession(user.getUserType())
 				.isDeleted(false)
 				.createdBy(user.getUserId())
 				.userType("Payment")
