@@ -212,8 +212,9 @@ public class ReportServiceImpl implements ReportService {
                 String ownerMessage ="⚠ Your post has been reported!";
            
 			postServiceImpl.sendNotification(
+					  reporterId, 
                         postOwnerId,            
-                        reporterId,              
+                               
                         ownerTitle, 
                         ownerMessage,
                         "POST_REPORT",           
