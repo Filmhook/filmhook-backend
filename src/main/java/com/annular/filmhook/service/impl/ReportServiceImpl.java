@@ -159,7 +159,7 @@ public class ReportServiceImpl implements ReportService {
                 String Emailsubject = "Important: Your Post Has Been Reported on Film-Hook";
 
                 
-                String postLink = "https://film-hookapps.com/report/" + postId;
+                String postLink = "https://filmhookapps.com/report/" + postId;
                 
                 // Step 3: Email Content
                 StringBuilder content = new StringBuilder();
