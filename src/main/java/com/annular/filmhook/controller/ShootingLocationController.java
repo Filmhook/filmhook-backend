@@ -40,6 +40,7 @@ import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
@@ -400,8 +401,8 @@ public class ShootingLocationController {
 	public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId) {
 		logger.info("Fetching reviews for property ID: {}", propertyId);
 		try {
-			List<ShootingLocationPropertyReviewDTO> reviews = service.getReviewsByPropertyId(propertyId);
-			logger.info("Fetched {} reviews for property ID: {}", reviews.size(), propertyId);
+			ShootingLocationPropertyReviewResponseDTO reviews = service.getReviewsByPropertyId(propertyId);
+
 			return ResponseEntity.ok(new Response(1, "Success", reviews));
 		} catch (Exception e) {
 			logger.error("Failed to fetch reviews for property ID: {}", propertyId, e);

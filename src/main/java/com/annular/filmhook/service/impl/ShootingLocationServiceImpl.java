@@ -65,7 +65,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.ShootingLocationService;
-
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
 import com.annular.filmhook.util.S3Util;
@@ -79,6 +79,7 @@ import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
@@ -145,6 +146,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Autowired
 	IndustryRepository industryRepository;
 
+
+	@Autowired
+	private UserService userService;
 
 	@Autowired
 	private PropertyAvailabilityDateRepository availabilityRepository;
@@ -2053,19 +2057,53 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 	@Override
-	public List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId) {
+	public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(Integer propertyId) {
 	    List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId)
 	            .stream()
-	            .sorted(Comparator.comparing(ShootingLocationPropertyReview::getCreatedOn).reversed()) // ✅ latest first
+	            .sorted(Comparator.comparing(ShootingLocationPropertyReview::getCreatedOn).reversed())
 	            .collect(Collectors.toList());
 
-	    return reviews.stream()
+	    if (reviews.isEmpty()) {
+	        return ShootingLocationPropertyReviewResponseDTO.builder()
+	                .reviews(Collections.emptyList())
+	                .averageRating(0.0)
+	                .totalReviews(0)
+	                .fiveStarPercentage(0.0)
+	                .fourStarPercentage(0.0)
+	                .threeStarPercentage(0.0)
+	                .twoStarPercentage(0.0)
+	                .oneStarPercentage(0.0)
+	                .build();
+	    }
+
+	    // ✅ Calculate rating stats
+	    long totalReviews = reviews.size();
+	    double averageRating = reviews.stream()
+	            .mapToInt(ShootingLocationPropertyReview::getRating)
+	            .average()
+	            .orElse(0.0);
+
+	    long fiveStar = reviews.stream().filter(r -> r.getRating() == 5).count();
+	    long fourStar = reviews.stream().filter(r -> r.getRating() == 4).count();
+	    long threeStar = reviews.stream().filter(r -> r.getRating() == 3).count();
+	    long twoStar = reviews.stream().filter(r -> r.getRating() == 2).count();
+	    long oneStar = reviews.stream().filter(r -> r.getRating() == 1).count();
+
+	    // ✅ Convert counts to percentages
+	    double fiveStarPercentage = (fiveStar * 100.0) / totalReviews;
+	    double fourStarPercentage = (fourStar * 100.0) / totalReviews;
+	    double threeStarPercentage = (threeStar * 100.0) / totalReviews;
+	    double twoStarPercentage = (twoStar * 100.0) / totalReviews;
+	    double oneStarPercentage = (oneStar * 100.0) / totalReviews;
+
+	    // ✅ Map reviews to DTO
+	    List<ShootingLocationPropertyReviewDTO> reviewDTOs = reviews.stream()
 	            .map(review -> {
-	                List<FileOutputWebModel> files = mediaFilesService
-	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocationReview, review.getId())
-	                        .stream()
-	                        .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
-	                        .collect(Collectors.toList());
+	            	  List<FileOutputWebModel> files = mediaFilesService
+		                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocationReview, review.getId())
+		                        .stream()
+		                        .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+		                        .collect(Collectors.toList());
 
 	                return ShootingLocationPropertyReviewDTO.builder()
 	                        .id(review.getId())
@@ -2073,14 +2111,26 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	                        .userId(review.getUser().getUserId())
 	                        .rating(review.getRating())
 	                        .reviewText(review.getReviewText())
+	                        .profilePicUrl(userService.getProfilePicUrl(review.getUser().getUserId()))
 	                        .userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
 	                        .createdOn(review.getCreatedOn())
 	                        .files(files)
 	                        .build();
 	            })
 	            .collect(Collectors.toList());
-	}
 
+	    // ✅ Return combined response
+	    return ShootingLocationPropertyReviewResponseDTO.builder()
+	            .reviews(reviewDTOs)
+	            .averageRating(Math.round(averageRating * 10.0) / 10.0)
+	            .totalReviews(totalReviews) // total number of reviews for the property
+	            .fiveStarPercentage(Math.round(fiveStarPercentage * 10.0) / 10.0)
+	            .fourStarPercentage(Math.round(fourStarPercentage * 10.0) / 10.0)
+	            .threeStarPercentage(Math.round(threeStarPercentage * 10.0) / 10.0)
+	            .twoStarPercentage(Math.round(twoStarPercentage * 10.0) / 10.0)
+	            .oneStarPercentage(Math.round(oneStarPercentage * 10.0) / 10.0)
+	            .build();
+	}
 
 
 	@Override
