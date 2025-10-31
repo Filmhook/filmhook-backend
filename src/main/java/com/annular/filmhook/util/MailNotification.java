@@ -1,11 +1,13 @@
 package com.annular.filmhook.util;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.mail.javamail.JavaMailSender;
@@ -33,6 +35,10 @@ public class MailNotification {
     
     @Value("${spring.mail.username}")
     private String senderEmail;
+    
+    @Autowired
+    @Qualifier("OtpMailSender")
+    private JavaMailSender OtpMailSender; 
     
     public boolean sendEmail(String userName, String mailId, String subject, String mailContent) {
         try {
@@ -89,6 +95,62 @@ public class MailNotification {
         }
         return false;
     }
+    
+    public boolean sendOTPEmail(String userName, String mailId, String subject, String mailContent) {
+        try {
+            String senderName = "Film-hook IT-Support";
+            String logoSection = "<tr><td align='center' style='padding-bottom:20px;'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png' alt='FilmHook Logo' style='width:180px;height:auto;'>"
+                    + "</td></tr>";
+            String appSection = "<tr><td style='padding:5px;'>"
+                    + "<p><strong>📲 Get the App:</strong></p>"
+                    + "<p>"
+                    + "<a href='https://play.google.com/store/apps/details?id=com.projectfh&hl=en'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/PlayStore.jpeg' alt='Android' width='25' style='margin-right:10px;'></a>"
+                    + "<a href='#'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Apple.jpeg' alt='iOS' width='25'></a>"
+                    + "</p></td></tr>";
+
+            String socialSection = "<tr><td style='padding:5px;'>"
+                    + "<p><strong>📢 Follow Us:</strong></p>"
+                    + "<p>"
+                    + "<a href='https://www.facebook.com/share/1BaDaYr3X6/?mibextid=qi2Omg'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/faceBook.jpeg' width='25' style='margin-right:5px;'></a>"
+                    + "<a href='https://x.com/Filmhook_Apps?t=KQJkjwuvBzTPOaL4FzDtIA&s=08/'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Twitter.jpeg' width='25' style='margin-right:5px;'></a>"
+                    + "<a href='https://www.threads.net/@filmhookapps/'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Threads.jpeg' width='25' style='margin-right:5px;'></a>"
+                    + "<a href='https://www.instagram.com/filmhookapps?igsh=dXdvNnB0ZGg5b2tx'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Instagram.jpeg' width='25' style='margin-right:5px;'></a>"
+                    + "<a href='https://youtube.com/@film-hookapps'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/Youtube.jpeg' width='25' style='margin-right:5px;'></a>"
+                    + "<a href='https://www.linkedin.com/in/film-hook-68666a353'>"
+                    + "<img src='https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/linked.png' width='25'></a>"
+                    + "</p></td></tr>";
+            
+            String bodyStart = "<html><body style='font-family:Verdana;font-size:12px;'><table width='100%' cellpadding='0' cellspacing='0'>";
+            String greeting = "<tr><td><p>Dear <b>" + userName + "</b>,</p></td></tr>";
+            String mainContent = "<tr><td>" + mailContent + "</td></tr>";
+            String closing = "<tr><td><p>Best Regards,<br>The Film-hook Team.</p></td></tr>";
+            String bodyEnd = "</table></body></html>";
+            
+            String finalMailContent = bodyStart + logoSection + greeting + mainContent + closing + appSection + socialSection + bodyEnd;
+
+
+            MimeMessage message = OtpMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message);
+            helper.setFrom("security@filmhookapp.com", senderName);
+            helper.setTo(mailId);
+            helper.setSubject(subject);
+            helper.setText(finalMailContent, true);
+            javaMailSender.send(message);
+            return true;
+        } catch (Exception e) {
+            logger.error("Error sending email -> {}", e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     @Async
     public void sendEmailAsync(String userName, String mailId, String subject, String mailContent) {
@@ -96,7 +158,7 @@ public class MailNotification {
     }
 
     public boolean sendEmailSync(String userName, String mailId, String subject, String mailContent) {
-        return this.sendEmail(userName, mailId, subject, mailContent);
+        return this.sendOTPEmail(userName, mailId, subject, mailContent);
     }
 
 //    public boolean sendVerificationEmail(User user) {
@@ -250,6 +312,28 @@ public class MailNotification {
         }
         return false;
     }
+    // 🔹 For Reports
+    
+ 
+    // 🔹 Send OTP Email (HTML)
+    public void sendOtpMail(String to, String otp) {
+        try {
+            MimeMessage message = OtpMailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
+            helper.setFrom("security@filmhookapp.com");
+            helper.setTo(to);
+            helper.setSubject("Your OTP Code 🔐");
+            helper.setText(
+                    "<h3>Your OTP is: <b style='color:blue;'>" + otp + "</b></h3><p>This code is valid for 5 minutes.</p>",
+                    true // true = HTML
+            );
+
+            OtpMailSender.send(message);
+            System.out.println("✅ OTP email sent successfully!");
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

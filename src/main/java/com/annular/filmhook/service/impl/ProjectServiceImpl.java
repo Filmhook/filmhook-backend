@@ -3,7 +3,6 @@ package com.annular.filmhook.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.MediaFileCategory;
@@ -18,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.PlatformPermanentDetail;

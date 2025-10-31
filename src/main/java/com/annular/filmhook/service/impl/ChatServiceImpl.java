@@ -460,50 +460,83 @@ public class ChatServiceImpl implements ChatService {
 	}
 
 	public void getLatestChatMessage(User user, ChatUserWebModel chatUserWebModel, Integer loggedInUserId) {
-		String latestMsg = "";
-		Date latestMsgTime = null;
-		boolean isLatestStory = false;
-		try {
-			Optional<Chat> lastChat = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
+	    String latestMsg = "";
+	    Date latestMsgTime = null;
+	    boolean isLatestStory = false;
 
-			if (lastChat.isPresent()) {
-				Chat chat = lastChat.get();
-				if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
-					latestMsg = "This message was deleted";
-				} else if ("story".equalsIgnoreCase(chat.getReplyType())) {	               
-					isLatestStory = true;
-					latestMsg = chat.getMessage();
-				} else if(!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
-					latestMsg = chat.getMessage();
-				} else {
-					List<FileOutputWebModel> files = mediaFilesService
-							.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId())
-							.stream().sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
-							.collect(Collectors.toList());
+	    try {
+	        // ✅ Get latest visible message between the two users
+	        Optional<Chat> lastChatOpt = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
 
-					if (!files.isEmpty()) {
-						String fileType = files.get(0).getFileType();
-						if (FileUtil.isImageFile(fileType)) {
-							latestMsg = "Photo";
-						} else if (FileUtil.isVideoFile(fileType)) {
-							latestMsg = "Audio/Video";
-						} else {
-							latestMsg = "Attachment";
-						}
-					}
-				}
+	        if (lastChatOpt.isPresent()) {
+	            Chat chat = lastChatOpt.get();
 
-				latestMsgTime = chat.getTimeStamp();
-			}
+	            // 🔹 Skip deleted-for-everyone messages
+	            if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+	                latestMsg = "🚫 This message was deleted";
 
-		} catch (Exception e) {
-			logger.error("Error while getting latest chat message -> {}", e.getMessage());
-		}
+	            // 🔹 Skip messages deleted by this user (sender/receiver)
+	            } else if ((loggedInUserId.equals(chat.getChatSenderId()) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
+	                       (loggedInUserId.equals(chat.getChatReceiverId()) && Boolean.TRUE.equals(chat.getDeletedByReceiver()))) {
+	                // Find the next valid message (previous in timestamp)
+	                Chat previousChat = chatRepository
+	                    .findPreviousVisibleMessage(loggedInUserId, user.getUserId(), chat.getTimeStamp())
+	                    .orElse(null);
 
-		chatUserWebModel.setLatestMessage(latestMsg);
-		chatUserWebModel.setLatestMsgTime(latestMsgTime);
-		chatUserWebModel.setIsLatestStory(isLatestStory);
+	                if (previousChat != null) {
+	                    chat = previousChat;
+	                } else {
+	                    latestMsg = ""; // No valid message found
+	                }
+
+	            // 🔹 Handle story replies
+	            } else if ("story".equalsIgnoreCase(chat.getReplyType())) {
+	                isLatestStory = true;
+	                latestMsg = chat.getMessage();
+
+	            // 🔹 Handle normal text messages
+	            } else if (!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
+	                latestMsg = chat.getMessage();
+
+	           
+	            } else {
+	            	List<FileOutputWebModel> savedFiles = mediaFilesService
+	            		    .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId())
+	            		    .stream()
+	            		    .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+	            		    .collect(Collectors.toList());
+
+	            		if (!savedFiles.isEmpty()) {
+	            		    FileOutputWebModel firstFile = savedFiles.get(0); // ✅ correct type
+	            		    String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
+
+	            		    if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg") ||
+	            		        fileType.endsWith(".png") || fileType.endsWith(".webp")) {
+	            		        latestMsg = "📷 Photo";
+	            		    } else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov") ||
+	            		               fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
+	            		        latestMsg = "🎥 Video";
+	            		    } else if (fileType.contains("post")) {
+	            		        latestMsg = "📌 Shared Post";
+	            		    } else {
+	            		        latestMsg = "📎 Attachment";
+	            		    }
+	            		}
+
+	            }
+
+	            latestMsgTime = chat.getTimeStamp();
+	        }
+
+	    } catch (Exception e) {
+	        logger.error("Error while getting latest chat message -> {}", e.getMessage());
+	    }
+
+	    chatUserWebModel.setLatestMessage(latestMsg);
+	    chatUserWebModel.setLatestMsgTime(latestMsgTime);
+	    chatUserWebModel.setIsLatestStory(isLatestStory);
 	}
+
 
 	//	@Override
 	//	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {

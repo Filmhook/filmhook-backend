@@ -1461,6 +1461,7 @@ public class AuditionServiceImpl implements AuditionService {
 	    return ResponseEntity.ok().body(new Response(1, "Auditions fetched by sub-category", response));
 	}
 
+	
 
 
 }

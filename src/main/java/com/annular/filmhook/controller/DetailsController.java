@@ -349,4 +349,13 @@ public class DetailsController {
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
     }
+    
+    @Autowired
+    MailNotification mailService;
+    
+    @GetMapping("/report")
+    public String sendReport(@RequestParam String to) {
+        mailService.sendOtpMail(to, "Today's report details with some HTML formatting.");
+        return "Report mail sent!";
+    }
 }

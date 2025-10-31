@@ -848,8 +848,9 @@ public class DetailServiceImpl implements DetailService {
                             // Calculate the total experience for the user
                             List<FilmSubProfessionPermanentDetail> details = filmSubProfessionPermanentDetailsRepository.findByUserId(userDetails.userInfo().getId());
                             int totalExperience = details.stream()
-                                    .mapToInt(data -> data.getEndingYear() - data.getStartingYear())
-                                    .sum();
+                            	    .filter(d -> d.getEndingYear() != null && d.getStartingYear() != null)
+                            	    .mapToInt(d -> d.getEndingYear() - d.getStartingYear())
+                            	    .sum();
 
                             // Fetch the user and update the experience
                             Optional<User> userOptional = userRepository.findById(userDetails.userInfo().getId());
