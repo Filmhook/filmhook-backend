@@ -11,6 +11,7 @@ import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 
@@ -36,7 +37,7 @@ public interface ShootingLocationService {
 	        String reviewText,
 	        List<MultipartFile> files);
 	double getAverageRating(Integer propertyId);
-	List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
+	public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(Integer propertyId);
 	PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto);
 	List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId);
 	void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList);

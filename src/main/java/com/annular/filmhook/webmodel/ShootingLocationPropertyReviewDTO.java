@@ -11,13 +11,14 @@ import lombok.Data;
 @Data
 @Builder
 public class ShootingLocationPropertyReviewDTO {
+	  private Integer id;
 	private Integer propertyId;
     private Integer userId;
+     private String userName;
+    private String profilePicUrl;
     private int rating;
     private String reviewText;
-    private String userName;
     private LocalDateTime createdOn;
-    private Integer id;
-    private List<FileOutputWebModel> files; 
+   private List<FileOutputWebModel> files; 
     private List<MultipartFile> file; 
 }
