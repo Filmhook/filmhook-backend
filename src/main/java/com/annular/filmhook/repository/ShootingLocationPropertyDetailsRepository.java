@@ -15,7 +15,7 @@ import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 @Repository
 public interface ShootingLocationPropertyDetailsRepository extends JpaRepository<ShootingLocationPropertyDetails, Integer>{
 	
-	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.user.id = :userId")
+	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.user.id = :userId AND p.status = true")
 	List<ShootingLocationPropertyDetails> findAllByUserId(@Param("userId") Integer userId);
 
 	@Query("SELECT DISTINCT p FROM ShootingLocationPropertyDetails p LEFT JOIN FETCH p.mediaFiles")

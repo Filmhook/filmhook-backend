@@ -161,30 +161,9 @@ public class ShootingLocationController {
 		return ResponseEntity.ok(properties);
 	}
 	@DeleteMapping("deleteProperty/{id}")
-	public ResponseEntity<Map<String, Object>> deleteProperty(@PathVariable Integer id) {
-		Map<String, Object> response = new HashMap<>();
-		try {
-			logger.info("Attempting to delete property with ID: {}", id);
-
-			service.deletePropertyById(id);
-
-			response.put("status", "success");
-			response.put("message", "Property deleted successfully");
-			response.put("propertyId", id);
-
-			logger.info("Successfully deleted property with ID: {}", id);
-			return ResponseEntity.ok(response); 
-		} catch (RuntimeException e) {
-			logger.error("Property not found or error occurred while deleting. ID: {}, Error: {}", id, e.getMessage());
-			response.put("status", "error");
-			response.put("message", "Property not found with ID: " + id);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-		} catch (Exception e) {
-			logger.error("Unexpected error occurred while deleting property ID: {}, Error: {}", id, e.getMessage(), e);
-			response.put("status", "error");
-			response.put("message", "Internal server error");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); 
-		}
+	public ResponseEntity<Response> deleteProperty(@PathVariable Integer id) {
+	    Response response = service.deletePropertyById(id);
+	    return ResponseEntity.ok(response);
 	}
 
 
