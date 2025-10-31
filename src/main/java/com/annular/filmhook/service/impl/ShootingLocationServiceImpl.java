@@ -28,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.controller.ShootingLocationController;
 
 import com.annular.filmhook.model.BankDetails;
@@ -95,6 +97,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Autowired
 	private ShootingLocationTypesRepository typesRepo;
 
+	@Autowired 
+	private UserDetails userDetails;
 	@Autowired
 	private PropertyLikeRepository likeRepository;
 
@@ -585,6 +589,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.singleProperty(dto.getSingleProperty())
 				.build();
 	}
+	
 	@Override
 	public List<ShootingLocationPropertyDetailsDTO> getAllProperties(Integer userId) {
 		logger.info("Starting getAllProperties() - fetching all properties from database");
@@ -1438,50 +1443,88 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		}
 	}
 
+//	@Override
+//	@Transactional
+//	public void deletePropertyById(Integer id) {
+//		try {
+//			Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
+//
+//			if (!optionalProperty.isPresent()) {
+//				logger.warn("Property with ID {} not found for deletion", id);
+//				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property with ID " + id + " not found");
+//			}
+//
+//			ShootingLocationPropertyDetails property = optionalProperty.get();
+//
+//			// --- Delete media files from S3 ---
+//			List<ShootingLocationImages> mediaFiles = shootingLocationImagesRepository.findByProperty(property);
+//			if (mediaFiles != null && !mediaFiles.isEmpty()) {
+//				for (ShootingLocationImages media : mediaFiles) {
+//					if (media.getFilePath() != null) {
+//						s3Util.deleteFileFromS3(media.getFilePath());
+//						logger.info("Deleted media file from S3: {}", media.getFilePath());
+//					}
+//				}
+//				shootingLocationImagesRepository.deleteAllByProperty(property);
+//			}
+//
+//			// --- Delete bank details ---
+//			bankDetailsRepository.findByPropertyDetails(property).ifPresent(bankDetailsRepository::delete);
+//
+//			// --- Delete business info ---
+//			businessInformationRepository.findByPropertyDetails(property).ifPresent(businessInformationRepository::delete);
+//
+//			// --- Delete property itself ---
+//			propertyDetailsRepository.delete(property);
+//
+//			logger.info("Property and related data deleted successfully: ID = {}", id);
+//
+//		} catch (ResponseStatusException e) {
+//			throw e;
+//
+//		} catch (Exception e) {
+//			logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
+//			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting property with ID " + id);
+//		}
+//	}
+
+	
 	@Override
 	@Transactional
-	public void deletePropertyById(Integer id) {
-		try {
-			Optional<ShootingLocationPropertyDetails> optionalProperty = propertyDetailsRepository.findById(id);
+	public Response deletePropertyById(Integer id) {
+	    try {
+	        Integer userId = userDetails.userInfo().getId();
 
-			if (!optionalProperty.isPresent()) {
-				logger.warn("Property with ID {} not found for deletion", id);
-				throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property with ID " + id + " not found");
-			}
+	        ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(id)
+	                .orElse(null);
 
-			ShootingLocationPropertyDetails property = optionalProperty.get();
+	        if (property == null) {
+	            logger.warn("Property with ID {} not found", id);
+	            return new Response(0, "Property not found with ID: " + id, null);
+	        }
 
-			// --- Delete media files from S3 ---
-			List<ShootingLocationImages> mediaFiles = shootingLocationImagesRepository.findByProperty(property);
-			if (mediaFiles != null && !mediaFiles.isEmpty()) {
-				for (ShootingLocationImages media : mediaFiles) {
-					if (media.getFilePath() != null) {
-						s3Util.deleteFileFromS3(media.getFilePath());
-						logger.info("Deleted media file from S3: {}", media.getFilePath());
-					}
-				}
-				shootingLocationImagesRepository.deleteAllByProperty(property);
-			}
+	        // ✅ Verify ownership
+	        if (property.getUser() == null || !property.getUser().getUserId().equals(userId)) {
+	            logger.warn("User {} is not authorized to delete property ID {}", userId, id);
+	            return new Response(0, "You are not authorized to delete this property", null);
+	        }
 
-			// --- Delete bank details ---
-			bankDetailsRepository.findByPropertyDetails(property).ifPresent(bankDetailsRepository::delete);
+	        // ✅ Soft delete
+	        property.setStatus(false);
+	        property.setUpdatedBy(userId);
+	        property.setUpdatedOn(LocalDateTime.now());
 
-			// --- Delete business info ---
-			businessInformationRepository.findByPropertyDetails(property).ifPresent(businessInformationRepository::delete);
+	        propertyDetailsRepository.save(property);
 
-			// --- Delete property itself ---
-			propertyDetailsRepository.delete(property);
+	        logger.info("Property ID {} soft deleted (status=false) by user ID {}", id, userId);
+	        return new Response(1, "Property deleted successfully", null);
 
-			logger.info("Property and related data deleted successfully: ID = {}", id);
-
-		} catch (ResponseStatusException e) {
-			throw e;
-
-		} catch (Exception e) {
-			logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting property with ID " + id);
-		}
+	    } catch (Exception e) {
+	        logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
+	        return new Response(0, "Something went wrong while deleting the property", null);
+	    }
 	}
+
 
 	@Transactional
 	@Override
@@ -2076,7 +2119,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	                .build();
 	    }
 
-	    // ✅ Calculate rating stats
+	    // ✅ Calculate rating status
 	    long totalReviews = reviews.size();
 	    double averageRating = reviews.stream()
 	            .mapToInt(ShootingLocationPropertyReview::getRating)
