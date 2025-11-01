@@ -559,7 +559,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 		return responseList.isEmpty() ? null : responseList.get(0);
 	}
 
-	private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
+	public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
 		List<PostWebModel> responseList = new ArrayList<>();
 		try {
 			Integer loggedInUserTemp = null;
