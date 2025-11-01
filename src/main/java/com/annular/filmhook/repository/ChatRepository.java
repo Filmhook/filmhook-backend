@@ -23,7 +23,7 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Query("SELECT c FROM Chat c WHERE ((c.chatSenderId = :chatSenderId AND c.chatReceiverId = :chatReceiverId) OR (c.chatSenderId = :chatReceiverId AND c.chatReceiverId = :chatSenderId)) AND (c.senderChatIsActive = true OR c.receiverChatIsActive=true)")
     List<Chat> getMessageListBySenderIdAndReceiverId(Integer chatSenderId, Integer chatReceiverId);
 
-    @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId) OR (c.chatSenderId = :receiverId AND c.chatReceiverId = :senderId) ORDER BY c.timeStamp DESC")
+    @Query("SELECT c FROM Chat c WHERE ((c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId) OR (c.chatSenderId = :receiverId AND c.chatReceiverId = :senderId)) AND (c.senderChatIsActive = true OR c.receiverChatIsActive=true) ORDER BY c.timeStamp DESC")
     List<Chat> findTopByChatSenderIdAndChatReceiverIdOrderByTimeStampDesc(Integer senderId, Integer receiverId);
 
     @Query(value = "SELECT * FROM chat c " +
