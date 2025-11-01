@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -42,9 +43,12 @@ public class Chat {
     @Column(name = "message")
     private String message;
 
-    @Column(name = "chat_is_active")
-    private Boolean chatIsActive;
-
+    @Column(name = "sender_chat_is_active")
+    private Boolean senderChatIsActive;
+    
+    @Column(name = "receiver_chat_is_active")
+    private Boolean receiverChatIsActive;
+    
     @Column(name = "chat_created_by")
     private Integer chatCreatedBy;
 
@@ -92,5 +96,9 @@ public class Chat {
     
     @Column(name = "reply_type")
     private String replyType;
+    
+
+
+
 
 }

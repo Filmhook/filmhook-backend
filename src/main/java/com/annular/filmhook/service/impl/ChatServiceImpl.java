@@ -181,7 +181,8 @@ public class ChatServiceImpl implements ChatService {
 						.chatSenderId(userId)
 						.userType(user.getUserType())
 						.timeStamp(new Date())
-						.chatIsActive(true)
+						.senderChatIsActive(true)
+						.receiverChatIsActive(true)
 						.chatCreatedBy(userId)
 						.senderRead(true)
 						.receiverRead(false)
@@ -650,13 +651,13 @@ public class ChatServiceImpl implements ChatService {
 
 			List<Chat> allMessages = new ArrayList<>();
 			for (Chat c : senderMessages) {
-				if (Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedBySender())) {
+				if ((Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedBySender())) && Boolean.TRUE.equals(c.getSenderChatIsActive())) {
 					allMessages.add(c);
 				}
 			}
 
 			for (Chat c : receiverMessages) {
-				if (Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedByReceiver())) {
+				if ((Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedByReceiver()))&& Boolean.TRUE.equals(c.getReceiverChatIsActive())) {
 					allMessages.add(c);
 				}
 			}
@@ -720,7 +721,8 @@ public class ChatServiceImpl implements ChatService {
 
 					ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
 							.chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
-							.chatIsActive(chat.getChatIsActive()).chatCreatedBy(chat.getChatCreatedBy())
+							.senderchatIsActive(chat.getSenderChatIsActive()).chatCreatedBy(chat.getChatCreatedBy())
+							.reciverchatIsActive(chat.getReceiverChatIsActive())
 							.chatCreatedOn(chat.getChatCreatedOn()).senderProfilePic(senderProfilePicUrl)
 							.receiverProfilePic(receiverProfilePicUrl)
 							.chatUpdatedBy(chat.getChatUpdatedBy()).chatUpdatedOn(chat.getChatUpdatedOn())
@@ -788,6 +790,7 @@ public class ChatServiceImpl implements ChatService {
 			return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
 		}
 	}
+
 
 
 
@@ -1216,20 +1219,18 @@ public class ChatServiceImpl implements ChatService {
 				// Delete only for the current user
 				if (isSender) {
 					chat.setDeletedBySender(true);
+					chat.setSenderChatIsActive(false);
 				} else if (isReceiver) {
 					chat.setDeletedByReceiver(true);
+					chat.setReceiverChatIsActive(false);
 				}
-
-				// If both sender and receiver have deleted, mark as fully deleted
-				if (Boolean.TRUE.equals(chat.getDeletedBySender()) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
-					chat.setIsDeletedForEveryone(true);
 
 					List<MediaFiles> mediaFiles = mediaFilesRepository.findByCategoryRefId(chat.getChatId());
 					for (MediaFiles file : mediaFiles) {
 						file.setStatus(false);
 					}
 					mediaFilesRepository.saveAll(mediaFiles);
-				}
+				
 
 				chatRepository.save(chat);
 				return new Response(1, "Success", "Message deleted for current user");
@@ -1269,8 +1270,12 @@ public class ChatServiceImpl implements ChatService {
 				// Soft delete chat for the current user only
 				if (chat.getChatSenderId().equals(currentUserId)) {
 					chat.setDeletedBySender(true);
+					chat.setSenderChatIsActive(false);
+					chat.setIsDeletedForEveryone(false);
 				} else if (chat.getChatReceiverId().equals(currentUserId)) {
 					chat.setDeletedByReceiver(true);
+					chat.setReceiverChatIsActive(false);
+					chat.setIsDeletedForEveryone(false);
 				}
 
 				chatRepository.save(chat);

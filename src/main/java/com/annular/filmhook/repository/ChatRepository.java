@@ -1,6 +1,7 @@
 package com.annular.filmhook.repository;
 
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,7 @@ import com.annular.filmhook.model.User;
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Integer> {
 
-    @Query("SELECT c FROM Chat c WHERE ((c.chatSenderId = :chatSenderId AND c.chatReceiverId = :chatReceiverId) OR (c.chatSenderId = :chatReceiverId AND c.chatReceiverId = :chatSenderId)) AND c.chatIsActive = true")
+    @Query("SELECT c FROM Chat c WHERE ((c.chatSenderId = :chatSenderId AND c.chatReceiverId = :chatReceiverId) OR (c.chatSenderId = :chatReceiverId AND c.chatReceiverId = :chatSenderId)) AND (c.senderChatIsActive = true OR c.receiverChatIsActive=true)")
     List<Chat> getMessageListBySenderIdAndReceiverId(Integer chatSenderId, Integer chatReceiverId);
 
     @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId) OR (c.chatSenderId = :receiverId AND c.chatReceiverId = :senderId) ORDER BY c.timeStamp DESC")
@@ -79,5 +80,4 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
             nativeQuery = true)
     Optional<Chat> findPreviousVisibleMessage(Integer senderId, Integer receiverId, Date lastMessageTime);
 
-
-}
+   }
