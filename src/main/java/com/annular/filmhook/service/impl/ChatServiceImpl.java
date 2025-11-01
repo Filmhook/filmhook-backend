@@ -459,173 +459,134 @@ public class ChatServiceImpl implements ChatService {
 			return chatUserWebModel;
 		}).collect(Collectors.toList());
 	}
-
+	
 	public void getLatestChatMessage(User user, ChatUserWebModel chatUserWebModel, Integer loggedInUserId) {
 	    String latestMsg = "";
 	    Date latestMsgTime = null;
 	    boolean isLatestStory = false;
 
 	    try {
-	        // ✅ Get latest visible message between the two users
-	        Optional<Chat> lastChatOpt = chatRepository.getLatestMessage(loggedInUserId, user.getUserId());
-
-	        if (lastChatOpt.isPresent()) {
-	            Chat chat = lastChatOpt.get();
-
-	            
-	            // 🔹 Skip deleted-for-everyone messages
-	            if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
-	                latestMsg = "🚫 This message was deleted";
-
-	            // 🔹 Skip messages deleted by this user (sender/receiver)
-	            } else if ((loggedInUserId.equals(chat.getChatSenderId()) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
-	                       (loggedInUserId.equals(chat.getChatReceiverId()) && Boolean.TRUE.equals(chat.getDeletedByReceiver()))) {
-	                // Find the next valid message (previous in timestamp)
-	                Chat previousChat = chatRepository
-	                    .findPreviousVisibleMessage(loggedInUserId, user.getUserId(), chat.getTimeStamp())
-	                    .orElse(null);
-
-	                if (previousChat != null) {
-	                    chat = previousChat;
-	                } else {
-	                    latestMsg = ""; // No valid message found
-	                }
-
-	            // 🔹 Handle story replies
-	            } else if ("story".equalsIgnoreCase(chat.getReplyType())) {
-	                isLatestStory = true;
-	                latestMsg = chat.getMessage();
-
-	            // 🔹 Handle normal text messages
-	            } else if (!Utility.isNullOrBlankWithTrim(chat.getMessage())) {
-	                latestMsg = chat.getMessage();
-
-	           
-	            } else {
-	            	List<FileOutputWebModel> savedFiles = mediaFilesService
-	            		    .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId())
-	            		    .stream()
-	            		    .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
-	            		    .collect(Collectors.toList());
-
-	            		if (!savedFiles.isEmpty()) {
-	            		    FileOutputWebModel firstFile = savedFiles.get(0); // ✅ correct type
-	            		    String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
-
-	            		    if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg") ||
-	            		        fileType.endsWith(".png") || fileType.endsWith(".webp")) {
-	            		        latestMsg = "📷 Photo";
-	            		    } else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov") ||
-	            		               fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
-	            		        latestMsg = "🎥 Video";
-	            		    } else if (fileType.contains("post")) {
-	            		        latestMsg = "📌 Shared Post";
-	            		    } else {
-	            		        latestMsg = "📎 Attachment";
-	            		    }
-	            		}
-
-	            }
-
-	            latestMsgTime = chat.getTimeStamp();
+	        // ✅ Null safety for user
+	        if (user == null || user.getUserId() == null) {
+	            logger.warn("User or userId is null while fetching latest chat message");
+	            chatUserWebModel.setLatestMessage("");
+	            chatUserWebModel.setLatestMsgTime(null);
+	            chatUserWebModel.setIsLatestStory(false);
+	            return;
 	        }
 
+	        Optional<Chat> lastChatOpt = getLatestChatBetweenUsers(loggedInUserId, user.getUserId());
+
+	        if (lastChatOpt.isEmpty()) {
+	            logger.info("No chat found between {} and {}", loggedInUserId, user.getUserId());
+	            chatUserWebModel.setLatestMessage("");
+	            chatUserWebModel.setLatestMsgTime(null);
+	            chatUserWebModel.setIsLatestStory(false);
+	            return;
+	        }
+
+	        Chat chat = lastChatOpt.get();
+
+	        // ✅ Skip if inactive for either side
+	        if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
+	            chatUserWebModel.setLatestMessage("");
+	            chatUserWebModel.setLatestMsgTime(null);
+	            chatUserWebModel.setIsLatestStory(false);
+	            return;
+	        }
+
+	        // ✅ Deleted message placeholder
+	        if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+	            latestMsg = "🚫 This message was deleted";
+
+	        // ✅ Story reply
+	        } else if ("story".equalsIgnoreCase(chat.getReplyType())) {
+	            isLatestStory = true;
+	            latestMsg = chat.getMessage();
+
+	        // ✅ Normal text
+	        } else if (chat.getMessage() != null && !chat.getMessage().trim().isEmpty()) {
+	            latestMsg = chat.getMessage();
+
+	        // ✅ Media message handling
+	        } else {
+	            List<FileOutputWebModel> savedFiles = mediaFilesService
+	                    .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId())
+	                    .stream()
+	                    .sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+	                    .collect(Collectors.toList());
+
+	            if (!savedFiles.isEmpty()) {
+	                FileOutputWebModel firstFile = savedFiles.get(0);
+	                String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
+
+	                if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg")
+	                        || fileType.endsWith(".png") || fileType.endsWith(".webp")) {
+	                    latestMsg = "📷 Photo";
+	                } else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov")
+	                        || fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
+	                    latestMsg = "🎥 Video";
+	                } else if (fileType.contains("post")) {
+	                    latestMsg = "📌 Shared Post";
+	                } else {
+	                    latestMsg = "📎 Attachment";
+	                }
+	            }
+	        }
+
+	        latestMsgTime = chat.getChatCreatedOn();
+
 	    } catch (Exception e) {
-	        logger.error("Error while getting latest chat message -> {}", e.getMessage());
+	        logger.error("Error while getting latest chat message -> {}", e.getMessage(), e);
+	        // Prevent propagation of 404 or 500
+	        latestMsg = "";
+	        latestMsgTime = null;
+	        isLatestStory = false;
 	    }
 
+	    // ✅ Set final values safely
 	    chatUserWebModel.setLatestMessage(latestMsg);
 	    chatUserWebModel.setLatestMsgTime(latestMsgTime);
 	    chatUserWebModel.setIsLatestStory(isLatestStory);
 	}
+	private Optional<Chat> getLatestChatBetweenUsers(Integer loggedInUserId, Integer targetUserId) {
+	    try {
+	        if (loggedInUserId == null || targetUserId == null) {
+	            logger.warn("Invalid user IDs while fetching latest chat");
+	            return Optional.empty();
+	        }
+
+	        // ✅ Fetch both sides of conversation
+	        List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(loggedInUserId, targetUserId);
+	        List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(targetUserId, loggedInUserId);
+
+	        List<Chat> allMessages = new ArrayList<>();
+
+	        if (senderMessages != null && !senderMessages.isEmpty()) {
+	            allMessages.addAll(senderMessages);
+	        }
+
+	        if (receiverMessages != null && !receiverMessages.isEmpty()) {
+	            allMessages.addAll(receiverMessages);
+	        }
+
+	        if (allMessages.isEmpty()) {
+	            return Optional.empty();
+	        }
+
+	        // ✅ Sort descending by creation date (latest first)
+	        return allMessages.stream()
+	                .filter(c -> c.getChatCreatedOn() != null)
+	                .sorted(Comparator.comparing(Chat::getChatCreatedOn).reversed())
+	                .findFirst();
+
+	    } catch (Exception e) {
+	        logger.error("Error fetching latest chat between {} and {} -> {}", loggedInUserId, targetUserId, e.getMessage(), e);
+	        return Optional.empty();
+	    }
+	}
 
 
-	//	@Override
-	//	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
-	//	    Map<String, Object> response = new HashMap<>();
-	//	    try {
-	//	        // Fetch the user by receiver ID
-	//	        User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
-	//	        if (user == null) {
-	//	            return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
-	//	        }
-	//
-	//	        logger.info("Get Messages by User ID Method Start");
-	//
-	//	        // Fetch sender and receiver IDs
-	//	        Integer senderId = userDetails.userInfo().getId();
-	//	        Integer receiverId = message.getChatReceiverId();
-	//
-	//	        // Define the pagination parameters
-	//	        Pageable paging = PageRequest.of(message.getPageNo() - 1, message.getPageSize(), Sort.by("chatCreatedOn").descending());
-	//
-	//	        // Fetch messages sent by the current user to the receiver with pagination
-	//	        Page<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, receiverId, paging);
-	//
-	//	        // Fetch messages received by the current user from the receiver with pagination
-	//	        Page<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId, paging);
-	//
-	//	        // Combine both lists of messages without duplicates
-	//	        Set<Chat> allMessages = new HashSet<>();
-	//	        allMessages.addAll(senderMessages.getContent());
-	//	        allMessages.addAll(receiverMessages.getContent());
-	//
-	//	        // Construct the response structure
-	//	        List<ChatWebModel> messagesWithFiles = new ArrayList<>();
-	//	        int senderUnreadCount = 0; // Initialize sender unread messages count
-	//	        int receiverUnreadCount = 0; // Initialize receiver unread messages count
-	//	        for (Chat chat : allMessages) {
-	//	            Optional<User> userData = userRepository.findById(chat.getChatSenderId());
-	//	            Optional<User> userDatas = userRepository.findById(receiverId);
-	//
-	//	            // Fetch profile picture URLs
-	//	            String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
-	//	            String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
-	//
-	//	            if (userData.isPresent()) {
-	//	                List<FileOutputWebModel> mediaFiles = mediaFilesService
-	//	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
-	//	                ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
-	//	                        .chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
-	//	                        .chatIsActive(chat.getChatIsActive()).chatCreatedBy(chat.getChatCreatedBy())
-	//	                        .chatCreatedOn(chat.getChatCreatedOn()).senderProfilePic(senderProfilePicUrl) 
-	//	                        .receiverProfilePic(receiverProfilePicUrl)
-	//	                        .chatUpdatedBy(chat.getChatUpdatedBy()).chatUpdatedOn(chat.getChatUpdatedOn())
-	//	                        .receiverRead(chat.getReceiverRead())
-	//	                        .senderRead(chat.getSenderRead()).chatFiles(mediaFiles).message(chat.getMessage())
-	//	                        .userType(userData.get().getUserType()).userAccountName(userData.get().getName())
-	//	                        .receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId()).build();
-	//
-	//	                // Update read status if the current user is the receiver
-	//	                if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
-	//	                    receiverUnreadCount++; 
-	//	                    chat.setReceiverRead(true);
-	//	                    chatRepository.save(chat);
-	//	                }
-	//	                if (!chat.getSenderRead()) {
-	//	                    senderUnreadCount++;
-	//	                }
-	//
-	//	                messagesWithFiles.add(chatWebModel);
-	//	            }
-	//	        }
-	//
-	////	        // Sort messagesWithFiles by chatId in descending order
-	////	        messagesWithFiles.sort(Comparator.comparing(ChatWebModel::getChatId).reversed());
-	//
-	//	        // Put the final response together
-	//	        response.put("userChat", messagesWithFiles);
-	//	        response.put("numberOfItems", messagesWithFiles.size());
-	//	        response.put("currentPage", message.getPageNo());
-	//	        response.put("totalPages", senderMessages.getTotalPages());
-	//
-	//	        logger.info("Get Messages by User ID Method End");
-	//	        return ResponseEntity.ok(new Response(1, "Success", response));
-	//	    } catch (Exception e) {
-	//	        logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
-	//	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
-	//	    }
-	//	}
 	@Override
 	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
 		Map<String, Object> response = new HashMap<>();

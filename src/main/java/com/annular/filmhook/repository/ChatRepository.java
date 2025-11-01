@@ -31,7 +31,7 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
             "   (c.chat_sender_id = :senderId AND c.chat_receiver_id = :receiverId) " +
             "   OR (c.chat_sender_id = :receiverId AND c.chat_receiver_id = :senderId)" +
             ") " +
-            "AND c.chat_is_active = true " +
+            "AND (c.senderChatIsActive = true OR c.receiverChatIsActive=true) " +
             "AND (" +
             "   c.is_deleted_for_everyone = true " + 
             "   OR (" +
@@ -69,11 +69,12 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     
     @Query("SELECT c.message FROM Chat c WHERE c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId AND c.receiverRead = false ORDER BY c.chatCreatedOn ASC")
     List<String> findUnreadMessagesFromSender(@Param("senderId") Integer senderId, @Param("receiverId") Integer receiverId);
+    
     @Query(value = "SELECT * FROM chat c " +
             "WHERE ((c.chat_sender_id = :senderId AND c.chat_receiver_id = :receiverId) " +
             "   OR (c.chat_sender_id = :receiverId AND c.chat_receiver_id = :senderId)) " +
             "  AND c.time_stamp < :lastMessageTime " +
-            "  AND c.chat_is_active = true " +
+            " AND (c.senderChatIsActive = true OR c.receiverChatIsActive=true)" +
               "  AND ((c.chat_sender_id = :senderId AND (c.deleted_by_sender = false OR c.deleted_by_sender IS NULL)) " +
             "    OR (c.chat_receiver_id = :senderId AND (c.deleted_by_receiver = false OR c.deleted_by_receiver IS NULL))) " +
             "ORDER BY c.time_stamp DESC LIMIT 1",
