@@ -574,11 +574,16 @@ public class ChatServiceImpl implements ChatService {
 	            return Optional.empty();
 	        }
 
-	        // ✅ Sort descending by creation date (latest first)
-	        return allMessages.stream()
-	                .filter(c -> c.getChatCreatedOn() != null)
-	                .sorted(Comparator.comparing(Chat::getChatCreatedOn).reversed())
-	                .findFirst();
+	        allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn).reversed());
+
+	        // ✅ Iterate through all messages to find the latest *valid* one
+	        for (Chat chat : allMessages) {
+	            if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
+	                continue;
+	            }
+	            return Optional.of(chat);
+	        }
+	        return Optional.empty();
 
 	    } catch (Exception e) {
 	        logger.error("Error fetching latest chat between {} and {} -> {}", loggedInUserId, targetUserId, e.getMessage(), e);
