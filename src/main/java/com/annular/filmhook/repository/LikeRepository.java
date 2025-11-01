@@ -13,8 +13,8 @@ import com.annular.filmhook.model.Likes;
 @Repository
 public interface LikeRepository extends JpaRepository<Likes, Integer> {
 
-	@Query("select l from Likes l where l.postId = :id and l.likedBy = :userId and l.category = 'Post'")
-	Optional<Likes> findByPostIdAndUserId(Integer id, Integer userId);
+	 @Query("select l from Likes l where l.likedBy = :userId and l.category = 'Post'")
+	    List<Likes> findAllByUserIdForPosts(Integer userId);
 
     @Query("select count(l) from Likes l where l.commentId = :commentId and l.postId = :postId and l.category = 'Comment' and l.status = true")
     Integer getLikesForCommentByCommentId(Integer postId, Integer commentId);

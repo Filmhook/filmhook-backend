@@ -594,22 +594,27 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 					Integer latestLikeId = null;
 
 					if (finalLoggedInUser != null) {
-						Optional<Likes> reactionOpt = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
-						if (reactionOpt.isPresent()) {
-							Likes r = reactionOpt.get();
-							latestLikeId = r.getLikeId();
+					    // Fetch all likes for this user once (you can also cache this outside the loop for efficiency)
+					    List<Likes> userLikes = likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
 
-							// Use reactionType instead of only status
-							if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
-								likeStatus = true;
-								unlikeStatus = false;
-							} else if ("UNLIKE".equalsIgnoreCase(r.getReactionType())) {
-								likeStatus = false;
-								unlikeStatus = true;
-							}
-						}
+					    // Find the like entry for the current post
+					    Likes r = userLikes.stream()
+					            .filter(like -> like.getPostId().equals(post.getId()))
+					            .findFirst()
+					            .orElse(null);
+
+					    if (r != null) {
+					        latestLikeId = r.getLikeId();
+
+					        if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
+					            likeStatus = true;
+					            unlikeStatus = false;
+					        } else if ("UNLIKE".equalsIgnoreCase(r.getReactionType())) {
+					            likeStatus = false;
+					            unlikeStatus = true;
+					        }
+					    }
 					}
-
 					// Count total likes/unlikes with category filter
 					Long totalLikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
 					        post.getId(), "LIKE", "Post");
