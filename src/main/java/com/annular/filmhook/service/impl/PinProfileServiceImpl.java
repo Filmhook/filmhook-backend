@@ -302,9 +302,16 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
         Integer latestLikeId = null;
 
         if (finalLoggedInUser != null) {
-            Optional<Likes> reactionOpt = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
-            if (reactionOpt.isPresent()) {
-                Likes r = reactionOpt.get();
+            // Fetch all likes for this user once (you can also cache this outside the loop for efficiency)
+            List<Likes> userLikes = likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
+
+            // Find the like entry for the current post
+            Likes r = userLikes.stream()
+                    .filter(like -> like.getPostId().equals(post.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (r != null) {
                 latestLikeId = r.getLikeId();
 
                 if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
