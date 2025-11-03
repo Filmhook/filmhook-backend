@@ -1,5 +1,6 @@
 package com.annular.filmhook.controller;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.service.WatchLaterService;
 import com.annular.filmhook.webmodel.PostWebModel;
@@ -21,14 +22,11 @@ public class WatchLaterController {
 
     // ✅ Add / Remove (toggle)
     @PostMapping("/toggle")
-    public String toggleWatchLater(@RequestParam Integer userId, @RequestParam Integer Id) {
-    	
-    	 logger.info("saveLiveSubscribe controller start {} {}",userId,Id );
+    public Response toggleWatchLater(@RequestParam Integer userId, @RequestParam Integer Id) {
         return watchLaterService.toggleWatchLater(userId, Id);
     }
-
     @GetMapping("/{userId}")
-    public List<PostWebModel> getWatchLaterPosts(@PathVariable String userId) {
-        return watchLaterService.getActiveWatchLaterPosts(userId);
+    public Response getWatchLaterPosts(@PathVariable String userId) {
+    	return watchLaterService.getActiveWatchLaterPosts(userId);
     }
 }

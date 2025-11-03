@@ -13,4 +13,6 @@ public interface WatchLaterRepository extends JpaRepository<WatchLater, Long> {
     Optional<WatchLater> findByUserAndPost(User user, Posts post);
 
     List<WatchLater> findByUserAndStatus(User user, Boolean status);
+    
+    boolean existsByUser_UserIdAndPost_IdAndStatus(Integer userId, Integer postId, Boolean status);
 }

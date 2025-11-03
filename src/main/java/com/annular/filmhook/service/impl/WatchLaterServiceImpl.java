@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import com.annular.filmhook.Response;
 import com.annular.filmhook.controller.LiveSubscribeController;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.User;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,56 +37,76 @@ public class WatchLaterServiceImpl implements WatchLaterService {
 	  
 	    
 	    @Override
-	    public String toggleWatchLater(Integer userId, Integer postId) {
-	    	
-	    	 logger.info("Watch history controller start {} {}",userId,postId );
-	        // ✅ convert userId to Integer for your existing query
-	        Integer userIdInt = Integer.valueOf(userId);
+	    public Response toggleWatchLater(Integer userId, Integer postId) {
+	        logger.info("Toggle Watch Later start => userId: {}, postId: {}", userId, postId);
 
-	        User user = userRepository.getUserByUserId(userIdInt)
-	                .orElse(null);
-	        logger.info("Watch history servise user {}",user );
-	        
-	        Posts post = postsRepository.findById(postId).orElse(null);
+	        try {
+	            User user = userRepository.getUserByUserId(userId).orElse(null);
+	            Posts post = postsRepository.findById(postId).orElse(null);
 
-	        logger.info("Watch history servise post {}",post );
-	        if (user == null || post == null) {
-	            return "User or Post not found";
-	        }
+	            if (user == null || post == null) {
+	                logger.warn("User or Post not found: userId={}, postId={}", userId, postId);
+	                return new Response(0, "User or Post not found", null);
+	            }
 
-	        var existingOpt = watchLaterRepository.findByUserAndPost(user, post);
+	            Optional<WatchLater> existingOpt = watchLaterRepository.findByUserAndPost(user, post);
 
-	        if (existingOpt.isPresent()) {
-	            WatchLater existing = existingOpt.get();
-	            existing.setStatus(!existing.getStatus()); // toggle
-	            watchLaterRepository.save(existing);
-	            return existing.getStatus() ? "Added to Watch Later" : "Removed from Watch Later";
-	        } else {
-	            WatchLater newEntry = WatchLater.builder()
-	                    .user(user)
-	                    .post(post)
-	                    .status(true)
-	                    .build();
-	            watchLaterRepository.save(newEntry);
-	            return "Added to Watch Later";
+	            if (existingOpt.isPresent()) {
+	                WatchLater existing = existingOpt.get();
+	                existing.setStatus(!existing.getStatus()); // Toggle the current status
+	                watchLaterRepository.save(existing);
+
+	                String message = existing.getStatus()
+	                        ? "Added to Watch Later"
+	                        : "Removed from Watch Later";
+
+	                logger.info(message);
+	                return new Response(1, message, null);
+	            } else {
+	                WatchLater newEntry = WatchLater.builder()
+	                        .user(user)
+	                        .post(post)
+	                        .status(true)
+	                        .build();
+	                watchLaterRepository.save(newEntry);
+
+	                logger.info("Added to Watch Later");
+	                return new Response(1, "Added to Watch Later", null);
+	            }
+
+	        } catch (Exception e) {
+	            logger.error("Error in toggleWatchLater: {}", e.getMessage(), e);
+	            return new Response(-1, "Error while toggling Watch Later", e.getMessage());
 	        }
 	    }
+
 
 	    @Override
-	    public List<PostWebModel> getActiveWatchLaterPosts(String userId) {
-	        Integer userIdInt = Integer.valueOf(userId);
+	    public Response getActiveWatchLaterPosts(String userId) {
+	        try {
+	            Integer userIdInt = Integer.valueOf(userId);
+	            User user = userRepository.getUserByUserId(userIdInt).orElse(null);
 
-	        User user = userRepository.getUserByUserId(userIdInt)
-	                .orElse(null);
-	        if (user == null) return List.of();
+	            if (user == null) {
+	                return new Response(0, "User not found", null);
+	            }
 
-	        // Get active watch later posts
-	        List<Posts> postList = watchLaterRepository.findByUserAndStatus(user, true)
-	                .stream()
-	                .map(WatchLater::getPost)
-	                .collect(Collectors.toList());
+	            List<Posts> postList = watchLaterRepository.findByUserAndStatus(user, true)
+	                    .stream()
+	                    .map(WatchLater::getPost)
+	                    .collect(Collectors.toList());
 
-	        // Convert Posts → PostWebModel (using your existing transformer)
-	        return postServiceImpl.transformPostsDataToPostWebModel(postList);
+	            if (postList.isEmpty()) {
+	                return new Response(1, "No posts found in Watch Later", List.of());
+	            }
+
+	            List<PostWebModel> postWebModels = postServiceImpl.transformPostsDataToPostWebModel(postList);
+	            return new Response(1, "Active Watch Later posts fetched successfully", postWebModels);
+
+	        } catch (Exception e) {
+	            return new Response(-1, "Error fetching Watch Later posts: " + e.getMessage(), null);
+	        }
 	    }
+
+
 	}
