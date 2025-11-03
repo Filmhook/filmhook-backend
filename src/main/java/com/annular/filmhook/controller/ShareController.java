@@ -42,7 +42,7 @@ public class ShareController {
 			mediaUrl = file.getFilePath();  // show image
 		}
 
-		String redirectUrl = "filmhook://media/" + postId;
+		String redirectUrl = "https://filmhookapps.com/media/" + postId;
 		String pageUrl = "https://filmhookapps.com/media/" + postId;
 
 		String html = "<!DOCTYPE html>\n" +

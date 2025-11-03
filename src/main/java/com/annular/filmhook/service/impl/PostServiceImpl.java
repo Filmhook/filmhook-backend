@@ -84,6 +84,7 @@ import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
+import com.annular.filmhook.repository.WatchLaterRepository;
 import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.repository.PostTagsRepository;
 import com.annular.filmhook.repository.PostViewRepository;
@@ -102,6 +103,8 @@ public class PostServiceImpl implements PostService {
 
 	public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
 
+	@Autowired
+	private WatchLaterRepository watchLaterRepository;
 	@Autowired
 	MediaFilesService mediaFilesService;
 	
@@ -622,6 +625,14 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 					Long totalUnlikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
 					        post.getId(), "UNLIKE", "Post");
 
+					Boolean watchLater = false;
+					if (finalLoggedInUser != null) {
+					    watchLater = watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(
+					            finalLoggedInUser,
+					            post.getId(),
+					            true
+					    );
+					}
 
 					// Pin Status
 					Boolean pinStatus = false;
@@ -721,6 +732,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 							.companyName(promoteDetails != null ? promoteDetails.getCompanyName() : null)
 							.brandName(promoteDetails != null ? promoteDetails.getBrandName() : null)
 							.companyLogoFiles(logoFiles) 
+							.watchLater(watchLater)
 							.build();
 
 					responseList.add(postWebModel);
