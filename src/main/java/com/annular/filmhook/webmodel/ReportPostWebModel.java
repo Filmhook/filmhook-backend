@@ -10,8 +10,8 @@ import lombok.Data;
 public class ReportPostWebModel {
 
     private Integer reportPostId;
-    private Integer userId; // primary key of user table
-    private Integer postId; // primary key of posts table
+    private Integer userId; 
+    private Integer postId; 
     private String reason;
     private String subject;                                                                                            
     private Integer deletePostSuspension;
