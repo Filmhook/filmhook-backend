@@ -218,7 +218,7 @@ public class ReportServiceImpl implements ReportService {
                         ownerMessage,
                         "POST_REPORT",           
                         reportPost.getPostId(),     
-                        String.valueOf(postId)   
+                       post.getPostId()  
                 );
             }
 
@@ -232,7 +232,7 @@ public class ReportServiceImpl implements ReportService {
                     reporterMessage,
                     "REPORT_CONFIRMATION",   
                     reportPost.getPostId(),
-                    String.valueOf(postId)
+                    post.getPostId()  
             );
             
             

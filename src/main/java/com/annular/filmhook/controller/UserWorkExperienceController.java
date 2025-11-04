@@ -76,5 +76,21 @@ public class UserWorkExperienceController {
 	                .body(new Response(0, "Internal server error: " + e.getMessage(), null));
 	    }
 	}
+	
+	@PutMapping("/update")
+	public ResponseEntity<Response> updateWorkExperience(@RequestBody UserWorkExperienceWebModel model) {
+	    try {
+	        UserWorkExperienceWebModel updatedData = service.updateUserWorkExperience(model);
+	        logger.info("Updated work experience ID: {}", model.getId());
+	        return ResponseEntity.ok(new Response(1, "Work experience updated successfully", updatedData));
+	    } catch (RuntimeException e) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new Response(0, "Failed to update work experience: " + e.getMessage(), null));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(0, "Internal server error: " + e.getMessage(), null));
+	    }
+	}
+
 
 }

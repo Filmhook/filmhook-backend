@@ -89,5 +89,62 @@ public class UserWorkExperienceServiceImpl implements UserWorkExperienceService 
 				.collect(Collectors.toList());
 	}
 	
+	@Override
+	public boolean deleteUserWorkExperience(Integer experienceId) {
+	    Optional<UserWorkExperience> experienceOptional = repository.findById(experienceId);
+
+	    if (experienceOptional.isEmpty()) {
+	        throw new RuntimeException("Work experience not found with ID: " + experienceId);
+	    }
+
+	    UserWorkExperience experience = experienceOptional.get();
+	    repository.delete(experience);
+
+	    return true;
+	}
+
+	@Override
+	public UserWorkExperienceWebModel updateUserWorkExperience(UserWorkExperienceWebModel model) {
+	    // ✅ 1. Fetch existing record
+	    UserWorkExperience existingExperience = repository.findById(model.getId())
+	            .orElseThrow(() -> new RuntimeException("Work experience not found with ID: " + model.getId()));
+
+	    // ✅ 2. Validate User
+	    User user = userRepository.findById(model.getUserId())
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    // ✅ 3. Check for duplicates (same company & designation for same user but different record)
+	    Optional<UserWorkExperience> duplicateCheck = repository
+	            .findByUserAndCompanyNameIgnoreCaseAndDesignationIgnoreCase(user, model.getCompanyName(), model.getDesignation());
+
+	    if (duplicateCheck.isPresent() && !duplicateCheck.get().getId().equals(model.getId())) {
+	        throw new RuntimeException("Work experience for this company and designation already exists.");
+	    }
+
+	    // ✅ 4. Validate currentlyWorking and endDate logic
+	    if (Boolean.TRUE.equals(model.getCurrentlyWorking()) && model.getEndDate() != null) {
+	        throw new RuntimeException("End date should be empty if currently working is true.");
+	    }
+	    if (Boolean.FALSE.equals(model.getCurrentlyWorking()) && model.getEndDate() == null) {
+	        throw new RuntimeException("End date is required if currently working is false.");
+	    }
+
+	    // ✅ 5. Update fields
+	    existingExperience.setCompanyName(model.getCompanyName());
+	    existingExperience.setDesignation(model.getDesignation());
+	    existingExperience.setCompanyLocation(model.getCompanyLocation());
+	    existingExperience.setStartDate(model.getStartDate());
+	    existingExperience.setEndDate(model.getEndDate());
+	    existingExperience.setCurrentlyWorking(model.getCurrentlyWorking());
+	    existingExperience.setUser(user);
+
+	    repository.save(existingExperience);
+
+	    // ✅ 6. Return updated model
+	    model.setId(existingExperience.getId());
+	    return model;
+	}
+
+	
 	
 }

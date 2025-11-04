@@ -7,4 +7,5 @@ public interface UserWorkExperienceService {
     UserWorkExperienceWebModel saveUserWorkExperience(UserWorkExperienceWebModel model);
     List<UserWorkExperienceWebModel> getUserWorkExperience(Integer userId);
 	boolean deleteUserWorkExperience(Integer experienceId);
+	UserWorkExperienceWebModel updateUserWorkExperience(UserWorkExperienceWebModel model);
 }
