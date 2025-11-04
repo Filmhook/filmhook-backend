@@ -55,4 +55,26 @@ public class UserWorkExperienceController {
 					.body(new Response(0, "Internal server error: " + e.getMessage(), null));
 		}
 	}
+	
+	@DeleteMapping("/delete/{experienceId}")
+	public ResponseEntity<Response> deleteWorkExperience(@PathVariable Integer experienceId) {
+	    try {
+	        boolean isDeleted = service.deleteUserWorkExperience(experienceId);
+
+	        if (isDeleted) {
+	            logger.info("Deleted work experience with ID: {}", experienceId);
+	            return ResponseEntity.ok(new Response(1, "Work experience deleted successfully", null));
+	        } else {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new Response(0, "Work experience not found for ID: " + experienceId, null));
+	        }
+	    } catch (RuntimeException e) {
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new Response(0, "Failed to delete work experience: " + e.getMessage(), null));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(0, "Internal server error: " + e.getMessage(), null));
+	    }
+	}
+
 }
