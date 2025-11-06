@@ -403,23 +403,53 @@ public class ChatServiceImpl implements ChatService {
 			List<Chat> allChats = chatRepository.findAllChatsByUserId(loggedInUserId);
 			Set<Integer> chatUserIds = new HashSet<>();
 
-			for (Chat chat : allChats) {
-				if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedBySender()) 
-					    && !Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
-					    continue;
-					}
+			   for (Chat chat : allChats) {
+		            boolean isSender = chat.getChatSenderId().equals(loggedInUserId);
+		            boolean isReceiver = chat.getChatReceiverId().equals(loggedInUserId);
 
-				if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
-					continue;
-				}
-				// Add the other user's ID
-				if (chat.getChatSenderId().equals(loggedInUserId)) {
-					chatUserIds.add(chat.getChatReceiverId());
-				} else {
-					chatUserIds.add(chat.getChatSenderId());
-				}
-			}
+		            // Skip if the logged-in user isn't part of this chat (safety)
+		            if (!isSender && !isReceiver) continue;
 
+		            // 🧹 Skip if both sides have chat inactive (deleted full chat)
+		            if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) &&
+		                Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
+		                continue;
+		            }
+
+		            // 🧹 Skip if the logged-in user deleted their whole chat profile
+		            if ((isSender && Boolean.FALSE.equals(chat.getSenderChatIsActive())) ||
+		                (isReceiver && Boolean.FALSE.equals(chat.getReceiverChatIsActive()))) {
+		                continue;
+		            }
+
+		            // 🧹 Skip messages deleted for everyone
+		            // (but keep chat user visible)
+		            if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+		                // Still show the user if the chat profile is active
+		                if (isSender && Boolean.TRUE.equals(chat.getSenderChatIsActive())) {
+		                    chatUserIds.add(chat.getChatReceiverId());
+		                } else if (isReceiver && Boolean.TRUE.equals(chat.getReceiverChatIsActive())) {
+		                    chatUserIds.add(chat.getChatSenderId());
+		                }
+		                continue;
+		            }
+
+		            // 🧹 Skip messages deleted only by this user
+		            if (isSender && Boolean.TRUE.equals(chat.getDeletedBySender())) {
+		                // message deleted for sender, skip this message
+		                continue;
+		            } else if (isReceiver && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
+		                // message deleted for receiver, skip this message
+		                continue;
+		            }
+
+		            // ✅ Add the other user if current user's chat profile is active
+		            if (isSender && Boolean.TRUE.equals(chat.getSenderChatIsActive())) {
+		                chatUserIds.add(chat.getChatReceiverId());
+		            } else if (isReceiver && Boolean.TRUE.equals(chat.getReceiverChatIsActive())) {
+		                chatUserIds.add(chat.getChatSenderId());
+		            }
+		        }
 			if (chatUserIds.isEmpty()) {
 				return ResponseEntity.notFound().build();
 			}
