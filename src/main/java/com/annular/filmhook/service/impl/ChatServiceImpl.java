@@ -404,9 +404,11 @@ public class ChatServiceImpl implements ChatService {
 			Set<Integer> chatUserIds = new HashSet<>();
 
 			for (Chat chat : allChats) {
-				if (chat.getChatSenderId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedBySender())) {
-					continue;
-				}
+				if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedBySender()) 
+					    && !Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+					    continue;
+					}
+
 				if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
 					continue;
 				}
