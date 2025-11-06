@@ -487,13 +487,13 @@ public class ChatServiceImpl implements ChatService {
 
 	        Chat chat = lastChatOpt.get();
 
-	        // ✅ Skip if inactive for either side
-	        if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
-	            chatUserWebModel.setLatestMessage("");
-	            chatUserWebModel.setLatestMsgTime(null);
-	            chatUserWebModel.setIsLatestStory(false);
-	            return;
-	        }
+//	        // ✅ Skip if inactive for either side
+//	        if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
+//	            chatUserWebModel.setLatestMessage("");
+//	            chatUserWebModel.setLatestMsgTime(null);
+//	            chatUserWebModel.setIsLatestStory(false);
+//	            return;
+//	        }
 
 	        // ✅ Deleted message placeholder
 	        if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
@@ -578,11 +578,14 @@ public class ChatServiceImpl implements ChatService {
 
 	        // ✅ Iterate through all messages to find the latest *valid* one
 	        for (Chat chat : allMessages) {
-	            if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
-	                continue;
-	            }
-	            return Optional.of(chat);
-	        }
+	        	  if ((chat.getChatSenderId().equals(loggedInUserId) && Boolean.FALSE.equals(chat.getSenderChatIsActive())) ||
+	                      (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.FALSE.equals(chat.getReceiverChatIsActive()))) {
+	                      continue;
+	                  }
+
+	                  // ✅ Don't skip just because the *other user* deleted
+	                  return Optional.of(chat);
+	              }
 	        return Optional.empty();
 
 	    } catch (Exception e) {

@@ -54,10 +54,9 @@ public class UserWorkExperienceController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(0, "Internal server error: " + e.getMessage(), null));
 		}
-	}
+	} 
 	
-	//jhgjvjhvgvghvghvgjh
-	
+
 	@DeleteMapping("/delete/{experienceId}")
 	public ResponseEntity<Response> deleteWorkExperience(@PathVariable Integer experienceId) {
 	    try {
