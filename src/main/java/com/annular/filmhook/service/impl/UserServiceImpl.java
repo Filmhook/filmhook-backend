@@ -74,13 +74,13 @@ public class UserServiceImpl implements UserService {
 	AuditionProjectRepository auditionProjectRepository;
 	@Autowired
 	CalendarUtil calendarUtil;
-	
+
 	@Autowired
 	ShootingLocationPropertyDetailsRepository shootingLocationRepository;
-	
+
 	@Autowired
 	AuditionCompanyRepository auditionCompanyRepository;
-	
+
 	@Autowired
 	AddressListRepository addressListRepository;
 
@@ -92,10 +92,10 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	MediaFilesService mediaFilesService;
-	
+
 	@Autowired
 	PostsRepository postRepository;
-	
+
 	@Autowired
 	UserService userService;
 
@@ -161,13 +161,13 @@ public class UserServiceImpl implements UserService {
 				user.setPinProfileStatus(pinStatus);
 
 				// ✅ Follow status
-				   Boolean followStatus = friendRequestRepository
-		                    .findByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
-		                            loggedInUserId, userId, true
-		                    )
-		                    .map(request -> "Followed".equalsIgnoreCase(request.getFollowersRequestStatus()))
-		                    .orElse(false);
-		            user.setFollowingStatus(followStatus);
+				Boolean followStatus = friendRequestRepository
+						.findByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
+								loggedInUserId, userId, true
+								)
+						.map(request -> "Followed".equalsIgnoreCase(request.getFollowersRequestStatus()))
+						.orElse(false);
+				user.setFollowingStatus(followStatus);
 			}
 		}
 		return Optional.ofNullable(user);
@@ -181,7 +181,7 @@ public class UserServiceImpl implements UserService {
 		UserWebModel userWebModel = new UserWebModel();
 
 		userWebModel.setUserId(user.getUserId());
-
+		userWebModel.setFilmHookCode(user.getFilmHookCode());
 		userWebModel.setEmail(user.getEmail());
 		userWebModel.setUserType(user.getUserType());
 
@@ -684,7 +684,7 @@ public class UserServiceImpl implements UserService {
         }*/
 		Map<String, List<Map<String, Object>>> professionUserMap = new HashMap<>();
 
-	
+
 		try {
 			// Example search
 			// Industry :- [KOLLYWOOD-1, MOLLYWOOD-2]
@@ -1416,7 +1416,7 @@ public class UserServiceImpl implements UserService {
 		}
 		//user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
 		userRepository.save(user); // Save changes to the database
-		
+
 		//	        // Send deactivation email
 		//	        boolean emailSent = sendVerificationEmail(user, false);
 		//	        if (!emailSent) {
@@ -1426,7 +1426,7 @@ public class UserServiceImpl implements UserService {
 
 		return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
 	}
-	
+
 
 
 	@Override
@@ -1507,7 +1507,7 @@ public class UserServiceImpl implements UserService {
 		}
 		user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
 		userRepository.save(user); // Save changes to the database
-		 softDeleteUserData(userId);
+		softDeleteUserData(userId);
 		// Send deactivation email
 		try {
 			boolean emailSent = sendVerificationEmail(user, false); // false = deactivation context
@@ -1520,18 +1520,18 @@ public class UserServiceImpl implements UserService {
 		return ResponseEntity.ok(new Response(1, "success", "User account has been deactivated successfully."));
 	}
 
-	
+
 	@Transactional
 	public void softDeleteUserData(Integer userId) {
-	   
+
 		// Soft delete user posts
-	    postRepository.deactivatePostsByUserId(userId);
-	    // ✅ Soft delete related audition data
-	    auditionCompanyRepository.softDeleteByUserId(userId);
-	    
-	    auditionProjectRepository.deactivateByCreatedBy(userId, userId);
-	    shootingLocationRepository.deactivateShootingPropertyByUserId(userId);
-	    
+		postRepository.deactivatePostsByUserId(userId);
+		// ✅ Soft delete related audition data
+		auditionCompanyRepository.softDeleteByUserId(userId);
+
+		auditionProjectRepository.deactivateByCreatedBy(userId, userId);
+		shootingLocationRepository.deactivateShootingPropertyByUserId(userId);
+
 	}
 
 	public boolean sendVerificationEmail(User user, boolean isActivation) {
