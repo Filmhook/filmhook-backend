@@ -597,170 +597,175 @@ public class ChatServiceImpl implements ChatService {
 
 	@Override
 	public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
-		Map<String, Object> response = new HashMap<>();
-		try {
-			// Fetch the user by receiver ID
-			User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
-			if (user == null) {
-				return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
-			}
+	    Map<String, Object> response = new HashMap<>();
+	    try {
+	        User receiverUser = userRepository.findById(message.getChatReceiverId()).orElse(null);
+	        if (receiverUser == null) {
+	            return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
+	        }
 
-			logger.info("Get Messages by User ID Method Start");
+	        logger.info("Get Messages by User ID Method Start");
 
-			// Fetch sender and receiver IDs
-			Integer senderId = userDetails.userInfo().getId();
-			Integer receiverId = message.getChatReceiverId();
+	        Integer currentUserId = userDetails.userInfo().getId();
+	        Integer targetUserId = message.getChatReceiverId();
 
-			// Fetch messages sent by the current user to the receiver
-			List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, receiverId);
+	        // Fetch messages between current user and target user
+	        List<Chat> sentMessages = chatRepository.getMessageListBySenderIdAndReceiverId(currentUserId, targetUserId);
+	        List<Chat> receivedMessages = chatRepository.getMessageListBySenderIdAndReceiverId(targetUserId, currentUserId);
 
-			// Fetch messages received by the current user from the receiver
-			List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId);
+	        List<Chat> allMessages = new ArrayList<>();
 
-			// Combine both lists of messages
+	        // 🧩 Combine messages sent and received, filtering correctly for chat visibility
+	        for (Chat chat : sentMessages) {
+	            if (Boolean.TRUE.equals(chat.getSenderChatIsActive()) &&
+	                (!Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) &&
+	                !Boolean.TRUE.equals(chat.getDeletedBySender())) {
+	                allMessages.add(chat);
+	            }
+	            // If deleted for everyone, still show the "🚫 This message was deleted"
+	            else if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+	                allMessages.add(chat);
+	            }
+	        }
 
-			List<Chat> allMessages = new ArrayList<>();
-			for (Chat c : senderMessages) {
-				if ((Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedBySender())) && Boolean.TRUE.equals(c.getSenderChatIsActive())) {
-					allMessages.add(c);
-				}
-			}
+	        for (Chat chat : receivedMessages) {
+	            if (Boolean.TRUE.equals(chat.getReceiverChatIsActive()) &&
+	                (!Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) &&
+	                !Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
+	                allMessages.add(chat);
+	            }
+	            else if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+	                allMessages.add(chat);
+	            }
+	        }
 
-			for (Chat c : receiverMessages) {
-				if ((Boolean.TRUE.equals(c.getIsDeletedForEveryone()) || !Boolean.TRUE.equals(c.getDeletedByReceiver()))&& Boolean.TRUE.equals(c.getReceiverChatIsActive())) {
-					allMessages.add(c);
-				}
-			}
+	        // Sort messages by creation time ascending (oldest first)
+	        allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn));
 
+	        // Remove duplicates by chatId
+	        Set<Integer> seenChatIds = new HashSet<>();
+	        List<Chat> uniqueMessages = new ArrayList<>();
+	        for (Chat chat : allMessages) {
+	            if (seenChatIds.add(chat.getChatId())) {
+	                uniqueMessages.add(chat);
+	            }
+	        }
 
-			// Sort combined messages by chatCreatedOn in descending order
-			allMessages.sort(Comparator.comparing(Chat::getChatCreatedOn).reversed());
+	        // Pagination (accumulate from page 1 to current page)
+	        int end = Math.min(message.getPageNo() * message.getPageSize(), uniqueMessages.size());
+	        List<Chat> paginatedMessages = uniqueMessages.subList(0, end);
 
-			// Use a Set to track seen chatIds and filter duplicates
-			Set<Integer> seenChatIds = new HashSet<>();
-			List<Chat> uniqueMessages = new ArrayList<>();
-			for (Chat chat : allMessages) {
-				if (!seenChatIds.contains(chat.getChatId())) {
-					seenChatIds.add(chat.getChatId());
-					uniqueMessages.add(chat);
-				}
-			}
+	        // Prepare final response
+	        List<ChatWebModel> messagesWithFiles = new ArrayList<>();
+	        int senderUnreadCount = 0;
+	        int receiverUnreadCount = 0;
 
-			// Adjust pagination to accumulate messages from page 1 to the current page
-			int end = Math.min(message.getPageNo() * message.getPageSize(), uniqueMessages.size());
-			List<Chat> paginatedMessages = uniqueMessages.subList(0, end);
+	        for (Chat chat : paginatedMessages) {
+	            Optional<User> senderData = userRepository.findById(chat.getChatSenderId());
+	            Optional<User> receiverData = userRepository.findById(chat.getChatReceiverId());
 
-			// Construct the response structure
-			List<ChatWebModel> messagesWithFiles = new ArrayList<>();
-			int senderUnreadCount = 0;
-			int receiverUnreadCount = 0;
-			for (Chat chat : paginatedMessages) {
-				if (!Boolean.TRUE.equals(chat.getIsDeletedForEveryone()) &&
-						((chat.getChatSenderId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedBySender())) ||
-								(chat.getChatReceiverId().equals(senderId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())))) {
-					continue;
-				}
-				Optional<User> userData = userRepository.findById(chat.getChatSenderId());
-				Optional<User> userDatas = userRepository.findById(receiverId);
+	            if (senderData.isEmpty() || receiverData.isEmpty()) continue;
 
-				// Fetch profile picture URLs
-				String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
-				String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
+	            String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
+	            String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
 
-				if (userData.isPresent()) {
-					List<FileOutputWebModel> mediaFiles = mediaFilesService
-							.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
+	            List<FileOutputWebModel> mediaFiles =
+	                    mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
 
-					FileOutputWebModel storyMedia = null;
-					if (chat.getStoryId() != null) {
+	            FileOutputWebModel storyMedia = null;
+	            if (chat.getStoryId() != null) {
+	                Story story = storyRepository.findByStoryId(chat.getStoryId());
+	                if (story != null && story.getId() != null) {
+	                    List<FileOutputWebModel> storyFiles =
+	                            mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
+	                    if (!storyFiles.isEmpty()) {
+	                        storyMedia = storyFiles.get(0);
+	                    }
+	                }
+	            }
 
-						Story story = storyRepository.findByStoryId(chat.getStoryId());
-						if (story != null && story.getId() != null) {
-							List<FileOutputWebModel> storyFiles = mediaFilesService
-									.getMediaFilesByCategoryAndRefId(MediaFileCategory.Stories, story.getId());
+	            // 👇 Handle deleted message visibility
+	            String finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
+	                    ? "🚫 This message was deleted"
+	                    : chat.getMessage();
 
-							if (!storyFiles.isEmpty()) {
-								storyMedia = storyFiles.get(0); 
-							}
-						}
-					}
-					// Set deleted message text if isDeletedForEveryone = true
-					String finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
-							? "🚫 This message was deleted"
-									: chat.getMessage();
+	            ChatWebModel chatWebModel = ChatWebModel.builder()
+	                    .chatId(chat.getChatId())
+	                    .chatSenderId(chat.getChatSenderId())
+	                    .chatReceiverId(chat.getChatReceiverId())
+	                    .senderchatIsActive(chat.getSenderChatIsActive())
+	                    .reciverchatIsActive(chat.getReceiverChatIsActive())
+	                    .chatCreatedBy(chat.getChatCreatedBy())
+	                    .chatCreatedOn(chat.getChatCreatedOn())
+	                    .chatUpdatedBy(chat.getChatUpdatedBy())
+	                    .chatUpdatedOn(chat.getChatUpdatedOn())
+	                    .senderProfilePic(senderProfilePicUrl)
+	                    .receiverProfilePic(receiverProfilePicUrl)
+	                    .receiverRead(chat.getReceiverRead())
+	                    .senderRead(chat.getSenderRead())
+	                    .chatFiles(mediaFiles)
+	                    .message(finalMessage)
+	                    .userType(senderData.get().getUserType())
+	                    .userAccountName(senderData.get().getName())
+	                    .receiverAccountName(receiverData.get().getName())
+	                    .userId(senderData.get().getUserId())
+	                    .storyId(chat.getStoryId())
+	                    .storyMediaUrl(storyMedia != null ? storyMedia.getFilePath() : null)
+	                    .storyMediaType(storyMedia != null ? storyMedia.getFileType() : null)
+	                    .replyType(chat.getReplyType())
+	                    .edited(chat.getEdited())
+	                    .editedOn(chat.getEditedOn())
+	                    .isDeletedForEveryone(chat.getIsDeletedForEveryone())
+	                    .build();
 
-					ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
-							.chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
-							.senderchatIsActive(chat.getSenderChatIsActive()).chatCreatedBy(chat.getChatCreatedBy())
-							.reciverchatIsActive(chat.getReceiverChatIsActive())
-							.chatCreatedOn(chat.getChatCreatedOn()).senderProfilePic(senderProfilePicUrl)
-							.receiverProfilePic(receiverProfilePicUrl)
-							.chatUpdatedBy(chat.getChatUpdatedBy()).chatUpdatedOn(chat.getChatUpdatedOn())
-							.receiverRead(chat.getReceiverRead()).senderRead(chat.getSenderRead())
-							.chatFiles(mediaFiles).message(finalMessage)
-							.userType(userData.get().getUserType()).userAccountName(userData.get().getName())
-							.receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId())
-							.storyId(chat.getStoryId())     
-							.storyMediaUrl(storyMedia != null ? storyMedia.getFilePath() : null)
-							.storyMediaType(storyMedia != null ? storyMedia.getFileType() : null)
-							.replyType(chat.getReplyType())
-							.edited(chat.getEdited())
-							.editedOn(chat.getEditedOn())
-							.isDeletedForEveryone(chat.getIsDeletedForEveryone())
-							.build();
+	            // ✅ Handle reply message if exists
+	            if (chat.getReplyToMessageId() != null) {
+	                chatRepository.findById(chat.getReplyToMessageId()).ifPresent(replyMsg -> {
+	                    List<FileOutputWebModel> replyMediaFiles =
+	                            mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, replyMsg.getChatId());
+	                    FileOutputWebModel replyMedia = !replyMediaFiles.isEmpty() ? replyMediaFiles.get(0) : null;
 
-					// 👉 Fetch replied message if present
-					if (chat.getReplyToMessageId() != null) {
-					    chatRepository.findById(chat.getReplyToMessageId()).ifPresent(replyMsg -> {
-					    	  List<FileOutputWebModel> replyMediaFiles = mediaFilesService
-					                  .getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, replyMsg.getChatId());
+	                    chatWebModel.setReplyToMessage(
+	                            new ChatWebModel.ReplyMessageDTO(
+	                                    replyMsg.getChatId(),
+	                                    replyMsg.getChatSenderId(),
+	                                    Boolean.TRUE.equals(replyMsg.getIsDeletedForEveryone())
+	                                            ? "🚫 This message was deleted"
+	                                            : replyMsg.getMessage(),
+	                                    replyMsg.getUserAccountName(),
+	                                    replyMedia != null ? replyMedia.getFilePath() : null,
+	                                    replyMedia != null ? replyMedia.getFileType() : null
+	                            )
+	                    );
+	                });
+	            }
 
-					          FileOutputWebModel replyMedia = !replyMediaFiles.isEmpty() ? replyMediaFiles.get(0) : null;
-					    	
-					    	
-					        chatWebModel.setReplyToMessage(
-					            new ChatWebModel.ReplyMessageDTO(   // ✅ use nested DTO instead of full ChatWebModel
-					                replyMsg.getChatId(),
-					                replyMsg.getChatSenderId(),
-					                Boolean.TRUE.equals(replyMsg.getIsDeletedForEveryone())
-					                        ? "🚫 This message was deleted"
-					                        : replyMsg.getMessage(),
-					                replyMsg.getUserAccountName(),
-					                replyMedia != null ? replyMedia.getFilePath() : null,   
-					                        replyMedia != null ? replyMedia.getFileType() : null  
-					            )
-					        );
-					    });
-					}
+	            // ✅ Mark as read for receiver
+	            if (chat.getChatReceiverId().equals(currentUserId) && !chat.getReceiverRead()) {
+	                receiverUnreadCount++;
+	                chat.setReceiverRead(true);
+	                chatRepository.save(chat);
+	            }
+	            if (!chat.getSenderRead()) {
+	                senderUnreadCount++;
+	            }
 
-					// Update read status if the current user is the receiver
-					if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
-						receiverUnreadCount++;
-						chat.setReceiverRead(true);
-						chatRepository.save(chat);
-					}
-					if (!chat.getSenderRead()) {
-						senderUnreadCount++;
-					}
+	            messagesWithFiles.add(chatWebModel);
+	        }
 
-					messagesWithFiles.add(chatWebModel);
-				}
-			}
+	        response.put("userChat", messagesWithFiles);
+	        response.put("numberOfItems", messagesWithFiles.size());
+	        response.put("currentPage", message.getPageNo());
+	        response.put("totalPages", (int) Math.ceil((double) uniqueMessages.size() / message.getPageSize()));
 
-			// Put the final response together
-			response.put("userChat", messagesWithFiles);
-			response.put("numberOfItems", messagesWithFiles.size());
-			response.put("currentPage", message.getPageNo());
-			response.put("totalPages", (int) Math.ceil((double) uniqueMessages.size() / message.getPageSize()));
+	        logger.info("Get Messages by User ID Method End");
+	        return ResponseEntity.ok(new Response(1, "Success", response));
 
-			logger.info("Get Messages by User ID Method End");
-			return ResponseEntity.ok(new Response(1, "Success", response));
-		} catch (Exception e) {
-			logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
-			return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
-		}
+	    } catch (Exception e) {
+	        logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
+	        return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
+	    }
 	}
-
 
 
 
@@ -1241,11 +1246,11 @@ public class ChatServiceImpl implements ChatService {
 				if (chat.getChatSenderId().equals(currentUserId)) {
 					chat.setDeletedBySender(true);
 					chat.setSenderChatIsActive(false);
-//					chat.setIsDeletedForEveryone(false);
+
 				} else if (chat.getChatReceiverId().equals(currentUserId)) {
 					chat.setDeletedByReceiver(true);
 					chat.setReceiverChatIsActive(false);
-//					chat.setIsDeletedForEveryone(false);
+				
 				}
 
 				chatRepository.save(chat);
