@@ -1241,11 +1241,11 @@ public class ChatServiceImpl implements ChatService {
 				if (chat.getChatSenderId().equals(currentUserId)) {
 					chat.setDeletedBySender(true);
 					chat.setSenderChatIsActive(false);
-					chat.setIsDeletedForEveryone(false);
+//					chat.setIsDeletedForEveryone(false);
 				} else if (chat.getChatReceiverId().equals(currentUserId)) {
 					chat.setDeletedByReceiver(true);
 					chat.setReceiverChatIsActive(false);
-					chat.setIsDeletedForEveryone(false);
+//					chat.setIsDeletedForEveryone(false);
 				}
 
 				chatRepository.save(chat);
