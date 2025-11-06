@@ -339,7 +339,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
         existingPost.setUpdatedBy(postWebModel.getUserId());
         existingPost.setUpdatedOn(new Date());
 
-        // 🔹 Handle tagged users
+        // 🔹 Handle tagged users (store comma-separated IDs)
         String taggedUserIds = (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty())
                 ? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
                 : null;
@@ -367,8 +367,13 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
             logger.info("Uploaded {} new files for post {}", postWebModel.getFiles().size(), updatedPost.getId());
         }
 
-        // 🔹 3️⃣ Handle tagged users (delete old + add new)
-        postTagsRepository.deleteByPostId(updatedPost.getId());
+        // 🔹 3️⃣ Handle tagged users (delete specific + add new)
+        if (postWebModel.getDeletedTaggedUserIds() != null && !postWebModel.getDeletedTaggedUserIds().isEmpty()) {
+            logger.info("Deleting tagged users for post {}: {}", updatedPost.getId(), postWebModel.getDeletedTaggedUserIds());
+            postTagsRepository.deleteByPostIdAndTaggedUserIds(updatedPost.getId(), postWebModel.getDeletedTaggedUserIds());
+        }
+
+        // 🔹 Add new tagged users if provided
         if (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty()) {
             List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
                     .map(taggedUserId -> PostTags.builder()
@@ -455,6 +460,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
     }
     return null;
 }
+
 
 
 	
