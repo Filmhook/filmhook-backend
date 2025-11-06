@@ -410,7 +410,7 @@ public class ChatServiceImpl implements ChatService {
 		            // Skip if the logged-in user isn't part of this chat (safety)
 		            if (!isSender && !isReceiver) continue;
 
-		            // 🧹 Skip if both sides have chat inactive (deleted full chat)
+		            // 🧹 Skip if both sides have chat inactive 
 		            if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) &&
 		                Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
 		                continue;
@@ -423,7 +423,7 @@ public class ChatServiceImpl implements ChatService {
 		            }
 
 		            // 🧹 Skip messages deleted for everyone
-		            // (but keep chat user visible)
+		          
 		            if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
 		                // Still show the user if the chat profile is active
 		                if (isSender && Boolean.TRUE.equals(chat.getSenderChatIsActive())) {
@@ -436,10 +436,10 @@ public class ChatServiceImpl implements ChatService {
 
 		            // 🧹 Skip messages deleted only by this user
 		            if (isSender && Boolean.TRUE.equals(chat.getDeletedBySender())) {
-		                // message deleted for sender, skip this message
+		             
 		                continue;
 		            } else if (isReceiver && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
-		                // message deleted for receiver, skip this message
+		       
 		                continue;
 		            }
 
@@ -485,7 +485,8 @@ public class ChatServiceImpl implements ChatService {
 
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
 
-			int unreadCount = chatRepository.countUnreadMessages(user.getUserId(), loggedInUserId);
+			int unreadCount = chatRepository.countUnreadMessages(loggedInUserId, user.getUserId());
+
 			chatUserWebModel.setReceiverUnreadCount(unreadCount);
 
 			return chatUserWebModel;
