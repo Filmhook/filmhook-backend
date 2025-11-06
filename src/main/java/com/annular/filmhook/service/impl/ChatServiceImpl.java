@@ -684,10 +684,21 @@ public class ChatServiceImpl implements ChatService {
 							}
 						}
 					}
-					// Set deleted message text if isDeletedForEveryone = true
-					String finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
-							? "🚫 This message was deleted"
-									: chat.getMessage();
+					  String finalMessage = null;
+			            boolean isSenderActive = Boolean.TRUE.equals(chat.getSenderChatIsActive());
+			            boolean isReceiverActive = Boolean.TRUE.equals(chat.getReceiverChatIsActive());
+
+			            if (chat.getChatSenderId().equals(senderId)) {
+			                if (!isSenderActive) continue;
+			                finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
+			                        ? "🚫 This message was deleted"
+			                        : chat.getMessage();
+			            } else if (chat.getChatReceiverId().equals(senderId)) {
+			                if (!isReceiverActive) continue;
+			                finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
+			                        ? "🚫 This message was deleted"
+			                        : chat.getMessage();
+			            }
 
 					ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
 							.chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
