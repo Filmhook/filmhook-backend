@@ -403,21 +403,53 @@ public class ChatServiceImpl implements ChatService {
 			List<Chat> allChats = chatRepository.findAllChatsByUserId(loggedInUserId);
 			Set<Integer> chatUserIds = new HashSet<>();
 
-			for (Chat chat : allChats) {
-				if (chat.getChatSenderId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedBySender())) {
-					continue;
-				}
-				if (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
-					continue;
-				}
-				// Add the other user's ID
-				if (chat.getChatSenderId().equals(loggedInUserId)) {
-					chatUserIds.add(chat.getChatReceiverId());
-				} else {
-					chatUserIds.add(chat.getChatSenderId());
-				}
-			}
+			   for (Chat chat : allChats) {
+		            boolean isSender = chat.getChatSenderId().equals(loggedInUserId);
+		            boolean isReceiver = chat.getChatReceiverId().equals(loggedInUserId);
 
+		            // Skip if the logged-in user isn't part of this chat (safety)
+		            if (!isSender && !isReceiver) continue;
+
+		            // 🧹 Skip if both sides have chat inactive 
+		            if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) &&
+		                Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
+		                continue;
+		            }
+
+		            // 🧹 Skip if the logged-in user deleted their whole chat profile
+		            if ((isSender && Boolean.FALSE.equals(chat.getSenderChatIsActive())) ||
+		                (isReceiver && Boolean.FALSE.equals(chat.getReceiverChatIsActive()))) {
+		                continue;
+		            }
+
+		            // 🧹 Skip messages deleted for everyone
+		          
+		            if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
+		                // Still show the user if the chat profile is active
+		                if (isSender && Boolean.TRUE.equals(chat.getSenderChatIsActive())) {
+		                    chatUserIds.add(chat.getChatReceiverId());
+		                } else if (isReceiver && Boolean.TRUE.equals(chat.getReceiverChatIsActive())) {
+		                    chatUserIds.add(chat.getChatSenderId());
+		                }
+		                continue;
+		            }
+
+		            // 🧹 Skip messages deleted only by this user
+		            if (isSender && Boolean.TRUE.equals(chat.getDeletedBySender())) {
+		             
+		                continue;
+		            } else if (isReceiver && Boolean.TRUE.equals(chat.getDeletedByReceiver())) {
+		       
+		                continue;
+		            }
+
+		            // ✅ Add the other user if current user's chat profile is active
+		            if (isSender && Boolean.TRUE.equals(chat.getSenderChatIsActive())) {
+		                chatUserIds.add(chat.getChatReceiverId());
+		            } else if (isReceiver && Boolean.TRUE.equals(chat.getReceiverChatIsActive())) {
+		                chatUserIds.add(chat.getChatSenderId());
+		            }
+		        }
 			if (chatUserIds.isEmpty()) {
 				return ResponseEntity.notFound().build();
 			}
@@ -453,8 +485,8 @@ public class ChatServiceImpl implements ChatService {
 
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
 
-			int unreadCount = chatRepository.countUnreadMessages(user.getUserId(), loggedInUserId);
-			logger.info("unreasdcount check", unreadCount);
+			int unreadCount = chatRepository.countUnreadMessages(loggedInUserId, user.getUserId());
+
 			chatUserWebModel.setReceiverUnreadCount(unreadCount);
 
 			return chatUserWebModel;
@@ -488,13 +520,13 @@ public class ChatServiceImpl implements ChatService {
 
 	        Chat chat = lastChatOpt.get();
 
-	        // ✅ Skip if inactive for either side
-	        if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
-	            chatUserWebModel.setLatestMessage("");
-	            chatUserWebModel.setLatestMsgTime(null);
-	            chatUserWebModel.setIsLatestStory(false);
-	            return;
-	        }
+//	        // ✅ Skip if inactive for either side
+//	        if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
+//	            chatUserWebModel.setLatestMessage("");
+//	            chatUserWebModel.setLatestMsgTime(null);
+//	            chatUserWebModel.setIsLatestStory(false);
+//	            return;
+//	        }
 
 	        // ✅ Deleted message placeholder
 	        if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
@@ -579,11 +611,14 @@ public class ChatServiceImpl implements ChatService {
 
 	        // ✅ Iterate through all messages to find the latest *valid* one
 	        for (Chat chat : allMessages) {
-	            if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
-	                continue;
-	            }
-	            return Optional.of(chat);
-	        }
+	        	  if ((chat.getChatSenderId().equals(loggedInUserId) && Boolean.FALSE.equals(chat.getSenderChatIsActive())) ||
+	                      (chat.getChatReceiverId().equals(loggedInUserId) && Boolean.FALSE.equals(chat.getReceiverChatIsActive()))) {
+	                      continue;
+	                  }
+
+	                  // ✅ Don't skip just because the *other user* deleted
+	                  return Optional.of(chat);
+	              }
 	        return Optional.empty();
 
 	    } catch (Exception e) {
@@ -682,10 +717,21 @@ public class ChatServiceImpl implements ChatService {
 							}
 						}
 					}
-					// Set deleted message text if isDeletedForEveryone = true
-					String finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
-							? "🚫 This message was deleted"
-									: chat.getMessage();
+					  String finalMessage = null;
+			            boolean isSenderActive = Boolean.TRUE.equals(chat.getSenderChatIsActive());
+			            boolean isReceiverActive = Boolean.TRUE.equals(chat.getReceiverChatIsActive());
+
+			            if (chat.getChatSenderId().equals(senderId)) {
+			                if (!isSenderActive) continue;
+			                finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
+			                        ? "🚫 This message was deleted"
+			                        : chat.getMessage();
+			            } else if (chat.getChatReceiverId().equals(senderId)) {
+			                if (!isReceiverActive) continue;
+			                finalMessage = Boolean.TRUE.equals(chat.getIsDeletedForEveryone())
+			                        ? "🚫 This message was deleted"
+			                        : chat.getMessage();
+			            }
 
 					ChatWebModel chatWebModel = ChatWebModel.builder().chatId(chat.getChatId())
 							.chatSenderId(chat.getChatSenderId()).chatReceiverId(chat.getChatReceiverId())
@@ -1234,11 +1280,11 @@ public class ChatServiceImpl implements ChatService {
 				if (chat.getChatSenderId().equals(currentUserId)) {
 					chat.setDeletedBySender(true);
 					chat.setSenderChatIsActive(false);
-					chat.setIsDeletedForEveryone(false);
+
 				} else if (chat.getChatReceiverId().equals(currentUserId)) {
 					chat.setDeletedByReceiver(true);
 					chat.setReceiverChatIsActive(false);
-					chat.setIsDeletedForEveryone(false);
+				
 				}
 
 				chatRepository.save(chat);

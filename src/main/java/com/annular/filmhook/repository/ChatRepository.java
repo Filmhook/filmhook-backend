@@ -58,13 +58,13 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Query("SELECT DISTINCT u FROM User u JOIN Chat c ON (c.chatSenderId = u.userId OR c.chatReceiverId = u.userId) WHERE :userId IN (c.chatSenderId, c.chatReceiverId)")
     List<User> findChatUsersByUserId(Integer userId);
     
-    @Query("SELECT COUNT(c) FROM Chat c WHERE c.chatReceiverId = :receiverId AND c.chatSenderId = :senderId AND c.receiverRead = false")
+    @Query("SELECT COUNT(c) FROM Chat c WHERE c.chatReceiverId = :receiverId AND c.chatSenderId = :senderId AND c.receiverRead = false AND c.receiverChatIsActive=true")
     Integer countUnreadMessages(Integer receiverId, Integer senderId);
     
     @Query("SELECT c FROM Chat c WHERE (c.chatSenderId = :user1 AND c.chatReceiverId = :user2) OR (c.chatSenderId = :user2 AND c.chatReceiverId = :user1)")
     List<Chat> findByParticipants(@Param("user1") Integer user1, @Param("user2") Integer user2);
 
-    @Query("SELECT c FROM Chat c WHERE c.chatSenderId = :userId OR c.chatReceiverId = :userId")
+    @Query("SELECT c FROM Chat c WHERE c.chatSenderId = :userId OR c.chatReceiverId = :userId ")
     List<Chat> findAllChatsByUserId(@Param("userId") Integer userId);
     
     @Query("SELECT c.message FROM Chat c WHERE c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId AND c.receiverRead = false ORDER BY c.chatCreatedOn ASC")
