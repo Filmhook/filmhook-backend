@@ -454,6 +454,7 @@ public class ChatServiceImpl implements ChatService {
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
 
 			int unreadCount = chatRepository.countUnreadMessages(user.getUserId(), loggedInUserId);
+			logger.info("unreasdcount check", unreadCount);
 			chatUserWebModel.setReceiverUnreadCount(unreadCount);
 
 			return chatUserWebModel;
@@ -1020,15 +1021,10 @@ public class ChatServiceImpl implements ChatService {
 				return new Response(0, "No Notifications", emptyResponse);
 			}
 
-			// Count unread
-			long unreadCount = notifications.stream()
-					.filter(n -> !Boolean.TRUE.equals(n.getIsRead()))
-					.count();
+			// Totals independent of page size
+			long unreadCount = inAppNotificationRepository.countUnreadInRange(userId, startDate, endDate);
+			long unseenCount = inAppNotificationRepository.countUnseenSince(userId, finalLastOpenedTime);
 
-			// Count unseen: created after lastOpenedTime
-			long unseenCount = notifications.stream()
-					.filter(n -> n.getCreatedOn().after(finalLastOpenedTime))
-					.count();
 
 			// Group by Today / Yesterday / Earlier
 			Map<String, List<InAppNotificationWebModel>> grouped = new LinkedHashMap<>();

@@ -329,6 +329,14 @@ public class UserServiceImpl implements UserService {
 		if (!Utility.isNullOrBlankWithTrim(userInput.getPhoneNumber())) userToUpdate.setPhoneNumber(userInput.getPhoneNumber());
 		if (!Utility.isNullOrBlankWithTrim(userInput.getCurrentAddress())) userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
 		if (!Utility.isNullOrBlankWithTrim(userInput.getHomeAddress())) userToUpdate.setHomeAddress(userInput.getHomeAddress());
+		
+		if (!Utility.isNullOrBlankWithTrim(userInput.getFirstName())) userToUpdate.setFirstName(userInput.getFirstName());
+		if (!Utility.isNullOrBlankWithTrim(userInput.getMiddleName())) userToUpdate.setMiddleName(userInput.getMiddleName());
+		if (!Utility.isNullOrBlankWithTrim(userInput.getLastName())) userToUpdate.setLastName(userInput.getLastName());
+		if (!Utility.isNullOrBlankWithTrim(userInput.getName())) userToUpdate.setName(userInput.getName());
+
+
+
 
 		userToUpdate.setUpdatedBy(userToUpdate.getUserId());
 		userToUpdate.setUpdatedOn(new Date());
