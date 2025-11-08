@@ -33,6 +33,9 @@ public class AuditionCartItems {
 
     @Column(name = "count", nullable = false)
     private Integer count;
+    
+    @Column(name = "status", nullable = false)
+    private Boolean status = true;
 
     @CreationTimestamp
     @Column(name = "created_on")

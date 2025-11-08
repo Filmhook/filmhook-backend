@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
+import com.annular.filmhook.exception.ResourceNotFoundException;
 import com.annular.filmhook.model.AuditionNewProject;
 import com.annular.filmhook.model.AuditionPayment;
 import com.annular.filmhook.validator.AuditionProjectValidator;
@@ -192,15 +193,60 @@ public class AuditionNewController {
 	                                              @RequestParam Integer companyId,
 	                                              @RequestParam Integer subProfessionId,
 	                                              @RequestParam Integer count) {
-	    	projectService.addToCart(userId, companyId, subProfessionId, count);
-	        return ResponseEntity.ok(new Response(1, "Cart updated successfully", null));
+	        try {
+	            projectService.addToCart(userId, companyId, subProfessionId, count);
+	            return ResponseEntity.ok(new Response(1, "Cart updated successfully", null));
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to update cart", null));
+	        }
 	    }
 
 	    @GetMapping("/cart")
 	    public ResponseEntity<?> getCart(@RequestParam Integer userId,
 	                                     @RequestParam Integer companyId) {
-	        List<FilmSubProfessionResponseDTO> cart = projectService.getCart(userId, companyId);
-	        return ResponseEntity.ok(cart);
+	        try {
+	            List<FilmSubProfessionResponseDTO> cart = projectService.getCart(userId, companyId);
+	            return ResponseEntity.ok(cart);
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to fetch cart", null));
+	        }
+	    }
+
+	    // ✅ delete a single item (soft delete)
+	    @DeleteMapping("/cart/deleteItem")
+	    public ResponseEntity<Response> removeFromCart(@RequestParam Integer userId,
+	                                                   @RequestParam Integer companyId,
+	                                                   @RequestParam Integer subProfessionId) {
+	        try {
+	            projectService.removeFromCart(userId, companyId, subProfessionId);
+	            return ResponseEntity.ok(new Response(1, "Item removed from cart", null));
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to remove item", null));
+	        }
+	    }
+
+	    // ✅ clear all items for a company (soft delete)
+	    @DeleteMapping("/cart/deleteAllItem")
+	    public ResponseEntity<Response> clearCart(@RequestParam Integer userId,
+	                                              @RequestParam Integer companyId) {
+	        try {
+	            projectService.clearCart(userId, companyId);
+	            return ResponseEntity.ok(new Response(1, "Cart cleared", null));
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to clear cart", null));
+	        }
 	    }
 	    @GetMapping("/professions")
 	    public ResponseEntity<List<FilmProfessionResponseDTO>> getAllProfessions() {

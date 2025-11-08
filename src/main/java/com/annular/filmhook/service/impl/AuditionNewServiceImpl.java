@@ -28,7 +28,8 @@ import com.itextpdf.layout.Document;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityNotFoundException;
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -473,75 +474,99 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Override
 	
-	public void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count) {
-		// ✅ Check SubProfession
-		FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
-				.orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
+	 public void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count) {
+        FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
+            .orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
 
-		// ✅ Check User
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-		// ✅ Find the company
-		AuditionCompanyDetails company = companyRepository.findById(companyId)
-				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
+        AuditionCompanyDetails company = companyRepository.findById(companyId)
+            .orElseThrow(() -> new ResourceNotFoundException("Company not found with ID: " + companyId));
 
-		// ✅ Check existing cart item
-		AuditionCartItems existingItem = auditionCartItemsRepository
-				.findByUserAndCompanyIdAndSubProfession(user, companyId, subProfession)
-				.orElse(null);
+        // find (active OR inactive) existing row to upsert
+        AuditionCartItems existingItem = auditionCartItemsRepository
+            .findByUserAndCompanyIdAndSubProfession(user, companyId, subProfession)
+            .orElse(null);
 
-		if (existingItem != null) {
-			existingItem.setCount(count);
-			auditionCartItemsRepository.save(existingItem);
-		} else {
-			AuditionCartItems cartItem = AuditionCartItems.builder()
-					.user(user)
-					.companyId(company.getId()) 
-					.subProfession(subProfession)
-					.count(count)
-					.build();
-			auditionCartItemsRepository.save(cartItem);
-		}
-	}
-
-
-
+        if (existingItem != null) {
+            existingItem.setCount(count);
+            existingItem.setStatus(true); // ✅ revive if previously soft-deleted
+            auditionCartItemsRepository.save(existingItem);
+        } else {
+            AuditionCartItems cartItem = AuditionCartItems.builder()
+                .user(user)
+                .companyId(company.getId())
+                .subProfession(subProfession)
+                .count(count)
+                .status(true) // active
+                .build();
+            auditionCartItemsRepository.save(cartItem);
+        }
+    }
 
 	@Override
-	public List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId) {
-		// ✅ Check user from DB
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-		// ✅ Find the company
-		AuditionCompanyDetails company = companyRepository.findById(companyId)
-				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyId));
+    @Transactional(readOnly = true)
+    public List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-		// ✅ Fetch cart items for user + company
-		List<AuditionCartItems> cartItems = auditionCartItemsRepository.findByUserAndCompanyId(user, companyId);
+        companyRepository.findById(companyId)
+            .orElseThrow(() -> new ResourceNotFoundException("Company not found with ID: " + companyId));
 
-		// (Optional) handle empty cart gracefully
-		if (cartItems.isEmpty()) {
-			throw new ResourceNotFoundException("No cart items found for user " + userId + " and company " + companyId);
-		}
+        // ✅ only active items
+        List<AuditionCartItems> cartItems = auditionCartItemsRepository
+            .findByUserAndCompanyIdAndStatusTrue(user, companyId);
 
-		return cartItems.stream()
-				.map(item -> FilmSubProfessionResponseDTO.builder()
-						.subProfessionId(item.getSubProfession().getSubProfessionId())
-						.subProfessionName(item.getSubProfession().getSubProfessionName())
-						.professionName(item.getSubProfession().getProfession().getProfessionName())
-						.filmProfessionId(item.getSubProfession().getProfession().getFilmProfessionId())
-						.iconFilePath(
-								!Utility.isNullOrBlankWithTrim(item.getSubProfession().getProfession().getFilePath())
-								? s3Util.generateS3FilePath(item.getSubProfession().getProfession().getFilePath())
-										: ""
-								)
-						.shortCharacters(generateShortCharacters(item.getSubProfession().getProfession().getProfessionName()))
-						.count(item.getCount())
-						.build()
-						)
-				.collect(Collectors.toList());
-	}
+        if (cartItems.isEmpty()) {
+            throw new ResourceNotFoundException("No active cart items found for user " + userId + " and company " + companyId);
+        }
+
+        return cartItems.stream()
+            .map(item -> FilmSubProfessionResponseDTO.builder()
+                .subProfessionId(item.getSubProfession().getSubProfessionId())
+                .subProfessionName(item.getSubProfession().getSubProfessionName())
+                .professionName(item.getSubProfession().getProfession().getProfessionName())
+                .filmProfessionId(item.getSubProfession().getProfession().getFilmProfessionId())
+                .iconFilePath(
+                    !Utility.isNullOrBlankWithTrim(item.getSubProfession().getProfession().getFilePath())
+                        ? s3Util.generateS3FilePath(item.getSubProfession().getProfession().getFilePath())
+                        : ""
+                )
+                .shortCharacters(generateShortCharacters(item.getSubProfession().getProfession().getProfessionName()))
+                .count(item.getCount())
+                .build()
+            ).collect(Collectors.toList());
+    }
+	
+	@Override
+    public void removeFromCart(Integer userId, Integer companyId, Integer subProfessionId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
+            .orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
+
+        AuditionCartItems item = auditionCartItemsRepository
+            .findByUserAndCompanyIdAndSubProfessionAndStatusTrue(user, companyId, subProfession)
+            .orElseThrow(() -> new ResourceNotFoundException("Active cart item not found"));
+
+        item.setStatus(false); // ✅ soft delete
+        auditionCartItemsRepository.save(item);
+    }
+
+    @Override
+    public void clearCart(Integer userId, Integer companyId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        // mark all active items for this user+company as false
+        List<AuditionCartItems> items = auditionCartItemsRepository.findByUserAndCompanyIdAndStatusTrue(user, companyId);
+        if (items.isEmpty()) return;
+
+        items.forEach(i -> i.setStatus(false));
+        auditionCartItemsRepository.saveAll(items);
+    }
 
 	@Override
 	public List<FilmProfessionResponseDTO> getAllProfessions() {
