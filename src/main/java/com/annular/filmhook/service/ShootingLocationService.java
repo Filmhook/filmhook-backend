@@ -44,13 +44,9 @@ public interface ShootingLocationService {
 	void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer userId);
 	ShootingLocationPropertyDetailsDTO getPropertyByBookingId(Integer bookingId);
-	public ShootingLocationPropertyReviewDTO updateReview(
-	        Integer reviewId,
-	        Integer propertyId,
-	        Integer userId,
-	        int rating,
-	        String reviewText,
-	        List<MultipartFile> files
-	);
+	
 	String deleteReview(Integer reviewId, Integer userId);
+	ShootingLocationPropertyReviewDTO updateReview(Integer reviewId, Integer propertyId, Integer userId, int rating,
+			String reviewText, List<MultipartFile> files, List<Integer> deletedFileIds);
+	
 }

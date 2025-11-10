@@ -540,20 +540,24 @@ public class AuditionNewServiceImpl implements AuditionNewService {
     }
 	
 	@Override
-    public void removeFromCart(Integer userId, Integer companyId, Integer subProfessionId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+	@Transactional
+	public void removeFromCart(Integer userId, Integer companyId, List<Integer> subProfessionIds) {
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
-            .orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
+	    for (Integer subProfessionId : subProfessionIds) {
+	        FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
+	                .orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
 
-        AuditionCartItems item = auditionCartItemsRepository
-            .findByUserAndCompanyIdAndSubProfessionAndStatusTrue(user, companyId, subProfession)
-            .orElseThrow(() -> new ResourceNotFoundException("Active cart item not found"));
+	        AuditionCartItems item = auditionCartItemsRepository
+	                .findByUserAndCompanyIdAndSubProfessionAndStatusTrue(user, companyId, subProfession)
+	                .orElseThrow(() -> new ResourceNotFoundException("Active cart item not found for subProfessionId: " + subProfessionId));
 
-        item.setStatus(false); // ✅ soft delete
-        auditionCartItemsRepository.save(item);
-    }
+	        // ✅ Soft delete
+	        item.setStatus(false);
+	        auditionCartItemsRepository.save(item);
+	    }
+	}
 
     @Override
     public void clearCart(Integer userId, Integer companyId) {

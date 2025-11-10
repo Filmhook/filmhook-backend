@@ -220,19 +220,23 @@ public class AuditionNewController {
 
 	    // ✅ delete a single item (soft delete)
 	    @DeleteMapping("/cart/deleteItem")
-	    public ResponseEntity<Response> removeFromCart(@RequestParam Integer userId,
-	                                                   @RequestParam Integer companyId,
-	                                                   @RequestParam Integer subProfessionId) {
+	    public ResponseEntity<Response> removeFromCart(
+	            @RequestParam Integer userId,
+	            @RequestParam Integer companyId,
+	            @RequestParam(name = "subProfessionId") List<Integer> subProfessionIds
+	    ) {
 	        try {
-	            projectService.removeFromCart(userId, companyId, subProfessionId);
-	            return ResponseEntity.ok(new Response(1, "Item removed from cart", null));
+	            projectService.removeFromCart(userId, companyId, subProfessionIds);
+	            return ResponseEntity.ok(new Response(1, "Items removed from cart", null));
 	        } catch (ResourceNotFoundException ex) {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new Response(0, ex.getMessage(), null));
 	        } catch (Exception ex) {
 	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                    .body(new Response(0, "Failed to remove item", null));
+	                    .body(new Response(0, "Failed to remove items", null));
 	        }
 	    }
+
 
 	    // ✅ clear all items for a company (soft delete)
 	    @DeleteMapping("/cart/deleteAllItem")

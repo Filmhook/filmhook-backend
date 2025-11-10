@@ -42,7 +42,8 @@ public interface AuditionNewService {
 	String softDeleteProject(Integer projectId, Integer userId);
 	AuditionJobPostCountDTO getCompanyPostCounts(Integer companyId, Integer professionId);
 
-	void removeFromCart(Integer userId, Integer companyId, Integer subProfessionId); // single item
+	void removeFromCart(Integer userId, Integer companyId, List<Integer> subProfessionIds);
+
 	void clearCart(Integer userId, Integer companyId); // all items for company
 	List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId);
 	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);

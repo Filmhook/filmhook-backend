@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -2496,61 +2497,81 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			throw e;
 		}
 	}
-	
-	@Override
-	@Transactional
-	public ShootingLocationPropertyReviewDTO updateReview(
-	        Integer reviewId,
-	        Integer propertyId,
-	        Integer userId,
-	        int rating,
-	        String reviewText,
-	        List<MultipartFile> files
-	) {
-	    ShootingLocationPropertyReview review = propertyReviewRepository.findById(reviewId)
-	            .orElseThrow(() -> new RuntimeException("Review not found"));
+@Override
+@Transactional
+public ShootingLocationPropertyReviewDTO updateReview(
+        Integer reviewId,
+        Integer propertyId,
+        Integer userId,
+        int rating,
+        String reviewText,
+        List<MultipartFile> files,
+        @Nullable List<Integer> deletedFileIds
+) {
+    // 1️⃣ Fetch and validate review
+    ShootingLocationPropertyReview review = propertyReviewRepository.findById(reviewId)
+            .orElseThrow(() -> new RuntimeException("Review not found"));
 
-	   
-	    if (!review.getUser().getUserId().equals(userId)) {
-	        throw new RuntimeException("You can only edit your own review");
-	    }
+    if (!review.getUser().getUserId().equals(userId)) {
+        throw new RuntimeException("You can only edit your own review");
+    }
 
-	 
-	    review.setRating(rating);
-	    review.setReviewText(reviewText);
-	    review.setUpdatedOn(LocalDateTime.now());
-	    propertyReviewRepository.save(review);
+    if (propertyId != null && review.getProperty() != null
+            && !Objects.equals(review.getProperty().getId(), propertyId)) {
+        throw new IllegalArgumentException("Review does not belong to the given propertyId");
+    }
 
-	    User user = userRepository.findById(userId)
-	            .orElseThrow(() -> new RuntimeException("User not found"));
+    // 2️⃣ Update review text/rating
+    review.setRating(rating);
+    review.setReviewText(reviewText);
+    review.setUpdatedOn(LocalDateTime.now());
+    propertyReviewRepository.save(review);
 
-	    // ✅ Delete existing media files (by categoryRefId, not file IDs)
-	    mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
-	        MediaFileCategory.ShootingLocationReview,
-	        List.of(review.getId())
-	    );
+    // 3️⃣ Get user
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
 
-	    // ✅ Save new files if provided
-	    if (files != null && !files.isEmpty()) {
-	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-	                .userId(userId)
-	                .category(MediaFileCategory.ShootingLocationReview)
-	                .categoryRefId(review.getId())
-	                .files(files)
-	                .build();
+    // 🔹 1️⃣ Delete specific old files if user removed any
+    if (deletedFileIds != null && !deletedFileIds.isEmpty()) {
+        logger.info("Deleting review files for review {}: {}", review.getId(), deletedFileIds);
+        mediaFilesService.deleteMediaFilesByCategoryAndIds(
+                MediaFileCategory.ShootingLocationReview,
+                deletedFileIds
+        );
+    }
 
-	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
-	    }
+    // 🔹 2️⃣ Upload new files if provided
+    if (files != null && !files.isEmpty()) {
+        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                .userId(userId)
+                .category(MediaFileCategory.ShootingLocationReview)
+                .categoryRefId(review.getId())
+                .files(files)
+                .build();
 
-	    return ShootingLocationPropertyReviewDTO.builder()
-	            .id(review.getId())
-	            .propertyId(propertyId)
-	            .userId(userId)
-	            .rating(rating)
-	            .reviewText(review.getReviewText())
-	            .createdOn(review.getCreatedOn())
-	            .build();
-	}
+        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+        logger.info("Uploaded {} new files for review {}", files.size(), review.getId());
+    }
+
+    // 🔹 3️⃣ Build response using mediaFilesService helper (not repository)
+    List<FileOutputWebModel> mediaDTOs = mediaFilesService.getMediaFilesByCategoryAndRefId(
+            MediaFileCategory.ShootingLocationReview,
+            review.getId()
+    );
+
+    // 🔹 4️⃣ Return DTO
+    return ShootingLocationPropertyReviewDTO.builder()
+            .id(review.getId())
+            .propertyId(propertyId)
+            .userId(userId)
+            .rating(review.getRating())
+            .reviewText(review.getReviewText())
+            .createdOn(review.getCreatedOn())
+          
+            .files(mediaDTOs)
+            .build();
+}
+
 
 
 	@Override

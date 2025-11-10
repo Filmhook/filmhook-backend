@@ -449,27 +449,35 @@ public class ShootingLocationController {
 
 	@PutMapping(value = "/updateReview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ShootingLocationPropertyReviewDTO> updateReview(
-			@RequestParam Integer reviewId,
-			@RequestParam Integer propertyId,
-			@RequestParam Integer userId,
-			@RequestParam int rating,
-			@RequestParam(required = false) String reviewText,
-			@RequestParam(required = false) List<MultipartFile> files) {
+	        @RequestParam Integer reviewId,
+	        @RequestParam Integer propertyId,
+	        @RequestParam Integer userId,
+	        @RequestParam int rating,
+	        @RequestParam(required = false) String reviewText,
 
-		try {
-			ShootingLocationPropertyReviewDTO updatedReview = service.updateReview(
-					reviewId, propertyId, userId, rating, reviewText, files  
-					);
+	        // 🔹 files to ADD (optional)
+	        @RequestParam(required = false) List<MultipartFile> files,
 
-			return ResponseEntity.ok(updatedReview);
-		} catch (RuntimeException e) {
-			logger.warn("Validation failed: {}", e.getMessage());
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-		} catch (Exception e) {
-			logger.error("Error updating review", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-		}
+	        // 🔹 specific existing file IDs to DELETE (optional)
+	        @RequestParam(required = false, name = "deletedFileIds") List<Integer> deletedFileIds
+	) {
+	    try {
+	        ShootingLocationPropertyReviewDTO updatedReview =
+	        		service.updateReview(
+	        			    reviewId, propertyId, userId, rating, reviewText,
+	        			    files, deletedFileIds
+	        			);
+	        return ResponseEntity.ok(updatedReview);
+
+	    } catch (RuntimeException e) {
+	        logger.warn("Validation failed: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+	    } catch (Exception e) {
+	        logger.error("Error updating review", e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
 	}
+
 
 
 	@DeleteMapping("/deleteReview")
