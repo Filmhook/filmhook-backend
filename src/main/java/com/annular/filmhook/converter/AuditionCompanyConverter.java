@@ -470,6 +470,26 @@ public class AuditionCompanyConverter {
 
 		return dto;
 	}
+	// DTO → Entity for User-Company Role
+	public static AuditionUserCompanyRole toEntity(
+	        User owner,
+	        User assignedUser,
+	        AuditionCompanyDetails company,
+	        String accessKey) {
+
+	    AuditionUserCompanyRole role = new AuditionUserCompanyRole();
+	    role.setOwner(owner);
+	    role.setAssignedUser(assignedUser);
+	    role.setFilmHookCode(assignedUser.getFilmHookCode());
+	    role.setCompany(company);
+	    role.setAccessKey(accessKey);
+	    role.setStatus(true);
+	    role.setDeleted(false);
+	    role.setCreatedDate(LocalDateTime.now());
+	    role.setCreatedBy(owner.getUserId());
+	    return role;
+	}
+
 
 	//	   AuditionPayment
 
