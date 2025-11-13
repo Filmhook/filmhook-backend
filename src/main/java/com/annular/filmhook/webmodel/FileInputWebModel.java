@@ -31,5 +31,6 @@ public class FileInputWebModel {
 	private String type;
 	private FileStatus fileStatus;
 	
+	
 
 }

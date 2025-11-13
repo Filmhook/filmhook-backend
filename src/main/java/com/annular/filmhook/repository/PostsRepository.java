@@ -41,7 +41,7 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Query("SELECT p FROM Posts p where p.id = :postId")
    	Optional<Posts> findByPostId(Integer postId);
 
-    @Query("SELECT p FROM Posts p WHERE p.tagUsers LIKE %:userId%")
+    @Query("SELECT p FROM Posts p WHERE p.tagUsers LIKE %:userId% AND p.status = true")
     List<Posts> getPostsByTaggedUserId(String userId);
 
     @Query("SELECT p FROM Posts p where p.id = :postId")

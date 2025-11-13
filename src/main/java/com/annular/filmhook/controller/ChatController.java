@@ -51,6 +51,7 @@ public class ChatController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+	
 
 	@GetMapping("/getAllUser")
 	public ResponseEntity<?> getAllUser() {
