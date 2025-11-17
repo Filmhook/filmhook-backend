@@ -79,25 +79,28 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 		       String industryUserType,
 		       List<Float> adminReviewRange);
 	
+	// in UserRepository
 	@Query("SELECT u FROM User u " +
-		       "WHERE u.status = :status " +
-		       "AND ( " +
-		       "     u.userType = :publicUserType " +
-		       "     OR (u.userType = :industryUserType AND u.adminReview IS NOT NULL " +
-		       "         AND u.adminReview BETWEEN :industryMin AND :industryMax) " +
-		       ") " +
-		       "AND ( " +
-		       "     (u.firstName IS NOT NULL AND LOWER(u.firstName) LIKE LOWER(CONCAT(:searchKey, '%'))) " +
-		       "     OR (u.lastName IS NOT NULL AND LOWER(u.lastName) LIKE LOWER(CONCAT(:searchKey, '%'))) " +
-		       ")")
-		List<User> searchUsersForChat(
-		    @Param("searchKey") String searchKey,
-		    @Param("status") boolean status,
-		    @Param("publicUserType") String publicUserType,
-		    @Param("industryUserType") String industryUserType,
-		    @Param("industryMin") float industryMin,
-		    @Param("industryMax") float industryMax
-		);
+	       "WHERE u.status = :status " +
+	       "AND ( " +
+	       "     u.userType = :publicUserType " +
+	       "     OR (u.userType = :industryUserType AND u.adminReview IS NOT NULL " +
+	       "         AND u.adminReview BETWEEN :industryMin AND :industryMax) " +
+	       ") " +
+	       "AND ( " +
+	       "     LOWER(CONCAT(COALESCE(u.firstName, ''), ' ', COALESCE(u.lastName, ''))) LIKE LOWER(:searchKey) " +
+	       "     OR (u.firstName IS NOT NULL AND LOWER(u.firstName) LIKE LOWER(:searchKey)) " +
+	       "     OR (u.lastName IS NOT NULL AND LOWER(u.lastName) LIKE LOWER(:searchKey)) " +
+	       ")")
+	List<User> searchUsersForChat(
+	    @Param("searchKey") String searchKey,
+	    @Param("status") boolean status,
+	    @Param("publicUserType") String publicUserType,
+	    @Param("industryUserType") String industryUserType,
+	    @Param("industryMin") float industryMin,
+	    @Param("industryMax") float industryMax
+	);
+
 
 
 

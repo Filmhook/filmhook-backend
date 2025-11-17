@@ -951,63 +951,73 @@ public class ChatServiceImpl implements ChatService {
 	//	}
 
 	@Override
-public Response getAllSearchByChat(String searchKey) {
-    try {
-        Integer loggedInUserId = userDetails.userInfo().getId();
-        String loggedInUserType = userDetails.userInfo().getUserType();
+	public Response getAllSearchByChat(String searchKey) {
+	    try {
+	        Integer loggedInUserId = userDetails.userInfo().getId();
+	        String loggedInUserType = userDetails.userInfo().getUserType();
 
-        float industryMin = 1.0f;  // lower bound for Industry targets in all cases
-        float industryMax;
+	        float industryMin = 1.0f;  // lower bound for Industry targets in all cases
+	        float industryMax;
 
-        if ("Industry User".equalsIgnoreCase(loggedInUserType)) {
-            // get the logged-in industry's own rating
-            User me = userRepository.findById(loggedInUserId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            float myReview = me.getAdminReview() == null ? 0.0f : me.getAdminReview();
+	        if ("Industry User".equalsIgnoreCase(loggedInUserType)) {
+	            User me = userRepository.findById(loggedInUserId)
+	                    .orElseThrow(() -> new RuntimeException("User not found"));
+	            float myReview = me.getAdminReview() == null ? 0.0f : me.getAdminReview();
 
-            // Your rules:
-            // > 5.1  => Public + Industry up to 9.9
-            // <= 5.0 => Public + Industry up to 5.0
-            if (myReview > 5.1f) {
-                industryMax = 9.9f;
-            } else {
-                industryMax = 5.0f;
-            }
+	            if (myReview > 5.1f) {
+	                industryMax = 9.9f;
+	            } else {
+	                industryMax = 5.0f;
+	            }
 
-        } else if ("public User".equalsIgnoreCase(loggedInUserType)) {
-            // unchanged: Public + Industry <= 5.0
-            industryMax = 5.0f;
+	        } else if ("public User".equalsIgnoreCase(loggedInUserType) || "Public User".equalsIgnoreCase(loggedInUserType)) {
+	            industryMax = 5.0f;
 
-        } else {
-            return new Response(-1, "Invalid user type", null);
-        }
+	        } else {
+	            return new Response(-1, "Invalid user type", null);
+	        }
 
-        List<User> users = userRepository.searchUsersForChat(
-                searchKey.trim(),
-                true,
-                "public User",
-                "Industry User",
-                industryMin,
-                industryMax
-        );
+	        // Normalise and build search param
+	        String normalized = (searchKey == null) ? "" : searchKey.trim().replaceAll("\\s+", " ");
+	        if (normalized.isEmpty()) {
+	            // If empty, you may want to return all (paginated) or empty result. Here we return empty.
+	            return new Response(-1, "No matching users found", null);
+	        }
 
-        // remove self
-        users = users.stream()
-                .filter(u -> !u.getUserId().equals(loggedInUserId))
-                .collect(Collectors.toList());
+	        // Option A: permissive match across spaces (recommended)
+	        // "Sai p" -> "%Sai%p%"
+	        String param = "%" + normalized.replaceAll("\\s+", "%") + "%";
 
-        if (users.isEmpty()) {
-            return new Response(-1, "No matching users found", null);
-        }
+	        // Option B: prefix match on full name (less permissive)
+	        // String param = normalized + "%";
 
-        List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users, loggedInUserId);
-        return new Response(1, "Success", responseList);
+	        List<User> users = userRepository.searchUsersForChat(
+	                param,
+	                true,
+	                "public User",
+	                "Industry User",
+	                industryMin,
+	                industryMax
+	        );
 
-    } catch (Exception e) {
-        logger.error("Error while searching chat users by keyword -> {}", e.getMessage(), e);
-        return new Response(-1, "Internal server error", e.getMessage());
-    }
-}
+	        // remove self
+	        users = users.stream()
+	                .filter(u -> !u.getUserId().equals(loggedInUserId))
+	                .collect(Collectors.toList());
+
+	        if (users.isEmpty()) {
+	            return new Response(-1, "No matching users found", null);
+	        }
+
+	        List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users, loggedInUserId);
+	        return new Response(1, "Success", responseList);
+
+	    } catch (Exception e) {
+	        logger.error("Error while searching chat users by keyword -> {}", e.getMessage(), e);
+	        return new Response(-1, "Internal server error", e.getMessage());
+	    }
+	}
+
 
 
 	private List<ChatUserWebModel> transformsUserDetailsForChat(List<User> users, Integer loggedInUserId) {
