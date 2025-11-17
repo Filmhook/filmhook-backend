@@ -964,7 +964,8 @@ public class UserServiceImpl implements UserService {
 			userMap.put("lastName", user.getLastName());
 			userMap.put("userName", user.getName());
 			userMap.put("userProfilePic", userService.getProfilePicUrl(userWebModel.getUserId()));
-
+			userMap.put("adminRating", user.getAdminReview().toString());
+	
 			// Fetching the user Profession
 			Set<String> professionNames = new HashSet<>();
 			List<FilmProfessionPermanentDetail> professionPermanentDataList = filmProfessionPermanentDetailRepository.getProfessionDataByUserId(userWebModel.getUserId());
