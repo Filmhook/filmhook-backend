@@ -169,7 +169,7 @@ public class ChatServiceImpl implements ChatService {
 			logger.info("Save Message Method Start");
 
 			Integer userId = userDetails.userInfo().getId();
-			Optional<User> userOptional = userRepository.findById(userId);
+			Optional<User> userOptional = userRepository.	findById(userId);
 
 			if (userOptional.isPresent()) {
 				User user = userOptional.get();
@@ -214,62 +214,7 @@ public class ChatServiceImpl implements ChatService {
 					mediaFilesService.saveMediaFiles(fileInputWebModel, user);
 				}
 
-				//	            // Push notification
-				//	            if (chatWebModel.getChatReceiverId() != null) {
-				//	                Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
-				//
-				//	                if (receiverOptional.isPresent()) {
-				//	                    User receiver = receiverOptional.get();
-				//
-				//	                    String notificationTitle = "filmHook";
-				//	                    String notificationMessage;
-				//	                    if (chatWebModel.getStoryId() != null) {
-				//	                        notificationMessage = user.getName() + " replied to your story";
-				//	                    } else {
-				//	                        notificationMessage = "You have a new message from " + user.getName();
-				//	                    }
-				//
-				//
-				//	                    InAppNotification inAppNotification = InAppNotification.builder()
-				//	                        .senderId(userId)
-				//	                        .receiverId(receiver.getUserId())
-				//	                        .title(notificationTitle)
-				//	                        .userType(chatWebModel.getStoryId() != null ? "story_reply" : "chat")
-				//	                        .id(chat.getChatId())
-				//	                        .message(notificationMessage)
-				//	                        .createdOn(new Date())
-				//	                        .isRead(true)
-				//	                        .createdBy(userId)
-				//	                        .build();
-				//
-				//	                    inAppNotificationRepository.save(inAppNotification);
-				//
-				//	                    String deviceToken = receiver.getFirebaseDeviceToken();
-				//	                    if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-				//	                        try {
-				//	                            Message message = Message.builder()
-				//	                                .setNotification(Notification.builder()
-				//	                                    .setTitle(notificationTitle)
-				//	                                    .setBody(notificationMessage)
-				//	                                    .build())
-				//	                                .putData("chatId", Integer.toString(chat.getChatId()))
-				//	                                .setToken(deviceToken)
-				//	                                .build();
-				//
-				//	                            String response = FirebaseMessaging.getInstance().send(message);
-				//	                            logger.info("Successfully sent push notification: " + response);
-				//	                        } catch (FirebaseMessagingException e) {
-				//	                            logger.error("Failed to send push notification", e);
-				//	                        }
-				//	                    } else {
-				//	                        logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
-				//	                    }
-				//
-				//	                } else {
-				//	                    logger.warn("Receiver user not found for id: " + chatWebModel.getChatReceiverId());
-				//	                }
-				//	            }
-
+			
 				// ✅ Firebase Push Notification
 				Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
 				if (receiverOptional.isPresent()) {

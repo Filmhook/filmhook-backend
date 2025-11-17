@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -72,22 +73,36 @@ public class UserWorkExperienceServiceImpl implements UserWorkExperienceService 
 
 	@Override
 	public List<UserWorkExperienceWebModel> getUserWorkExperience(Integer userId) {
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
 
-		return repository.findByUser(user).stream()
-				.map(e -> UserWorkExperienceWebModel.builder()
-						.id(e.getId())
-						.companyName(e.getCompanyName())
-						.designation(e.getDesignation())
-						.companyLocation(e.getCompanyLocation())
-						.startDate(e.getStartDate())
-						.endDate(e.getEndDate())
-						.currentlyWorking(e.getCurrentlyWorking())
-						.userId(userId)
-						.build())
-				.collect(Collectors.toList());
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    return repository.findByUser(user)
+	            .stream()
+	            .sorted((a, b) -> {
+	                // 1. Currently working comes first
+	                if (a.getCurrentlyWorking() && !b.getCurrentlyWorking()) return -1;
+	                if (!a.getCurrentlyWorking() && b.getCurrentlyWorking()) return 1;
+
+	                // 2. Compare by endDate (null = treat as current date)
+	                LocalDate endDateA = a.getEndDate() != null ? a.getEndDate() : LocalDate.now();
+	                LocalDate endDateB = b.getEndDate() != null ? b.getEndDate() : LocalDate.now();
+
+	                return endDateB.compareTo(endDateA); // latest first
+	            })
+	            .map(e -> UserWorkExperienceWebModel.builder()
+	                    .id(e.getId())
+	                    .companyName(e.getCompanyName())
+	                    .designation(e.getDesignation())
+	                    .companyLocation(e.getCompanyLocation())
+	                    .startDate(e.getStartDate())
+	                    .endDate(e.getEndDate())
+	                    .currentlyWorking(e.getCurrentlyWorking())
+	                    .userId(userId)
+	                    .build())
+	            .collect(Collectors.toList());
 	}
+
 	
 	@Override
 	public boolean deleteUserWorkExperience(Integer experienceId) {

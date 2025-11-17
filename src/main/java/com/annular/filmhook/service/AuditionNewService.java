@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
-
+import com.annular.filmhook.model.UserOffer;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
 
@@ -47,7 +47,7 @@ public interface AuditionNewService {
 	void clearCart(Integer userId, Integer companyId); // all items for company
 	List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId);
 	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);
-
+	UserOffer saveOffer(UserOffer userOffer);
 }
 
 

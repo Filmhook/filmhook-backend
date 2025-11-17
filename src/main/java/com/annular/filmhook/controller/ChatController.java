@@ -163,7 +163,7 @@ public class ChatController {
 	    }
 	}
 
-	@PostMapping("updateOnlineStatus")
+	@PostMapping("/updateOnlineStatus")
 	public ResponseEntity<Response> updateOnlineStatus(@RequestBody UserWebModel userWebModel) {
 		try {
 			Response response = chatService.updateOnlineStatus(userWebModel);

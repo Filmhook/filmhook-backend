@@ -4,6 +4,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.UserOffer;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionNewService;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
@@ -139,8 +140,6 @@ public class AuditionNewController {
     }
     
   
-
-
 	@GetMapping("/categories")
 	public ResponseEntity<?> getCategories() {
 		try {
@@ -462,6 +461,17 @@ public class AuditionNewController {
             @RequestParam Integer professionId) {
 
         return projectService.getCompanyPostCounts(companyId, professionId);
+    }
+    
+    
+    @PostMapping("/saveUserOffer")
+    public ResponseEntity<?> saveUserOffer(@RequestBody UserOffer offer) {
+        try {
+            UserOffer saved = projectService.saveOffer(offer);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
     }
     
 }

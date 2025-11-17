@@ -48,7 +48,7 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
 	Optional<Posts> findByIds(Integer postId);
 
   
-    @Query("SELECT p FROM Posts p where p.id = :postId")
+    @Query("SELECT p FROM Posts p where p.id = :postId AND p.status = true")
    	Optional<Posts> findById(Integer postId);
     
 //    @Modifying

@@ -321,10 +321,13 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 					AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
 
-					if (user.getFilmHookCode() != null) {
-						dto.setFilmHookCode(user.getFilmHookCode());
+					if (project.getCreatedBy() != null) {
+					    userRepository.findById(project.getCreatedBy()).ifPresent(creator -> {
+					        if (creator.getFilmHookCode() != null) {
+					            dto.setFilmHookCode(creator.getFilmHookCode());
+					        }
+					    });
 					}
-					
 					
 					// ✅ Attach project expiry date
 					Optional<AuditionPayment> paymentOpt = paymentRepository
@@ -1371,6 +1374,14 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	        return dto;
 	    }
 
+	 
+	 @Override
+	    public UserOffer saveOffer(UserOffer userOffer) {
+	        if (userOffer.getActive() == null) {
+	            userOffer.setActive(true);  // default active
+	        }
+	        return userOfferRepository.save(userOffer);
+	    }
 }
 
 
