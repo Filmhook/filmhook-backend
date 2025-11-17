@@ -161,36 +161,36 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 	@Value("${payu.salt}")
 	private String salt;
-//	@Override
-//	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
-//
-//		// ✅ Get currently logged-in user's ID
-//		Integer userId = userDetails.userInfo().getId();
-//
-//		// ✅ Fetch User entity
-//		User user = userRepository.findById(userId)
-//				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-//
-//		// ✅ Find the company
-//		AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
-//				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
-//
-//		// ✅ Convert DTO → Entity (with userId)
-//		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
-//		            projectDto,
-//		            company,
-//		            userId,
-//		            filmSubProfessionRepository // <-- important!
-//		    );
-//
-//		// ✅ Save project
-//		AuditionNewProject savedProject = projectRepository.save(project);
-//
-//		// ✅ Handle profile picture upload
-//		AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
-//
-//		return savedProject;
-//	}
+	//	@Override
+	//	public AuditionNewProject createProject(AuditionNewProjectWebModel projectDto) {
+	//
+	//		// ✅ Get currently logged-in user's ID
+	//		Integer userId = userDetails.userInfo().getId();
+	//
+	//		// ✅ Fetch User entity
+	//		User user = userRepository.findById(userId)
+	//				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+	//
+	//		// ✅ Find the company
+	//		AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
+	//				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
+	//
+	//		// ✅ Convert DTO → Entity (with userId)
+	//		 AuditionNewProject project = AuditionCompanyConverter.toEntity(
+	//		            projectDto,
+	//		            company,
+	//		            userId,
+	//		            filmSubProfessionRepository // <-- important!
+	//		    );
+	//
+	//		// ✅ Save project
+	//		AuditionNewProject savedProject = projectRepository.save(project);
+	//
+	//		// ✅ Handle profile picture upload
+	//		AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
+	//
+	//		return savedProject;
+	//	}
 
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId) {
@@ -328,7 +328,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					        }
 					    });
 					}
-					
+
 					// ✅ Attach project expiry date
 					Optional<AuditionPayment> paymentOpt = paymentRepository
 							.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
@@ -367,7 +367,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 								int totalViews = auditionViewRepository.countByTeamNeedId(tn.getId());
 								tnDto.setTotalViews(totalViews);
-								
+
 
 								return tnDto;
 							})
@@ -476,104 +476,104 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	}
 
 	@Override
-	
-	 public void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count) {
-        FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
-            .orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
 
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+	public void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count) {
+		FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
+				.orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
 
-        AuditionCompanyDetails company = companyRepository.findById(companyId)
-            .orElseThrow(() -> new ResourceNotFoundException("Company not found with ID: " + companyId));
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // find (active OR inactive) existing row to upsert
-        AuditionCartItems existingItem = auditionCartItemsRepository
-            .findByUserAndCompanyIdAndSubProfession(user, companyId, subProfession)
-            .orElse(null);
+		AuditionCompanyDetails company = companyRepository.findById(companyId)
+				.orElseThrow(() -> new ResourceNotFoundException("Company not found with ID: " + companyId));
 
-        if (existingItem != null) {
-            existingItem.setCount(count);
-            existingItem.setStatus(true); // ✅ revive if previously soft-deleted
-            auditionCartItemsRepository.save(existingItem);
-        } else {
-            AuditionCartItems cartItem = AuditionCartItems.builder()
-                .user(user)
-                .companyId(company.getId())
-                .subProfession(subProfession)
-                .count(count)
-                .status(true) // active
-                .build();
-            auditionCartItemsRepository.save(cartItem);
-        }
-    }
+		// find (active OR inactive) existing row to upsert
+		AuditionCartItems existingItem = auditionCartItemsRepository
+				.findByUserAndCompanyIdAndSubProfession(user, companyId, subProfession)
+				.orElse(null);
+
+		if (existingItem != null) {
+			existingItem.setCount(count);
+			existingItem.setStatus(true); // ✅ revive if previously soft-deleted
+			auditionCartItemsRepository.save(existingItem);
+		} else {
+			AuditionCartItems cartItem = AuditionCartItems.builder()
+					.user(user)
+					.companyId(company.getId())
+					.subProfession(subProfession)
+					.count(count)
+					.status(true) // active
+					.build();
+			auditionCartItemsRepository.save(cartItem);
+		}
+	}
 
 	@Override
-    @Transactional(readOnly = true)
-    public List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+	@Transactional(readOnly = true)
+	public List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        companyRepository.findById(companyId)
-            .orElseThrow(() -> new ResourceNotFoundException("Company not found with ID: " + companyId));
+		companyRepository.findById(companyId)
+		.orElseThrow(() -> new ResourceNotFoundException("Company not found with ID: " + companyId));
 
-        // ✅ only active items
-        List<AuditionCartItems> cartItems = auditionCartItemsRepository
-            .findByUserAndCompanyIdAndStatusTrue(user, companyId);
+		// ✅ only active items
+		List<AuditionCartItems> cartItems = auditionCartItemsRepository
+				.findByUserAndCompanyIdAndStatusTrue(user, companyId);
 
-        if (cartItems.isEmpty()) {
-            throw new ResourceNotFoundException("No active cart items found for user " + userId + " and company " + companyId);
-        }
+		if (cartItems.isEmpty()) {
+			throw new ResourceNotFoundException("No active cart items found for user " + userId + " and company " + companyId);
+		}
 
-        return cartItems.stream()
-            .map(item -> FilmSubProfessionResponseDTO.builder()
-                .subProfessionId(item.getSubProfession().getSubProfessionId())
-                .subProfessionName(item.getSubProfession().getSubProfessionName())
-                .professionName(item.getSubProfession().getProfession().getProfessionName())
-                .filmProfessionId(item.getSubProfession().getProfession().getFilmProfessionId())
-                .iconFilePath(
-                    !Utility.isNullOrBlankWithTrim(item.getSubProfession().getProfession().getFilePath())
-                        ? s3Util.generateS3FilePath(item.getSubProfession().getProfession().getFilePath())
-                        : ""
-                )
-                .shortCharacters(generateShortCharacters(item.getSubProfession().getProfession().getProfessionName()))
-                .count(item.getCount())
-                .build()
-            ).collect(Collectors.toList());
-    }
-	
+		return cartItems.stream()
+				.map(item -> FilmSubProfessionResponseDTO.builder()
+						.subProfessionId(item.getSubProfession().getSubProfessionId())
+						.subProfessionName(item.getSubProfession().getSubProfessionName())
+						.professionName(item.getSubProfession().getProfession().getProfessionName())
+						.filmProfessionId(item.getSubProfession().getProfession().getFilmProfessionId())
+						.iconFilePath(
+								!Utility.isNullOrBlankWithTrim(item.getSubProfession().getProfession().getFilePath())
+								? s3Util.generateS3FilePath(item.getSubProfession().getProfession().getFilePath())
+										: ""
+								)
+						.shortCharacters(generateShortCharacters(item.getSubProfession().getProfession().getProfessionName()))
+						.count(item.getCount())
+						.build()
+						).collect(Collectors.toList());
+	}
+
 	@Override
 	@Transactional
 	public void removeFromCart(Integer userId, Integer companyId, List<Integer> subProfessionIds) {
-	    User user = userRepository.findById(userId)
-	            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-	    for (Integer subProfessionId : subProfessionIds) {
-	        FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
-	                .orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
+		for (Integer subProfessionId : subProfessionIds) {
+			FilmSubProfession subProfession = filmSubProfessionRepository.findById(subProfessionId)
+					.orElseThrow(() -> new ResourceNotFoundException("SubProfession not found with id: " + subProfessionId));
 
-	        AuditionCartItems item = auditionCartItemsRepository
-	                .findByUserAndCompanyIdAndSubProfessionAndStatusTrue(user, companyId, subProfession)
-	                .orElseThrow(() -> new ResourceNotFoundException("Active cart item not found for subProfessionId: " + subProfessionId));
+			AuditionCartItems item = auditionCartItemsRepository
+					.findByUserAndCompanyIdAndSubProfessionAndStatusTrue(user, companyId, subProfession)
+					.orElseThrow(() -> new ResourceNotFoundException("Active cart item not found for subProfessionId: " + subProfessionId));
 
-	        // ✅ Soft delete
-	        item.setStatus(false);
-	        auditionCartItemsRepository.save(item);
-	    }
+			// ✅ Soft delete
+			item.setStatus(false);
+			auditionCartItemsRepository.save(item);
+		}
 	}
 
-    @Override
-    public void clearCart(Integer userId, Integer companyId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+	@Override
+	public void clearCart(Integer userId, Integer companyId) {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        // mark all active items for this user+company as false
-        List<AuditionCartItems> items = auditionCartItemsRepository.findByUserAndCompanyIdAndStatusTrue(user, companyId);
-        if (items.isEmpty()) return;
+		// mark all active items for this user+company as false
+		List<AuditionCartItems> items = auditionCartItemsRepository.findByUserAndCompanyIdAndStatusTrue(user, companyId);
+		if (items.isEmpty()) return;
 
-        items.forEach(i -> i.setStatus(false));
-        auditionCartItemsRepository.saveAll(items);
-    }
+		items.forEach(i -> i.setStatus(false));
+		auditionCartItemsRepository.saveAll(items);
+	}
 
 	@Override
 	public List<FilmProfessionResponseDTO> getAllProfessions() {
@@ -673,47 +673,47 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		return auditionViewRepository.countByTeamNeedId(teamNeedId);
 	}
 
-		@Override
-		public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
-			// 1️⃣ Fetch project
-			AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
-					.orElseThrow(() -> new RuntimeException("Project not found"));
-	
-			// 2️⃣ Fetch user
-			User user = userRepository.findById(webModel.getUserId())
-					.orElseThrow(() -> new RuntimeException("User not found"));
-	
-			// 3️⃣ Generate txnid if not passed
-			if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
-				String txnid;
-				do {
-					txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
-				} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
-				webModel.setTxnid(txnid);
-			} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
-				throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
-			}
-	
-			// 4️⃣ Convert to entity
-			AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
-			String amountStr = String.format("%.2f", webModel.getTotalAmount());
-			// 5️⃣ Generate payment hash
-			String hash = HashGenerator.generateHash(
-					key,
-					payment.getTxnid(),
-					amountStr,
-				"Audition Booking",
-					user.getFirstName(),
-					user.getEmail(),
-					salt
-					);
-			payment.setPaymentHash(hash);
-			
+	@Override
+	public AuditionPayment createPayment(AuditionPaymentWebModel webModel) {
+		// 1️⃣ Fetch project
+		AuditionNewProject project = projectRepository.findById(webModel.getProjectId())
+				.orElseThrow(() -> new RuntimeException("Project not found"));
 
-	
-			// 6️⃣ Save payment
-			return paymentRepository.save(payment);
+		// 2️⃣ Fetch user
+		User user = userRepository.findById(webModel.getUserId())
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		// 3️⃣ Generate txnid if not passed
+		if (webModel.getTxnid() == null || webModel.getTxnid().isEmpty()) {
+			String txnid;
+			do {
+				txnid = UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+			} while (paymentRepository.existsByTxnid(txnid)); // Ensure unique
+			webModel.setTxnid(txnid);
+		} else if (paymentRepository.existsByTxnid(webModel.getTxnid())) {
+			throw new IllegalArgumentException("Duplicate transaction ID: " + webModel.getTxnid());
 		}
+
+		// 4️⃣ Convert to entity
+		AuditionPayment payment = AuditionCompanyConverter.toEntity(webModel, project, user);
+		String amountStr = String.format("%.2f", webModel.getTotalAmount());
+		// 5️⃣ Generate payment hash
+		String hash = HashGenerator.generateHash(
+				key,
+				payment.getTxnid(),
+				amountStr,
+				"Audition Booking",
+				user.getFirstName(),
+				user.getEmail(),
+				salt
+				);
+		payment.setPaymentHash(hash);
+
+
+
+		// 6️⃣ Save payment
+		return paymentRepository.save(payment);
+	}
 
 	@Override
 	public ResponseEntity<?> paymentSuccess(String txnid) {
@@ -981,8 +981,8 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 
 			// Convert to WebModel / DTO
 			AuditionPaymentWebModel responseWebModel = AuditionCompanyConverter.toWebModel(payment, key);
-		
-			
+
+
 			//  Return success response
 			return ResponseEntity.ok(new Response(1, "Payment details fetched successfully", responseWebModel));
 
@@ -1046,22 +1046,22 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		// Total amount including GST
 		double amountForCalculation = discountedAmount != null ? discountedAmount : baseAmount;
 		double totalAmount = amountForCalculation + (amountForCalculation * gstPercentage / 100.0);
-		
-		
-	    BigDecimal bdBaseAmount = BigDecimal.valueOf(baseAmount).setScale(2, RoundingMode.HALF_UP);
-	    BigDecimal bdDiscountedAmount = discountedAmount != null ? 
-	            BigDecimal.valueOf(discountedAmount).setScale(2, RoundingMode.HALF_UP) : null;
-	    BigDecimal bdFinalRatePerPost = finalRatePerPost != null ? 
-	            BigDecimal.valueOf(finalRatePerPost).setScale(2, RoundingMode.HALF_UP) : null;
-	    BigDecimal bdTotalAmount = BigDecimal.valueOf(totalAmount).setScale(2, RoundingMode.HALF_UP);
 
-	    // Role breakdown
-	    Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
-	            .collect(Collectors.toMap(
-	                    tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
-	                    AuditionNewTeamNeed::getCount,
-	                    Integer::sum
-	            ));
+
+		BigDecimal bdBaseAmount = BigDecimal.valueOf(baseAmount).setScale(2, RoundingMode.HALF_UP);
+		BigDecimal bdDiscountedAmount = discountedAmount != null ? 
+				BigDecimal.valueOf(discountedAmount).setScale(2, RoundingMode.HALF_UP) : null;
+		BigDecimal bdFinalRatePerPost = finalRatePerPost != null ? 
+				BigDecimal.valueOf(finalRatePerPost).setScale(2, RoundingMode.HALF_UP) : null;
+		BigDecimal bdTotalAmount = BigDecimal.valueOf(totalAmount).setScale(2, RoundingMode.HALF_UP);
+
+		// Role breakdown
+		Map<String, Integer> roleBreakdown = project.getTeamNeeds().stream()
+				.collect(Collectors.toMap(
+						tn -> tn.getRole() != null ? tn.getRole() : "Unknown",
+								AuditionNewTeamNeed::getCount,
+								Integer::sum
+						));
 
 		// Build response DTO
 		return AuditionPaymentDTO.builder()
@@ -1167,212 +1167,212 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					payment.getUser().getEmail(), project.getProjectTitle(), e);
 		}
 	}
-//	@PostConstruct
-//	public void testProperties() {
-//		System.out.println(">>> payment.key = " + key);
-//		System.out.println(">>> payment.salt = " + salt);
-//	}
+	//	@PostConstruct
+	//	public void testProperties() {
+	//		System.out.println(">>> payment.key = " + key);
+	//		System.out.println(">>> payment.salt = " + salt);
+	//	}
 
-	
+
 	@Override
 	public AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto) {
 
-	    Integer userId = userDetails.userInfo().getId();
-	    User user = userRepository.findById(userId)
-	            .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+		Integer userId = userDetails.userInfo().getId();
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
-	    AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
-	            .orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
+		AuditionCompanyDetails company = companyRepository.findById(projectDto.getCompanyId())
+				.orElseThrow(() -> new RuntimeException("Company not found with ID: " + projectDto.getCompanyId()));
 
-	    AuditionNewProject project;
+		AuditionNewProject project;
 
-	    if (projectDto.getId() != null) {
-	        // 🔄 UPDATE
-	        project = projectRepository.findById(projectDto.getId())
-	                .orElseThrow(() -> new RuntimeException("Project not found with ID: " + projectDto.getId()));
+		if (projectDto.getId() != null) {
+			// 🔄 UPDATE
+			project = projectRepository.findById(projectDto.getId())
+					.orElseThrow(() -> new RuntimeException("Project not found with ID: " + projectDto.getId()));
 
-	        // Update base fields
-	        AuditionCompanyConverter.updateEntityFromDto(project, projectDto, company, userId, filmSubProfessionRepository);
+			// Update base fields
+			AuditionCompanyConverter.updateEntityFromDto(project, projectDto, company, userId, filmSubProfessionRepository);
 
-	        // ✅ Ensure teamNeeds list exists
-	        if (project.getTeamNeeds() == null) {
-	            project.setTeamNeeds(new ArrayList<>());
-	        }
+			// ✅ Ensure teamNeeds list exists
+			if (project.getTeamNeeds() == null) {
+				project.setTeamNeeds(new ArrayList<>());
+			}
 
-	        // Map existing teamNeeds by ID
-	        Map<Integer, AuditionNewTeamNeed> existingTeamNeedsMap = project.getTeamNeeds().stream()
-	                .filter(tn -> tn.getId() != null)
-	                .collect(Collectors.toMap(AuditionNewTeamNeed::getId, tn -> tn));
+			// Map existing teamNeeds by ID
+			Map<Integer, AuditionNewTeamNeed> existingTeamNeedsMap = project.getTeamNeeds().stream()
+					.filter(tn -> tn.getId() != null)
+					.collect(Collectors.toMap(AuditionNewTeamNeed::getId, tn -> tn));
 
-	        // Process incoming teamNeeds from DTO
-	        if (projectDto.getTeamNeeds() != null) {
-	            for (AuditionNewTeamNeedWebModel teamDto : projectDto.getTeamNeeds()) {
-	                if (teamDto.getId() != null && existingTeamNeedsMap.containsKey(teamDto.getId())) {
-	                    // 🔄 Update existing
-	                    AuditionNewTeamNeed existing = existingTeamNeedsMap.get(teamDto.getId());
-	                    AuditionCompanyConverter.updateTeamNeedEntity(existing, teamDto, filmSubProfessionRepository);
-	                    existing.setStatus(true);
-	                    existing.setUpdatedBy(userId);
-	                    existing.setUpdatedDate(LocalDateTime.now());
-	                    existingTeamNeedsMap.remove(teamDto.getId());
-	                } else {
-	                    // ➕ Add new
-	                    AuditionNewTeamNeed newTeamNeed = AuditionCompanyConverter.toEntity(teamDto, project, userId, filmSubProfessionRepository);
-	                    newTeamNeed.setStatus(true);
-	                    project.getTeamNeeds().add(newTeamNeed);
-	                }
-	            }
-	        }
+			// Process incoming teamNeeds from DTO
+			if (projectDto.getTeamNeeds() != null) {
+				for (AuditionNewTeamNeedWebModel teamDto : projectDto.getTeamNeeds()) {
+					if (teamDto.getId() != null && existingTeamNeedsMap.containsKey(teamDto.getId())) {
+						// 🔄 Update existing
+						AuditionNewTeamNeed existing = existingTeamNeedsMap.get(teamDto.getId());
+						AuditionCompanyConverter.updateTeamNeedEntity(existing, teamDto, filmSubProfessionRepository);
+						existing.setStatus(true);
+						existing.setUpdatedBy(userId);
+						existing.setUpdatedDate(LocalDateTime.now());
+						existingTeamNeedsMap.remove(teamDto.getId());
+					} else {
+						// ➕ Add new
+						AuditionNewTeamNeed newTeamNeed = AuditionCompanyConverter.toEntity(teamDto, project, userId, filmSubProfessionRepository);
+						newTeamNeed.setStatus(true);
+						project.getTeamNeeds().add(newTeamNeed);
+					}
+				}
+			}
 
-	        // ❌ Soft delete leftover team needs (not in DTO)
-	        for (AuditionNewTeamNeed leftover : existingTeamNeedsMap.values()) {
-	            leftover.setStatus(false);
-	        }
+			// ❌ Soft delete leftover team needs (not in DTO)
+			for (AuditionNewTeamNeed leftover : existingTeamNeedsMap.values()) {
+				leftover.setStatus(false);
+			}
 
-	    } else {
-	        // ➕ CREATE
-	        project = AuditionCompanyConverter.toEntity(projectDto, company, userId, filmSubProfessionRepository);
-	    }
+		} else {
+			// ➕ CREATE
+			project = AuditionCompanyConverter.toEntity(projectDto, company, userId, filmSubProfessionRepository);
+		}
 
-	    // ✅ Save entity
-	    AuditionNewProject savedProject = projectRepository.save(project);
+		// ✅ Save entity
+		AuditionNewProject savedProject = projectRepository.save(project);
 
-	 // ✅ Handle profile picture upload
-	    AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
+		// ✅ Handle profile picture upload
+		AuditionCompanyConverter.handleProjectProfilePictureFile(projectDto, savedProject, user, mediaFilesService);
 
-	    // ✅ Return DTO, not entity
-	    return AuditionCompanyConverter.toDto(savedProject);
+		// ✅ Return DTO, not entity
+		return AuditionCompanyConverter.toDto(savedProject);
 	}
-	
-	
+
+
 	@Override
 	public List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status) {
 		List<AuditionNewProject> projects = projectRepository.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
 
 
-	    List<FileOutputWebModel> companyLogos = mediaFilesService
-	            .getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, companyId);
+		List<FileOutputWebModel> companyLogos = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, companyId);
 
-	    return projects.stream()
-	            .map(project -> {
-	                // 🔹 Get latest payment (if any)
-	                Optional<AuditionPayment> paymentOpt =
-	                        paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
+		return projects.stream()
+				.map(project -> {
+					// 🔹 Get latest payment (if any)
+					Optional<AuditionPayment> paymentOpt =
+							paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(project.getId());
 
-	                String paymentStatus = paymentOpt.map(AuditionPayment::getPaymentStatus)
-	                                                 .orElse("PENDING");
+					String paymentStatus = paymentOpt.map(AuditionPayment::getPaymentStatus)
+							.orElse("PENDING");
 
-	                // 🔹 If status filter is given, skip if it doesn’t match
-	                if (status != null && !status.isEmpty() && !status.equalsIgnoreCase(paymentStatus)) {
-	                    return null;
-	                }
+					// 🔹 If status filter is given, skip if it doesn’t match
+					if (status != null && !status.isEmpty() && !status.equalsIgnoreCase(paymentStatus)) {
+						return null;
+					}
 
-	                // 🔹 Only include projects with active teamNeeds
-	                List<AuditionNewTeamNeed> activeTeamNeeds = teamNeedRepository.findAllByProjectId(project.getId())
-	                        .stream()
-	                        .filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
-	                        .collect(Collectors.toList());
+					// 🔹 Only include projects with active teamNeeds
+					List<AuditionNewTeamNeed> activeTeamNeeds = teamNeedRepository.findAllByProjectId(project.getId())
+							.stream()
+							.filter(teamNeed -> Boolean.TRUE.equals(teamNeed.getStatus()))
+							.collect(Collectors.toList());
 
-	                if (activeTeamNeeds.isEmpty()) {
-	                    return null;
-	                }
+					if (activeTeamNeeds.isEmpty()) {
+						return null;
+					}
 
-	                // 🔹 Convert entity → DTO
-	                AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+					// 🔹 Convert entity → DTO
+					AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
 
-	                // Attach expiry date/time if available
-	                paymentOpt.ifPresent(payment -> {
-	                    LocalDateTime expiry = payment.getExpiryDateTime();
-	                    if (expiry != null) {
-	                        ZonedDateTime istTime = expiry.atZone(ZoneId.of("UTC"))
-	                                .withZoneSameInstant(ZoneId.of("Asia/Kolkata"));
-	                        dto.setExpiryTime(istTime.format(DateTimeFormatter.ofPattern("hh:mm a")));
-	                        dto.setExpiryDate(istTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
-	                    }
-	                });
+					// Attach expiry date/time if available
+					paymentOpt.ifPresent(payment -> {
+						LocalDateTime expiry = payment.getExpiryDateTime();
+						if (expiry != null) {
+							ZonedDateTime istTime = expiry.atZone(ZoneId.of("UTC"))
+									.withZoneSameInstant(ZoneId.of("Asia/Kolkata"));
+							dto.setExpiryTime(istTime.format(DateTimeFormatter.ofPattern("hh:mm a")));
+							dto.setExpiryDate(istTime.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+						}
+					});
 
-	                dto.setPaymentStatus(paymentStatus);
+					dto.setPaymentStatus(paymentStatus);
 
-	                // Attach teamNeeds
-	                dto.setTeamNeeds(
-	                        activeTeamNeeds.stream()
-	                                .map(AuditionCompanyConverter::toDto)
-	                                .collect(Collectors.toList())
-	                );
+					// Attach teamNeeds
+					dto.setTeamNeeds(
+							activeTeamNeeds.stream()
+							.map(AuditionCompanyConverter::toDto)
+							.collect(Collectors.toList())
+							);
 
-	                // Attach profile pictures
-	                List<FileOutputWebModel> profilePictures = mediaFilesService
-	                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
-	                if (profilePictures != null && !profilePictures.isEmpty()) {
-	                    dto.setProfilePictureFilesOutput(profilePictures);
-	                }
+					// Attach profile pictures
+					List<FileOutputWebModel> profilePictures = mediaFilesService
+							.getMediaFilesByCategoryAndRefId(MediaFileCategory.AuditionProfilePicture, project.getId());
+					if (profilePictures != null && !profilePictures.isEmpty()) {
+						dto.setProfilePictureFilesOutput(profilePictures);
+					}
 
-	                // Attach company logo
-	                if (companyLogos != null && !companyLogos.isEmpty()) {
-	                    dto.setLogoFiles(companyLogos);
-	                }
+					// Attach company logo
+					if (companyLogos != null && !companyLogos.isEmpty()) {
+						dto.setLogoFiles(companyLogos);
+					}
 
-	                return dto;
-	            })
-	            .filter(Objects::nonNull)
-	            .collect(Collectors.toList());
+					return dto;
+				})
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
 	}
 
-	
+
 	@Override
-	 public String softDeleteProject(Integer projectId, Integer userId) {
-		         AuditionNewProject project = projectRepository.findByIdAndIsDeletedFalse(projectId)
-		                 .orElseThrow(() -> new RuntimeException("Project not found or already deleted"));
+	public String softDeleteProject(Integer projectId, Integer userId) {
+		AuditionNewProject project = projectRepository.findByIdAndIsDeletedFalse(projectId)
+				.orElseThrow(() -> new RuntimeException("Project not found or already deleted"));
 
-		         // ✅ Only owner or project creator can delete
-		         Integer companyOwnerId = project.getCompany().getUser().getUserId(); 
-		         Integer projectCreatorId = project.getCreatedBy();
+		// ✅ Only owner or project creator can delete
+		Integer companyOwnerId = project.getCompany().getUser().getUserId(); 
+		Integer projectCreatorId = project.getCreatedBy();
 
-		         if (!userId.equals(companyOwnerId) && !userId.equals(projectCreatorId)) {
-		             throw new RuntimeException("You are not authorized to delete this project");
-		         }
+		if (!userId.equals(companyOwnerId) && !userId.equals(projectCreatorId)) {
+			throw new RuntimeException("You are not authorized to delete this project");
+		}
 
-		         project.setIsDeleted(true);
-		         project.setStatus(false);
-		         project.setDeletedBy(userId);
-		         project.setDeletedOn(LocalDateTime.now());
+		project.setIsDeleted(true);
+		project.setStatus(false);
+		project.setDeletedBy(userId);
+		project.setDeletedOn(LocalDateTime.now());
 
-		         projectRepository.save(project);
+		projectRepository.save(project);
 
-		         return "Project deleted successfully.";
-		     }
+		return "Project deleted successfully.";
+	}
 
-	 @Override
-	    public AuditionJobPostCountDTO getCompanyPostCounts(Integer companyId, Integer professionId) {
-	        List<AuditionNewProject> projects = projectRepository
-	                .findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
+	@Override
+	public AuditionJobPostCountDTO getCompanyPostCounts(Integer companyId, Integer professionId) {
+		List<AuditionNewProject> projects = projectRepository
+				.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(companyId);
 
-	        // All active teamNeeds in company
-	        int activePostCount = projects.stream()
-	        		 .filter(p -> Boolean.TRUE.equals(p.getStatus()))
-	                .flatMap(p -> p.getTeamNeeds().stream())
-	                .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
-	                .mapToInt(tn -> 1)
-	                .sum();
+		// All active teamNeeds in company
+		int activePostCount = projects.stream()
+				.filter(p -> Boolean.TRUE.equals(p.getStatus()))
+				.flatMap(p -> p.getTeamNeeds().stream())
+				.filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+				.mapToInt(tn -> 1)
+				.sum();
 
-	        // Active teamNeeds only for given professionjobPostCount
-	        int jobPostCount = projects.stream()
-	        		 .filter(p -> Boolean.TRUE.equals(p.getStatus()))
-	                .flatMap(p -> p.getTeamNeeds().stream())
-	                .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
-	                .filter(tn -> tn.getProfession() != null &&
-	                        tn.getProfession().getFilmProfessionId().equals(professionId))
-	                .mapToInt(tn -> 1)
-	                .sum();
+		// Active teamNeeds only for given professionjobPostCount
+		int jobPostCount = projects.stream()
+				.filter(p -> Boolean.TRUE.equals(p.getStatus()))
+				.flatMap(p -> p.getTeamNeeds().stream())
+				.filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+				.filter(tn -> tn.getProfession() != null &&
+				tn.getProfession().getFilmProfessionId().equals(professionId))
+				.mapToInt(tn -> 1)
+				.sum();
 
-	        AuditionJobPostCountDTO dto = new AuditionJobPostCountDTO();
-	        dto.setCompanyId(companyId);
-	        dto.setProfessionId(professionId);
-	        dto.setJobPostCount(jobPostCount);
-	        dto.setActivePostCount(activePostCount);
+		AuditionJobPostCountDTO dto = new AuditionJobPostCountDTO();
+		dto.setCompanyId(companyId);
+		dto.setProfessionId(professionId);
+		dto.setJobPostCount(jobPostCount);
+		dto.setActivePostCount(activePostCount);
 
-	        return dto;
-	    }
+		return dto;
+	}
 
 	 
 	 @Override

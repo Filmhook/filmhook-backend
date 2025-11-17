@@ -894,53 +894,76 @@ public class ChatServiceImpl implements ChatService {
 	//		}
 	//
 	//	}
+
 	@Override
 	public Response getAllSearchByChat(String searchKey) {
-		try {
-			Integer loggedInUserId = userDetails.userInfo().getId();
-			String loggedInUserType = userDetails.userInfo().getUserType();
-			
-			List<User> users;
+	    try {
+	        Integer loggedInUserId = userDetails.userInfo().getId();
+	        String loggedInUserType = userDetails.userInfo().getUserType();
 
-			if ("public User".equalsIgnoreCase(loggedInUserType)) {
-				// Public user can chat with Public or Industry users having adminReview 1–5
-				users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
-						searchKey,
-						true,
-						"public User",
-						"Industry User",
-						Arrays.asList(1f, 2f, 3f, 4f, 5f)
-						);
-			} else if ("Industry User".equalsIgnoreCase(loggedInUserType)) {
-				// Industry users can chat with Public and other Industry users having adminReview 5.1–9.9
-				users = userRepository.findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
-						searchKey,
-						true,
-						"public User",
-						"Industry User",
-						Arrays.asList(5.1f, 6f, 7f, 8f, 9f, 9.9f)
-						);
-			} else {
-				return new Response(-1, "Invalid user type", null);
-			}
+	        float industryMin = 1.0f;  // lower bound for Industry targets in all cases
+	        float industryMax;
 
-			// Remove self from search results
-			users = users.stream()
-					.filter(user -> !user.getUserId().equals(loggedInUserId))
-					.collect(Collectors.toList());
+	        if ("Industry User".equalsIgnoreCase(loggedInUserType)) {
+	            User me = userRepository.findById(loggedInUserId)
+	                    .orElseThrow(() -> new RuntimeException("User not found"));
+	            float myReview = me.getAdminReview() == null ? 0.0f : me.getAdminReview();
 
-			if (!users.isEmpty()) {
-				List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users, loggedInUserId);
-				return new Response(1, "Success", responseList);
-			} else {
-				return new Response(-1, "No matching users found", null);
-			}
+	            if (myReview > 5.1f) {
+	                industryMax = 9.9f;
+	            } else {
+	                industryMax = 5.0f;
+	            }
 
-		} catch (Exception e) {
-			logger.error("Error while searching chat users by keyword -> {}", e.getMessage(), e);
-			return new Response(-1, "Internal server error", e.getMessage());
-		}
+	        } else if ("public User".equalsIgnoreCase(loggedInUserType) || "Public User".equalsIgnoreCase(loggedInUserType)) {
+	            industryMax = 5.0f;
+
+	        } else {
+	            return new Response(-1, "Invalid user type", null);
+	        }
+
+	        // Normalise and build search param
+	        String normalized = (searchKey == null) ? "" : searchKey.trim().replaceAll("\\s+", " ");
+	        if (normalized.isEmpty()) {
+	            // If empty, you may want to return all (paginated) or empty result. Here we return empty.
+	            return new Response(-1, "No matching users found", null);
+	        }
+
+	        // Option A: permissive match across spaces (recommended)
+	        // "Sai p" -> "%Sai%p%"
+	        String param = "%" + normalized.replaceAll("\\s+", "%") + "%";
+
+	        // Option B: prefix match on full name (less permissive)
+	        // String param = normalized + "%";
+
+	        List<User> users = userRepository.searchUsersForChat(
+	                param,
+	                true,
+	                "public User",
+	                "Industry User",
+	                industryMin,
+	                industryMax
+	        );
+
+	        // remove self
+	        users = users.stream()
+	                .filter(u -> !u.getUserId().equals(loggedInUserId))
+	                .collect(Collectors.toList());
+
+	        if (users.isEmpty()) {
+	            return new Response(-1, "No matching users found", null);
+	        }
+
+	        List<ChatUserWebModel> responseList = this.transformsUserDetailsForChat(users, loggedInUserId);
+	        return new Response(1, "Success", responseList);
+
+	    } catch (Exception e) {
+	        logger.error("Error while searching chat users by keyword -> {}", e.getMessage(), e);
+	        return new Response(-1, "Internal server error", e.getMessage());
+	    }
 	}
+
+
 
 	private List<ChatUserWebModel> transformsUserDetailsForChat(List<User> users, Integer loggedInUserId) {
 		return users.stream().map(user -> {

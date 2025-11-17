@@ -23,6 +23,8 @@ public class ChatUserWebModel {
     private Float adminReview;
     private Boolean onlineStatus;
     private Boolean isLatestStory;
+    private String matchedPart;          // "firstName" or "lastName"
+    private Integer matchLength;  
     
 
 }
