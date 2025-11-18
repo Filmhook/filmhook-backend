@@ -13,5 +13,7 @@ public interface AuditionCartItemsRepository extends JpaRepository<AuditionCartI
     // ✅ Use entity references instead of primitive IDs
     Optional<AuditionCartItems> findByUserAndCompanyIdAndSubProfession(User user, Integer companyId, FilmSubProfession subProfession);
 
-    List<AuditionCartItems> findByUserAndCompanyId(User user, Integer companyId);
+    List<AuditionCartItems> findByUserAndCompanyIdAndStatusTrue(User user, Integer companyId);
+    
+    Optional<AuditionCartItems> findByUserAndCompanyIdAndSubProfessionAndStatusTrue(User user, Integer companyId, FilmSubProfession subProfession);
 }

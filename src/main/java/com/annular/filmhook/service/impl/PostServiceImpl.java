@@ -48,6 +48,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.UUID;
 import java.util.Date;
 import java.util.HashMap;
@@ -58,6 +61,7 @@ import java.util.NoSuchElementException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -72,6 +76,7 @@ import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.LinkRepository;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.AuditionRepository;
@@ -79,6 +84,7 @@ import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
+import com.annular.filmhook.repository.WatchLaterRepository;
 import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.repository.PostTagsRepository;
 import com.annular.filmhook.repository.PostViewRepository;
@@ -97,6 +103,8 @@ public class PostServiceImpl implements PostService {
 
 	public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
 
+	@Autowired
+	private WatchLaterRepository watchLaterRepository;
 	@Autowired
 	MediaFilesService mediaFilesService;
 	
@@ -160,6 +168,9 @@ public class PostServiceImpl implements PostService {
 	PostViewRepository postViewRepository;
 	@Autowired
 	AuditionRepository auditionRepository;
+	@Autowired
+	MediaFilesRepository mediaFilesRepository;
+
 
 
 	private static final String POST = "Post";
@@ -298,6 +309,161 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
+@Override
+@Transactional
+public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
+    try {
+        // 🔹 Fetch existing post
+        Posts existingPost = postsRepository.findByPostId(postWebModel.getPostId());
+        if (existingPost == null) {
+            logger.error("Post not found with ID: {}", postWebModel.getPostId());
+            return null;
+        }
+
+        User userFromDB = userService.getUser(postWebModel.getUserId()).orElse(null);
+        if (userFromDB == null) {
+            logger.error("User not found for ID: {}", postWebModel.getUserId());
+            return null;
+        }
+
+        logger.info("Updating post for user: {}", userFromDB.getName());
+
+        // 🔹 Update post fields
+        existingPost.setDescription(postWebModel.getDescription());
+        existingPost.setLatitude(postWebModel.getLatitude());
+        existingPost.setLongitude(postWebModel.getLongitude());
+        existingPost.setAddress(postWebModel.getAddress());
+        existingPost.setPrivateOrPublic(postWebModel.getPrivateOrPublic());
+        existingPost.setPostLinkUrls(postWebModel.getPostLinkUrl());
+        existingPost.setLocationName(postWebModel.getLocationName());
+        existingPost.setUpdatedBy(postWebModel.getUserId());
+        existingPost.setUpdatedOn(new Date());
+
+        // 🔹 Handle tagged users (store comma-separated IDs)
+        String taggedUserIds = (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty())
+                ? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
+                : null;
+        existingPost.setTagUsers(taggedUserIds);
+
+        // 🔹 Save updated post
+        Posts updatedPost = postsRepository.saveAndFlush(existingPost);
+
+        // 🔹 1️⃣ Delete specific old files if user removed any
+        if (postWebModel.getDeletedFileIds() != null && !postWebModel.getDeletedFileIds().isEmpty()) {
+            logger.info("Deleting files for post {}: {}", updatedPost.getId(), postWebModel.getDeletedFileIds());
+            mediaFilesService.deleteMediaFilesByCategoryAndIds(MediaFileCategory.Post, postWebModel.getDeletedFileIds());
+        }
+
+        // 🔹 2️⃣ Upload new files if provided
+        if (postWebModel.getFiles() != null && !postWebModel.getFiles().isEmpty()) {
+            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+                    .userId(postWebModel.getUserId())
+                    .category(MediaFileCategory.Post)
+                    .categoryRefId(updatedPost.getId())
+                    .files(postWebModel.getFiles())
+                    .build();
+
+            mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
+            logger.info("Uploaded {} new files for post {}", postWebModel.getFiles().size(), updatedPost.getId());
+        }
+
+        // 🔹 3️⃣ Handle tagged users (delete specific + add new)
+        if (postWebModel.getDeletedTaggedUserIds() != null && !postWebModel.getDeletedTaggedUserIds().isEmpty()) {
+            logger.info("Deleting tagged users for post {}: {}", updatedPost.getId(), postWebModel.getDeletedTaggedUserIds());
+            postTagsRepository.deleteByPostIdAndTaggedUserIds(updatedPost.getId(), postWebModel.getDeletedTaggedUserIds());
+        }
+
+        // 🔹 Add new tagged users if provided
+        if (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty()) {
+            List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
+                    .map(taggedUserId -> PostTags.builder()
+                            .postId(updatedPost.getId())
+                            .taggedUser(User.builder().userId(taggedUserId).build())
+                            .status(true)
+                            .createdBy(postWebModel.getUserId())
+                            .createdOn(new Date())
+                            .build())
+                    .collect(Collectors.toList());
+
+            postTagsRepository.saveAllAndFlush(tagsList);
+
+            // 🔹 Recreate notifications for new tagged users
+            for (PostTags tag : tagsList) {
+                Integer taggedUserId = tag.getTaggedUser().getUserId();
+
+                InAppNotification notification = InAppNotification.builder()
+                        .senderId(postWebModel.getUserId())
+                        .receiverId(taggedUserId)
+                        .title("You've been tagged! ")
+                        .message(userFromDB.getName() + " tagged you in a post update.")
+                        .createdOn(new Date())
+                        .isRead(false)
+                        .adminReview(userFromDB.getAdminReview())
+                        .Profession(userFromDB.getUserType())
+                        .isDeleted(false)
+                        .createdBy(postWebModel.getUserId())
+                        .userType("Tagged")
+                        .postId(updatedPost.getPostId())
+                        .build();
+
+                inAppNotificationRepository.save(notification);
+
+                // 🔹 Push notification (same logic you use in savePost)
+                User receiver = userService.getUser(taggedUserId).orElse(null);
+                if (receiver != null && receiver.getFirebaseDeviceToken() != null 
+                        && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
+                    try {
+                        String deviceToken = receiver.getFirebaseDeviceToken();
+                        String title = "You've been tagged!";
+                        String messageBody = userFromDB.getName() + " tagged you in an updated post.";
+
+                        Notification firebaseNotification = Notification.builder()
+                                .setTitle(messageBody)
+                                .build();
+
+                        AndroidNotification androidNotification = AndroidNotification.builder()
+                                .setIcon("ic_notification")
+                                .setColor("#00A2E8")
+                                .build();
+
+                        AndroidConfig androidConfig = AndroidConfig.builder()
+                                .setNotification(androidNotification)
+                                .build();
+
+                        Message firebaseMessage = Message.builder()
+                                .setNotification(firebaseNotification)
+                                .putData("type", "Tagged")
+                                .putData("refId", String.valueOf(updatedPost.getId()))
+                                .putData("postId", updatedPost.getPostId())
+                                .putData("senderId", String.valueOf(postWebModel.getUserId()))
+                                .putData("receiverId", String.valueOf(taggedUserId))
+                                .setAndroidConfig(androidConfig)
+                                .setToken(deviceToken)
+                                .build();
+
+                        String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
+                        logger.info("Push notification sent successfully: {}", firebaseResponse);
+                    } catch (FirebaseMessagingException e) {
+                        logger.error("Firebase push notification failed: {}", e.getMessage(), e);
+                    }
+                }
+            }
+        }
+
+        // 🔹 Final transform to WebModel
+        List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(updatedPost));
+        return responseList.isEmpty() ? null : responseList.get(0);
+
+    } catch (Exception e) {
+        logger.error("Error at updatePostWithFiles() -> {}", e.getMessage(), e);
+        e.printStackTrace();
+    }
+    return null;
+}
+
+
+
+	
 	@Override
 	public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
 		try {
@@ -402,7 +568,7 @@ public class PostServiceImpl implements PostService {
 		return responseList.isEmpty() ? null : responseList.get(0);
 	}
 
-	private List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
+	public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
 		List<PostWebModel> responseList = new ArrayList<>();
 		try {
 			Integer loggedInUserTemp = null;
@@ -437,22 +603,27 @@ public class PostServiceImpl implements PostService {
 					Integer latestLikeId = null;
 
 					if (finalLoggedInUser != null) {
-						Optional<Likes> reactionOpt = likeRepository.findByPostIdAndUserId(post.getId(), finalLoggedInUser);
-						if (reactionOpt.isPresent()) {
-							Likes r = reactionOpt.get();
-							latestLikeId = r.getLikeId();
+					    // Fetch all likes for this user once (you can also cache this outside the loop for efficiency)
+					    List<Likes> userLikes = likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
 
-							// Use reactionType instead of only status
-							if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
-								likeStatus = true;
-								unlikeStatus = false;
-							} else if ("UNLIKE".equalsIgnoreCase(r.getReactionType())) {
-								likeStatus = false;
-								unlikeStatus = true;
-							}
-						}
+					    // Find the like entry for the current post
+					    Likes r = userLikes.stream()
+					            .filter(like -> like.getPostId().equals(post.getId()))
+					            .findFirst()
+					            .orElse(null);
+
+					    if (r != null) {
+					        latestLikeId = r.getLikeId();
+
+					        if ("LIKE".equalsIgnoreCase(r.getReactionType())) {
+					            likeStatus = true;
+					            unlikeStatus = false;
+					        } else if ("UNLIKE".equalsIgnoreCase(r.getReactionType())) {
+					            likeStatus = false;
+					            unlikeStatus = true;
+					        }
+					    }
 					}
-
 					// Count total likes/unlikes with category filter
 					Long totalLikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
 					        post.getId(), "LIKE", "Post");
@@ -460,6 +631,14 @@ public class PostServiceImpl implements PostService {
 					Long totalUnlikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(
 					        post.getId(), "UNLIKE", "Post");
 
+					Boolean watchLater = false;
+					if (finalLoggedInUser != null) {
+					    watchLater = watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(
+					            finalLoggedInUser,
+					            post.getId(),
+					            true
+					    );
+					}
 
 					// Pin Status
 					Boolean pinStatus = false;
@@ -559,6 +738,7 @@ public class PostServiceImpl implements PostService {
 							.companyName(promoteDetails != null ? promoteDetails.getCompanyName() : null)
 							.brandName(promoteDetails != null ? promoteDetails.getBrandName() : null)
 							.companyLogoFiles(logoFiles) 
+							.watchLater(watchLater)
 							.build();
 
 					responseList.add(postWebModel);
@@ -1292,7 +1472,7 @@ public class PostServiceImpl implements PostService {
             Likes userLike = null;
             if (finalLoggedInUser != null) {
                 userLike = likeRepository
-                        .findByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
+                        .findFirstByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
                         .orElse(null);
             }
             
@@ -1470,35 +1650,75 @@ public class PostServiceImpl implements PostService {
 				.status(comment.getStatus())
 				.build();
 	}
-
+	
+	
 	@Override
 	public boolean deletePostByUserId(PostWebModel postWebModel) {
-		try {
-			// Find the post by its ID and user ID
-			Optional<Posts> postData = postsRepository.findByIdAndUserId(postWebModel.getMediaFilesIds(), postWebModel.getUserId());
-			if (postData.isPresent()) {
-				Posts post = postData.get();
+	    try {
+	        // Fetch all posts matching the provided IDs
+	        List<Posts> postsList = postsRepository.findAllById(postWebModel.getMediaFilesIds());
 
-				// Delete associated media files
-				mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(post.getUser().getUserId(), MediaFileCategory.Post, postWebModel.getMediaFilesIds());
+	        if (postsList == null || postsList.isEmpty()) {
+	            return false; // No posts found
+	        }
 
-				// Update post status to false
-				post.setStatus(false);
+	        Integer loggedInUserId = postWebModel.getUserId();
+	        boolean anyActionPerformed = false;
 
-				// Save the updated post
-				postsRepository.save(post);
-				return true;
-			} else {
-				return false; // Post not found
-			}
-		} catch (Exception e) {
-			// Log the exception
-			e.printStackTrace();
-			return false;
-		}
+	        // Iterate through each post
+	        for (Posts post : postsList) {
+	            Integer postOwnerId = post.getUser().getUserId();
 
+	            //  Logged-in user is the post owner → soft delete
+	            if (loggedInUserId.equals(postOwnerId)) {
+
+	                // Convert post IDs to Integer list for media deletion
+	                List<Integer> mediaFileIds = postWebModel.getMediaFilesIds().stream()
+	                        .map(Integer::valueOf)
+	                        .collect(Collectors.toList());
+
+	                // Delete associated media files
+	                mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(
+	                        postOwnerId,
+	                        MediaFileCategory.Post,
+	                        mediaFileIds
+	                );
+
+	                // Soft delete post
+	                post.setStatus(false);
+	                postsRepository.save(post);
+	                anyActionPerformed = true;
+	            }
+
+	            // Logged-in user is tagged → remove tag only
+	            else if (post.getTagUsers() != null && !post.getTagUsers().isEmpty()) {
+	                List<String> taggedIds = new ArrayList<>(Arrays.asList(post.getTagUsers().split(",")));
+	                String loggedInUserStr = String.valueOf(loggedInUserId);
+
+	                if (taggedIds.contains(loggedInUserStr)) {
+	                    taggedIds.remove(loggedInUserStr);
+	                    post.setTagUsers(String.join(",", taggedIds)); // Update string
+	                    postsRepository.save(post);
+	                    anyActionPerformed = true;
+	                }
+	            }
+
+	            //  Unauthorized user → do nothing
+	            else {
+	                System.out.println("Unauthorized delete attempt by userId: " + loggedInUserId +
+	                        " for postId: " + post.getPostId());
+	            }
+	        }
+
+	        // Return true if any delete or untag happened
+	        return anyActionPerformed;
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
-
+	
 	public PostView trackPostView(Integer postId, Integer userId) {
 		Posts post = postsRepository.findById(postId)
 				.orElseThrow(() -> new RuntimeException("Post not found"));
@@ -1558,7 +1778,4 @@ public class PostServiceImpl implements PostService {
 			throw new NoSuchElementException("Tag not found");
 		}
 	}
-
-
-
 }

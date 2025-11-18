@@ -78,6 +78,9 @@ public class PostWebModel {
     private String companyName;
     private String brandName;
     private List<FileOutputWebModel> companyLogoFiles;
+    private List<Integer> deletedFileIds; // IDs of existing post files to delete
+    private Boolean watchLater;
+    private List<Integer> deletedTaggedUserIds;
 
 
 }

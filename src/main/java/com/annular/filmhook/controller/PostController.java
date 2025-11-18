@@ -62,6 +62,21 @@ public class PostController {
         }
         return new Response(-1, "Error occurred while saving post with files...", null);
     }
+    
+    @RequestMapping(path = "/updatePost", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+    public Response updatePost(@ModelAttribute PostWebModel inputData) {
+        try {
+            logger.info("updatePost Inputs :- {}", inputData);
+            PostWebModel updatedPost = postService.updatePostWithFiles(inputData);
+            if (updatedPost != null)
+                return new Response(1, "Post updated successfully...", updatedPost);
+        } catch (Exception e) {
+            logger.error("Error at updatePost() -> {}", e.getMessage());
+            return new Response(-1, "Error occurred while updating post with files -> {}", e.getMessage());
+        }
+        return new Response(-1, "Error occurred while updating post with files...", null);
+    }
+
 
     @GetMapping("/downloadPostFile")
     public ResponseEntity<?> downloadPostFile(@RequestParam("userId") Integer userId,
@@ -122,7 +137,7 @@ public class PostController {
         } catch (Exception e) {
             logger.error("Error at getPostsByPostId() -> {}", e.getMessage());
         }
-        return new Response(-1, "Post files were not found...", null);
+        return new Response(-1, "Unable to retrieve post details at the moment. Please try again later.", null);
     }
 
     @GetMapping("/downloadUserPostFiles")
@@ -292,7 +307,7 @@ public class PostController {
             if (isDeleted) {
                 return ResponseEntity.ok(new Response(1, "Success","Post deleted successfully."));
             } else {
-                return ResponseEntity.badRequest().body(new Response(-1, "fail","Failed to delete post"));
+                return ResponseEntity.ok(new Response(-1, "fail","Failed to delete post"));
             }
         } catch (Exception e) {
             logger.error("deletePostByUserId Method Exception -> {}", e.getMessage());

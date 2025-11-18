@@ -4,6 +4,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.UserOffer;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionNewService;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
@@ -32,9 +33,11 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
+import com.annular.filmhook.exception.ResourceNotFoundException;
 import com.annular.filmhook.model.AuditionNewProject;
 import com.annular.filmhook.model.AuditionPayment;
 import com.annular.filmhook.validator.AuditionProjectValidator;
+import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
 import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
@@ -137,8 +140,6 @@ public class AuditionNewController {
     }
     
   
-
-
 	@GetMapping("/categories")
 	public ResponseEntity<?> getCategories() {
 		try {
@@ -191,15 +192,64 @@ public class AuditionNewController {
 	                                              @RequestParam Integer companyId,
 	                                              @RequestParam Integer subProfessionId,
 	                                              @RequestParam Integer count) {
-	    	projectService.addToCart(userId, companyId, subProfessionId, count);
-	        return ResponseEntity.ok(new Response(1, "Cart updated successfully", null));
+	        try {
+	            projectService.addToCart(userId, companyId, subProfessionId, count);
+	            return ResponseEntity.ok(new Response(1, "Cart updated successfully", null));
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to update cart", null));
+	        }
 	    }
 
 	    @GetMapping("/cart")
 	    public ResponseEntity<?> getCart(@RequestParam Integer userId,
 	                                     @RequestParam Integer companyId) {
-	        List<FilmSubProfessionResponseDTO> cart = projectService.getCart(userId, companyId);
-	        return ResponseEntity.ok(cart);
+	        try {
+	            List<FilmSubProfessionResponseDTO> cart = projectService.getCart(userId, companyId);
+	            return ResponseEntity.ok(cart);
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to fetch cart", null));
+	        }
+	    }
+
+	    // ✅ delete a single item (soft delete)
+	    @DeleteMapping("/cart/deleteItem")
+	    public ResponseEntity<Response> removeFromCart(
+	            @RequestParam Integer userId,
+	            @RequestParam Integer companyId,
+	            @RequestParam(name = "subProfessionId") List<Integer> subProfessionIds
+	    ) {
+	        try {
+	            projectService.removeFromCart(userId, companyId, subProfessionIds);
+	            return ResponseEntity.ok(new Response(1, "Items removed from cart", null));
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to remove items", null));
+	        }
+	    }
+
+
+	    // ✅ clear all items for a company (soft delete)
+	    @DeleteMapping("/cart/deleteAllItem")
+	    public ResponseEntity<Response> clearCart(@RequestParam Integer userId,
+	                                              @RequestParam Integer companyId) {
+	        try {
+	            projectService.clearCart(userId, companyId);
+	            return ResponseEntity.ok(new Response(1, "Cart cleared", null));
+	        } catch (ResourceNotFoundException ex) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, ex.getMessage(), null));
+	        } catch (Exception ex) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(0, "Failed to clear cart", null));
+	        }
 	    }
 	    @GetMapping("/professions")
 	    public ResponseEntity<List<FilmProfessionResponseDTO>> getAllProfessions() {
@@ -404,5 +454,24 @@ public class AuditionNewController {
         String message = projectService.softDeleteProject(projectId, userId);
         return ResponseEntity.ok(new Response(1, message, null));
     }
+    
+    @GetMapping("/AuditionCompanyPostCounts")
+    public AuditionJobPostCountDTO getCompanyPostCounts(
+            @RequestParam Integer companyId,
+            @RequestParam Integer professionId) {
 
+        return projectService.getCompanyPostCounts(companyId, professionId);
+    }
+    
+    
+    @PostMapping("/saveUserOffer")
+    public ResponseEntity<?> saveUserOffer(@RequestBody UserOffer offer) {
+        try {
+            UserOffer saved = projectService.saveOffer(offer);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+    
 }

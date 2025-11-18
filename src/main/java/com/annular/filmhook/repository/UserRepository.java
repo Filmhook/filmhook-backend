@@ -1,6 +1,6 @@
 package com.annular.filmhook.repository;
 
-import java.time.LocalDateTime;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -78,17 +78,42 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 		       String publicUserType,
 		       String industryUserType,
 		       List<Float> adminReviewRange);
+	
+	// in UserRepository
+	@Query("SELECT u FROM User u " +
+	       "WHERE u.status = :status " +
+	       "AND ( " +
+	       "     u.userType = :publicUserType " +
+	       "     OR (u.userType = :industryUserType AND u.adminReview IS NOT NULL " +
+	       "         AND u.adminReview BETWEEN :industryMin AND :industryMax) " +
+	       ") " +
+	       "AND ( " +
+	       "     LOWER(CONCAT(COALESCE(u.firstName, ''), ' ', COALESCE(u.lastName, ''))) LIKE LOWER(:searchKey) " +
+	       "     OR (u.firstName IS NOT NULL AND LOWER(u.firstName) LIKE LOWER(:searchKey)) " +
+	       "     OR (u.lastName IS NOT NULL AND LOWER(u.lastName) LIKE LOWER(:searchKey)) " +
+	       ")")
+	List<User> searchUsersForChat(
+	    @Param("searchKey") String searchKey,
+	    @Param("status") boolean status,
+	    @Param("publicUserType") String publicUserType,
+	    @Param("industryUserType") String industryUserType,
+	    @Param("industryMin") float industryMin,
+	    @Param("industryMax") float industryMax
+	);
 
 
-	@Query("SELECT u FROM User u WHERE " +
-		       "((u.userType = :publicUserType) OR " +
-		       "(u.userType = :industryUserType AND u.adminReview IN :adminReviewRange)) " +
-		       "OR (:loggedInUserType = :industryUserType AND u.adminReview BETWEEN 5.1 AND 9.9) " +
-		       "AND LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) " +
-		       "AND u.status = :status")
-		List<User> findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
-		    String searchKey,boolean status,String publicUserType,String industryUserType,List<Float> adminReviewRange,String loggedInUserType
-		);
+
+
+
+//	@Query("SELECT u FROM User u WHERE " +
+//		       "((u.userType = :publicUserType) OR " +
+//		       "(u.userType = :industryUserType AND u.adminReview IN :adminReviewRange)) " +
+//		       "OR (:loggedInUserType = :industryUserType AND u.adminReview BETWEEN 5.1 AND 9.9) " +
+//		       "AND LOWER(u.name) LIKE LOWER(CONCAT('%', :searchKey, '%')) " +
+//		       "AND u.status = :status")
+//		List<User> findByNameContainingIgnoreCaseAndStatusAndUserTypeOrAdminReviewInRange(
+//		    String searchKey,boolean status,String publicUserType,String industryUserType,List<Float> adminReviewRange,String loggedInUserType
+//		);
 
 
 
@@ -139,21 +164,15 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("SELECT COUNT(u) FROM User u WHERE (u.notificationCount IS NULL OR u.notificationCount = false) AND u.status = true")
 	Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
 
+
+	@Query("SELECT u FROM User u WHERE u.email = :email AND u.status = true")
+	Optional<User> findActiveUserByEmail(@Param("email") String email);
 	List<User> findByFilmHookCodeContainingIgnoreCaseAndStatus(String filmHookCode, Boolean status);
 
-
-
-
-
-
-
-
-
-
+	@Query("SELECT u FROM User u WHERE u.email = :email AND u.status = false")
+	Optional<User> findInactiveUserByEmail(@Param("email") String email);
 	
 	
-
-
 
 
 

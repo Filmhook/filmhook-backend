@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
 
-public interface ShootingLocationPropertyReviewRepository extends JpaRepository<ShootingLocationPropertyReview, Long> {
+public interface ShootingLocationPropertyReviewRepository extends JpaRepository<ShootingLocationPropertyReview, Integer> {
     List<ShootingLocationPropertyReview> findByPropertyId(Integer propertyId);
     List<ShootingLocationPropertyReview> findByPropertyIdAndUser_UserId(Integer propertyId, Integer userId);
 

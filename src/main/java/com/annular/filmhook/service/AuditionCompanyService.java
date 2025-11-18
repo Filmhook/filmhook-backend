@@ -8,6 +8,7 @@ import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 
 
@@ -28,6 +29,6 @@ public interface AuditionCompanyService {
 	 void deleteUserAccess(List<Integer> roleIds) ;
 	 List<AuditionCompanyDetailsDTO> getCompaniesForLoggedInUser(Integer userId);
 	 AuditionUserCompanyRoleDTO editAccess(Integer roleId, AuditionUserCompanyRoleDTO request);
-
+	 List<AuditionUserCompanyRoleDTO> assignAccess(AuditionUserCompanyAccessRequestDTO request);
 
 }

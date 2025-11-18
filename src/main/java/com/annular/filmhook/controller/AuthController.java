@@ -110,9 +110,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
         try {
             Optional<User> checkUsername = userRepository.findByEmail(userWebModel.getEmail());
-            if (checkUsername.isPresent()) {
-                loginConstants.setUserType(userWebModel.getUserType());
-                logger.info("In login() User type from constants -> {}", loginConstants.getUserType());
+            if (checkUsername.isPresent()) {              
 
                 Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
                 SecurityContextHolder.getContext().setAuthentication(authentication);

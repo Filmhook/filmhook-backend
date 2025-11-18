@@ -25,7 +25,8 @@ public class ChatWebModel {
     private Integer chatSenderId;
     private Integer chatReceiverId;
     private String message;
-    private Boolean chatIsActive;
+    private Boolean senderchatIsActive;
+    private Boolean reciverchatIsActive;
     private Integer chatCreatedBy;
     private Integer chatUpdatedBy;
     private Date chatCreatedOn;

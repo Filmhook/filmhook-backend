@@ -117,6 +117,51 @@ public class FileUtil {
     public static boolean isVideoFile(String fileFormat) {
         return VIDEO_FORMATS.contains(fileFormat);
     }
+    
+    public boolean deleteFileFromS3Url(String fileUrl) {
+        try {
+            if (fileUrl == null || fileUrl.isEmpty()) {
+                logger.warn("File URL is null or empty. Skipping delete.");
+                return false;
+            }
+
+            String bucketName = s3Util.getS3BucketName();
+            // Extract object key from URL after ".com/"
+            String key = fileUrl.substring(fileUrl.indexOf(".com/") + 5);
+
+            awsS3Service.deleteObjectFromS3(bucketName, key);
+            logger.info("✅ Deleted file from S3: {}", key);
+            return true;
+        } catch (Exception e) {
+            logger.error("❌ Error deleting file from S3 -> {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * 🔹 Uploads a new MultipartFile to S3 and returns the new file URL.
+     * Automatically handles temp file creation and cleanup.
+     */
+    public String uploadNewVersionToS3(MultipartFile multipartFile, String folderPath, String fileId, String extension) {
+        File tempFile = null;
+        try {
+            tempFile = Files.createTempFile("upload_", "_" + multipartFile.getOriginalFilename()).toFile();
+            multipartFile.transferTo(tempFile);
+
+            String s3Path = folderPath + "/" + fileId + extension;
+            String newUrl = uploadFile(tempFile, s3Path);
+
+            logger.info("✅ Uploaded new file to S3: {}", newUrl);
+            return newUrl;
+        } catch (Exception e) {
+            logger.error("❌ Error uploading new file to S3 -> {}", e.getMessage(), e);
+            return null;
+        } finally {
+            if (tempFile != null && tempFile.exists()) {
+                tempFile.delete();
+            }
+        }
+    }
 
 
 //    public static void compressImageFile(File inputFile, String inputFileType, File outputFile) {

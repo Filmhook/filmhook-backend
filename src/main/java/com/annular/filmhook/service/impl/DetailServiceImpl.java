@@ -86,6 +86,8 @@ public class DetailServiceImpl implements DetailService {
 
     @Autowired
     MediaFilesService mediaFilesService;
+    
+    
 
     @Autowired
     private MailNotification mailNotification;
@@ -846,8 +848,9 @@ public class DetailServiceImpl implements DetailService {
                             // Calculate the total experience for the user
                             List<FilmSubProfessionPermanentDetail> details = filmSubProfessionPermanentDetailsRepository.findByUserId(userDetails.userInfo().getId());
                             int totalExperience = details.stream()
-                                    .mapToInt(data -> data.getEndingYear() - data.getStartingYear())
-                                    .sum();
+                            	    .filter(d -> d.getEndingYear() != null && d.getStartingYear() != null)
+                            	    .mapToInt(d -> d.getEndingYear() - d.getStartingYear())
+                            	    .sum();
 
                             // Fetch the user and update the experience
                             Optional<User> userOptional = userRepository.findById(userDetails.userInfo().getId());
@@ -1040,7 +1043,7 @@ public class DetailServiceImpl implements DetailService {
             user.setFilmHookOtp(otpNumber);
             userRepository.save(user);
 
-            boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
+            boolean sendVerificationRes = mailNotification.sendVerificationFilmHookOTP(user);
             if (sendVerificationRes) {
                 // If email sent successfully, return success response
                 return ResponseEntity.ok("Verification email sent successfully.");

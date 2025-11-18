@@ -51,6 +51,7 @@ public class ChatController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+	
 
 	@GetMapping("/getAllUser")
 	public ResponseEntity<?> getAllUser() {
@@ -162,7 +163,7 @@ public class ChatController {
 	    }
 	}
 
-	@PostMapping("updateOnlineStatus")
+	@PostMapping("/updateOnlineStatus")
 	public ResponseEntity<Response> updateOnlineStatus(@RequestBody UserWebModel userWebModel) {
 		try {
 			Response response = chatService.updateOnlineStatus(userWebModel);

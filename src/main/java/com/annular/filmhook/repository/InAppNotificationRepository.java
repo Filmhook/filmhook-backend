@@ -38,7 +38,23 @@ public interface InAppNotificationRepository extends JpaRepository<InAppNotifica
 			    Integer receiverId, Date startDate, Date endDate, Pageable pageable);
 
 
-	
+	  // Total unread in the same 30-day window (treat NULL as unread)
+	    @Query("SELECT COUNT(n) FROM InAppNotification n " +
+	           "WHERE n.receiverId = :receiverId " +
+	           "AND n.isDeleted = false " +
+	           "AND n.createdOn BETWEEN :startDate AND :endDate " +
+	           "AND (n.isRead IS NULL OR n.isRead = false)")
+	    long countUnreadInRange(@Param("receiverId") Integer receiverId,
+	                            @Param("startDate") Date startDate,
+	                            @Param("endDate") Date endDate);
+
+	    // Total unseen since last opened (independent of paging)
+	    @Query("SELECT COUNT(n) FROM InAppNotification n " +
+	           "WHERE n.receiverId = :receiverId " +
+	           "AND n.isDeleted = false " +
+	           "AND n.createdOn > :lastOpenedTime")
+	    long countUnseenSince(@Param("receiverId") Integer receiverId,
+	                          @Param("lastOpenedTime") Date lastOpenedTime);
 	
 
 }

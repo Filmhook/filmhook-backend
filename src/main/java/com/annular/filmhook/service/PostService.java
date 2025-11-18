@@ -62,6 +62,9 @@ public interface PostService {
 	
 
 	Posts getTaggedPostById(Integer taggedId);
+
+
+	PostWebModel updatePostWithFiles(PostWebModel inputData);
 	
 
 }

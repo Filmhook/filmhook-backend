@@ -25,6 +25,7 @@ import com.annular.filmhook.service.AuditionCompanyService;
 import com.annular.filmhook.service.impl.UserDetailsServiceImpl;
 import com.annular.filmhook.validator.AuditionCompanyDetailsValidator;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 
 @RestController
@@ -134,6 +135,15 @@ public class AuditionCompanyController {
     public ResponseEntity<AuditionUserCompanyRoleDTO> assignAccess(@RequestBody AuditionUserCompanyRoleDTO request) {
         return ResponseEntity.ok(companyService.assignAccess(request));
     }
+    
+    @PostMapping("/assign")
+    public ResponseEntity<List<AuditionUserCompanyRoleDTO>> assignCompanyAccess(
+            @RequestBody AuditionUserCompanyAccessRequestDTO request) {
+
+        List<AuditionUserCompanyRoleDTO> assignedRoles = companyService.assignAccess(request);
+        return ResponseEntity.ok(assignedRoles);
+    }
+
     
     @PostMapping("/AuditionLogin")
     public ResponseEntity<Response> postAudition(

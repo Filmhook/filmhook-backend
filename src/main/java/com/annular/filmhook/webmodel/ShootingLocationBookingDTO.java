@@ -2,10 +2,15 @@ package com.annular.filmhook.webmodel;
 
 import java.time.LocalDate;
 
+import com.annular.filmhook.model.BookingStatus;
+
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Builder
 public class ShootingLocationBookingDTO {
 private Integer bookingId;

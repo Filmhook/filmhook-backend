@@ -159,7 +159,7 @@ public class ReportServiceImpl implements ReportService {
                 String Emailsubject = "Important: Your Post Has Been Reported on Film-Hook";
 
                 
-                String postLink = "https://film-hookapps.com/report/" + postId;
+                String postLink = "https://filmhookapps.com/report/" + postId;
                 
                 // Step 3: Email Content
                 StringBuilder content = new StringBuilder();
@@ -218,7 +218,7 @@ public class ReportServiceImpl implements ReportService {
                         ownerMessage,
                         "POST_REPORT",           
                         reportPost.getPostId(),     
-                        String.valueOf(postId)   
+                       post.getPostId()  
                 );
             }
 
@@ -232,7 +232,7 @@ public class ReportServiceImpl implements ReportService {
                     reporterMessage,
                     "REPORT_CONFIRMATION",   
                     reportPost.getPostId(),
-                    String.valueOf(postId)
+                    post.getPostId()  
             );
             
             
@@ -272,8 +272,12 @@ public class ReportServiceImpl implements ReportService {
                 List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
                 Integer userId = userDetails.userInfo().getId();
-                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
+                List<Likes> likes = likeRepository.findAllByUserIdForPosts(userId);
+
+                boolean likeStatus = likes.stream()
+                        .filter(l -> l.getPostId().equals(post.getId()))
                         .map(Likes::getStatus)
+                        .findFirst()
                         .orElse(false);
 
                 boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
@@ -370,8 +374,12 @@ public class ReportServiceImpl implements ReportService {
                 List<FollowersRequest> followersList = friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
                 Integer userId = userDetails.userInfo().getId();
-                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
+                List<Likes> likes = likeRepository.findAllByUserIdForPosts(userId);
+
+                boolean likeStatus = likes.stream()
+                        .filter(l -> l.getPostId().equals(post.getId()))
                         .map(Likes::getStatus)
+                        .findFirst()
                         .orElse(false);
 
                 boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(post.getUser().getUserId(), userId)
@@ -480,8 +488,13 @@ public class ReportServiceImpl implements ReportService {
                     .findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
                 Integer userId = userDetails.userInfo().getId();
-                boolean likeStatus = likeRepository.findByPostIdAndUserId(post.getId(), userId)
-                    .map(Likes::getStatus).orElse(false);
+                List<Likes> likes = likeRepository.findAllByUserIdForPosts(userId);
+
+                boolean likeStatus = likes.stream()
+                        .filter(l -> l.getPostId().equals(post.getId()))
+                        .map(Likes::getStatus)
+                        .findFirst()
+                        .orElse(false);
 
                 boolean pinMediaStatus = pinProfileRepository.findByPinProfileIdAndUserId(
                     post.getUser().getUserId(), userId).map(UserProfilePin::isStatus).orElse(false);

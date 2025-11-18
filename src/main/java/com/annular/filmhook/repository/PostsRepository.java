@@ -14,6 +14,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
 @Repository
 public interface PostsRepository extends JpaRepository<Posts, Integer> {
 
@@ -39,14 +41,14 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Query("SELECT p FROM Posts p where p.id = :postId")
    	Optional<Posts> findByPostId(Integer postId);
 
-    @Query("SELECT p FROM Posts p WHERE p.tagUsers LIKE %:userId%")
+    @Query("SELECT p FROM Posts p WHERE p.tagUsers LIKE %:userId% AND p.status = true")
     List<Posts> getPostsByTaggedUserId(String userId);
 
     @Query("SELECT p FROM Posts p where p.id = :postId")
 	Optional<Posts> findByIds(Integer postId);
 
   
-    @Query("SELECT p FROM Posts p where p.id = :postId")
+    @Query("SELECT p FROM Posts p where p.id = :postId AND p.status = true")
    	Optional<Posts> findById(Integer postId);
     
 //    @Modifying
@@ -68,7 +70,10 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Query("UPDATE Posts p SET p.viewsCount = p.viewsCount + 1 WHERE p.id = :postId")
     void incrementViewCount(@Param("postId") Integer postId);
 
-
+    @Modifying
+    @Transactional
+    @Query("UPDATE Posts p SET p.status = false WHERE p.user.id = :userId")
+    void deactivatePostsByUserId(@Param("userId") Integer userId);
 
 
 }

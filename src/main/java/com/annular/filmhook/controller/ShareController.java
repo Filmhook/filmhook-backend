@@ -42,7 +42,7 @@ public class ShareController {
 			mediaUrl = file.getFilePath();  // show image
 		}
 
-		String redirectUrl = "filmhook://media/" + postId;
+		String redirectUrl = "https://filmhookapps.com/media/" + postId;
 		String pageUrl = "https://filmhookapps.com/media/" + postId;
 
 		String html = "<!DOCTYPE html>\n" +
@@ -126,7 +126,7 @@ public class ShareController {
 			@PathVariable Integer professionId) {
 
 		// ✅ You can fetch data from DB, or just return a link for now
-		String deepLink = "https://www.filmhookapps.com/audition-post/" 
+		String deepLink = "https://filmhookapps.com/audition-post/" 
 				+ companyId + "/" + teamLeadId + "/"+ professionId;
 
 		return ResponseEntity.ok(deepLink);
@@ -139,7 +139,7 @@ public class ShareController {
 			@PathVariable String txnId) {
 
 		// ✅ You can fetch data from DB, or just return a link for now
-		String deepLink = "https://www.filmhookapps.com/retry-payment/" 
+		String deepLink = "https://filmhookapps.com/retry-payment/" 
 
                             + txnId;
 

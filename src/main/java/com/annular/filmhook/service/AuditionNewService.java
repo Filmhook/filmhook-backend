@@ -6,11 +6,12 @@ import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
-
+import com.annular.filmhook.model.UserOffer;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
 
 import com.annular.filmhook.model.AuditionPayment;
+import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
 import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
@@ -19,10 +20,9 @@ public interface AuditionNewService {
 	List<MovieSubCategory> getSubCategories(Integer categoryId);
 	List<FilmSubProfessionResponseDTO> getAllSubProfessions();
 	List<FilmSubProfessionResponseDTO> getSubProfessionsByProfessionId(Integer professionId);
-	List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId);
-	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);
+	
 	List<FilmProfessionResponseDTO> getAllProfessions();
-//	AuditionNewProject createProject(AuditionNewProjectWebModel projectDto);
+	//	AuditionNewProject createProject(AuditionNewProjectWebModel projectDto);
 	List<AuditionNewProjectWebModel> getProjectsBySubProfession(Integer subProfessionId);
 	List<AuditionNewProjectWebModel> getProjectsByCompanyIdAndTeamNeed(Integer companyId, Integer teamNeedId,Integer professionId);
 	String toggleTeamNeedLike(Integer teamNeedId, Integer userId);
@@ -35,11 +35,19 @@ public interface AuditionNewService {
 	ResponseEntity<?> getPaymentByTxnid(String txnid);
 	AuditionPaymentDTO calculateAuditionPayment(Integer projectId, Integer userId, Integer selectedDays);
 	void softDeleteTeamNeed(Integer teamNeedId, Integer userId, Integer companyId);
-	
+
 	void updateExpiredPaymentsAndProjects();
 	AuditionNewProjectWebModel saveOrUpdateProject(AuditionNewProjectWebModel projectDto);
 	List<AuditionNewProjectWebModel> getProjectsByCompanyId(Integer companyId, @Nullable String status);
 	String softDeleteProject(Integer projectId, Integer userId);
+	AuditionJobPostCountDTO getCompanyPostCounts(Integer companyId, Integer professionId);
+
+	void removeFromCart(Integer userId, Integer companyId, List<Integer> subProfessionIds);
+
+	void clearCart(Integer userId, Integer companyId); // all items for company
+	List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId);
+	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);
+	UserOffer saveOffer(UserOffer userOffer);
 }
 
 

@@ -11,6 +11,10 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
+import com.google.firebase.messaging.ApnsConfig;
+import com.google.firebase.messaging.Aps;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -53,6 +57,53 @@ public class FcmServiceImpl implements FcmService {
             throw new RuntimeException("Error sending FCM message", e);
         }
     }
+//    @Override
+//    public void sendFCMMessage(FCMRequestWebModel request) {
+//        try {
+//            // Data payload only (NO notification)
+//            Map<String, String> dataPayload = new HashMap<>();
+//            dataPayload.put("fromUser", request.getUserName());
+//            dataPayload.put("callType", request.getCallType()); // video / voice
+//            dataPayload.put("userId", request.getUserId());
+//            dataPayload.put("channelName", request.getChannelName());
+//            dataPayload.put("channelToken", request.getChannelToken());
+//
+//            // Android config
+//            AndroidConfig androidConfig = AndroidConfig.builder()
+//                    .setPriority(AndroidConfig.Priority.HIGH)
+//                    .setTtl(24 * 60 * 60 * 1000) // 24 hours
+////                    .setNotification(AndroidNotification.builder()
+////                            .setTitle("Incoming Call")
+////                            .setBody(request.getUserName() + " is calling you")
+////                            .setChannelId("calls") // channel must exist on Android app
+////                            .setClickAction("OPEN_CALL_ACTIVITY")
+////                            .build())
+//                    .build();
+//
+//            // iOS / APNs config
+//            ApnsConfig apnsConfig = ApnsConfig.builder()
+//                    .putHeader("apns-priority", "10")
+//                    .setAps(Aps.builder()
+//                            .setContentAvailable(true) // background fetch
+//                            .build())
+//                    .build();
+//
+//            // Build message
+//            Message message = Message.builder()
+//                    .putAllData(dataPayload)
+//                    .setToken(request.getToken())
+//                    .setAndroidConfig(androidConfig)
+//                    .setApnsConfig(apnsConfig)
+//                    .build();
+//
+//            FirebaseMessaging.getInstance().send(message);
+//            logger.info("FCM call notification sent successfully to {}", request.getUserId());
+//
+//        } catch (FirebaseMessagingException e) {
+//            logger.error("Error sending FCM message: {}", e.getMessage());
+//            e.printStackTrace();
+//        }
+//    }
 }
 
 

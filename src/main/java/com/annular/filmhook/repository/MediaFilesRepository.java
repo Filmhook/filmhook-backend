@@ -5,9 +5,11 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -50,4 +52,23 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 			);
 
 	  List<MediaFiles> findByCategoryAndCategoryRefId(MediaFileCategory category, Integer categoryRefId);
+	  
+	  @Transactional
+	  @Modifying
+	  @Query("UPDATE MediaFiles m SET m.filePath = :filePath, m.updatedBy = :updatedBy, m.updatedOn = CURRENT_TIMESTAMP WHERE m.id = :id")
+	  void updateFilePathById(@Param("id") Integer id, @Param("filePath") String filePath, @Param("updatedBy") Integer updatedBy);
+	  
+	  @Modifying
+	    @Transactional
+	    @Query("UPDATE MediaFiles m SET m.filePath = :filePath, m.thumbnailPath = :thumbnailPath, m.updatedBy = :updatedBy, m.updatedOn = CURRENT_TIMESTAMP WHERE m.id = :id")
+	    int updateFilePathAndThumbById(@Param("id") Integer id,
+	                                   @Param("filePath") String filePath,
+	                                   @Param("thumbnailPath") String thumbnailPath,
+	                                   @Param("updatedBy") Integer updatedBy);
+	  
+	  
+	  @Query("SELECT m FROM MediaFiles m WHERE m.category = :category AND m.id IN (:fileIds) AND m.status = true")
+	  List<MediaFiles> getMediaFilesByCategoryAndFileIds(MediaFileCategory category, List<Integer> fileIds);
+
+
 }
