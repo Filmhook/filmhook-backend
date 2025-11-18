@@ -27,8 +27,7 @@ public class HomeController {
     public String payFromWallet(@RequestParam Integer userId,
                                            @RequestParam String externalRef,
                                            @RequestParam java.math.BigDecimal amount) {
-    	if(5==10) {
-    		System.out.println("Hi  Heloow");
+    	if(5==5) {
     		return "checking";
     	}
     	else {

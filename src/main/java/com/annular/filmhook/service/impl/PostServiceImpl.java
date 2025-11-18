@@ -479,18 +479,6 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 		return null;
 	}
 
-	//    @Override
-	//    public List<PostWebModel> getPostsByUserId(Integer userId) {
-	//        try {
-	//            List<Posts> postList = postsRepository.getUserPosts(User.builder().userId(userId).build());
-	//            return this.transformPostsDataToPostWebModel(postList);
-	//        } catch (Exception e) {
-	//            logger.error("Error at getPostsByUserId() -> {}", e.getMessage());
-	//            e.printStackTrace();
-	//            return null;
-	//        }
-	//    }
-
 	@Override
 	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize, Integer highlightPostId) {
 		try {
