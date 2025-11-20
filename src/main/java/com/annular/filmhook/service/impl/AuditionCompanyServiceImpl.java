@@ -243,73 +243,99 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	@Override
 	public AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request) {
 
-		// Validate owner
-		User owner = userRepository.findById(request.getOwnerId())
-				.orElseThrow(() -> new RuntimeException("Owner not found"));
+	    // Validate owner
+	    User owner = userRepository.findById(request.getOwnerId())
+	            .orElseThrow(() -> new RuntimeException("Owner not found"));
 
-		// Validate company
-		AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
-				.orElseThrow(() -> new RuntimeException("Company not found"));
+	    // Validate company
+	    AuditionCompanyDetails company = companyRepository.findById(request.getCompanyId())
+	            .orElseThrow(() -> new RuntimeException("Company not found"));
 
-		//  Validate assigned user
-		User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
-				.orElseThrow(() -> new RuntimeException(
-						"Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
-						));
+	    // Validate assigned user
+	    User assignedUser = userRepository.findByFilmHookCode(request.getFilmHookCode())
+	            .orElseThrow(() -> new RuntimeException(
+	                    "Assigned user not found with FilmHook Code: " + request.getFilmHookCode()
+	            ));
 
-		//  Check if role exists (even soft-deleted)
-		Optional<AuditionUserCompanyRole> existingRoleOpt =
-				roleRepository.findByCompanyAndAssignedUser(company, assignedUser);
+	    // Check if role already exists
+	    Optional<AuditionUserCompanyRole> existingRoleOpt =
+	            roleRepository.findByCompanyAndAssignedUser(company, assignedUser);
 
-		if (existingRoleOpt.isPresent()) {
-			AuditionUserCompanyRole existingRole = existingRoleOpt.get();
+	    if (existingRoleOpt.isPresent()) {
 
-			// Case A: Active & not deleted → block
-			if (Boolean.TRUE.equals(existingRole.getStatus()) && Boolean.FALSE.equals(existingRole.getDeleted())) {
-				throw new RuntimeException("Access already assigned to this user for the given company");
-			}
+	        AuditionUserCompanyRole existingRole = existingRoleOpt.get();
 
-			// Case B: Inactive & not deleted → reactivate
-			if (Boolean.FALSE.equals(existingRole.getStatus()) && Boolean.FALSE.equals(existingRole.getDeleted())) {
-				existingRole.setStatus(true);
-				existingRole.setDesignation(request.getDesignation());
-				existingRole.setAccessKey(
-						(request.getAccessKey() != null && !request.getAccessKey().isBlank())
-						? request.getAccessKey()
-								: UUID.randomUUID().toString().substring(0, 8).toUpperCase()
-						);
-				existingRole.setUpdatedBy(request.getOwnerId());
-				existingRole.setUpdatedDate(LocalDateTime.now());
+	        // Case A: Already active and not deleted → throw error
+	        if (Boolean.TRUE.equals(existingRole.getStatus()) &&
+	            Boolean.FALSE.equals(existingRole.getDeleted())) {
 
-				AuditionUserCompanyRole reactivated = roleRepository.save(existingRole);
-				sendAssignAccessEmails(owner, assignedUser, company, reactivated.getAccessKey(), reactivated.getDesignation());
+	            throw new RuntimeException("Access already assigned to this user for the given company");
+	        }
 
-				return AuditionCompanyConverter.toDto(reactivated);
-			}
+	        // Case B: Inactive & not deleted → Reactivate
+	        if (Boolean.FALSE.equals(existingRole.getStatus()) &&
+	            Boolean.FALSE.equals(existingRole.getDeleted())) {
 
-			// Case C: Deleted → skip reactivation and create new instead
-			if (Boolean.TRUE.equals(existingRole.getDeleted())) {
+	            updateExistingRole(existingRole, request);
+	            AuditionUserCompanyRole updatedRole = roleRepository.save(existingRole);
 
-			}
-		}
+	            sendAssignAccessEmails(owner, assignedUser, company,
+	                    updatedRole.getAccessKey(), updatedRole.getDesignation());
 
-		// Create new role if none exists OR deleted = true
-		String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
-				? request.getAccessKey()
-						: UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+	            return AuditionCompanyConverter.toDto(updatedRole);
+	        }
 
-		AuditionUserCompanyRole newRole = AuditionCompanyConverter
-				.toEntity(request, owner, assignedUser, company, accessKey);
+	        // Case C: deleted = true & status = false → UPDATE SAME ROW (your requirement)
+	        if (Boolean.TRUE.equals(existingRole.getDeleted()) &&
+	            Boolean.FALSE.equals(existingRole.getStatus())) {
 
-		newRole.setDeleted(false);
-		newRole.setStatus(true);
+	            updateExistingRole(existingRole, request);
+	            existingRole.setDeleted(false);   // restore
+	            existingRole.setStatus(true);     // activate
 
-		newRole = roleRepository.save(newRole);
+	            AuditionUserCompanyRole restoredRole = roleRepository.save(existingRole);
 
-		sendAssignAccessEmails(owner, assignedUser, company, accessKey, request.getDesignation());
+	            sendAssignAccessEmails(owner, assignedUser, company,
+	                    restoredRole.getAccessKey(), restoredRole.getDesignation());
 
-		return AuditionCompanyConverter.toDto(newRole);
+	            return AuditionCompanyConverter.toDto(restoredRole);
+	        }
+	    }
+
+	    // Case D: No existing role → create new
+	    String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
+	            ? request.getAccessKey()
+	            : UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+	    AuditionUserCompanyRole newRole =
+	            AuditionCompanyConverter.toEntity(request, owner, assignedUser, company, accessKey);
+
+	    newRole.setDeleted(false);
+	    newRole.setStatus(true);
+
+	    newRole = roleRepository.save(newRole);
+
+	    sendAssignAccessEmails(owner, assignedUser, company, accessKey, request.getDesignation());
+
+	    return AuditionCompanyConverter.toDto(newRole);
 	}
+
+
+	/**
+	 * Helper method to update reused rows
+	 */
+	private void updateExistingRole(AuditionUserCompanyRole role, AuditionUserCompanyRoleDTO request) {
+
+	    String accessKey = (request.getAccessKey() != null && !request.getAccessKey().isBlank())
+	            ? request.getAccessKey()
+	            : UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+	    role.setDesignation(request.getDesignation());
+	    role.setAccessKey(accessKey);
+	    role.setUpdatedBy(request.getOwnerId());
+	    role.setUpdatedDate(LocalDateTime.now());
+	}
+
 
 	@Override
 	public List<AuditionUserCompanyRoleDTO> assignAccess(AuditionUserCompanyAccessRequestDTO request) {
