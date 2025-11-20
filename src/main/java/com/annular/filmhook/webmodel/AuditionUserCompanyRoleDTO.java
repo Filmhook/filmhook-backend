@@ -26,4 +26,6 @@ public class AuditionUserCompanyRoleDTO {
     private String ownerName;
     private String ownerEmail;
     private String assignedUserProfilePicture;
+    private String resultStatus;
+    private String message;
 }

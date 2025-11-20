@@ -3,6 +3,7 @@ package com.annular.filmhook.service.impl;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -290,8 +291,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	            Boolean.FALSE.equals(existingRole.getStatus())) {
 
 	            updateExistingRole(existingRole, request);
-	            existingRole.setDeleted(false);   // restore
-	            existingRole.setStatus(true);     // activate
+	            existingRole.setDeleted(false);  
+	            existingRole.setStatus(true);     
 
 	            AuditionUserCompanyRole restoredRole = roleRepository.save(existingRole);
 
@@ -367,7 +368,14 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	            if (Boolean.TRUE.equals(existingRole.getStatus()) &&
 	                    Boolean.FALSE.equals(existingRole.getDeleted())) {
 
-	                throw new RuntimeException("Access already assigned to user: " + assignedUser.getName());
+	                responseList.add(
+	                        AuditionUserCompanyRoleDTO.builder()
+	                                .filmHookCode(assignedUser.getFilmHookCode())
+	                                .resultStatus("EXISTS")
+	                                .message("Access already assigned to user: " + assignedUser.getFilmHookCode())
+	                                .build()
+	                );
+	                continue;
 	            }
 
 	            // CASE 2: deleted = true & status = false -> UPDATE SAME ROW
@@ -386,6 +394,13 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	                existingRole.setUpdatedDate(LocalDateTime.now());
 
 	                savedRole = roleRepository.save(existingRole);
+	                responseList.add(
+	                        AuditionUserCompanyRoleDTO.builder()
+	                                .filmHookCode(assignedUser.getFilmHookCode())
+	                                .resultStatus("SAVED")
+	                                .build()
+	                );
+	                continue;
 	            }
 	            // CASE 3: status = false & deleted = false (inactive row) -> activate again
 	            else if (Boolean.FALSE.equals(existingRole.getStatus()) &&
@@ -416,7 +431,11 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	        sendAssignAccessEmails(owner, assignedUser, company,
 	                savedRole.getAccessKey(), savedRole.getDesignation());
 
-	        responseList.add(AuditionCompanyConverter.toDto(savedRole));
+
+	        AuditionUserCompanyRoleDTO dto = AuditionCompanyConverter.toDto(savedRole);
+	        dto.setResultStatus("SAVED");
+	        dto.setMessage("Access saved successfully");
+	        responseList.add(dto);
 	    }
 
 	    return responseList;
@@ -442,6 +461,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	    newRole.setStatus(true);
 
 	    return roleRepository.save(newRole);
+	  
 	}
 
 
