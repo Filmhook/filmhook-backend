@@ -197,9 +197,10 @@ public class AuditionCompanyController {
     
     @GetMapping("/companyDetails")
     public ResponseEntity<List<AuditionCompanyDetailsDTO>> getMyCompanies(
-            @RequestParam Integer userId) {
-  List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesForLoggedInUser(userId);
+            @AuthenticationPrincipal UserDetailsImpl loggedInUser) {
 
+        Integer userId = loggedInUser.getId(); // from your custom UserDetailsImpl
+        List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesForLoggedInUser(userId);
         return ResponseEntity.ok(companies);
     }
     
