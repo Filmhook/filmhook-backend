@@ -657,7 +657,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (Utility.isNullOrZero(user.getSecondaryemailOtp())) throw new IllegalArgumentException("OTP is null");
             String subject = "Email Id Verification";
             String mailContent = "<p>Please use the following OTP to verify your email on FilmHook:<b>" + user.getSecondaryemailOtp() + "</b></p>";
-            return mailNotification.sendEmailSync(user.getName(), user.getEmail(), subject, mailContent);
+            return mailNotification.sendEmailSync(user.getName(), user.getSecondaryEmail(), subject, mailContent);
         } catch (Exception e) {
             e.printStackTrace();
         }
