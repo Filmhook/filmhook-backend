@@ -17,24 +17,5 @@ public class HomeController {
     public ResponseEntity<String> home() {
         return ResponseEntity.ok("FilmHook API is running");
     }
-    
-    @PostMapping("/topup/confirm")
-    public String confirmTopup() {
-      return "Dinesh";
-    }
-
-    @PostMapping("/pay")
-    public String payFromWallet(@RequestParam Integer userId,
-                                           @RequestParam String externalRef,
-                                           @RequestParam java.math.BigDecimal amount) {
-    	if(5==5) {
-    		return "checking";
-    	}
-    	else {
-    		return "block";
-    	}
-    	    
-    }
-
 
 }
