@@ -201,7 +201,6 @@ public class AuditionCompanyController {
 
         Integer userId = loggedInUser.getId(); // from your custom UserDetailsImpl
         List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesForLoggedInUser(userId);
-
         return ResponseEntity.ok(companies);
     }
     
