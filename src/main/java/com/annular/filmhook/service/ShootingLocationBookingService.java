@@ -17,7 +17,7 @@ import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 public interface ShootingLocationBookingService {
 	
 	
-	ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto);
+//	ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto);
 
     List<ShootingLocationBookingDTO> getBookingsByClient(Integer clientId);
 

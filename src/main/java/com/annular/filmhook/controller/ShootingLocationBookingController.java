@@ -49,30 +49,30 @@ public class ShootingLocationBookingController {
     @Autowired
     private ShootingLocationPaymentRepository paymentRepo;
 
-	@PostMapping("/create")
-	public ResponseEntity<Response> createBooking(@RequestBody ShootingLocationBookingDTO dto) {
-		try {      	      
-			List<ShootingLocationBooking> overlaps = bookingRepo.findOverlappingBookings(
-					dto.getPropertyId(), dto.getShootStartDate(), dto.getShootEndDate());
-
-			if (!overlaps.isEmpty()) {
-				throw new ResponseStatusException(HttpStatus.CONFLICT, "Selected dates are already booked.");
-			}
-			logger.info("Creating booking for property ID: {}", dto.getPropertyId());
-			ShootingLocationBookingDTO created = bookingService.createBooking(dto);
-			return ResponseEntity.ok(new Response(1, "Booking created successfully", created));
-		} catch (ResponseStatusException e) {
-
-			logger.warn("Booking creation failed: {}", e.getReason());
-			return ResponseEntity.status(e.getStatus())
-					.body(new Response(0, e.getReason(), null));
-		} catch (Exception e) {
-
-			logger.error("Unexpected error during booking creation", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(0, "Unexpected error occurred", null));
-		}
-	}
+//	@PostMapping("/create")
+//	public ResponseEntity<Response> createBooking(@RequestBody ShootingLocationBookingDTO dto) {
+//		try {      	      
+//			List<ShootingLocationBooking> overlaps = bookingRepo.findOverlappingBookings(
+//					dto.getPropertyId(), dto.getShootStartDate(), dto.getShootEndDate());
+//
+//			if (!overlaps.isEmpty()) {
+//				throw new ResponseStatusException(HttpStatus.CONFLICT, "Selected dates are already booked.");
+//			}
+//			logger.info("Creating booking for property ID: {}", dto.getPropertyId());
+//			ShootingLocationBookingDTO created = bookingService.createBooking(dto);
+//			return ResponseEntity.ok(new Response(1, "Booking created successfully", created));
+//		} catch (ResponseStatusException e) {
+//
+//			logger.warn("Booking creation failed: {}", e.getReason());
+//			return ResponseEntity.status(e.getStatus())
+//					.body(new Response(0, e.getReason(), null));
+//		} catch (Exception e) {
+//
+//			logger.error("Unexpected error during booking creation", e);
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body(new Response(0, "Unexpected error occurred", null));
+//		}
+//	}
 	@GetMapping("/client/{clientId}")
 	public ResponseEntity<Response> getBookingsByClient(@PathVariable Integer clientId) {
 	    try {

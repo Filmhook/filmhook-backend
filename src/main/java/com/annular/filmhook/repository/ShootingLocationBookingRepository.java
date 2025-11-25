@@ -1,6 +1,7 @@
 package com.annular.filmhook.repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,6 +52,16 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
 
 
     Optional<ShootingLocationBooking> findById(Integer bookingId);
+
+    
+    @Query("SELECT COUNT(b) FROM ShootingLocationBooking b " +
+            "WHERE b.property.id = :propertyId " +
+            "AND b.createdAt >= :since " +
+            "AND b.status = com.annular.filmhook.model.BookingStatus.CONFIRMED")
+     long countConfirmedBookingsByPropertySince(
+             @Param("propertyId") Integer propertyId,
+             @Param("since") LocalDateTime since
+     );
 
 
 }

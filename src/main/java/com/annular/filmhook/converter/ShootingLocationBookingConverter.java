@@ -14,11 +14,11 @@ import java.time.temporal.ChronoUnit;
 public class ShootingLocationBookingConverter {
 
     public static ShootingLocationBooking toEntity(ShootingLocationBookingDTO dto, User client, ShootingLocationPropertyDetails property) {
-        Double pricePerDay = property.getPriceCustomerPay();
-        long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
-        double baseAmount = pricePerDay * days;
-        double gstAmount = baseAmount * 0.18; 
-        double totalAmount = baseAmount + gstAmount;
+//        Double pricePerDay = property.getPriceCustomerPay();
+//        long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
+//        double baseAmount = pricePerDay * days;
+//        double gstAmount = baseAmount * 0.18; 
+//        double totalAmount = baseAmount + gstAmount;
 
         return ShootingLocationBooking.builder()
         		
@@ -29,10 +29,10 @@ public class ShootingLocationBookingConverter {
                 .createdBy(dto.getClientId())
                 .client(client)
                 .property(property)
-                .pricePerDay(pricePerDay)
-                .baseAmount(baseAmount)
-                .gstAmount(gstAmount)
-                .totalAmount(totalAmount)
+//                .pricePerDay(pricePerDay)
+//                .baseAmount(baseAmount)
+//                .gstAmount(gstAmount)
+//                .totalAmount(totalAmount)
                 .bookingMessage(dto.getBookingMessage())
                 .build();
     }
