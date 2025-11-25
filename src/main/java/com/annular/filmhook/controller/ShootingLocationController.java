@@ -151,15 +151,19 @@ public class ShootingLocationController {
 		}
 	}
 
-
 	@GetMapping("/user/{userId}")
-	public ResponseEntity<List<ShootingLocationPropertyDetailsDTO>> getPropertiesByUserId(@PathVariable Integer userId) {
-		List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByUserId(userId);
-		if (properties.isEmpty()) {
-			return ResponseEntity.noContent().build();
-		}
-		return ResponseEntity.ok(properties);
+	public ResponseEntity<Response> getPropertiesByUserId(@PathVariable Integer userId) {
+
+	    Response response = service.getPropertiesByUserId(userId);
+
+	    // If no data
+	    if (response.getStatus() == 0) {
+	        return ResponseEntity.status(HttpStatus.OK).body(response);
+	    }
+
+	    return ResponseEntity.ok(response);
 	}
+
 	@DeleteMapping("deleteProperty/{id}")
 	public ResponseEntity<Response> deleteProperty(@PathVariable Integer id) {
 	    Response response = service.deletePropertyById(id);
@@ -169,28 +173,26 @@ public class ShootingLocationController {
 
 	@PostMapping("/savePropertyDetails")
 	public ResponseEntity<Response> savePropertyDetails(
-			@ModelAttribute ShootingLocationFileInputModel inputFile,
-			@RequestPart(value = "propertyDetails", required = false) ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
+	        @ModelAttribute ShootingLocationFileInputModel inputFile,
+	        @RequestPart(value = "propertyDetails", required = false)
+	        ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
 
-		try {
-			logger.info("POST /save - Saving property: {}", propertyDetailsDTO.getPropertyName());
-			service.savePropertyDetails(propertyDetailsDTO, inputFile);
-			return ResponseEntity.status(HttpStatus.CREATED)
-					.body(new Response(1, "Property details saved successfully", null));
+	    try {
+	        Response response = service.savePropertyDetails(propertyDetailsDTO, inputFile);
 
-		} catch (ResponseStatusException e) {
-			logger.warn("Save failed: {}", e.getReason());
-			return ResponseEntity.status(e.getStatus())
-					.body(new Response(-1, e.getReason(), null));
+	        // If service returns status = 1 → Success
+	        if (response.getStatus() == 1) {
+	            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	        }
 
-		} catch (Exception e) {
-			logger.error("Unexpected error saving property: {}", e.getMessage(), e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Failed to save property details", e.getMessage()));
-		}
+	        // If service returns status = -1 → Validation Error
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1, "Failed to save property details", e.getMessage()));
+	    }
 	}
-
-
 	@PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<Response> updateProperty(
 			@RequestParam("propertyId") Integer propertyId,

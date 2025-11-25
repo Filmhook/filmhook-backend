@@ -5,9 +5,12 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.Convert;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.model.PropertyAvailabilityDate;
+import com.annular.filmhook.util.StringListConverter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -41,11 +44,11 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String countryOfIssued;
 
 	// 2. Listing Summary
-	private int numberOfPeopleAllowed;
-	
-	
+	private String numberOfPeopleAllowed;
+
+
 	private double totalArea;
- 
+
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private String selectedUnit;
 	private int numberOfRooms;
@@ -60,7 +63,9 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	// 3. Facilities & Amenities
 	private String powerSupply;
-	private List<String> bakupGeneratorsAndVoltage;
+	private String bakupGenerators;
+	@Convert(converter = StringListConverter.class)
+	private List<String> voltageCapacity;
 	private String wifi;
 	private String airConditionAndHeating;
 	private int numberOfWashrooms;
@@ -102,16 +107,15 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<String> additionalCharges;
 	private List<String> paymentModelsAccepted;
 	private List<String> cancellationPolicy;
+	private List<String> hygienStatus;
+	private List<String> genderSpecific;
 
 	private String description;
-	private double priceCustomerPay;
-	private boolean discount20Percent;
 	private boolean businessOwner;
-	private List<String> highQualityPhotos;
-	private List<String> videoWalkthrough;
-	
 
-	private LocalDate createdOn;
+
+
+	private LocalDateTime createdOn;
 	private Integer createdBy;
 	private Boolean status;
 
@@ -120,7 +124,7 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	private List<String> imageUrls;
 	private List<String> governmentIdUrls;
-	private List<String> videoUrls;
+	private List<String> verificationVideo;
 
 	private Integer categoryId;
 	private Integer subCategoryId;
@@ -130,6 +134,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private ShootingLocationCategoryDTO category;
 	private ShootingLocationSubcategoryDTO subCategory;
 	private ShootingLocationSubcategorySelectionDTO subcategorySelectionDTO;
+
 	private String industryName;
 	private List<Integer> industryIds;   
 	private boolean likedByUser;
@@ -141,9 +146,9 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	private String typeLocation;
 	private String locationLink;
-	
+
 	public Double getTotalArea() {
-	    return totalArea;
+		return totalArea;
 	}
 
 }

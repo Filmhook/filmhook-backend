@@ -40,7 +40,7 @@ import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.model.PlatformDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
-import com.annular.filmhook.model.ShootingLocationImages;
+
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.CountryRepository;
 import com.annular.filmhook.repository.FilmProfessionDetailRepository;

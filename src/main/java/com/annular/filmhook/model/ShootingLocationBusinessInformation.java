@@ -14,13 +14,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "business_information")
+@Table(name = "shooting_location_business_information")
 @Builder
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BusinessInformation {
+public class ShootingLocationBusinessInformation {
 
  @Id
  @GeneratedValue(strategy = GenerationType.IDENTITY)

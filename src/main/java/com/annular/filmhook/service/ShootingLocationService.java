@@ -23,9 +23,9 @@ public interface ShootingLocationService {
 	List<ShootingLocationCategoryDTO> getCategoriesByTypeId(Integer typeId);
 	List<ShootingLocationSubcategoryDTO> getSubcategoriesByCategoryId(Integer categoryId);
 	void saveSelection(Long subcategoryId, Boolean entire, Boolean single);
-	ShootingLocationPropertyDetailsDTO savePropertyDetails(ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile);
+	Response savePropertyDetails(ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile);
 	List<ShootingLocationPropertyDetailsDTO> getAllProperties(Integer userId);
-	List<ShootingLocationPropertyDetailsDTO> getPropertiesByUserId(Integer userId);
+	Response getPropertiesByUserId(Integer userId);
 	Response deletePropertyById(Integer id);
 	ShootingLocationPropertyDetailsDTO updatePropertyDetails(Integer id, ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile);
 	String toggleLike(Integer propertyId, Integer userId);

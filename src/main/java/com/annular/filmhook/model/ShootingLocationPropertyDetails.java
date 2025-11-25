@@ -48,7 +48,6 @@ public class ShootingLocationPropertyDetails {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-    private String industryName;
 
 	// 1. Property Information
 	private String firstName;
@@ -65,7 +64,7 @@ public class ShootingLocationPropertyDetails {
 	private String countryOfIssued;
 
 	// 2. Listing Summary
-	private int numberOfPeopleAllowed;
+	private String numberOfPeopleAllowed;
 	private double totalArea;
 	private String selectedUnit;
 	private int numberOfRooms;
@@ -85,8 +84,11 @@ public class ShootingLocationPropertyDetails {
 
 	// 3. Facilities & Amenities
 	private String powerSupply;
+	private String bakupGenerators;
+	
 	@Convert(converter = StringListConverter.class)
-	private List<String> bakupGeneratorsAndVoltage;
+	private List<String> voltageCapacity;
+	
 	private String wifi;
 	private String airConditionAndHeating;
 	private int numberOfWashrooms;
@@ -156,13 +158,7 @@ public class ShootingLocationPropertyDetails {
 
 
 	private String description;
-	private double priceCustomerPay;
-	private boolean discount20Percent;
 	private boolean businessOwner;
-	@Convert(converter = StringListConverter.class)
-	private List<String> highQualityPhotos;
-	@Convert(converter = StringListConverter.class)
-	private List<String> videoWalkthrough;
 	
 	private String govtLicenseAndPermissions;
 
@@ -180,11 +176,11 @@ public class ShootingLocationPropertyDetails {
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "bank_details_id")
-	private BankDetails bankDetails;
+	private ShootingLocationOwnerBankDetails bankDetails;
 
 	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JoinColumn(name = "business_information_id")
-	private BusinessInformation businessInformation;
+	private ShootingLocationBusinessInformation businessInformation;
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "subcategory_selection_id")
@@ -206,9 +202,6 @@ public class ShootingLocationPropertyDetails {
     @JoinColumn(name = "user_id")
     private User user;
 	
-    @OneToMany(mappedBy = "property", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<ShootingLocationImages> mediaFiles;
-    
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<PropertyLike> likes;
     
@@ -224,6 +217,12 @@ public class ShootingLocationPropertyDetails {
     
     private String typeLocation;
     private String locationLink;
+    
+    @Convert(converter = StringListConverter.class)
+    private List<String> hygienStatus;
+    
+    @Convert(converter = StringListConverter.class)
+    private List<String> genderSpecific;
     
 	
 

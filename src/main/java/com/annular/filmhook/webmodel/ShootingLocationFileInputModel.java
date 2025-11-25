@@ -14,11 +14,6 @@ public class ShootingLocationFileInputModel {
 
 	private List<MultipartFile> images;
 	private List<MultipartFile> videos;
-	//    private MultipartFile panCard;
-	//    private MultipartFile adharCard;
-	//	private Integer propertyID;
-	//  private String category;
-
 	private List<MultipartFile> govermentId;
-	   private String updateMode;
+    private String updateMode;
 }
