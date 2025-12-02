@@ -15,5 +15,10 @@ public class ShootingLocationFileInputModel {
 	private List<MultipartFile> images;
 	private List<MultipartFile> videos;
 	private List<MultipartFile> govermentId;
+    private MultipartFile selfOwnedPropertyDocument;
+    private MultipartFile mortgagePropertyDocument;
+    private MultipartFile ownerPermittedDocument;
+    private MultipartFile propertyDamageDocument;
+    private MultipartFile crewAccidentDocument;
     private String updateMode;
 }

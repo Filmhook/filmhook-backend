@@ -414,11 +414,35 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.files(inputFile.getVideos())
 							.build();
 
-					mediaFilesService.saveMediaFiles(videoInput, user);
-					
+					mediaFilesService.saveMediaFiles(videoInput, user);	
 				
 			}
+				savedProperty.setSelfOwnedPropertyDocument(
+				        uploadDocument(inputFile.getSelfOwnedPropertyDocument(),
+				                MediaFileCategory.shootingPropertyDocuments,
+				                savedProperty.getId(), user));
 
+				savedProperty.setMortgagePropertyDocument(
+				        uploadDocument(inputFile.getMortgagePropertyDocument(),
+				                MediaFileCategory.shootingPropertyDocuments,
+				                savedProperty.getId(), user));
+
+				savedProperty.setOwnerPermittedDocument(
+				        uploadDocument(inputFile.getOwnerPermittedDocument(),
+				                MediaFileCategory.shootingPropertyDocuments,
+				                savedProperty.getId(), user));
+
+				savedProperty.setPropertyDamageDocument(
+				        uploadDocument(inputFile.getPropertyDamageDocument(),
+				                MediaFileCategory.shootingPropertyDocuments,
+				                savedProperty.getId(), user));
+
+				savedProperty.setCrewAccidentDocument(
+				        uploadDocument(inputFile.getCrewAccidentDocument(),
+				                MediaFileCategory.shootingPropertyDocuments,
+				                savedProperty.getId(), user));
+
+				propertyDetailsRepository.saveAndFlush(savedProperty);
 			}
 			logger.info("Property saved successfully: {}", savedProperty.getId());
 			return new Response(1, "Property saved successfully", null);
@@ -446,29 +470,51 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	            .singleDayPropertyPrice(dto.getSingleDayPropertyPrice())
 	            .singleNightPropertyPrice(dto.getSingleNightPropertyPrice())
 	            .singleFullDayPropertyPrice(dto.getSingleFullDayPropertyPrice())
-	            .entirePropertyDiscount20Percent(dto.isEntirePropertyDiscount20Percent())
-	            .singlePropertyDiscount20Percent(dto.isSinglePropertyDiscount20Percent())
+	            .entirePropertyDayDiscountPercent(dto.getEntirePropertyDayDiscountPercent())
+                .entirePropertyNightDiscountPercent(dto.getEntirePropertyNightDiscountPercent())
+                .entirePropertyFullDayDiscountPercent(dto.getEntirePropertyFullDayDiscountPercent())
+                .singlePropertyDayDiscountPercent(dto.getSinglePropertyDayDiscountPercent())
+                .singlePropertyNightDiscountPercent(dto.getSinglePropertyNightDiscountPercent())
+                .singlePropertyFullDayDiscountPercent(dto.getSinglePropertyFullDayDiscountPercent())
 	            .build();
 
-	    // Save start date for Entire Property Discount
-	    if (dto.isEntirePropertyDiscount20Percent()) {
-	        sel.setEntirePropertyDiscountStartDate(LocalDateTime.now());
-	        sel.setEntirePropertyDiscountBookingCount(0);
-	    } else {
-	        sel.setEntirePropertyDiscountStartDate(null);
-	        sel.setEntirePropertyDiscountBookingCount(0);
-	    }
-
-	    // ⭐ IMPORTANT — Save start date for Single Property Discount
-	    if (dto.isSinglePropertyDiscount20Percent()) {
-	        sel.setSinglePropertyDiscountStartDate(LocalDateTime.now());
-	        sel.setSinglePropertyDiscountBookingCount(0);
-	    } else {
-	        sel.setSinglePropertyDiscountStartDate(null);
-	        sel.setSinglePropertyDiscountBookingCount(0);
-	    }
+//	    // Save start date for Entire Property Discount
+//	    if (dto.isEntirePropertyDiscount20Percent()) {
+//	        sel.setEntirePropertyDiscountStartDate(LocalDateTime.now());
+//	        sel.setEntirePropertyDiscountBookingCount(0);
+//	    } else {
+//	        sel.setEntirePropertyDiscountStartDate(null);
+//	        sel.setEntirePropertyDiscountBookingCount(0);
+//	    }
+//
+//	    // ⭐ IMPORTANT — Save start date for Single Property Discount
+//	    if (dto.isSinglePropertyDiscount20Percent()) {
+//	        sel.setSinglePropertyDiscountStartDate(LocalDateTime.now());
+//	        sel.setSinglePropertyDiscountBookingCount(0);
+//	    } else {
+//	        sel.setSinglePropertyDiscountStartDate(null);
+//	        sel.setSinglePropertyDiscountBookingCount(0);
+//	    }
 
 	    return sel;
+	}
+	
+	private String uploadDocument(MultipartFile file, MediaFileCategory category, Integer propertyId, User user) {
+
+	    if (file == null || file.isEmpty()) {
+	        return null;
+	    }
+
+	    FileInputWebModel input = FileInputWebModel.builder()
+	            .userId(user.getUserId())
+	            .category(category)
+	            .categoryRefId(propertyId)
+	            .files(List.of(file))
+	            .build();
+
+	    List<FileOutputWebModel> result = mediaFilesService.saveMediaFiles(input, user);
+
+	    return result.get(0).getFilePath();  // or getFileUrl()
 	}
 
 
@@ -806,7 +852,7 @@ public List<ShootingLocationPropertyDetailsDTO> getAllProperties(Integer userId)
 			property.setNumberOfRooms(dto.getNumberOfRooms());
 			property.setNumberOfFloor(dto.getNumberOfFloor());
 			property.setCeilingHeight(dto.getCeilingHeight());
-			property.setGovtLicenseAndPermissions(dto.getGovtLicenseAndPermissions());
+//			property.setGovtLicenseAndPermissions(dto.getGovtLicenseAndPermissions());
 
 			property.setOutdoorFeatures(dto.getOutdoorFeatures());
 			property.setArchitecturalStyle(dto.getArchitecturalStyle());
@@ -836,24 +882,24 @@ public List<ShootingLocationPropertyDetailsDTO> getAllProperties(Integer userId)
 			property.setStructuralModification(dto.getStructuralModification());
 			property.setTemporary(dto.getTemporary());
 			property.setDressing(dto.getDressing());
-			property.setPermissions(dto.getPermissions());
-			property.setNoiseRestrictions(dto.getNoiseRestrictions());
-			property.setShootingTiming(dto.getShootingTiming());
-			property.setInsuranceRequired(dto.getInsuranceRequired());
-			property.setLegalAgreements(dto.getLegalAgreements());
-
-			property.setRoadAccessAndCondition(dto.getRoadAccessAndCondition());
-			property.setPublicTransport(dto.getPublicTransport());
-			property.setNearestAirportOrRailway(dto.getNearestAirportOrRailway());
-			property.setAccommodationNearby(dto.getAccommodationNearby());
-			property.setFoodAndCatering(dto.getFoodAndCatering());
-			property.setEmergencyServicesNearby(dto.getEmergencyServicesNearby());
-
-			property.setRentalCost(dto.getRentalCost());
-			property.setSecurityDeposit(dto.getSecurityDeposit());
-			property.setAdditionalCharges(dto.getAdditionalCharges());
-			property.setPaymentModelsAccepted(dto.getPaymentModelsAccepted());
-			property.setCancellationPolicy(dto.getCancellationPolicy());
+//			property.setPermissions(dto.getPermissions());
+//			property.setNoiseRestrictions(dto.getNoiseRestrictions());
+//			property.setShootingTiming(dto.getShootingTiming());
+//			property.setInsuranceRequired(dto.getInsuranceRequired());
+//			property.setLegalAgreements(dto.getLegalAgreements());
+//
+//			property.setRoadAccessAndCondition(dto.getRoadAccessAndCondition());
+//			property.setPublicTransport(dto.getPublicTransport());
+//			property.setNearestAirportOrRailway(dto.getNearestAirportOrRailway());
+//			property.setAccommodationNearby(dto.getAccommodationNearby());
+//			property.setFoodAndCatering(dto.getFoodAndCatering());
+//			property.setEmergencyServicesNearby(dto.getEmergencyServicesNearby());
+//
+//			property.setRentalCost(dto.getRentalCost());
+//			property.setSecurityDeposit(dto.getSecurityDeposit());
+//			property.setAdditionalCharges(dto.getAdditionalCharges());
+//			property.setPaymentModelsAccepted(dto.getPaymentModelsAccepted());
+//			property.setCancellationPolicy(dto.getCancellationPolicy());
 
 			property.setDescription(dto.getDescription());
 
@@ -1525,23 +1571,23 @@ public List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer
 					.structuralModification(property.getStructuralModification())
 					.temporary(property.getTemporary())
 					.dressing(property.getDressing())
-					.permissions(property.getPermissions())
-					.noiseRestrictions(property.getNoiseRestrictions())
-					.shootingTiming(property.getShootingTiming())
+//					.permissions(property.getPermissions())
+//					.noiseRestrictions(property.getNoiseRestrictions())
+//					.shootingTiming(property.getShootingTiming())
 					.insuranceRequired(property.getInsuranceRequired())
-					.legalAgreements(property.getLegalAgreements())
-					.govtLicenseAndPermissions(property.getGovtLicenseAndPermissions())
-					.roadAccessAndCondition(property.getRoadAccessAndCondition())
-					.publicTransport(property.getPublicTransport())
-					.nearestAirportOrRailway(property.getNearestAirportOrRailway())
-					.accommodationNearby(property.getAccommodationNearby())
-					.foodAndCatering(property.getFoodAndCatering())
-					.emergencyServicesNearby(property.getEmergencyServicesNearby())
-					.rentalCost(property.getRentalCost())
-					.securityDeposit(property.getSecurityDeposit())
-					.additionalCharges(property.getAdditionalCharges())
-					.paymentModelsAccepted(property.getPaymentModelsAccepted())
-					.cancellationPolicy(property.getCancellationPolicy())
+//					.legalAgreements(property.getLegalAgreements())
+//					.govtLicenseAndPermissions(property.getGovtLicenseAndPermissions())
+//					.roadAccessAndCondition(property.getRoadAccessAndCondition())
+//					.publicTransport(property.getPublicTransport())
+//					.nearestAirportOrRailway(property.getNearestAirportOrRailway())
+//					.accommodationNearby(property.getAccommodationNearby())
+//					.foodAndCatering(property.getFoodAndCatering())
+//					.emergencyServicesNearby(property.getEmergencyServicesNearby())
+//					.rentalCost(property.getRentalCost())
+//					.securityDeposit(property.getSecurityDeposit())
+//					.additionalCharges(property.getAdditionalCharges())
+//					.paymentModelsAccepted(property.getPaymentModelsAccepted())
+//					.cancellationPolicy(property.getCancellationPolicy())
 					.description(property.getDescription())
 					.businessOwner(property.isBusinessOwner())
 					.businessInformation(businessInfoDTO)
@@ -1672,51 +1718,51 @@ public List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer
 		return "Your review has been deleted successfully";
 	}
 
-	@Scheduled(cron = "0 25 10 * * *")
- @Transactional
-	    public void expireDiscountsDaily() {
-	        LocalDateTime now = LocalDateTime.now();
-
-	        List<ShootingLocationSubcategorySelection> selections = selectionRepo.findAllWithAnyDiscountEnabled();
-	        for (ShootingLocationSubcategorySelection sel : selections) {
-	            boolean changed = false;
-
-	            if (Boolean.TRUE.equals(sel.isEntirePropertyDiscount20Percent()) && sel.getEntirePropertyDiscountStartDate() != null) {
-	                LocalDateTime start = sel.getEntirePropertyDiscountStartDate();
-	                long bookings = bookingRepo.countConfirmedBookingsByPropertySince(sel.getPropertyDetails().getId(), start);
-	                sel.setEntirePropertyDiscountBookingCount((int) bookings);
-
-	                boolean expiredByBookings = bookings >= 2;
-	                boolean expiredByDate = start.plusDays(1).isBefore(now) || start.plusDays(1).isEqual(now);
-	                if (expiredByBookings || expiredByDate) {
-	                    sel.setEntirePropertyDiscount20Percent(false);
-	                    sel.setEntirePropertyDiscountStartDate(null);
-	                    sel.setEntirePropertyDiscountBookingCount(0);
-	                    changed = true;
-	                }
-	            }
-
-	            if (Boolean.TRUE.equals(sel.isSinglePropertyDiscount20Percent()) && sel.getSinglePropertyDiscountStartDate() != null) {
-	                LocalDateTime start = sel.getSinglePropertyDiscountStartDate();
-	                long bookings = bookingRepo.countConfirmedBookingsByPropertySince(sel.getPropertyDetails().getId(), start);
-	                sel.setSinglePropertyDiscountBookingCount((int) bookings);
-
-	                boolean expiredByBookings = bookings >= 2;
-	                boolean expiredByDate = start.plusDays(1).isBefore(now) || start.plusDays(1).isEqual(now);
-	                if (expiredByBookings || expiredByDate) {
-	                    sel.setSinglePropertyDiscount20Percent(false);
-	                    sel.setSinglePropertyDiscountStartDate(null);
-	                    sel.setSinglePropertyDiscountBookingCount(0);
-	                    changed = true;
-	                }
-	            }
-
-	            if (changed) {
-	                selectionRepo.save(sel);
-	            }
-	        }
-	    }
-	
-	
+//	@Scheduled(cron = "0 25 10 * * *")
+// @Transactional
+//	    public void expireDiscountsDaily() {
+//	        LocalDateTime now = LocalDateTime.now();
+//
+//	        List<ShootingLocationSubcategorySelection> selections = selectionRepo.findAllWithAnyDiscountEnabled();
+//	        for (ShootingLocationSubcategorySelection sel : selections) {
+//	            boolean changed = false;
+//
+//	            if (Boolean.TRUE.equals(sel.isEntirePropertyDiscount20Percent()) && sel.getEntirePropertyDiscountStartDate() != null) {
+//	                LocalDateTime start = sel.getEntirePropertyDiscountStartDate();
+//	                long bookings = bookingRepo.countConfirmedBookingsByPropertySince(sel.getPropertyDetails().getId(), start);
+//	                sel.setEntirePropertyDiscountBookingCount((int) bookings);
+//
+//	                boolean expiredByBookings = bookings >= 2;
+//	                boolean expiredByDate = start.plusDays(1).isBefore(now) || start.plusDays(1).isEqual(now);
+//	                if (expiredByBookings || expiredByDate) {
+//	                    sel.setEntirePropertyDiscount20Percent(false);
+//	                    sel.setEntirePropertyDiscountStartDate(null);
+//	                    sel.setEntirePropertyDiscountBookingCount(0);
+//	                    changed = true;
+//	                }
+//	            }
+//
+//	            if (Boolean.TRUE.equals(sel.isSinglePropertyDiscount20Percent()) && sel.getSinglePropertyDiscountStartDate() != null) {
+//	                LocalDateTime start = sel.getSinglePropertyDiscountStartDate();
+//	                long bookings = bookingRepo.countConfirmedBookingsByPropertySince(sel.getPropertyDetails().getId(), start);
+//	                sel.setSinglePropertyDiscountBookingCount((int) bookings);
+//
+//	                boolean expiredByBookings = bookings >= 2;
+//	                boolean expiredByDate = start.plusDays(1).isBefore(now) || start.plusDays(1).isEqual(now);
+//	                if (expiredByBookings || expiredByDate) {
+//	                    sel.setSinglePropertyDiscount20Percent(false);
+//	                    sel.setSinglePropertyDiscountStartDate(null);
+//	                    sel.setSinglePropertyDiscountBookingCount(0);
+//	                    changed = true;
+//	                }
+//	            }
+//
+//	            if (changed) {
+//	                selectionRepo.save(sel);
+//	            }
+//	        }
+//	    }
+//	
+//	
 
 }

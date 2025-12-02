@@ -25,6 +25,13 @@ public interface PropertyAvailabilityDateRepository extends JpaRepository<Proper
     
     List<PropertyAvailabilityDate> findByProperty_Id(Integer propertyId);
     
+//    @Query("SELECT DISTINCT a.property.id FROM PropertyAvailabilityDate a " +
+//    	       "WHERE a.startDate <= :filterEndDate " +
+//    	       "AND a.endDate >= :filterStartDate")
+//    	List<Integer> findAvailablePropertyIds(
+//    	        LocalDate filterStartDate,
+//    	        LocalDate filterEndDate
+//    	);
 
 
 
