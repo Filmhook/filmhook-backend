@@ -11,6 +11,6 @@ public interface ShootingLocationSubcategorySelectionRepository extends JpaRepos
 
 	
 	
-	@Query("SELECT s FROM ShootingLocationSubcategorySelection s WHERE s.entirePropertyDiscount20Percent = true OR s.singlePropertyDiscount20Percent = true")
-    List<ShootingLocationSubcategorySelection> findAllWithAnyDiscountEnabled();
+//	@Query("SELECT s FROM ShootingLocationSubcategorySelection s WHERE s.entirePropertyDiscount20Percent = true OR s.singlePropertyDiscount20Percent = true")
+//    List<ShootingLocationSubcategorySelection> findAllWithAnyDiscountEnabled();
 }

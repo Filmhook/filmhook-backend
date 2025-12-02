@@ -1,6 +1,5 @@
 package com.annular.filmhook.webmodel;
 
-import com.annular.filmhook.model.ShootingLocationSubcategory;
 
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +17,12 @@ public class ShootingLocationSubcategorySelectionDTO {
 	    private Double singleDayPropertyPrice;
 	    private Double singleNightPropertyPrice;
 	    private Double singleFullDayPropertyPrice;
-		private boolean entirePropertyDiscount20Percent;
-		private boolean singlePropertyDiscount20Percent;
+	    private Integer entirePropertyDayDiscountPercent;
+	    private Integer entirePropertyNightDiscountPercent;
+	    private Integer entirePropertyFullDayDiscountPercent;
+
+	    private Integer singlePropertyDayDiscountPercent;
+	    private Integer singlePropertyNightDiscountPercent;
+	    private Integer singlePropertyFullDayDiscountPercent;
+
 }
-	

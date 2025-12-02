@@ -146,6 +146,20 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	private String typeLocation;
 	private String locationLink;
+    private String IdNumber;
+    private String ownerPermission;
+    private String selfOwnedPropertyDocument;
+    private String mortgagePropertyDocument; 
+    private String ownerPermittedDocument; 
+    private String propertyDamageDocument; 
+    private String crewAccidentDocument; 
+    
+    private String localAuthorities;
+    private String governmentPermission;
+
+    private Double additionalChargesForOverTime;
+	private String propertyDamageDescription;
+	private String crewAccidentLiabilityDescription;
 
 	public Double getTotalArea() {
 		return totalArea;

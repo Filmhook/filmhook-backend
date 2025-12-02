@@ -28,4 +28,6 @@ public enum MediaFileCategory {
     Promote,
     AuditionProfilePicture,
     ShootingLocationReview,
+    
+    shootingPropertyDocuments,
 }
