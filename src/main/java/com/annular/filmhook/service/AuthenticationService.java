@@ -14,7 +14,7 @@ import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface AuthenticationService {
 
-    ResponseEntity<?> register(UserWebModel userWebModel, String request);
+    ResponseEntity<?> updateregisterDetails(UserWebModel userWebModel);
 
     Response verifyExpiration(RefreshToken refreshToken);
 
@@ -68,4 +68,7 @@ public interface AuthenticationService {
     // ResponseEntity<?> forgotPassword(UserWebModel userWebModel,
     // HttpServletRequest request);
 
+	ResponseEntity<?> sendEmailOtp(UserWebModel model);
+	
+	
 }

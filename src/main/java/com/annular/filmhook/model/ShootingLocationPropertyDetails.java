@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -19,6 +20,7 @@ import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.annular.filmhook.util.LocalDateListConverter;
 import com.annular.filmhook.util.StringListConverter;
 
 import lombok.AllArgsConstructor;
@@ -210,8 +212,8 @@ public class ShootingLocationPropertyDetails {
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ShootingLocationPropertyReview> reviews;
  
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PropertyAvailabilityDate> availabilityDates;
+//    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//    private List<ShootingPropertyAvailabilityDates> availabilityDates;
     
     private String typeLocation;
     private String locationLink;
@@ -239,5 +241,12 @@ public class ShootingLocationPropertyDetails {
 	@Convert(converter = StringListConverter.class)
 	private List<String> insuranceRequired;
 	
+	private LocalDate availabilityStartDate;
+	private LocalDate availabilityEndDate;
+
+	@Convert(converter = LocalDateListConverter.class)
+	@Column(columnDefinition = "TEXT")
+	private List<LocalDate> pausedDates; 
+
 
 }

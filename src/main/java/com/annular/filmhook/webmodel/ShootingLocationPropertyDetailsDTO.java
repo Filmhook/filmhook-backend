@@ -2,20 +2,16 @@ package com.annular.filmhook.webmodel;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
+
 import java.util.List;
 
 import javax.persistence.Convert;
 
-import org.springframework.web.multipart.MultipartFile;
-
-import com.annular.filmhook.model.PropertyAvailabilityDate;
 import com.annular.filmhook.util.StringListConverter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -45,10 +41,7 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	// 2. Listing Summary
 	private String numberOfPeopleAllowed;
-
-
 	private double totalArea;
-
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private String selectedUnit;
 	private int numberOfRooms;
@@ -112,20 +105,8 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	private String description;
 	private boolean businessOwner;
-
-
-
-	private LocalDateTime createdOn;
-	private Integer createdBy;
-	private Boolean status;
-
 	private BusinessInformationDTO businessInformation;
 	private BankDetailsDTO bankDetailsDTO;
-
-	private List<String> imageUrls;
-	private List<String> governmentIdUrls;
-	private List<String> verificationVideo;
-
 	private Integer categoryId;
 	private Integer subCategoryId;
 	private Integer typesId;
@@ -134,32 +115,41 @@ public class ShootingLocationPropertyDetailsDTO {
 	private ShootingLocationCategoryDTO category;
 	private ShootingLocationSubcategoryDTO subCategory;
 	private ShootingLocationSubcategorySelectionDTO subcategorySelectionDTO;
-
 	private String industryName;
-	private List<Integer> industryIds;   
+	private List<Integer> industryIds;
+	private Integer industryId;	
+	
 	private boolean likedByUser;
 	private int likeCount;
-	private Integer industryId;	
 	private double averageRating;
 	private List<ShootingLocationPropertyReviewDTO> reviews;
 	private List<PropertyAvailabilityDTO> availabilityDates;
-
 	private String typeLocation;
 	private String locationLink;
-    private String IdNumber;
+	private List<String> imageUrls;
+	private String IdNumber;
+	private List<String> governmentIdUrls;
+	private List<String> verificationVideo;
     private String ownerPermission;
     private String selfOwnedPropertyDocument;
     private String mortgagePropertyDocument; 
     private String ownerPermittedDocument; 
     private String propertyDamageDocument; 
+	private String propertyDamageDescription;
     private String crewAccidentDocument; 
-    
+    private String crewAccidentLiabilityDescription;
     private String localAuthorities;
     private String governmentPermission;
-
     private Double additionalChargesForOverTime;
-	private String propertyDamageDescription;
-	private String crewAccidentLiabilityDescription;
+
+	
+
+	private LocalDate availabilityStartDate;
+	private LocalDate availabilityEndDate;
+	private List<LocalDate> pausedDates; 
+	private LocalDateTime createdOn;
+	private Integer createdBy;
+	private Boolean status;
 
 	public Double getTotalArea() {
 		return totalArea;

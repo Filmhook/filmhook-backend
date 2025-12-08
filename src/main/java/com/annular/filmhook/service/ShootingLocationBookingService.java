@@ -32,7 +32,7 @@ public interface ShootingLocationBookingService {
     void sendBookingExpiryReminders();
     void markBookingsAsCompleted();
     
-    List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
+//    List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
     
     boolean canChatByProperty(Integer senderId, Integer receiverId, Integer propertyId);
     String sendMessage(ShootingLocationChatDTO dto, Integer propertyId);

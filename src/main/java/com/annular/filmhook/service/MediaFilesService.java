@@ -36,6 +36,11 @@ public interface MediaFilesService {
 
 	void deleteMediaFilesByCategoryAndIds(MediaFileCategory category, List<Integer> idList);
 
-    
+	 void updateMediaFiles(MediaFileCategory category,
+             Integer refId,
+             Integer userId,
+             List<Integer> deleteIds,
+             FileInputWebModel newFiles,
+             boolean replaceMode);
 
 }

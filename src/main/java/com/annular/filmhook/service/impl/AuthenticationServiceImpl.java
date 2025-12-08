@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,73 +69,43 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Value("${annular.app.url}")
     private String url;
-
+    
     @Override
-    public ResponseEntity<?> register(UserWebModel userWebModel, String request) {
+    public ResponseEntity<?> updateregisterDetails(UserWebModel userWebModel) {
         HashMap<String, Object> response = new HashMap<>();
         try {
             logger.info("Register method start");
 
             // Check active users
-            Optional<User> activeUser = userRepository.findActiveUserByEmail(userWebModel.getEmail());
-            if (activeUser.isPresent()) {
-                return ResponseEntity.unprocessableEntity()
-                        .body(new Response(1, "This Account already exists", ""));
+            if (userWebModel.getUserId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "UserId is required", null));
             }
 
-            // Check inactive users
-            Optional<User> inactiveUser = userRepository.findInactiveUserByEmail(userWebModel.getEmail());
-
-            User user;
-            if (inactiveUser.isPresent()) {
-                // Reuse existing inactive user
-                user = inactiveUser.get();
-                logger.info("Reusing existing inactive user: " + user.getUserId());
-            } else {
-                // Create new user
-                user = new User();
+            Optional<User> userOpt = userRepository.findById(userWebModel.getUserId());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(0, "User not found", null));
             }
+            User user = userOpt.get();
 
             // Set user fields
             user.setPhoneNumber(userWebModel.getPhoneNumber());
-
-            // Build full name
-            StringBuilder name = new StringBuilder();
-            if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName())) {
-                user.setFirstName(userWebModel.getFirstName());
-                name.append(userWebModel.getFirstName()).append(" ");
-            }
-            if (!Utility.isNullOrBlankWithTrim(userWebModel.getMiddleName())) {
-                user.setMiddleName(userWebModel.getMiddleName());
-                name.append(userWebModel.getMiddleName()).append(" ");
-            }
-            if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) {
-                user.setLastName(userWebModel.getLastName());
-                name.append(userWebModel.getLastName());
-            }
-            user.setName(name.toString().trim());
-
-            user.setEmail(userWebModel.getEmail());
-            user.setUserType(userWebModel.getUserType());
+            user.setCountryCode(userWebModel.getCountryCode());
+            user.setUserType("Public User");
             user.setMobileNumberStatus(false);
             user.setIndustryUserVerified(false);
-            user.setDob(userWebModel.getDob());
             user.setAdminReview(0.1f);
-            user.setGender(userWebModel.getGender());
-            user.setBirthPlace(userWebModel.getBirthPlace());
-            user.setLivingPlace(userWebModel.getLivingPlace());
-            user.setDistrict(userWebModel.getDistrict());
-            user.setCountryCode(userWebModel.getCountryCode());
 
-            // Generate FilmHook code & encrypt password if new user
-            if (user.getUserId() == null) {
+            if (user.getFilmHookCode() == null || user.getFilmHookCode().isEmpty()) {
                 user.setFilmHookCode(this.generateFilmHookCode());
             }
+
             user.setPassword(new BCryptPasswordEncoder().encode(userWebModel.getPassword()));
 
             // Verification codes
             user.setVerificationCode(RandomString.make(64));
-            user.setOtp(Integer.parseInt(Utility.generateOtp(4)));
+//            user.setOtp(Integer.parseInt(Utility.generateOtp(4)));
             user.setEmailOtp(Integer.parseInt(Utility.generateOtp(4)));
          // boolean sendVerificationRes = this.sendVerificationEmail(user);
             // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
@@ -144,13 +115,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             if (user.getCreatedOn() == null) {
                 user.setCreatedOn(new Date());
             }
-
+            user.setStatus(true);  
             user.setUserFlag(true);
 
             // Save user
             user = userRepository.save(user);
             response.put("userDetails", user);
+            if (Boolean.TRUE.equals(user.getUserFlag())) {
 
+                String mailContent =
+                        "<p>Thank you for joining the Film-hook community! We're thrilled to have you on board as a Public User.</p>" +
+                        "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";
+
+                mailNotification.sendEmail(
+                        user.getName(),
+                        user.getEmail(),
+                        "Welcome to Film-hook Media Apps",
+                        mailContent
+                );
+            }
             logger.info("Register method end");
             return ResponseEntity.ok()
                     .body(new Response(1, "User was registered in FilmHook app successfully...", response));
@@ -389,48 +372,60 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 //            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to verify email OTP", ""));
 //        }
 //    }
-    @Override
-    public ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel) {
-        try {
-            List<User> userList = userRepository.findAll();
-            boolean emailOtpVerified = false; // Flag to track if email OTP is verified
-            User verifiedUser = null; // Hold the user object once OTP is verified
+   
 
-            for (User user : userList) {
-                if (user.getEmailOtp() != null && user.getEmailOtp().equals(userWebModel.getEmailOtp())) {
-                    // Email OTP matches, set the status of this user to true
-                    user.setStatus(true);
-                    userRepository.save(user);
-                    emailOtpVerified = true; // Set flag to true since email OTP is verified
-                    verifiedUser = user; // Store the verified user
-                    break; // Exit loop once OTP is verified
-                }
-            }
 
-            if (emailOtpVerified) {
-                // Check the user's flag (assuming this is a field in the User entity)
-            
-                    // If the userFlag is true, send the success email
-                	if (verifiedUser != null && Boolean.TRUE.equals(verifiedUser.getUserFlag())) {
-                    	String mailContent ="<p>Thank you for joining the Film-hook community! We're thrilled to have you on board as a Public User.</p>" +
-                                "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";                        
-                                mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "Welcome to Film-hook Media Apps", mailContent);
-                    }
-
-                // Return a success response if email OTP is verified
-                return ResponseEntity.ok(new Response(1, "Email OTP verified successfully. Public user account created in FilmHook.", ""));
-            } else {
-                // Return an error response if email OTP is not verified
-                return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP. Unable to create a public user account.", ""));
-            }
-
-        } catch (Exception e) {
-            // Handle any unexpected exceptions and return an error response
-            logger.error("Error verifying email OTP: {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to verify email OTP", ""));
-        }
-    }
+//    @Override
+//    public ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel) {
+//        try {
+//        	
+//        	 if (userWebModel.getUserId() == null || userWebModel.getEmailOtp() == null) {
+//                 return ResponseEntity.badRequest()
+//                         .body(new Response(0, "UserId and OTP are required", null));
+//             }
+//        	  Optional<User> userOpt = userRepository.findById(userWebModel.getUserId());
+//              if (userOpt.isEmpty()) {
+//                  return ResponseEntity.badRequest()
+//                          .body(new Response(0, "User not found", null));
+//              }
+//            boolean emailOtpVerified = false; // Flag to track if email OTP is verified
+//            User verifiedUser = null; // Hold the user object once OTP is verified
+//
+//            for (User user : userList) {
+//                if (user.getEmailOtp() != null && user.getEmailOtp().equals(userWebModel.getEmailOtp())) {
+//                    // Email OTP matches, set the status of this user to true
+//                    user.setStatus(true);
+//                    userRepository.save(user);
+//                    emailOtpVerified = true; // Set flag to true since email OTP is verified
+//                    verifiedUser = user; // Store the verified user
+//                    break; // Exit loop once OTP is verified
+//                }
+//            }
+//
+//            if (emailOtpVerified) {
+//                // Check the user's flag (assuming this is a field in the User entity)
+//            
+//                    // If the userFlag is true, send the success email
+//                	if (verifiedUser != null && Boolean.TRUE.equals(verifiedUser.getUserFlag())) {
+//                    	String mailContent ="<p>Thank you for joining the Film-hook community! We're thrilled to have you on board as a Public User.</p>" +
+//                                "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";                        
+//                                mailNotification.sendEmail(verifiedUser.getName(), verifiedUser.getEmail(), "Welcome to Film-hook Media Apps", mailContent);
+//                    }
+//
+//              //   Return a success response if email OTP is verified
+//                return ResponseEntity.ok(new Response(1, "Email OTP verified successfully. Public user account created in FilmHook.", ""));
+//            } else {
+//                // Return an error response if email OTP is not verified
+//                return ResponseEntity.badRequest().body(new Response(-1, "Invalid Email OTP. Unable to create a public user account.", ""));
+//            }
+//
+//        } catch (Exception e) {
+//            // Handle any unexpected exceptions and return an error response
+//            logger.error("Error verifying email OTP: {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.internalServerError().body(new Response(-1, "Failed to verify email OTP", ""));
+//        }
+//    }
 
 
 
@@ -847,8 +842,96 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the deactivate list.");
 		}
 	}
+	
+	  @Override
+	    public ResponseEntity<?> sendEmailOtp(UserWebModel model) {
+
+	        String email = model.getEmail();
+
+	        // 1️⃣ Check if active user exists
+	        Optional<User> active = userRepository.findActiveUserByEmail(email);
+	        if (active.isPresent()) {
+	            return ResponseEntity.unprocessableEntity()
+	                    .body(new Response(0, "This email already exists. Please login.", null));
+	        }
+
+	        // 2️⃣ Create new user row for OTP registration
+	        User user = new User();
+	        user.setEmail(email);
+
+	        // BASIC DETAILS must be saved before OTP
+	        user.setName(model.getName());
+	        user.setDob(model.getDob());
+	        user.setGender(model.getGender());
+	        user.setBirthPlace(model.getBirthPlace());
+	        user.setLivingPlace(model.getLivingPlace());
+	        user.setCountry(model.getCountry());
+	        user.setStatus(false);
+	        user.setUserFlag(true);
+	        user.setCreatedOn(new Date());
+
+	        // 3️⃣ Generate EXACT 4-DIGIT OTP (compulsory)
+	        int otp = 1000 + new Random().nextInt(9000); 
+	        user.setEmailOtp(otp);
+
+	        // 4️⃣ Save user row fully
+	        user = userRepository.save(user);
+
+	        // 5️⃣ Send OTP email
+	        mailNotification.sendVerificationEmail(user);
+	        
+	        Map<String, Object> responseData = new HashMap<>();
+	        responseData.put("userId", user.getUserId());
+	        
+	        return ResponseEntity.ok(new Response(1, "OTP sent successfully", responseData));
+	    }
 
 	
+	 @Override
+	    public ResponseEntity<?> verifyEmailOtp(UserWebModel userWebModel) {
+	        try {
+
+	            if (userWebModel.getUserId() == null || userWebModel.getEmailOtp() == null) {
+	                return ResponseEntity.badRequest()
+	                        .body(new Response(0, "UserId and OTP are required", null));
+	            }
+
+	            Optional<User> userOpt = userRepository.findById(userWebModel.getUserId());
+	            if (userOpt.isEmpty()) {
+	                return ResponseEntity.badRequest()
+	                        .body(new Response(0, "User not found", null));
+	            }
+
+	            User user = userOpt.get();
+
+	            if (user.getEmailOtp() == null ||
+	                !user.getEmailOtp().equals(userWebModel.getEmailOtp())) {
+
+	                return ResponseEntity.badRequest()
+	                        .body(new Response(-1, "Invalid Email OTP", ""));
+	            }
+
+	            // Update status or any other field after OTP verification
+//	            user.setStatus(true);
+	            user.setEmailOtp(null);
+	            userRepository.save(user);
+
+	            // Prepare response with userId
+	            Map<String, Object> responseData = new HashMap<>();
+	            responseData.put("userId", user.getUserId());
+
+	            return ResponseEntity.ok(
+	                    new Response(1, "Email OTP verified successfully", responseData)
+	            );
+
+	        } catch (Exception e) {
+	            logger.error("Error verifying email OTP: {}", e.getMessage(), e);
+	            return ResponseEntity.internalServerError()
+	                    .body(new Response(-1, "Failed to verify email OTP", ""));
+	        }
+	    }
+	
+		
 	
 	
 	

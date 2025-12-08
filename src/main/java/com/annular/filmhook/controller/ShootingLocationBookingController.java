@@ -180,16 +180,16 @@ public class ShootingLocationBookingController {
 	    }
 	}
 	
-	@GetMapping("/availability/{propertyId}")
-	public ResponseEntity<Response> getAvailableDates(@PathVariable Integer propertyId) {
-	    try {
-	        List<LocalDate> availableDates = bookingService.getAvailableDatesForProperty(propertyId);
-	        return ResponseEntity.ok(new Response(1, "Available dates fetched", availableDates));
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(0, "Error fetching availability: " + e.getMessage(), null));
-	    }
-	}
+//	@GetMapping("/availability/{propertyId}")
+//	public ResponseEntity<Response> getAvailableDates(@PathVariable Integer propertyId) {
+//	    try {
+//	        List<LocalDate> availableDates = bookingService.getAvailableDatesForProperty(propertyId);
+//	        return ResponseEntity.ok(new Response(1, "Available dates fetched", availableDates));
+//	    } catch (Exception e) {
+//	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//	                .body(new Response(0, "Error fetching availability: " + e.getMessage(), null));
+//	    }
+//	}
 
 	@PostMapping("/send")
 	public ResponseEntity<Response> sendMessage(
