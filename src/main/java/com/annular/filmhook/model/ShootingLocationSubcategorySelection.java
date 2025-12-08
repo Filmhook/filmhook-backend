@@ -55,7 +55,7 @@ public class ShootingLocationSubcategorySelection {
 	    private Integer singlePropertyDayDiscountPercent;
 	    private Integer singlePropertyNightDiscountPercent;
 	    private Integer singlePropertyFullDayDiscountPercent;	
-		
+	    
 	    private LocalDateTime entirePropertyDiscountStartDate;
 	    private LocalDateTime singlePropertyDiscountStartDate;
 	    private Integer entirePropertyDiscountBookingCount = 0;

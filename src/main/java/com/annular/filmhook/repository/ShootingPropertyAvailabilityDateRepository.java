@@ -10,20 +10,20 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.annular.filmhook.model.PropertyAvailabilityDate;
+import com.annular.filmhook.model.ShootingPropertyAvailabilityDates;
 
 @Repository
-public interface PropertyAvailabilityDateRepository extends JpaRepository<PropertyAvailabilityDate, Integer> {
-    List<PropertyAvailabilityDate> findByPropertyId(Integer propertyId);
+public interface ShootingPropertyAvailabilityDateRepository extends JpaRepository<ShootingPropertyAvailabilityDates, Integer> {
+    List<ShootingPropertyAvailabilityDates> findByPropertyId(Integer propertyId);
     
-    List<PropertyAvailabilityDate> findByPropertyIdIn(List<Integer> propertyIds);
+    List<ShootingPropertyAvailabilityDates> findByPropertyIdIn(List<Integer> propertyIds);
     
-    @Modifying
-    @Transactional
-    @Query("DELETE FROM PropertyAvailabilityDate p WHERE p.property.id = :propertyId")
-    void deleteByPropertyId(Integer propertyId);
+//    @Modifying
+//    @Transactional
+//    @Query("DELETE FROM PropertyAvailabilityDate p WHERE p.property.id = :propertyId")
+//    void deleteByPropertyId(Integer propertyId);
     
-    List<PropertyAvailabilityDate> findByProperty_Id(Integer propertyId);
+    List<ShootingPropertyAvailabilityDates> findByProperty_Id(Integer propertyId);
     
 //    @Query("SELECT DISTINCT a.property.id FROM PropertyAvailabilityDate a " +
 //    	       "WHERE a.startDate <= :filterEndDate " +

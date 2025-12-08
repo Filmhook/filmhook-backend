@@ -13,55 +13,56 @@ import java.time.temporal.ChronoUnit;
 @Component
 public class ShootingLocationBookingConverter {
 
-    public static ShootingLocationBooking toEntity(ShootingLocationBookingDTO dto, User client, ShootingLocationPropertyDetails property) {
-//        Double pricePerDay = property.getPriceCustomerPay();
-//        long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
-//        double baseAmount = pricePerDay * days;
-//        double gstAmount = baseAmount * 0.18; 
-//        double totalAmount = baseAmount + gstAmount;
+	public static ShootingLocationBooking toEntity(ShootingLocationBookingDTO dto) {
 
-        return ShootingLocationBooking.builder()
-        		
-                .shootStartDate(dto.getShootStartDate())
-                .shootEndDate(dto.getShootEndDate())
-                .bookingDate(LocalDate.now())
-                .status(BookingStatus.PENDING)
-                .createdBy(dto.getClientId())
-                .client(client)
-                .property(property)
-//                .pricePerDay(pricePerDay)
-//                .baseAmount(baseAmount)
-//                .gstAmount(gstAmount)
-//                .totalAmount(totalAmount)
-                .bookingMessage(dto.getBookingMessage())
-                .build();
-    }
+	    if (dto == null) return null;
 
-    public static ShootingLocationBookingDTO toDTO(ShootingLocationBooking booking) {
-    	
-    	 if (booking == null) {
-    	        throw new IllegalArgumentException("Booking is null");
-    	    }
+	    ShootingLocationBooking booking = new ShootingLocationBooking();
 
-    	    if (booking.getClient() == null || booking.getProperty() == null) {
-    	        throw new IllegalArgumentException("Client or Property information is missing in booking ID: " + booking.getId());
-    	    }
+	    // --- INPUT FIELDS ONLY ---
+	    booking.setBookingType(dto.getBookingType());
+	    booking.setSlotType(dto.getSlotType());
+	    booking.setSlotTimings(dto.getSlotTimings());
+
+	    booking.setShootStartDate(dto.getShootStartDate());
+	    booking.setShootEndDate(dto.getShootEndDate());
+
+	    booking.setBookingMessage(dto.getBookingMessage());
+
+	    return booking;
+	}
+
+    public static ShootingLocationBookingDTO toDTO(ShootingLocationBooking b) {
+
+        if (b == null) return null;
+
         return ShootingLocationBookingDTO.builder()
-        		.bookingId(booking.getId())
-                .propertyId(booking.getProperty().getId())
-                .clientId(booking.getClient().getUserId())
-                .createdBy(booking.getClient().getUserId())
-                .shootStartDate(booking.getShootStartDate())
-                .shootEndDate(booking.getShootEndDate())
-                .bookingMessage(booking.getBookingMessage())
-                .pricePerDay(booking.getPricePerDay())
-                .totalAmount(booking.getTotalAmount())
-                .baseAmount(booking.getBaseAmount())
-                .gstAmount(booking.getGstAmount())
-                .bookingStatus(
-                	    booking.getStatus() != null ? booking.getStatus().name() : "UNKNOWN"
-                	)
+                .bookingId(b.getId())
+                .propertyId(b.getProperty().getId())
+                .clientId(b.getClient().getUserId())
+                .createdBy(b.getProperty().getCreatedBy())
+
+                .bookingType(b.getBookingType())
+                .slotType(b.getSlotType())
+                .slotTimings(b.getSlotTimings())
+
+                .shootStartDate(b.getShootStartDate())
+                .shootEndDate(b.getShootEndDate())
+
+                .totalDays(b.getTotalDays())
+
+                // ------- PRICE BREAKDOWN -------
+                .pricePerDay(b.getPricePerDay())
+                .subtotal(b.getSubtotal())
+                .discountPercent(b.getDiscountPercent())
+                .discountAmount(b.getDiscountAmount())
+                .amountAfterDiscount(b.getAmountAfterDiscount())
+                .gstPercent(b.getGstPercent())
+                .gstAmount(b.getGstAmount())
+                .netAmount(b.getNetAmount())
+
+                .bookingMessage(b.getBookingMessage())
+                .bookingStatus(b.getStatus().name())
                 .build();
-               
     }
 }

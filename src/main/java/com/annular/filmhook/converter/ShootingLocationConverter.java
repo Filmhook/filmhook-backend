@@ -114,7 +114,7 @@ public class ShootingLocationConverter {
 	            .IdNumber(e.getIdNumber())
 	            .ownerPermission(e.getOwnerPermission())
 	            .selfOwnedPropertyDocument(e.getSelfOwnedPropertyDocument())
-	            .mortgagePropertyDocument(e.getMiddleName())
+	            .mortgagePropertyDocument(e.getMortgagePropertyDocument())
 	            .ownerPermittedDocument(e.getOwnerPermittedDocument())
 	            .propertyDamageDocument(e.getPropertyDamageDocument())
 	            .propertyDamageDescription(e.getPropertyDamageDescription())

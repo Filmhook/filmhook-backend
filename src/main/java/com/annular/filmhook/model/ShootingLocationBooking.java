@@ -14,6 +14,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,38 +30,53 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ShootingLocationBooking {
+	 @Id
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	    private Integer id;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+	    @ManyToOne
+	    @JoinColumn(name = "property_id", nullable = false)
+	    private ShootingLocationPropertyDetails property;
 
-    @ManyToOne
-    @JoinColumn(name = "property_id", nullable = false)
-    private ShootingLocationPropertyDetails property;
+	    @ManyToOne
+	    @JoinColumn(name = "client_id", nullable = false)
+	    private User client;
 
-    @ManyToOne
-    @JoinColumn(name = "client_id", nullable = false)
-    private User client;
+	    // Booking Dates
+	    private LocalDate shootStartDate;
+	    private LocalDate shootEndDate;
+	    private Integer totalDays;
+	    
+	    @Enumerated(EnumType.STRING)
+	    private PropertyBookingType bookingType;  
 
-    @Column(name = "created_by")
-    private Integer createdBy;
+	    @Enumerated(EnumType.STRING)
+	    private SlotType slotType;              
 
-    private LocalDate bookingDate;
-    private LocalDate shootStartDate;
-    private LocalDate shootEndDate;
+	    private String slotTimings;    
 
-    private Double pricePerDay;
-    private Double totalAmount;
-    private Double baseAmount;
-    private Double gstAmount;
+	    private Double pricePerDay;             
+	    private Double subtotal;                    
 
-    @Enumerated(EnumType.STRING)
-    private BookingStatus status;
+	    private Double discountPercent;         
+	    private Double discountAmount;           
 
-    private String bookingMessage;
+	    private Double amountAfterDiscount;    
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+	    private Double gstPercent;              
+	    private Double gstAmount;               
 
+	    private Double netAmount;               
+
+	    private String bookingMessage;
+
+	    @Enumerated(EnumType.STRING)
+	    private BookingStatus status;
+
+	    @CreationTimestamp
+	    private LocalDateTime createdAt;
+
+	    private LocalDateTime updatedAt;
+	
   
 }

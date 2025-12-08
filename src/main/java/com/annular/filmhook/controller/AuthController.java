@@ -64,11 +64,11 @@ public class AuthController {
     @Autowired
     UserService userServices;
 
-    @PostMapping("register")
-    public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel, String request) {
+    @PostMapping("/register")
+    public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
         try {
             logger.info("User details to register :- {}", userWebModel);
-            return userService.register(userWebModel, request);
+            return userService.updateregisterDetails(userWebModel);
         } catch (Exception e) {
             logger.error("userRegister Method Exception -> {}", e.getMessage());
             e.printStackTrace();
@@ -406,5 +406,11 @@ public class AuthController {
             e.printStackTrace();
         }
         return ResponseEntity.ok(new Response(-1, "Fail", ""));
+    }
+    
+    
+    @PostMapping("/sendEmailOtp")
+    public ResponseEntity<?> sendEmailOtp(@RequestBody UserWebModel model) {
+        return userService.sendEmailOtp(model);
     }
 }
