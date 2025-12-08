@@ -913,7 +913,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	            // Update status or any other field after OTP verification
 //	            user.setStatus(true);
-	            user.setEmailOtp(null);
+//	            user.setEmailOtp(null);
 	            userRepository.save(user);
 
 	            // Prepare response with userId
