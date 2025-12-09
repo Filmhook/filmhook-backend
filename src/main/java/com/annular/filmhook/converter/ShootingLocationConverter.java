@@ -62,11 +62,11 @@ public class ShootingLocationConverter {
 	            .wifi(e.getWifi())
 	            .airConditionAndHeating(e.getAirConditionAndHeating())
 	            .numberOfWashrooms(e.getNumberOfWashrooms())
-	            .restrooms(e.getRestrooms())
+	           
 	            .waterSupply(e.getWaterSupply())
 	            .changingRooms(e.getChangingRooms())
 	            .kitchen(e.getKitchen())
-	            .furnitureAndProps(e.getFurnitureAndProps())
+	           
 	            .neutralLightingConditions(e.getNeutralLightingConditions())
 	            .artificialLightingAvailability(e.getArtificialLightingAvailability())
 	            .parkingCapacity(e.getParkingCapacity())
@@ -75,31 +75,11 @@ public class ShootingLocationConverter {
 	            .droneUsage(e.getDroneUsage())
 	            .firearms(e.getFirearms())
 	            .actionScenes(e.getActionScenes())
-	            .security(e.getSecurity())
+	         
 	            .structuralModification(e.getStructuralModification())
 	            .temporary(e.getTemporary())
 	            .dressing(e.getDressing())
-//	            .permissions(e.getPermissions())
-//	            .noiseRestrictions(e.getNoiseRestrictions())
-//	            .shootingTiming(e.getShootingTiming())
 	            .insuranceRequired(e.getInsuranceRequired())
-//	            .legalAgreements(e.getLegalAgreements())
-
-	            // ----- Accessibility -----
-//	            .roadAccessAndCondition(e.getRoadAccessAndCondition())
-//	            .publicTransport(e.getPublicTransport())
-//	            .nearestAirportOrRailway(e.getNearestAirportOrRailway())
-//	            .accommodationNearby(e.getAccommodationNearby())
-//	            .foodAndCatering(e.getFoodAndCatering())
-//	            .emergencyServicesNearby(e.getEmergencyServicesNearby())
-
-	            // ----- Pricing -----
-//	            .rentalCost(e.getRentalCost())
-//	            .securityDeposit(e.getSecurityDeposit())
-//	            .additionalCharges(e.getAdditionalCharges())
-//	            .paymentModelsAccepted(e.getPaymentModelsAccepted())
-//	            .cancellationPolicy(e.getCancellationPolicy())
-
 	            // ----- Misc -----
 	            .description(e.getDescription())
 	            .businessOwner(e.isBusinessOwner())
@@ -257,18 +237,18 @@ public class ShootingLocationConverter {
 	            .wifi(dto.getWifi())
 	            .airConditionAndHeating(dto.getAirConditionAndHeating())
 	            .numberOfWashrooms(dto.getNumberOfWashrooms())
-	            .restrooms(dto.getRestrooms())
+	          
 	            .waterSupply(dto.getWaterSupply())
 	            .changingRooms(dto.getChangingRooms())
 	            .kitchen(dto.getKitchen())
-	            .furnitureAndProps(dto.getFurnitureAndProps())
+	            
 	            .neutralLightingConditions(dto.getNeutralLightingConditions())
 	            .artificialLightingAvailability(dto.getArtificialLightingAvailability())
 	            .parkingCapacity(dto.getParkingCapacity())
 	            .droneUsage(dto.getDroneUsage())
 	            .firearms(dto.getFirearms())
 	            .actionScenes(dto.getActionScenes())
-	            .security(dto.getSecurity())
+	           
 	            .structuralModification(dto.getStructuralModification())
 	            .temporary(dto.getTemporary())
 	            .dressing(dto.getDressing())

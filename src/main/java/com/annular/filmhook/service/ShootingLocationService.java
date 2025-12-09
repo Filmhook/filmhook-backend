@@ -61,4 +61,9 @@ public interface ShootingLocationService {
 	public ResponseEntity<Response> handleShootingLocationPaymentSuccess(String txnid);
 	ResponseEntity<?> handleShootingLocationPaymentFailed(String txnid, String reason);
 	
+	List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIdsAndDates(
+	        Integer industryId,
+	        Integer userId,
+	        LocalDate startDate,
+	        LocalDate endDate);
 }

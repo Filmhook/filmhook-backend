@@ -88,15 +88,12 @@ public class ShootingLocationPropertyDetails {
 	private String airConditionAndHeating;
 	private int numberOfWashrooms;
 	@Convert(converter = StringListConverter.class)
-	private List<String> restrooms;
-	@Convert(converter = StringListConverter.class)
 	private List<String> waterSupply;
 	@Convert(converter = StringListConverter.class)
 	private List<String> changingRooms;
 	@Convert(converter = StringListConverter.class)
 	private List<String> kitchen;
-	@Convert(converter = StringListConverter.class)
-	private List<String> furnitureAndProps;
+
 	@Convert(converter = StringListConverter.class)
 	private List<String> neutralLightingConditions;
 	@Convert(converter = StringListConverter.class)
@@ -108,7 +105,6 @@ public class ShootingLocationPropertyDetails {
 	private String droneUsage;
 	private String firearms;
 	private String actionScenes;
-	private String security;
 	@Convert(converter = StringListConverter.class)
 	private List<String> structuralModification;
 	private String temporary;
