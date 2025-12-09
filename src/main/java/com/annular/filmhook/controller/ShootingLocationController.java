@@ -49,6 +49,7 @@ import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
+import com.annular.filmhook.webmodel.ShootingPropertyByIndustryAndDateRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -448,7 +449,7 @@ public class ShootingLocationController {
 		}
 	}
 
-	@GetMapping("/available-dates/{propertyId}")
+	@GetMapping("/availableDates/{propertyId}")
 	public ResponseEntity<?> getAvailableDates(@PathVariable Integer propertyId) {
 		try {
 			List<LocalDate> availableDates = service.getAvailableDatesForProperty(propertyId);
@@ -517,6 +518,19 @@ public class ShootingLocationController {
 	    public ResponseEntity<?> shootingPaymentFailed( @RequestParam String txnid, @RequestParam(required = false, defaultValue = "Transaction Failed") String reason) {
 
 	        return service.handleShootingLocationPaymentFailed(txnid, reason);
+	    }
+	    
+	    @PostMapping("/properties/byIndustry")
+	    public ResponseEntity<?> getProperties(@RequestBody ShootingPropertyByIndustryAndDateRequest req) {
+	        List<ShootingLocationPropertyDetailsDTO> result =
+	            service.getPropertiesByIndustryIdsAndDates(
+	                req.getIndustryId(),
+	                req.getUserId(),
+	                req.getStartDate(), 
+	                req.getEndDate()     
+	            );
+
+	        return ResponseEntity.ok(new Response(1, "Success", result));
 	    }
 
 }

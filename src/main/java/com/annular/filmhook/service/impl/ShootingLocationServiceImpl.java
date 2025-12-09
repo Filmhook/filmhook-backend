@@ -145,7 +145,7 @@ import com.itextpdf.layout.borders.SolidBorder;
 @Service
 public class ShootingLocationServiceImpl implements ShootingLocationService {
 
-	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
+	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationServiceImpl.class);
 	private static final DeviceRgb BRAND_BLUE = new DeviceRgb(3, 169, 244);
 	@Autowired
 	private ShootingLocationTypesRepository typesRepo;
@@ -802,6 +802,134 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		}
 	}
 
+
+ @Override
+    public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIdsAndDates(
+            Integer industryId,
+            Integer userId,
+            LocalDate startDate,
+            LocalDate endDate) {
+	
+
+        try {
+
+            // VALIDATION
+            if (industryId == null) {
+                throw new RuntimeException("Industry ID is required");
+            }
+            if (userId == null) {
+                throw new RuntimeException("User ID is required");
+            }
+            if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+                throw new RuntimeException("Start Date cannot be after End Date");
+            }
+
+            // 1️⃣ Fetch all active properties for the single industry
+            List<ShootingLocationPropertyDetails> properties =
+                    propertyDetailsRepository.findAllActiveByIndustryIndustryId(
+                            Collections.singletonList(industryId)
+                    );
+
+            if (properties == null || properties.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            // 2️⃣ If search dates provided -> filter strictly
+            if (startDate != null && endDate != null) {
+
+                List<LocalDate> selectedDates = startDate.datesUntil(endDate.plusDays(1)).collect(Collectors.toList());
+
+                properties = properties.stream()
+                        .filter(p -> {
+
+                            // Exclude null availability fields
+                            if (p.getAvailabilityStartDate() == null || p.getAvailabilityEndDate() == null) {
+                                logger.debug("Property {} excluded: availabilityStart/End is null", p.getId());
+                                return false;
+                            }
+
+                            // Ensure property's availability window fully contains search window
+                            if (p.getAvailabilityStartDate().isAfter(startDate) || p.getAvailabilityEndDate().isBefore(endDate)) {
+                                logger.debug("Property {} excluded: availability window {} - {} does not contain search {} - {}",
+                                        p.getId(), p.getAvailabilityStartDate(), p.getAvailabilityEndDate(), startDate, endDate);
+                                return false;
+                            }
+
+                            // Generate available dates for the property (removes paused and confirmed bookings)
+                            List<LocalDate> availableDates;
+                            try {
+                                availableDates = getAvailableDatesForProperty(p.getId());
+                            } catch (RuntimeException ex) {
+                                // If generation fails treat property as unavailable for safety
+                                logger.warn("Unable to generate availableDates for property {}: {}", p.getId(), ex.getMessage());
+                                return false;
+                            }
+
+                            // Ensure every selected date exists in availableDates
+                            boolean allAvailable = selectedDates.stream().allMatch(availableDates::contains);
+                            if (!allAvailable) {
+                                logger.debug("Property {} excluded: not all selectedDates are available", p.getId());
+                            }
+                            return allAvailable;
+                        })
+                        .collect(Collectors.toList());
+            }
+
+            if (properties.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            // 3️⃣ Preload user likes
+            Set<Integer> likedPropertyIds = likeRepository.findByLikedById(userId)
+                    .stream()
+                    .filter(PropertyLike::getStatus)
+                    .map(l -> l.getProperty().getId())
+                    .collect(Collectors.toSet());
+
+            // 4️⃣ Convert to DTOs
+            List<ShootingLocationPropertyDetailsDTO> dtoList = new ArrayList<>();
+
+            for (ShootingLocationPropertyDetails p : properties) {
+
+                ShootingLocationPropertyDetailsDTO dto = shootingLocationPropertyConverter.entityToDto(p);
+
+                // Industry info (entity might be lazy)
+                if (p.getIndustry() != null) {
+                    dto.setIndustryId(p.getIndustry().getIndustryId());
+                    dto.setIndustryName(p.getIndustry().getIndustryName());
+                }
+
+                // Likes
+                dto.setLikedByUser(likedPropertyIds.contains(p.getId()));
+                dto.setLikeCount(likeRepository.countLikesByPropertyId(p.getId()));
+
+                // Media files
+                List<String> imageUrls = mediaFilesService
+                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, p.getId())
+                        .stream().map(FileOutputWebModel::getFilePath).collect(Collectors.toList());
+
+                List<String> govtIdUrls = mediaFilesService
+                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingGovermentId, p.getId())
+                        .stream().map(FileOutputWebModel::getFilePath).collect(Collectors.toList());
+
+                List<String> verificationVideo = mediaFilesService
+                        .getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationVerificationVideo, p.getId())
+                        .stream().map(FileOutputWebModel::getFilePath).collect(Collectors.toList());
+
+                dto.setImageUrls(imageUrls);
+                dto.setGovernmentIdUrls(govtIdUrls);
+                dto.setVerificationVideo(verificationVideo);
+
+                dtoList.add(dto);
+            }
+
+            return dtoList;
+
+        } catch (Exception e) {
+            logger.error("Error fetching properties:", e);
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
 
 
 	@Override
@@ -1492,18 +1620,18 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.wifi(property.getWifi())
 					.airConditionAndHeating(property.getAirConditionAndHeating())
 					.numberOfWashrooms(property.getNumberOfWashrooms())
-					.restrooms(property.getRestrooms())
+				
 					.waterSupply(property.getWaterSupply())
 					.changingRooms(property.getChangingRooms())
 					.kitchen(property.getKitchen())
-					.furnitureAndProps(property.getFurnitureAndProps())
+					
 					.neutralLightingConditions(property.getNeutralLightingConditions())
 					.artificialLightingAvailability(property.getArtificialLightingAvailability())
 					.parkingCapacity(property.getParkingCapacity())
 					.droneUsage(property.getDroneUsage())
 					.firearms(property.getFirearms())
 					.actionScenes(property.getActionScenes())
-					.security(property.getSecurity())
+			
 					.structuralModification(property.getStructuralModification())
 					.temporary(property.getTemporary())
 					.dressing(property.getDressing())

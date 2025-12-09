@@ -24,8 +24,8 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 //@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class ShootingLocationPropertyDetailsDTO {
 	// Property Information
+public class ShootingLocationPropertyDetailsDTO {
 	private Integer id;
 	private String firstName;
 	private String middleName;

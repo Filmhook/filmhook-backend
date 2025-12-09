@@ -70,81 +70,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${annular.app.url}")
     private String url;
     
-    @Override
-    public ResponseEntity<?> updateregisterDetails(UserWebModel userWebModel) {
-        HashMap<String, Object> response = new HashMap<>();
-        try {
-            logger.info("Register method start");
-
-            // Check active users
-            if (userWebModel.getUserId() == null) {
-                return ResponseEntity.badRequest()
-                        .body(new Response(0, "UserId is required", null));
-            }
-
-            Optional<User> userOpt = userRepository.findById(userWebModel.getUserId());
-            if (userOpt.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new Response(0, "User not found", null));
-            }
-            User user = userOpt.get();
-
-            // Set user fields
-            user.setPhoneNumber(userWebModel.getPhoneNumber());
-            user.setCountryCode(userWebModel.getCountryCode());
-            user.setUserType("Public User");
-            user.setMobileNumberStatus(false);
-            user.setIndustryUserVerified(false);
-            user.setAdminReview(0.1f);
-
-            if (user.getFilmHookCode() == null || user.getFilmHookCode().isEmpty()) {
-                user.setFilmHookCode(this.generateFilmHookCode());
-            }
-
-            user.setPassword(new BCryptPasswordEncoder().encode(userWebModel.getPassword()));
-
-            // Verification codes
-            user.setVerificationCode(RandomString.make(64));
-//            user.setOtp(Integer.parseInt(Utility.generateOtp(4)));
-            user.setEmailOtp(Integer.parseInt(Utility.generateOtp(4)));
-         // boolean sendVerificationRes = this.sendVerificationEmail(user);
-            // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
-            // Set status false
-            user.setStatus(false);
-
-            if (user.getCreatedOn() == null) {
-                user.setCreatedOn(new Date());
-            }
-            user.setStatus(true);  
-            user.setUserFlag(true);
-
-            // Save user
-            user = userRepository.save(user);
-            response.put("userDetails", user);
-            if (Boolean.TRUE.equals(user.getUserFlag())) {
-
-                String mailContent =
-                        "<p>Thank you for joining the Film-hook community! We're thrilled to have you on board as a Public User.</p>" +
-                        "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";
-
-                mailNotification.sendEmail(
-                        user.getName(),
-                        user.getEmail(),
-                        "Welcome to Film-hook Media Apps",
-                        mailContent
-                );
-            }
-            logger.info("Register method end");
-            return ResponseEntity.ok()
-                    .body(new Response(1, "User was registered in FilmHook app successfully...", response));
-
-        } catch (Exception e) {
-            logger.error("Register Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
-        }
-    }
+  
 
     private static final AtomicInteger counter = new AtomicInteger(1);
 
@@ -931,7 +857,82 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	        }
 	    }
 	
-		
+	 
+	  @Override
+	    public ResponseEntity<?> updateregisterDetails(UserWebModel userWebModel) {
+	        HashMap<String, Object> response = new HashMap<>();
+	        try {
+	            logger.info("Register method start");
+
+	            // Check active users
+	            if (userWebModel.getUserId() == null) {
+	                return ResponseEntity.badRequest()
+	                        .body(new Response(0, "UserId is required", null));
+	            }
+
+	            Optional<User> userOpt = userRepository.findById(userWebModel.getUserId());
+	            if (userOpt.isEmpty()) {
+	                return ResponseEntity.badRequest()
+	                        .body(new Response(0, "User not found", null));
+	            }
+	            User user = userOpt.get();
+
+	            // Set user fields
+	            user.setPhoneNumber(userWebModel.getPhoneNumber());
+	            user.setCountryCode(userWebModel.getCountryCode());
+	            user.setUserType("Public User");
+	            user.setMobileNumberStatus(false);
+	            user.setIndustryUserVerified(false);
+	            user.setAdminReview(0.1f);
+
+	            if (user.getFilmHookCode() == null || user.getFilmHookCode().isEmpty()) {
+	                user.setFilmHookCode(this.generateFilmHookCode());
+	            }
+
+	            user.setPassword(new BCryptPasswordEncoder().encode(userWebModel.getPassword()));
+
+	            // Verification codes
+	            user.setVerificationCode(RandomString.make(64));
+//	            user.setOtp(Integer.parseInt(Utility.generateOtp(4)));
+	            user.setEmailOtp(Integer.parseInt(Utility.generateOtp(4)));
+	         // boolean sendVerificationRes = this.sendVerificationEmail(user);
+	            // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
+	            // Set status false
+	            user.setStatus(false);
+
+	            if (user.getCreatedOn() == null) {
+	                user.setCreatedOn(new Date());
+	            }
+	            user.setStatus(true);  
+	            user.setUserFlag(true);
+
+	            // Save user
+	            user = userRepository.save(user);
+	            response.put("userDetails", user);
+	            if (Boolean.TRUE.equals(user.getUserFlag())) {
+
+	                String mailContent =
+	                        "<p>Thank you for joining the Film-hook community! We're thrilled to have you on board as a Public User.</p>" +
+	                        "<p>Explore the world of cinema and entertainment like never before. Whether you're here to follow your favorite stars or discover fresh talent, you're in the right place. Browse through the latest films, engage with creative content, and join a community that celebrates storytelling in all its forms.</p>";
+
+	                mailNotification.sendEmail(
+	                        user.getName(),
+	                        user.getEmail(),
+	                        "Welcome to Film-hook Media Apps",
+	                        mailContent
+	                );
+	            }
+	            logger.info("Register method end");
+	            return ResponseEntity.ok()
+	                    .body(new Response(1, "User was registered in FilmHook app successfully...", response));
+
+	        } catch (Exception e) {
+	            logger.error("Register Method Exception -> {}", e.getMessage());
+	            e.printStackTrace();
+	            return ResponseEntity.internalServerError()
+	                    .body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
+	        }
+	    }
 	
 	
 	
