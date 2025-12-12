@@ -20,10 +20,14 @@ public enum MediaFileCategory {
     ShootingLocationChat,
     oneMinuteVideo,
     govermentId,
+    shootingGovermentId,
     shootingLocationImage,
+    shootingLocationVerificationVideo,
     shootingLocationImageProof,
     AuditionScript,
     Promote,
     AuditionProfilePicture,
     ShootingLocationReview,
+    
+    shootingPropertyDocuments,
 }

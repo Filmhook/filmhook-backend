@@ -1,5 +1,6 @@
 package com.annular.filmhook.controller;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,11 +32,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
+import com.annular.filmhook.webmodel.PaymentsDTO;
 import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
+import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
@@ -44,6 +48,8 @@ import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
+import com.annular.filmhook.webmodel.ShootingPaymentModel;
+import com.annular.filmhook.webmodel.ShootingPropertyByIndustryAndDateRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -151,65 +157,67 @@ public class ShootingLocationController {
 		}
 	}
 
-
 	@GetMapping("/user/{userId}")
-	public ResponseEntity<List<ShootingLocationPropertyDetailsDTO>> getPropertiesByUserId(@PathVariable Integer userId) {
-		List<ShootingLocationPropertyDetailsDTO> properties = service.getPropertiesByUserId(userId);
-		if (properties.isEmpty()) {
-			return ResponseEntity.noContent().build();
+	public ResponseEntity<Response> getPropertiesByUserId(@PathVariable Integer userId) {
+
+		Response response = service.getPropertiesByUserId(userId);
+
+		// If no data
+		if (response.getStatus() == 0) {
+			return ResponseEntity.status(HttpStatus.OK).body(response);
 		}
-		return ResponseEntity.ok(properties);
+
+		return ResponseEntity.ok(response);
 	}
+
 	@DeleteMapping("deleteProperty/{id}")
 	public ResponseEntity<Response> deleteProperty(@PathVariable Integer id) {
-	    Response response = service.deletePropertyById(id);
-	    return ResponseEntity.ok(response);
+		Response response = service.deletePropertyById(id);
+		return ResponseEntity.ok(response);
 	}
 
 
 	@PostMapping("/savePropertyDetails")
 	public ResponseEntity<Response> savePropertyDetails(
 			@ModelAttribute ShootingLocationFileInputModel inputFile,
-			@RequestPart(value = "propertyDetails", required = false) ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
+			@RequestPart(value = "propertyDetails", required = false)
+			ShootingLocationPropertyDetailsDTO propertyDetailsDTO) {
 
 		try {
-			logger.info("POST /save - Saving property: {}", propertyDetailsDTO.getPropertyName());
-			service.savePropertyDetails(propertyDetailsDTO, inputFile);
-			return ResponseEntity.status(HttpStatus.CREATED)
-					.body(new Response(1, "Property details saved successfully", null));
+			Response response = service.savePropertyDetails(propertyDetailsDTO, inputFile);
 
-		} catch (ResponseStatusException e) {
-			logger.warn("Save failed: {}", e.getReason());
-			return ResponseEntity.status(e.getStatus())
-					.body(new Response(-1, e.getReason(), null));
+			// If service returns status = 1 → Success
+			if (response.getStatus() == 1) {
+				return ResponseEntity.status(HttpStatus.CREATED).body(response);
+			}
+
+			// If service returns status = -1 → Validation Error
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 
 		} catch (Exception e) {
-			logger.error("Unexpected error saving property: {}", e.getMessage(), e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new Response(-1, "Failed to save property details", e.getMessage()));
 		}
 	}
-
-
-	@PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	public ResponseEntity<Response> updateProperty(
-			@RequestParam("propertyId") Integer propertyId,
-			@RequestPart("propertyDetails") ShootingLocationPropertyDetailsDTO dto,
-			@ModelAttribute ShootingLocationFileInputModel mediaFiles) {
-
-		try {
-			service.updatePropertyDetails(propertyId, dto, mediaFiles);
-			return ResponseEntity.ok(new Response(1, "Property updated successfully", null));
-
-		} catch (ResponseStatusException e) {
-			return ResponseEntity.status(e.getStatus())
-					.body(new Response(-1, e.getReason(), null));
-
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new Response(-1, "Unexpected error during update", e.getMessage()));
-		}
-	}
+//	@PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//	public ResponseEntity<Response> updateProperty(
+//			@RequestParam("propertyId") Integer propertyId,
+//			@RequestPart("propertyDetails") ShootingLocationPropertyDetailsDTO dto,
+//			@ModelAttribute ShootingLocationFileInputModel mediaFiles) {
+//
+//		try {
+//			service.updatePropertyDetails(propertyId, dto, mediaFiles);
+//			return ResponseEntity.ok(new Response(1, "Property updated successfully", null));
+//
+//		} catch (ResponseStatusException e) {
+//			return ResponseEntity.status(e.getStatus())
+//					.body(new Response(-1, e.getReason(), null));
+//
+//		} catch (Exception e) {
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body(new Response(-1, "Unexpected error during update", e.getMessage()));
+//		}
+//	}
 
 
 	@PostMapping("/addLike")
@@ -391,57 +399,6 @@ public class ShootingLocationController {
 	}
 
 
-	@PostMapping("/save/availabilityDates")
-	public ResponseEntity<?> saveAvailability(@RequestBody PropertyAvailabilityDTO dto) {
-		try {
-			PropertyAvailabilityDTO saved = service.saveAvailability(dto);
-			return ResponseEntity.ok(new Response(1, "Availability Saved", saved));
-		} catch (Exception e) {
-			return ResponseEntity.internalServerError().body(new Response(-1, e.getMessage(), null));
-		}
-	}
-
-	@GetMapping("/availabilityDates/{propertyId}")
-	public ResponseEntity<?> getAvailability(@PathVariable Integer propertyId) {
-		try {
-			List<PropertyAvailabilityDTO> list = service.getAvailabilityByPropertyId(propertyId);
-			return ResponseEntity.ok(new Response(1, "Fetched successfully", list));
-		} catch (Exception e) {
-			return ResponseEntity.internalServerError().body(new Response(-1, e.getMessage(), null));
-		}
-	}
-
-	@PutMapping("/availabilityDates/update")
-	public ResponseEntity<?> updateAvailability(@RequestBody List<PropertyAvailabilityDTO> availabilityList) {
-		try {
-			if (availabilityList == null || availabilityList.isEmpty()) {
-				return ResponseEntity.badRequest().body("❌ Availability list is empty.");
-			}
-
-			// Validate date ranges
-			for (PropertyAvailabilityDTO dto : availabilityList) {
-				if (dto.getStartDate() == null || dto.getEndDate() == null) {
-					return ResponseEntity.badRequest().body("❌ Start date and end date must not be null.");
-				}
-				if (!dto.getEndDate().isAfter(dto.getStartDate())) {
-					return ResponseEntity.badRequest().body(
-							"❌ End date must be after start date. Found: startDate=" + dto.getStartDate() +
-							", endDate=" + dto.getEndDate()
-							);
-				}
-			}
-
-			Integer propertyId = availabilityList.get(0).getPropertyId();
-			service.updateAvailabilityDates(propertyId, availabilityList);
-
-			return ResponseEntity.ok("✅ Availability dates updated successfully.");
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("❌ Failed to update availability dates: " + e.getMessage());
-		}
-	}
-
 	@GetMapping("/{bookingId}/property")
 	public ShootingLocationPropertyDetailsDTO getPropertyByBookingId(@PathVariable Integer bookingId) {
 		return service.getPropertyByBookingId(bookingId);
@@ -449,48 +406,132 @@ public class ShootingLocationController {
 
 	@PutMapping(value = "/updateReview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<ShootingLocationPropertyReviewDTO> updateReview(
-	        @RequestParam Integer reviewId,
-	        @RequestParam Integer propertyId,
-	        @RequestParam Integer userId,
-	        @RequestParam int rating,
-	        @RequestParam(required = false) String reviewText,
+			@RequestParam Integer reviewId,
+			@RequestParam Integer propertyId,
+			@RequestParam Integer userId,
+			@RequestParam int rating,
+			@RequestParam(required = false) String reviewText,
 
-	        // 🔹 files to ADD (optional)
-	        @RequestParam(required = false) List<MultipartFile> files,
+			// 🔹 files to ADD (optional)
+			@RequestParam(required = false) List<MultipartFile> files,
 
-	        // 🔹 specific existing file IDs to DELETE (optional)
-	        @RequestParam(required = false, name = "deletedFileIds") List<Integer> deletedFileIds
-	) {
-	    try {
-	        ShootingLocationPropertyReviewDTO updatedReview =
-	        		service.updateReview(
-	        			    reviewId, propertyId, userId, rating, reviewText,
-	        			    files, deletedFileIds
-	        			);
-	        return ResponseEntity.ok(updatedReview);
+			// 🔹 specific existing file IDs to DELETE (optional)
+			@RequestParam(required = false, name = "deletedFileIds") List<Integer> deletedFileIds
+			) {
+		try {
+			ShootingLocationPropertyReviewDTO updatedReview =
+					service.updateReview(
+							reviewId, propertyId, userId, rating, reviewText,
+							files, deletedFileIds
+							);
+			return ResponseEntity.ok(updatedReview);
 
-	    } catch (RuntimeException e) {
-	        logger.warn("Validation failed: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-	    } catch (Exception e) {
-	        logger.error("Error updating review", e);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	    }
+		} catch (RuntimeException e) {
+			logger.warn("Validation failed: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+		} catch (Exception e) {
+			logger.error("Error updating review", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 
 
 	@DeleteMapping("/deleteReview")
 	public ResponseEntity<Response> deleteReview(
-	        @RequestParam Integer reviewId,
-	        @RequestParam Integer userId) {
-	    try {
-	        String message = service.deleteReview(reviewId, userId);
-	        return ResponseEntity.ok(new Response(1, "Success", message));
-	    } catch (RuntimeException e) {
-	        return ResponseEntity.ok(new Response(0, e.getMessage(), null));
-	    }
+			@RequestParam Integer reviewId,
+			@RequestParam Integer userId) {
+		try {
+			String message = service.deleteReview(reviewId, userId);
+			return ResponseEntity.ok(new Response(1, "Success", message));
+		} catch (RuntimeException e) {
+			return ResponseEntity.ok(new Response(0, e.getMessage(), null));
+		}
 	}
+
+	@GetMapping("/availableDates/{propertyId}")
+	public ResponseEntity<?> getAvailableDates(@PathVariable Integer propertyId) {
+		try {
+			List<LocalDate> availableDates = service.getAvailableDatesForProperty(propertyId);
+
+			return ResponseEntity.ok(availableDates);
+
+		} catch (RuntimeException e) {
+			return ResponseEntity
+					.status(HttpStatus.BAD_REQUEST)
+					.body(Collections.singletonMap("error", e.getMessage()));
+
+		} catch (Exception e) {
+			return ResponseEntity
+					.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Collections.singletonMap("error", "Something went wrong"));
+		}
+	}
+
+
+	@PostMapping("/createBooking")
+	public ResponseEntity<ShootingLocationBookingDTO> createBooking(@RequestBody ShootingLocationBookingDTO dto) {
+
+		ShootingLocationBookingDTO response = service.createBooking(dto);
+		return ResponseEntity.ok(response);
+	}
+
+	@PostMapping("/createPayment")
+	public ResponseEntity<?> initiatePayment(@RequestBody ShootingPaymentModel model) {
+
+		try {
+			// Service contains validations
+			Payments payment = service.createShootingPayment(model);
+
+			return ResponseEntity.ok(
+					new Response(1, "Payment initiated successfully", payment)
+					);
+
+		} catch (RuntimeException e) {
+
+			// 404: Not Found cases (User / Booking not found)
+			if (e.getMessage().contains("not found")) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND)
+						.body(new Response(-1, e.getMessage(), null));
+			}
+
+			// 400: Validation issues
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+					.body(new Response(-1, e.getMessage(), null));
+
+		} catch (Exception e) {
+
+			// 500: Server related issues
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1,
+							"Failed to initiate payment: " + e.getMessage(),
+							null));
+		}
+	}
+
+	 @GetMapping("/successPayment")
+	    public ResponseEntity<Response> shootingPaymentSuccess(@RequestParam String txnid) {
+	        return service.handleShootingLocationPaymentSuccess(txnid);
+	    }
+	 
+	    @GetMapping("/failedPayment")
+	    public ResponseEntity<?> shootingPaymentFailed( @RequestParam String txnid, @RequestParam(required = false, defaultValue = "Transaction Failed") String reason) {
+
+	        return service.handleShootingLocationPaymentFailed(txnid, reason);
+	    }
+	    
+	    @PostMapping("/properties/byIndustry")
+	    public ResponseEntity<?> getProperties(@RequestBody ShootingPropertyByIndustryAndDateRequest req) {
+	        List<ShootingLocationPropertyDetailsDTO> result =
+	            service.getPropertiesByIndustryIdsAndDates(
+	                req.getIndustryId(),
+	                req.getUserId(),
+	                req.getStartDate(), 
+	                req.getEndDate()     
+	            );
+
+	        return ResponseEntity.ok(new Response(1, "Success", result));
+	    }
 
 }
 

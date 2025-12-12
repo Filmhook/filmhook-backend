@@ -1,5 +1,7 @@
 package com.annular.filmhook.model;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -30,17 +32,33 @@ import lombok.ToString;
 public class ShootingLocationSubcategorySelection {
 	  @Id
 	    @GeneratedValue(strategy = GenerationType.IDENTITY)
-	    private Long id;
-
+	    private Integer id;
 	    @ManyToOne(fetch = FetchType.LAZY)
 	    @JoinColumn(name = "subcategory_id")
-	    private ShootingLocationSubcategory subcategory;
-	    
+	    private ShootingLocationSubcategory subcategory;    
 	    @OneToOne(mappedBy = "subcategorySelection", cascade = CascadeType.ALL)
 	    private ShootingLocationPropertyDetails propertyDetails;
-
 	    private Boolean entireProperty;
 	    private Boolean singleProperty;
 	    
+	    private Double entireDayPropertyPrice;
+	    private Double entireNightPropertyPrice;
+	    private Double entireFullDayPropertyPrice;
+	    private Double singleDayPropertyPrice;
+	    private Double singleNightPropertyPrice;
+	    private Double singleFullDayPropertyPrice;
+	    
+	    private Integer entirePropertyDayDiscountPercent;
+	    private Integer entirePropertyNightDiscountPercent;
+	    private Integer entirePropertyFullDayDiscountPercent;
+
+	    private Integer singlePropertyDayDiscountPercent;
+	    private Integer singlePropertyNightDiscountPercent;
+	    private Integer singlePropertyFullDayDiscountPercent;	
+	    
+	    private LocalDateTime entirePropertyDiscountStartDate;
+	    private LocalDateTime singlePropertyDiscountStartDate;
+	    private Integer entirePropertyDiscountBookingCount = 0;
+	    private Integer singlePropertyDiscountBookingCount = 0;
 	    
 }

@@ -507,6 +507,44 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		}
 		return outputList;
 	}
+	
+	
+	@Override
+	public void updateMediaFiles(MediaFileCategory category,
+	                             Integer refId,
+	                             Integer userId,
+	                             List<Integer> deleteIds,
+	                             FileInputWebModel newFiles,
+	                             boolean replaceMode) {
+
+	    // 1️⃣ Replace: Delete ALL existing files for this category + refId
+	    if (replaceMode) {
+	        List<FileOutputWebModel> existing = 
+	            getMediaFilesByCategoryAndRefId(category, refId);
+
+	        List<Integer> allIds = existing.stream()
+	                .map(FileOutputWebModel::getId)
+	                .toList();
+
+	        if (!allIds.isEmpty()) {
+	            deleteMediaFilesByCategoryAndIds(category, allIds);
+	        }
+	    }
+
+	    // 2️⃣ Delete selected files
+	    if (deleteIds != null && !deleteIds.isEmpty()) {
+	        deleteMediaFilesByCategoryAndIds(category, deleteIds);
+	    }
+
+	    // 3️⃣ Append new files
+	    if (newFiles != null && newFiles.getFiles() != null && !newFiles.getFiles().isEmpty()) {
+	        User user = new User();
+	        user.setUserId(userId);
+
+	        saveMediaFiles(newFiles, user);
+	    }
+	}
+
 
 
 }

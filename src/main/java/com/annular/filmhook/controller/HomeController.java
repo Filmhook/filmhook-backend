@@ -17,5 +17,5 @@ public class HomeController {
     public ResponseEntity<String> home() {
         return ResponseEntity.ok("FilmHook API is running");
     }
- 
+
 }

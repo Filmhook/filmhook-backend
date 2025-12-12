@@ -15,4 +15,6 @@ public class AuditionUserAccessDTO {
     private String filmHookCode;
     private String designation;
     private String accessKey;
+    private String resultStatus;
+    private String message;
 }

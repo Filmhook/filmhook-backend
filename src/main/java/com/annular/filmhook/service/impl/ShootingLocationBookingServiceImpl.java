@@ -21,28 +21,22 @@ import com.annular.filmhook.model.BookingStatus;
 
 import com.annular.filmhook.model.InAppNotification;
 
-import com.annular.filmhook.model.PropertyAvailabilityDate;
+
 import com.annular.filmhook.model.ShootingLocationBooking;
 import com.annular.filmhook.model.ShootingLocationChat;
 
 import com.annular.filmhook.model.ShootingLocationPayment;
-import com.annular.filmhook.model.ShootingLocationPropertyDetails;
-
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
-import com.annular.filmhook.repository.PropertyAvailabilityDateRepository;
-import com.annular.filmhook.repository.PropertyLikeRepository;
+
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
-import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
+
 import com.annular.filmhook.repository.ShootingLocationChatRepository;
 import com.annular.filmhook.repository.ShootingLocationPaymentRepository;
-import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
+
 import com.annular.filmhook.repository.ShootingLocationPropertyReviewRepository;
-import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
-import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepository;
-import com.annular.filmhook.repository.ShootingLocationTypesRepository;
-import com.annular.filmhook.repository.UserRepository;
+
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.ShootingLocationBookingService;
 import com.annular.filmhook.util.HashGenerator;
@@ -72,12 +66,10 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashSet;
 import java.util.List;
 
-import java.util.Set;
+
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -112,11 +104,6 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	@Autowired
 	private ShootingLocationBookingRepository bookingRepository;
 
-	@Autowired
-	private ShootingLocationPropertyDetailsRepository propertyRepository;
-
-	@Autowired
-	private UserRepository userRepository;
 
 	@Autowired
 	private  ShootingLocationBookingRepository bookingRepo;
@@ -128,25 +115,6 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Autowired
 	private JavaMailSender javaMailSender;
-
-	@Autowired
-	private PropertyAvailabilityDateRepository availabilityRepo;
-	private ShootingLocationTypesRepository typesRepo;
-
-	@Autowired
-	private PropertyLikeRepository likeRepository;
-
-	@Autowired
-	private ShootingLocationCategoryRepository categoryRepo;
-
-	@Autowired
-	private ShootingLocationSubcategoryRepository subcategoryRepo;
-
-	@Autowired
-	private  ShootingLocationSubcategorySelectionRepository selectionRepo;
-
-	@Autowired
-	private ShootingLocationPropertyDetailsRepository propertyDetailsRepository;
 
 	@Autowired
 	MultiMediaFileRepository multiMediaFilesRepository;
@@ -170,75 +138,79 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 
 	@Value("${payu.salt}")
 	private String salt;
+	
+	
+	
+	
 
 	//    String paymentRetryLink = "https://filmhookapps.com/shooting-location-retry-payment";
-
-	@Override
-	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
-	    // Fetch property
-	    ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
-
-	    // Fetch client
-	    User client = userRepository.findById(dto.getClientId())
-	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
-
-	    LocalDate newStart = dto.getShootStartDate();
-	    LocalDate newEnd = dto.getShootEndDate();
-
-	    // ✅ Step 1: Prevent overlapping only for CONFIRMED bookings
-	    List<ShootingLocationBooking> confirmedBookings = bookingRepository
-	            .findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
-
-	    for (ShootingLocationBooking existing : confirmedBookings) {
-	        LocalDate existingStart = existing.getShootStartDate();
-	        LocalDate existingEnd = existing.getShootEndDate();
-
-	        boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
-	        if (overlaps) {
-	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-	                    "This property is already booked for the selected dates.");
-	        }
-	    }
-	    Double pricePerDay = property.getPriceCustomerPay();
-        long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
-        double baseAmount = pricePerDay * days;
-        double gstAmount = baseAmount * 0.18; 
-        double totalAmount = baseAmount + gstAmount;
-
-	    // ✅ Step 2: Check if SAME USER already has a booking for SAME PROPERTY
-	    ShootingLocationBooking existingBooking = bookingRepository
-	            .findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId())
-	            .stream()
-	            .findFirst()
-	            .orElse(null);
-	    ShootingLocationBooking bookingEntity;
-	    if (existingBooking != null) {
-	        // 🔄 Update existing booking instead of creating new one
-	        bookingEntity = existingBooking;
-	        bookingEntity.setShootStartDate(newStart);
-	        bookingEntity.setShootEndDate(newEnd);
-	        bookingEntity.setBaseAmount(baseAmount);
-	        bookingEntity.setPricePerDay(pricePerDay);
-	        bookingEntity.setGstAmount(gstAmount);
-	        bookingEntity.setTotalAmount(totalAmount);
-	        if (dto.getBookingStatus() != null) {
-	            bookingEntity.setStatus(BookingStatus.valueOf(dto.getBookingStatus().toUpperCase()));
-	        } else {
-	            bookingEntity.setStatus(BookingStatus.PENDING);
-	        }
-
-	        bookingEntity.setUpdatedAt(LocalDateTime.now());
-	    } else {
-	        // 🆕 Create new booking if user never booked this property before
-	        bookingEntity = ShootingLocationBookingConverter.toEntity(dto, client, property);
-	        bookingEntity.setStatus(BookingStatus.PENDING);
-	    }
-
-	    // ✅ Save and return
-	    ShootingLocationBooking saved = bookingRepository.save(bookingEntity);
-	    return ShootingLocationBookingConverter.toDTO(saved);
-	}
+//
+//	@Override
+//	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
+//	    // Fetch property
+//	    ShootingLocationPropertyDetails property = propertyRepository.findById(dto.getPropertyId())
+//	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+//
+//	    // Fetch client
+//	    User client = userRepository.findById(dto.getClientId())
+//	            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found"));
+//
+//	    LocalDate newStart = dto.getShootStartDate();
+//	    LocalDate newEnd = dto.getShootEndDate();
+//
+//	    // ✅ Step 1: Prevent overlapping only for CONFIRMED bookings
+//	    List<ShootingLocationBooking> confirmedBookings = bookingRepository
+//	            .findByProperty_IdAndStatus(dto.getPropertyId(), BookingStatus.CONFIRMED);
+//
+//	    for (ShootingLocationBooking existing : confirmedBookings) {
+//	        LocalDate existingStart = existing.getShootStartDate();
+//	        LocalDate existingEnd = existing.getShootEndDate();
+//
+//	        boolean overlaps = !(newEnd.isBefore(existingStart) || newStart.isAfter(existingEnd));
+//	        if (overlaps) {
+//	            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+//	                    "This property is already booked for the selected dates.");
+//	        }
+//	    }
+//	    Double pricePerDay = property.getPriceCustomerPay();
+//        long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
+//        double baseAmount = pricePerDay * days;
+//        double gstAmount = baseAmount * 0.18; 
+//        double totalAmount = baseAmount + gstAmount;
+//
+//	    // ✅ Step 2: Check if SAME USER already has a booking for SAME PROPERTY
+//	    ShootingLocationBooking existingBooking = bookingRepository
+//	            .findByProperty_IdAndClient_UserId(dto.getPropertyId(), dto.getClientId())
+//	            .stream()
+//	            .findFirst()
+//	            .orElse(null);
+//	    ShootingLocationBooking bookingEntity;
+//	    if (existingBooking != null) {
+//	        // 🔄 Update existing booking instead of creating new one
+//	        bookingEntity = existingBooking;
+//	        bookingEntity.setShootStartDate(newStart);
+//	        bookingEntity.setShootEndDate(newEnd);
+//	        bookingEntity.setBaseAmount(baseAmount);
+//	        bookingEntity.setPricePerDay(pricePerDay);
+//	        bookingEntity.setGstAmount(gstAmount);
+//	        bookingEntity.setTotalAmount(totalAmount);
+//	        if (dto.getBookingStatus() != null) {
+//	            bookingEntity.setStatus(BookingStatus.valueOf(dto.getBookingStatus().toUpperCase()));
+//	        } else {
+//	            bookingEntity.setStatus(BookingStatus.PENDING);
+//	        }
+//
+//	        bookingEntity.setUpdatedAt(LocalDateTime.now());
+//	    } else {
+//	        // 🆕 Create new booking if user never booked this property before
+//	        bookingEntity = ShootingLocationBookingConverter.toEntity(dto, client, property);
+//	        bookingEntity.setStatus(BookingStatus.PENDING);
+//	    }
+//
+//	    // ✅ Save and return
+//	    ShootingLocationBooking saved = bookingRepository.save(bookingEntity);
+//	    return ShootingLocationBookingConverter.toDTO(saved);
+//	}
 
 
 	// My order
@@ -408,11 +380,11 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 			clientHelper.setSubject(subject);
 			clientHelper.setText(content.toString(), true);
 
-			if (isSuccess) {
-				byte[] invoiceBytes = generateInvoicePdf(payment, booking);
-				DataSource attachment = new ByteArrayDataSource(invoiceBytes, "application/pdf");
-				clientHelper.addAttachment("Invoice_" + txnid + ".pdf", attachment);
-			}
+//			if (isSuccess) {
+//				byte[] invoiceBytes = generateInvoicePdf(payment, booking);
+//				DataSource attachment = new ByteArrayDataSource(invoiceBytes, "application/pdf");
+//				clientHelper.addAttachment("Invoice_" + txnid + ".pdf", attachment);
+//			}
 
 			javaMailSender.send(clientMessage);
 
@@ -514,137 +486,137 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 	}
 
 
-	private byte[] generateInvoicePdf(ShootingLocationPayment payment, ShootingLocationBooking booking) {
-		try {
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			PdfWriter writer = new PdfWriter(baos);
-			PdfDocument pdf = new PdfDocument(writer);
-			Document doc = new Document(pdf, PageSize.A4);
-			doc.setMargins(36, 36, 36, 36);
-
-			DeviceRgb blue = new DeviceRgb(41, 86, 184);
-			final int fontSize = 12;
-
-			int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
-			double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0.0;
-			double base = booking.getBaseAmount() != null ? booking.getBaseAmount() : 0.0;
-			double gst = booking.getGstAmount() != null ? booking.getGstAmount() : 0.0;
-			double total = booking.getTotalAmount() != null ? booking.getTotalAmount() : base + gst;
-
-			// Logo
-			InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
-			Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
-					.scaleToFit(120, 60)
-					.setMarginBottom(3)
-					.setHorizontalAlignment(HorizontalAlignment.CENTER);
-			doc.add(logo);
-
-			doc.add(new Paragraph("TAX INVOICE")
-					.setTextAlignment(TextAlignment.CENTER)
-					.setFontSize(14)
-					.setBold()
-					.setFontColor(blue)
-					.setMarginBottom(10));
-
-			// Invoice metadata
-			Table meta = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
-					.setWidth(UnitValue.createPercentValue(100))
-					.setMarginTop(10);
-
-			meta.addCell(getPlainCell("Invoice To: " + payment.getFirstname()));
-			meta.addCell(getPlainCell("Issued by: FilmHook Pvt. Ltd.\nGSTIN: 29ABCDE1234F2Z5\nAddress: Bangalore\nPhone: +91-9876543210"));
-
-			meta.addCell(getPlainCell("Order ID: " + payment.getTxnid()));
-			meta.addCell(getPlainCell("Date of Invoice: " + LocalDate.now()));
-
-			meta.addCell(getPlainCell("Service Description: Shooting Location Rental"));
-			meta.addCell(getPlainCell("HSN Code: 996331\nReverse Charges: No"));
-
-			doc.add(meta);
-
-			// Item Table
-			Table itemTable = new Table(UnitValue.createPercentArray(new float[]{25, 10, 10, 15, 15, 10, 15}))
-					.setWidth(UnitValue.createPercentValue(100))
-					.setMarginTop(10);
-
-			itemTable.addHeaderCell(getStyledBottomBorderHeader("Description"));
-			itemTable.addHeaderCell(getStyledBottomBorderHeader("UOM"));
-			itemTable.addHeaderCell(getStyledBottomBorderHeader("Qty"));
-			itemTable.addHeaderCell(getStyledBottomBorderHeader("Unit Price"));
-			itemTable.addHeaderCell(getStyledBottomBorderHeader("Amount"));
-			itemTable.addHeaderCell(getStyledBottomBorderHeader("Discount"));
-			itemTable.addHeaderCell(getStyledBottomBorderHeader("Net Value"));
-
-			itemTable.addCell(getStyledBottomBorderCell("Shooting Location: " + booking.getProperty().getPropertyName()));
-			itemTable.addCell(getStyledBottomBorderCell("OTH"));
-			itemTable.addCell(getStyledBottomBorderCell(String.valueOf(days)));
-			itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate)));
-			itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate * days)));
-			itemTable.addCell(getStyledBottomBorderCell("₹ 0.00"));
-			itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", base)));
-
-			doc.add(itemTable);
-
-			// Taxes
-			Table taxTable = new Table(UnitValue.createPercentArray(new float[]{60, 10, 30}))
-					.setWidth(UnitValue.createPercentValue(100))
-					.setMarginTop(10);
-
-			taxTable.addCell(getLightCell("Taxes"));
-			taxTable.addCell(getLightCell("Rate"));
-			taxTable.addCell(getLightCell("Amount"));
-
-			taxTable.addCell(getPlainCell("CGST")).addCell(getPlainCell("9%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
-			taxTable.addCell(getPlainCell("SGST")).addCell(getPlainCell("9%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
-
-			taxTable.addCell(getLightCell("Total Taxes")).addCell(getPlainCell("")).addCell(getPlainCell("₹ " + String.format("%.2f", gst)));
-
-			doc.add(taxTable);
-
-			// Total
-			Table totalTable = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
-					.setWidth(UnitValue.createPercentValue(100))
-					.setMarginTop(10);
-
-			totalTable.addCell(new Cell().add(new Paragraph("Invoice Total").setFontSize(11).setBold())
-					.setBorder(Border.NO_BORDER));
-
-			totalTable.addCell(new Cell().add(new Paragraph("₹ " + String.format("%.2f", total))
-					.setFontColor(blue)
-					.setBold()
-					.setFontSize(11)
-					.setTextAlignment(TextAlignment.RIGHT))
-					.setBorder(Border.NO_BORDER));
-
-			doc.add(totalTable);
-
-			// Amount in words
-			doc.add(new Paragraph("\nInvoice total in words: " + convertToIndianCurrency(total))
-					.setFontSize(12)
-					.setItalic());
-
-			// Declaration
-			doc.add(new Paragraph("\nDeclaration").setBold().setFontSize(12).setMarginTop(20));
-			doc.add(new Paragraph("We declare that this invoice shows the actual price of the services provided and that all particulars are true and correct.")
-					.setFontSize(fontSize));
-
-			// Signature
-			InputStream signStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
-			Image sign = new Image(ImageDataFactory.create(signStream.readAllBytes())).scaleToFit(80, 30);
-			Paragraph signText = new Paragraph("Digitally Signed by FilmHook Pvt. Ltd.")
-					.setFontSize(9)
-					.setTextAlignment(TextAlignment.RIGHT);
-			Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
-			Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
-			signTable.addCell(new Cell().add(signBlock).setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT));
-			doc.add(signTable);
-
-			doc.close();
-			return baos.toByteArray();
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to generate invoice PDF", e);
-		}
-	}
+//	private byte[] generateInvoicePdf(ShootingLocationPayment payment, ShootingLocationBooking booking) {
+//		try {
+//			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//			PdfWriter writer = new PdfWriter(baos);
+//			PdfDocument pdf = new PdfDocument(writer);
+//			Document doc = new Document(pdf, PageSize.A4);
+//			doc.setMargins(36, 36, 36, 36);
+//
+//			DeviceRgb blue = new DeviceRgb(41, 86, 184);
+//			final int fontSize = 12;
+//
+//			int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
+//			double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0.0;
+//			double base = booking.getBaseAmount() != null ? booking.getBaseAmount() : 0.0;
+//			double gst = booking.getGstAmount() != null ? booking.getGstAmount() : 0.0;
+//			double total = booking.getTotalAmount() != null ? booking.getTotalAmount() : base + gst;
+//
+//			// Logo
+//			InputStream logoStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+//			Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()))
+//					.scaleToFit(120, 60)
+//					.setMarginBottom(3)
+//					.setHorizontalAlignment(HorizontalAlignment.CENTER);
+//			doc.add(logo);
+//
+//			doc.add(new Paragraph("TAX INVOICE")
+//					.setTextAlignment(TextAlignment.CENTER)
+//					.setFontSize(14)
+//					.setBold()
+//					.setFontColor(blue)
+//					.setMarginBottom(10));
+//
+//			// Invoice metadata
+//			Table meta = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
+//					.setWidth(UnitValue.createPercentValue(100))
+//					.setMarginTop(10);
+//
+//			meta.addCell(getPlainCell("Invoice To: " + payment.getFirstname()));
+//			meta.addCell(getPlainCell("Issued by: FilmHook Pvt. Ltd.\nGSTIN: 29ABCDE1234F2Z5\nAddress: Bangalore\nPhone: +91-9876543210"));
+//
+//			meta.addCell(getPlainCell("Order ID: " + payment.getTxnid()));
+//			meta.addCell(getPlainCell("Date of Invoice: " + LocalDate.now()));
+//
+//			meta.addCell(getPlainCell("Service Description: Shooting Location Rental"));
+//			meta.addCell(getPlainCell("HSN Code: 996331\nReverse Charges: No"));
+//
+//			doc.add(meta);
+//
+//			// Item Table
+//			Table itemTable = new Table(UnitValue.createPercentArray(new float[]{25, 10, 10, 15, 15, 10, 15}))
+//					.setWidth(UnitValue.createPercentValue(100))
+//					.setMarginTop(10);
+//
+//			itemTable.addHeaderCell(getStyledBottomBorderHeader("Description"));
+//			itemTable.addHeaderCell(getStyledBottomBorderHeader("UOM"));
+//			itemTable.addHeaderCell(getStyledBottomBorderHeader("Qty"));
+//			itemTable.addHeaderCell(getStyledBottomBorderHeader("Unit Price"));
+//			itemTable.addHeaderCell(getStyledBottomBorderHeader("Amount"));
+//			itemTable.addHeaderCell(getStyledBottomBorderHeader("Discount"));
+//			itemTable.addHeaderCell(getStyledBottomBorderHeader("Net Value"));
+//
+//			itemTable.addCell(getStyledBottomBorderCell("Shooting Location: " + booking.getProperty().getPropertyName()));
+//			itemTable.addCell(getStyledBottomBorderCell("OTH"));
+//			itemTable.addCell(getStyledBottomBorderCell(String.valueOf(days)));
+//			itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate)));
+//			itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", rate * days)));
+//			itemTable.addCell(getStyledBottomBorderCell("₹ 0.00"));
+//			itemTable.addCell(getStyledBottomBorderCell("₹ " + String.format("%.2f", base)));
+//
+//			doc.add(itemTable);
+//
+//			// Taxes
+//			Table taxTable = new Table(UnitValue.createPercentArray(new float[]{60, 10, 30}))
+//					.setWidth(UnitValue.createPercentValue(100))
+//					.setMarginTop(10);
+//
+//			taxTable.addCell(getLightCell("Taxes"));
+//			taxTable.addCell(getLightCell("Rate"));
+//			taxTable.addCell(getLightCell("Amount"));
+//
+//			taxTable.addCell(getPlainCell("CGST")).addCell(getPlainCell("9%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
+//			taxTable.addCell(getPlainCell("SGST")).addCell(getPlainCell("9%")).addCell(getPlainCell("₹ " + String.format("%.2f", gst / 2)));
+//
+//			taxTable.addCell(getLightCell("Total Taxes")).addCell(getPlainCell("")).addCell(getPlainCell("₹ " + String.format("%.2f", gst)));
+//
+//			doc.add(taxTable);
+//
+//			// Total
+//			Table totalTable = new Table(UnitValue.createPercentArray(new float[]{70, 30}))
+//					.setWidth(UnitValue.createPercentValue(100))
+//					.setMarginTop(10);
+//
+//			totalTable.addCell(new Cell().add(new Paragraph("Invoice Total").setFontSize(11).setBold())
+//					.setBorder(Border.NO_BORDER));
+//
+//			totalTable.addCell(new Cell().add(new Paragraph("₹ " + String.format("%.2f", total))
+//					.setFontColor(blue)
+//					.setBold()
+//					.setFontSize(11)
+//					.setTextAlignment(TextAlignment.RIGHT))
+//					.setBorder(Border.NO_BORDER));
+//
+//			doc.add(totalTable);
+//
+//			// Amount in words
+//			doc.add(new Paragraph("\nInvoice total in words: " + convertToIndianCurrency(total))
+//					.setFontSize(12)
+//					.setItalic());
+//
+//			// Declaration
+//			doc.add(new Paragraph("\nDeclaration").setBold().setFontSize(12).setMarginTop(20));
+//			doc.add(new Paragraph("We declare that this invoice shows the actual price of the services provided and that all particulars are true and correct.")
+//					.setFontSize(fontSize));
+//
+//			// Signature
+//			InputStream signStream = new URL("https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/filmHookLogo.png").openStream();
+//			Image sign = new Image(ImageDataFactory.create(signStream.readAllBytes())).scaleToFit(80, 30);
+//			Paragraph signText = new Paragraph("Digitally Signed by FilmHook Pvt. Ltd.")
+//					.setFontSize(9)
+//					.setTextAlignment(TextAlignment.RIGHT);
+//			Paragraph signBlock = new Paragraph().add(sign).add("\n").add(signText);
+//			Table signTable = new Table(1).setWidth(UnitValue.createPercentValue(100)).setMarginTop(30);
+//			signTable.addCell(new Cell().add(signBlock).setBorder(Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT));
+//			doc.add(signTable);
+//
+//			doc.close();
+//			return baos.toByteArray();
+//		} catch (Exception e) {
+//			throw new RuntimeException("Failed to generate invoice PDF", e);
+//		}
+//	}
 
 	private Cell getLightCell(String text) {
 		return new Cell().add(new Paragraph(text).setBold().setFontSize(9))
@@ -980,48 +952,7 @@ public class ShootingLocationBookingServiceImpl implements ShootingLocationBooki
 		logger.info("📩 Completion email sent to {}", to);
 	}
 
-	@Override
-	public List<LocalDate> getAvailableDatesForProperty(Integer propertyId) {
-
-		// Step 1: Fetch all availability ranges for the property
-		List<PropertyAvailabilityDate> availabilityRanges = availabilityRepo.findByProperty_Id(propertyId);
-
-		// Step 2: Expand each availability range into individual dates
-		Set<LocalDate> ownerAvailableDates = new HashSet<>();
-		for (PropertyAvailabilityDate range : availabilityRanges) {
-			LocalDate current = range.getStartDate();
-			while (!current.isAfter(range.getEndDate())) {
-				ownerAvailableDates.add(current);
-				current = current.plusDays(1);
-			}
-		}
-
-		// Step 3: Get all confirmed bookings for this property
-		List<ShootingLocationBooking> confirmedBookings =
-				bookingRepo.findByProperty_IdAndStatus(propertyId, BookingStatus.CONFIRMED);
-
-		// Step 4: Collect booked dates
-		Set<LocalDate> bookedDates = new HashSet<>();
-		for (ShootingLocationBooking booking : confirmedBookings) {
-			LocalDate current = booking.getShootStartDate();
-			while (!current.isAfter(booking.getShootEndDate())) {
-				bookedDates.add(current);
-				current = current.plusDays(1);
-			}
-		}
-
-		// Step 5: Filter out booked dates from owner's available dates
-		ownerAvailableDates.removeAll(bookedDates);
-
-		LocalDate today = LocalDate.now();
-
-		// Step 6: Return sorted available dates
-		return ownerAvailableDates.stream()
-				.sorted()
-				.filter(date -> !bookedDates.contains(date)) // not booked
-				.filter(date -> !date.isBefore(today))       // not in past
-				.collect(Collectors.toList());
-	}
+	
 
 
 	@Override

@@ -17,7 +17,7 @@ import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 public interface ShootingLocationBookingService {
 	
 	
-	ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto);
+//	ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto);
 
     List<ShootingLocationBookingDTO> getBookingsByClient(Integer clientId);
 
@@ -32,7 +32,7 @@ public interface ShootingLocationBookingService {
     void sendBookingExpiryReminders();
     void markBookingsAsCompleted();
     
-    List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
+//    List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
     
     boolean canChatByProperty(Integer senderId, Integer receiverId, Integer propertyId);
     String sendMessage(ShootingLocationChatDTO dto, Integer propertyId);

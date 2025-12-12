@@ -2,7 +2,6 @@ package com.annular.filmhook.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -14,19 +13,15 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 
+import com.annular.filmhook.util.LocalDateListConverter;
 import com.annular.filmhook.util.StringListConverter;
-import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,7 +43,6 @@ public class ShootingLocationPropertyDetails {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-    private String industryName;
 
 	// 1. Property Information
 	private String firstName;
@@ -65,7 +59,7 @@ public class ShootingLocationPropertyDetails {
 	private String countryOfIssued;
 
 	// 2. Listing Summary
-	private int numberOfPeopleAllowed;
+	private String numberOfPeopleAllowed;
 	private double totalArea;
 	private String selectedUnit;
 	private int numberOfRooms;
@@ -85,21 +79,21 @@ public class ShootingLocationPropertyDetails {
 
 	// 3. Facilities & Amenities
 	private String powerSupply;
+	private String bakupGenerators;
+	
 	@Convert(converter = StringListConverter.class)
-	private List<String> bakupGeneratorsAndVoltage;
+	private List<String> voltageCapacity;
+	
 	private String wifi;
 	private String airConditionAndHeating;
 	private int numberOfWashrooms;
-	@Convert(converter = StringListConverter.class)
-	private List<String> restrooms;
 	@Convert(converter = StringListConverter.class)
 	private List<String> waterSupply;
 	@Convert(converter = StringListConverter.class)
 	private List<String> changingRooms;
 	@Convert(converter = StringListConverter.class)
 	private List<String> kitchen;
-	@Convert(converter = StringListConverter.class)
-	private List<String> furnitureAndProps;
+
 	@Convert(converter = StringListConverter.class)
 	private List<String> neutralLightingConditions;
 	@Convert(converter = StringListConverter.class)
@@ -111,60 +105,58 @@ public class ShootingLocationPropertyDetails {
 	private String droneUsage;
 	private String firearms;
 	private String actionScenes;
-	private String security;
 	@Convert(converter = StringListConverter.class)
 	private List<String> structuralModification;
 	private String temporary;
 	private String dressing;
-	@Convert(converter = StringListConverter.class)
-	private List<String> permissions;
-	@Convert(converter = StringListConverter.class)
-	private List<String> noiseRestrictions;
-	@Convert(converter = StringListConverter.class)
-	private List<String> shootingTiming;
-	@Convert(converter = StringListConverter.class)
-	private List<String> insuranceRequired;
-	@Convert(converter = StringListConverter.class)
-	private List<String> legalAgreements;
+	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> permissions;
+	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> noiseRestrictions;
+	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> shootingTiming;
+	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> legalAgreements;
 
 	// 5. Accessibility & Transportation
-	@Convert(converter = StringListConverter.class)
-	private List<String> roadAccessAndCondition;
-	@Convert(converter = StringListConverter.class)
-	private List<String> publicTransport;
-	@Convert(converter = StringListConverter.class)
-	private List<String> nearestAirportOrRailway;
-	@Convert(converter = StringListConverter.class)
-	private List<String> accommodationNearby;
-
-	@Convert(converter = StringListConverter.class)
-	private List<String> foodAndCatering;
-	@Convert(converter = StringListConverter.class)
-	private List<String> emergencyServicesNearby;
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> roadAccessAndCondition;
+//	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> publicTransport;
+//	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> nearestAirportOrRailway;
+//	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> accommodationNearby;
+//
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> foodAndCatering;
+//	
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> emergencyServicesNearby;
 
 	// 6. Pricing & Payment Terms
-	@Convert(converter = StringListConverter.class)
-	private List<String> rentalCost;
-	@Convert(converter = StringListConverter.class)
-	private List<String> securityDeposit;
-	@Convert(converter = StringListConverter.class)
-	private List<String> additionalCharges;
-	@Convert(converter = StringListConverter.class)
-	private List<String> paymentModelsAccepted;
-	@Convert(converter = StringListConverter.class)
-	private List<String> cancellationPolicy;
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> rentalCost;
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> securityDeposit;
+
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> paymentModelsAccepted;
+//	@Convert(converter = StringListConverter.class)
+//	private List<String> cancellationPolicy;
 
 
 	private String description;
-	private double priceCustomerPay;
-	private boolean discount20Percent;
 	private boolean businessOwner;
-	@Convert(converter = StringListConverter.class)
-	private List<String> highQualityPhotos;
-	@Convert(converter = StringListConverter.class)
-	private List<String> videoWalkthrough;
 	
-	private String govtLicenseAndPermissions;
+//	private String govtLicenseAndPermissions;
 
     private Integer createdBy;
 
@@ -180,11 +172,11 @@ public class ShootingLocationPropertyDetails {
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "bank_details_id")
-	private BankDetails bankDetails;
+	private ShootingLocationOwnerBankDetails bankDetails;
 
 	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JoinColumn(name = "business_information_id")
-	private BusinessInformation businessInformation;
+	private ShootingLocationBusinessInformation businessInformation;
 
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "subcategory_selection_id")
@@ -206,9 +198,6 @@ public class ShootingLocationPropertyDetails {
     @JoinColumn(name = "user_id")
     private User user;
 	
-    @OneToMany(mappedBy = "property", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<ShootingLocationImages> mediaFiles;
-    
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<PropertyLike> likes;
     
@@ -219,12 +208,41 @@ public class ShootingLocationPropertyDetails {
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ShootingLocationPropertyReview> reviews;
  
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<PropertyAvailabilityDate> availabilityDates;
+//    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//    private List<ShootingPropertyAvailabilityDates> availabilityDates;
     
     private String typeLocation;
     private String locationLink;
     
+    @Convert(converter = StringListConverter.class)
+    private List<String> hygienStatus;
+    
+    @Convert(converter = StringListConverter.class)
+    private List<String> genderSpecific;
+    
+    private String IdNumber;
+    private String ownerPermission;
+    private String selfOwnedPropertyDocument;
+    private String mortgagePropertyDocument; 
+    private String ownerPermittedDocument; 
+    private String propertyDamageDocument; 
+    private String crewAccidentDocument; 
+    
+    private String localAuthorities;
+    private String governmentPermission;
+
+    private Double additionalChargesForOverTime;
+	private String propertyDamageDescription;
+	private String crewAccidentLiabilityDescription;
+	@Convert(converter = StringListConverter.class)
+	private List<String> insuranceRequired;
 	
+	private LocalDate availabilityStartDate;
+	private LocalDate availabilityEndDate;
+
+	@Convert(converter = LocalDateListConverter.class)
+	@Column(columnDefinition = "TEXT")
+	private List<LocalDate> pausedDates; 
+
 
 }

@@ -2,17 +2,16 @@ package com.annular.filmhook.webmodel;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
+
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
+import javax.persistence.Convert;
 
-import com.annular.filmhook.model.PropertyAvailabilityDate;
+import com.annular.filmhook.util.StringListConverter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -25,8 +24,8 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 //@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public class ShootingLocationPropertyDetailsDTO {
 	// Property Information
+public class ShootingLocationPropertyDetailsDTO {
 	private Integer id;
 	private String firstName;
 	private String middleName;
@@ -41,11 +40,8 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String countryOfIssued;
 
 	// 2. Listing Summary
-	private int numberOfPeopleAllowed;
-	
-	
+	private String numberOfPeopleAllowed;
 	private double totalArea;
- 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private String selectedUnit;
 	private int numberOfRooms;
@@ -60,7 +56,9 @@ public class ShootingLocationPropertyDetailsDTO {
 
 	// 3. Facilities & Amenities
 	private String powerSupply;
-	private List<String> bakupGeneratorsAndVoltage;
+	private String bakupGenerators;
+	@Convert(converter = StringListConverter.class)
+	private List<String> voltageCapacity;
 	private String wifi;
 	private String airConditionAndHeating;
 	private int numberOfWashrooms;
@@ -102,26 +100,13 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<String> additionalCharges;
 	private List<String> paymentModelsAccepted;
 	private List<String> cancellationPolicy;
+	private List<String> hygienStatus;
+	private List<String> genderSpecific;
 
 	private String description;
-	private double priceCustomerPay;
-	private boolean discount20Percent;
 	private boolean businessOwner;
-	private List<String> highQualityPhotos;
-	private List<String> videoWalkthrough;
-	
-
-	private LocalDate createdOn;
-	private Integer createdBy;
-	private Boolean status;
-
 	private BusinessInformationDTO businessInformation;
 	private BankDetailsDTO bankDetailsDTO;
-
-	private List<String> imageUrls;
-	private List<String> governmentIdUrls;
-	private List<String> videoUrls;
-
 	private Integer categoryId;
 	private Integer subCategoryId;
 	private Integer typesId;
@@ -131,19 +116,43 @@ public class ShootingLocationPropertyDetailsDTO {
 	private ShootingLocationSubcategoryDTO subCategory;
 	private ShootingLocationSubcategorySelectionDTO subcategorySelectionDTO;
 	private String industryName;
-	private List<Integer> industryIds;   
+	private List<Integer> industryIds;
+	private Integer industryId;	
+	
 	private boolean likedByUser;
 	private int likeCount;
-	private Integer industryId;	
 	private double averageRating;
 	private List<ShootingLocationPropertyReviewDTO> reviews;
 	private List<PropertyAvailabilityDTO> availabilityDates;
-
 	private String typeLocation;
 	private String locationLink;
+	private List<String> imageUrls;
+	private String IdNumber;
+	private List<String> governmentIdUrls;
+	private List<String> verificationVideo;
+    private String ownerPermission;
+    private String selfOwnedPropertyDocument;
+    private String mortgagePropertyDocument; 
+    private String ownerPermittedDocument; 
+    private String propertyDamageDocument; 
+	private String propertyDamageDescription;
+    private String crewAccidentDocument; 
+    private String crewAccidentLiabilityDescription;
+    private String localAuthorities;
+    private String governmentPermission;
+    private Double additionalChargesForOverTime;
+
 	
+
+	private LocalDate availabilityStartDate;
+	private LocalDate availabilityEndDate;
+	private List<LocalDate> pausedDates; 
+	private LocalDateTime createdOn;
+	private Integer createdBy;
+	private Boolean status;
+
 	public Double getTotalArea() {
-	    return totalArea;
+		return totalArea;
 	}
 
 }
