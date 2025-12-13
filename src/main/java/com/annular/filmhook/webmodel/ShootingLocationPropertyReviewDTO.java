@@ -21,4 +21,8 @@ public class ShootingLocationPropertyReviewDTO {
     private LocalDateTime createdOn;
    private List<FileOutputWebModel> files; 
     private List<MultipartFile> file; 
+    
+    private String ownerReplyText;
+    private Integer ownerReplyBy;   // property owner userId
+    private LocalDateTime ownerReplyOn;
 }
