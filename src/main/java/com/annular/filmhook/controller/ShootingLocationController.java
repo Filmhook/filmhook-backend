@@ -39,6 +39,7 @@ import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.webmodel.PaymentsDTO;
 import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
+import com.annular.filmhook.webmodel.ReviewReplyRequestDTO;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
@@ -369,7 +370,44 @@ public class ShootingLocationController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
+	
+	@PostMapping(value = "/review/reply", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<ShootingLocationPropertyReviewDTO> replyToReview(@RequestBody ReviewReplyRequestDTO request) {
+	    try {
+	        ShootingLocationPropertyReviewDTO dto = service.replyToReview(
+	                request.getReviewId(),
+	                request.getOwnerUserId(),
+	                request.getReplyText()
+	        );
+	        return ResponseEntity.ok(dto);
+	    } catch (RuntimeException e) {
+	        logger.warn("Reply failed: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // or 404 depending on message
+	    } catch (Exception e) {
+	        logger.error("Error replying to review", e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+	}
 
+	@DeleteMapping("/review/reply")
+	public ResponseEntity<ShootingLocationPropertyReviewDTO> deleteReply(
+	        @RequestParam Integer reviewId,
+	        @RequestParam Integer ownerUserId) {
+
+	    try {
+	        ShootingLocationPropertyReviewDTO dto =
+	                service.deleteReply(reviewId, ownerUserId);
+
+	        return ResponseEntity.ok(dto);
+
+	    } catch (RuntimeException e) {
+	        logger.warn("Delete reply failed: {}", e.getMessage());
+	        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+	    } catch (Exception e) {
+	        logger.error("Error deleting reply", e);
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+	}
 
 	@GetMapping("/average-rating/{propertyId}")
 	public ResponseEntity<?> getAverageRating(@PathVariable Integer propertyId) {

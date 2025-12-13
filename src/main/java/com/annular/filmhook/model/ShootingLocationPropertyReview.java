@@ -2,6 +2,7 @@ package com.annular.filmhook.model;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -50,5 +51,13 @@ public class ShootingLocationPropertyReview {
 
     @UpdateTimestamp
     private LocalDateTime updatedOn;
+    @Column(columnDefinition = "TEXT")
+    private String ownerReplyText;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_reply_by")
+    private User ownerReplyBy; // property owner user
+
+    private LocalDateTime ownerReplyOn;
 }    
 
