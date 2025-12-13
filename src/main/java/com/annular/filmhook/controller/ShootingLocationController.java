@@ -199,26 +199,32 @@ public class ShootingLocationController {
 					.body(new Response(-1, "Failed to save property details", e.getMessage()));
 		}
 	}
-//	@PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//	public ResponseEntity<Response> updateProperty(
-//			@RequestParam("propertyId") Integer propertyId,
-//			@RequestPart("propertyDetails") ShootingLocationPropertyDetailsDTO dto,
-//			@ModelAttribute ShootingLocationFileInputModel mediaFiles) {
-//
-//		try {
-//			service.updatePropertyDetails(propertyId, dto, mediaFiles);
-//			return ResponseEntity.ok(new Response(1, "Property updated successfully", null));
-//
-//		} catch (ResponseStatusException e) {
-//			return ResponseEntity.status(e.getStatus())
-//					.body(new Response(-1, e.getReason(), null));
-//
-//		} catch (Exception e) {
-//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//					.body(new Response(-1, "Unexpected error during update", e.getMessage()));
-//		}
-//	}
+	 @PutMapping(value = "/updateProperty/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	    public ResponseEntity<Response> updateProperty(
+	            @PathVariable("propertyId") Integer propertyId,
+	            @RequestPart("propertyDetails") ShootingLocationPropertyDetailsDTO dto,
+	            @ModelAttribute ShootingLocationFileInputModel mediaFiles) {
 
+	        try {
+	            // Optional validation: ensure path ID matches DTO ID if present
+	            if (dto.getId() != null && !dto.getId().equals(propertyId)) {
+	                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mismatched property IDs");
+	            }
+
+	            ShootingLocationPropertyDetailsDTO updated =
+	                    service.updatePropertyDetails(propertyId, dto, mediaFiles);
+
+	            return ResponseEntity.ok(new Response(1, "Property updated successfully", updated));
+
+	        } catch (ResponseStatusException e) {
+	            return ResponseEntity.status(e.getStatus())
+	                    .body(new Response(-1, e.getReason(), null));
+
+	        } catch (Exception e) {
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                    .body(new Response(-1, "Unexpected error during update", e.getMessage()));
+	        }
+	    }
 
 	@PostMapping("/addLike")
 	public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer propertyId, @RequestParam Integer userId) {

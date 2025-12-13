@@ -32,7 +32,7 @@ public interface ShootingLocationService {
 	List<ShootingLocationPropertyDetailsDTO> getAllProperties(Integer userId);
 	Response getPropertiesByUserId(Integer userId);
 	Response deletePropertyById(Integer id);
-//	ShootingLocationPropertyDetailsDTO updatePropertyDetails(Integer id, ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile);
+	ShootingLocationPropertyDetailsDTO updatePropertyDetails(Integer id, ShootingLocationPropertyDetailsDTO dto, ShootingLocationFileInputModel inputFile);
 	String toggleLike(Integer propertyId, Integer userId);
 	Long countLikes(Integer propertyId);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIds(List<Integer> industryIds, Integer userId);
