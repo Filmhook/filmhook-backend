@@ -1162,8 +1162,8 @@ public class DetailServiceImpl implements DetailService {
     }
 
     
- @Override
-    public Response  saveVerification(IndustrySignupDetailsDTO dto) {
+    @Override
+    public Response saveVerification(IndustrySignupDetailsDTO dto) {
 
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -1181,24 +1181,81 @@ public class DetailServiceImpl implements DetailService {
                 .findById(dto.getSubProfessionId())
                 .orElseThrow(() -> new RuntimeException("Sub profession not found"));
 
+        // Check if record already exists for this user
+        Optional<IndustrySignupDetails> existingOpt =
+                industrySignupDetailsRepository.findByUser_UserId(dto.getUserId());
 
-        IndustrySignupDetails verification = IndustrySignupDetails.builder()
-                .user(user)
-                .fullName(dto.getFullName())
-                .country(country)
-                .industry(industry)
-                .profession(profession)
-                .subProfession(subProfession)
-                .yearsOfExperience(dto.getYearsOfExperience())
-                .verificationCode(dto.getVerificationCode())
-                .verified(false)
-                .build();
+        IndustrySignupDetails entity;
 
-        IndustrySignupDetails saved = industrySignupDetailsRepository.save(verification);
+        if (existingOpt.isPresent()) {
+         
+            entity = existingOpt.get();
 
-        return new Response(1, "IndustryDetails saved successfully", "");
+           
+            if (Boolean.TRUE.equals(entity.getVerified())) {
+                return new Response(0, "User already verified.", null);
+            }
+
+            entity.setFullName(dto.getFullName());
+            entity.setCountry(country);
+            entity.setIndustry(industry);
+            entity.setProfession(profession);
+            entity.setSubProfession(subProfession);
+            entity.setYearsOfExperience(dto.getYearsOfExperience());
+            entity.setVerificationCode(dto.getVerificationCode());
+            entity.setVerified(false); 
+
+        } else {
+            //  INSERT NEW ROW
+            entity = IndustrySignupDetails.builder()
+                    .user(user)
+                    .fullName(dto.getFullName())
+                    .country(country)
+                    .industry(industry)
+                    .profession(profession)
+                    .subProfession(subProfession)
+                    .yearsOfExperience(dto.getYearsOfExperience())
+                    .verificationCode(dto.getVerificationCode())
+                    .verified(false)
+                    .build();
+        }
+
+        industrySignupDetailsRepository.save(entity);
+
+        return new Response(1, "Industry details saved successfully", null);
     }
 
+
+ @Override
+ public Response getIndustrySignupDetails(Integer userId) {
+
+     IndustrySignupDetails details = industrySignupDetailsRepository
+             .findByUser_UserId(userId)
+             .orElseThrow(() -> new RuntimeException("Industry signup details not found"));
+
+     IndustrySignupDetailsDTO dto = IndustrySignupDetailsDTO.builder()
+             .userId(details.getUser().getUserId())
+             .fullName(details.getFullName())
+
+             .countryId(details.getCountry().getId())
+             .countryName(details.getCountry().getName())
+
+             .industryId(details.getIndustry().getIndustryId())
+             .industryName(details.getIndustry().getIndustryName())
+
+             .professionId(details.getProfession().getFilmProfessionId())
+             .professionName(details.getProfession().getProfessionName())
+
+             .subProfessionId(details.getSubProfession().getSubProfessionId())
+             .subProfessionName(details.getSubProfession().getSubProfessionName())
+
+             .yearsOfExperience(details.getYearsOfExperience())
+             .verificationCode(details.getVerificationCode())
+             .verified(details.getVerified())
+             .build();
+
+     return new Response(1, "Industry signup details fetched successfully", dto);
+ }
 
 
 

@@ -60,7 +60,7 @@ public interface DetailService {
 	
 	Response saveVerification(IndustrySignupDetailsDTO dto);
 	
-	
+	Response getIndustrySignupDetails(Integer userId);
 
 
 }

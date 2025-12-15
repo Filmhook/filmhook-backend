@@ -32,6 +32,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
+import com.annular.filmhook.model.IndustrySignupDetails;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.PaymentDetails;
@@ -40,6 +41,7 @@ import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
+import com.annular.filmhook.repository.IndustrySignupDetailsRepository;
 import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
 import com.annular.filmhook.repository.PaymentDetailsRepository;
 import com.annular.filmhook.repository.PostsRepository;
@@ -87,6 +89,9 @@ public class AdminServiceImpl implements AdminService {
     @Autowired
     UserService userService;
 
+    @Autowired
+    IndustrySignupDetailsRepository industrySignupDetailsRepository;
+    
     @Autowired
     FilmSubProfessionRepository filmSubProfessionRepository;
 
@@ -538,7 +543,17 @@ public class AdminServiceImpl implements AdminService {
 
             // Save the updated records back to the database
             industryMediaFileRepository.saveAll(industryDbData);
-
+           
+			Optional<IndustrySignupDetails> signupOpt =
+                    industrySignupDetailsRepository.findByUser_UserId(userWebModel.getUserId());
+            
+            if (signupOpt.isPresent()) {
+                IndustrySignupDetails signupDetails = signupOpt.get();
+                signupDetails.setVerified(status); 
+                industrySignupDetailsRepository.save(signupDetails);
+            }
+            
+            
             // Update the userType in the User table
             Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
             logger.info(">>>>>>>>>>>{}", userWebModel.getUserId());
