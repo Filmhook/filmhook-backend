@@ -25,4 +25,5 @@ public class ShootingLocationPropertyReviewDTO {
     private String ownerReplyText;
     private Integer ownerReplyBy;   // property owner userId
     private LocalDateTime ownerReplyOn;
+    private String ownerReplyByName;
 }
