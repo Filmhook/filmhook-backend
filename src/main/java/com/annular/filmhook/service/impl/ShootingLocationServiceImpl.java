@@ -1004,6 +1004,19 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
 							.createdOn(review.getCreatedOn())
 							.files(files)
+							.ownerReplyOn(review.getOwnerReplyOn())
+				            .ownerReplyText(review.getOwnerReplyText())
+				            .ownerReplyBy(
+				                review.getOwnerReplyBy() != null
+				                    ? review.getOwnerReplyBy().getUserId()
+				                    : null
+				            )
+				            .ownerReplyByName(
+				                review.getOwnerReplyBy() != null
+				                    ? review.getOwnerReplyBy().getFirstName() + " " +
+				                      review.getOwnerReplyBy().getLastName()
+				                    : null
+				            )
 							.build();
 				})
 				.collect(Collectors.toList());
@@ -1065,7 +1078,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			return new Response(0, "Something went wrong while deleting the property", null);
 		}
 	}
-
 
 
 	@Transactional
@@ -1355,6 +1367,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 
+
 	@Override
 	public String toggleLike(Integer propertyId, Integer userId) {
 		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
@@ -1531,6 +1544,114 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.createdOn(savedReview.getCreatedOn())
 				.build();
 	}
+
+
+	@Override
+	@Transactional
+	public ShootingLocationPropertyReviewDTO replyToReview(Integer reviewId, Integer ownerUserId, String replyText) {
+
+		ShootingLocationPropertyReview review = propertyReviewRepository.findById(reviewId)
+				.orElseThrow(() -> new RuntimeException("Review not found"));
+
+		ShootingLocationPropertyDetails property = review.getProperty();
+		if (property == null) throw new RuntimeException("Property data missing for review");
+
+		User propertyOwner = property.getUser();
+		if (propertyOwner == null || propertyOwner.getUserId() == null)
+			throw new RuntimeException("Property has no owner assigned");
+
+		if (!propertyOwner.getUserId().equals(ownerUserId))
+			throw new RuntimeException("Only the property owner can reply to this review");
+
+		User owner = userRepository.findById(ownerUserId)
+				.orElseThrow(() -> new RuntimeException("Owner user not found"));
+
+		// ⭐ ONLY update these three fields
+		review.setOwnerReplyText(replyText);
+		review.setOwnerReplyBy(owner);
+		review.setOwnerReplyOn(LocalDateTime.now());
+
+		ShootingLocationPropertyReview saved = propertyReviewRepository.save(review);
+
+		// ⭐ Get media files (your existing method)
+		List<FileOutputWebModel> files = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocationReview, saved.getId())
+				.stream()
+				.sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+				.collect(Collectors.toList());
+
+		// ⭐ Build DTO exactly like your GET review API does
+		return ShootingLocationPropertyReviewDTO.builder()
+				.id(saved.getId())
+				.propertyId(property.getId())
+				.userId(saved.getUser().getUserId())
+				.userName(saved.getUser().getName())
+				.profilePicUrl(userService.getProfilePicUrl(review.getUser().getUserId()))
+				.rating(saved.getRating())
+				.reviewText(saved.getReviewText())
+				.createdOn(saved.getCreatedOn())
+
+				.files(files)
+
+				// ⭐ reply fields
+				.ownerReplyText(saved.getOwnerReplyText())
+				.ownerReplyBy(ownerUserId)
+				.ownerReplyOn(saved.getOwnerReplyOn())
+				.build();
+	}
+
+	@Override
+	@Transactional
+	public ShootingLocationPropertyReviewDTO deleteReply(Integer reviewId, Integer ownerUserId) {
+
+		ShootingLocationPropertyReview review = propertyReviewRepository.findById(reviewId)
+				.orElseThrow(() -> new RuntimeException("Review not found"));
+
+		ShootingLocationPropertyDetails property = review.getProperty();
+		if (property == null)
+			throw new RuntimeException("Property data missing for review");
+
+		User propertyOwner = property.getUser();
+		if (propertyOwner == null || propertyOwner.getUserId() == null)
+			throw new RuntimeException("Property has no owner assigned");
+
+		// Only owner can delete reply
+		if (!propertyOwner.getUserId().equals(ownerUserId))
+			throw new RuntimeException("Only the property owner can delete the reply");
+
+		// ⭐ Delete reply by setting values to null
+		review.setOwnerReplyText(null);
+		review.setOwnerReplyBy(null);
+		review.setOwnerReplyOn(null);
+
+		ShootingLocationPropertyReview saved = propertyReviewRepository.save(review);
+
+		// ⭐ Get media files
+		List<FileOutputWebModel> files = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocationReview, saved.getId())
+				.stream()
+				.sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
+				.collect(Collectors.toList());
+
+		// ⭐ Build DTO (same response as reply)
+		return ShootingLocationPropertyReviewDTO.builder()
+				.id(saved.getId())
+				.propertyId(property.getId())
+				.userId(saved.getUser().getUserId())
+				.userName(saved.getUser().getName())
+				.profilePicUrl(userService.getProfilePicUrl(saved.getUser().getUserId()))
+				.rating(saved.getRating())
+				.reviewText(saved.getReviewText())
+				.createdOn(saved.getCreatedOn())
+				.files(files)
+
+				// reply becomes null
+				.ownerReplyText(null)
+				.ownerReplyBy(null)
+				.ownerReplyOn(null)
+				.build();
+	}
+
 
 	public double getAverageRating(Integer propertyId) {
 		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId);
