@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -42,6 +42,7 @@ import com.annular.filmhook.model.ShootingLocationOwnerBankDetails;
 import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.ShootingLocationBusinessInformation;
 import com.annular.filmhook.model.Industry;
+import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.PaymentModule;
 import com.annular.filmhook.model.Payments;
@@ -60,6 +61,7 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BankDetailsRepository;
 import com.annular.filmhook.repository.BusinessInformationRepository;
 import com.annular.filmhook.repository.IndustryRepository;
+import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
 
 import com.annular.filmhook.repository.PropertyLikeRepository;
@@ -157,6 +159,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	private UserDetails userDetails;
 	@Autowired
 	private PropertyLikeRepository likeRepository;
+	@Autowired
+	private LikeRepository likesRepository;
 
 	@Autowired
 	private ShootingLocationCategoryRepository categoryRepo;
@@ -922,7 +926,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				dto.setVerificationVideo(verificationVideo);
 
 				
-				  ShootingLocationPropertyReviewResponseDTO reviewData = getReviewsByPropertyId(p.getId());
+				  ShootingLocationPropertyReviewResponseDTO reviewData = getReviewsByPropertyId(p.getId(), userId);
 
 				    dto.setReviews(reviewData.getReviews());
 				    dto.setAverageRating(reviewData.getAverageRating());
@@ -945,94 +949,159 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		}
 	}
 
-	@Override
-	public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(Integer propertyId) {
-		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findByPropertyId(propertyId)
-				.stream()
-				.sorted(Comparator.comparing(ShootingLocationPropertyReview::getCreatedOn).reversed())
-				.collect(Collectors.toList());
+@Override
+public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
+        Integer propertyId,
+        Integer userId) {
 
-		if (reviews.isEmpty()) {
-			return ShootingLocationPropertyReviewResponseDTO.builder()
-					.reviews(Collections.emptyList())
-					.averageRating(0.0)
-					.totalReviews(0)
-					.fiveStarPercentage(0.0)
-					.fourStarPercentage(0.0)
-					.threeStarPercentage(0.0)
-					.twoStarPercentage(0.0)
-					.oneStarPercentage(0.0)
-					.build();
-		}
+    // ----------------------------------
+    // 1️⃣ FETCH REVIEWS
+    // ----------------------------------
+    List<ShootingLocationPropertyReview> reviews =
+            propertyReviewRepository.findByPropertyId(propertyId)
+                    .stream()
+                    .sorted(Comparator.comparing(
+                            ShootingLocationPropertyReview::getCreatedOn).reversed())
+                    .collect(Collectors.toList());
 
-		// ✅ Calculate rating status
-		long totalReviews = reviews.size();
-		double averageRating = reviews.stream()
-				.mapToInt(ShootingLocationPropertyReview::getRating)
-				.average()
-				.orElse(0.0);
+    if (reviews.isEmpty()) {
+        return ShootingLocationPropertyReviewResponseDTO.builder()
+                .reviews(Collections.emptyList())
+                .averageRating(0.0)
+                .totalReviews(0)
+                .fiveStarPercentage(0.0)
+                .fourStarPercentage(0.0)
+                .threeStarPercentage(0.0)
+                .twoStarPercentage(0.0)
+                .oneStarPercentage(0.0)
+                .build();
+    }
 
-		long fiveStar = reviews.stream().filter(r -> r.getRating() == 5).count();
-		long fourStar = reviews.stream().filter(r -> r.getRating() == 4).count();
-		long threeStar = reviews.stream().filter(r -> r.getRating() == 3).count();
-		long twoStar = reviews.stream().filter(r -> r.getRating() == 2).count();
-		long oneStar = reviews.stream().filter(r -> r.getRating() == 1).count();
+    // ----------------------------------
+    // 2️⃣ RATING CALCULATION
+    // ----------------------------------
+    long totalReviews = reviews.size();
 
-		// ✅ Convert counts to percentages
-		double fiveStarPercentage = (fiveStar * 100.0) / totalReviews;
-		double fourStarPercentage = (fourStar * 100.0) / totalReviews;
-		double threeStarPercentage = (threeStar * 100.0) / totalReviews;
-		double twoStarPercentage = (twoStar * 100.0) / totalReviews;
-		double oneStarPercentage = (oneStar * 100.0) / totalReviews;
+    double averageRating = reviews.stream()
+            .mapToInt(ShootingLocationPropertyReview::getRating)
+            .average()
+            .orElse(0.0);
 
-		// ✅ Map reviews to DTO
-		List<ShootingLocationPropertyReviewDTO> reviewDTOs = reviews.stream()
-				.map(review -> {
-					List<FileOutputWebModel> files = mediaFilesService
-							.getMediaFilesByCategoryAndRefId(MediaFileCategory.ShootingLocationReview, review.getId())
-							.stream()
-							.sorted(Comparator.comparing(FileOutputWebModel::getId).reversed())
-							.collect(Collectors.toList());
+    long fiveStar = reviews.stream().filter(r -> r.getRating() == 5).count();
+    long fourStar = reviews.stream().filter(r -> r.getRating() == 4).count();
+    long threeStar = reviews.stream().filter(r -> r.getRating() == 3).count();
+    long twoStar = reviews.stream().filter(r -> r.getRating() == 2).count();
+    long oneStar = reviews.stream().filter(r -> r.getRating() == 1).count();
 
-					return ShootingLocationPropertyReviewDTO.builder()
-							.id(review.getId())
-							.propertyId(review.getProperty().getId())
-							.userId(review.getUser().getUserId())
-							.rating(review.getRating())
-							.reviewText(review.getReviewText())
-							.profilePicUrl(userService.getProfilePicUrl(review.getUser().getUserId()))
-							.userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
-							.createdOn(review.getCreatedOn())
-							.files(files)
-							.ownerReplyOn(review.getOwnerReplyOn())
-				            .ownerReplyText(review.getOwnerReplyText())
-				            .ownerReplyBy(
-				                review.getOwnerReplyBy() != null
-				                    ? review.getOwnerReplyBy().getUserId()
-				                    : null
-				            )
-				            .ownerReplyByName(
-				                review.getOwnerReplyBy() != null
-				                    ? review.getOwnerReplyBy().getFirstName() + " " +
-				                      review.getOwnerReplyBy().getLastName()
-				                    : null
-				            )
-							.build();
-				})
-				.collect(Collectors.toList());
+    double fiveStarPercentage = (fiveStar * 100.0) / totalReviews;
+    double fourStarPercentage = (fourStar * 100.0) / totalReviews;
+    double threeStarPercentage = (threeStar * 100.0) / totalReviews;
+    double twoStarPercentage = (twoStar * 100.0) / totalReviews;
+    double oneStarPercentage = (oneStar * 100.0) / totalReviews;
 
-		// ✅ Return combined response
-		return ShootingLocationPropertyReviewResponseDTO.builder()
-				.reviews(reviewDTOs)
-				.averageRating(Math.round(averageRating * 10.0) / 10.0)
-				.totalReviews(totalReviews) // total number of reviews for the property
-				.fiveStarPercentage(Math.round(fiveStarPercentage * 10.0) / 10.0)
-				.fourStarPercentage(Math.round(fourStarPercentage * 10.0) / 10.0)
-				.threeStarPercentage(Math.round(threeStarPercentage * 10.0) / 10.0)
-				.twoStarPercentage(Math.round(twoStarPercentage * 10.0) / 10.0)
-				.oneStarPercentage(Math.round(oneStarPercentage * 10.0) / 10.0)
-				.build();
-	}
+    // ----------------------------------
+    // 3️⃣ PRELOAD USER REVIEW LIKES (ONCE)
+    // ----------------------------------
+    Map<Integer, Likes> userReviewLikeMap = new HashMap<>();
+
+    if (userId != null) {
+        likesRepository.findAllByUserIdForReviews(userId)
+                .stream()
+                .filter(l -> l.getReviewId() != null)
+                .forEach(l -> userReviewLikeMap.put(l.getReviewId(), l));
+    }
+
+    // ----------------------------------
+    // 4️⃣ MAP REVIEWS → DTO (WITH LIKES)
+    // ----------------------------------
+    List<ShootingLocationPropertyReviewDTO> reviewDTOs =
+            reviews.stream()
+                    .map((ShootingLocationPropertyReview review) -> {
+
+                        Boolean likeStatus = false;
+                        Boolean unlikeStatus = false;
+                        Integer latestLikeId = null;
+
+                        Likes userLike = userReviewLikeMap.get(review.getId());
+
+                        if (userLike != null) {
+                            latestLikeId = userLike.getLikeId();
+
+                            if ("LIKE".equalsIgnoreCase(userLike.getReactionType())) {
+                                likeStatus = true;
+                            } else if ("UNLIKE".equalsIgnoreCase(userLike.getReactionType())) {
+                                unlikeStatus = true;
+                            }
+                        }
+
+                        Long totalLikes =
+                                likesRepository.countByReviewIdAndReactionTypeAndCategory(
+                                        review.getId(), "LIKE", "REVIEW");
+
+                        Long totalUnlikes =
+                                likesRepository.countByReviewIdAndReactionTypeAndCategory(
+                                        review.getId(), "UNLIKE", "REVIEW");
+
+                        List<FileOutputWebModel> files =
+                                mediaFilesService
+                                        .getMediaFilesByCategoryAndRefId(
+                                                MediaFileCategory.ShootingLocationReview,
+                                                review.getId())
+                                        .stream()
+                                        .sorted(Comparator.comparing(
+                                                FileOutputWebModel::getId).reversed())
+                                        .collect(Collectors.toList());
+
+                        return ShootingLocationPropertyReviewDTO.builder()
+                                .id(review.getId())
+                                .propertyId(review.getProperty().getId())
+                                .userId(review.getUser().getUserId())
+                                .userName(review.getUser().getFirstName() + " "
+                                        + review.getUser().getLastName())
+                                .profilePicUrl(
+                                        userService.getProfilePicUrl(
+                                                review.getUser().getUserId()))
+                                .rating(review.getRating())
+                                .reviewText(review.getReviewText())
+                                .createdOn(review.getCreatedOn())
+                                .files(files)
+                                .likeStatus(likeStatus)
+                                .unlikeStatus(unlikeStatus)
+                                .latestLikeId(latestLikeId)
+                                .totalLikes(totalLikes)
+                                .totalUnlikes(totalUnlikes)
+                                .ownerReplyOn(review.getOwnerReplyOn())
+                                .ownerReplyText(review.getOwnerReplyText())
+                                .ownerReplyBy(
+                                        review.getOwnerReplyBy() != null
+                                                ? review.getOwnerReplyBy().getUserId()
+                                                : null
+                                )
+                                .ownerReplyByName(
+                                        review.getOwnerReplyBy() != null
+                                                ? review.getOwnerReplyBy().getFirstName()
+                                                  + " "
+                                                  + review.getOwnerReplyBy().getLastName()
+                                                : null
+                                )
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+
+    // ----------------------------------
+    // 5️⃣ FINAL RESPONSE
+    // ----------------------------------
+    return ShootingLocationPropertyReviewResponseDTO.builder()
+            .reviews(reviewDTOs)
+            .averageRating(Math.round(averageRating * 10.0) / 10.0)
+            .totalReviews(totalReviews)
+            .fiveStarPercentage(Math.round(fiveStarPercentage * 10.0) / 10.0)
+            .fourStarPercentage(Math.round(fourStarPercentage * 10.0) / 10.0)
+            .threeStarPercentage(Math.round(threeStarPercentage * 10.0) / 10.0)
+            .twoStarPercentage(Math.round(twoStarPercentage * 10.0) / 10.0)
+            .oneStarPercentage(Math.round(oneStarPercentage * 10.0) / 10.0)
+            .build();
+}
 
 
 	@Override

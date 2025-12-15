@@ -11,6 +11,7 @@ import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Audition;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
+import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.model.PostTags;
 import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.model.MediaFileCategory;
@@ -82,6 +83,7 @@ import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.AuditionRepository;
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
+import com.annular.filmhook.repository.ShootingLocationPropertyReviewRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.repository.WatchLaterRepository;
@@ -146,6 +148,10 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	CommentRepository commentRepository;
+	
+	@Autowired
+	ShootingLocationPropertyReviewRepository reviewRepository;
+
 
 	@Autowired
 	ShareRepository shareRepository;
@@ -176,6 +182,7 @@ public class PostServiceImpl implements PostService {
 	private static final String POST = "Post";
 	private static final String COMMENT = "Comment";
 	public static final String AUDITION = "Audition";
+	public static final String REVIEW = "REVIEW";
 
 	@Override
 	public PostWebModel savePostsWithFiles(PostWebModel postWebModel) {
@@ -890,33 +897,40 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 			Posts post = null;
 			Audition audition = null;
 			Comment existingComment = null;
+			ShootingLocationPropertyReview review = null;
 
 			// --- Validate category targets ---
 			if (POST.equalsIgnoreCase(likeWebModel.getCategory())) {
-				post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
-				if (post == null) return null;
-			} else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory())) {
-				audition = auditionRepository.findById(likeWebModel.getAuditionId()).orElse(null);
-				if (audition == null) return null;
-			} else if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
-				existingComment = likeWebModel.getCommentId() != null
-						? commentRepository.findById(likeWebModel.getCommentId()).orElse(null)
-								: null;
-				if (existingComment == null) return null;
-			}
+			    post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
+			    if (post == null) return null;
 
+			} else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory())) {
+			    audition = auditionRepository.findById(likeWebModel.getAuditionId()).orElse(null);
+			    if (audition == null) return null;
+
+			} else if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
+			    existingComment = commentRepository.findById(likeWebModel.getCommentId()).orElse(null);
+			    if (existingComment == null) return null;
+
+			} else if (REVIEW.equalsIgnoreCase(likeWebModel.getCategory())) {
+			    review = reviewRepository.findById(likeWebModel.getReviewId()).orElse(null);
+			    if (review == null) return null;
+			}
 			// --- Find existing like/unlike record ---
 			Likes existingLike;
 			if (!Utility.isNullObject(likeWebModel.getLikeId())) {
 				existingLike = likeRepository.findById(likeWebModel.getLikeId()).orElse(null);
 			} else {
-				existingLike = likeRepository.findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionId(
-						likeWebModel.getCategory(),
-						likeWebModel.getUserId(),
-						likeWebModel.getPostId(),
-						likeWebModel.getCommentId(),
-						likeWebModel.getAuditionId()
-						).orElse(null);
+				existingLike = likeRepository
+					    .findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionIdAndReviewId(
+					        likeWebModel.getCategory(),
+					        likeWebModel.getUserId(),
+					        likeWebModel.getPostId(),
+					        likeWebModel.getCommentId(),
+					        likeWebModel.getAuditionId(),
+					        likeWebModel.getReviewId()
+					    )
+					    .orElse(null);
 			}
 
 			if (existingLike != null) {
@@ -929,37 +943,40 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 			} else {
 				// Insert new record
 				likeRowToSaveOrUpdate = Likes.builder()
-						.category(likeWebModel.getCategory())
-						.postId(likeWebModel.getPostId())
-						.commentId(likeWebModel.getCommentId())
-						.auditionId(likeWebModel.getAuditionId())
-						.likedBy(likeWebModel.getUserId())
-						.reactionType(likeWebModel.getReactionType())
-						.status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType()))
-						.notified(false)
-						.createdBy(likeWebModel.getUserId())
-						.createdOn(new Date())
-						.build();
+					    .category(likeWebModel.getCategory())
+					    .postId(likeWebModel.getPostId())
+					    .commentId(likeWebModel.getCommentId())
+					    .auditionId(likeWebModel.getAuditionId())
+					    .reviewId(likeWebModel.getReviewId()) 
+					    .likedBy(likeWebModel.getUserId())
+					    .reactionType(likeWebModel.getReactionType())
+					    .status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType()))
+					    .notified(false)
+					    .createdBy(likeWebModel.getUserId())
+					    .createdOn(new Date())
+					    .build();
 			}
 
 			Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
 
 			// --- Count likes & unlikes ---
 			Integer totalLikes = likeRepository.countByReactionType(
-					likeWebModel.getCategory(),
-					likeWebModel.getPostId(),
-					likeWebModel.getCommentId(),
-					likeWebModel.getAuditionId(),
-					"LIKE"
-					);
+				    likeWebModel.getCategory(),
+				    likeWebModel.getPostId(),
+				    likeWebModel.getCommentId(),
+				    likeWebModel.getAuditionId(),
+				    likeWebModel.getReviewId(),
+				    "LIKE"
+				);
 
-			Integer totalUnlikes = likeRepository.countByReactionType(
-					likeWebModel.getCategory(),
-					likeWebModel.getPostId(),
-					likeWebModel.getCommentId(),
-					likeWebModel.getAuditionId(),
-					"UNLIKE"
-					);
+				Integer totalUnlikes = likeRepository.countByReactionType(
+				    likeWebModel.getCategory(),
+				    likeWebModel.getPostId(),
+				    likeWebModel.getCommentId(),
+				    likeWebModel.getAuditionId(),
+				    likeWebModel.getReviewId(),
+				    "UNLIKE"
+				);
 
 			logger.info("Like count [{}], Unlike count [{}] for category [{}]",
 					totalLikes, totalUnlikes, likeWebModel.getCategory());
