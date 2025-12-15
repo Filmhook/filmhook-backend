@@ -1005,6 +1005,19 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.userName(review.getUser().getFirstName() + " " + review.getUser().getLastName())
 							.createdOn(review.getCreatedOn())
 							.files(files)
+							.ownerReplyOn(review.getOwnerReplyOn())
+				            .ownerReplyText(review.getOwnerReplyText())
+				            .ownerReplyBy(
+				                review.getOwnerReplyBy() != null
+				                    ? review.getOwnerReplyBy().getUserId()
+				                    : null
+				            )
+				            .ownerReplyByName(
+				                review.getOwnerReplyBy() != null
+				                    ? review.getOwnerReplyBy().getFirstName() + " " +
+				                      review.getOwnerReplyBy().getLastName()
+				                    : null
+				            )
 							.build();
 				})
 				.collect(Collectors.toList());
