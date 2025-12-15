@@ -43,7 +43,7 @@ public interface ShootingLocationService {
 	        String reviewText,
 	        List<MultipartFile> files);
 	double getAverageRating(Integer propertyId);
-	public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(Integer propertyId);
+	public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(Integer propertyId, Integer userId);
 //	PropertyAvailabilityDTO saveAvailability(PropertyAvailabilityDTO dto);
 //	List<PropertyAvailabilityDTO> getAvailabilityByPropertyId(Integer propertyId);
 //	void updateAvailabilityDates(Integer propertyId, List<PropertyAvailabilityDTO> availabilityList);

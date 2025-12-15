@@ -27,13 +27,15 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
     boolean existsByCategoryAndAuditionIdAndLikedByAndStatusTrue(String category, Integer auditionId, Integer likedBy);
 
     
-    Optional<Likes> findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionId(
+    Optional<Likes> findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionIdAndReviewId(
     	    String category,
     	    Integer likedBy,
     	    Integer postId,
     	    Integer commentId,
-    	    Integer auditionId
+    	    Integer auditionId,
+    	    Integer reviewId
     	);
+
     
     Optional<Likes> findByCategoryAndAuditionIdAndLikedByAndStatusTrue(String category, Integer auditionId, Integer likedBy);
     List<Likes> findTop2ByPostIdAndStatusTrueOrderByCreatedOnDesc(Integer postId);
@@ -47,19 +49,26 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
             @Param("status") Boolean status
     );
     
-    @Query("SELECT COUNT(l) FROM Likes l " +
-    	       "WHERE l.category = :category " +
-    	       "AND (:postId IS NULL OR l.postId = :postId) " +
-    	       "AND (:commentId IS NULL OR l.commentId = :commentId) " +
-    	       "AND (:auditionId IS NULL OR l.auditionId = :auditionId) " +
-    	       "AND l.reactionType = :reactionType")
+    @Query(
+    	    "SELECT COUNT(l) FROM Likes l " +
+    	    "WHERE l.category = :category " +
+    	    "AND (:postId IS NULL OR l.postId = :postId) " +
+    	    "AND (:commentId IS NULL OR l.commentId = :commentId) " +
+    	    "AND (:auditionId IS NULL OR l.auditionId = :auditionId) " +
+    	    "AND (:reviewId IS NULL OR l.reviewId = :reviewId) " +
+    	    "AND l.reactionType = :reactionType " +
+    	    "AND l.status = true"
+    	)
     	Integer countByReactionType(
-    	        @Param("category") String category,
-    	        @Param("postId") Integer postId,
-    	        @Param("commentId") Integer commentId,
-    	        @Param("auditionId") Integer auditionId,
-    	        @Param("reactionType") String reactionType
+    	    @Param("category") String category,
+    	    @Param("postId") Integer postId,
+    	    @Param("commentId") Integer commentId,
+    	    @Param("auditionId") Integer auditionId,
+    	    @Param("reviewId") Integer reviewId,
+    	    @Param("reactionType") String reactionType
     	);
+
+
     Long countByPostIdAndReactionTypeAndCategory(Integer postId, String reactionType, String category);
     
     Optional<Likes> findFirstByCommentIdAndLikedByAndCategory(Integer commentId, Integer likedBy, String category);
@@ -73,6 +82,14 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
     
     //count by comment like 
     Integer countByCommentIdAndReactionTypeAndStatus(Integer commentId, String reactionType, Boolean status);
+    
+    @Query("SELECT l FROM Likes l WHERE l.likedBy = :userId AND l.category = 'REVIEW'")
+    List<Likes> findAllByUserIdForReviews(@Param("userId") Integer userId);
 
+    Long countByReviewIdAndReactionTypeAndCategory(
+    	    Integer reviewId,
+    	    String reactionType,
+    	    String category
+    	);
 
 }

@@ -25,5 +25,10 @@ public class ShootingLocationPropertyReviewDTO {
     private String ownerReplyText;
     private Integer ownerReplyBy;   // property owner userId
     private LocalDateTime ownerReplyOn;
+    private Boolean likeStatus;
+    private Boolean unlikeStatus;
+    private Integer latestLikeId;
+    private Long totalLikes;
+    private Long totalUnlikes;
     private String ownerReplyByName;
 }

@@ -18,6 +18,7 @@ public class LikeWebModel {
     private Integer auditionId;
     private String category; // 'Post' or 'Comment' or 'Audition'
     private Integer commentId; // Comment primary key. If like/unlike is for any comment.
+    private Integer reviewId; 
 
     private Boolean status;   // true = like, false = unlike
     private Boolean isLiked;  // logged-in user’s like status

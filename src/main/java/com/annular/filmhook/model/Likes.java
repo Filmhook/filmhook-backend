@@ -41,6 +41,9 @@ public class Likes {
 
     @Column(name = "comment_Id", columnDefinition = "int default null")
     private Integer commentId; // primary key of Comment
+    
+    @Column(name = "review_id")
+    private Integer reviewId;
 
     @Column(name = "liked_by")
     private Integer likedBy; // primary key for user table

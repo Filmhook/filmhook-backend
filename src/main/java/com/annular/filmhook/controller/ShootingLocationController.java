@@ -429,10 +429,10 @@ public class ShootingLocationController {
 		}
 	}
 	@GetMapping("/property/{propertyId}")
-	public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId) {
+	public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId, @PathVariable Integer userId ) {
 		logger.info("Fetching reviews for property ID: {}", propertyId);
 		try {
-			ShootingLocationPropertyReviewResponseDTO reviews = service.getReviewsByPropertyId(propertyId);
+			ShootingLocationPropertyReviewResponseDTO reviews = service.getReviewsByPropertyId(propertyId, userId);
 
 			return ResponseEntity.ok(new Response(1, "Success", reviews));
 		} catch (Exception e) {
