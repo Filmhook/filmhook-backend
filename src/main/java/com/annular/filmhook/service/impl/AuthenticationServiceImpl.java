@@ -894,7 +894,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	            // Verification codes
 	            user.setVerificationCode(RandomString.make(64));
 //	            user.setOtp(Integer.parseInt(Utility.generateOtp(4)));
-	            user.setEmailOtp(Integer.parseInt(Utility.generateOtp(4)));
+//	            user.setEmailOtp(Integer.parseInt(Utility.generateOtp(4)));
 	         // boolean sendVerificationRes = this.sendVerificationEmail(user);
 	            // if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
 	            // Set status false
