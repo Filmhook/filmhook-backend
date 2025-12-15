@@ -30,6 +30,7 @@ import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
+import com.annular.filmhook.webmodel.IndustrySignupDetailsDTO;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
@@ -358,4 +359,37 @@ public class DetailsController {
         mailService.sendOtpMail(to, "Today's report details with some HTML formatting.");
         return "Report mail sent!";
     }
-}
+    
+    
+    @PostMapping("/saveIndustrySignupDetails")
+    public ResponseEntity<Response> submitVerification(
+            @RequestBody IndustrySignupDetailsDTO dto) {
+
+        Response response = detailService.saveVerification(dto);
+        return ResponseEntity.ok(response);
+    }
+
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

@@ -6,9 +6,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.Response;
+import com.annular.filmhook.model.IndustrySignupDetails;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
+import com.annular.filmhook.webmodel.IndustrySignupDetailsDTO;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
@@ -55,7 +58,7 @@ public interface DetailService {
 
 	List<FileOutputWebModel> saveIndustryUserFilesss(IndustryFileInputWebModel inputFileData);
 	
-	
+	Response saveVerification(IndustrySignupDetailsDTO dto);
 	
 	
 

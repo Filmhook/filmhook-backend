@@ -34,6 +34,7 @@ import com.annular.filmhook.model.FilmSubProfessionDetails;
 import com.annular.filmhook.model.FilmSubProfessionPermanentDetail;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.IndustryDetails;
+import com.annular.filmhook.model.IndustrySignupDetails;
 import com.annular.filmhook.model.IndustryTemporaryDetails;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
 import com.annular.filmhook.model.MediaFileCategory;
@@ -51,6 +52,7 @@ import com.annular.filmhook.repository.FilmSubProfessionPermanentDetailsReposito
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryDetailRepository;
 import com.annular.filmhook.repository.IndustryRepository;
+import com.annular.filmhook.repository.IndustrySignupDetailsRepository;
 import com.annular.filmhook.repository.IndustryTemporaryDetailRepository;
 import com.annular.filmhook.repository.IndustryUserPermanentDetailsRepository;
 import com.annular.filmhook.repository.PlatformDetailRepository;
@@ -68,6 +70,7 @@ import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.DetailRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
+import com.annular.filmhook.webmodel.IndustrySignupDetailsDTO;
 import com.annular.filmhook.webmodel.IndustryTemporaryWebModel;
 import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
@@ -87,16 +90,23 @@ public class DetailServiceImpl implements DetailService {
     @Autowired
     MediaFilesService mediaFilesService;
     
+    @Autowired 
+    private UserRepository userRepository;
     
+    @Autowired 
+    private FilmProfessionRepository professionRepository;
+    
+    @Autowired 
+    private FilmSubProfessionRepository subProfessionRepository;
+    
+    @Autowired 
+    private IndustrySignupDetailsRepository industrySignupDetailsRepository;
 
     @Autowired
     private MailNotification mailNotification;
 
     @Autowired
     UserMediaFilesService userMediaFilesService;
-
-    @Autowired
-    UserRepository userRepository;
 
     @Autowired
     PlatformRepository platformRepository;
@@ -1151,6 +1161,43 @@ public class DetailServiceImpl implements DetailService {
         }
     }
 
+    
+ @Override
+    public Response  saveVerification(IndustrySignupDetailsDTO dto) {
+
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Country country = countryRepository.findById(dto.getCountryId())
+                .orElseThrow(() -> new RuntimeException("Country not found"));
+
+        Industry industry = industryRepository.findById(dto.getIndustryId())
+                .orElseThrow(() -> new RuntimeException("Industry not found"));
+
+        FilmProfession profession = professionRepository.findById(dto.getProfessionId())
+                .orElseThrow(() -> new RuntimeException("Profession not found"));
+
+        FilmSubProfession subProfession = subProfessionRepository
+                .findById(dto.getSubProfessionId())
+                .orElseThrow(() -> new RuntimeException("Sub profession not found"));
+
+
+        IndustrySignupDetails verification = IndustrySignupDetails.builder()
+                .user(user)
+                .fullName(dto.getFullName())
+                .country(country)
+                .industry(industry)
+                .profession(profession)
+                .subProfession(subProfession)
+                .yearsOfExperience(dto.getYearsOfExperience())
+                .verificationCode(dto.getVerificationCode())
+                .verified(false)
+                .build();
+
+        IndustrySignupDetails saved = industrySignupDetailsRepository.save(verification);
+
+        return new Response(1, "IndustryDetails saved successfully", "");
+    }
 
 
 
