@@ -81,7 +81,7 @@ public class WebSecurityConfig {
                                         "/industryUser/getTemporaryDetails", "/industryUser/addIndustryUserPermanentDetails","/user/saveProfilePhotos",
                                         "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag","/industryUser/saveOneMinuteVideo","/user/updateRerferrralcode","/industryUser/saveGovermentIdProof",
                                         "/payment/payment-failure", "/payment/payment-success","/deeplink/**","/retry-payment/**", "/audition-post/**",  "/swagger-ui.html",
-                                        "/swagger-ui/**","/masterData/getCountries",
+                                        "/swagger-ui/**","/masterData/getCountries", "/industryUser/saveIndustrySignupDetails",
                                         "/v3/api-docs/**",
                                         "/v2/api-docs",   // for old swagger
                                         "/swagger-resources/**",
