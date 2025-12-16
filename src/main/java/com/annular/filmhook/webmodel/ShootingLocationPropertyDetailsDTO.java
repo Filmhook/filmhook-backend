@@ -27,9 +27,7 @@ import lombok.experimental.SuperBuilder;
 	// Property Information
 public class ShootingLocationPropertyDetailsDTO {
 	private Integer id;
-	private String firstName;
-	private String middleName;
-	private String lastName;
+	private String fullName;
 	private String citizenship;
 	private String placeOfBirth;
 	private String propertyName;
@@ -163,6 +161,9 @@ public class ShootingLocationPropertyDetailsDTO {
 	private double oneStarPercentage;
 	private double averageRating;
 	private List<ShootingLocationPropertyReviewDTO> reviews;
-
+	
+	private Double adminRating;                  
+	private LocalDateTime adminRatedOn;          
+	private Integer adminRatedBy;
 }
 

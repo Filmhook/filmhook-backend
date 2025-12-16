@@ -576,6 +576,15 @@ public class ShootingLocationController {
 
 	        return ResponseEntity.ok(new Response(1, "Success", result));
 	    }
+	    
+	    
+	    
+	    @PostMapping("/saveAdminRating")
+	    public ResponseEntity<?> saveAdminRating(
+	            @RequestBody ShootingLocationPropertyDetailsDTO request) {
+
+	        return service.saveAdminPropertyRating(request);
+	    }
 
 }
 

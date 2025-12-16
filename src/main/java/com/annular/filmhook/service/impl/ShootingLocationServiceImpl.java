@@ -1399,9 +1399,7 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	private void copyNonNullFields(ShootingLocationPropertyDetails source, ShootingLocationPropertyDetails target) {
 
 		// Basic Info
-		if (source.getFirstName() != null) target.setFirstName(source.getFirstName());
-		if (source.getMiddleName() != null) target.setMiddleName(source.getMiddleName());
-		if (source.getLastName() != null) target.setLastName(source.getLastName());
+		if (source.getFullName() != null) target.setFullName(source.getFullName());
 		if (source.getCitizenship() != null) target.setCitizenship(source.getCitizenship());
 		if (source.getPlaceOfBirth() != null) target.setPlaceOfBirth(source.getPlaceOfBirth());
 		if (source.getPropertyName() != null) target.setPropertyName(source.getPropertyName());
@@ -1909,9 +1907,8 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 			// 11. Build final DTO
 			ShootingLocationPropertyDetailsDTO dto = ShootingLocationPropertyDetailsDTO.builder()
 					.id(propertyId)
-					.firstName(property.getFirstName())
-					.middleName(property.getMiddleName())
-					.lastName(property.getLastName())
+					.fullName(property.getFullName())
+
 					.citizenship(property.getCitizenship())
 					.placeOfBirth(property.getPlaceOfBirth())
 					.propertyName(property.getPropertyName())
@@ -3092,6 +3089,41 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	            logger.error("❌ Failed to complete booking {}", bookingId, e);
 	        }
 	    }
+	}	
+	
+	@Override
+	@Transactional
+	public ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request) {
+
+	    if (request.getId() == null) {
+	        return ResponseEntity.badRequest()
+	                .body("Property ID is required");
+	    }
+
+	    if (request.getAdminRating() == null ||
+	        request.getAdminRating() < 1 ||
+	        request.getAdminRating() > 5) {
+
+	        return ResponseEntity.badRequest()
+	                .body("Admin rating must be between 1 and 5");
+	    }
+
+	    ShootingLocationPropertyDetails property =
+	    		propertyDetailsRepository.findById(request.getId())
+	                    .orElseThrow(() ->
+	                            new RuntimeException("Property not found"));
+
+	 
+	    property.setAdminRating(request.getAdminRating());
+	    property.setAdminRatedOn(LocalDateTime.now());
+	    property.setAdminRatedBy(userDetails.userInfo().getId()); 
+
+	    propertyDetailsRepository.save(property);
+
+	    return ResponseEntity.ok(
+	            "Admin rating saved successfully for property ID "
+	                    + request.getId()
+	    );
 	}
 
 

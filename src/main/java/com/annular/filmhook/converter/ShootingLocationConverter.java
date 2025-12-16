@@ -31,9 +31,7 @@ public class ShootingLocationConverter {
 	            .id(e.getId())
 
 	            // ----- Owner & Identity -----
-	            .firstName(e.getFirstName())
-	            .middleName(e.getMiddleName())
-	            .lastName(e.getLastName())
+	            .fullName(e.getFullName())
 	            .citizenship(e.getCitizenship())
 	            .placeOfBirth(e.getPlaceOfBirth())
 	            .propertyName(e.getPropertyName())
@@ -103,6 +101,9 @@ public class ShootingLocationConverter {
 	            .localAuthorities(e.getLocalAuthorities())
 	            .governmentPermission(e.getGovernmentPermission())
 	            .additionalChargesForOverTime(e.getAdditionalChargesForOverTime())
+	            .adminRatedBy(e.getAdminRatedBy())
+	            .adminRatedOn(e.getAdminRatedOn())
+	            .adminRating(e.getAdminRating())
 	            .build();
 	   
 	    // ----- Category -----
@@ -210,9 +211,7 @@ public class ShootingLocationConverter {
 
 	    ShootingLocationPropertyDetails e = ShootingLocationPropertyDetails.builder()
 	            .id(dto.getId())
-	            .firstName(dto.getFirstName())
-	            .middleName(dto.getMiddleName())
-	            .lastName(dto.getLastName())
+	            .fullName(dto.getFullName())
 	            .citizenship(dto.getCitizenship())
 	            .placeOfBirth(dto.getPlaceOfBirth())
 	            .propertyName(dto.getPropertyName())
