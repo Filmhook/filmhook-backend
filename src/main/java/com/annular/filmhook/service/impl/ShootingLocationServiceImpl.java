@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,16 +20,19 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -39,7 +43,9 @@ import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationConverter;
 import com.annular.filmhook.model.ShootingLocationOwnerBankDetails;
+import com.annular.filmhook.model.ShootingLocationPayment;
 import com.annular.filmhook.model.BookingStatus;
+import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.ShootingLocationBusinessInformation;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.Likes;
@@ -60,10 +66,11 @@ import com.annular.filmhook.model.SlotType;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BankDetailsRepository;
 import com.annular.filmhook.repository.BusinessInformationRepository;
+import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.LikeRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
-
+import com.annular.filmhook.repository.PaymentsRepository;
 import com.annular.filmhook.repository.PropertyLikeRepository;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
 import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
@@ -98,6 +105,12 @@ import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -191,7 +204,10 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	PaymentsServiceImpl paymentsServiceImpl;
-
+	@Autowired
+	  PaymentsRepository paymentsRepository;
+	@Autowired
+	   InAppNotificationRepository inAppNotificationRepo;
 	@Autowired
 	S3Util s3Util;
 
@@ -2864,5 +2880,113 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 		return o == null ? "" : o.toString();
 	}
 
+	
+	@Scheduled(cron = "0 0 0 * * *")
+	public void sendBookingExpiryReminders() {
+
+	    LocalDate tomorrow = LocalDate.now().plusDays(1);
+
+	    List<ShootingLocationBooking> bookings =
+	            bookingRepo.findByShootEndDate(tomorrow);
+
+	    logger.info("🔍 Found {} bookings ending on {}", bookings.size(), tomorrow);
+
+	    for (ShootingLocationBooking booking : bookings) {
+
+	        Integer bookingId = booking.getId();
+
+	      
+			// ✅ PAYMENT CHECK (Payments table ONLY)
+	        Optional<Payments> paymentOpt =
+	                paymentsRepository
+	                        .findByReferenceIdAndModuleTypeAndPaymentStatus(
+	                                bookingId,
+	                                PaymentModule.SHOOTING_LOCATION,
+	                                "SUCCESS"
+	                        );
+
+	        if (paymentOpt.isEmpty()) {
+	            logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
+	            continue;
+	        }
+	     
+	        int retryCount =
+	                inAppNotificationRepo.countExpiryReminders(
+	                        "SHOOTING_LOCATION_EXPIRY",
+	                        bookingId
+	                );
+
+	        if (retryCount >= 3) {
+	            logger.warn("⛔ Max retry reached for booking {}", bookingId);
+	            continue;
+	        }
+
+	        try {
+	            User client = booking.getClient();
+
+	            String title = "Shooting Location Expiring Soon!";
+	            String message =
+	                    "Hi " + client.getName()
+	                    + ", your booking will expire in 24 hours. Renew now to continue.";
+
+	            // ================= EMAIL =================
+	            String mailBody =
+	                    "<p>Dear <b>" + client.getName() + "</b>,</p>"
+	                  + "<p>Your shooting location booking will expire in <b>24 hours</b>.</p>"
+	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
+	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
+	                  + "<p>Please renew to avoid cancellation.</p>";
+
+	            mailNotification.sendEmailAsync(
+	                    client.getName(),
+	                    client.getEmail(),
+	                    "⏳ FilmHook Reminder: Booking Expiring Soon",
+	                    mailBody
+	            );
+
+	            // ================= IN-APP =================
+	            inAppNotificationRepo.save(
+	                    InAppNotification.builder()
+	                            .senderId(0)
+	                            .receiverId(client.getUserId())
+	                            .title(title)
+	                            .message(message)
+	                            .userType("SHOOTING_LOCATION_EXPIRY")
+	                            .id(bookingId)
+	                            .isRead(false)
+	                            .isDeleted(false)
+	                            .createdOn(new Date())
+	                            .createdBy(0)
+	                            .build()
+	            );
+
+	            // ================= PUSH =================
+	            String token = client.getFirebaseDeviceToken();
+	            if (token != null && !token.isBlank()) {
+
+	                Message pushMessage = Message.builder()
+	                        .setToken(token)
+	                        .setNotification(
+	                                Notification.builder()
+	                                        .setTitle(title)
+	                                        .setBody(message)
+	                                        .build()
+	                        )
+	                        .putData("type", "SHOOTING_LOCATION_EXPIRY")
+	                        .putData("bookingId", bookingId.toString())
+	                        .build();
+
+	                FirebaseMessaging.getInstance().send(pushMessage);
+	            }
+
+	            logger.info("✅ Reminder sent (attempt {}) for booking {}",
+	                    retryCount + 1, bookingId);
+
+	        } catch (Exception e) {
+	            logger.error("❌ Reminder attempt {} failed for booking {}",
+	                    retryCount + 1, bookingId, e);
+	        }
+	    }
+	}
 
 }

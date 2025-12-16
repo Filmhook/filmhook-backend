@@ -48,6 +48,21 @@ public class MasterDataController {
         }
         return 0;
     }
+    
+    @GetMapping("/getCountries")
+    public Response getCountries() {
+        try {
+            List<CountryWebModel> countryList = masterDataService.getAllCountries();
+            countryList.sort(Comparator.comparing(CountryWebModel::getName));
+            CountryWebModel indiaCountry = countryList.remove(this.getIndiaCountryPosition(countryList)); 
+            countryList.add(0, indiaCountry); 
+            return new Response(1, "Success", countryList);
+        } catch (Exception e) {
+            logger.error("Error at getAllCountries() -> [{}]", e.getMessage());
+            e.printStackTrace();
+            return new Response(-1, "Error", e.getMessage());
+        }
+    }
 
     @GetMapping("/getAllIndustry")
     public Response getAllIndustries() {

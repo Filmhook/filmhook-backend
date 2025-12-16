@@ -24,4 +24,11 @@ public interface PaymentsRepository extends JpaRepository<Payments,Integer>{
 	            PaymentModule moduleType,
 	            String status
 	    );
+	    
+	    Optional<Payments> findByReferenceIdAndModuleTypeAndPaymentStatus(
+	            Integer referenceId,
+	            PaymentModule moduleType,
+	            String paymentStatus
+	    );
+
 }
