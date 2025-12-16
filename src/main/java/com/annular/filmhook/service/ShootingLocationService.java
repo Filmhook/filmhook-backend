@@ -68,6 +68,6 @@ public interface ShootingLocationService {
 	        LocalDate endDate);
 	ShootingLocationPropertyReviewDTO replyToReview(Integer reviewId, Integer ownerUserId, String replyText);
 	ShootingLocationPropertyReviewDTO deleteReply(Integer reviewId, Integer ownerUserId);
-	
+	ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request);
 	
 }
