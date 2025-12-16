@@ -2881,7 +2881,7 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	}
 
 	
-	@Scheduled(cron = "0 0 0 * * *")
+	@Scheduled(cron = "0 21 12 * * *")
 	public void sendBookingExpiryReminders() {
 
 	    LocalDate tomorrow = LocalDate.now().plusDays(1);
@@ -2988,5 +2988,113 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	        }
 	    }
 	}
+
+	
+	@Scheduled(cron = "0 9 13 * * *")
+	@Transactional
+	public void markBookingsAsCompleted() {
+
+	    LocalDate today = LocalDate.now();
+
+	    List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDateLessThanEqualAndStatus(
+	                    today,
+	                    BookingStatus.CONFIRMED
+	            );
+
+	    logger.info("📅 [{}] Found {} confirmed bookings to mark as COMPLETED",
+	            today, bookings.size());
+
+	    for (ShootingLocationBooking booking : bookings) {
+
+	        Integer bookingId = booking.getId();
+	        User client = booking.getClient();
+
+	        try {
+	            // ✅ PAYMENT CHECK
+	            Optional<Payments> paymentOpt =
+	                    paymentsRepository.findByReferenceIdAndModuleTypeAndPaymentStatus(
+	                            bookingId,
+	                            PaymentModule.SHOOTING_LOCATION,
+	                            "SUCCESS"
+	                    );
+
+	            if (paymentOpt.isEmpty()) {
+	                logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
+	                continue;
+	            }
+
+	            // ✅ Mark booking as COMPLETED
+	            booking.setStatus(BookingStatus.COMPLETED);
+	            bookingRepo.save(booking);
+
+	            logger.info("✅ Booking {} marked as COMPLETED", bookingId);
+
+	            // ================= IN-APP =================
+	            String title = "Shooting Location Completed";
+	            String message =
+	                    "Hi " + client.getName()
+	                    + ", your booking at "
+	                    + booking.getProperty().getPropertyName()
+	                    + " has been successfully completed. Thank you for choosing FilmHook!";
+
+	            inAppNotificationRepo.save(
+	                    InAppNotification.builder()
+	                            .senderId(0)
+	                            .receiverId(client.getUserId())
+	                            .title(title)
+	                            .message(message)
+	                            .userType("SHOOTING_LOCATION_COMPLETED")
+	                            .id(bookingId)
+	                            .isRead(false)
+	                            .isDeleted(false)
+	                            .createdOn(new Date())
+	                            .createdBy(0)
+	                            .build()
+	            );
+
+	            // ================= PUSH =================
+	            String token = client.getFirebaseDeviceToken();
+	            if (token != null && !token.isBlank()) {
+
+	                Message pushMessage = Message.builder()
+	                        .setToken(token)
+	                        .setNotification(
+	                                Notification.builder()
+	                                        .setTitle(title)
+	                                        .setBody(message)
+	                                        .build()
+	                        )
+	                        .putData("type", "SHOOTING_LOCATION_COMPLETED")
+	                        .putData("bookingId", bookingId.toString())
+	                        .build();
+
+	                FirebaseMessaging.getInstance().send(pushMessage);
+	            }
+
+	            // ================= EMAIL =================
+	            String subject = "📸 Booking Completed – Thank You for Choosing FilmHook!";
+
+	            String mailContent =
+	                    "<p>We hope your shoot was a great success! 🎬</p>"
+	                  + "<p>Your booking has been marked as <b>COMPLETED</b>.</p>"
+	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
+	                  + "<p><b>Property:</b> " + booking.getProperty().getPropertyName() + "</p>"
+	                  + "<p><b>Start Date:</b> " + booking.getShootStartDate() + "</p>"
+	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
+	                  + "<p>Thank you for using <b>FilmHook</b>. We look forward to working with you again!</p>";
+
+	            mailNotification.sendEmailAsync(
+	                    client.getName(),
+	                    client.getEmail(),
+	                    subject,
+	                    mailContent
+	            );
+
+	        } catch (Exception e) {
+	            logger.error("❌ Failed to complete booking {}", bookingId, e);
+	        }
+	    }
+	}
+
 
 }
