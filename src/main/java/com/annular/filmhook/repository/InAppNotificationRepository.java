@@ -56,5 +56,15 @@ public interface InAppNotificationRepository extends JpaRepository<InAppNotifica
 	    long countUnseenSince(@Param("receiverId") Integer receiverId,
 	                          @Param("lastOpenedTime") Date lastOpenedTime);
 	
+	    @Query(
+	            "SELECT COUNT(n) FROM InAppNotification n " +
+	            "WHERE n.userType = :userType " +
+	            "AND n.id = :refId " +
+	            "AND n.isDeleted = false"
+	        )
+	        int countExpiryReminders(
+	                @Param("userType") String userType,
+	                @Param("refId") Integer refId
+	        );
 
 }
