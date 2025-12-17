@@ -200,32 +200,32 @@ public class ShootingLocationController {
 					.body(new Response(-1, "Failed to save property details", e.getMessage()));
 		}
 	}
-	 @PutMapping(value = "/updateProperty/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	    public ResponseEntity<Response> updateProperty(
-	            @PathVariable("propertyId") Integer propertyId,
-	            @RequestPart("propertyDetails") ShootingLocationPropertyDetailsDTO dto,
-	            @ModelAttribute ShootingLocationFileInputModel mediaFiles) {
+	@PutMapping(value = "/updateProperty/{propertyId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Response> updateProperty(
+			@PathVariable("propertyId") Integer propertyId,
+			@RequestPart("propertyDetails") ShootingLocationPropertyDetailsDTO dto,
+			@ModelAttribute ShootingLocationFileInputModel mediaFiles) {
 
-	        try {
-	            // Optional validation: ensure path ID matches DTO ID if present
-	            if (dto.getId() != null && !dto.getId().equals(propertyId)) {
-	                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mismatched property IDs");
-	            }
+		try {
+			// Optional validation: ensure path ID matches DTO ID if present
+			if (dto.getId() != null && !dto.getId().equals(propertyId)) {
+				throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mismatched property IDs");
+			}
 
-	            ShootingLocationPropertyDetailsDTO updated =
-	                    service.updatePropertyDetails(propertyId, dto, mediaFiles);
+			ShootingLocationPropertyDetailsDTO updated =
+					service.updatePropertyDetails(propertyId, dto, mediaFiles);
 
-	            return ResponseEntity.ok(new Response(1, "Property updated successfully", updated));
+			return ResponseEntity.ok(new Response(1, "Property updated successfully", updated));
 
-	        } catch (ResponseStatusException e) {
-	            return ResponseEntity.status(e.getStatus())
-	                    .body(new Response(-1, e.getReason(), null));
+		} catch (ResponseStatusException e) {
+			return ResponseEntity.status(e.getStatus())
+					.body(new Response(-1, e.getReason(), null));
 
-	        } catch (Exception e) {
-	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                    .body(new Response(-1, "Unexpected error during update", e.getMessage()));
-	        }
-	    }
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Unexpected error during update", e.getMessage()));
+		}
+	}
 
 	@PostMapping("/addLike")
 	public ResponseEntity<Map<String, String>> toggleLike(@RequestParam Integer propertyId, @RequestParam Integer userId) {
@@ -376,43 +376,43 @@ public class ShootingLocationController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
-	
+
 	@PostMapping(value = "/review/reply", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<ShootingLocationPropertyReviewDTO> replyToReview(@RequestBody ReviewReplyRequestDTO request) {
-	    try {
-	        ShootingLocationPropertyReviewDTO dto = service.replyToReview(
-	                request.getReviewId(),
-	                request.getOwnerUserId(),
-	                request.getReplyText()
-	        );
-	        return ResponseEntity.ok(dto);
-	    } catch (RuntimeException e) {
-	        logger.warn("Reply failed: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // or 404 depending on message
-	    } catch (Exception e) {
-	        logger.error("Error replying to review", e);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	    }
+		try {
+			ShootingLocationPropertyReviewDTO dto = service.replyToReview(
+					request.getReviewId(),
+					request.getOwnerUserId(),
+					request.getReplyText()
+					);
+			return ResponseEntity.ok(dto);
+		} catch (RuntimeException e) {
+			logger.warn("Reply failed: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // or 404 depending on message
+		} catch (Exception e) {
+			logger.error("Error replying to review", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 	@DeleteMapping("/review/reply")
 	public ResponseEntity<ShootingLocationPropertyReviewDTO> deleteReply(
-	        @RequestParam Integer reviewId,
-	        @RequestParam Integer ownerUserId) {
+			@RequestParam Integer reviewId,
+			@RequestParam Integer ownerUserId) {
 
-	    try {
-	        ShootingLocationPropertyReviewDTO dto =
-	                service.deleteReply(reviewId, ownerUserId);
+		try {
+			ShootingLocationPropertyReviewDTO dto =
+					service.deleteReply(reviewId, ownerUserId);
 
-	        return ResponseEntity.ok(dto);
+			return ResponseEntity.ok(dto);
 
-	    } catch (RuntimeException e) {
-	        logger.warn("Delete reply failed: {}", e.getMessage());
-	        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-	    } catch (Exception e) {
-	        logger.error("Error deleting reply", e);
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	    }
+		} catch (RuntimeException e) {
+			logger.warn("Delete reply failed: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		} catch (Exception e) {
+			logger.error("Error deleting reply", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
 	@GetMapping("/average-rating/{propertyId}")
@@ -428,7 +428,7 @@ public class ShootingLocationController {
 					.body(new Response(-1, "Failed to get average rating", null));
 		}
 	}
-	@GetMapping("/property/{propertyId}")
+	@GetMapping("/property/{propertyId}/{userId}")
 	public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId, @PathVariable Integer userId ) {
 		logger.info("Fetching reviews for property ID: {}", propertyId);
 		try {
@@ -553,48 +553,48 @@ public class ShootingLocationController {
 		}
 	}
 
-	 @GetMapping("/successPayment")
-	    public ResponseEntity<Response> shootingPaymentSuccess(@RequestParam String txnid) {
-	        return service.handleShootingLocationPaymentSuccess(txnid);
-	    }
-	 
-	    @GetMapping("/failedPayment")
-	    public ResponseEntity<?> shootingPaymentFailed( @RequestParam String txnid, @RequestParam(required = false, defaultValue = "Transaction Failed") String reason) {
+	@GetMapping("/successPayment")
+	public ResponseEntity<Response> shootingPaymentSuccess(@RequestParam String txnid) {
+		return service.handleShootingLocationPaymentSuccess(txnid);
+	}
 
-	        return service.handleShootingLocationPaymentFailed(txnid, reason);
-	    }
-	    
-	    @PostMapping("/properties/byIndustry")
-	    public ResponseEntity<?> getProperties(@RequestBody ShootingPropertyByIndustryAndDateRequest req) {
-	        List<ShootingLocationPropertyDetailsDTO> result =
-	            service.getPropertiesByIndustryIdsAndDates(
-	                req.getIndustryId(),
-	                req.getUserId(),
-	                req.getStartDate(), 
-	                req.getEndDate()     
-	            );
+	@GetMapping("/failedPayment")
+	public ResponseEntity<?> shootingPaymentFailed( @RequestParam String txnid, @RequestParam(required = false, defaultValue = "Transaction Failed") String reason) {
 
-	        return ResponseEntity.ok(new Response(1, "Success", result));
-	    }
-	    
-	    
-	    
-	    @PostMapping("/saveAdminRating")
-	    public ResponseEntity<?> saveAdminRating(
-	            @RequestBody ShootingLocationPropertyDetailsDTO request) {
+		return service.handleShootingLocationPaymentFailed(txnid, reason);
+	}
 
-	        return service.saveAdminPropertyRating(request);
-	    }
-	    
-	    
-	    @GetMapping("/bookingHistory/{clientId}")
-	    public ResponseEntity<?> getBookingHistoryByClientId(
-	            @PathVariable Integer clientId) {
+	@PostMapping("/properties/byIndustry")
+	public ResponseEntity<?> getProperties(@RequestBody ShootingPropertyByIndustryAndDateRequest req) {
+		List<ShootingLocationPropertyDetailsDTO> result =
+				service.getPropertiesByIndustryIdsAndDates(
+						req.getIndustryId(),
+						req.getUserId(),
+						req.getStartDate(), 
+						req.getEndDate()     
+						);
 
-	        return ResponseEntity.ok(
-	        		service.getBookingHistoryByClientId(clientId)
-	        );
-	    }
+		return ResponseEntity.ok(new Response(1, "Success", result));
+	}
+
+
+
+	@PostMapping("/saveAdminRating")
+	public ResponseEntity<?> saveAdminRating(
+			@RequestBody ShootingLocationPropertyDetailsDTO request) {
+
+		return service.saveAdminPropertyRating(request);
+	}
+
+	@GetMapping("/bookingHistory/{clientId}")
+	public ResponseEntity<?> getBookingHistoryByClientId(
+			@PathVariable Integer clientId) {
+
+		return ResponseEntity.ok(
+				service.getBookingHistoryByClientId(clientId)
+				);
+	}
+	
 
 }
 
