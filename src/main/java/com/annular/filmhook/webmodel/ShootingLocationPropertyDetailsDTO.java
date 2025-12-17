@@ -16,15 +16,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-
-
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-//@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-	// Property Information
 public class ShootingLocationPropertyDetailsDTO {
 	private Integer id;
 	private String fullName;
