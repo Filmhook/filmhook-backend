@@ -946,20 +946,18 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				dto.setGovernmentIdUrls(govtIdUrls);
 				dto.setVerificationVideo(verificationVideo);
 
+				ShootingLocationPropertyReviewResponseDTO reviewData = getReviewsByPropertyId(p.getId(), userId);
 
-				
-				  ShootingLocationPropertyReviewResponseDTO reviewData = getReviewsByPropertyId(p.getId(), userId);
+				dto.setReviews(reviewData.getReviews());
+				dto.setAverageRating(reviewData.getAverageRating());
+				dto.setTotalReviews(reviewData.getTotalReviews());
+				dto.setFiveStarPercentage(reviewData.getFiveStarPercentage());
+				dto.setFourStarPercentage(reviewData.getFourStarPercentage());
+				dto.setThreeStarPercentage(reviewData.getThreeStarPercentage());
+				dto.setTwoStarPercentage(reviewData.getTwoStarPercentage());
+				dto.setOneStarPercentage(reviewData.getOneStarPercentage());
 
-				    dto.setReviews(reviewData.getReviews());
-				    dto.setAverageRating(reviewData.getAverageRating());
-				    dto.setTotalReviews(reviewData.getTotalReviews());
-				    dto.setFiveStarPercentage(reviewData.getFiveStarPercentage());
-				    dto.setFourStarPercentage(reviewData.getFourStarPercentage());
-				    dto.setThreeStarPercentage(reviewData.getThreeStarPercentage());
-				    dto.setTwoStarPercentage(reviewData.getTwoStarPercentage());
-				    dto.setOneStarPercentage(reviewData.getOneStarPercentage());
-				    
-				    
+
 				dtoList.add(dto);
 			}
 
@@ -971,159 +969,159 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		}
 	}
 
-@Override
-public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
-        Integer propertyId,
-        Integer userId) {
+	@Override
+	public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
+			Integer propertyId,
+			Integer userId) {
 
-    // ----------------------------------
-    // 1️⃣ FETCH REVIEWS
-    // ----------------------------------
-    List<ShootingLocationPropertyReview> reviews =
-            propertyReviewRepository.findByPropertyId(propertyId)
-                    .stream()
-                    .sorted(Comparator.comparing(
-                            ShootingLocationPropertyReview::getCreatedOn).reversed())
-                    .collect(Collectors.toList());
+		// ----------------------------------
+		// 1️⃣ FETCH REVIEWS
+		// ----------------------------------
+		List<ShootingLocationPropertyReview> reviews =
+				propertyReviewRepository.findByPropertyId(propertyId)
+				.stream()
+				.sorted(Comparator.comparing(
+						ShootingLocationPropertyReview::getCreatedOn).reversed())
+				.collect(Collectors.toList());
 
-    if (reviews.isEmpty()) {
-        return ShootingLocationPropertyReviewResponseDTO.builder()
-                .reviews(Collections.emptyList())
-                .averageRating(0.0)
-                .totalReviews(0)
-                .fiveStarPercentage(0.0)
-                .fourStarPercentage(0.0)
-                .threeStarPercentage(0.0)
-                .twoStarPercentage(0.0)
-                .oneStarPercentage(0.0)
-                .build();
-    }
+		if (reviews.isEmpty()) {
+			return ShootingLocationPropertyReviewResponseDTO.builder()
+					.reviews(Collections.emptyList())
+					.averageRating(0.0)
+					.totalReviews(0)
+					.fiveStarPercentage(0.0)
+					.fourStarPercentage(0.0)
+					.threeStarPercentage(0.0)
+					.twoStarPercentage(0.0)
+					.oneStarPercentage(0.0)
+					.build();
+		}
 
-    // ----------------------------------
-    // 2️⃣ RATING CALCULATION
-    // ----------------------------------
-    long totalReviews = reviews.size();
+		// ----------------------------------
+		// 2️⃣ RATING CALCULATION
+		// ----------------------------------
+		long totalReviews = reviews.size();
 
-    double averageRating = reviews.stream()
-            .mapToInt(ShootingLocationPropertyReview::getRating)
-            .average()
-            .orElse(0.0);
+		double averageRating = reviews.stream()
+				.mapToInt(ShootingLocationPropertyReview::getRating)
+				.average()
+				.orElse(0.0);
 
-    long fiveStar = reviews.stream().filter(r -> r.getRating() == 5).count();
-    long fourStar = reviews.stream().filter(r -> r.getRating() == 4).count();
-    long threeStar = reviews.stream().filter(r -> r.getRating() == 3).count();
-    long twoStar = reviews.stream().filter(r -> r.getRating() == 2).count();
-    long oneStar = reviews.stream().filter(r -> r.getRating() == 1).count();
+		long fiveStar = reviews.stream().filter(r -> r.getRating() == 5).count();
+		long fourStar = reviews.stream().filter(r -> r.getRating() == 4).count();
+		long threeStar = reviews.stream().filter(r -> r.getRating() == 3).count();
+		long twoStar = reviews.stream().filter(r -> r.getRating() == 2).count();
+		long oneStar = reviews.stream().filter(r -> r.getRating() == 1).count();
 
-    double fiveStarPercentage = (fiveStar * 100.0) / totalReviews;
-    double fourStarPercentage = (fourStar * 100.0) / totalReviews;
-    double threeStarPercentage = (threeStar * 100.0) / totalReviews;
-    double twoStarPercentage = (twoStar * 100.0) / totalReviews;
-    double oneStarPercentage = (oneStar * 100.0) / totalReviews;
+		double fiveStarPercentage = (fiveStar * 100.0) / totalReviews;
+		double fourStarPercentage = (fourStar * 100.0) / totalReviews;
+		double threeStarPercentage = (threeStar * 100.0) / totalReviews;
+		double twoStarPercentage = (twoStar * 100.0) / totalReviews;
+		double oneStarPercentage = (oneStar * 100.0) / totalReviews;
 
-    // ----------------------------------
-    // 3️⃣ PRELOAD USER REVIEW LIKES (ONCE)
-    // ----------------------------------
-    Map<Integer, Likes> userReviewLikeMap = new HashMap<>();
+		// ----------------------------------
+		// 3️⃣ PRELOAD USER REVIEW LIKES (ONCE)
+		// ----------------------------------
+		Map<Integer, Likes> userReviewLikeMap = new HashMap<>();
 
-    if (userId != null) {
-        likesRepository.findAllByUserIdForReviews(userId)
-                .stream()
-                .filter(l -> l.getReviewId() != null)
-                .forEach(l -> userReviewLikeMap.put(l.getReviewId(), l));
-    }
+		if (userId != null) {
+			likesRepository.findAllByUserIdForReviews(userId)
+			.stream()
+			.filter(l -> l.getReviewId() != null)
+			.forEach(l -> userReviewLikeMap.put(l.getReviewId(), l));
+		}
 
-    // ----------------------------------
-    // 4️⃣ MAP REVIEWS → DTO (WITH LIKES)
-    // ----------------------------------
-    List<ShootingLocationPropertyReviewDTO> reviewDTOs =
-            reviews.stream()
-                    .map((ShootingLocationPropertyReview review) -> {
+		// ----------------------------------
+		// 4️⃣ MAP REVIEWS → DTO (WITH LIKES)
+		// ----------------------------------
+		List<ShootingLocationPropertyReviewDTO> reviewDTOs =
+				reviews.stream()
+				.map((ShootingLocationPropertyReview review) -> {
 
-                        Boolean likeStatus = false;
-                        Boolean unlikeStatus = false;
-                        Integer latestLikeId = null;
+					Boolean likeStatus = false;
+					Boolean unlikeStatus = false;
+					Integer latestLikeId = null;
 
-                        Likes userLike = userReviewLikeMap.get(review.getId());
+					Likes userLike = userReviewLikeMap.get(review.getId());
 
-                        if (userLike != null) {
-                            latestLikeId = userLike.getLikeId();
+					if (userLike != null) {
+						latestLikeId = userLike.getLikeId();
 
-                            if ("LIKE".equalsIgnoreCase(userLike.getReactionType())) {
-                                likeStatus = true;
-                            } else if ("UNLIKE".equalsIgnoreCase(userLike.getReactionType())) {
-                                unlikeStatus = true;
-                            }
-                        }
+						if ("LIKE".equalsIgnoreCase(userLike.getReactionType())) {
+							likeStatus = true;
+						} else if ("UNLIKE".equalsIgnoreCase(userLike.getReactionType())) {
+							unlikeStatus = true;
+						}
+					}
 
-                        Long totalLikes =
-                                likesRepository.countByReviewIdAndReactionTypeAndCategory(
-                                        review.getId(), "LIKE", "REVIEW");
+					Long totalLikes =
+							likesRepository.countByReviewIdAndReactionTypeAndCategory(
+									review.getId(), "LIKE", "REVIEW");
 
-                        Long totalUnlikes =
-                                likesRepository.countByReviewIdAndReactionTypeAndCategory(
-                                        review.getId(), "UNLIKE", "REVIEW");
+					Long totalUnlikes =
+							likesRepository.countByReviewIdAndReactionTypeAndCategory(
+									review.getId(), "UNLIKE", "REVIEW");
 
-                        List<FileOutputWebModel> files =
-                                mediaFilesService
-                                        .getMediaFilesByCategoryAndRefId(
-                                                MediaFileCategory.ShootingLocationReview,
-                                                review.getId())
-                                        .stream()
-                                        .sorted(Comparator.comparing(
-                                                FileOutputWebModel::getId).reversed())
-                                        .collect(Collectors.toList());
+					List<FileOutputWebModel> files =
+							mediaFilesService
+							.getMediaFilesByCategoryAndRefId(
+									MediaFileCategory.ShootingLocationReview,
+									review.getId())
+							.stream()
+							.sorted(Comparator.comparing(
+									FileOutputWebModel::getId).reversed())
+							.collect(Collectors.toList());
 
-                        return ShootingLocationPropertyReviewDTO.builder()
-                                .id(review.getId())
-                                .propertyId(review.getProperty().getId())
-                                .userId(review.getUser().getUserId())
-                                .userName(review.getUser().getFirstName() + " "
-                                        + review.getUser().getLastName())
-                                .profilePicUrl(
-                                        userService.getProfilePicUrl(
-                                                review.getUser().getUserId()))
-                                .rating(review.getRating())
-                                .reviewText(review.getReviewText())
-                                .createdOn(review.getCreatedOn())
-                                .files(files)
-                                .likeStatus(likeStatus)
-                                .unlikeStatus(unlikeStatus)
-                                .latestLikeId(latestLikeId)
-                                .totalLikes(totalLikes)
-                                .totalUnlikes(totalUnlikes)
-                                .ownerReplyOn(review.getOwnerReplyOn())
-                                .ownerReplyText(review.getOwnerReplyText())
-                                .ownerReplyBy(
-                                        review.getOwnerReplyBy() != null
-                                                ? review.getOwnerReplyBy().getUserId()
-                                                : null
-                                )
-                                .ownerReplyByName(
-                                        review.getOwnerReplyBy() != null
-                                                ? review.getOwnerReplyBy().getFirstName()
-                                                  + " "
-                                                  + review.getOwnerReplyBy().getLastName()
-                                                : null
-                                )
-                                .build();
-                    })
-                    .collect(Collectors.toList());
+					return ShootingLocationPropertyReviewDTO.builder()
+							.id(review.getId())
+							.propertyId(review.getProperty().getId())
+							.userId(review.getUser().getUserId())
+							.userName(review.getUser().getFirstName() + " "
+									+ review.getUser().getLastName())
+							.profilePicUrl(
+									userService.getProfilePicUrl(
+											review.getUser().getUserId()))
+							.rating(review.getRating())
+							.reviewText(review.getReviewText())
+							.createdOn(review.getCreatedOn())
+							.files(files)
+							.likeStatus(likeStatus)
+							.unlikeStatus(unlikeStatus)
+							.latestLikeId(latestLikeId)
+							.totalLikes(totalLikes)
+							.totalUnlikes(totalUnlikes)
+							.ownerReplyOn(review.getOwnerReplyOn())
+							.ownerReplyText(review.getOwnerReplyText())
+							.ownerReplyBy(
+									review.getOwnerReplyBy() != null
+									? review.getOwnerReplyBy().getUserId()
+											: null
+									)
+							.ownerReplyByName(
+									review.getOwnerReplyBy() != null
+									? review.getOwnerReplyBy().getFirstName()
+											+ " "
+											+ review.getOwnerReplyBy().getLastName()
+											: null
+									)
+							.build();
+				})
+				.collect(Collectors.toList());
 
-    // ----------------------------------
-    // 5️⃣ FINAL RESPONSE
-    // ----------------------------------
-    return ShootingLocationPropertyReviewResponseDTO.builder()
-            .reviews(reviewDTOs)
-            .averageRating(Math.round(averageRating * 10.0) / 10.0)
-            .totalReviews(totalReviews)
-            .fiveStarPercentage(Math.round(fiveStarPercentage * 10.0) / 10.0)
-            .fourStarPercentage(Math.round(fourStarPercentage * 10.0) / 10.0)
-            .threeStarPercentage(Math.round(threeStarPercentage * 10.0) / 10.0)
-            .twoStarPercentage(Math.round(twoStarPercentage * 10.0) / 10.0)
-            .oneStarPercentage(Math.round(oneStarPercentage * 10.0) / 10.0)
-            .build();
-}
+		// ----------------------------------
+		// 5️⃣ FINAL RESPONSE
+		// ----------------------------------
+		return ShootingLocationPropertyReviewResponseDTO.builder()
+				.reviews(reviewDTOs)
+				.averageRating(Math.round(averageRating * 10.0) / 10.0)
+				.totalReviews(totalReviews)
+				.fiveStarPercentage(Math.round(fiveStarPercentage * 10.0) / 10.0)
+				.fourStarPercentage(Math.round(fourStarPercentage * 10.0) / 10.0)
+				.threeStarPercentage(Math.round(threeStarPercentage * 10.0) / 10.0)
+				.twoStarPercentage(Math.round(twoStarPercentage * 10.0) / 10.0)
+				.oneStarPercentage(Math.round(oneStarPercentage * 10.0) / 10.0)
+				.build();
+	}
 
 
 	@Override
@@ -1176,30 +1174,30 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	@Transactional
 	@Override
 	public ShootingLocationPropertyDetailsDTO updatePropertyDetails(
-	        Integer id,
-	        ShootingLocationPropertyDetailsDTO dto,
-	        ShootingLocationFileInputModel inputFile) {
+			Integer id,
+			ShootingLocationPropertyDetailsDTO dto,
+			ShootingLocationFileInputModel inputFile) {
 
-	    ShootingLocationPropertyDetails existing = propertyDetailsRepository.findById(id)
-	            .orElseThrow(() -> new RuntimeException("Property not found with ID: " + id));
+		ShootingLocationPropertyDetails existing = propertyDetailsRepository.findById(id)
+				.orElseThrow(() -> new RuntimeException("Property not found with ID: " + id));
 
-	    // Convert DTO to temp entity
-	    ShootingLocationPropertyDetails tempEntity = shootingLocationPropertyConverter.dtoToEntity(dto);
+		// Convert DTO to temp entity
+		ShootingLocationPropertyDetails tempEntity = shootingLocationPropertyConverter.dtoToEntity(dto);
 
-	    // Copy non-null scalar fields
-	    copyNonNullFields(tempEntity, existing);
+		// Copy non-null scalar fields
+		copyNonNullFields(tempEntity, existing);
 
-	    // Update relations
-	    updateRelations(existing, dto);
+		// Update relations
+		updateRelations(existing, dto);
 
-	    // Update nested objects
-	    if (dto.getBusinessInformation() != null) {
-	        updateBusinessInfo(existing, dto.getBusinessInformation());
-	    }
+		// Update nested objects
+		if (dto.getBusinessInformation() != null) {
+			updateBusinessInfo(existing, dto.getBusinessInformation());
+		}
 
-	    if (dto.getBankDetailsDTO() != null) {
-	        updateBankInfo(existing, dto.getBankDetailsDTO());
-	    }
+		if (dto.getBankDetailsDTO() != null) {
+			updateBankInfo(existing, dto.getBankDetailsDTO());
+		}
 
 	    if (dto.getSubcategorySelectionDTO() != null) {
 	        updateSubcategorySelection(existing, dto.getSubcategorySelectionDTO());
@@ -1224,21 +1222,21 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	    existing.setUpdatedBy(dto.getUserId());
 
 	    // Save main entity
-	    ShootingLocationPropertyDetails saved = propertyDetailsRepository.save(existing);
+		ShootingLocationPropertyDetails saved = propertyDetailsRepository.save(existing);
 
-	    // ✅ Fetch the User from DB (required for file upload)
-	    User user = null;
-	    if (dto.getUserId() != null) {
-	        user = userRepository.findById(dto.getUserId())
-	                .orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getUserId()));
-	    }
+		// ✅ Fetch the User from DB (required for file upload)
+		User user = null;
+		if (dto.getUserId() != null) {
+			user = userRepository.findById(dto.getUserId())
+					.orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getUserId()));
+		}
 
-	    // ✅ Handle media files (only if user and file inputs exist)
-	    if (inputFile != null && user != null) {
-	        handleFileUpload(saved, inputFile, user);
-	    }
+		// ✅ Handle media files (only if user and file inputs exist)
+		if (inputFile != null && user != null) {
+			handleFileUpload(saved, inputFile, user);
+		}
 
-	    return shootingLocationPropertyConverter.entityToDto(saved);
+		return shootingLocationPropertyConverter.entityToDto(saved);
 	}
 	private void updateSubcategorySelection(
 	        ShootingLocationPropertyDetails property,
@@ -1695,6 +1693,11 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 			mediaFilesService.saveMediaFiles(fileInputWebModel, user);
 		}
 
+		List<FileOutputWebModel> mediaDTOs = mediaFilesService.getMediaFilesByCategoryAndRefId(
+				MediaFileCategory.ShootingLocationReview,
+				review.getId()
+				);
+
 		// 4️⃣ Convert to DTO
 		return ShootingLocationPropertyReviewDTO.builder()
 				.id(savedReview.getId())
@@ -1703,6 +1706,12 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 				.rating(rating)
 				.reviewText(reviewText)
 				.userName(user.getName())
+				.profilePicUrl(
+						userService.getProfilePicUrl(
+								review.getUser().getUserId()))
+				.files(mediaDTOs)
+				.ownerReplyText(savedReview.getOwnerReplyText())				
+				.ownerReplyOn(savedReview.getOwnerReplyOn())
 				.createdOn(savedReview.getCreatedOn())
 				.build();
 	}
@@ -2128,9 +2137,14 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 				.userId(userId)
 				.rating(review.getRating())
 				.reviewText(review.getReviewText())
+				.userName(user.getName())
 				.createdOn(review.getCreatedOn())
-
+				 .profilePicUrl(
+                         userService.getProfilePicUrl(
+                                 review.getUser().getUserId()))
 				.files(mediaDTOs)
+				.ownerReplyText(review.getOwnerReplyText())				
+				.ownerReplyOn(review.getOwnerReplyOn())
 				.build();
 	}
 	@Override
