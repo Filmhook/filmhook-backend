@@ -585,6 +585,16 @@ public class ShootingLocationController {
 
 	        return service.saveAdminPropertyRating(request);
 	    }
+	    
+	    
+	    @GetMapping("/bookingHistory/{clientId}")
+	    public ResponseEntity<?> getBookingHistoryByClientId(
+	            @PathVariable Integer clientId) {
+
+	        return ResponseEntity.ok(
+	        		service.getBookingHistoryByClientId(clientId)
+	        );
+	    }
 
 }
 

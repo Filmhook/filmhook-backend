@@ -63,5 +63,7 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
              @Param("since") LocalDateTime since
      );
 
+    
+    List<ShootingLocationBooking> findByClient_UserIdOrderByUpdatedAtDesc(Integer clientId);
 
 }

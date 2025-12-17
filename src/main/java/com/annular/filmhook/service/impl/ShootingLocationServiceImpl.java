@@ -89,6 +89,7 @@ import com.annular.filmhook.util.NumberToWordsConverter;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
+import com.annular.filmhook.webmodel.BookingWithPropertyDTO;
 import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -3202,5 +3203,23 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	    );
 	}
 
+	@Override
+	public List<BookingWithPropertyDTO> getBookingHistoryByClientId(Integer clientId) {
+
+	    List<ShootingLocationBooking> bookings =
+	            bookingRepository.findByClient_UserIdOrderByUpdatedAtDesc(clientId);
+
+	    return bookings.stream()
+	            .map(booking -> BookingWithPropertyDTO.builder()
+	                    .booking(ShootingLocationBookingConverter.toDTO(booking))
+	                   .property(
+	                		   shootingLocationPropertyConverter.entityToDto(
+	                            booking.getProperty()
+	                        )
+	                    )
+	                    .build()
+	            )
+	            .collect(Collectors.toList());
+	}
 
 }
