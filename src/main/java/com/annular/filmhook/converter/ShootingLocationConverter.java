@@ -1,18 +1,7 @@
 package com.annular.filmhook.converter;
-
-import java.time.LocalDateTime;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
-import com.annular.filmhook.model.ShootingLocationSubcategory;
 import com.annular.filmhook.model.ShootingLocationSubcategorySelection;
-import com.annular.filmhook.repository.IndustryRepository;
-import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
-import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
-import com.annular.filmhook.repository.ShootingLocationTypesRepository;
-import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
 import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
@@ -265,6 +254,8 @@ public class ShootingLocationConverter {
 	            .propertyDamageDescription(dto.getPropertyDamageDescription())
 	            .crewAccidentLiabilityDescription(dto.getCrewAccidentLiabilityDescription())
 	            .additionalChargesForOverTime(dto.getAdditionalChargesForOverTime())
+	          
+
 	            .status(true)
 	            .build();
 

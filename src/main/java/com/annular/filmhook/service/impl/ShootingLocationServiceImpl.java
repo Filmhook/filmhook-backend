@@ -43,7 +43,6 @@ import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationConverter;
 import com.annular.filmhook.model.ShootingLocationOwnerBankDetails;
-import com.annular.filmhook.model.ShootingLocationPayment;
 import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.ShootingLocationBusinessInformation;
@@ -665,79 +664,84 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Override
 	public Response getPropertiesByUserId(Integer userId) {
 
-		logger.info("Fetching properties for userId: {}", userId);
+    logger.info("Fetching properties for userId: {}", userId);
 
-		try {
-			List<ShootingLocationPropertyDetails> properties =
-					propertyDetailsRepository.findAllByUserId(userId);
+    try {
+        List<ShootingLocationPropertyDetails> properties =
+                propertyDetailsRepository.findAllByUserId(userId);
 
-			// ⛔ No properties
-			if (properties.isEmpty()) {
-				return new Response(0, "No properties found for this user", Collections.emptyList());
-			}
+        if (properties.isEmpty()) {
+            return new Response(0, "No properties found for this user", Collections.emptyList());
+        }
 
-			// 1️⃣ PRELOAD LIKES
-			List<PropertyLike> likes = likeRepository.findByLikedById(userId);
-			Set<Integer> likedPropertyIds = likes.stream()
-					.filter(PropertyLike::getStatus)
-					.map(l -> l.getProperty().getId())
-					.collect(Collectors.toSet());
+        // 1️⃣ PRELOAD LIKES
+        List<PropertyLike> likes = likeRepository.findByLikedById(userId);
+        Set<Integer> likedPropertyIds = likes.stream()
+                .filter(PropertyLike::getStatus)
+                .map(l -> l.getProperty().getId())
+                .collect(Collectors.toSet());
 
-			List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
+        List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
 
-			for (ShootingLocationPropertyDetails p : properties) {
+        for (ShootingLocationPropertyDetails p : properties) {
 
-				// 2️⃣ DTO using converter
-				ShootingLocationPropertyDetailsDTO dto = shootingLocationPropertyConverter.entityToDto(p);
+            Integer propertyId = p.getId();
 
-				// 3️⃣ liked info
-				dto.setLikedByUser(likedPropertyIds.contains(p.getId()));
-				dto.setLikeCount(likeRepository.countLikesByPropertyId(p.getId()));
-				// 8️⃣ MEDIA FILES
-				List<String> imageUrls = mediaFilesService
-						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, p.getId())
-						.stream().map(FileOutputWebModel::getFilePath)
-						.collect(Collectors.toList());
+            // 2️⃣ Base DTO mapping
+            ShootingLocationPropertyDetailsDTO dto =
+                    shootingLocationPropertyConverter.entityToDto(p);
 
-				List<String> govtIdUrls = mediaFilesService
-						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingGovermentId, p.getId())
-						.stream().map(FileOutputWebModel::getFilePath)
-						.collect(Collectors.toList());
+            // 3️⃣ Like info
+            dto.setLikedByUser(likedPropertyIds.contains(propertyId));
+            dto.setLikeCount(likeRepository.countLikesByPropertyId(propertyId));
 
-				dto.setImageUrls(imageUrls);
-				dto.setGovernmentIdUrls(govtIdUrls);
+            // 4️⃣ Media files
+            dto.setImageUrls(
+                    mediaFilesService
+                            .getMediaFilesByCategoryAndRefId(
+                                    MediaFileCategory.shootingLocationImage, propertyId)
+                            .stream()
+                            .map(FileOutputWebModel::getFilePath)
+                            .collect(Collectors.toList())
+            );
 
-				// 9️⃣ REVIEWS
-				List<ShootingLocationPropertyReviewDTO> reviews =
-						propertyReviewRepository.findByPropertyIdAndUser_UserId(p.getId(), userId)
-						.stream()
-						.map(r -> ShootingLocationPropertyReviewDTO.builder()
-								.propertyId(r.getProperty().getId())
-								.userId(r.getUser().getUserId())
-								.rating(r.getRating())
-								.reviewText(r.getReviewText())
-								.userName(r.getUser().getName())
-								.build())
-						.collect(Collectors.toList());
+            dto.setGovernmentIdUrls(
+                    mediaFilesService
+                            .getMediaFilesByCategoryAndRefId(
+                                    MediaFileCategory.shootingGovermentId, propertyId)
+                            .stream()
+                            .map(FileOutputWebModel::getFilePath)
+                            .collect(Collectors.toList())
+            );
 
-				dto.setReviews(reviews);
+            // 5️⃣ REVIEWS + RATINGS (✅ USE YOUR METHOD)
+            ShootingLocationPropertyReviewResponseDTO reviewResponse =
+                    getReviewsByPropertyId(propertyId, userId);
 
-				double avgRating =
-						reviews.stream().mapToInt(ShootingLocationPropertyReviewDTO::getRating)
-						.average().orElse(0);
+            dto.setReviews(reviewResponse.getReviews());
+            dto.setAverageRating(reviewResponse.getAverageRating());
+            dto.setTotalReviews(reviewResponse.getTotalReviews());
+            dto.setFiveStarPercentage(reviewResponse.getFiveStarPercentage());
+            dto.setFourStarPercentage(reviewResponse.getFourStarPercentage());
+            dto.setThreeStarPercentage(reviewResponse.getThreeStarPercentage());
+            dto.setTwoStarPercentage(reviewResponse.getTwoStarPercentage());
+            dto.setOneStarPercentage(reviewResponse.getOneStarPercentage());
 
-				dto.setAverageRating(avgRating);
+            // 6️⃣ Admin rating (if added)
+            dto.setAdminRating(p.getAdminRating());
+            dto.setAdminRatedOn(p.getAdminRatedOn());
+            dto.setAdminRatedBy(p.getAdminRatedBy());
 
-				result.add(dto);
-			}
+            result.add(dto);
+        }
 
-			return new Response(1, "Properties fetched successfully", result);
+        return new Response(1, "Properties fetched successfully", result);
 
-		} catch (Exception e) {
-			logger.error("Error fetching user properties", e);
-			return new Response(-1, "Error while fetching properties", null);
-		}
-	}
+    } catch (Exception e) {
+        logger.error("Error fetching user properties", e);
+        return new Response(-1, "Error while fetching properties", null);
+    }
+}
 
 
 	//===========================================
@@ -1197,8 +1201,22 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	    }
 
 	    if (dto.getSubcategorySelectionDTO() != null) {
-	        existing.setSubcategorySelection(mapToEntity(dto.getSubcategorySelectionDTO()));
+	        updateSubcategorySelection(existing, dto.getSubcategorySelectionDTO());
 	    }
+
+	 // ✅ AVAILABILITY UPDATE 
+	    if (dto.getAvailabilityStartDate() != null) {
+	        existing.setAvailabilityStartDate(dto.getAvailabilityStartDate());
+	    }
+
+	    if (dto.getAvailabilityEndDate() != null) {
+	        existing.setAvailabilityEndDate(dto.getAvailabilityEndDate());
+	    }
+
+	    if (dto.getPausedDates() != null) {
+	        existing.setPausedDates(dto.getPausedDates());
+	    }
+
 
 	    // Set audit fields
 	    existing.setUpdatedOn(LocalDateTime.now());
@@ -1220,6 +1238,47 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	    }
 
 	    return shootingLocationPropertyConverter.entityToDto(saved);
+	}
+	private void updateSubcategorySelection(
+	        ShootingLocationPropertyDetails property,
+	        ShootingLocationSubcategorySelectionDTO dto) {
+
+	    ShootingLocationSubcategorySelection selection =
+	            property.getSubcategorySelection();
+
+	    // 🔹 If exists → UPDATE
+	    if (selection == null) {
+	        selection = new ShootingLocationSubcategorySelection();
+	        selection.setPropertyDetails(property); // VERY IMPORTANT
+	    }
+
+	    ShootingLocationSubcategory subcategory =
+	            subcategoryRepo.findById(dto.getSubcategoryId().intValue())
+	                    .orElseThrow(() ->
+	                            new RuntimeException("Subcategory not found"));
+
+	    selection.setSubcategory(subcategory);
+	    selection.setEntireProperty(dto.getEntireProperty());
+	    selection.setSingleProperty(dto.getSingleProperty());
+
+	    selection.setEntireDayPropertyPrice(dto.getEntireDayPropertyPrice());
+	    selection.setEntireNightPropertyPrice(dto.getEntireNightPropertyPrice());
+	    selection.setEntireFullDayPropertyPrice(dto.getEntireFullDayPropertyPrice());
+
+	    selection.setSingleDayPropertyPrice(dto.getSingleDayPropertyPrice());
+	    selection.setSingleNightPropertyPrice(dto.getSingleNightPropertyPrice());
+	    selection.setSingleFullDayPropertyPrice(dto.getSingleFullDayPropertyPrice());
+
+	    selection.setEntirePropertyDayDiscountPercent(dto.getEntirePropertyDayDiscountPercent());
+	    selection.setEntirePropertyNightDiscountPercent(dto.getEntirePropertyNightDiscountPercent());
+	    selection.setEntirePropertyFullDayDiscountPercent(dto.getEntirePropertyFullDayDiscountPercent());
+
+	    selection.setSinglePropertyDayDiscountPercent(dto.getSinglePropertyDayDiscountPercent());
+	    selection.setSinglePropertyNightDiscountPercent(dto.getSinglePropertyNightDiscountPercent());
+	    selection.setSinglePropertyFullDayDiscountPercent(dto.getSinglePropertyFullDayDiscountPercent());
+
+	    // Attach back to property
+	    property.setSubcategorySelection(selection);
 	}
 
 	private void handleFileUpload(ShootingLocationPropertyDetails property,
@@ -1450,6 +1509,11 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 
 		// Booleans
 		if (source.isBusinessOwner() != target.isBusinessOwner()) target.setBusinessOwner(source.isBusinessOwner());
+		
+		
+		if (source.getAvailabilityStartDate()!=null) target.setAvailabilityStartDate(source.getAvailabilityStartDate());
+		if (source.getAvailabilityEndDate()!=null) target.setAvailabilityEndDate(source.getAvailabilityEndDate());
+		if(source.getPausedDates()!=null) target.setPausedDates(source.getPausedDates());
 	}
 
 
@@ -1482,98 +1546,110 @@ public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(
 	@Override
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer userId) {
 
-		logger.info("Fetching liked properties for userId: {}", userId);
+	    logger.info("Fetching liked properties for userId: {}", userId);
 
-		try {
+	    try {
+	        // 1️⃣ Fetch liked properties (only active likes)
+	        List<PropertyLike> likedList = likeRepository.findByLikedById(userId)
+	                .stream()
+	                .filter(PropertyLike::getStatus)
+	                .collect(Collectors.toList());
 
-			// 1. Fetch liked properties (only where status = true)
-			List<PropertyLike> likedList = likeRepository.findByLikedById(userId)
-					.stream()
-					.filter(PropertyLike::getStatus)
-					.collect(Collectors.toList());
+	        if (likedList.isEmpty()) {
+	            return Collections.emptyList();
+	        }
 
-			if (likedList.isEmpty()) {
-				return Collections.emptyList();
-			}
+	        List<ShootingLocationPropertyDetails> properties =
+	                likedList.stream()
+	                        .map(PropertyLike::getProperty)
+	                        .filter(Objects::nonNull)
+	                        .collect(Collectors.toList());
 
-			List<ShootingLocationPropertyDetails> properties =
-					likedList.stream()
-					.map(PropertyLike::getProperty)
-					.filter(Objects::nonNull)
-					.collect(Collectors.toList());
+	        if (properties.isEmpty()) {
+	            return Collections.emptyList();
+	        }
 
-			if (properties.isEmpty()) {
-				return Collections.emptyList();
-			}
-			List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
+	        List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
 
-			// 3. Loop each liked property
-			for (ShootingLocationPropertyDetails property : properties) {
+	        // 2️⃣ Loop each liked property
+	        for (ShootingLocationPropertyDetails property : properties) {
 
-				Integer pid = property.getId();
+	            Integer pid = property.getId();
 
-				// A) Convert using converter (main mapping)
-				ShootingLocationPropertyDetailsDTO dto =
-						shootingLocationPropertyConverter.entityToDto(property);
+	            // A) Base mapping
+	            ShootingLocationPropertyDetailsDTO dto =
+	                    shootingLocationPropertyConverter.entityToDto(property);
 
-				// B) Add LIKE details
-				dto.setLikedByUser(true);
-				dto.setLikeCount(likeRepository.countLikesByPropertyId(pid));
+	            // B) Like details
+	            dto.setLikedByUser(true);
+	            dto.setLikeCount(likeRepository.countLikesByPropertyId(pid));
 
-				// C) Add industry name
-				dto.setIndustryName(
-						property.getIndustry() != null ? property.getIndustry().getIndustryName() : null
-						);
+	            // C) Industry name
+	            dto.setIndustryName(
+	                    property.getIndustry() != null
+	                            ? property.getIndustry().getIndustryName()
+	                            : null
+	            );
 
-				// D) Add MEDIA FILES
-				dto.setImageUrls(
-						mediaFilesService.getMediaFilesByCategoryAndRefId(
-								MediaFileCategory.shootingLocationImage, pid)
-						.stream().map(FileOutputWebModel::getFilePath).toList()
-						);
+	            // D) Media files
+	            dto.setImageUrls(
+	                    mediaFilesService
+	                            .getMediaFilesByCategoryAndRefId(
+	                                    MediaFileCategory.shootingLocationImage, pid)
+	                            .stream()
+	                            .map(FileOutputWebModel::getFilePath)
+	                            .toList()
+	            );
 
-				dto.setGovernmentIdUrls(
-						mediaFilesService.getMediaFilesByCategoryAndRefId(
-								MediaFileCategory.shootingGovermentId, pid)
-						.stream().map(FileOutputWebModel::getFilePath).toList()
-						);
+	            dto.setGovernmentIdUrls(
+	                    mediaFilesService
+	                            .getMediaFilesByCategoryAndRefId(
+	                                    MediaFileCategory.shootingGovermentId, pid)
+	                            .stream()
+	                            .map(FileOutputWebModel::getFilePath)
+	                            .toList()
+	            );
 
-				dto.setVerificationVideo(
-						mediaFilesService.getMediaFilesByCategoryAndRefId(
-								MediaFileCategory.shootingLocationVerificationVideo, pid)
-						.stream().map(FileOutputWebModel::getFilePath).toList()
-						);
+	            dto.setVerificationVideo(
+	                    mediaFilesService
+	                            .getMediaFilesByCategoryAndRefId(
+	                                    MediaFileCategory.shootingLocationVerificationVideo, pid)
+	                            .stream()
+	                            .map(FileOutputWebModel::getFilePath)
+	                            .toList()
+	            );
 
-				// E) Add REVIEWS
-				List<ShootingLocationPropertyReviewDTO> reviews =
-						propertyReviewRepository.findByPropertyId(pid)
-						.stream()
-						.map(r -> ShootingLocationPropertyReviewDTO.builder()
-								.propertyId(r.getProperty().getId())
-								.userId(r.getUser().getUserId())
-								.rating(r.getRating())
-								.reviewText(r.getReviewText())
-								.userName(r.getUser().getName())
-								.build())
-						.toList();
+	            // E) Reviews + rating
+	            ShootingLocationPropertyReviewResponseDTO reviewData =
+	                    getReviewsByPropertyId(pid, userId);
 
-				dto.setReviews(reviews);
-				dto.setAverageRating(
-						reviews.stream().mapToInt(ShootingLocationPropertyReviewDTO::getRating)
-						.average().orElse(0.0)
-						);
-				// Add final DTO to list
-				result.add(dto);
-			}
+	            dto.setTotalReviews(reviewData.getTotalReviews());
+	            dto.setAverageRating(reviewData.getAverageRating());
+	            dto.setFiveStarPercentage(reviewData.getFiveStarPercentage());
+	            dto.setFourStarPercentage(reviewData.getFourStarPercentage());
+	            dto.setThreeStarPercentage(reviewData.getThreeStarPercentage());
+	            dto.setTwoStarPercentage(reviewData.getTwoStarPercentage());
+	            dto.setOneStarPercentage(reviewData.getOneStarPercentage());
+	            dto.setReviews(reviewData.getReviews());
 
-			logger.info("Total liked properties returned: {}", result.size());
-			return result;
+	            // F) Admin rating (IMPORTANT)
+	            dto.setAdminRating(property.getAdminRating());
+	            dto.setAdminRatedOn(property.getAdminRatedOn());
+	            dto.setAdminRatedBy(property.getAdminRatedBy());
 
-		} catch (Exception ex) {
-			logger.error("Error in getPropertiesLikedByUser: {}", ex.getMessage(), ex);
-			return Collections.emptyList();
-		}
+	            // Add final DTO
+	            result.add(dto);
+	        }
+
+	        logger.info("Total liked properties returned: {}", result.size());
+	        return result;
+
+	    } catch (Exception ex) {
+	        logger.error("Error in getPropertiesLikedByUser: {}", ex.getMessage(), ex);
+	        return Collections.emptyList();
+	    }
 	}
+
 
 	public Long countLikes(Integer propertyId) {
 		ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(propertyId)
