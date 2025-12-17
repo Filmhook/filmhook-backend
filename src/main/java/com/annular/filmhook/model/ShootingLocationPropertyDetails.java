@@ -45,9 +45,7 @@ public class ShootingLocationPropertyDetails {
 	private Integer id;
 
 	// 1. Property Information
-	private String firstName;
-	private String middleName;
-	private String lastName;
+	private String fullName;
 		
 	private String citizenship;
 	
@@ -196,6 +194,13 @@ public class ShootingLocationPropertyDetails {
 	@Convert(converter = LocalDateListConverter.class)
 	@Column(columnDefinition = "TEXT")
 	private List<LocalDate> pausedDates; 
+	
+	@Column(name = "admin_rating")
+	private Double adminRating; 	
+	
+	private LocalDateTime adminRatedOn;
 
+	// Admin user who rated
+	private Integer adminRatedBy;
 
 }

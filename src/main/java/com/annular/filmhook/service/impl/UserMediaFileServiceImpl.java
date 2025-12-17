@@ -105,6 +105,12 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
             IndustryMediaFiles mediaFiles = this.createMediaFiles(inputFileData.getAdharCard(), user, MediaFileCategory.AadhaarCard.toString(), inputFileData.getUserId());
             if (mediaFiles != null) mediaFilesMap.put(mediaFiles, inputFileData.getAdharCard());
         }
+        
+        // Process Aadhaar card
+        if (inputFileData.getAdharCard() != null) {
+            IndustryMediaFiles mediaFiles = this.createMediaFiles(inputFileData.getAdharCard(), user, MediaFileCategory.govermentId.toString(), inputFileData.getUserId());
+            if (mediaFiles != null) mediaFilesMap.put(mediaFiles, inputFileData.getAdharCard());
+        }
 
         return mediaFilesMap;
     }

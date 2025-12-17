@@ -32,15 +32,26 @@ public class FilmProfessionServiceImpl implements FilmProfessionService {
         try {
             FilmProfession filmProfession = filmProfessionRepository.findById(filmWebModel.getFilmProfesssionId()).orElse(null);
             if (filmProfession != null) {
-                List<String> subProfessionNames = filmProfession.getFilmSubProfessionCollection().stream()
-                        .filter(subProfession -> subProfession.getStatus().equals(true))
-                        .map(FilmSubProfession::getSubProfessionName)
-                        .collect(Collectors.toList());
-                // Create a map with the desired structure
-                Map<String, Object> responseMap = new HashMap<>();
-                responseMap.put("subProfessionName", subProfessionNames);
-                return ResponseEntity.ok(responseMap);
-            } else {
+            	 List<Map<String, Object>> subProfessionList =
+                         filmProfession.getFilmSubProfessionCollection()
+                                 .stream()
+                                 .filter(subProfession -> Boolean.TRUE.equals(subProfession.getStatus()))
+                                 .map(subProfession -> {
+                                     Map<String, Object> map = new HashMap<>();
+                                     map.put("subProfessionId", subProfession.getSubProfessionId());
+                                     map.put("subProfessionName", subProfession.getSubProfessionName());
+                                     return map;
+                                 })
+                                 .collect(Collectors.toList());
+
+                 Map<String, Object> responseMap = new HashMap<>();
+                 responseMap.put("professionId", filmProfession.getFilmProfessionId());
+                 responseMap.put("subProfessions", subProfessionList);
+
+                 return ResponseEntity.ok(responseMap);
+             }
+
+             else {
                 // FilmProfession entity not found for the given filmProfessionId
                 return ResponseEntity.notFound().build();
             }

@@ -23,7 +23,7 @@ public interface ShootingLocationPropertyDetailsRepository extends JpaRepository
 
 	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.industry.industryId IN :industryIds AND p.status = true")
 	List<ShootingLocationPropertyDetails> findAllActiveByIndustryIndustryId(@Param("industryIds") List<Integer> industryIds);
-	
+	 
 	 @Modifying
 	    @Transactional
 	    @Query("UPDATE ShootingLocationPropertyDetails s SET s.status = false WHERE s.user.id = :userId")
