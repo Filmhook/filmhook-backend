@@ -428,7 +428,7 @@ public class ShootingLocationController {
 					.body(new Response(-1, "Failed to get average rating", null));
 		}
 	}
-	@GetMapping("/property/{propertyId}")
+	@GetMapping("/property/{propertyId}/{userId}")
 	public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId, @PathVariable Integer userId ) {
 		logger.info("Fetching reviews for property ID: {}", propertyId);
 		try {
