@@ -1,6 +1,7 @@
 package com.annular.filmhook.webmodel;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.PropertyBookingType;
@@ -20,8 +21,9 @@ public class ShootingLocationBookingDTO {
     private PropertyBookingType bookingType;
     private SlotType slotType;
     private String slotTimings;
-    private LocalDate shootStartDate;
-    private LocalDate shootEndDate;
+//    private LocalDate shootStartDate;
+//    private LocalDate shootEndDate;
+    private List<LocalDate> bookingDates; 
     private String bookingMessage;
     private Integer bookingId;
     private Integer createdBy;

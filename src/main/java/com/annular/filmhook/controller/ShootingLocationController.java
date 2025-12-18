@@ -596,5 +596,21 @@ public class ShootingLocationController {
 	}
 	
 
+	@GetMapping("/properties/sort")
+	public ResponseEntity<?> sortProperties(
+	        @RequestParam String sortBy,          // price | rating | rating_price
+	        @RequestParam(defaultValue = "asc") String order,
+	        @RequestParam(required = false) String propertyType,
+	        @RequestParam(required = false) String priceType) {
+
+	    return ResponseEntity.ok(
+	            service.getPropertiesSorted(
+	                    sortBy, order, propertyType, priceType)
+	    );
+	}
+
+	
+	
+	
 }
 

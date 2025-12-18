@@ -24,8 +24,10 @@ public class ShootingLocationBookingConverter {
 	    booking.setSlotType(dto.getSlotType());
 	    booking.setSlotTimings(dto.getSlotTimings());
 
-	    booking.setShootStartDate(dto.getShootStartDate());
-	    booking.setShootEndDate(dto.getShootEndDate());
+//	    booking.setShootStartDate(dto.getShootStartDate());
+//	    booking.setShootEndDate(dto.getShootEndDate());
+	    
+	    booking.setBookingDates(dto.getBookingDates());
 
 	    booking.setBookingMessage(dto.getBookingMessage());
 
@@ -46,9 +48,9 @@ public class ShootingLocationBookingConverter {
                 .slotType(b.getSlotType())
                 .slotTimings(b.getSlotTimings())
 
-                .shootStartDate(b.getShootStartDate())
-                .shootEndDate(b.getShootEndDate())
-
+//                .shootStartDate(b.getShootStartDate())
+//                .shootEndDate(b.getShootEndDate())
+                  .bookingDates(b.getBookingDates())
                 .totalDays(b.getTotalDays())
 
                 // ------- PRICE BREAKDOWN -------
