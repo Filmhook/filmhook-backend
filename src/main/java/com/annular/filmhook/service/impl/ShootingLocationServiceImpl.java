@@ -2195,23 +2195,22 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			availableDates.removeAll(pausedDates);
 		}
 
+	    // 3️⃣ Remove booked dates USING bookingDates
+	    List<ShootingLocationBooking> confirmedBookings =
+	            bookingRepo.findByProperty_IdAndStatus(
+	                    propertyId,
+	                    BookingStatus.CONFIRMED
+	            );
 
-		// 3️⃣ Remove booked dates
-		List<ShootingLocationBooking> confirmedBookings =
-				bookingRepo.findByProperty_IdAndStatus(propertyId, BookingStatus.CONFIRMED);
+	    Set<LocalDate> bookedDates = new HashSet<>();
 
-		Set<LocalDate> bookedDates = new HashSet<>();
+	    for (ShootingLocationBooking booking : confirmedBookings) {
+	        if (booking.getBookingDates() != null) {
+	            bookedDates.addAll(booking.getBookingDates());
+	        }
+	    }
 
-		for (ShootingLocationBooking booking : confirmedBookings) {
-			LocalDate current = booking.getShootStartDate();
-			while (!current.isAfter(booking.getShootEndDate())) {
-				bookedDates.add(current);
-				current = current.plusDays(1);
-			}
-		}
-
-		// Remove booked dates
-		availableDates.removeAll(bookedDates);
+	    availableDates.removeAll(bookedDates);
 
 		// 4️⃣ DO NOT REMOVE PAST DATES HERE (OPTIONAL)
 		// LocalDate today = LocalDate.now();
@@ -2231,6 +2230,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
 		{
 
+		    if (dto.getBookingDates() == null || dto.getBookingDates().isEmpty()) {
+		        throw new RuntimeException("Booking dates are required");
+		    }
 			// --- 1. Build entity from DTO (only input fields) ---
 			ShootingLocationBooking booking = ShootingLocationBookingConverter.toEntity(dto);
 
@@ -2241,10 +2243,18 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			booking.setProperty(property);
 			booking.setClient(client);
+			
+			   List<LocalDate> availableDates =
+			            getAvailableDatesForProperty(property.getId());
 
-			// --- 3. Calculate total days ---
-			long days = ChronoUnit.DAYS.between(dto.getShootStartDate(), dto.getShootEndDate()) + 1;
-			booking.setTotalDays((int) days);
+			    for (LocalDate date : dto.getBookingDates()) {
+			        if (!availableDates.contains(date)) {
+			            throw new RuntimeException(
+			                    "Selected date " + date + " is not available");
+			        }
+			    }
+			    int totalDays = dto.getBookingDates().size();
+			    booking.setTotalDays(totalDays);
 
 			// --- 4. Fetch pricing rules from SubcategorySelection ---
 			ShootingLocationSubcategorySelection sel = property.getSubcategorySelection();
@@ -2256,7 +2266,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			double discountPercent = getDiscount(sel, dto.getBookingType(), dto.getSlotType());
 
 			// --- 5. Price Breakdown Calculations ---
-			double subtotal = pricePerDay * days;
+			double subtotal = pricePerDay * totalDays;
 			double discountAmount = subtotal * (discountPercent / 100.0);
 			double amountAfterDiscount = subtotal - discountAmount;
 
@@ -2450,8 +2460,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			                + "<div class='section'>"
 			                + "<div class='section-title'>Stay Details</div>"
 
-			                + "<div class='row'><div class='label'>Check-in</div><div class='value'>" + booking.getShootStartDate() + "</div></div>"
-			                + "<div class='row'><div class='label'>Check-out</div><div class='value'>" + booking.getShootEndDate() + "</div></div>"
+//			                + "<div class='row'><div class='label'>Check-in</div><div class='value'>" + booking.getShootStartDate() + "</div></div>"
+//			                + "<div class='row'><div class='label'>Check-out</div><div class='value'>" + booking.getShootEndDate() + "</div></div>"
 			                + "<div class='row'><div class='label'>Guest</div><div class='value'>" + payment.getFirstname() + "</div></div>"
 			                + "</div>"
 
@@ -2511,8 +2521,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 								+ "    <p style='margin:0 0 10px 0;color:#444'>A guest has booked your property. Below are the details.</p>"
 								+ ""
 								+ "    <div class='line'><span class='label'>Property</span><span class='val'>" + booking.getProperty().getPropertyName() + "</span></div>"
-								+ "    <div class='line'><span class='label'>From</span><span class='val'>" + booking.getShootStartDate() + "</span></div>"
-								+ "    <div class='line'><span class='label'>To</span><span class='val'>" + booking.getShootEndDate() + "</span></div>"
+//								+ "    <div class='line'><span class='label'>From</span><span class='val'>" + booking.getShootStartDate() + "</span></div>"
+//								+ "    <div class='line'><span class='label'>To</span><span class='val'>" + booking.getShootEndDate() + "</span></div>"
 								+ "    <div class='line'><span class='label'>Guest</span><span class='val'>" + payment.getFirstname() + " (" + payment.getEmail() + ")</span></div>"
 								+ "    <div class='line'><span class='label'>Amount (credited to wallet)</span><span class='val'>&#8377;" + payment.getAmount() + "</span></div>"
 								+ ""
@@ -2732,11 +2742,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.useAllAvailableWidth();
 			summary.setBorder(Border.NO_BORDER);
 
-			int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
-			double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0;
-			double base = rate * days;
-			double taxes = base * 0.18;
-			double total = base + taxes;
+////			int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
+//			double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0;
+////			double base = rate * days;
+//			double taxes = base * 0.18;
+//			double total = base + taxes;
 
 			summary.addCell(label("Location", fontBold));
 			summary.addCell(value(booking.getProperty().getPropertyName(), fontRegular));
@@ -2744,17 +2754,17 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			summary.addCell(label("Booking ID", fontBold));
 			summary.addCell(value(String.valueOf(booking.getId()), fontRegular));
 
-			summary.addCell(label("Check-in", fontBold));
-			summary.addCell(value(String.valueOf(booking.getShootStartDate()), fontRegular));
-
-			summary.addCell(label("Check-out", fontBold));
-			summary.addCell(value(String.valueOf(booking.getShootEndDate()), fontRegular));
-
-			summary.addCell(label("Total Days", fontBold));
-			summary.addCell(value(days + " Days", fontRegular));
-
-			summary.addCell(label("Rate Per Day", fontBold));
-			summary.addCell(value("₹ " + format(rate), fontRegular));
+//			summary.addCell(label("Check-in", fontBold));
+//			summary.addCell(value(String.valueOf(booking.getShootStartDate()), fontRegular));
+//
+//			summary.addCell(label("Check-out", fontBold));
+//			summary.addCell(value(String.valueOf(booking.getShootEndDate()), fontRegular));
+//
+//			summary.addCell(label("Total Days", fontBold));
+//			summary.addCell(value(days + " Days", fontRegular));
+//
+//			summary.addCell(label("Rate Per Day", fontBold));
+//			summary.addCell(value("₹ " + format(rate), fontRegular));
 
 			card.addCell(new Cell().add(summary).setPadding(10).setBorder(Border.NO_BORDER));
 			doc.add(card);
@@ -2770,11 +2780,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			items.addHeaderCell(headerCell("Amount", fontBold));
 			items.addHeaderCell(headerCell("Net", fontBold));
 
-			items.addCell(bodyCell("Shooting Location Rental", fontRegular));
-			items.addCell(bodyCell(String.valueOf(days), fontRegular));
-			items.addCell(bodyCell("₹ " + format(rate), fontRegular));
-			items.addCell(bodyCell("₹ " + format(rate * days), fontRegular));
-			items.addCell(bodyCell("₹ " + format(base), fontRegular));
+//			items.addCell(bodyCell("Shooting Location Rental", fontRegular));
+//			items.addCell(bodyCell(String.valueOf(days), fontRegular));
+//			items.addCell(bodyCell("₹ " + format(rate), fontRegular));
+//			items.addCell(bodyCell("₹ " + format(rate * days), fontRegular));
+//			items.addCell(bodyCell("₹ " + format(base), fontRegular));
 
 			doc.add(items);
 			doc.add(new Paragraph("\n"));
@@ -2784,7 +2794,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.useAllAvailableWidth();
 
 			tax.addCell(textLeft("Taxes & Platform Fees (18%)", fontBold));
-			tax.addCell(textRight("₹ " + format(taxes), fontRegular));
+//			tax.addCell(textRight("₹ " + format(taxes), fontRegular));
 
 			doc.add(tax);
 			doc.add(new Paragraph("\n"));
@@ -2794,25 +2804,25 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			totalTable.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph(" ")));
 
-			totalTable.addCell(
-					new Cell()
-					.setBorder(Border.NO_BORDER)
-					.add(new Paragraph("GRAND TOTAL\n₹ " + format(total))
-							.setFont(fontBold)
-							.setFontSize(14)
-							.setFontColor(BRAND_BLUE)
-							.setTextAlignment(TextAlignment.RIGHT))
-					);
+//			totalTable.addCell(
+//					new Cell()
+//					.setBorder(Border.NO_BORDER)
+//					.add(new Paragraph("GRAND TOTAL\n₹ " + format(total))
+//							.setFont(fontBold)
+//							.setFontSize(14)
+//							.setFontColor(BRAND_BLUE)
+//							.setTextAlignment(TextAlignment.RIGHT))
+//					);
 
 			doc.add(totalTable);
 			doc.add(new Paragraph("\n"));
 
-			doc.add(new Paragraph("Amount (in words): " +
-					NumberToWordsConverter.convertToIndianCurrency(total))
-					.setFont(fontRegular)
-					.setFontSize(10)
-					.setItalic()
-					.setFontColor(ColorConstants.DARK_GRAY));
+//			doc.add(new Paragraph("Amount (in words): " +
+////					NumberToWordsConverter.convertToIndianCurrency(total))
+//					.setFont(fontRegular)
+//					.setFontSize(10)
+//					.setItalic()
+//					.setFontColor(ColorConstants.DARK_GRAY));
 
 			doc.add(new Paragraph("\nPlease ensure the location is prepared for the shoot. For any assistance contact support@film-hookapps.com")
 					.setFontSize(9)
@@ -2969,221 +2979,221 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 	
-	@Scheduled(cron = "0 21 12 * * *")
-	public void sendBookingExpiryReminders() {
-
-	    LocalDate tomorrow = LocalDate.now().plusDays(1);
-
-	    List<ShootingLocationBooking> bookings =
-	            bookingRepo.findByShootEndDate(tomorrow);
-
-	    logger.info("🔍 Found {} bookings ending on {}", bookings.size(), tomorrow);
-
-	    for (ShootingLocationBooking booking : bookings) {
-
-	        Integer bookingId = booking.getId();
-
-	      
-			// ✅ PAYMENT CHECK (Payments table ONLY)
-	        Optional<Payments> paymentOpt =
-	                paymentsRepository
-	                        .findByReferenceIdAndModuleTypeAndPaymentStatus(
-	                                bookingId,
-	                                PaymentModule.SHOOTING_LOCATION,
-	                                "SUCCESS"
-	                        );
-
-	        if (paymentOpt.isEmpty()) {
-	            logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
-	            continue;
-	        }
-	     
-	        int retryCount =
-	                inAppNotificationRepo.countExpiryReminders(
-	                        "SHOOTING_LOCATION_EXPIRY",
-	                        bookingId
-	                );
-
-	        if (retryCount >= 3) {
-	            logger.warn("⛔ Max retry reached for booking {}", bookingId);
-	            continue;
-	        }
-
-	        try {
-	            User client = booking.getClient();
-
-	            String title = "Shooting Location Expiring Soon!";
-	            String message =
-	                    "Hi " + client.getName()
-	                    + ", your booking will expire in 24 hours. Renew now to continue.";
-
-	            // ================= EMAIL =================
-	            String mailBody =
-	                    "<p>Dear <b>" + client.getName() + "</b>,</p>"
-	                  + "<p>Your shooting location booking will expire in <b>24 hours</b>.</p>"
-	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
-	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
-	                  + "<p>Please renew to avoid cancellation.</p>";
-
-	            mailNotification.sendEmailAsync(
-	                    client.getName(),
-	                    client.getEmail(),
-	                    "⏳ FilmHook Reminder: Booking Expiring Soon",
-	                    mailBody
-	            );
-
-	            // ================= IN-APP =================
-	            inAppNotificationRepo.save(
-	                    InAppNotification.builder()
-	                            .senderId(0)
-	                            .receiverId(client.getUserId())
-	                            .title(title)
-	                            .message(message)
-	                            .userType("SHOOTING_LOCATION_EXPIRY")
-	                            .id(bookingId)
-	                            .isRead(false)
-	                            .isDeleted(false)
-	                            .createdOn(new Date())
-	                            .createdBy(0)
-	                            .build()
-	            );
-
-	            // ================= PUSH =================
-	            String token = client.getFirebaseDeviceToken();
-	            if (token != null && !token.isBlank()) {
-
-	                Message pushMessage = Message.builder()
-	                        .setToken(token)
-	                        .setNotification(
-	                                Notification.builder()
-	                                        .setTitle(title)
-	                                        .setBody(message)
-	                                        .build()
-	                        )
-	                        .putData("type", "SHOOTING_LOCATION_EXPIRY")
-	                        .putData("bookingId", bookingId.toString())
-	                        .build();
-
-	                FirebaseMessaging.getInstance().send(pushMessage);
-	            }
-
-	            logger.info("✅ Reminder sent (attempt {}) for booking {}",
-	                    retryCount + 1, bookingId);
-
-	        } catch (Exception e) {
-	            logger.error("❌ Reminder attempt {} failed for booking {}",
-	                    retryCount + 1, bookingId, e);
-	        }
-	    }
-	}
+//	@Scheduled(cron = "0 21 12 * * *")
+//	public void sendBookingExpiryReminders() {
+//
+//	    LocalDate tomorrow = LocalDate.now().plusDays(1);
+//
+//	    List<ShootingLocationBooking> bookings =
+//	            bookingRepo.findByShootEndDate(tomorrow);
+//
+//	    logger.info("🔍 Found {} bookings ending on {}", bookings.size(), tomorrow);
+//
+//	    for (ShootingLocationBooking booking : bookings) {
+//
+//	        Integer bookingId = booking.getId();
+//
+//	      
+//			// ✅ PAYMENT CHECK (Payments table ONLY)
+//	        Optional<Payments> paymentOpt =
+//	                paymentsRepository
+//	                        .findByReferenceIdAndModuleTypeAndPaymentStatus(
+//	                                bookingId,
+//	                                PaymentModule.SHOOTING_LOCATION,
+//	                                "SUCCESS"
+//	                        );
+//
+//	        if (paymentOpt.isEmpty()) {
+//	            logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
+//	            continue;
+//	        }
+//	     
+//	        int retryCount =
+//	                inAppNotificationRepo.countExpiryReminders(
+//	                        "SHOOTING_LOCATION_EXPIRY",
+//	                        bookingId
+//	                );
+//
+//	        if (retryCount >= 3) {
+//	            logger.warn("⛔ Max retry reached for booking {}", bookingId);
+//	            continue;
+//	        }
+//
+//	        try {
+//	            User client = booking.getClient();
+//
+//	            String title = "Shooting Location Expiring Soon!";
+//	            String message =
+//	                    "Hi " + client.getName()
+//	                    + ", your booking will expire in 24 hours. Renew now to continue.";
+//
+//	            // ================= EMAIL =================
+//	            String mailBody =
+//	                    "<p>Dear <b>" + client.getName() + "</b>,</p>"
+//	                  + "<p>Your shooting location booking will expire in <b>24 hours</b>.</p>"
+//	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
+////	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
+//	                  + "<p>Please renew to avoid cancellation.</p>";
+//
+//	            mailNotification.sendEmailAsync(
+//	                    client.getName(),
+//	                    client.getEmail(),
+//	                    "⏳ FilmHook Reminder: Booking Expiring Soon",
+//	                    mailBody
+//	            );
+//
+//	            // ================= IN-APP =================
+//	            inAppNotificationRepo.save(
+//	                    InAppNotification.builder()
+//	                            .senderId(0)
+//	                            .receiverId(client.getUserId())
+//	                            .title(title)
+//	                            .message(message)
+//	                            .userType("SHOOTING_LOCATION_EXPIRY")
+//	                            .id(bookingId)
+//	                            .isRead(false)
+//	                            .isDeleted(false)
+//	                            .createdOn(new Date())
+//	                            .createdBy(0)
+//	                            .build()
+//	            );
+//
+//	            // ================= PUSH =================
+//	            String token = client.getFirebaseDeviceToken();
+//	            if (token != null && !token.isBlank()) {
+//
+//	                Message pushMessage = Message.builder()
+//	                        .setToken(token)
+//	                        .setNotification(
+//	                                Notification.builder()
+//	                                        .setTitle(title)
+//	                                        .setBody(message)
+//	                                        .build()
+//	                        )
+//	                        .putData("type", "SHOOTING_LOCATION_EXPIRY")
+//	                        .putData("bookingId", bookingId.toString())
+//	                        .build();
+//
+//	                FirebaseMessaging.getInstance().send(pushMessage);
+//	            }
+//
+//	            logger.info("✅ Reminder sent (attempt {}) for booking {}",
+//	                    retryCount + 1, bookingId);
+//
+//	        } catch (Exception e) {
+//	            logger.error("❌ Reminder attempt {} failed for booking {}",
+//	                    retryCount + 1, bookingId, e);
+//	        }
+//	    }
+//	}
 
 	
-	@Scheduled(cron = "0 9 13 * * *")
-	@Transactional
-	public void markBookingsAsCompleted() {
-
-	    LocalDate today = LocalDate.now();
-
-	    List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDateLessThanEqualAndStatus(
-	                    today,
-	                    BookingStatus.CONFIRMED
-	            );
-
-	    logger.info("📅 [{}] Found {} confirmed bookings to mark as COMPLETED",
-	            today, bookings.size());
-
-	    for (ShootingLocationBooking booking : bookings) {
-
-	        Integer bookingId = booking.getId();
-	        User client = booking.getClient();
-
-	        try {
-	            // ✅ PAYMENT CHECK
-	            Optional<Payments> paymentOpt =
-	                    paymentsRepository.findByReferenceIdAndModuleTypeAndPaymentStatus(
-	                            bookingId,
-	                            PaymentModule.SHOOTING_LOCATION,
-	                            "SUCCESS"
-	                    );
-
-	            if (paymentOpt.isEmpty()) {
-	                logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
-	                continue;
-	            }
-
-	            // ✅ Mark booking as COMPLETED
-	            booking.setStatus(BookingStatus.COMPLETED);
-	            bookingRepo.save(booking);
-
-	            logger.info("✅ Booking {} marked as COMPLETED", bookingId);
-
-	            // ================= IN-APP =================
-	            String title = "Shooting Location Completed";
-	            String message =
-	                    "Hi " + client.getName()
-	                    + ", your booking at "
-	                    + booking.getProperty().getPropertyName()
-	                    + " has been successfully completed. Thank you for choosing FilmHook!";
-
-	            inAppNotificationRepo.save(
-	                    InAppNotification.builder()
-	                            .senderId(0)
-	                            .receiverId(client.getUserId())
-	                            .title(title)
-	                            .message(message)
-	                            .userType("SHOOTING_LOCATION_COMPLETED")
-	                            .id(bookingId)
-	                            .isRead(false)
-	                            .isDeleted(false)
-	                            .createdOn(new Date())
-	                            .createdBy(0)
-	                            .build()
-	            );
-
-	            // ================= PUSH =================
-	            String token = client.getFirebaseDeviceToken();
-	            if (token != null && !token.isBlank()) {
-
-	                Message pushMessage = Message.builder()
-	                        .setToken(token)
-	                        .setNotification(
-	                                Notification.builder()
-	                                        .setTitle(title)
-	                                        .setBody(message)
-	                                        .build()
-	                        )
-	                        .putData("type", "SHOOTING_LOCATION_COMPLETED")
-	                        .putData("bookingId", bookingId.toString())
-	                        .build();
-
-	                FirebaseMessaging.getInstance().send(pushMessage);
-	            }
-
-	            // ================= EMAIL =================
-	            String subject = "📸 Booking Completed – Thank You for Choosing FilmHook!";
-
-	            String mailContent =
-	                    "<p>We hope your shoot was a great success! 🎬</p>"
-	                  + "<p>Your booking has been marked as <b>COMPLETED</b>.</p>"
-	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
-	                  + "<p><b>Property:</b> " + booking.getProperty().getPropertyName() + "</p>"
-	                  + "<p><b>Start Date:</b> " + booking.getShootStartDate() + "</p>"
-	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
-	                  + "<p>Thank you for using <b>FilmHook</b>. We look forward to working with you again!</p>";
-
-	            mailNotification.sendEmailAsync(
-	                    client.getName(),
-	                    client.getEmail(),
-	                    subject,
-	                    mailContent
-	            );
-
-	        } catch (Exception e) {
-	            logger.error("❌ Failed to complete booking {}", bookingId, e);
-	        }
-	    }
-	}	
-	
+//	@Scheduled(cron = "0 9 13 * * *")
+//	@Transactional
+//	public void markBookingsAsCompleted() {
+//
+//	    LocalDate today = LocalDate.now();
+//
+//	    List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDateLessThanEqualAndStatus(
+//	                    today,
+//	                    BookingStatus.CONFIRMED
+//	            );
+//
+//	    logger.info("📅 [{}] Found {} confirmed bookings to mark as COMPLETED",
+//	            today, bookings.size());
+//
+//	    for (ShootingLocationBooking booking : bookings) {
+//
+//	        Integer bookingId = booking.getId();
+//	        User client = booking.getClient();
+//
+//	        try {
+//	            // ✅ PAYMENT CHECK
+//	            Optional<Payments> paymentOpt =
+//	                    paymentsRepository.findByReferenceIdAndModuleTypeAndPaymentStatus(
+//	                            bookingId,
+//	                            PaymentModule.SHOOTING_LOCATION,
+//	                            "SUCCESS"
+//	                    );
+//
+//	            if (paymentOpt.isEmpty()) {
+//	                logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
+//	                continue;
+//	            }
+//
+//	            // ✅ Mark booking as COMPLETED
+//	            booking.setStatus(BookingStatus.COMPLETED);
+//	            bookingRepo.save(booking);
+//
+//	            logger.info("✅ Booking {} marked as COMPLETED", bookingId);
+//
+//	            // ================= IN-APP =================
+//	            String title = "Shooting Location Completed";
+//	            String message =
+//	                    "Hi " + client.getName()
+//	                    + ", your booking at "
+//	                    + booking.getProperty().getPropertyName()
+//	                    + " has been successfully completed. Thank you for choosing FilmHook!";
+//
+//	            inAppNotificationRepo.save(
+//	                    InAppNotification.builder()
+//	                            .senderId(0)
+//	                            .receiverId(client.getUserId())
+//	                            .title(title)
+//	                            .message(message)
+//	                            .userType("SHOOTING_LOCATION_COMPLETED")
+//	                            .id(bookingId)
+//	                            .isRead(false)
+//	                            .isDeleted(false)
+//	                            .createdOn(new Date())
+//	                            .createdBy(0)
+//	                            .build()
+//	            );
+//
+//	            // ================= PUSH =================
+//	            String token = client.getFirebaseDeviceToken();
+//	            if (token != null && !token.isBlank()) {
+//
+//	                Message pushMessage = Message.builder()
+//	                        .setToken(token)
+//	                        .setNotification(
+//	                                Notification.builder()
+//	                                        .setTitle(title)
+//	                                        .setBody(message)
+//	                                        .build()
+//	                        )
+//	                        .putData("type", "SHOOTING_LOCATION_COMPLETED")
+//	                        .putData("bookingId", bookingId.toString())
+//	                        .build();
+//
+//	                FirebaseMessaging.getInstance().send(pushMessage);
+//	            }
+//
+//	            // ================= EMAIL =================
+//	            String subject = "📸 Booking Completed – Thank You for Choosing FilmHook!";
+//
+//	            String mailContent =
+//	                    "<p>We hope your shoot was a great success! 🎬</p>"
+//	                  + "<p>Your booking has been marked as <b>COMPLETED</b>.</p>"
+//	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
+//	                  + "<p><b>Property:</b> " + booking.getProperty().getPropertyName() + "</p>"
+////	                  + "<p><b>Start Date:</b> " + booking.getShootStartDate() + "</p>"
+////	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
+//	                  + "<p>Thank you for using <b>FilmHook</b>. We look forward to working with you again!</p>";
+//
+//	            mailNotification.sendEmailAsync(
+//	                    client.getName(),
+//	                    client.getEmail(),
+//	                    subject,
+//	                    mailContent
+//	            );
+//
+//	        } catch (Exception e) {
+//	            logger.error("❌ Failed to complete booking {}", bookingId, e);
+//	        }
+//	    }
+//	}	
+//	
 	@Override
 	@Transactional
 	public ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request) {
@@ -3237,5 +3247,110 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	            )
 	            .collect(Collectors.toList());
 	}
+	
+	
+	@Override
+	public List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(
+	        String sortBy,
+	        String order,
+	        String propertyType,
+	        String priceType) {
+
+	    List<ShootingLocationPropertyDetails> entities =
+	            propertyDetailsRepository.findAll();
+
+	    Comparator<ShootingLocationPropertyDetails> comparator;
+
+	    // ---------- RATING + PRICE ----------
+	    if ("rating_price".equalsIgnoreCase(sortBy)) {
+
+	        Comparator<Double> ratingComparator =
+	                "desc".equalsIgnoreCase(order)
+	                        ? Comparator.reverseOrder()
+	                        : Comparator.naturalOrder();
+
+	        Comparator<Double> priceComparator =
+	                "desc".equalsIgnoreCase(order)
+	                        ? Comparator.reverseOrder()
+	                        : Comparator.naturalOrder();
+
+	        comparator = Comparator
+	                .comparing(
+	                        (ShootingLocationPropertyDetails p) ->
+	                                p.getAdminRating() != null ? p.getAdminRating() : 0.0,
+	                        ratingComparator
+	                )
+	                .thenComparing(
+	                        p -> getPrice(p, propertyType, priceType),
+	                        priceComparator
+	                );
+	    }
+
+	    // ---------- PRICE ONLY ----------
+	    else if ("price".equalsIgnoreCase(sortBy)) {
+
+	        comparator = Comparator.comparing(
+	                p -> getPrice(p, propertyType, priceType)
+	        );
+
+	        if ("desc".equalsIgnoreCase(order)) {
+	            comparator = comparator.reversed();
+	        }
+	    }
+
+	    // ---------- RATING ONLY ----------
+	    else if ("rating".equalsIgnoreCase(sortBy)) {
+
+	        comparator = Comparator.comparing(
+	                (ShootingLocationPropertyDetails p) ->
+	                        p.getAdminRating() != null ? p.getAdminRating() : 0.0
+	        );
+
+	        if ("desc".equalsIgnoreCase(order)) {
+	            comparator = comparator.reversed();
+	        }
+	    }
+
+	    // ---------- FALLBACK ----------
+	    else {
+	        comparator = Comparator.comparing(ShootingLocationPropertyDetails::getId);
+	    }
+
+	    return entities.stream()
+	            .sorted(comparator)
+	            .map(shootingLocationPropertyConverter::entityToDto)
+	            .collect(Collectors.toList());
+	}
+
+	
+	private Double getPrice(
+	        ShootingLocationPropertyDetails p,
+	        String propertyType,
+	        String priceType) {
+
+	    ShootingLocationSubcategorySelection s = p.getSubcategorySelection();
+	    if (s == null) return 0.0;
+
+	    if ("entire".equalsIgnoreCase(propertyType)) {
+	        if ("day".equalsIgnoreCase(priceType))
+	            return s.getEntireDayPropertyPrice() != null ? s.getEntireDayPropertyPrice() : 0.0;
+	        if ("night".equalsIgnoreCase(priceType))
+	            return s.getEntireNightPropertyPrice() != null ? s.getEntireNightPropertyPrice() : 0.0;
+	        if ("full".equalsIgnoreCase(priceType))
+	            return s.getEntireFullDayPropertyPrice() != null ? s.getEntireFullDayPropertyPrice() : 0.0;
+	    }
+
+	    if ("single".equalsIgnoreCase(propertyType)) {
+	        if ("day".equalsIgnoreCase(priceType))
+	            return s.getSingleDayPropertyPrice() != null ? s.getSingleDayPropertyPrice() : 0.0;
+	        if ("night".equalsIgnoreCase(priceType))
+	            return s.getSingleNightPropertyPrice() != null ? s.getSingleNightPropertyPrice() : 0.0;
+	        if ("full".equalsIgnoreCase(priceType))
+	            return s.getSingleFullDayPropertyPrice() != null ? s.getSingleFullDayPropertyPrice() : 0.0;
+	    }
+
+	    return 0.0;
+	}
+
 
 }

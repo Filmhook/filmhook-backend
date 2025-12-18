@@ -22,16 +22,16 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
 
     List<ShootingLocationBooking> findByProperty_IdAndClient_UserId(Integer propertyId, Integer userId);
     
-    @Query("SELECT b FROM ShootingLocationBooking b WHERE b.property.id = :propertyId AND b.status = 'CONFIRMED' AND " +
-    	       "(b.shootStartDate <= :shootEndDate AND b.shootEndDate >= :shootStartDate)")
-    	List<ShootingLocationBooking> findOverlappingBookings(@Param("propertyId") Integer propertyId,
-    	                                                       @Param("shootStartDate") LocalDate shootStartDate,
-    	                                                       @Param("shootEndDate") LocalDate shootEndDate);
+//    @Query("SELECT b FROM ShootingLocationBooking b WHERE b.property.id = :propertyId AND b.status = 'CONFIRMED' AND " +
+//    	       "(b.shootStartDate <= :shootEndDate AND b.shootEndDate >= :shootStartDate)")
+//    	List<ShootingLocationBooking> findOverlappingBookings(@Param("propertyId") Integer propertyId,
+//    	                                                       @Param("shootStartDate") LocalDate shootStartDate,
+//    	                                                       @Param("shootEndDate") LocalDate shootEndDate);
     
-    List<ShootingLocationBooking> findByShootEndDate(LocalDate endDate);
+//    List<ShootingLocationBooking> findByShootEndDate(LocalDate endDate);
  
 
-    List<ShootingLocationBooking> findByShootEndDateLessThanEqualAndStatus(LocalDate date, BookingStatus status);
+//    List<ShootingLocationBooking> findByShootEndDateLessThanEqualAndStatus(LocalDate date, BookingStatus status);
     
     @Query("SELECT b FROM ShootingLocationBooking b " +
             "WHERE ((b.client.userId = :user1 AND b.property.user.id = :user2) " +

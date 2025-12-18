@@ -71,5 +71,5 @@ public interface ShootingLocationService {
 	ShootingLocationPropertyReviewDTO deleteReply(Integer reviewId, Integer ownerUserId);
 	ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request);
 	List<BookingWithPropertyDTO> getBookingHistoryByClientId(Integer clientId);
-
+	List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(String sortBy, String order, String propertyType, String priceType);
 }
