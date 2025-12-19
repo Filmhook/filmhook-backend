@@ -21,4 +21,6 @@ public class ShootingLocationFileInputModel {
     private MultipartFile propertyDamageDocument;
     private MultipartFile crewAccidentDocument;
     private String updateMode;
+    private Integer userId;        
+    private List<Integer> deleteIds;
 }

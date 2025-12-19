@@ -109,54 +109,10 @@ public class ShootingLocationPropertyDetails {
 	private List<String> structuralModification;
 	private String temporary;
 	private String dressing;
-	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> permissions;
-	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> noiseRestrictions;
-	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> shootingTiming;
-	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> legalAgreements;
-
-	// 5. Accessibility & Transportation
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> roadAccessAndCondition;
-//	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> publicTransport;
-//	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> nearestAirportOrRailway;
-//	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> accommodationNearby;
-//
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> foodAndCatering;
-//	
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> emergencyServicesNearby;
-
-	// 6. Pricing & Payment Terms
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> rentalCost;
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> securityDeposit;
-
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> paymentModelsAccepted;
-//	@Convert(converter = StringListConverter.class)
-//	private List<String> cancellationPolicy;
-
 
 	private String description;
 	private boolean businessOwner;
 	
-//	private String govtLicenseAndPermissions;
 
     private Integer createdBy;
 
@@ -208,9 +164,6 @@ public class ShootingLocationPropertyDetails {
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ShootingLocationPropertyReview> reviews;
  
-//    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-//    private List<ShootingPropertyAvailabilityDates> availabilityDates;
-    
     private String typeLocation;
     private String locationLink;
     

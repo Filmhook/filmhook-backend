@@ -121,8 +121,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	
 	private boolean likedByUser;
 	private int likeCount;
-	private double averageRating;
-	private List<ShootingLocationPropertyReviewDTO> reviews;
+
 	private List<PropertyAvailabilityDTO> availabilityDates;
 	private String typeLocation;
 	private String locationLink;
@@ -154,6 +153,16 @@ public class ShootingLocationPropertyDetailsDTO {
 	public Double getTotalArea() {
 		return totalArea;
 	}
+	
+	
+	private long totalReviews;
+	private double fiveStarPercentage;
+	private double fourStarPercentage;
+	private double threeStarPercentage;
+	private double twoStarPercentage;
+	private double oneStarPercentage;
+	private double averageRating;
+	private List<ShootingLocationPropertyReviewDTO> reviews;
 
 }
 
