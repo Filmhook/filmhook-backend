@@ -117,11 +117,15 @@ public class PaymentsServiceImpl implements PaymentsService {
 				LocalDateTime.now()
 				);
 	}
+	public Payments markExpired(Payments payment, LocalDateTime expiryDateTime) {
 
-	public Payments markExpired(Payments payment) {
-		payment.setPaymentStatus("EXPIRED");
-		payment.setUpdatedOn(LocalDateTime.now());
-		return paymentsRepository.save(payment);
+	    payment.setExpiryDate(expiryDateTime);
+	    payment.setPaymentStatus("EXPIRED");
+	    payment.setUpdatedOn(LocalDateTime.now());
+	    payment.setUpdatedBy(0); // system
+
+	    return paymentsRepository.save(payment);
 	}
+
 }
 
