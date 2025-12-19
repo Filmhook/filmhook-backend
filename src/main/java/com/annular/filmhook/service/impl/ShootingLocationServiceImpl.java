@@ -834,7 +834,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			Integer industryId,
 			Integer userId,
 			LocalDate startDate,
-			LocalDate endDate) {
+			LocalDate endDate, SlotType slotType) {
 
 
 		try {
@@ -849,6 +849,10 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
 				throw new RuntimeException("Start Date cannot be after End Date");
 			}
+			if (slotType == null) {
+			    throw new RuntimeException("SlotType is required for availability search");
+			}
+
 
 			// 1️⃣ Fetch all active properties for the single industry
 			List<ShootingLocationPropertyDetails> properties =
@@ -884,7 +888,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							// Generate available dates for the property (removes paused and confirmed bookings)
 							List<LocalDate> availableDates;
 							try {
-								availableDates = getAvailableDatesForProperty(p.getId());
+								availableDates = getAvailableDatesForProperty(p.getId(), slotType);
 							} catch (RuntimeException ex) {
 								// If generation fails treat property as unavailable for safety
 								logger.warn("Unable to generate availableDates for property {}: {}", p.getId(), ex.getMessage());
@@ -2175,63 +2179,78 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 	@Override
-	public List<LocalDate> getAvailableDatesForProperty(Integer propertyId) {
+public List<LocalDate> getAvailableDatesForProperty(
+        Integer propertyId,
+        SlotType requestedSlot) {
 
-		ShootingLocationPropertyDetails property = 
-				propertyDetailsRepository.findById(propertyId)
-				.orElseThrow(() -> new RuntimeException("Property not found"));
+    ShootingLocationPropertyDetails property =
+            propertyDetailsRepository.findById(propertyId)
+                    .orElseThrow(() -> new RuntimeException("Property not found"));
 
-		LocalDate start = property.getAvailabilityStartDate();
-		LocalDate end = property.getAvailabilityEndDate();
+    LocalDate start = property.getAvailabilityStartDate();
+    LocalDate end = property.getAvailabilityEndDate();
 
-		if (start == null || end == null) {
-			throw new RuntimeException("Availability dates not set for this property");
-		}
+    if (start == null || end == null) {
+        throw new RuntimeException("Availability dates not set");
+    }
 
-		// 1️⃣ Full range dates
-		Set<LocalDate> availableDates = start
-				.datesUntil(end.plusDays(1))
-				.collect(Collectors.toSet());
+    // 1️⃣ Create full date range
+    Set<LocalDate> availableDates = start
+            .datesUntil(end.plusDays(1))
+            .collect(Collectors.toSet());
 
+    // 2️⃣ Remove paused dates
+    if (property.getPausedDates() != null) {
+        availableDates.removeAll(property.getPausedDates());
+    }
 
-		// 2️⃣ Remove paused dates (optional)
-		List<LocalDate> pausedDates =
-				property.getPausedDates() != null ? property.getPausedDates() : Collections.emptyList();
+    // 3️⃣ Fetch confirmed bookings
+    List<ShootingLocationBooking> confirmedBookings =
+            bookingRepo.findByProperty_IdAndStatus(
+                    propertyId,
+                    BookingStatus.CONFIRMED
+            );
 
+    // 4️⃣ Remove blocked dates BASED ON SLOT
+    for (ShootingLocationBooking booking : confirmedBookings) {
 
-		if (!pausedDates.isEmpty()) {
-			availableDates.removeAll(pausedDates);
-		}
+        if (booking.getBookingDates() == null) continue;
 
-		// 3️⃣ Remove booked dates USING bookingDates
-		List<ShootingLocationBooking> confirmedBookings =
-				bookingRepo.findByProperty_IdAndStatus(
-						propertyId,
-						BookingStatus.CONFIRMED
-						);
+        for (LocalDate bookedDate : booking.getBookingDates()) {
 
-		Set<LocalDate> bookedDates = new HashSet<>();
+            SlotType bookedSlot = booking.getSlotType();
 
-		for (ShootingLocationBooking booking : confirmedBookings) {
-			if (booking.getBookingDates() != null) {
-				bookedDates.addAll(booking.getBookingDates());
-			}
-		}
+            boolean blockDate = false;
 
-		availableDates.removeAll(bookedDates);
+            if (requestedSlot == SlotType.FULL_DAY) {
+                // Full day requires FULL availability
+                blockDate = true;
+            }
+            else if (requestedSlot == SlotType.DAY) {
+                // Day blocked if DAY or FULL_DAY booked
+                blockDate =
+                        bookedSlot == SlotType.DAY ||
+                        bookedSlot == SlotType.FULL_DAY;
+            }
+            else if (requestedSlot == SlotType.NIGHT) {
+                // Night blocked if NIGHT or FULL_DAY booked
+                blockDate =
+                        bookedSlot == SlotType.NIGHT ||
+                        bookedSlot == SlotType.FULL_DAY;
+            }
 
-		// 4️⃣ DO NOT REMOVE PAST DATES HERE (OPTIONAL)
-		// LocalDate today = LocalDate.now();
-		// availableDates.removeIf(date -> date.isBefore(today));
+            if (blockDate) {
+                availableDates.remove(bookedDate);
+            }
+        }
+    }
 
-		// 5️⃣ Sort and return
-		List<LocalDate> result = availableDates.stream()
-				.sorted()
-				.collect(Collectors.toList());
+    // 5️⃣ Sort and return
+    return availableDates.stream()
+            .sorted()
+            .collect(Collectors.toList());
+}
 
-
-		return result;
-	}
 
 
 	@Override
@@ -2252,15 +2271,18 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			booking.setProperty(property);
 			booking.setClient(client);
 
+			// Validate availability based on SLOT TYPE
 			List<LocalDate> availableDates =
-					getAvailableDatesForProperty(property.getId());
+			        getAvailableDatesForProperty(property.getId(), dto.getSlotType());
 
 			for (LocalDate date : dto.getBookingDates()) {
-				if (!availableDates.contains(date)) {
-					throw new RuntimeException(
-							"Selected date " + date + " is not available");
-				}
+			    if (!availableDates.contains(date)) {
+			        throw new RuntimeException(
+			                "Selected date " + date + " is not available for "
+			                + dto.getSlotType());
+			    }
 			}
+
 			int totalDays = dto.getBookingDates().size();
 			booking.setTotalDays(totalDays);
 

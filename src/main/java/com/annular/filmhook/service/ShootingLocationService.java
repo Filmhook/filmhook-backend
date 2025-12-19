@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Payments;
+import com.annular.filmhook.model.SlotType;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.BookingWithPropertyDTO;
 import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
@@ -54,7 +55,7 @@ public interface ShootingLocationService {
 	String deleteReview(Integer reviewId, Integer userId);
 	ShootingLocationPropertyReviewDTO updateReview(Integer reviewId, Integer propertyId, Integer userId, int rating,
 			String reviewText, List<MultipartFile> files, List<Integer> deletedFileIds);
-	List<LocalDate> getAvailableDatesForProperty(Integer propertyId);
+	List<LocalDate> getAvailableDatesForProperty( Integer propertyId, SlotType requestedSlot) ;
 	ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto);
 	
 	
@@ -63,10 +64,10 @@ public interface ShootingLocationService {
 	ResponseEntity<?> handleShootingLocationPaymentFailed(String txnid, String reason);
 	
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIdsAndDates(
-	        Integer industryId,
-	        Integer userId,
-	        LocalDate startDate,
-	        LocalDate endDate);
+			Integer industryId,
+			Integer userId,
+			LocalDate startDate,
+			LocalDate endDate, SlotType slotType);
 	ShootingLocationPropertyReviewDTO replyToReview(Integer reviewId, Integer ownerUserId, String replyText);
 	ShootingLocationPropertyReviewDTO deleteReply(Integer reviewId, Integer ownerUserId);
 	ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request);

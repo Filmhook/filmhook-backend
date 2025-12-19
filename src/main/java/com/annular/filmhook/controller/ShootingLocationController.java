@@ -34,6 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
+import com.annular.filmhook.model.SlotType;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserMediaFilesService;
@@ -493,10 +494,10 @@ public class ShootingLocationController {
 		}
 	}
 
-	@GetMapping("/availableDates/{propertyId}")
-	public ResponseEntity<?> getAvailableDates(@PathVariable Integer propertyId) {
+	@GetMapping("/availableDates")
+	public ResponseEntity<?> getAvailableDates(@RequestParam Integer propertyId,  @RequestParam SlotType slotType) {
 		try {
-			List<LocalDate> availableDates = service.getAvailableDatesForProperty(propertyId);
+			List<LocalDate> availableDates = service.getAvailableDatesForProperty(propertyId,slotType);
 
 			return ResponseEntity.ok(availableDates);
 
@@ -571,7 +572,8 @@ public class ShootingLocationController {
 						req.getIndustryId(),
 						req.getUserId(),
 						req.getStartDate(), 
-						req.getEndDate()     
+						req.getEndDate(),
+						req.getSlotType()
 						);
 
 		return ResponseEntity.ok(new Response(1, "Success", result));
