@@ -205,9 +205,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Autowired
 	PaymentsServiceImpl paymentsServiceImpl;
 	@Autowired
-	  PaymentsRepository paymentsRepository;
+	PaymentsRepository paymentsRepository;
 	@Autowired
-	   InAppNotificationRepository inAppNotificationRepo;
+	InAppNotificationRepository inAppNotificationRepo;
 	@Autowired
 	S3Util s3Util;
 
@@ -665,84 +665,84 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Override
 	public Response getPropertiesByUserId(Integer userId) {
 
-    logger.info("Fetching properties for userId: {}", userId);
+		logger.info("Fetching properties for userId: {}", userId);
 
-    try {
-        List<ShootingLocationPropertyDetails> properties =
-                propertyDetailsRepository.findAllByUserId(userId);
+		try {
+			List<ShootingLocationPropertyDetails> properties =
+					propertyDetailsRepository.findAllByUserId(userId);
 
-        if (properties.isEmpty()) {
-            return new Response(0, "No properties found for this user", Collections.emptyList());
-        }
+			if (properties.isEmpty()) {
+				return new Response(0, "No properties found for this user", Collections.emptyList());
+			}
 
-        // 1️⃣ PRELOAD LIKES
-        List<PropertyLike> likes = likeRepository.findByLikedById(userId);
-        Set<Integer> likedPropertyIds = likes.stream()
-                .filter(PropertyLike::getStatus)
-                .map(l -> l.getProperty().getId())
-                .collect(Collectors.toSet());
+			// 1️⃣ PRELOAD LIKES
+			List<PropertyLike> likes = likeRepository.findByLikedById(userId);
+			Set<Integer> likedPropertyIds = likes.stream()
+					.filter(PropertyLike::getStatus)
+					.map(l -> l.getProperty().getId())
+					.collect(Collectors.toSet());
 
-        List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
+			List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
 
-        for (ShootingLocationPropertyDetails p : properties) {
+			for (ShootingLocationPropertyDetails p : properties) {
 
-            Integer propertyId = p.getId();
+				Integer propertyId = p.getId();
 
-            // 2️⃣ Base DTO mapping
-            ShootingLocationPropertyDetailsDTO dto =
-                    shootingLocationPropertyConverter.entityToDto(p);
+				// 2️⃣ Base DTO mapping
+				ShootingLocationPropertyDetailsDTO dto =
+						shootingLocationPropertyConverter.entityToDto(p);
 
-            // 3️⃣ Like info
-            dto.setLikedByUser(likedPropertyIds.contains(propertyId));
-            dto.setLikeCount(likeRepository.countLikesByPropertyId(propertyId));
+				// 3️⃣ Like info
+				dto.setLikedByUser(likedPropertyIds.contains(propertyId));
+				dto.setLikeCount(likeRepository.countLikesByPropertyId(propertyId));
 
-            // 4️⃣ Media files
-            dto.setImageUrls(
-                    mediaFilesService
-                            .getMediaFilesByCategoryAndRefId(
-                                    MediaFileCategory.shootingLocationImage, propertyId)
-                            .stream()
-                            .map(FileOutputWebModel::getFilePath)
-                            .collect(Collectors.toList())
-            );
+				// 4️⃣ Media files
+				dto.setImageUrls(
+						mediaFilesService
+						.getMediaFilesByCategoryAndRefId(
+								MediaFileCategory.shootingLocationImage, propertyId)
+						.stream()
+						.map(FileOutputWebModel::getFilePath)
+						.collect(Collectors.toList())
+						);
 
-            dto.setGovernmentIdUrls(
-                    mediaFilesService
-                            .getMediaFilesByCategoryAndRefId(
-                                    MediaFileCategory.shootingGovermentId, propertyId)
-                            .stream()
-                            .map(FileOutputWebModel::getFilePath)
-                            .collect(Collectors.toList())
-            );
+				dto.setGovernmentIdUrls(
+						mediaFilesService
+						.getMediaFilesByCategoryAndRefId(
+								MediaFileCategory.shootingGovermentId, propertyId)
+						.stream()
+						.map(FileOutputWebModel::getFilePath)
+						.collect(Collectors.toList())
+						);
 
-            // 5️⃣ REVIEWS + RATINGS (✅ USE YOUR METHOD)
-            ShootingLocationPropertyReviewResponseDTO reviewResponse =
-                    getReviewsByPropertyId(propertyId, userId);
+				// 5️⃣ REVIEWS + RATINGS (✅ USE YOUR METHOD)
+				ShootingLocationPropertyReviewResponseDTO reviewResponse =
+						getReviewsByPropertyId(propertyId, userId);
 
-            dto.setReviews(reviewResponse.getReviews());
-            dto.setAverageRating(reviewResponse.getAverageRating());
-            dto.setTotalReviews(reviewResponse.getTotalReviews());
-            dto.setFiveStarPercentage(reviewResponse.getFiveStarPercentage());
-            dto.setFourStarPercentage(reviewResponse.getFourStarPercentage());
-            dto.setThreeStarPercentage(reviewResponse.getThreeStarPercentage());
-            dto.setTwoStarPercentage(reviewResponse.getTwoStarPercentage());
-            dto.setOneStarPercentage(reviewResponse.getOneStarPercentage());
+				dto.setReviews(reviewResponse.getReviews());
+				dto.setAverageRating(reviewResponse.getAverageRating());
+				dto.setTotalReviews(reviewResponse.getTotalReviews());
+				dto.setFiveStarPercentage(reviewResponse.getFiveStarPercentage());
+				dto.setFourStarPercentage(reviewResponse.getFourStarPercentage());
+				dto.setThreeStarPercentage(reviewResponse.getThreeStarPercentage());
+				dto.setTwoStarPercentage(reviewResponse.getTwoStarPercentage());
+				dto.setOneStarPercentage(reviewResponse.getOneStarPercentage());
 
-            // 6️⃣ Admin rating (if added)
-            dto.setAdminRating(p.getAdminRating());
-            dto.setAdminRatedOn(p.getAdminRatedOn());
-            dto.setAdminRatedBy(p.getAdminRatedBy());
+				// 6️⃣ Admin rating (if added)
+				dto.setAdminRating(p.getAdminRating());
+				dto.setAdminRatedOn(p.getAdminRatedOn());
+				dto.setAdminRatedBy(p.getAdminRatedBy());
 
-            result.add(dto);
-        }
+				result.add(dto);
+			}
 
-        return new Response(1, "Properties fetched successfully", result);
+			return new Response(1, "Properties fetched successfully", result);
 
-    } catch (Exception e) {
-        logger.error("Error fetching user properties", e);
-        return new Response(-1, "Error while fetching properties", null);
-    }
-}
+		} catch (Exception e) {
+			logger.error("Error fetching user properties", e);
+			return new Response(-1, "Error while fetching properties", null);
+		}
+	}
 
 
 	//===========================================
@@ -1199,22 +1199,23 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			updateBankInfo(existing, dto.getBankDetailsDTO());
 		}
 
-	    if (dto.getSubcategorySelectionDTO() != null) {
-	        updateSubcategorySelection(existing, dto.getSubcategorySelectionDTO());
-	    }
+		if (dto.getSubcategorySelectionDTO() != null) {
+			updateSubcategorySelection(existing, dto.getSubcategorySelectionDTO());
+		}
 
-	 // ✅ AVAILABILITY UPDATE 
-	    if (dto.getAvailabilityStartDate() != null) {
-	        existing.setAvailabilityStartDate(dto.getAvailabilityStartDate());
-	    }
+		// ✅ AVAILABILITY UPDATE 
+		if (dto.getAvailabilityStartDate() != null) {
+			existing.setAvailabilityStartDate(dto.getAvailabilityStartDate());
+		}
 
-	    if (dto.getAvailabilityEndDate() != null) {
-	        existing.setAvailabilityEndDate(dto.getAvailabilityEndDate());
-	    }
+		if (dto.getAvailabilityEndDate() != null) {
+			existing.setAvailabilityEndDate(dto.getAvailabilityEndDate());
+		}
 
-	    if (dto.getPausedDates() != null) {
-	        existing.setPausedDates(dto.getPausedDates());
-	    }
+		if (dto.getPausedDates() != null) {
+			existing.setPausedDates(dto.getPausedDates());
+		}
+
 
 
 	    // Set audit fields
@@ -1239,45 +1240,45 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		return shootingLocationPropertyConverter.entityToDto(saved);
 	}
 	private void updateSubcategorySelection(
-	        ShootingLocationPropertyDetails property,
-	        ShootingLocationSubcategorySelectionDTO dto) {
+			ShootingLocationPropertyDetails property,
+			ShootingLocationSubcategorySelectionDTO dto) {
 
-	    ShootingLocationSubcategorySelection selection =
-	            property.getSubcategorySelection();
+		ShootingLocationSubcategorySelection selection =
+				property.getSubcategorySelection();
 
-	    // 🔹 If exists → UPDATE
-	    if (selection == null) {
-	        selection = new ShootingLocationSubcategorySelection();
-	        selection.setPropertyDetails(property); // VERY IMPORTANT
-	    }
+		// 🔹 If exists → UPDATE
+		if (selection == null) {
+			selection = new ShootingLocationSubcategorySelection();
+			selection.setPropertyDetails(property); // VERY IMPORTANT
+		}
 
-	    ShootingLocationSubcategory subcategory =
-	            subcategoryRepo.findById(dto.getSubcategoryId().intValue())
-	                    .orElseThrow(() ->
-	                            new RuntimeException("Subcategory not found"));
+		ShootingLocationSubcategory subcategory =
+				subcategoryRepo.findById(dto.getSubcategoryId().intValue())
+				.orElseThrow(() ->
+				new RuntimeException("Subcategory not found"));
 
-	    selection.setSubcategory(subcategory);
-	    selection.setEntireProperty(dto.getEntireProperty());
-	    selection.setSingleProperty(dto.getSingleProperty());
+		selection.setSubcategory(subcategory);
+		selection.setEntireProperty(dto.getEntireProperty());
+		selection.setSingleProperty(dto.getSingleProperty());
 
-	    selection.setEntireDayPropertyPrice(dto.getEntireDayPropertyPrice());
-	    selection.setEntireNightPropertyPrice(dto.getEntireNightPropertyPrice());
-	    selection.setEntireFullDayPropertyPrice(dto.getEntireFullDayPropertyPrice());
+		selection.setEntireDayPropertyPrice(dto.getEntireDayPropertyPrice());
+		selection.setEntireNightPropertyPrice(dto.getEntireNightPropertyPrice());
+		selection.setEntireFullDayPropertyPrice(dto.getEntireFullDayPropertyPrice());
 
-	    selection.setSingleDayPropertyPrice(dto.getSingleDayPropertyPrice());
-	    selection.setSingleNightPropertyPrice(dto.getSingleNightPropertyPrice());
-	    selection.setSingleFullDayPropertyPrice(dto.getSingleFullDayPropertyPrice());
+		selection.setSingleDayPropertyPrice(dto.getSingleDayPropertyPrice());
+		selection.setSingleNightPropertyPrice(dto.getSingleNightPropertyPrice());
+		selection.setSingleFullDayPropertyPrice(dto.getSingleFullDayPropertyPrice());
 
-	    selection.setEntirePropertyDayDiscountPercent(dto.getEntirePropertyDayDiscountPercent());
-	    selection.setEntirePropertyNightDiscountPercent(dto.getEntirePropertyNightDiscountPercent());
-	    selection.setEntirePropertyFullDayDiscountPercent(dto.getEntirePropertyFullDayDiscountPercent());
+		selection.setEntirePropertyDayDiscountPercent(dto.getEntirePropertyDayDiscountPercent());
+		selection.setEntirePropertyNightDiscountPercent(dto.getEntirePropertyNightDiscountPercent());
+		selection.setEntirePropertyFullDayDiscountPercent(dto.getEntirePropertyFullDayDiscountPercent());
 
-	    selection.setSinglePropertyDayDiscountPercent(dto.getSinglePropertyDayDiscountPercent());
-	    selection.setSinglePropertyNightDiscountPercent(dto.getSinglePropertyNightDiscountPercent());
-	    selection.setSinglePropertyFullDayDiscountPercent(dto.getSinglePropertyFullDayDiscountPercent());
+		selection.setSinglePropertyDayDiscountPercent(dto.getSinglePropertyDayDiscountPercent());
+		selection.setSinglePropertyNightDiscountPercent(dto.getSinglePropertyNightDiscountPercent());
+		selection.setSinglePropertyFullDayDiscountPercent(dto.getSinglePropertyFullDayDiscountPercent());
 
-	    // Attach back to property
-	    property.setSubcategorySelection(selection);
+		// Attach back to property
+		property.setSubcategorySelection(selection);
 	}
 
 	private void handleFileUpload(ShootingLocationPropertyDetails property,
@@ -1508,8 +1509,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 		// Booleans
 		if (source.isBusinessOwner() != target.isBusinessOwner()) target.setBusinessOwner(source.isBusinessOwner());
-		
-		
+
+
 		if (source.getAvailabilityStartDate()!=null) target.setAvailabilityStartDate(source.getAvailabilityStartDate());
 		if (source.getAvailabilityEndDate()!=null) target.setAvailabilityEndDate(source.getAvailabilityEndDate());
 		if(source.getPausedDates()!=null) target.setPausedDates(source.getPausedDates());
@@ -1545,108 +1546,108 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Override
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesLikedByUser(Integer userId) {
 
-	    logger.info("Fetching liked properties for userId: {}", userId);
+		logger.info("Fetching liked properties for userId: {}", userId);
 
-	    try {
-	        // 1️⃣ Fetch liked properties (only active likes)
-	        List<PropertyLike> likedList = likeRepository.findByLikedById(userId)
-	                .stream()
-	                .filter(PropertyLike::getStatus)
-	                .collect(Collectors.toList());
+		try {
+			// 1️⃣ Fetch liked properties (only active likes)
+			List<PropertyLike> likedList = likeRepository.findByLikedById(userId)
+					.stream()
+					.filter(PropertyLike::getStatus)
+					.collect(Collectors.toList());
 
-	        if (likedList.isEmpty()) {
-	            return Collections.emptyList();
-	        }
+			if (likedList.isEmpty()) {
+				return Collections.emptyList();
+			}
 
-	        List<ShootingLocationPropertyDetails> properties =
-	                likedList.stream()
-	                        .map(PropertyLike::getProperty)
-	                        .filter(Objects::nonNull)
-	                        .collect(Collectors.toList());
+			List<ShootingLocationPropertyDetails> properties =
+					likedList.stream()
+					.map(PropertyLike::getProperty)
+					.filter(Objects::nonNull)
+					.collect(Collectors.toList());
 
-	        if (properties.isEmpty()) {
-	            return Collections.emptyList();
-	        }
+			if (properties.isEmpty()) {
+				return Collections.emptyList();
+			}
 
-	        List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
+			List<ShootingLocationPropertyDetailsDTO> result = new ArrayList<>();
 
-	        // 2️⃣ Loop each liked property
-	        for (ShootingLocationPropertyDetails property : properties) {
+			// 2️⃣ Loop each liked property
+			for (ShootingLocationPropertyDetails property : properties) {
 
-	            Integer pid = property.getId();
+				Integer pid = property.getId();
 
-	            // A) Base mapping
-	            ShootingLocationPropertyDetailsDTO dto =
-	                    shootingLocationPropertyConverter.entityToDto(property);
+				// A) Base mapping
+				ShootingLocationPropertyDetailsDTO dto =
+						shootingLocationPropertyConverter.entityToDto(property);
 
-	            // B) Like details
-	            dto.setLikedByUser(true);
-	            dto.setLikeCount(likeRepository.countLikesByPropertyId(pid));
+				// B) Like details
+				dto.setLikedByUser(true);
+				dto.setLikeCount(likeRepository.countLikesByPropertyId(pid));
 
-	            // C) Industry name
-	            dto.setIndustryName(
-	                    property.getIndustry() != null
-	                            ? property.getIndustry().getIndustryName()
-	                            : null
-	            );
+				// C) Industry name
+				dto.setIndustryName(
+						property.getIndustry() != null
+						? property.getIndustry().getIndustryName()
+								: null
+						);
 
-	            // D) Media files
-	            dto.setImageUrls(
-	                    mediaFilesService
-	                            .getMediaFilesByCategoryAndRefId(
-	                                    MediaFileCategory.shootingLocationImage, pid)
-	                            .stream()
-	                            .map(FileOutputWebModel::getFilePath)
-	                            .toList()
-	            );
+				// D) Media files
+				dto.setImageUrls(
+						mediaFilesService
+						.getMediaFilesByCategoryAndRefId(
+								MediaFileCategory.shootingLocationImage, pid)
+						.stream()
+						.map(FileOutputWebModel::getFilePath)
+						.toList()
+						);
 
-	            dto.setGovernmentIdUrls(
-	                    mediaFilesService
-	                            .getMediaFilesByCategoryAndRefId(
-	                                    MediaFileCategory.shootingGovermentId, pid)
-	                            .stream()
-	                            .map(FileOutputWebModel::getFilePath)
-	                            .toList()
-	            );
+				dto.setGovernmentIdUrls(
+						mediaFilesService
+						.getMediaFilesByCategoryAndRefId(
+								MediaFileCategory.shootingGovermentId, pid)
+						.stream()
+						.map(FileOutputWebModel::getFilePath)
+						.toList()
+						);
 
-	            dto.setVerificationVideo(
-	                    mediaFilesService
-	                            .getMediaFilesByCategoryAndRefId(
-	                                    MediaFileCategory.shootingLocationVerificationVideo, pid)
-	                            .stream()
-	                            .map(FileOutputWebModel::getFilePath)
-	                            .toList()
-	            );
+				dto.setVerificationVideo(
+						mediaFilesService
+						.getMediaFilesByCategoryAndRefId(
+								MediaFileCategory.shootingLocationVerificationVideo, pid)
+						.stream()
+						.map(FileOutputWebModel::getFilePath)
+						.toList()
+						);
 
-	            // E) Reviews + rating
-	            ShootingLocationPropertyReviewResponseDTO reviewData =
-	                    getReviewsByPropertyId(pid, userId);
+				// E) Reviews + rating
+				ShootingLocationPropertyReviewResponseDTO reviewData =
+						getReviewsByPropertyId(pid, userId);
 
-	            dto.setTotalReviews(reviewData.getTotalReviews());
-	            dto.setAverageRating(reviewData.getAverageRating());
-	            dto.setFiveStarPercentage(reviewData.getFiveStarPercentage());
-	            dto.setFourStarPercentage(reviewData.getFourStarPercentage());
-	            dto.setThreeStarPercentage(reviewData.getThreeStarPercentage());
-	            dto.setTwoStarPercentage(reviewData.getTwoStarPercentage());
-	            dto.setOneStarPercentage(reviewData.getOneStarPercentage());
-	            dto.setReviews(reviewData.getReviews());
+				dto.setTotalReviews(reviewData.getTotalReviews());
+				dto.setAverageRating(reviewData.getAverageRating());
+				dto.setFiveStarPercentage(reviewData.getFiveStarPercentage());
+				dto.setFourStarPercentage(reviewData.getFourStarPercentage());
+				dto.setThreeStarPercentage(reviewData.getThreeStarPercentage());
+				dto.setTwoStarPercentage(reviewData.getTwoStarPercentage());
+				dto.setOneStarPercentage(reviewData.getOneStarPercentage());
+				dto.setReviews(reviewData.getReviews());
 
-	            // F) Admin rating (IMPORTANT)
-	            dto.setAdminRating(property.getAdminRating());
-	            dto.setAdminRatedOn(property.getAdminRatedOn());
-	            dto.setAdminRatedBy(property.getAdminRatedBy());
+				// F) Admin rating (IMPORTANT)
+				dto.setAdminRating(property.getAdminRating());
+				dto.setAdminRatedOn(property.getAdminRatedOn());
+				dto.setAdminRatedBy(property.getAdminRatedBy());
 
-	            // Add final DTO
-	            result.add(dto);
-	        }
+				// Add final DTO
+				result.add(dto);
+			}
 
-	        logger.info("Total liked properties returned: {}", result.size());
-	        return result;
+			logger.info("Total liked properties returned: {}", result.size());
+			return result;
 
-	    } catch (Exception ex) {
-	        logger.error("Error in getPropertiesLikedByUser: {}", ex.getMessage(), ex);
-	        return Collections.emptyList();
-	    }
+		} catch (Exception ex) {
+			logger.error("Error in getPropertiesLikedByUser: {}", ex.getMessage(), ex);
+			return Collections.emptyList();
+		}
 	}
 
 
@@ -2139,9 +2140,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.reviewText(review.getReviewText())
 				.userName(user.getName())
 				.createdOn(review.getCreatedOn())
-				 .profilePicUrl(
-                         userService.getProfilePicUrl(
-                                 review.getUser().getUserId()))
+				.profilePicUrl(
+						userService.getProfilePicUrl(
+								review.getUser().getUserId()))
 				.files(mediaDTOs)
 				.ownerReplyText(review.getOwnerReplyText())				
 				.ownerReplyOn(review.getOwnerReplyOn())
@@ -2195,22 +2196,22 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			availableDates.removeAll(pausedDates);
 		}
 
-	    // 3️⃣ Remove booked dates USING bookingDates
-	    List<ShootingLocationBooking> confirmedBookings =
-	            bookingRepo.findByProperty_IdAndStatus(
-	                    propertyId,
-	                    BookingStatus.CONFIRMED
-	            );
+		// 3️⃣ Remove booked dates USING bookingDates
+		List<ShootingLocationBooking> confirmedBookings =
+				bookingRepo.findByProperty_IdAndStatus(
+						propertyId,
+						BookingStatus.CONFIRMED
+						);
 
-	    Set<LocalDate> bookedDates = new HashSet<>();
+		Set<LocalDate> bookedDates = new HashSet<>();
 
-	    for (ShootingLocationBooking booking : confirmedBookings) {
-	        if (booking.getBookingDates() != null) {
-	            bookedDates.addAll(booking.getBookingDates());
-	        }
-	    }
+		for (ShootingLocationBooking booking : confirmedBookings) {
+			if (booking.getBookingDates() != null) {
+				bookedDates.addAll(booking.getBookingDates());
+			}
+		}
 
-	    availableDates.removeAll(bookedDates);
+		availableDates.removeAll(bookedDates);
 
 		// 4️⃣ DO NOT REMOVE PAST DATES HERE (OPTIONAL)
 		// LocalDate today = LocalDate.now();
@@ -2230,9 +2231,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
 		{
 
-		    if (dto.getBookingDates() == null || dto.getBookingDates().isEmpty()) {
-		        throw new RuntimeException("Booking dates are required");
-		    }
+			if (dto.getBookingDates() == null || dto.getBookingDates().isEmpty()) {
+				throw new RuntimeException("Booking dates are required");
+			}
 			// --- 1. Build entity from DTO (only input fields) ---
 			ShootingLocationBooking booking = ShootingLocationBookingConverter.toEntity(dto);
 
@@ -2243,18 +2244,18 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			booking.setProperty(property);
 			booking.setClient(client);
-			
-			   List<LocalDate> availableDates =
-			            getAvailableDatesForProperty(property.getId());
 
-			    for (LocalDate date : dto.getBookingDates()) {
-			        if (!availableDates.contains(date)) {
-			            throw new RuntimeException(
-			                    "Selected date " + date + " is not available");
-			        }
-			    }
-			    int totalDays = dto.getBookingDates().size();
-			    booking.setTotalDays(totalDays);
+			List<LocalDate> availableDates =
+					getAvailableDatesForProperty(property.getId());
+
+			for (LocalDate date : dto.getBookingDates()) {
+				if (!availableDates.contains(date)) {
+					throw new RuntimeException(
+							"Selected date " + date + " is not available");
+				}
+			}
+			int totalDays = dto.getBookingDates().size();
+			booking.setTotalDays(totalDays);
 
 			// --- 4. Fetch pricing rules from SubcategorySelection ---
 			ShootingLocationSubcategorySelection sel = property.getSubcategorySelection();
@@ -2462,8 +2463,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 //			                + "<div class='row'><div class='label'>Check-in</div><div class='value'>" + booking.getShootStartDate() + "</div></div>"
 //			                + "<div class='row'><div class='label'>Check-out</div><div class='value'>" + booking.getShootEndDate() + "</div></div>"
-			                + "<div class='row'><div class='label'>Guest</div><div class='value'>" + payment.getFirstname() + "</div></div>"
-			                + "</div>"
++ "<div class='row'><div class='label'>Guest</div><div class='value'>" + payment.getFirstname() + "</div></div>"
++ "</div>"
 
 			                // PAYMENT SUMMARY
 			                + "<div class='section'>"
@@ -2521,8 +2522,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 								+ "    <p style='margin:0 0 10px 0;color:#444'>A guest has booked your property. Below are the details.</p>"
 								+ ""
 								+ "    <div class='line'><span class='label'>Property</span><span class='val'>" + booking.getProperty().getPropertyName() + "</span></div>"
-//								+ "    <div class='line'><span class='label'>From</span><span class='val'>" + booking.getShootStartDate() + "</span></div>"
-//								+ "    <div class='line'><span class='label'>To</span><span class='val'>" + booking.getShootEndDate() + "</span></div>"
+								//								+ "    <div class='line'><span class='label'>From</span><span class='val'>" + booking.getShootStartDate() + "</span></div>"
+								//								+ "    <div class='line'><span class='label'>To</span><span class='val'>" + booking.getShootEndDate() + "</span></div>"
 								+ "    <div class='line'><span class='label'>Guest</span><span class='val'>" + payment.getFirstname() + " (" + payment.getEmail() + ")</span></div>"
 								+ "    <div class='line'><span class='label'>Amount (credited to wallet)</span><span class='val'>&#8377;" + payment.getAmount() + "</span></div>"
 								+ ""
@@ -2742,11 +2743,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.useAllAvailableWidth();
 			summary.setBorder(Border.NO_BORDER);
 
-////			int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
-//			double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0;
-////			double base = rate * days;
-//			double taxes = base * 0.18;
-//			double total = base + taxes;
+			////			int days = (int) ChronoUnit.DAYS.between(booking.getShootStartDate(), booking.getShootEndDate()) + 1;
+			//			double rate = booking.getPricePerDay() != null ? booking.getPricePerDay() : 0;
+			////			double base = rate * days;
+			//			double taxes = base * 0.18;
+			//			double total = base + taxes;
 
 			summary.addCell(label("Location", fontBold));
 			summary.addCell(value(booking.getProperty().getPropertyName(), fontRegular));
@@ -2754,17 +2755,17 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			summary.addCell(label("Booking ID", fontBold));
 			summary.addCell(value(String.valueOf(booking.getId()), fontRegular));
 
-//			summary.addCell(label("Check-in", fontBold));
-//			summary.addCell(value(String.valueOf(booking.getShootStartDate()), fontRegular));
-//
-//			summary.addCell(label("Check-out", fontBold));
-//			summary.addCell(value(String.valueOf(booking.getShootEndDate()), fontRegular));
-//
-//			summary.addCell(label("Total Days", fontBold));
-//			summary.addCell(value(days + " Days", fontRegular));
-//
-//			summary.addCell(label("Rate Per Day", fontBold));
-//			summary.addCell(value("₹ " + format(rate), fontRegular));
+			//			summary.addCell(label("Check-in", fontBold));
+			//			summary.addCell(value(String.valueOf(booking.getShootStartDate()), fontRegular));
+			//
+			//			summary.addCell(label("Check-out", fontBold));
+			//			summary.addCell(value(String.valueOf(booking.getShootEndDate()), fontRegular));
+			//
+			//			summary.addCell(label("Total Days", fontBold));
+			//			summary.addCell(value(days + " Days", fontRegular));
+			//
+			//			summary.addCell(label("Rate Per Day", fontBold));
+			//			summary.addCell(value("₹ " + format(rate), fontRegular));
 
 			card.addCell(new Cell().add(summary).setPadding(10).setBorder(Border.NO_BORDER));
 			doc.add(card);
@@ -2780,11 +2781,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			items.addHeaderCell(headerCell("Amount", fontBold));
 			items.addHeaderCell(headerCell("Net", fontBold));
 
-//			items.addCell(bodyCell("Shooting Location Rental", fontRegular));
-//			items.addCell(bodyCell(String.valueOf(days), fontRegular));
-//			items.addCell(bodyCell("₹ " + format(rate), fontRegular));
-//			items.addCell(bodyCell("₹ " + format(rate * days), fontRegular));
-//			items.addCell(bodyCell("₹ " + format(base), fontRegular));
+			//			items.addCell(bodyCell("Shooting Location Rental", fontRegular));
+			//			items.addCell(bodyCell(String.valueOf(days), fontRegular));
+			//			items.addCell(bodyCell("₹ " + format(rate), fontRegular));
+			//			items.addCell(bodyCell("₹ " + format(rate * days), fontRegular));
+			//			items.addCell(bodyCell("₹ " + format(base), fontRegular));
 
 			doc.add(items);
 			doc.add(new Paragraph("\n"));
@@ -2794,7 +2795,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.useAllAvailableWidth();
 
 			tax.addCell(textLeft("Taxes & Platform Fees (18%)", fontBold));
-//			tax.addCell(textRight("₹ " + format(taxes), fontRegular));
+			//			tax.addCell(textRight("₹ " + format(taxes), fontRegular));
 
 			doc.add(tax);
 			doc.add(new Paragraph("\n"));
@@ -2804,25 +2805,25 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			totalTable.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph(" ")));
 
-//			totalTable.addCell(
-//					new Cell()
-//					.setBorder(Border.NO_BORDER)
-//					.add(new Paragraph("GRAND TOTAL\n₹ " + format(total))
-//							.setFont(fontBold)
-//							.setFontSize(14)
-//							.setFontColor(BRAND_BLUE)
-//							.setTextAlignment(TextAlignment.RIGHT))
-//					);
+			//			totalTable.addCell(
+			//					new Cell()
+			//					.setBorder(Border.NO_BORDER)
+			//					.add(new Paragraph("GRAND TOTAL\n₹ " + format(total))
+			//							.setFont(fontBold)
+			//							.setFontSize(14)
+			//							.setFontColor(BRAND_BLUE)
+			//							.setTextAlignment(TextAlignment.RIGHT))
+			//					);
 
 			doc.add(totalTable);
 			doc.add(new Paragraph("\n"));
 
-//			doc.add(new Paragraph("Amount (in words): " +
-////					NumberToWordsConverter.convertToIndianCurrency(total))
-//					.setFont(fontRegular)
-//					.setFontSize(10)
-//					.setItalic()
-//					.setFontColor(ColorConstants.DARK_GRAY));
+			//			doc.add(new Paragraph("Amount (in words): " +
+			////					NumberToWordsConverter.convertToIndianCurrency(total))
+			//					.setFont(fontRegular)
+			//					.setFontSize(10)
+			//					.setItalic()
+			//					.setFontColor(ColorConstants.DARK_GRAY));
 
 			doc.add(new Paragraph("\nPlease ensure the location is prepared for the shoot. For any assistance contact support@film-hookapps.com")
 					.setFontSize(9)
@@ -2978,378 +2979,415 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		return o == null ? "" : o.toString();
 	}
 
-	
-//	@Scheduled(cron = "0 21 12 * * *")
-//	public void sendBookingExpiryReminders() {
-//
-//	    LocalDate tomorrow = LocalDate.now().plusDays(1);
-//
-//	    List<ShootingLocationBooking> bookings =
-//	            bookingRepo.findByShootEndDate(tomorrow);
-//
-//	    logger.info("🔍 Found {} bookings ending on {}", bookings.size(), tomorrow);
-//
-//	    for (ShootingLocationBooking booking : bookings) {
-//
-//	        Integer bookingId = booking.getId();
-//
-//	      
-//			// ✅ PAYMENT CHECK (Payments table ONLY)
-//	        Optional<Payments> paymentOpt =
-//	                paymentsRepository
-//	                        .findByReferenceIdAndModuleTypeAndPaymentStatus(
-//	                                bookingId,
-//	                                PaymentModule.SHOOTING_LOCATION,
-//	                                "SUCCESS"
-//	                        );
-//
-//	        if (paymentOpt.isEmpty()) {
-//	            logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
-//	            continue;
-//	        }
-//	     
-//	        int retryCount =
-//	                inAppNotificationRepo.countExpiryReminders(
-//	                        "SHOOTING_LOCATION_EXPIRY",
-//	                        bookingId
-//	                );
-//
-//	        if (retryCount >= 3) {
-//	            logger.warn("⛔ Max retry reached for booking {}", bookingId);
-//	            continue;
-//	        }
-//
-//	        try {
-//	            User client = booking.getClient();
-//
-//	            String title = "Shooting Location Expiring Soon!";
-//	            String message =
-//	                    "Hi " + client.getName()
-//	                    + ", your booking will expire in 24 hours. Renew now to continue.";
-//
-//	            // ================= EMAIL =================
-//	            String mailBody =
-//	                    "<p>Dear <b>" + client.getName() + "</b>,</p>"
-//	                  + "<p>Your shooting location booking will expire in <b>24 hours</b>.</p>"
-//	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
-////	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
-//	                  + "<p>Please renew to avoid cancellation.</p>";
-//
-//	            mailNotification.sendEmailAsync(
-//	                    client.getName(),
-//	                    client.getEmail(),
-//	                    "⏳ FilmHook Reminder: Booking Expiring Soon",
-//	                    mailBody
-//	            );
-//
-//	            // ================= IN-APP =================
-//	            inAppNotificationRepo.save(
-//	                    InAppNotification.builder()
-//	                            .senderId(0)
-//	                            .receiverId(client.getUserId())
-//	                            .title(title)
-//	                            .message(message)
-//	                            .userType("SHOOTING_LOCATION_EXPIRY")
-//	                            .id(bookingId)
-//	                            .isRead(false)
-//	                            .isDeleted(false)
-//	                            .createdOn(new Date())
-//	                            .createdBy(0)
-//	                            .build()
-//	            );
-//
-//	            // ================= PUSH =================
-//	            String token = client.getFirebaseDeviceToken();
-//	            if (token != null && !token.isBlank()) {
-//
-//	                Message pushMessage = Message.builder()
-//	                        .setToken(token)
-//	                        .setNotification(
-//	                                Notification.builder()
-//	                                        .setTitle(title)
-//	                                        .setBody(message)
-//	                                        .build()
-//	                        )
-//	                        .putData("type", "SHOOTING_LOCATION_EXPIRY")
-//	                        .putData("bookingId", bookingId.toString())
-//	                        .build();
-//
-//	                FirebaseMessaging.getInstance().send(pushMessage);
-//	            }
-//
-//	            logger.info("✅ Reminder sent (attempt {}) for booking {}",
-//	                    retryCount + 1, bookingId);
-//
-//	        } catch (Exception e) {
-//	            logger.error("❌ Reminder attempt {} failed for booking {}",
-//	                    retryCount + 1, bookingId, e);
-//	        }
-//	    }
-//	}
 
-	
-//	@Scheduled(cron = "0 9 13 * * *")
-//	@Transactional
-//	public void markBookingsAsCompleted() {
-//
-//	    LocalDate today = LocalDate.now();
-//
-//	    List<ShootingLocationBooking> bookings = bookingRepo.findByShootEndDateLessThanEqualAndStatus(
-//	                    today,
-//	                    BookingStatus.CONFIRMED
-//	            );
-//
-//	    logger.info("📅 [{}] Found {} confirmed bookings to mark as COMPLETED",
-//	            today, bookings.size());
-//
-//	    for (ShootingLocationBooking booking : bookings) {
-//
-//	        Integer bookingId = booking.getId();
-//	        User client = booking.getClient();
-//
-//	        try {
-//	            // ✅ PAYMENT CHECK
-//	            Optional<Payments> paymentOpt =
-//	                    paymentsRepository.findByReferenceIdAndModuleTypeAndPaymentStatus(
-//	                            bookingId,
-//	                            PaymentModule.SHOOTING_LOCATION,
-//	                            "SUCCESS"
-//	                    );
-//
-//	            if (paymentOpt.isEmpty()) {
-//	                logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
-//	                continue;
-//	            }
-//
-//	            // ✅ Mark booking as COMPLETED
-//	            booking.setStatus(BookingStatus.COMPLETED);
-//	            bookingRepo.save(booking);
-//
-//	            logger.info("✅ Booking {} marked as COMPLETED", bookingId);
-//
-//	            // ================= IN-APP =================
-//	            String title = "Shooting Location Completed";
-//	            String message =
-//	                    "Hi " + client.getName()
-//	                    + ", your booking at "
-//	                    + booking.getProperty().getPropertyName()
-//	                    + " has been successfully completed. Thank you for choosing FilmHook!";
-//
-//	            inAppNotificationRepo.save(
-//	                    InAppNotification.builder()
-//	                            .senderId(0)
-//	                            .receiverId(client.getUserId())
-//	                            .title(title)
-//	                            .message(message)
-//	                            .userType("SHOOTING_LOCATION_COMPLETED")
-//	                            .id(bookingId)
-//	                            .isRead(false)
-//	                            .isDeleted(false)
-//	                            .createdOn(new Date())
-//	                            .createdBy(0)
-//	                            .build()
-//	            );
-//
-//	            // ================= PUSH =================
-//	            String token = client.getFirebaseDeviceToken();
-//	            if (token != null && !token.isBlank()) {
-//
-//	                Message pushMessage = Message.builder()
-//	                        .setToken(token)
-//	                        .setNotification(
-//	                                Notification.builder()
-//	                                        .setTitle(title)
-//	                                        .setBody(message)
-//	                                        .build()
-//	                        )
-//	                        .putData("type", "SHOOTING_LOCATION_COMPLETED")
-//	                        .putData("bookingId", bookingId.toString())
-//	                        .build();
-//
-//	                FirebaseMessaging.getInstance().send(pushMessage);
-//	            }
-//
-//	            // ================= EMAIL =================
-//	            String subject = "📸 Booking Completed – Thank You for Choosing FilmHook!";
-//
-//	            String mailContent =
-//	                    "<p>We hope your shoot was a great success! 🎬</p>"
-//	                  + "<p>Your booking has been marked as <b>COMPLETED</b>.</p>"
-//	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
-//	                  + "<p><b>Property:</b> " + booking.getProperty().getPropertyName() + "</p>"
-////	                  + "<p><b>Start Date:</b> " + booking.getShootStartDate() + "</p>"
-////	                  + "<p><b>End Date:</b> " + booking.getShootEndDate() + "</p>"
-//	                  + "<p>Thank you for using <b>FilmHook</b>. We look forward to working with you again!</p>";
-//
-//	            mailNotification.sendEmailAsync(
-//	                    client.getName(),
-//	                    client.getEmail(),
-//	                    subject,
-//	                    mailContent
-//	            );
-//
-//	        } catch (Exception e) {
-//	            logger.error("❌ Failed to complete booking {}", bookingId, e);
-//	        }
-//	    }
-//	}	
-//	
+	@Scheduled(cron = "0 50 17 * * *") 
+	public void sendBookingExpiryReminders() {
+
+		LocalDate today = LocalDate.now();
+
+		// 1️⃣ Get only CONFIRMED bookings
+		List<ShootingLocationBooking> bookings =
+				bookingRepo.findByStatus(BookingStatus.CONFIRMED);
+
+		logger.info("🔍 Checking expiry reminders for {} bookings on {}", bookings.size(), today);
+
+		for (ShootingLocationBooking booking : bookings) {
+
+			Integer bookingId = booking.getId();
+
+			try {
+				// 2️⃣ Validate bookingDates
+				List<LocalDate> bookingDates = booking.getBookingDates();
+				if (bookingDates == null || bookingDates.isEmpty()) {
+					continue;
+				}
+
+				// 3️⃣ Get LAST booking date
+				LocalDate lastDate = bookingDates.stream()
+						.max(LocalDate::compareTo)
+						.orElse(null);
+
+				if (lastDate == null) continue;
+
+				// 4️⃣ Reminder day = lastDate - 1
+				LocalDate reminderDate = lastDate.minusDays(1);
+
+				// ❌ Not reminder day
+				if (!today.equals(reminderDate)) {
+					continue;
+				}
+
+				// 5️⃣ PAYMENT CHECK
+				Optional<Payments> paymentOpt =
+						paymentsRepository.findByReferenceIdAndModuleTypeAndPaymentStatus(
+								bookingId,
+								PaymentModule.SHOOTING_LOCATION,
+								"SUCCESS"
+								);
+
+				if (paymentOpt.isEmpty()) {
+					logger.info("⏭️ Skipping booking {} – payment not successful", bookingId);
+					continue;
+				}
+
+				// 6️⃣ Retry limit
+				int retryCount =
+						inAppNotificationRepo.countExpiryReminders(
+								"SHOOTING_LOCATION_EXPIRY",
+								bookingId
+								);
+
+				if (retryCount >= 3) {
+					logger.warn("⛔ Max retry reached for booking {}", bookingId);
+					continue;
+				}
+
+				// 7️⃣ Send notifications
+				User client = booking.getClient();
+
+				String title = "⏳ Shooting Location Expiring Soon!";
+				String message =
+						"Hi " + client.getName()
+						+ ", your shooting location booking will expire in 24 hours. "
+						+ "Please renew if required.";
+
+				// ================= EMAIL =================
+				String mailBody =
+						"<p>Dear <b>" + client.getName() + "</b>,</p>"
+								+ "<p>Your shooting location booking will expire in <b>24 hours</b>.</p>"
+								+ "<p><b>Booking ID:</b> " + bookingId + "</p>"
+								+ "<p><b>Last Shoot Date:</b> " + lastDate + "</p>"
+								+ "<p>Please renew to avoid cancellation.</p>";
+
+				mailNotification.sendEmailAsync(
+						client.getName(),
+						client.getEmail(),
+						"⏳ FilmHook Reminder: Booking Expiring Soon",
+						mailBody
+						);
+
+				// ================= IN-APP =================
+				inAppNotificationRepo.save(
+						InAppNotification.builder()
+						.senderId(0)
+						.receiverId(client.getUserId())
+						.title(title)
+						.message(message)
+						.userType("SHOOTING_LOCATION_EXPIRY")
+						.id(bookingId)
+						.isRead(false)
+						.isDeleted(false)
+						.createdOn(new Date())
+						.createdBy(0)
+						.build()
+						);
+
+				// ================= PUSH =================
+				String token = client.getFirebaseDeviceToken();
+				if (token != null && !token.isBlank()) {
+
+					Message pushMessage = Message.builder()
+							.setToken(token)
+							.setNotification(
+									Notification.builder()
+									.setTitle(title)
+									.setBody(message)
+									.build()
+									)
+							.putData("type", "SHOOTING_LOCATION_EXPIRY")
+							.putData("bookingId", bookingId.toString())
+							.build();
+
+					FirebaseMessaging.getInstance().send(pushMessage);
+				}
+
+				logger.info("✅ Expiry reminder sent (attempt {}) for booking {}",
+						retryCount + 1, bookingId);
+
+			} catch (Exception e) {
+				logger.error("❌ Reminder failed for booking {}", bookingId, e);
+			}
+		}
+	}
+
+	@Scheduled(cron = "0 43 17 * * *", zone = "Asia/Kolkata") // 5:43 PM
+	@Transactional
+	public void markBookingsAsCompleted() {
+
+	    LocalDate today = LocalDate.now();
+
+	    List<ShootingLocationBooking> bookings =
+	            bookingRepo.findByStatus(BookingStatus.CONFIRMED);
+
+	    for (ShootingLocationBooking booking : bookings) {
+
+	        Integer bookingId = booking.getId();
+	        User client = booking.getClient();
+
+	        try {
+	            // 1️⃣ Validate booking dates
+	            List<LocalDate> bookingDates = booking.getBookingDates();
+	            if (bookingDates == null || bookingDates.isEmpty()) continue;
+
+	            // 2️⃣ LAST booking date
+	            LocalDate lastBookingDate = bookingDates.stream()
+	                    .max(LocalDate::compareTo)
+	                    .orElse(null);
+
+	            if (lastBookingDate == null || lastBookingDate.isAfter(today)) {
+	                continue; // still active
+	            }
+
+	            // 3️⃣ Convert to end-of-day
+	            LocalDateTime expiryDateTime =
+	                    lastBookingDate.atTime(23, 59, 59);
+
+	            // 4️⃣ Payment check
+	            Optional<Payments> paymentOpt =
+	                    paymentsRepository.findByReferenceIdAndModuleTypeAndPaymentStatus(
+	                            bookingId,
+	                            PaymentModule.SHOOTING_LOCATION,
+	                            "SUCCESS"
+	                    );
+
+	            if (paymentOpt.isEmpty()) continue;
+
+	            Payments payment = paymentOpt.get();
+
+	            // 5️⃣ MARK PAYMENT EXPIRED (REUSE METHOD)
+	            paymentsServiceImpl.markExpired(payment, expiryDateTime);
+
+	            // 6️⃣ Mark booking completed
+	            booking.setStatus(BookingStatus.COMPLETED);
+	            booking.setUpdatedAt(LocalDateTime.now());
+	            bookingRepo.save(booking);
+
+	            // ================= IN-APP =================
+	            String title = "Shooting Location Completed";
+	            String message =
+	                    "Hi " + client.getName()
+	                    + ", your booking at "
+	                    + booking.getProperty().getPropertyName()
+	                    + " has been successfully completed.";
+
+	            inAppNotificationRepo.save(
+	                    InAppNotification.builder()
+	                            .senderId(0)
+	                            .receiverId(client.getUserId())
+	                            .title(title)
+	                            .message(message)
+	                            .userType("SHOOTING_LOCATION_COMPLETED")
+	                            .id(bookingId)
+	                            .isRead(false)
+	                            .isDeleted(false)
+	                            .createdOn(new Date())
+	                            .createdBy(0)
+	                            .build()
+	            );
+
+	            // ================= PUSH =================
+	            if (client.getFirebaseDeviceToken() != null) {
+	                Message push = Message.builder()
+	                        .setToken(client.getFirebaseDeviceToken())
+	                        .setNotification(
+	                                Notification.builder()
+	                                        .setTitle(title)
+	                                        .setBody(message)
+	                                        .build()
+	                        )
+	                        .putData("bookingId", bookingId.toString())
+	                        .build();
+
+	                FirebaseMessaging.getInstance().send(push);
+	            }
+
+	            // ================= EMAIL =================
+	            String subject = "Booking Completed – FilmHook";
+
+	            String mailContent =
+	                    "<div style='font-family:Arial;padding:20px'>"
+	                  + "<h2>Booking Completed 🎬</h2>"
+	                  + "<p>Hi <b>" + client.getName() + "</b>,</p>"
+	                  + "<p>Your shooting location booking has been <b>successfully completed</b>.</p>"
+	                  + "<hr>"
+	                  + "<p><b>Booking ID:</b> " + bookingId + "</p>"
+	                  + "<p><b>Property:</b> " + booking.getProperty().getPropertyName() + "</p>"
+	                  + "<p><b>Last Shoot Date:</b> " + lastBookingDate + "</p>"
+	                  + "<p><b>Total Days:</b> " + booking.getTotalDays() + "</p>"
+	                  + "<p><b>Amount Paid:</b> ₹" + booking.getNetAmount() + "</p>"
+	                  + "<hr>"
+	                  + "<p>Thank you for choosing <b>FilmHook</b>.</p>"
+	                  + "</div>";
+
+	            mailNotification.sendEmailAsync(
+	                    client.getName(),
+	                    client.getEmail(),
+	                    subject,
+	                    mailContent
+	            );
+
+	        } catch (Exception e) {
+	            logger.error("❌ Failed to complete booking {}", bookingId, e);
+	        }
+	    }
+	}
+
 	@Override
 	@Transactional
 	public ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request) {
 
-	    if (request.getId() == null) {
-	        return ResponseEntity.badRequest()
-	                .body("Property ID is required");
-	    }
+		if (request.getId() == null) {
+			return ResponseEntity.badRequest()
+					.body("Property ID is required");
+		}
 
-	    if (request.getAdminRating() == null ||
-	        request.getAdminRating() < 1 ||
-	        request.getAdminRating() > 5) {
+		if (request.getAdminRating() == null ||
+				request.getAdminRating() < 1 ||
+				request.getAdminRating() > 5) {
 
-	        return ResponseEntity.badRequest()
-	                .body("Admin rating must be between 1 and 5");
-	    }
+			return ResponseEntity.badRequest()
+					.body("Admin rating must be between 1 and 5");
+		}
 
-	    ShootingLocationPropertyDetails property =
-	    		propertyDetailsRepository.findById(request.getId())
-	                    .orElseThrow(() ->
-	                            new RuntimeException("Property not found"));
+		ShootingLocationPropertyDetails property =
+				propertyDetailsRepository.findById(request.getId())
+				.orElseThrow(() ->
+				new RuntimeException("Property not found"));
 
-	 
-	    property.setAdminRating(request.getAdminRating());
-	    property.setAdminRatedOn(LocalDateTime.now());
-	    property.setAdminRatedBy(userDetails.userInfo().getId()); 
 
-	    propertyDetailsRepository.save(property);
+		property.setAdminRating(request.getAdminRating());
+		property.setAdminRatedOn(LocalDateTime.now());
+		property.setAdminRatedBy(userDetails.userInfo().getId()); 
 
-	    return ResponseEntity.ok(
-	            "Admin rating saved successfully for property ID "
-	                    + request.getId()
-	    );
+		propertyDetailsRepository.save(property);
+
+		return ResponseEntity.ok(
+				"Admin rating saved successfully for property ID "
+						+ request.getId()
+				);
 	}
 
 	@Override
 	public List<BookingWithPropertyDTO> getBookingHistoryByClientId(Integer clientId) {
 
-	    List<ShootingLocationBooking> bookings =
-	            bookingRepository.findByClient_UserIdOrderByUpdatedAtDesc(clientId);
+		List<ShootingLocationBooking> bookings =
+				bookingRepository.findByClient_UserIdOrderByUpdatedAtDesc(clientId);
 
-	    return bookings.stream()
-	            .map(booking -> BookingWithPropertyDTO.builder()
-	                    .booking(ShootingLocationBookingConverter.toDTO(booking))
-	                   .property(
-	                		   shootingLocationPropertyConverter.entityToDto(
-	                            booking.getProperty()
-	                        )
-	                    )
-	                    .build()
-	            )
-	            .collect(Collectors.toList());
+		return bookings.stream()
+				.map(booking -> BookingWithPropertyDTO.builder()
+						.booking(ShootingLocationBookingConverter.toDTO(booking))
+						.property(
+								shootingLocationPropertyConverter.entityToDto(
+										booking.getProperty()
+										)
+								)
+						.build()
+						)
+				.collect(Collectors.toList());
 	}
-	
-	
+
+
 	@Override
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(
-	        String sortBy,
-	        String order,
-	        String propertyType,
-	        String priceType) {
+			String sortBy,
+			String order,
+			String propertyType,
+			String priceType) {
 
-	    List<ShootingLocationPropertyDetails> entities =
-	            propertyDetailsRepository.findAll();
+		List<ShootingLocationPropertyDetails> entities =
+				propertyDetailsRepository.findAll();
 
-	    Comparator<ShootingLocationPropertyDetails> comparator;
+		Comparator<ShootingLocationPropertyDetails> comparator;
 
-	    // ---------- RATING + PRICE ----------
-	    if ("rating_price".equalsIgnoreCase(sortBy)) {
+		// ---------- RATING + PRICE ----------
+		if ("rating_price".equalsIgnoreCase(sortBy)) {
 
-	        Comparator<Double> ratingComparator =
-	                "desc".equalsIgnoreCase(order)
-	                        ? Comparator.reverseOrder()
-	                        : Comparator.naturalOrder();
+			Comparator<Double> ratingComparator =
+					"desc".equalsIgnoreCase(order)
+					? Comparator.reverseOrder()
+							: Comparator.naturalOrder();
 
-	        Comparator<Double> priceComparator =
-	                "desc".equalsIgnoreCase(order)
-	                        ? Comparator.reverseOrder()
-	                        : Comparator.naturalOrder();
+			Comparator<Double> priceComparator =
+					"desc".equalsIgnoreCase(order)
+					? Comparator.reverseOrder()
+							: Comparator.naturalOrder();
 
-	        comparator = Comparator
-	                .comparing(
-	                        (ShootingLocationPropertyDetails p) ->
-	                                p.getAdminRating() != null ? p.getAdminRating() : 0.0,
-	                        ratingComparator
-	                )
-	                .thenComparing(
-	                        p -> getPrice(p, propertyType, priceType),
-	                        priceComparator
-	                );
-	    }
+			comparator = Comparator
+					.comparing(
+							(ShootingLocationPropertyDetails p) ->
+							p.getAdminRating() != null ? p.getAdminRating() : 0.0,
+									ratingComparator
+							)
+					.thenComparing(
+							p -> getPrice(p, propertyType, priceType),
+							priceComparator
+							);
+		}
 
-	    // ---------- PRICE ONLY ----------
-	    else if ("price".equalsIgnoreCase(sortBy)) {
+		// ---------- PRICE ONLY ----------
+		else if ("price".equalsIgnoreCase(sortBy)) {
 
-	        comparator = Comparator.comparing(
-	                p -> getPrice(p, propertyType, priceType)
-	        );
+			comparator = Comparator.comparing(
+					p -> getPrice(p, propertyType, priceType)
+					);
 
-	        if ("desc".equalsIgnoreCase(order)) {
-	            comparator = comparator.reversed();
-	        }
-	    }
+			if ("desc".equalsIgnoreCase(order)) {
+				comparator = comparator.reversed();
+			}
+		}
 
-	    // ---------- RATING ONLY ----------
-	    else if ("rating".equalsIgnoreCase(sortBy)) {
+		// ---------- RATING ONLY ----------
+		else if ("rating".equalsIgnoreCase(sortBy)) {
 
-	        comparator = Comparator.comparing(
-	                (ShootingLocationPropertyDetails p) ->
-	                        p.getAdminRating() != null ? p.getAdminRating() : 0.0
-	        );
+			comparator = Comparator.comparing(
+					(ShootingLocationPropertyDetails p) ->
+					p.getAdminRating() != null ? p.getAdminRating() : 0.0
+					);
 
-	        if ("desc".equalsIgnoreCase(order)) {
-	            comparator = comparator.reversed();
-	        }
-	    }
+			if ("desc".equalsIgnoreCase(order)) {
+				comparator = comparator.reversed();
+			}
+		}
 
-	    // ---------- FALLBACK ----------
-	    else {
-	        comparator = Comparator.comparing(ShootingLocationPropertyDetails::getId);
-	    }
+		// ---------- FALLBACK ----------
+		else {
+			comparator = Comparator.comparing(ShootingLocationPropertyDetails::getId);
+		}
 
-	    return entities.stream()
-	            .sorted(comparator)
-	            .map(shootingLocationPropertyConverter::entityToDto)
-	            .collect(Collectors.toList());
+		return entities.stream()
+				.sorted(comparator)
+				.map(shootingLocationPropertyConverter::entityToDto)
+				.collect(Collectors.toList());
 	}
 
-	
+
 	private Double getPrice(
-	        ShootingLocationPropertyDetails p,
-	        String propertyType,
-	        String priceType) {
+			ShootingLocationPropertyDetails p,
+			String propertyType,
+			String priceType) {
 
-	    ShootingLocationSubcategorySelection s = p.getSubcategorySelection();
-	    if (s == null) return 0.0;
+		ShootingLocationSubcategorySelection s = p.getSubcategorySelection();
+		if (s == null) return 0.0;
 
-	    if ("entire".equalsIgnoreCase(propertyType)) {
-	        if ("day".equalsIgnoreCase(priceType))
-	            return s.getEntireDayPropertyPrice() != null ? s.getEntireDayPropertyPrice() : 0.0;
-	        if ("night".equalsIgnoreCase(priceType))
-	            return s.getEntireNightPropertyPrice() != null ? s.getEntireNightPropertyPrice() : 0.0;
-	        if ("full".equalsIgnoreCase(priceType))
-	            return s.getEntireFullDayPropertyPrice() != null ? s.getEntireFullDayPropertyPrice() : 0.0;
-	    }
+		if ("entire".equalsIgnoreCase(propertyType)) {
+			if ("day".equalsIgnoreCase(priceType))
+				return s.getEntireDayPropertyPrice() != null ? s.getEntireDayPropertyPrice() : 0.0;
+			if ("night".equalsIgnoreCase(priceType))
+				return s.getEntireNightPropertyPrice() != null ? s.getEntireNightPropertyPrice() : 0.0;
+			if ("full".equalsIgnoreCase(priceType))
+				return s.getEntireFullDayPropertyPrice() != null ? s.getEntireFullDayPropertyPrice() : 0.0;
+		}
 
-	    if ("single".equalsIgnoreCase(propertyType)) {
-	        if ("day".equalsIgnoreCase(priceType))
-	            return s.getSingleDayPropertyPrice() != null ? s.getSingleDayPropertyPrice() : 0.0;
-	        if ("night".equalsIgnoreCase(priceType))
-	            return s.getSingleNightPropertyPrice() != null ? s.getSingleNightPropertyPrice() : 0.0;
-	        if ("full".equalsIgnoreCase(priceType))
-	            return s.getSingleFullDayPropertyPrice() != null ? s.getSingleFullDayPropertyPrice() : 0.0;
-	    }
+		if ("single".equalsIgnoreCase(propertyType)) {
+			if ("day".equalsIgnoreCase(priceType))
+				return s.getSingleDayPropertyPrice() != null ? s.getSingleDayPropertyPrice() : 0.0;
+			if ("night".equalsIgnoreCase(priceType))
+				return s.getSingleNightPropertyPrice() != null ? s.getSingleNightPropertyPrice() : 0.0;
+			if ("full".equalsIgnoreCase(priceType))
+				return s.getSingleFullDayPropertyPrice() != null ? s.getSingleFullDayPropertyPrice() : 0.0;
+		}
 
-	    return 0.0;
+		return 0.0;
 	}
 
 
