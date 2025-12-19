@@ -2369,14 +2369,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 		// 4️⃣ Validate firstname & email
 		if (model.getFullName() == null || model.getFullName().trim().isEmpty()) {
-			throw new RuntimeException("Firstname is required");
+			throw new RuntimeException("Name is required");
 		}
 		if (model.getEmail() == null || model.getEmail().trim().isEmpty()) {
 			throw new RuntimeException("Email is required");
 		}
 
 		// 5️⃣ Validate phone
-		if (model.getPhone() == null || model.getPhone().trim().isEmpty()) {
+		if (model.getPhoneNumber() == null || model.getPhoneNumber().trim().isEmpty()) {
 			throw new RuntimeException("Phone number is required");
 		}
 
@@ -2388,7 +2388,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.amount(model.getAmount())
 				.fullName(model.getFullName())
 				.email(model.getEmail())
-				.phone(model.getPhone())
+				.phoneNumber(model.getPhoneNumber())
 				.productInfo("Shooting Location Booking")
 				.txnid(model.getTxnid())
 				.build();

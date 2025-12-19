@@ -20,10 +20,10 @@ public class PaymentsDTO {
 
 	    private String fullName;
 	    private String email;
-	    private String phone;
+	    private String phoneNumber;
 
-	    private Integer selectedDays;       // optional
-	    private String productInfo;         // "Audition Booking", "Shooting Location", etc.
+	    private Integer selectedDays;      
+	    private String productInfo;     
 
 	    private String txnid;      
 }

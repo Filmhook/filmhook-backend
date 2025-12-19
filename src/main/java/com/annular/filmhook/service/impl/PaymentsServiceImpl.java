@@ -78,6 +78,7 @@ public class PaymentsServiceImpl implements PaymentsService {
 				.amount(dto.getAmount())
 				.paymentStatus("PENDING")
 				.paymentHash(hash)
+				.phoneNumber(dto.getPhoneNumber())
 				.txnid(dto.getTxnid())
 				.createdOn(LocalDateTime.now())
 				.paymentGateway("PAYU")

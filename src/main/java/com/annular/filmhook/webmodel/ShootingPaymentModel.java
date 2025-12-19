@@ -4,15 +4,11 @@ import lombok.Data;
 
 @Data
 public class ShootingPaymentModel {
-
     private Integer bookingId;     
     private Integer userId;
-
     private Double amount;
-
     private String fullName;
     private String email;
-    private String phone;
-
+    private String phoneNumber;
     private String txnid;         
 }

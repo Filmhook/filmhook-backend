@@ -41,7 +41,8 @@ public class Payments {
 	    
 	    private String fullName;
 	    private String email;
-
+	    
+        private String phoneNumber;
 	 
 	    @Column(unique = true)
 	    private String txnid;    
