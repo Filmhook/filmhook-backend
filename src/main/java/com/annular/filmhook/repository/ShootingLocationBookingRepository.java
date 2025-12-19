@@ -66,5 +66,8 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
 
     
     List<ShootingLocationBooking> findByClient_UserIdOrderByUpdatedAtDesc(Integer clientId);
-
+    boolean existsByProperty_IdAndStatusIn(
+            Integer propertyId,
+            List<BookingStatus> statuses
+    );
 }

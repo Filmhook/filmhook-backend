@@ -18,7 +18,7 @@ public class PaymentsDTO {
 	    private Integer userId;
 	    private Double amount;
 
-	    private String firstname;
+	    private String fullName;
 	    private String email;
 	    private String phone;
 

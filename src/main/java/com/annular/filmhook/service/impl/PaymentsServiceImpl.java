@@ -63,7 +63,7 @@ public class PaymentsServiceImpl implements PaymentsService {
 				dto.getTxnid(),
 				String.format("%.2f", dto.getAmount()),
 				productInfo,
-				dto.getFirstname(),
+				dto.getFullName(),
 				dto.getEmail(),
 				salt
 				);
@@ -73,7 +73,7 @@ public class PaymentsServiceImpl implements PaymentsService {
 				.referenceId(dto.getReferenceId())
 				.moduleType(dto.getModuleType())
 				.userId(dto.getUserId())
-				.firstname(dto.getFirstname())
+				.fullName(dto.getFullName())
 				.email(dto.getEmail())
 				.amount(dto.getAmount())
 				.paymentStatus("PENDING")

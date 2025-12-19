@@ -31,15 +31,15 @@ public class Payments {
 	    @GeneratedValue(strategy = GenerationType.IDENTITY)
 	    private Integer id;
 
-	    private Integer referenceId;  // bookingId OR auditionId etc.
+	    private Integer referenceId;  
 	                                 
 
 	    @Enumerated(EnumType.STRING)
-	    private PaymentModule moduleType;// shooting location , audition etc 
+	    private PaymentModule moduleType;
 	    
 	    private Integer userId;
 	    
-	    private String firstname;
+	    private String fullName;
 	    private String email;
 
 	 

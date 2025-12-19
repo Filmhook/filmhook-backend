@@ -1128,45 +1128,54 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Override
 	@Transactional
 	public Response deletePropertyById(Integer id) {
-		try {
-			// Logged-in user ID
-			Integer userId = userDetails.userInfo().getId();
+	    try {
+	        Integer userId = userDetails.userInfo().getId();
 
-			// Fetch property
-			ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(id)
-					.orElse(null);
+	        ShootingLocationPropertyDetails property =
+	                propertyDetailsRepository.findById(id).orElse(null);
 
-			if (property == null) {
-				logger.warn("Property with ID {} not found", id);
-				return new Response(0, "Property not found with ID: " + id, null);
-			}
+	        if (property == null) {
+	            return new Response(0, "Property not found", null);
+	        }
 
-			// Validate if property has owner
-			if (property.getUser() == null) {
-				logger.error("Property ID {} has no owner assigned!", id);
-				return new Response(0, "Property owner information missing", null);
-			}
+	        // Owner check
+	        if (property.getUser() == null ||
+	            !property.getUser().getUserId().equals(userId)) {
 
-			// ❗ FIXED — compare correct field: property.getUser().getId()
-			if (!property.getUser().getUserId().equals(userId)) {
-				logger.warn("User {} is NOT authorized to delete property ID {}", userId, id);
-				return new Response(0, "You are not authorized to delete this property", null);
-			}
+	            return new Response(0, "You are not authorized to delete this property", null);
+	        }
 
-			// Soft delete
-			property.setStatus(false);
-			property.setUpdatedBy(userId);
-			property.setUpdatedOn(LocalDateTime.now());
+	        // Block delete if ACTIVE bookings exist
+	        boolean hasActiveBookings =
+	                bookingRepository.existsByProperty_IdAndStatusIn(
+	                        id,
+	                        List.of(
+	                                BookingStatus.INPROGRESS,
+	                                BookingStatus.CONFIRMED
+	                        )
+	                );
 
-			propertyDetailsRepository.save(property);
+	        if (hasActiveBookings) {
+	            return new Response(
+	                    0,
+	                    "Property cannot be deleted because it has active bookings",
+	                    null
+	            );
+	        }
 
-			logger.info("Property ID {} soft deleted successfully by user ID {}", id, userId);
-			return new Response(1, "Property deleted successfully", null);
+	        //  SOFT DELETE
+	        property.setStatus(false);
+	        property.setUpdatedBy(userId);
+	        property.setUpdatedOn(LocalDateTime.now());
 
-		} catch (Exception e) {
-			logger.error("Error deleting property with ID {}: {}", id, e.getMessage(), e);
-			return new Response(0, "Something went wrong while deleting the property", null);
-		}
+	        propertyDetailsRepository.save(property);
+
+	        return new Response(1, "Property deleted successfully", null);
+
+	    } catch (Exception e) {
+	        logger.error("Delete property failed for ID {}: {}", id, e.getMessage(), e);
+	        return new Response(0, "Something went wrong while deleting property", null);
+	    }
 	}
 
 
@@ -2359,7 +2368,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		}
 
 		// 4️⃣ Validate firstname & email
-		if (model.getFirstname() == null || model.getFirstname().trim().isEmpty()) {
+		if (model.getFullName() == null || model.getFullName().trim().isEmpty()) {
 			throw new RuntimeException("Firstname is required");
 		}
 		if (model.getEmail() == null || model.getEmail().trim().isEmpty()) {
@@ -2377,7 +2386,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.moduleType(PaymentModule.SHOOTING_LOCATION)
 				.userId(model.getUserId())
 				.amount(model.getAmount())
-				.firstname(model.getFirstname())
+				.fullName(model.getFullName())
 				.email(model.getEmail())
 				.phone(model.getPhone())
 				.productInfo("Shooting Location Booking")
@@ -2461,7 +2470,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 //			                + "<div class='row'><div class='label'>Check-in</div><div class='value'>" + booking.getShootStartDate() + "</div></div>"
 //			                + "<div class='row'><div class='label'>Check-out</div><div class='value'>" + booking.getShootEndDate() + "</div></div>"
-+ "<div class='row'><div class='label'>Guest</div><div class='value'>" + payment.getFirstname() + "</div></div>"
++ "<div class='row'><div class='label'>Guest</div><div class='value'>" + payment.getFullName() + "</div></div>"
 + "</div>"
 
 			                // PAYMENT SUMMARY
@@ -2491,7 +2500,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			                + "</div></body></html>";
 			// 5️⃣ Call your mail util
 			mailNotification.sendEmail(
-					payment.getFirstname(),
+					payment.getFullName(),
 					payment.getEmail(),
 					"Shooting Location Booking Confirmed",
 					mailContent
@@ -2522,7 +2531,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 								+ "    <div class='line'><span class='label'>Property</span><span class='val'>" + booking.getProperty().getPropertyName() + "</span></div>"
 								//								+ "    <div class='line'><span class='label'>From</span><span class='val'>" + booking.getShootStartDate() + "</span></div>"
 								//								+ "    <div class='line'><span class='label'>To</span><span class='val'>" + booking.getShootEndDate() + "</span></div>"
-								+ "    <div class='line'><span class='label'>Guest</span><span class='val'>" + payment.getFirstname() + " (" + payment.getEmail() + ")</span></div>"
+								+ "    <div class='line'><span class='label'>Guest</span><span class='val'>" + payment.getFullName() + " (" + payment.getEmail() + ")</span></div>"
 								+ "    <div class='line'><span class='label'>Amount (credited to wallet)</span><span class='val'>&#8377;" + payment.getAmount() + "</span></div>"
 								+ ""
 								+ "    <div class='note'>The payment has been credited to your FilmHook wallet. You may withdraw the funds after the booking period is completed and the shoot has concluded.</div>"
@@ -2547,7 +2556,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			byte[] pdfBytes = generateInvoicePdf(payment, booking);
 
 			mailNotification.sendEmailWithAttachment(
-					payment.getFirstname(),
+					payment.getFullName(),
 					payment.getEmail(),
 					"Shooting Location Booking Confirmed",
 					mailContent,
@@ -2602,7 +2611,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			// 5️⃣ Send failure email
 			mailNotification.sendEmail(
-					payment.getFirstname(),
+					payment.getFullName(),
 					payment.getEmail(),
 					"Shooting Location Payment Failed ❌",
 					mailContent
@@ -2693,7 +2702,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			billed.add(new Paragraph("BILLED TO")
 					.setFont(fontBold).setFontSize(10).setFontColor(ColorConstants.DARK_GRAY));
-			billed.add(new Paragraph(safe(payment.getFirstname()))
+			billed.add(new Paragraph(safe(payment.getFullName()))
 					.setFont(fontRegular).setFontSize(11));
 			billed.add(new Paragraph("Email: " + safe(payment.getEmail()))
 					.setFont(fontRegular).setFontSize(10).setFontColor(ColorConstants.GRAY));

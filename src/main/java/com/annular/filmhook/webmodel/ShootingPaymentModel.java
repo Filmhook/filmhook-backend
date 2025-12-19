@@ -10,7 +10,7 @@ public class ShootingPaymentModel {
 
     private Double amount;
 
-    private String firstname;
+    private String fullName;
     private String email;
     private String phone;
 
