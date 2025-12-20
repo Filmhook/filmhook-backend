@@ -67,10 +67,10 @@ public interface ShootingLocationService {
 			Integer industryId,
 			Integer userId,
 			LocalDate startDate,
-			LocalDate endDate, SlotType slotType);
+			LocalDate endDate);
 	ShootingLocationPropertyReviewDTO replyToReview(Integer reviewId, Integer ownerUserId, String replyText);
 	ShootingLocationPropertyReviewDTO deleteReply(Integer reviewId, Integer ownerUserId);
 	ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request);
 	List<BookingWithPropertyDTO> getBookingHistoryByClientId(Integer clientId);
-	List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(String sortBy, String order, String propertyType, String priceType);
+	List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(Integer industryId,String sortBy, String order, String propertyType, String priceType);
 }

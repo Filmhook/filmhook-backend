@@ -834,7 +834,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			Integer industryId,
 			Integer userId,
 			LocalDate startDate,
-			LocalDate endDate, SlotType slotType) {
+			LocalDate endDate) {
 
 
 		try {
@@ -849,9 +849,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
 				throw new RuntimeException("Start Date cannot be after End Date");
 			}
-			if (slotType == null) {
-			    throw new RuntimeException("SlotType is required for availability search");
-			}
 
 
 			// 1️⃣ Fetch all active properties for the single industry
@@ -864,46 +861,40 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				return Collections.emptyList();
 			}
 
-			// 2️⃣ If search dates provided -> filter strictly
+			// 2️⃣ Filter ONLY by availability window
 			if (startDate != null && endDate != null) {
 
-				List<LocalDate> selectedDates = startDate.datesUntil(endDate.plusDays(1)).collect(Collectors.toList());
+			    properties = properties.stream()
+			        .filter(p -> {
 
-				properties = properties.stream()
-						.filter(p -> {
+			            LocalDate availabilityStart = p.getAvailabilityStartDate();
+			            LocalDate availabilityEnd = p.getAvailabilityEndDate();
 
-							// Exclude null availability fields
-							if (p.getAvailabilityStartDate() == null || p.getAvailabilityEndDate() == null) {
-								logger.debug("Property {} excluded: availabilityStart/End is null", p.getId());
-								return false;
-							}
+			            // availability dates must exist
+			            if (availabilityStart == null || availabilityEnd == null) {
+			                logger.debug("Property {} excluded: availability dates missing", p.getId());
+			                return false;
+			            }
 
-							// Ensure property's availability window fully contains search window
-							if (p.getAvailabilityStartDate().isAfter(startDate) || p.getAvailabilityEndDate().isBefore(endDate)) {
-								logger.debug("Property {} excluded: availability window {} - {} does not contain search {} - {}",
-										p.getId(), p.getAvailabilityStartDate(), p.getAvailabilityEndDate(), startDate, endDate);
-								return false;
-							}
+			            //🔥 ONLY CHECK — search dates inside availability
+			            boolean valid =
+			                    !startDate.isBefore(availabilityStart) &&
+			                    !endDate.isAfter(availabilityEnd);
 
-							// Generate available dates for the property (removes paused and confirmed bookings)
-							List<LocalDate> availableDates;
-							try {
-								availableDates = getAvailableDatesForProperty(p.getId(), slotType);
-							} catch (RuntimeException ex) {
-								// If generation fails treat property as unavailable for safety
-								logger.warn("Unable to generate availableDates for property {}: {}", p.getId(), ex.getMessage());
-								return false;
-							}
+			            if (!valid) {
+			                logger.debug(
+			                    "Property {} excluded: search {} - {} outside availability {} - {}",
+			                    p.getId(),
+			                    startDate, endDate,
+			                    availabilityStart, availabilityEnd
+			                );
+			            }
 
-							// Ensure every selected date exists in availableDates
-							boolean allAvailable = selectedDates.stream().allMatch(availableDates::contains);
-							if (!allAvailable) {
-								logger.debug("Property {} excluded: not all selectedDates are available", p.getId());
-							}
-							return allAvailable;
-						})
-						.collect(Collectors.toList());
+			            return valid;
+			        })
+			        .collect(Collectors.toList());
 			}
+
 
 			if (properties.isEmpty()) {
 				return Collections.emptyList();
@@ -968,10 +959,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			return dtoList;
 
-		} catch (Exception e) {
-			logger.error("Error fetching properties:", e);
-			throw new RuntimeException(e.getMessage(), e);
-		}
+		} catch (RuntimeException e) {
+	        throw e;
+	    } 
 	}
 
 	@Override
@@ -3318,13 +3308,15 @@ public List<LocalDate> getAvailableDatesForProperty(
 
 	@Override
 	public List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(
+			   Integer industryId,
 			String sortBy,
 			String order,
 			String propertyType,
 			String priceType) {
 
 		List<ShootingLocationPropertyDetails> entities =
-				propertyDetailsRepository.findAll();
+		        propertyDetailsRepository.findByIndustryIndustryIdAndStatusTrue(industryId);
+
 
 		Comparator<ShootingLocationPropertyDetails> comparator;
 

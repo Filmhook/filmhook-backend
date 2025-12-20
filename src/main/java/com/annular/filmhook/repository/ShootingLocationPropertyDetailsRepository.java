@@ -29,6 +29,7 @@ public interface ShootingLocationPropertyDetailsRepository extends JpaRepository
 	    @Query("UPDATE ShootingLocationPropertyDetails s SET s.status = false WHERE s.user.id = :userId")
 	    void deactivateShootingPropertyByUserId(@Param("userId") Integer userId);
 	
-	
+	 List<ShootingLocationPropertyDetails> findByIndustryIndustryIdAndStatusTrue(Integer industryId);
+
 }
 	

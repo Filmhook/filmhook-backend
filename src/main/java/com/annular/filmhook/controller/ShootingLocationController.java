@@ -566,18 +566,35 @@ public class ShootingLocationController {
 	}
 
 	@PostMapping("/properties/byIndustry")
-	public ResponseEntity<?> getProperties(@RequestBody ShootingPropertyByIndustryAndDateRequest req) {
-		List<ShootingLocationPropertyDetailsDTO> result =
-				service.getPropertiesByIndustryIdsAndDates(
-						req.getIndustryId(),
-						req.getUserId(),
-						req.getStartDate(), 
-						req.getEndDate(),
-						req.getSlotType()
-						);
+	public ResponseEntity<?> getProperties(
+	        @RequestBody ShootingPropertyByIndustryAndDateRequest req) {
 
-		return ResponseEntity.ok(new Response(1, "Success", result));
+	    try {
+
+	        List<ShootingLocationPropertyDetailsDTO> result =
+	                service.getPropertiesByIndustryIdsAndDates(
+	                        req.getIndustryId(),
+	                        req.getUserId(),
+	                        req.getStartDate(),
+	                        req.getEndDate()
+	                );
+
+	        return ResponseEntity.ok(
+	                new Response(1, "Success", result)
+	        );
+
+	    } catch (RuntimeException e) {
+	        return ResponseEntity.ok(new Response(0, e.getMessage(), null));
+
+	    } catch (Exception e) {
+	        // Unexpected system errors
+	        logger.error("Error in getProperties by industry API", e);
+	        return ResponseEntity
+	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(0, "Something went wrong", null));
+	    }
 	}
+
 
 
 
@@ -600,6 +617,7 @@ public class ShootingLocationController {
 
 	@GetMapping("/properties/sort")
 	public ResponseEntity<?> sortProperties(
+			@RequestParam  Integer industryId,
 	        @RequestParam String sortBy,          // price | rating | rating_price
 	        @RequestParam(defaultValue = "asc") String order,
 	        @RequestParam(required = false) String propertyType,
@@ -607,7 +625,7 @@ public class ShootingLocationController {
 
 	    return ResponseEntity.ok(
 	            service.getPropertiesSorted(
-	                    sortBy, order, propertyType, priceType)
+	            		industryId,sortBy, order, propertyType, priceType )
 	    );
 	}
 
