@@ -3358,80 +3358,153 @@ public List<LocalDate> getAvailableDatesForProperty(
 	}
 
 
-	@Override
-	public List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(
-			   Integer industryId,
-			String sortBy,
-			String order,
-			String propertyType,
-			String priceType) {
+@Override
+public List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(
+        Integer industryId,
+        String sortBy,
+        String order,
+        String propertyType,
+        String priceType) {
 
-		List<ShootingLocationPropertyDetails> entities =
-		        propertyDetailsRepository.findByIndustryIndustryIdAndStatusTrue(industryId);
+    // 1️⃣ Fetch active properties
+    List<ShootingLocationPropertyDetails> entities =
+            propertyDetailsRepository.findByIndustryIndustryIdAndStatusTrue(industryId);
 
+    if (entities == null || entities.isEmpty()) {
+        return Collections.emptyList();
+    }
 
-		Comparator<ShootingLocationPropertyDetails> comparator;
+    // 2️⃣ Build comparator
+    Comparator<ShootingLocationPropertyDetails> comparator;
 
-		// ---------- RATING + PRICE ----------
-		if ("rating_price".equalsIgnoreCase(sortBy)) {
+    // ---------- RATING + PRICE ----------
+    if ("rating_price".equalsIgnoreCase(sortBy)) {
 
-			Comparator<Double> ratingComparator =
-					"desc".equalsIgnoreCase(order)
-					? Comparator.reverseOrder()
-							: Comparator.naturalOrder();
+        Comparator<Double> ratingComparator =
+                "desc".equalsIgnoreCase(order)
+                        ? Comparator.reverseOrder()
+                        : Comparator.naturalOrder();
 
-			Comparator<Double> priceComparator =
-					"desc".equalsIgnoreCase(order)
-					? Comparator.reverseOrder()
-							: Comparator.naturalOrder();
+        Comparator<Double> priceComparator =
+                "desc".equalsIgnoreCase(order)
+                        ? Comparator.reverseOrder()
+                        : Comparator.naturalOrder();
 
-			comparator = Comparator
-					.comparing(
-							(ShootingLocationPropertyDetails p) ->
-							p.getAdminRating() != null ? p.getAdminRating() : 0.0,
-									ratingComparator
-							)
-					.thenComparing(
-							p -> getPrice(p, propertyType, priceType),
-							priceComparator
-							);
-		}
+        comparator = Comparator
+                .comparing(
+                        (ShootingLocationPropertyDetails p) ->
+                                p.getAdminRating() != null ? p.getAdminRating() : 0.0,
+                        ratingComparator
+                )
+                .thenComparing(
+                        p -> getPrice(p, propertyType, priceType),
+                        priceComparator
+                );
+    }
 
-		// ---------- PRICE ONLY ----------
-		else if ("price".equalsIgnoreCase(sortBy)) {
+    // ---------- PRICE ONLY ----------
+    else if ("price".equalsIgnoreCase(sortBy)) {
 
-			comparator = Comparator.comparing(
-					p -> getPrice(p, propertyType, priceType)
-					);
+        comparator = Comparator.comparing(
+                p -> getPrice(p, propertyType, priceType)
+        );
 
-			if ("desc".equalsIgnoreCase(order)) {
-				comparator = comparator.reversed();
-			}
-		}
+        if ("desc".equalsIgnoreCase(order)) {
+            comparator = comparator.reversed();
+        }
+    }
 
-		// ---------- RATING ONLY ----------
-		else if ("rating".equalsIgnoreCase(sortBy)) {
+    // ---------- RATING ONLY ----------
+    else if ("rating".equalsIgnoreCase(sortBy)) {
 
-			comparator = Comparator.comparing(
-					(ShootingLocationPropertyDetails p) ->
-					p.getAdminRating() != null ? p.getAdminRating() : 0.0
-					);
+        comparator = Comparator.comparing(
+                (ShootingLocationPropertyDetails p) ->
+                        p.getAdminRating() != null ? p.getAdminRating() : 0.0
+        );
 
-			if ("desc".equalsIgnoreCase(order)) {
-				comparator = comparator.reversed();
-			}
-		}
+        if ("desc".equalsIgnoreCase(order)) {
+            comparator = comparator.reversed();
+        }
+    }
 
-		// ---------- FALLBACK ----------
-		else {
-			comparator = Comparator.comparing(ShootingLocationPropertyDetails::getId);
-		}
+    // ---------- FALLBACK ----------
+    else {
+        comparator = Comparator.comparing(ShootingLocationPropertyDetails::getId);
+    }
 
-		return entities.stream()
-				.sorted(comparator)
-				.map(shootingLocationPropertyConverter::entityToDto)
-				.collect(Collectors.toList());
-	}
+    // 3️⃣ Preload likes (avoid N+1)
+    Set<Integer> likedPropertyIds = likeRepository.findAll()
+            .stream()
+            .filter(PropertyLike::getStatus)
+            .map(l -> l.getProperty().getId())
+            .collect(Collectors.toSet());
+
+    // 4️⃣ Sort + Enrich DTO
+    List<ShootingLocationPropertyDetailsDTO> dtoList = new ArrayList<>();
+
+    for (ShootingLocationPropertyDetails p :
+            entities.stream().sorted(comparator).collect(Collectors.toList())) {
+
+        ShootingLocationPropertyDetailsDTO dto =
+                shootingLocationPropertyConverter.entityToDto(p);
+
+        // ---------- Industry ----------
+        if (p.getIndustry() != null) {
+            dto.setIndustryId(p.getIndustry().getIndustryId());
+            dto.setIndustryName(p.getIndustry().getIndustryName());
+        }
+
+        // ---------- Likes ----------
+        dto.setLikedByUser(likedPropertyIds.contains(p.getId()));
+        dto.setLikeCount(likeRepository.countLikesByPropertyId(p.getId()));
+
+        // ---------- Media ----------
+        dto.setImageUrls(
+                mediaFilesService
+                        .getMediaFilesByCategoryAndRefId(
+                                MediaFileCategory.shootingLocationImage, p.getId())
+                        .stream()
+                        .map(FileOutputWebModel::getFilePath)
+                        .collect(Collectors.toList())
+        );
+
+        dto.setGovernmentIdUrls(
+                mediaFilesService
+                        .getMediaFilesByCategoryAndRefId(
+                                MediaFileCategory.shootingGovermentId, p.getId())
+                        .stream()
+                        .map(FileOutputWebModel::getFilePath)
+                        .collect(Collectors.toList())
+        );
+
+        dto.setVerificationVideo(
+                mediaFilesService
+                        .getMediaFilesByCategoryAndRefId(
+                                MediaFileCategory.shootingLocationVerificationVideo, p.getId())
+                        .stream()
+                        .map(FileOutputWebModel::getFilePath)
+                        .collect(Collectors.toList())
+        );
+
+        // ---------- Reviews ----------
+        ShootingLocationPropertyReviewResponseDTO reviewData =
+                getReviewsByPropertyId(p.getId(), null);
+
+        dto.setReviews(reviewData.getReviews());
+        dto.setAverageRating(reviewData.getAverageRating());
+        dto.setTotalReviews(reviewData.getTotalReviews());
+        dto.setFiveStarPercentage(reviewData.getFiveStarPercentage());
+        dto.setFourStarPercentage(reviewData.getFourStarPercentage());
+        dto.setThreeStarPercentage(reviewData.getThreeStarPercentage());
+        dto.setTwoStarPercentage(reviewData.getTwoStarPercentage());
+        dto.setOneStarPercentage(reviewData.getOneStarPercentage());
+
+        dtoList.add(dto);
+    }
+
+    return dtoList;
+}
+
 
 
 	private Double getPrice(
