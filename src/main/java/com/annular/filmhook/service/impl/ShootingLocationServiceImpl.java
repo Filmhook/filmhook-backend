@@ -834,8 +834,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			Integer industryId,
 			Integer userId,
 			LocalDate startDate,
-			LocalDate endDate) {
-
+			LocalDate endDate,
+			PropertyBookingType propertyType) {
 
 		try {
 
@@ -894,10 +894,25 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			        })
 			        .collect(Collectors.toList());
 			}
+			// 2️⃣.5 Filter by property booking type (ONLY if provided)
+			if (propertyType != null) {
+
+			    properties = properties.stream()
+			        .filter(p -> {
+
+			            ShootingLocationSubcategorySelection s = p.getSubcategorySelection();
+			            if (s == null) return false;
+
+			            return propertyType == PropertyBookingType.ENTIRE_PROPERTY
+			                    ? Boolean.TRUE.equals(s.getEntireProperty())
+			                    : Boolean.TRUE.equals(s.getSingleProperty());
+			        })
+			        .collect(Collectors.toList());
+			}
 
 
 			if (properties.isEmpty()) {
-				return Collections.emptyList();
+			    return Collections.emptyList();
 			}
 
 			// 3️⃣ Preload user likes
@@ -914,6 +929,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				ShootingLocationPropertyDetailsDTO dto = shootingLocationPropertyConverter.entityToDto(p);
 
+			    // ---- CLEAN PRICES BASED ON PROPERTY TYPE ----
+	            applyPropertyTypeCleanup(dto, propertyType);
+	            
 				// Industry info (entity might be lazy)
 				if (p.getIndustry() != null) {
 					dto.setIndustryId(p.getIndustry().getIndustryId());
@@ -963,6 +981,40 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	        throw e;
 	    } 
 	}
+	
+	private void applyPropertyTypeCleanup(
+	        ShootingLocationPropertyDetailsDTO dto,
+	        PropertyBookingType propertyType) {
+
+	    if (propertyType == null || dto.getSubcategorySelectionDTO() == null) return;
+
+	    ShootingLocationSubcategorySelectionDTO s =
+	            dto.getSubcategorySelectionDTO();
+
+	    if (propertyType == PropertyBookingType.ENTIRE_PROPERTY) {
+
+	        // keep ENTIRE, remove SINGLE
+	        s.setSingleProperty(false);
+	        s.setSingleDayPropertyPrice(null);
+	        s.setSingleNightPropertyPrice(null);
+	        s.setSingleFullDayPropertyPrice(null);
+	        s.setSinglePropertyDayDiscountPercent(null);
+	        s.setSinglePropertyNightDiscountPercent(null);
+	        s.setSinglePropertyFullDayDiscountPercent(null);
+
+	    } else if (propertyType == PropertyBookingType.SINGLE_PROPERTY) {
+
+	        // keep SINGLE, remove ENTIRE
+	        s.setEntireProperty(false);
+	        s.setEntireDayPropertyPrice(null);
+	        s.setEntireNightPropertyPrice(null);
+	        s.setEntireFullDayPropertyPrice(null);
+	        s.setEntirePropertyDayDiscountPercent(null);
+	        s.setEntirePropertyNightDiscountPercent(null);
+	        s.setEntirePropertyFullDayDiscountPercent(null);
+	    }
+	}
+
 
 	@Override
 	public ShootingLocationPropertyReviewResponseDTO getReviewsByPropertyId(

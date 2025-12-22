@@ -33,6 +33,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Payments;
+import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.model.SlotType;
 import com.annular.filmhook.model.User;
@@ -576,7 +577,8 @@ public class ShootingLocationController {
 	                        req.getIndustryId(),
 	                        req.getUserId(),
 	                        req.getStartDate(),
-	                        req.getEndDate()
+	                        req.getEndDate(),
+	                       req. getPropertyType()
 	                );
 
 	        return ResponseEntity.ok(

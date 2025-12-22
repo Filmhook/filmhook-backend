@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Payments;
+import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.SlotType;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.BookingWithPropertyDTO;
@@ -67,10 +68,17 @@ public interface ShootingLocationService {
 			Integer industryId,
 			Integer userId,
 			LocalDate startDate,
-			LocalDate endDate);
+			LocalDate endDate,
+			PropertyBookingType propertyType);
 	ShootingLocationPropertyReviewDTO replyToReview(Integer reviewId, Integer ownerUserId, String replyText);
 	ShootingLocationPropertyReviewDTO deleteReply(Integer reviewId, Integer ownerUserId);
 	ResponseEntity<?> saveAdminPropertyRating(ShootingLocationPropertyDetailsDTO request);
 	List<BookingWithPropertyDTO> getBookingHistoryByClientId(Integer clientId);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(Integer industryId,String sortBy, String order, String propertyType, String priceType);
+
+
+
+
+
+
 }
