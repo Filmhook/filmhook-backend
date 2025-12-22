@@ -181,6 +181,8 @@ public class ShootingLocationPropertyDetails {
     
     private String localAuthorities;
     private String governmentPermission;
+    @Column(columnDefinition = "TEXT")
+    private String publicPermission;
 
     private Double additionalChargesForOverTime;
 	private String propertyDamageDescription;

@@ -133,6 +133,7 @@ public class ShootingLocationPropertyDetailsDTO {
     private String crewAccidentLiabilityDescription;
     private String localAuthorities;
     private String governmentPermission;
+    private String publicPermission;
     private Double additionalChargesForOverTime;
 
 	
