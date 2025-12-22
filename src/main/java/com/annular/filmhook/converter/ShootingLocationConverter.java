@@ -251,6 +251,7 @@ public class ShootingLocationConverter {
 	            .ownerPermission(dto.getOwnerPermission())
 	            .localAuthorities(dto.getLocalAuthorities())
 	            .governmentPermission(dto.getGovernmentPermission())
+	            .publicPermission(dto.getPublicPermission())
 	            .propertyDamageDescription(dto.getPropertyDamageDescription())
 	            .crewAccidentLiabilityDescription(dto.getCrewAccidentLiabilityDescription())
 	            .additionalChargesForOverTime(dto.getAdditionalChargesForOverTime())
