@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.persistence.NonUniqueResultException;
+
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -50,13 +52,24 @@ public class UserController {
 
     @GetMapping("/getUserByUserId")
     public Response getUserByUserId(@RequestParam("userId") Integer userId) {
-        Optional<UserWebModel> user = userService.getUserByUserId(userId);
-        if (user.isPresent()) {
-            return new Response(1, "User found...", user);
-        } else {
-            return new Response(-1, "User not found...", null);
+        logger.info("🔍 getUserByUserId API called with userId: {}", userId);
+        try {
+            Optional<UserWebModel> user = userService.getUserByUserId(userId);
+
+            if (user.isPresent()) {
+                logger.info("✅ User found for userId: {}", userId);
+                return new Response(1, "User found...", user.get());
+            } else {
+                logger.warn("⚠️ User not found for userId: {}", userId);
+                return new Response(-1, "User not found...", null);
+            }
+
+        } catch (Exception e) {
+            logger.error("❌ Exception in getUserByUserId for userId: {}", userId, e);
+            return new Response(-1, "Internal server error", null);
         }
     }
+
 
     // Biography Section
 

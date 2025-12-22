@@ -25,7 +25,8 @@ public interface FriendRequestRepository extends JpaRepository<FollowersRequest,
 
 	boolean existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(Integer senderId, Integer receiverId, boolean isActive);
 
-	Optional<FollowersRequest> findByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
-			Integer senderId, Integer receiverId, Boolean isActive
-			);
+	List<FollowersRequest>
+	findByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
+	    Integer senderId, Integer receiverId, Boolean isActive
+	);
 }
