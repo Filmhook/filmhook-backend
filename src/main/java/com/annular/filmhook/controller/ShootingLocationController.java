@@ -624,11 +624,25 @@ public class ShootingLocationController {
 	        @RequestParam(defaultValue = "asc") String order,
 	        @RequestParam(required = false) String propertyType,
 	        @RequestParam(required = false) String priceType) {
+try {
+	   
+	    		 List<ShootingLocationPropertyDetailsDTO> result =  service.getPropertiesSorted(
+	            		industryId,sortBy, order, propertyType, priceType );
+	    		  return ResponseEntity.ok(
+	  	                new Response(1, "Success", result)
+	  	        );
 
-	    return ResponseEntity.ok(
-	            service.getPropertiesSorted(
-	            		industryId,sortBy, order, propertyType, priceType )
-	    );
+	  	    } catch (RuntimeException e) {
+	  	        return ResponseEntity.ok(new Response(0, e.getMessage(), null));
+
+	  	    } catch (Exception e) {
+	  	        // Unexpected system errors
+	  	        logger.error("Error in getProperties by industry API", e);
+	  	        return ResponseEntity
+	  	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+	  	                .body(new Response(0, "Something went wrong", null));
+	  	    }
+	   
 	}
 
 	
