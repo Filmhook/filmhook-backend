@@ -1491,7 +1491,7 @@ public class UserServiceImpl implements UserService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while retrieving the delete status.");
 		}
 	}
-
+	@Transactional
 	@Override
 	public ResponseEntity<?> confirmdeleteUserId(Integer userId, String password) {
 		// Validate input parameters
@@ -1514,12 +1514,17 @@ public class UserServiceImpl implements UserService {
 		}
 
 		// Deactivate the user account (set 'status' flag to false)
-		if (!user.getStatus()) {
-			return ResponseEntity.badRequest().body(new Response(0, "fail", "User is already deactivated."));
-		}
+		  if (Boolean.TRUE.equals(user.getPermanentDelete())) {
+		        return ResponseEntity.badRequest()
+		                .body(new Response(0, "fail", "User already deleted"));
+		    }
 		user.setStatus(false); // Ensure 'status' is a boolean or equivalent flag in the User entity
+		user.setPermanentDelete(true);
+		user.setUpdatedOn(new Date());
 		userRepository.save(user); // Save changes to the database
+		
 		softDeleteUserData(userId);
+		 
 		// Send deactivation email
 		try {
 			boolean emailSent = sendVerificationEmail(user, false); // false = deactivation context

@@ -182,8 +182,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	Integer countByNotificationCountIsNullOrNotificationCountFalseAndStatusTrue();
 
 
-	@Query("SELECT u FROM User u WHERE u.email = :email AND u.status = true")
-	Optional<User> findActiveUserByEmail(@Param("email") String email);
+	Optional<User> findByEmailAndStatusFalseAndPermanentDeleteFalse(String email);
+
+	Optional<User> findByEmailAndStatusFalseAndPermanentDeleteTrue(String email);
+
+	Optional<User> findByEmailAndStatusTrue(String email);
+
+	
 	List<User> findByFilmHookCodeContainingIgnoreCaseAndStatus(String filmHookCode, Boolean status);
 
 	@Query("SELECT u FROM User u WHERE u.email = :email AND u.status = false")

@@ -184,6 +184,10 @@ public class User {
 
     @Column(name = "emailOtp")
     private Integer emailOtp;
+    
+    @Column(name = "email_otp_created_on")
+    private Date emailOtpCreatedOn;
+
 
     @Column(name = "film_hook_code")
     private String filmHookCode;
@@ -306,5 +310,9 @@ public class User {
 	@Column(name = "last_notification_open_time")
 	private Date lastNotificationOpenTime;
 	
+	@Builder.Default
+	@Column(name = "permanent_delete", columnDefinition = "BOOLEAN DEFAULT 0")
+	private Boolean permanentDelete = false;
+
 	
 }
