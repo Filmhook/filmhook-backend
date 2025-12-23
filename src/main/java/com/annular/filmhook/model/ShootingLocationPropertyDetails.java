@@ -205,7 +205,7 @@ public class ShootingLocationPropertyDetails {
 	private Integer adminRatedBy;
 	 
 	
-	private String ShootingHeldDescription;
+	private String shootingHeldDescription;
 	
 
 }

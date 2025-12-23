@@ -62,12 +62,8 @@ import lombok.RequiredArgsConstructor;
 public class ShootingLocationController {
 	@Autowired
 	private ShootingLocationService service;
-
-
-
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
-
-
+	
 	@GetMapping("/types")
 	public ResponseEntity<?> getTypes() {
 		try {
@@ -430,6 +426,7 @@ public class ShootingLocationController {
 					.body(new Response(-1, "Failed to get average rating", null));
 		}
 	}
+	
 	@GetMapping("/property/{propertyId}/{userId}")
 	public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId, @PathVariable Integer userId ) {
 		logger.info("Fetching reviews for property ID: {}", propertyId);
@@ -480,9 +477,7 @@ public class ShootingLocationController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
-
-
-
+	
 	@DeleteMapping("/deleteReview")
 	public ResponseEntity<Response> deleteReview(
 			@RequestParam Integer reviewId,
@@ -565,41 +560,37 @@ public class ShootingLocationController {
 
 		return service.handleShootingLocationPaymentFailed(txnid, reason);
 	}
-
 	@PostMapping("/properties/byIndustry")
 	public ResponseEntity<?> getProperties(
-	        @RequestBody ShootingPropertyByIndustryAndDateRequest req) {
+			@RequestBody ShootingPropertyByIndustryAndDateRequest req) {
 
-	    try {
+		try {
 
-	        List<ShootingLocationPropertyDetailsDTO> result =
-	                service.getPropertiesByIndustryIdsAndDates(
-	                        req.getIndustryId(),
-	                        req.getUserId(),
-	                        req.getStartDate(),
-	                        req.getEndDate(),
-	                       req. getPropertyType()
-	                );
+			List<ShootingLocationPropertyDetailsDTO> result =
+					service.getPropertiesByIndustryIdsAndDates(
+							req.getIndustryId(),
+							req.getUserId(),
+							req.getStartDate(),
+							req.getEndDate(),
+							req. getPropertyType()
+							);
 
-	        return ResponseEntity.ok(
-	                new Response(1, "Success", result)
-	        );
+			return ResponseEntity.ok(
+					new Response(1, "Success", result)
+					);
 
-	    } catch (RuntimeException e) {
-	        return ResponseEntity.ok(new Response(0, e.getMessage(), null));
+		} catch (RuntimeException e) {
+			return ResponseEntity.ok(new Response(0, e.getMessage(), null));
 
-	    } catch (Exception e) {
-	        // Unexpected system errors
-	        logger.error("Error in getProperties by industry API", e);
-	        return ResponseEntity
-	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(0, "Something went wrong", null));
-	    }
+		} catch (Exception e) {
+			// Unexpected system errors
+			logger.error("Error in getProperties by industry API", e);
+			return ResponseEntity
+					.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(0, "Something went wrong", null));
+		}
 	}
-
-
-
-
+	
 	@PostMapping("/saveAdminRating")
 	public ResponseEntity<?> saveAdminRating(
 			@RequestBody ShootingLocationPropertyDetailsDTO request) {
@@ -615,38 +606,38 @@ public class ShootingLocationController {
 				service.getBookingHistoryByClientId(clientId)
 				);
 	}
-	
+
 
 	@GetMapping("/properties/sort")
 	public ResponseEntity<?> sortProperties(
 			@RequestParam  Integer industryId,
-	        @RequestParam String sortBy,          // price | rating | rating_price
-	        @RequestParam(defaultValue = "asc") String order,
-	        @RequestParam(required = false) String propertyType,
-	        @RequestParam(required = false) String priceType) {
-try {
-	   
-	    		 List<ShootingLocationPropertyDetailsDTO> result =  service.getPropertiesSorted(
-	            		industryId,sortBy, order, propertyType, priceType );
-	    		  return ResponseEntity.ok(
-	  	                new Response(1, "Success", result)
-	  	        );
+			@RequestParam String sortBy,          // price | rating | rating_price
+			@RequestParam(defaultValue = "asc") String order,
+			@RequestParam(required = false) String propertyType,
+			@RequestParam(required = false) String priceType) {
+		try {
 
-	  	    } catch (RuntimeException e) {
-	  	        return ResponseEntity.ok(new Response(0, e.getMessage(), null));
+			List<ShootingLocationPropertyDetailsDTO> result =  service.getPropertiesSorted(
+					industryId,sortBy, order, propertyType, priceType );
+			return ResponseEntity.ok(
+					new Response(1, "Success", result)
+					);
 
-	  	    } catch (Exception e) {
-	  	        // Unexpected system errors
-	  	        logger.error("Error in getProperties by industry API", e);
-	  	        return ResponseEntity
-	  	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-	  	                .body(new Response(0, "Something went wrong", null));
-	  	    }
-	   
+		} catch (RuntimeException e) {
+			return ResponseEntity.ok(new Response(0, e.getMessage(), null));
+
+		} catch (Exception e) {
+			// Unexpected system errors
+			logger.error("Error in getProperties by industry API", e);
+			return ResponseEntity
+					.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(0, "Something went wrong", null));
+		}
+
 	}
 
-	
-	
-	
+
+
+
 }
 

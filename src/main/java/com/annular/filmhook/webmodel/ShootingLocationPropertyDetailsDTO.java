@@ -158,6 +158,6 @@ public class ShootingLocationPropertyDetailsDTO {
 	private LocalDateTime adminRatedOn;          
 	private Integer adminRatedBy;
 	
-	private String ShootingHeldDescription;
+	private String shootingHeldDescription;
 }
 

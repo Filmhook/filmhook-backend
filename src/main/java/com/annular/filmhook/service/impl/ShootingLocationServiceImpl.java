@@ -3498,14 +3498,11 @@ public List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(
         dto.setThreeStarPercentage(reviewData.getThreeStarPercentage());
         dto.setTwoStarPercentage(reviewData.getTwoStarPercentage());
         dto.setOneStarPercentage(reviewData.getOneStarPercentage());
-
         dtoList.add(dto);
     }
 
     return dtoList;
 }
-
-
 
 	private Double getPrice(
 			ShootingLocationPropertyDetails p,
