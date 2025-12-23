@@ -135,9 +135,6 @@ public class ShootingLocationPropertyDetailsDTO {
     private String governmentPermission;
     private String publicPermission;
     private Double additionalChargesForOverTime;
-
-	
-
 	private LocalDate availabilityStartDate;
 	private LocalDate availabilityEndDate;
 	private List<LocalDate> pausedDates; 
@@ -148,8 +145,6 @@ public class ShootingLocationPropertyDetailsDTO {
 	public Double getTotalArea() {
 		return totalArea;
 	}
-	
-	
 	private long totalReviews;
 	private double fiveStarPercentage;
 	private double fourStarPercentage;
@@ -162,5 +157,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private Double adminRating;                  
 	private LocalDateTime adminRatedOn;          
 	private Integer adminRatedBy;
+	
+	private String ShootingHeldDescription;
 }
 

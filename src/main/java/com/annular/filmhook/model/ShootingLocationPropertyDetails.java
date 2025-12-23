@@ -183,7 +183,6 @@ public class ShootingLocationPropertyDetails {
     private String governmentPermission;
     @Column(columnDefinition = "TEXT")
     private String publicPermission;
-
     private Double additionalChargesForOverTime;
 	private String propertyDamageDescription;
 	private String crewAccidentLiabilityDescription;
@@ -204,5 +203,9 @@ public class ShootingLocationPropertyDetails {
 
 	// Admin user who rated
 	private Integer adminRatedBy;
+	 
+	
+	private String ShootingHeldDescription;
+	
 
 }

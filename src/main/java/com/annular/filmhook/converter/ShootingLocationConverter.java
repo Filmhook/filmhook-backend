@@ -93,6 +93,7 @@ public class ShootingLocationConverter {
 	            .adminRatedBy(e.getAdminRatedBy())
 	            .adminRatedOn(e.getAdminRatedOn())
 	            .adminRating(e.getAdminRating())
+	            .ShootingHeldDescription(e.getShootingHeldDescription())
 	            .build();
 	   
 	    // ----- Category -----
@@ -255,7 +256,7 @@ public class ShootingLocationConverter {
 	            .propertyDamageDescription(dto.getPropertyDamageDescription())
 	            .crewAccidentLiabilityDescription(dto.getCrewAccidentLiabilityDescription())
 	            .additionalChargesForOverTime(dto.getAdditionalChargesForOverTime())
-	          
+	            .ShootingHeldDescription(dto.getShootingHeldDescription())
 
 	            .status(true)
 	            .build();
