@@ -110,10 +110,7 @@ public class ShootingLocationPropertyDetails {
 
 	private String description;
 	private boolean businessOwner;
-	
-
     private Integer createdBy;
-
     @CreationTimestamp
      private LocalDateTime createdOn;
 
@@ -195,16 +192,11 @@ public class ShootingLocationPropertyDetails {
 	@Convert(converter = LocalDateListConverter.class)
 	@Column(columnDefinition = "TEXT")
 	private List<LocalDate> pausedDates; 
-	
 	@Column(name = "admin_rating")
 	private Double adminRating; 	
-	
 	private LocalDateTime adminRatedOn;
-
 	// Admin user who rated
 	private Integer adminRatedBy;
-	 
-	
 	private String shootingHeldDescription;
 	
 

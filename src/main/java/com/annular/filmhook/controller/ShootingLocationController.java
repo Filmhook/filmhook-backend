@@ -277,34 +277,40 @@ public class ShootingLocationController {
 
 
 	@GetMapping("/getPropertiesByliked")
-	public ResponseEntity<?> getLikedProperties(@RequestParam Integer userId) {
-		Logger logger = LoggerFactory.getLogger(this.getClass());
-		Map<String, String> response = new HashMap<>();
+	public ResponseEntity<Response> getLikedProperties(@RequestParam Integer userId) {
 
-		try {
-			logger.info("Fetching liked properties for userId: {}", userId);
+	    Logger logger = LoggerFactory.getLogger(this.getClass());
 
-			if (userId == null) {
-				logger.warn("User ID is null");
-				response.put("message", "User ID cannot be null");
-				return ResponseEntity.badRequest().body(response);
-			}
-			List<ShootingLocationPropertyDetailsDTO> likedProperties = service.getPropertiesLikedByUser(userId);
+	    try {
+	        logger.info("Fetching liked properties for userId: {}", userId);
 
-			if (likedProperties.isEmpty()) {
-				logger.info("No liked properties found for userId: {}", userId);
-				response.put("message", "No properties found in wishlist");
-				return ResponseEntity.ok(response);
-			}
+	        List<ShootingLocationPropertyDetailsDTO> likedProperties =
+	                service.getPropertiesLikedByUser(userId);
 
-			logger.info("Found {} liked properties for userId: {}", likedProperties.size(), userId);
-			return ResponseEntity.ok(likedProperties);
+	        // ✅ Return empty list instead of message map
+	        if (likedProperties == null || likedProperties.isEmpty()) {
+	            logger.info("No liked properties found for userId: {}", userId);
+	            return ResponseEntity.ok(
+	                    new Response(1, "No properties found in wishlist", Collections.emptyList())
+	            );
+	        }
 
-		} catch (Exception ex) {
-			logger.error("Unexpected error while fetching liked properties for userId {}: {}", userId, ex.getMessage());
-			response.put("message", "Something went wrong while fetching wishlist");
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-		}
+	        logger.info("Found {} liked properties for userId: {}",
+	                likedProperties.size(), userId);
+
+	        return ResponseEntity.ok(
+	                new Response(1, "Success", likedProperties)
+	        );
+
+	    } catch (Exception ex) {
+	        logger.error("Error while fetching liked properties for userId {}",
+	                userId, ex);
+
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new Response(-1,
+	                        "Something went wrong while fetching wishlist",
+	                        null));
+	    }
 	}
 
 
