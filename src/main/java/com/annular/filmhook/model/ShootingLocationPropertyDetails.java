@@ -197,12 +197,12 @@ public class ShootingLocationPropertyDetails {
 	private LocalDateTime adminRatedOn;
 	// Admin user who rated
 	private Integer adminRatedBy;
-<<<<<<< HEAD
-=======
-	 
+
 	@Column(columnDefinition = "TEXT")
->>>>>>> 9358b9cd18aa3da0d6fa747fae6834b642f4ba3d
 	private String shootingHeldDescription;
+	
+	@Column(name = "property_code", unique = true, nullable = false, length = 12)
+	private String propertyCode;
 	
 
 }
