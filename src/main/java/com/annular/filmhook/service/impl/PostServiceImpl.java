@@ -1672,6 +1672,11 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 
 	        // Iterate through each post
 	        for (Posts post : postsList) {
+	        	
+	            // ✅ ONLY ACTIVE POSTS
+	            if (post.getStatus() == null || !post.getStatus()) {
+	                continue; // skip inactive posts
+	            }
 	            Integer postOwnerId = post.getUser().getUserId();
 
 	            //  Logged-in user is the post owner → soft delete
