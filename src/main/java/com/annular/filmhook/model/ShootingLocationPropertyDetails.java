@@ -204,7 +204,7 @@ public class ShootingLocationPropertyDetails {
 	// Admin user who rated
 	private Integer adminRatedBy;
 	 
-	
+	@Column(columnDefinition = "TEXT")
 	private String shootingHeldDescription;
 	
 
