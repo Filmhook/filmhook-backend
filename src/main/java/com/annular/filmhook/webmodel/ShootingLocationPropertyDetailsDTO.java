@@ -120,7 +120,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String typeLocation;
 	private String locationLink;
 	private List<String> imageUrls;
-	private String IdNumber;
+	private String idNumber;
 	private List<String> governmentIdUrls;
 	private List<String> verificationVideo;
     private String ownerPermission;
@@ -159,5 +159,6 @@ public class ShootingLocationPropertyDetailsDTO {
 	private Integer adminRatedBy;
 	
 	private String shootingHeldDescription;
+	private String propertyCode;
 }
 

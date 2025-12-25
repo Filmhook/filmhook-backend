@@ -78,7 +78,7 @@ public class ShootingLocationConverter {
 	            .locationLink(e.getLocationLink())
 	            .hygienStatus(e.getHygienStatus())
 	            .genderSpecific(e.getGenderSpecific())
-	            .IdNumber(e.getIdNumber())
+	            .idNumber(e.getIdNumber())
 	            .ownerPermission(e.getOwnerPermission())
 	            .selfOwnedPropertyDocument(e.getSelfOwnedPropertyDocument())
 	            .mortgagePropertyDocument(e.getMortgagePropertyDocument())
@@ -94,6 +94,7 @@ public class ShootingLocationConverter {
 	            .adminRatedOn(e.getAdminRatedOn())
 	            .adminRating(e.getAdminRating())
 	            .shootingHeldDescription(e.getShootingHeldDescription())
+	            .propertyCode(e.getPropertyCode())
 	            .build();
 	   
 	    // ----- Category -----
@@ -248,7 +249,7 @@ public class ShootingLocationConverter {
 	            .locationLink(dto.getLocationLink())
 	            .hygienStatus(dto.getHygienStatus())
 	            .genderSpecific(dto.getGenderSpecific())
-	            .IdNumber(dto.getIdNumber())
+	            .idNumber(dto.getIdNumber())
 	            .ownerPermission(dto.getOwnerPermission())
 	            .localAuthorities(dto.getLocalAuthorities())
 	            .governmentPermission(dto.getGovernmentPermission())

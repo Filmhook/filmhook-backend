@@ -168,7 +168,7 @@ public class ShootingLocationPropertyDetails {
     @Convert(converter = StringListConverter.class)
     private List<String> genderSpecific;
     
-    private String IdNumber;
+    private String idNumber;
     private String ownerPermission;
     private String selfOwnedPropertyDocument;
     private String mortgagePropertyDocument; 
@@ -203,6 +203,6 @@ public class ShootingLocationPropertyDetails {
 	
 	@Column(name = "property_code", unique = true, nullable = false, length = 12)
 	private String propertyCode;
-	
+
 
 }
