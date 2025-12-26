@@ -30,6 +30,7 @@ public interface ShootingLocationPropertyDetailsRepository extends JpaRepository
 	    void deactivateShootingPropertyByUserId(@Param("userId") Integer userId);
 	
 	 List<ShootingLocationPropertyDetails> findByIndustryIndustryIdAndStatusTrue(Integer industryId);
+	 boolean existsByPropertyCode(String propertyCode);
 
 }
 	

@@ -45,6 +45,9 @@ public class ReportPost {
     @Column(name = "subject")
     private String subject;
     
+    @Column(name = "description")
+    private String description;
+    
 //    @Column(name = "current_address")
 //    private String currentAddress;
 

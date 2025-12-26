@@ -94,6 +94,7 @@ public class ShootingLocationConverter {
 	            .adminRatedOn(e.getAdminRatedOn())
 	            .adminRating(e.getAdminRating())
 	            .shootingHeldDescription(e.getShootingHeldDescription())
+	            .propertyCode(e.getPropertyCode())
 	            .build();
 	   
 	    // ----- Category -----

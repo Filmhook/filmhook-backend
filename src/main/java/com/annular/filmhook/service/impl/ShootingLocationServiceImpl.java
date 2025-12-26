@@ -80,6 +80,7 @@ import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepository;
 import com.annular.filmhook.repository.ShootingLocationTypesRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.security.PropertyCodeGenerator;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.ShootingLocationService;
@@ -387,6 +388,24 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			// 6. Convert DTO to ENTITY
 			ShootingLocationPropertyDetails property =
 					shootingLocationPropertyConverter.dtoToEntity(dto);
+			
+			if (dto.getId() == null) {
+
+			    String propertyCode;
+			    int attempts = 0;
+
+			    do {
+			        propertyCode = PropertyCodeGenerator.generate();
+			        attempts++;
+			    } while (propertyDetailsRepository.existsByPropertyCode(propertyCode) && attempts < 5);
+
+			    if (attempts == 5) {
+			        throw new RuntimeException("Unable to generate unique property code");
+			    }
+
+			    property.setPropertyCode(propertyCode);
+			}
+
 
 			property.setCategory(category);
 			property.setSubCategory(subCategory);
@@ -521,7 +540,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						uploadDocument(inputFile.getCrewAccidentDocument(),
 								MediaFileCategory.shootingPropertyDocuments,
 								savedProperty.getId(), user));
-
+				
+				
 				propertyDetailsRepository.saveAndFlush(savedProperty);
 			}
 			logger.info("Property saved successfully: {}", savedProperty.getId());

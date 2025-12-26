@@ -159,5 +159,6 @@ public class ShootingLocationPropertyDetailsDTO {
 	private Integer adminRatedBy;
 	
 	private String shootingHeldDescription;
+	private String propertyCode;
 }
 
