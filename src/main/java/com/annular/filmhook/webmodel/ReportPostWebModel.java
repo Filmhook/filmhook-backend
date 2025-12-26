@@ -13,7 +13,8 @@ public class ReportPostWebModel {
     private Integer userId; 
     private Integer postId; 
     private String reason;
-    private String subject;                                                                                            
+    private String subject;  
+    private String description;  
     private Integer deletePostSuspension;
     private String postTitle;
     private String emailId;

@@ -105,6 +105,7 @@ public class ReportServiceImpl implements ReportService {
                Integer postId = reportPostWebModel.getPostId();
                String reason = reportPostWebModel.getReason();     	
               String subject=reportPostWebModel.getSubject();
+              String description = reportPostWebModel.getDescription();
             // 1. Validate reason
             if (reason == null || reason.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
@@ -141,6 +142,7 @@ public class ReportServiceImpl implements ReportService {
             reportPost.setPostId(postId);
             reportPost.setReason(reason);
             reportPost.setSubject(subject);
+            reportPost.setDescription(description);
             reportPost.setStatus(false);
             reportPost.setCreatedBy(reporterId);
             reportRepository.save(reportPost);
@@ -171,6 +173,7 @@ public class ReportServiceImpl implements ReportService {
                         .append("<p>We have received a report against your post on <strong>Film-Hook Apps</strong>.</p>")
                         .append("<p><strong> Subject: </strong> ").append(reportPostWebModel.getSubject()).append("</p>")
                         .append("<p><strong>Reported Reason:</strong> ").append(reportPostWebModel.getReason()).append("</p>")
+                        .append("<p><strong>Description:</strong> ").append(reportPostWebModel.getDescription()).append("</p>")
 //                        .append("<p>Please note that if your post is found to be violating our community guidelines, it will be <strong>automatically deleted within 24 hours</strong>.</p>")
 //                        .append("<p>If you believe this was a mistake, please contact our support team immediately.</p>")
                         .append("<p>To view the reported post, ")
