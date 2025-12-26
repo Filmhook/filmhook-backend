@@ -1,14 +1,10 @@
 package com.annular.filmhook.converter;
 
-import com.annular.filmhook.model.BookingStatus;
+
 import com.annular.filmhook.model.ShootingLocationBooking;
-import com.annular.filmhook.model.ShootingLocationPropertyDetails;
-import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 @Component
 public class ShootingLocationBookingConverter {
@@ -28,7 +24,6 @@ public class ShootingLocationBookingConverter {
 //	    booking.setShootEndDate(dto.getShootEndDate());
 	    
 	    booking.setBookingDates(dto.getBookingDates());
-
 	    booking.setBookingMessage(dto.getBookingMessage());
 
 	    return booking;
