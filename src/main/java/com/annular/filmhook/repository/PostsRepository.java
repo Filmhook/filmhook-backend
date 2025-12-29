@@ -74,6 +74,9 @@ public interface PostsRepository extends JpaRepository<Posts, Integer> {
     @Transactional
     @Query("UPDATE Posts p SET p.status = false WHERE p.user.id = :userId")
     void deactivatePostsByUserId(@Param("userId") Integer userId);
+    
+    @Query("SELECT p FROM Posts p WHERE p.id = :id")
+    Optional<Posts> findByIdIgnoringStatus(@Param("id") Integer id);
 
 
 }
