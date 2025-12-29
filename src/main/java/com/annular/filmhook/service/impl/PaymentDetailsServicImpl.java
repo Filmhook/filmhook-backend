@@ -162,8 +162,10 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 			helper.setSubject(subject);
 			helper.setText(content.toString(), true);
 
-			Posts promotedPost = postsRepository.findById(promoteData.getPostId())
-					.orElseThrow(() -> new RuntimeException("Post not found with ID: " + promoteData.getPostId()));
+		 Posts promotedPost = postsRepository.findByIdIgnoringStatus(promoteData.getPostId())
+		                .orElseThrow(() ->
+		                        new RuntimeException("Post not found (ignoring status)"));
+
 
 			promotedPost.setStatus(true); 
 			promotedPost.setPromoteFlag(true);
