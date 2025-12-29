@@ -59,7 +59,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	@Autowired
 	RefreshTokenRepository refreshTokenRepository;
 	
-	 private static final int OTP_EXPIRY_MINUTES = 10;
+	 private static final int OTP_EXPIRY_MINUTES = 3;
 	 
 	@Autowired
 	TwilioConfig twilioConfig;

@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
@@ -601,67 +602,73 @@ public class PromoteServiceImpl implements PromoteService {
 //			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 //		}
 //	}
+	@Transactional
+@Override
+public ResponseEntity<?> selectPromoteOption(PromoteWebModel request) {
 
-	@Override
-	public ResponseEntity<?> selectPromoteOption(PromoteWebModel request) {
-	    Map<String, Object> response = new HashMap<>();
+    Map<String, Object> response = new HashMap<>();
 
-	    try {
-	        // 🔹 Retrieve promotion using promoteId
-	        Optional<Promote> optionalPromotion = promoteRepository.findById(request.getPromoteId());
+    try {
+        logger.info("selectPromoteOption started for promoteId={}", request.getPromoteId());
 
-	        if (optionalPromotion.isEmpty()) {
-	            response.put("error", "Promotion not found");
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-	        }
+        // 1️⃣ Fetch promotion
+        Promote promotion = promoteRepository.findById(request.getPromoteId())
+                .orElseThrow(() -> new RuntimeException("Promotion not found"));
 
-	        Promote promotion = optionalPromotion.get();
+        // 2️⃣ Update promotion fields
+        promotion.setSelectOption(request.getSelectOption());
+        promotion.setContactNumber(request.getContactNumber());
+        promotion.setWebSiteLink(request.getWebSiteLink());
+        promoteRepository.save(promotion);
 
-	        // 🔹 Update promotion fields
-	        promotion.setSelectOption(request.getSelectOption());
-	        promotion.setContactNumber(request.getContactNumber());
-	        promotion.setWebSiteLink(request.getWebSiteLink());
+        // 3️⃣ Validate postId
+        Integer postId = promotion.getPostId();
+        if (postId == null) {
+            throw new RuntimeException("PostId missing for promotionId=" + promotion.getPromoteId());
+        }
 
-	        promoteRepository.save(promotion);
+        logger.info("Promotion mapped to postId={}", postId);
 
-	        // 🔹 Update Post description if provided
-	        if (request.getDescription() != null && !request.getDescription().isBlank()) {
-	            postsRepository.findById(promotion.getPostId()).ifPresent(post -> {
-	                post.setDescription(request.getDescription());
-	                postsRepository.save(post);
-	            });
-	        }
+        // ✅ Fetch post WITHOUT status dependency
+        Posts post = postsRepository.findByIdIgnoringStatus(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
 
-	        // 🔹 Save images if provided
-	        if (!Utility.isNullOrEmptyList(request.getFiles())) {
-	            postsRepository.findById(promotion.getPostId()).ifPresent(post -> {
-	                User userFromDB = post.getUser();
+        // 5️⃣ Update post description
+        if (request.getDescription() != null && !request.getDescription().isBlank()) {
+            post.setDescription(request.getDescription());
+            postsRepository.save(post);
+            logger.info("Post description updated for postId={}", postId);
+        }
 
-	                FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-	                        .userId(userFromDB.getUserId())
-	                        .category(MediaFileCategory.Post) // Store under Post category
-	                        .categoryRefId(post.getId())      // Link with postId
-	                        .files(request.getFiles())        // Uploaded files
-	                        .build();
+        // 6️⃣ Save media files
+        if (request.getFiles() != null &&
+                request.getFiles().stream().anyMatch(file -> !file.isEmpty())) {
 
-	                mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
-	                response.put("mediaStatus", "Media uploaded successfully");
-	            });
-	        }
+            FileInputWebModel fileInput = FileInputWebModel.builder()
+                    .userId(post.getUser().getUserId())
+                    .category(MediaFileCategory.Post)
+                    .categoryRefId(post.getId())
+                    .files(request.getFiles())
+                    .build();
 
-	        // 🔹 Final Response
-	        response.put("message", "Promotion updated successfully");
-	        response.put("postId", promotion.getPostId());
-	        response.put("promoteId", promotion.getPromoteId());
+            mediaFilesService.saveMediaFiles(fileInput, post.getUser());
+            logger.info("Media files saved successfully for postId={}", postId);
+        }
 
-	        return ResponseEntity.ok(response);
+        // 7️⃣ Response
+        response.put("message", "Promotion updated successfully");
+        response.put("promoteId", promotion.getPromoteId());
+        response.put("postId", postId);
 
-	    } catch (Exception e) {
-	        logger.error("Error updating promotion: ", e);
-	        response.put("error", "Failed to update promotion due to server error");
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-	    }
-	}
+        return ResponseEntity.ok(response);
+
+    } catch (Exception ex) {
+        logger.error("Error updating promotion", ex);
+        response.put("error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+
 
 	@Override
 	public ResponseEntity<?> getDescriptionByPostId(PostWebModel postWebModel) {
