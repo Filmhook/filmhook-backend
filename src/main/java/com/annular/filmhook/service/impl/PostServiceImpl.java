@@ -1198,7 +1198,6 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 
 	@Override
 	public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {
-		Integer userId = userDetails.userInfo().getId();
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
@@ -1395,7 +1394,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 	}
 
 	@Override
-	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
+	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {		
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
@@ -1537,7 +1536,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 	}
 
 	@Override
-	public ShareWebModel addShare(ShareWebModel shareWebModel) {
+	public ShareWebModel addShare(ShareWebModel shareWebModel) {		
 		try {
 			Posts post = postsRepository.findById(shareWebModel.getPostId()).orElse(null);
 			if (post != null) {
