@@ -2,36 +2,24 @@ package com.annular.filmhook.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,7 +27,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
-import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationConverter;
 import com.annular.filmhook.model.ShootingLocationOwnerBankDetails;
@@ -86,7 +73,6 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
-import com.annular.filmhook.util.NumberToWordsConverter;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
@@ -106,10 +92,7 @@ import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
-import com.google.firebase.messaging.AndroidConfig;
-import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 
@@ -117,25 +100,17 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.kernel.geom.AffineTransform;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.pdf.PdfDocument;
-import com.itextpdf.kernel.pdf.PdfPage;
-import com.itextpdf.kernel.pdf.PdfReader;
-import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.*;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.kernel.pdf.canvas.PdfCanvasConstants;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.layout.Canvas;
 import com.itextpdf.layout.Document;
@@ -145,18 +120,10 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.borders.SolidBorder;
-
-import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.element.Image;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.layout.properties.VerticalAlignment;
-import com.itextpdf.layout.borders.Border;
-import com.itextpdf.layout.borders.SolidBorder;
+
 
 
 @Service
@@ -870,12 +837,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				throw new RuntimeException("Start Date cannot be after End Date");
 			}
 
-	@Override
-	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIdsAndDates(
-			Integer industryId,
-			Integer userId,
-			LocalDate startDate,
-			LocalDate endDate) {
 
 			// 1️⃣ Fetch all active properties for the single industry
 			List<ShootingLocationPropertyDetails> properties =
@@ -1200,9 +1161,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Override
 	@Transactional
 	public Response deletePropertyById(Integer id) {
-		try {
-			// Logged-in user ID
-			Integer userId = userDetails.userInfo().getId();
+	    try {
+	        Integer userId = userDetails.userInfo().getId();
 
 	        ShootingLocationPropertyDetails property =
 	                propertyDetailsRepository.findById(id).orElse(null);
@@ -1241,7 +1201,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	        property.setUpdatedBy(userId);
 	        property.setUpdatedOn(LocalDateTime.now());
 
-			propertyDetailsRepository.save(property);
+	        propertyDetailsRepository.save(property);
 
 	        return new Response(1, "Property deleted successfully", null);
 
@@ -1250,8 +1210,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	        return new Response(0, "Something went wrong while deleting property", null);
 	    }
 	}
-
-
 
 
 	@Transactional
@@ -2322,66 +2280,8 @@ public List<LocalDate> getAvailableDatesForProperty(
             .collect(Collectors.toList());
 }
 
-		if (propertyId != null && review.getProperty() != null
-				&& !Objects.equals(review.getProperty().getId(), propertyId)) {
-			throw new IllegalArgumentException("Review does not belong to the given propertyId");
-		}
 
-		// 2️⃣ Update review text/rating
-		review.setRating(rating);
-		review.setReviewText(reviewText);
-		review.setUpdatedOn(LocalDateTime.now());
-		propertyReviewRepository.save(review);
 
-		// 3️⃣ Get user
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
-
-		// 🔹 1️⃣ Delete specific old files if user removed any
-		if (deletedFileIds != null && !deletedFileIds.isEmpty()) {
-			logger.info("Deleting review files for review {}: {}", review.getId(), deletedFileIds);
-			mediaFilesService.deleteMediaFilesByCategoryAndIds(
-					MediaFileCategory.ShootingLocationReview,
-					deletedFileIds
-					);
-		}
-
-		// 🔹 2️⃣ Upload new files if provided
-		if (files != null && !files.isEmpty()) {
-			FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-					.userId(userId)
-					.category(MediaFileCategory.ShootingLocationReview)
-					.categoryRefId(review.getId())
-					.files(files)
-					.build();
-
-			mediaFilesService.saveMediaFiles(fileInputWebModel, user);
-			logger.info("Uploaded {} new files for review {}", files.size(), review.getId());
-		}
-
-		// 🔹 3️⃣ Build response using mediaFilesService helper (not repository)
-		List<FileOutputWebModel> mediaDTOs = mediaFilesService.getMediaFilesByCategoryAndRefId(
-				MediaFileCategory.ShootingLocationReview,
-				review.getId()
-				);
-
-		// 🔹 4️⃣ Return DTO
-		return ShootingLocationPropertyReviewDTO.builder()
-				.id(review.getId())
-				.propertyId(propertyId)
-				.userId(userId)
-				.rating(review.getRating())
-				.reviewText(review.getReviewText())
-				.userName(user.getName())
-				.createdOn(review.getCreatedOn())
-				.profilePicUrl(
-						userService.getProfilePicUrl(
-								review.getUser().getUserId()))
-				.files(mediaDTOs)
-				.ownerReplyText(review.getOwnerReplyText())				
-				.ownerReplyOn(review.getOwnerReplyOn())
-				.build();
-	}
 	@Override
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
 		{
