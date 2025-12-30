@@ -276,7 +276,7 @@ public class AdminServiceImpl implements AdminService {
             Map<String, Object> userMap = new HashMap<>();
             userMap.put("userId", user.getUserId());
             userMap.put("name", user.getName());
-            userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
+            userMap.put("userProfilePic", userService.getProfilePicUrl());
             responseList.add(userMap);
         }
 
@@ -431,7 +431,7 @@ public class AdminServiceImpl implements AdminService {
 
                 response.put("Data", responseDTOList);
                 response.put("userInfo", user);
-                response.put("profilePicturePath", userService.getProfilePicUrl(user.getUserId()));
+                response.put("profilePicturePath", userService.getProfilePicUrl());
 
                 return ResponseEntity.ok(response);
             }

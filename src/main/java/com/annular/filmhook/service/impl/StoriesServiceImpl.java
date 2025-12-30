@@ -331,7 +331,7 @@ public class StoriesServiceImpl implements StoriesService {
 	                                        return StoryViewerDTO.builder()
 	                                                .viewerId(viewer.getUserId())
 	                                                .viewerName(viewer.getName())
-	                                                .userProfilePic(userService.getProfilePicUrl(viewer.getUserId()))
+	                                                .userProfilePic(userService.getRecieverProfilePicUrl(viewer.getUserId()))
 	                                                .viewedOn(view.getViewedOn())
 	                                                .viewedAtText(Utility.formatRelativeTime(view.getViewedOn()))
 	                                                .liked(view.getLiked())
@@ -380,7 +380,7 @@ public class StoriesServiceImpl implements StoriesService {
 		StoriesWebModel storiesWebModel = new StoriesWebModel();
 
 		//		storiesWebModel.setStoryId(story.getStoryId());
-		storiesWebModel.setProfileUrl(userService.getProfilePicUrl(story.getUser().getUserId()));
+		storiesWebModel.setProfileUrl(userService.getRecieverProfilePicUrl(story.getUser().getUserId()));
 		storiesWebModel.setUserName(story.getUser().getName());
 		//		storiesWebModel.setDescription(story.getDescription());
 		//		storiesWebModel.setViewCount(story.getViewCount());
@@ -558,7 +558,7 @@ public class StoriesServiceImpl implements StoriesService {
 	}
 
 	private UserIdAndNameWebModel createUserIdAndNameWebModel(Integer userId, String userName) {
-		String profilePicUrl = userService.getProfilePicUrl(userId); // Get profile picture URL
+		String profilePicUrl = userService.getRecieverProfilePicUrl(userId); // Get profile picture URL
 		List<String> professionNames = getProfessionNames(userId); // Get profession names
 		return new UserIdAndNameWebModel(userId, userName, profilePicUrl, professionNames);
 	}
@@ -622,7 +622,7 @@ public class StoriesServiceImpl implements StoriesService {
 											return StoryViewerDTO.builder()
 													.viewerId(viewer.getUserId())
 													.viewerName(viewer.getName())
-													.userProfilePic(userService.getProfilePicUrl(viewer.getUserId()))
+													.userProfilePic(userService.getRecieverProfilePicUrl(viewer.getUserId()))
 													.viewedOn(view.getViewedOn())
 													.build();
 										})

@@ -303,7 +303,7 @@ public class ChatServiceImpl implements ChatService {
 									.setAndroidConfig(androidConfig)
 									.putData("chatId", String.valueOf(chat.getChatId()))
 									.putData("type", "chat")
-									.putData("profilePic", userService.getProfilePicUrl(userId))
+									.putData("profilePic", userService.getProfilePicUrl())
 									.putData("senderId", String.valueOf(user.getUserId()))
 									.putData("senderName", senderName) 
 		                            .putData("allUnread", allUnread)   
@@ -425,7 +425,7 @@ public class ChatServiceImpl implements ChatService {
 			chatUserWebModel.setUserName(user.getName());
 			chatUserWebModel.setUserType(user.getUserType());
 			chatUserWebModel.setAdminReview(user.getAdminReview());
-			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl());
 			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
 
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
@@ -642,8 +642,8 @@ public class ChatServiceImpl implements ChatService {
 				Optional<User> userDatas = userRepository.findById(receiverId);
 
 				// Fetch profile picture URLs
-				String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
-				String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
+				String senderProfilePicUrl = userService.getProfilePicUrl();
+				String receiverProfilePicUrl = userService.getRecieverProfilePicUrl(chat.getChatReceiverId());
 
 				if (userData.isPresent()) {
 					List<FileOutputWebModel> mediaFiles = mediaFilesService
@@ -970,7 +970,7 @@ public Response getAllSearchByChat(String searchKey) {
 			chatUserWebModel.setUserId(user.getUserId());
 			chatUserWebModel.setUserName(user.getName());
 			chatUserWebModel.setUserType(user.getUserType());
-			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl());
 			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
 			chatUserWebModel.setAdminReview(user.getAdminReview());
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
@@ -1055,8 +1055,8 @@ public Response getAllSearchByChat(String searchKey) {
 				InAppNotificationWebModel dto = new InAppNotificationWebModel();
 				dto.setInAppNotificationId(notification.getInAppNotificationId());
 				dto.setSenderId(notification.getSenderId());
-				dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
-				dto.setProfilePicUrl2(userService.getProfilePicUrl(notification.getSenderId2()));
+				dto.setProfilePicUrl(userService.getProfilePicUrl());
+				dto.setProfilePicUrl2(userService.getRecieverProfilePicUrl(notification.getSenderId2()));
 				dto.setReceiverId(notification.getReceiverId());
 				dto.setTitle(notification.getTitle());
 				dto.setMessage(notification.getMessage());

@@ -665,7 +665,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 										taggedUserDetails.put("userId", taggedUserId);
 										userService.getUser(taggedUserId).ifPresent(user -> {
 											taggedUserDetails.put("username", user.getName());
-											taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
+											taggedUserDetails.put("userProfilePic", userService.getRecieverProfilePicUrl(taggedUserId));
 										});
 										return taggedUserDetails;
 									})
@@ -694,7 +694,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 							.userName(post.getUser().getName())
 							.postId(post.getPostId())
 							.adminReview(post.getUser().getAdminReview())
-							.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+							.userProfilePic(userService.getProfilePicUrl())
 							.description(post.getDescription())
 							.pinMediaStatus(pinMediaStatus)
 							.pinProfileStatus(pinStatus)
@@ -892,6 +892,8 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 
 	@Override
 	public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
+		
+		Integer userId = userDetails.userInfo().getId();
 		try {
 			Likes likeRowToSaveOrUpdate;
 			Posts post = null;
@@ -924,7 +926,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 				existingLike = likeRepository
 					    .findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionIdAndReviewId(
 					        likeWebModel.getCategory(),
-					        likeWebModel.getUserId(),
+					        userId,
 					        likeWebModel.getPostId(),
 					        likeWebModel.getCommentId(),
 					        likeWebModel.getAuditionId(),
@@ -937,7 +939,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 				// Update reaction type directly (LIKE or UNLIKE)
 				existingLike.setReactionType(likeWebModel.getReactionType());
 				existingLike.setStatus("LIKE".equalsIgnoreCase(likeWebModel.getReactionType())); // status = true for like, false for unlike
-				existingLike.setUpdatedBy(likeWebModel.getUserId());
+				existingLike.setUpdatedBy(userId);
 				existingLike.setUpdatedOn(new Date());
 				likeRowToSaveOrUpdate = existingLike;
 			} else {
@@ -948,11 +950,11 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 					    .commentId(likeWebModel.getCommentId())
 					    .auditionId(likeWebModel.getAuditionId())
 					    .reviewId(likeWebModel.getReviewId()) 
-					    .likedBy(likeWebModel.getUserId())
+					    .likedBy(userId)
 					    .reactionType(likeWebModel.getReactionType())
 					    .status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType()))
 					    .notified(false)
-					    .createdBy(likeWebModel.getUserId())
+					    .createdBy(userId)
 					    .createdOn(new Date())
 					    .build();
 			}
@@ -981,7 +983,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 			logger.info("Like count [{}], Unlike count [{}] for category [{}]",
 					totalLikes, totalUnlikes, likeWebModel.getCategory());
 
-			return this.transformLikeData(savedLike, totalLikes, totalUnlikes, likeWebModel.getUserId());
+			return this.transformLikeData(savedLike, totalLikes, totalUnlikes, userId);
 
 		} catch (Exception e) {
 			logger.error("Error at addOrUpdateLike() -> {}", e.getMessage(), e);
@@ -1496,7 +1498,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
                     .totalLikesCount(totalLikesCount)
                     .totalCommentCount(totalCommentCount)
                     .status(comment.getStatus())
-                    .userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
+                    .userProfilePic(userService.getProfilePicUrl())
                     .userName(user != null ? user.getName() : "")
                     .time(elapsedTime)
                     .postUserId(post != null ? post.getUser().getUserId() : null)
@@ -1666,8 +1668,8 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 	        if (postsList == null || postsList.isEmpty()) {
 	            return false; // No posts found
 	        }
-
-	        Integer loggedInUserId = postWebModel.getUserId();
+	        
+	        Integer loggedInUserId = userDetails.userInfo().getId();
 	        boolean anyActionPerformed = false;
 
 	        // Iterate through each post

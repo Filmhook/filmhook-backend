@@ -1146,7 +1146,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.userName(review.getUser().getFirstName() + " "
 									+ review.getUser().getLastName())
 							.profilePicUrl(
-									userService.getProfilePicUrl(
+									userService.getRecieverProfilePicUrl(
 											review.getUser().getUserId()))
 							.rating(review.getRating())
 							.reviewText(review.getReviewText())
@@ -1781,7 +1781,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.reviewText(reviewText)
 				.userName(user.getName())
 				.profilePicUrl(
-						userService.getProfilePicUrl(
+						userService.getRecieverProfilePicUrl(
 								review.getUser().getUserId()))
 				.files(mediaDTOs)
 				.ownerReplyText(savedReview.getOwnerReplyText())				
@@ -1831,7 +1831,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.propertyId(property.getId())
 				.userId(saved.getUser().getUserId())
 				.userName(saved.getUser().getName())
-				.profilePicUrl(userService.getProfilePicUrl(review.getUser().getUserId()))
+				.profilePicUrl(userService.getRecieverProfilePicUrl(review.getUser().getUserId()))
 				.rating(saved.getRating())
 				.reviewText(saved.getReviewText())
 				.createdOn(saved.getCreatedOn())
@@ -1884,7 +1884,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.propertyId(property.getId())
 				.userId(saved.getUser().getUserId())
 				.userName(saved.getUser().getName())
-				.profilePicUrl(userService.getProfilePicUrl(saved.getUser().getUserId()))
+				.profilePicUrl(userService.getProfilePicUrl())
 				.rating(saved.getRating())
 				.reviewText(saved.getReviewText())
 				.createdOn(saved.getCreatedOn())
@@ -2214,7 +2214,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.userName(user.getName())
 				.createdOn(review.getCreatedOn())
 				.profilePicUrl(
-						userService.getProfilePicUrl(
+						userService.getRecieverProfilePicUrl(
 								review.getUser().getUserId()))
 				.files(mediaDTOs)
 				.ownerReplyText(review.getOwnerReplyText())				

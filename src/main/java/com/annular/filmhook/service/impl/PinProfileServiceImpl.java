@@ -360,7 +360,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                     taggedUserDetails.put("userId", taggedUserId);
                     userService.getUser(taggedUserId).ifPresent(user -> {
                         taggedUserDetails.put("username", user.getName());
-                        taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
+                        taggedUserDetails.put("userProfilePic", userService.getRecieverProfilePicUrl(taggedUserId));
                     });
                     return taggedUserDetails;
                 })
@@ -376,7 +376,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                 .userName(post.getUser().getName())
                 .postId(post.getPostId())
                 .adminReview(post.getUser().getAdminReview())
-                .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+                .userProfilePic(userService.getProfilePicUrl())
                 .description(post.getDescription())
                 .pinMediaStatus(pinMediaStatus)
                 .pinProfileStatus(pinStatus)

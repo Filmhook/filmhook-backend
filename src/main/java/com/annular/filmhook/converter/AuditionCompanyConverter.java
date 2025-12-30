@@ -464,7 +464,7 @@ public class AuditionCompanyConverter {
 
 		// ✅ Attach assigned user profile picture using userService
 		if (entity.getAssignedUser() != null) {
-			String profilePicUrl = userService.getProfilePicUrl(entity.getAssignedUser().getUserId());
+			String profilePicUrl = userService.getRecieverProfilePicUrl(entity.getAssignedUser().getUserId());
 			dto.setAssignedUserProfilePicture(profilePicUrl);
 		}
 

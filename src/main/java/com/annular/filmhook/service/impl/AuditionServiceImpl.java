@@ -308,7 +308,7 @@ public class AuditionServiceImpl implements AuditionService {
 						auditionWebModel.setAdminReview(user.getAdminReview());
 						auditionWebModel.setUserType(user.getUserType());
 						auditionWebModel.setUserId(user.getUserId());
-						auditionWebModel.setProfilePic(userService.getProfilePicUrl(userId));
+						auditionWebModel.setProfilePic(userService.getProfilePicUrl());
 					});
 					if (!audition.getAuditionRoles().isEmpty()) {
 						List<AuditionRolesWebModel> auditionRolesWebModelsList = new ArrayList<>();
@@ -827,7 +827,7 @@ public class AuditionServiceImpl implements AuditionService {
 				Map<String, Object> userDetails = new HashMap<>();
 				userDetails.put("acceptanceId", acceptanceId);
 				userDetails.put("username", user.getName());
-				userDetails.put("userProfilePic", userService.getProfilePicUrl(user.getUserId())); // Assuming you have
+				userDetails.put("userProfilePic", userService.getProfilePicUrl()); // Assuming you have
 				// a method to get
 				// the profile pic
 				// URL
@@ -975,7 +975,7 @@ public class AuditionServiceImpl implements AuditionService {
 
 					webModel.setAdminReview(audition.getUser().getAdminReview());
 					webModel.setUserType(audition.getUser().getUserType());
-					webModel.setProfilePic(userService.getProfilePicUrl(audition.getUser().getUserId()));
+					webModel.setProfilePic(userService.getProfilePicUrl());
 					webModel.setUrl(audition.getUrl());
 					webModel.setTermsAndCondition(audition.getTermsAndCondition());
 
@@ -1409,7 +1409,7 @@ public class AuditionServiceImpl implements AuditionService {
 	                    auditionWebModel.setAdminReview(user.getAdminReview());
 	                    auditionWebModel.setUserType(user.getUserType());
 	                    auditionWebModel.setUserId(user.getUserId());
-	                    auditionWebModel.setProfilePic(userService.getProfilePicUrl(userId));
+	                    auditionWebModel.setProfilePic(userService.getProfilePicUrl());
 	                });
 
 	                // Audition roles

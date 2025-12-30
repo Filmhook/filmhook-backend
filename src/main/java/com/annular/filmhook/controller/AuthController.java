@@ -136,7 +136,7 @@ public class AuthController {
                         userDetails.getUserType(),
                         user.getFilmHookCode(),
                         user.getAdminReview(),
-                        user.getLastName(),userServices.getProfilePicUrl(user.getUserId()),user.getPhoneNumber(),user.getLivingPlace()));
+                        user.getLastName(),userServices.getRecieverProfilePicUrl(user.getUserId()),user.getPhoneNumber(),user.getLivingPlace()));
             }
         } catch (Exception e) {
             logger.error("Error at login() -> {}", e.getMessage());

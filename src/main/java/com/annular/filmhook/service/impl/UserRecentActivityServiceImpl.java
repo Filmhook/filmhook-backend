@@ -73,7 +73,7 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
 
             for (UserSearchHistory history : historyList) {
                 userRepo.findById(history.getSearchedUserId()).ifPresent(user -> {
-                    String profilePic = getProfilePic(user.getUserId());
+                    String profilePic =  userService.getRecieverProfilePicUrl(user.getUserId());
                     
              
                     categorizedMap.get(source).put(user.getUserId(), RecentUserWebModel.builder()
@@ -143,8 +143,8 @@ public class UserRecentActivityServiceImpl implements UserRecentActivityService 
         userSearchHistoryRepo.save(targetHistory);
     }
 
-    private String getProfilePic(Integer userId) {
-        String profilePicUrl = userService.getProfilePicUrl(userId);
-        return (profilePicUrl != null && !profilePicUrl.isEmpty()) ? profilePicUrl : null;
-    }
+//    private String getProfilePic(Integer userId) {
+//        String profilePicUrl = userService.getProfilePicUrl(userId);
+//        return (profilePicUrl != null && !profilePicUrl.isEmpty()) ? profilePicUrl : null;
+//    }
 }

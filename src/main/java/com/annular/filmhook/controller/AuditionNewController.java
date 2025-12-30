@@ -162,7 +162,7 @@ public class AuditionNewController {
 			logger.error("Error in getSubCategories: {}", e.getMessage(), e);
 			return ResponseEntity.ok(new Response(-1, "Failed to fetch subcategories", null));
 		}
-	}
+	} 
 	 @GetMapping("/professions/sub-professions")
 	    public ResponseEntity<?> getAllSubProfessions() {
 	        try {

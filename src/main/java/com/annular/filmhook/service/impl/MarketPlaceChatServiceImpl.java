@@ -321,8 +321,8 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	            Optional<User> receiverData = userRepository.findById(receiverId);
 
 	            // Fetch profile picture URLs
-	            String senderProfilePicUrl = userService.getProfilePicUrl(chat.getMarketPlaceSenderId());
-	            String receiverProfilePicUrl = userService.getProfilePicUrl(receiverId);
+	            String senderProfilePicUrl = userService.getProfilePicUrl();
+	            String receiverProfilePicUrl = userService.getRecieverProfilePicUrl(receiverId);
 
 	            if (userData.isPresent() && receiverData.isPresent()) {
 	                // Retrieve media files associated with the chat
@@ -440,7 +440,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	        chatUserWebModel.setUserId(user.getUserId());
 	        chatUserWebModel.setUserName(user.getName());
 	        chatUserWebModel.setUserType(user.getUserType());
-	        chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+	        chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl());
 	        chatUserWebModel.setMarketTypes("marketPlace");
 	        
 	        // Set adminReview only if userType is "Industry User"; otherwise, set it to null
@@ -636,7 +636,7 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                    MarketPlaceUserWebModel chatUserWebModel = new MarketPlaceUserWebModel();
 	                    chatUserWebModel.setUserId(user.getUserId());
 	                    chatUserWebModel.setUserName(user.getName());
-	                    chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
+	                    chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl());
 	                    chatUserWebModel.setUserType(user.getUserType()); // Set userType
 
 	                    // Set adminReview based on userType
@@ -714,8 +714,8 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	                .findByShootingLocationSenderIdAndShootingLocationReceiverIdOrViceVersa(senderId, receiverId);
 
 	        // Get profile picture URLs for sender and receiver
-	        String senderProfilePicUrl = userService.getProfilePicUrl(senderId);
-	        String receiverProfilePicUrl = userService.getProfilePicUrl(receiverId);
+	        String senderProfilePicUrl = userService.getProfilePicUrl();
+	        String receiverProfilePicUrl = userService.getRecieverProfilePicUrl(receiverId);
 	        
 	        Optional<User> userData = userRepository.findById(senderId);
             Optional<User> receiverData = userRepository.findById(receiverId);

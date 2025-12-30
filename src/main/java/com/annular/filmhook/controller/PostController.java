@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.service.PostService;
@@ -46,7 +47,8 @@ import java.util.concurrent.CompletableFuture;
 public class PostController {
 
     public static final Logger logger = LoggerFactory.getLogger(PostController.class);
-
+    @Autowired
+  	private  UserDetails userDetails;
     @Autowired
     PostService postService;
 
@@ -101,10 +103,10 @@ public class PostController {
     }
 
     @GetMapping("/getPostsByUserId")
-    public Response getPostsByUserId(@RequestParam("userId") Integer userId,
-                                @RequestParam("pageNo") Integer pageNo,
+    public Response getPostsByUserId(@RequestParam("pageNo") Integer pageNo,
                                      @RequestParam("pageSize") Integer pageSize,  @RequestParam(required = false) Integer postId)
 {
+    	Integer userId = userDetails.userInfo().getId();
         try {
             List<PostWebModel> outputList = postService.getPostsByUserId(userId,pageNo,pageSize, postId);
             if (!Utility.isNullOrEmptyList(outputList)) return new Response(1, "Post(s) found successfully...", outputList);
@@ -197,7 +199,9 @@ public class PostController {
     }
 
     @GetMapping("/getAllUsersPosts")
-    public Response getAllUsersPosts(@RequestParam("pageNo") Integer pageNo, @RequestParam("pageSize") Integer pageSize, @RequestParam("userId") Integer userId ) {
+    public Response getAllUsersPosts(@RequestParam("pageNo") Integer pageNo, @RequestParam("pageSize") Integer pageSize ) {
+    	
+    	Integer userId = userDetails.userInfo().getId();
         try {
             List<PostWebModel> postWebModelList = postService.getAllUsersPosts(userId, pageNo, pageSize);
             if (!Utility.isNullOrEmptyList(postWebModelList)) return new Response(1, "Success", postWebModelList);

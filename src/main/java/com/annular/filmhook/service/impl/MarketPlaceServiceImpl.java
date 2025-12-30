@@ -284,7 +284,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                         Map<String, String> details = new HashMap<>();
                         if (user != null) {
                             details.put("userName", user.getName());
-                            details.put("userPic", userService.getProfilePicUrl(user.getUserId()));
+                            details.put("userPic", userService.getProfilePicUrl());
                             details.put("userType", user.getUserType());
                             // Set adminReview based on userType
                             if ("Industry User".equals(user.getUserType())) {
@@ -407,7 +407,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     Map<String, Object> receiverData = new HashMap<>();
                     receiverData.put("id", receiver.getUserId());
                     receiverData.put("name", receiver.getName());
-                    receiverData.put("profilePic", userService.getProfilePicUrl(receiver.getUserId()));
+                    receiverData.put("profilePic", userService.getRecieverProfilePicUrl(receiver.getUserId()));
                     //receiverData.put("accept", (chat != null) ? chat.getAccept() : true);  // Add the accept status (true, false, or null)
                  // Determine the accept status
                     Boolean acceptStatus = (chat != null && chat.getAccept() != null) ? chat.getAccept() : true; // Default to true if chat is null or accept is null
@@ -506,7 +506,7 @@ public class MarketPlaceServiceImpl implements MarketPlaceService {
                     Map<String, Object> receiverData = new HashMap<>();
                     receiverData.put("id", receiver.getUserId());
                     receiverData.put("name", receiver.getName());
-                    receiverData.put("profilePic", userService.getProfilePicUrl(receiver.getUserId()));
+                    receiverData.put("profilePic", userService.getRecieverProfilePicUrl(receiver.getUserId()));
                     //receiverData.put("accept", (chat != null) ? chat.getAccept() : true);  // Add the accept status (true, false, or null)
                  // Determine the accept status
                     Boolean acceptStatus = (chat != null && chat.getAccept() != null) ? chat.getAccept() : true; // Default to true if chat is null or accept is null

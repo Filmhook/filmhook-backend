@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Location;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.UserService;
@@ -40,7 +41,8 @@ import javax.persistence.NonUniqueResultException;
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-
+    @Autowired
+	private  UserDetails userDetails;
     @Autowired
     UserService userService;
 
@@ -51,7 +53,9 @@ public class UserController {
     }
 
     @GetMapping("/getUserByUserId")
-    public Response getUserByUserId(@RequestParam("userId") Integer userId) {
+    public Response getUserByUserId() {
+    	
+    	Integer userId = userDetails.userInfo().getId();
         logger.info("🔍 getUserByUserId API called with userId: {}", userId);
         try {
             Optional<UserWebModel> user = userService.getUserByUserId(userId);
@@ -185,8 +189,8 @@ public class UserController {
      * @return Response
      */
     @PostMapping("/getProfilePic")
-    public Response getProfilePic(@RequestBody UserWebModel userWebModel) {
-        FileOutputWebModel profilePic = userService.getProfilePic(userWebModel);
+    public Response getProfilePic() {
+        FileOutputWebModel profilePic = userService.getProfilePic();
         if (profilePic != null) return new Response(1, "Profile pic found successfully...", profilePic);
         return new Response(-1, "User profile pic not found...", null);
     }

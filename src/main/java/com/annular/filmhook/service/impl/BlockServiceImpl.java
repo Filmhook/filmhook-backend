@@ -103,7 +103,7 @@ public class BlockServiceImpl implements BlockService {
                                     .blockStatus(block.getBlockStatus())
                                     .blockedUserName(block.getBlockedUser().getName())
                                     .blockedUserGender(block.getBlockedUser().getGender())
-                                    .blockedUserProfilePicUrl(userService.getProfilePicUrl(block.getBlockedUser().getUserId()))
+                                    .blockedUserProfilePicUrl(userService.getProfilePicUrl())
                                     .createdBy(block.getCreatedBy())
                                     .createdOn(block.getCreatedOn())
                                     .updatedBy(block.getUpdatedBy())
