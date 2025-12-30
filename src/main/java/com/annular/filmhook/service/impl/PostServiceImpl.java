@@ -495,7 +495,6 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 			// Fetch tagged posts
 			String userIdString = userId.toString();
 			List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
-
 			// Fetch promoted posts
 			List<Promote> promotedEntities = promoteRepository.findByUserIdAndStatus(userId, true);
 			List<Posts> promotedPosts = promotedEntities.stream()
@@ -1201,6 +1200,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 
 	@Override
 	public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {
+		Integer userId = userDetails.userInfo().getId();
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
@@ -1210,10 +1210,10 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 						.postId(post.getId())
 						.parentCommentId(commentInputWebModel.getParentCommentId())
 						.content(commentInputWebModel.getContent())
-						.commentedBy(commentInputWebModel.getUserId())
+						.commentedBy(userId)
 						.status(true)
 						.likesCount(0)
-						.createdBy(commentInputWebModel.getUserId())
+						.createdBy(userId)
 						.createdOn(new Date())
 						.build();
 
@@ -1236,12 +1236,12 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 						commentRepository.saveAndFlush(parent);
 
 						// Notify parent comment owner (if not replying to self!)
-						if (!parent.getCommentedBy().equals(commentInputWebModel.getUserId())) {
-							User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+						if (!parent.getCommentedBy().equals(userId)) {
+							User sender = userRepository.findById(userId).orElse(null);
 							String senderName = sender != null ? sender.getName() : "Someone";
 							sendNotification(
 									parent.getCommentedBy(),            
-									commentInputWebModel.getUserId(),                
+									userId,                
 									"Reply to Your Comment",
 									" replied to your comment.",
 									"COMMENT_REPLY",
@@ -1253,12 +1253,12 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 				}
 
 				// 4. Always notify post owner if commenter is not the post owner
-				if (!post.getCreatedBy().equals(commentInputWebModel.getUserId())) {
-					User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
+				if (!post.getCreatedBy().equals(userId)) {
+					User commenter = userRepository.findById(userId).orElse(null);
 					String commenterName = commenter != null ? commenter.getName() : "Someone";
 					sendNotification(
 							post.getCreatedBy(),                        
-							commentInputWebModel.getUserId(),                        
+							userId,                        
 							"New Comment on Your Post",
 							" commented on your post.",
 							"POST_COMMENT",
@@ -1267,7 +1267,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 							);
 				}
 
-				logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), commentInputWebModel.getUserId());
+				logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), userId);
 				logger.info("Comment added to post [{}]", post.getId());
 				return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
 
@@ -1398,6 +1398,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 
 	@Override
 	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
+		Integer userId = userDetails.userInfo().getId();
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
@@ -1406,7 +1407,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 				if (comment != null && Boolean.TRUE.equals(comment.getStatus())) {
 					// Soft delete the parent comment
 					comment.setStatus(false);
-					comment.setUpdatedBy(commentInputWebModel.getUserId());
+					comment.setUpdatedBy(userId);
 					comment.setUpdatedOn(new Date());
 					commentRepository.save(comment);
 
@@ -1420,7 +1421,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 						for (Comment child : childComments) {
 							if (Boolean.TRUE.equals(child.getStatus())) {
 								child.setStatus(false);
-								child.setUpdatedBy(commentInputWebModel.getUserId());
+								child.setUpdatedBy(userId);
 								child.setUpdatedOn(new Date());
 								commentRepository.save(child);
 								childDeletedCount++;
@@ -1540,14 +1541,15 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 
 	@Override
 	public ShareWebModel addShare(ShareWebModel shareWebModel) {
+		Integer userId = userDetails.userInfo().getId();
 		try {
 			Posts post = postsRepository.findById(shareWebModel.getPostId()).orElse(null);
 			if (post != null) {
 				Share share = Share.builder()
-						.sharedBy(shareWebModel.getUserId())
+						.sharedBy(userId)
 						.postId(post.getId())
 						.status(true)
-						.createdBy(shareWebModel.getUserId())
+						.createdBy(userId)
 						.createdOn(new Date()).build();
 				Share savedShare = shareRepository.saveAndFlush(share); // Save the updated like
 
@@ -1612,6 +1614,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 
 	@Override
 	public CommentOutputWebModel updateComment(CommentInputWebModel commentInputWebModel) {
+		Integer userId = userDetails.userInfo().getId();
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
@@ -1624,7 +1627,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 					// Update the content of the comment
 					existingComment.setContent(commentInputWebModel.getContent());
 					existingComment.setUpdatedOn(new Date());
-					existingComment.setUpdatedBy(commentInputWebModel.getUserId());
+					existingComment.setUpdatedBy(userId);
 
 					// Save the updated comment back to the repository
 					Comment updatedComment = commentRepository.saveAndFlush(existingComment);
