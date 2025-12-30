@@ -870,6 +870,12 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				throw new RuntimeException("Start Date cannot be after End Date");
 			}
 
+	@Override
+	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIdsAndDates(
+			Integer industryId,
+			Integer userId,
+			LocalDate startDate,
+			LocalDate endDate) {
 
 			// 1️⃣ Fetch all active properties for the single industry
 			List<ShootingLocationPropertyDetails> properties =
@@ -1194,8 +1200,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Override
 	@Transactional
 	public Response deletePropertyById(Integer id) {
-	    try {
-	        Integer userId = userDetails.userInfo().getId();
+		try {
+			// Logged-in user ID
+			Integer userId = userDetails.userInfo().getId();
 
 	        ShootingLocationPropertyDetails property =
 	                propertyDetailsRepository.findById(id).orElse(null);
@@ -1234,7 +1241,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	        property.setUpdatedBy(userId);
 	        property.setUpdatedOn(LocalDateTime.now());
 
-	        propertyDetailsRepository.save(property);
+			propertyDetailsRepository.save(property);
 
 	        return new Response(1, "Property deleted successfully", null);
 
@@ -1243,6 +1250,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	        return new Response(0, "Something went wrong while deleting property", null);
 	    }
 	}
+
+
 
 
 	@Transactional
@@ -2313,8 +2322,66 @@ public List<LocalDate> getAvailableDatesForProperty(
             .collect(Collectors.toList());
 }
 
+		if (propertyId != null && review.getProperty() != null
+				&& !Objects.equals(review.getProperty().getId(), propertyId)) {
+			throw new IllegalArgumentException("Review does not belong to the given propertyId");
+		}
 
+		// 2️⃣ Update review text/rating
+		review.setRating(rating);
+		review.setReviewText(reviewText);
+		review.setUpdatedOn(LocalDateTime.now());
+		propertyReviewRepository.save(review);
 
+		// 3️⃣ Get user
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
+
+		// 🔹 1️⃣ Delete specific old files if user removed any
+		if (deletedFileIds != null && !deletedFileIds.isEmpty()) {
+			logger.info("Deleting review files for review {}: {}", review.getId(), deletedFileIds);
+			mediaFilesService.deleteMediaFilesByCategoryAndIds(
+					MediaFileCategory.ShootingLocationReview,
+					deletedFileIds
+					);
+		}
+
+		// 🔹 2️⃣ Upload new files if provided
+		if (files != null && !files.isEmpty()) {
+			FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+					.userId(userId)
+					.category(MediaFileCategory.ShootingLocationReview)
+					.categoryRefId(review.getId())
+					.files(files)
+					.build();
+
+			mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+			logger.info("Uploaded {} new files for review {}", files.size(), review.getId());
+		}
+
+		// 🔹 3️⃣ Build response using mediaFilesService helper (not repository)
+		List<FileOutputWebModel> mediaDTOs = mediaFilesService.getMediaFilesByCategoryAndRefId(
+				MediaFileCategory.ShootingLocationReview,
+				review.getId()
+				);
+
+		// 🔹 4️⃣ Return DTO
+		return ShootingLocationPropertyReviewDTO.builder()
+				.id(review.getId())
+				.propertyId(propertyId)
+				.userId(userId)
+				.rating(review.getRating())
+				.reviewText(review.getReviewText())
+				.userName(user.getName())
+				.createdOn(review.getCreatedOn())
+				.profilePicUrl(
+						userService.getProfilePicUrl(
+								review.getUser().getUserId()))
+				.files(mediaDTOs)
+				.ownerReplyText(review.getOwnerReplyText())				
+				.ownerReplyOn(review.getOwnerReplyOn())
+				.build();
+	}
 	@Override
 	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
 		{

@@ -771,6 +771,49 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the deactivate list.");
 		}
 	}
+	
+	  @Override
+	    public ResponseEntity<?> sendEmailOtp(UserWebModel model) {
+
+	        String email = model.getEmail();
+
+	        // 1️⃣ Check if active user exists
+	        Optional<User> active = userRepository.findActiveUserByEmail(email);
+	        if (active.isPresent()) {
+	            return ResponseEntity.unprocessableEntity()
+	                    .body(new Response(0, "This email already exists. Please login.", null));
+	        }
+
+	        // 2️⃣ Create new user row for OTP registration
+	        User user = new User();
+	        user.setEmail(email);
+
+	        // BASIC DETAILS must be saved before OTP
+	        user.setName(model.getName());
+	        user.setDob(model.getDob());
+	        user.setGender(model.getGender());
+	        user.setBirthPlace(model.getBirthPlace());
+	        user.setLivingPlace(model.getLivingPlace());
+	        user.setCountry(model.getCountry());
+	        user.setStatus(false);
+	        user.setUserFlag(true);
+	        user.setCreatedOn(new Date());
+
+	        // 3️⃣ Generate EXACT 4-DIGIT OTP (compulsory)
+	        int otp = 1000 + new Random().nextInt(9000); 
+	        user.setEmailOtp(otp);
+
+	        // 4️⃣ Save user row fully
+	        user = userRepository.save(user);
+
+	        // 5️⃣ Send OTP email
+	        mailNotification.sendVerificationEmail(user);
+	        
+	        Map<String, Object> responseData = new HashMap<>();
+	        responseData.put("userId", user.getUserId());
+	        
+	        return ResponseEntity.ok(new Response(1, "OTP sent successfully", responseData));
+	    }
 
 	@Override
 	@Transactional
