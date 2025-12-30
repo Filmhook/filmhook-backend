@@ -119,50 +119,7 @@ public class ChatServiceImpl implements ChatService {
 
 	public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
-	//    @Override
-	//    public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
-	//        try {
-	//            logger.info("Save Message Method Start");
-	//
-	//            Integer userId = userDetails.userInfo().getId();
-	//            Optional<User> userOptional = userRepository.findById(userId);
-	//
-	//            if (userOptional.isPresent()) {
-	//                User user = userOptional.get();
-	//                Chat chat = Chat.builder()
-	//                        .message(chatWebModel.getMessage())
-	//                        .chatReceiverId(chatWebModel.getChatReceiverId())
-	//                        .userAccountName(user.getName())
-	//                        .chatSenderId(userId)
-	//                        .userType(user.getUserType())
-	//                        .timeStamp(new Date())
-	//                        .chatIsActive(true)
-	//                        .chatCreatedBy(userId)
-	//                        .senderRead(true)
-	//                        .receiverRead(false)
-	//                        .chatCreatedOn(new Date())
-	//                        .build();
-	//                chatRepository.save(chat);
-	//
-	//                if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
-	//                    // Saving the chat files in the media_files table
-	//                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-	//                            .userId(chatWebModel.getUserId())
-	//                            .category(MediaFileCategory.Chat)
-	//                            .categoryRefId(chat.getChatId())
-	//                            .files(chatWebModel.getFiles())
-	//                            .build();
-	//                    mediaFilesService.saveMediaFiles(fileInputWebModel, userOptional.get());
-	//                }
-	//                return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
-	//            } else {
-	//                return ResponseEntity.notFound().build();
-	//            }
-	//        } catch (Exception e) {
-	//            logger.error("Error occurred while saving message -> {}", e.getMessage());
-	//            return ResponseEntity.internalServerError().build();
-	//        }
-	//    }
+	
 	@Override
 	public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
 		try {
