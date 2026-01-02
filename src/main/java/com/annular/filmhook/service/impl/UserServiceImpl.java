@@ -332,10 +332,6 @@ public class UserServiceImpl implements UserService {
 		if (!Utility.isNullOrBlankWithTrim(userInput.getPhoneNumber())) userToUpdate.setPhoneNumber(userInput.getPhoneNumber());
 		if (!Utility.isNullOrBlankWithTrim(userInput.getCurrentAddress())) userToUpdate.setCurrentAddress(userInput.getCurrentAddress());
 		if (!Utility.isNullOrBlankWithTrim(userInput.getHomeAddress())) userToUpdate.setHomeAddress(userInput.getHomeAddress());
-		
-		if (!Utility.isNullOrBlankWithTrim(userInput.getFirstName())) userToUpdate.setFirstName(userInput.getFirstName());
-		if (!Utility.isNullOrBlankWithTrim(userInput.getMiddleName())) userToUpdate.setMiddleName(userInput.getMiddleName());
-		if (!Utility.isNullOrBlankWithTrim(userInput.getLastName())) userToUpdate.setLastName(userInput.getLastName());
 		if (!Utility.isNullOrBlankWithTrim(userInput.getName())) userToUpdate.setName(userInput.getName());
 
 
@@ -949,9 +945,8 @@ public class UserServiceImpl implements UserService {
 			if (userOptional.isPresent()) {
 				User user = userOptional.get();
 
-				if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirstName())) user.setFirstName(userWebModel.getFirstName());
-				if (!Utility.isNullOrBlankWithTrim(userWebModel.getLastName())) user.setLastName(userWebModel.getLastName());
-				user.setName(user.getFirstName() + " " + user.getLastName());
+				if (!Utility.isNullOrBlankWithTrim(userWebModel.getName())) user.setName(userWebModel.getName());
+				user.setName(user.getName());
 
 				user.setUpdatedBy(userWebModel.getUserId());
 				user.setUpdatedOn(new Date());
@@ -972,8 +967,6 @@ public class UserServiceImpl implements UserService {
 		if (userOptional.isPresent()) {
 			User user = userOptional.get();
 			HashMap<String, String> userMap = new HashMap<>();
-			userMap.put("firstName", user.getFirstName());
-			userMap.put("lastName", user.getLastName());
 			userMap.put("userName", user.getName());
 			userMap.put("userProfilePic", userService.getProfilePicUrl());
 			userMap.put("adminRating", user.getAdminReview().toString());

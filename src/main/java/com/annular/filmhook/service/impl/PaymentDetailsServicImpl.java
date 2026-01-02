@@ -1,15 +1,12 @@
 package com.annular.filmhook.service.impl;
 
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Optional;
 
 import javax.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -67,7 +64,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 				webModel.getTxnid(),
 				webModel.getAmount(),
 				webModel.getProductinfo(),
-				webModel.getFirstname(),
+				webModel.getFullName(),
 				webModel.getEmail(),
 				salt
 				);
@@ -76,7 +73,7 @@ public class PaymentDetailsServicImpl implements PaymentDetailsService{
 				.txnid(webModel.getTxnid())
 				.amount(webModel.getAmount())
 				.productinfo(webModel.getProductinfo())
-				.firstname(webModel.getFirstname())
+				.fullName(webModel.getFullName())
 				.promoteId(webModel.getPromoteId())
 				.email(webModel.getEmail())
 				.userId(webModel.getUserId())

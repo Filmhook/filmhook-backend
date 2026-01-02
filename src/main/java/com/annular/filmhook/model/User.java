@@ -56,15 +56,6 @@ public class User {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "first_name")
-    private String firstName;
-
-    @Column(name = "last_Name")
-    private String lastName;
-
-    @Column(name = "middle_Name")
-    private String middleName;
-
     @JsonIgnore
     @Column(name = "verification_code")
     private String verificationCode;
@@ -301,11 +292,6 @@ public class User {
 	
 	@Column(name = "locationLongitude")
 	private String locationLongitude;
-	
-	@OneToMany(mappedBy = "user")
-	@JsonIgnore
-	 @ToString.Exclude 
-	private List<ShootingLocationPropertyDetails> properties;
 
 	@Column(name = "last_notification_open_time")
 	private Date lastNotificationOpenTime;

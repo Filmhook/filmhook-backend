@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.util.Utility;
-import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.HelpAndSupport;
 import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
@@ -38,7 +37,6 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.configuration.TwilioConfig;
-import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 

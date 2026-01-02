@@ -17,13 +17,12 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Block;
-import com.annular.filmhook.model.MediaFileCategory;
+
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BlockRepository;
-import com.annular.filmhook.repository.UserRepository;
+
 import com.annular.filmhook.service.BlockService;
-import com.annular.filmhook.util.FileUtil;
-import com.annular.filmhook.util.S3Util;
+
 import com.annular.filmhook.webmodel.BlockWebModel;
 
 @Service

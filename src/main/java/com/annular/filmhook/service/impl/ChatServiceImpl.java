@@ -3,7 +3,7 @@ package com.annular.filmhook.service.impl;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 import com.annular.filmhook.configuration.FirebaseConfig;
 import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.util.FileUtil;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.repository.CrudRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -41,16 +41,15 @@ import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.ChatMediaDeleteTracker;
 import com.annular.filmhook.model.InAppNotification;
-import com.annular.filmhook.model.MarketPlaceChat;
+
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
-import com.annular.filmhook.model.ShootingLocationChat;
 import com.annular.filmhook.model.Story;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.ChatMediaDeleteTrackerRepository;
 import com.annular.filmhook.repository.ChatRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
-import com.annular.filmhook.repository.MarketPlaceChatRepository;
+
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.ShootingLocationChatRepository;
 import com.annular.filmhook.repository.StoryRepository;
@@ -95,9 +94,6 @@ public class ChatServiceImpl implements ChatService {
 
 	@Autowired
 	private UserService userService;
-
-	@Autowired
-	MarketPlaceChatRepository marketPlaceChatRepository;
 
 	@Autowired
 	InAppNotificationRepository inAppNotificationRepository;
@@ -422,14 +418,6 @@ public class ChatServiceImpl implements ChatService {
 
 	        Chat chat = lastChatOpt.get();
 
-//	        // ✅ Skip if inactive for either side
-//	        if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
-//	            chatUserWebModel.setLatestMessage("");
-//	            chatUserWebModel.setLatestMsgTime(null);
-//	            chatUserWebModel.setIsLatestStory(false);
-//	            return;
-//	        }
-
 	        // ✅ Deleted message placeholder
 	        if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
 	            latestMsg = "🚫 This message was deleted";
@@ -708,90 +696,6 @@ public class ChatServiceImpl implements ChatService {
 	}
 
 
-
-
-	//    @Override
-	//    public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
-	//        Map<String, Object> response = new HashMap<>();
-	//        try {
-	//            // Fetch the user by receiver ID
-	//            User user = userRepository.findById(message.getChatReceiverId()).orElse(null);
-	//            if (user == null) {
-	//                return ResponseEntity.ok().body(new Response(-1, "User not found", ""));
-	//            }
-	//
-	//            logger.info("Get Messages by User ID Method Start");
-	//
-	//            // Fetch sender and receiver IDs
-	//            Integer senderId = userDetails.userInfo().getId();
-	//            Integer receiverId = message.getChatReceiverId();
-	//
-	//            // Fetch messages sent by the current user to the receiver
-	//            List<Chat> senderMessages = chatRepository.getMessageListBySenderIdAndReceiverId(senderId, receiverId);
-	//
-	//            // Fetch messages received by the current user from the receiver
-	//            List<Chat> receiverMessages = chatRepository.getMessageListBySenderIdAndReceiverId(receiverId, senderId);
-	//
-	//            // Combine both lists of messages without duplicates
-	//            Set<Chat> allMessages = new HashSet<>();
-	//            allMessages.addAll(senderMessages);
-	//            allMessages.addAll(receiverMessages);
-	//
-	//            // Construct the response structure
-	//            List<ChatWebModel> messagesWithFiles = new ArrayList<>();
-	//            int unreadCount = 0; // Initialize unread messages count
-	//            for (Chat chat : allMessages) {
-	//                Optional<User> userData = userRepository.findById(chat.getChatSenderId());
-	//                Optional<User> userDatas = userRepository.findById(receiverId);
-	//                // Fetch profile picture URLs
-	//                String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
-	//                String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
-	//
-	//                if (userData.isPresent()) {
-	//                    List<FileOutputWebModel> mediaFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Chat, chat.getChatId());
-	//                    ChatWebModel chatWebModel = ChatWebModel.builder()
-	//                            .chatId(chat.getChatId())
-	//                            .chatSenderId(chat.getChatSenderId())
-	//                            .chatReceiverId(chat.getChatReceiverId())
-	//                            .chatIsActive(chat.getChatIsActive())
-	//                            .chatCreatedBy(chat.getChatCreatedBy())
-	//                            .chatCreatedOn(chat.getChatCreatedOn())
-	//                            .senderProfilePic(senderProfilePicUrl) // Set sender profile pic URL
-	//                            .receiverProfilePic(receiverProfilePicUrl) // Set receiver profile pic URL
-	//                            .chatUpdatedBy(chat.getChatUpdatedBy())
-	//                            .chatUpdatedOn(chat.getChatUpdatedOn())
-	//                            .receiverRead(true)
-	//                            .senderRead(chat.getSenderRead())
-	//                            .chatFiles(mediaFiles)
-	//                            .message(chat.getMessage())
-	//                            .userType(userData.get().getUserType())
-	//                            .userAccountName(userData.get().getName())
-	//                            .receiverAccountName(userDatas.get().getName())
-	//                            .userId(userData.get().getUserId())
-	//                            .build();
-	//                    
-	//                    if (!chat.getReceiverRead()) {
-	//                        unreadCount++; // Increment count if receiver hasn't read the message
-	//                    }
-	//                    messagesWithFiles.add(chatWebModel);
-	//                }
-	//            }
-	//
-	//            // Sort messagesWithFiles by chatId
-	//            messagesWithFiles.sort(Comparator.comparing(ChatWebModel::getChatId));
-	//
-	//            // Put the final response together
-	//            response.put("userChat", messagesWithFiles);
-	//            response.put("numberOfItems", messagesWithFiles.size());
-	//            response.put("unreadCount", unreadCount);
-	//            logger.info("Get Messages by User ID Method End");
-	//            return ResponseEntity.ok(new Response(1, "Success", response));
-	//        } catch (Exception e) {
-	//            logger.error("Error occurred while retrieving messages -> {}", e.getMessage());
-	//            return ResponseEntity.internalServerError().body(new Response(-1, "Internal Server Error", ""));
-	//        }
-	//    }
-
 	@Override
 	public ResponseEntity<?> getFirebaseTokenByUserId(Integer userId) {
 		try {
@@ -1041,18 +945,7 @@ public Response getAllSearchByChat(String searchKey) {
 
 
 				// Handle accept/additionalData
-				if ("marketPlace".equals(notification.getUserType())) {
-					marketPlaceChatRepository.findByIds(notification.getId()).ifPresentOrElse(
-							chat -> {
-								dto.setAccept(chat.getAccept());
-								dto.setAdditionalData(chat.getAccept() != null ?
-										(chat.getAccept() ? "Accepted" : "Declined") : "null");
-							},
-							() -> {
-								dto.setAccept(null);
-								dto.setAdditionalData("null");
-							});
-				} else if ("shootingLocation".equals(notification.getUserType())) {
+			 if ("shootingLocation".equals(notification.getUserType())) {
 					shootingLocationChatRepository.findByIds(notification.getId()).ifPresentOrElse(
 							chat -> {
 								dto.setAccept(chat.getAccept());

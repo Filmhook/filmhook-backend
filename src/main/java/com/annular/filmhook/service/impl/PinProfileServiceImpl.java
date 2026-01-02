@@ -1,6 +1,5 @@
 package com.annular.filmhook.service.impl;
 
-import java.sql.Date;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -27,7 +26,6 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
-import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.MediaFileCategory;
@@ -38,7 +36,6 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserMediaPin;
 import com.annular.filmhook.model.UserProfilePin;
 import com.annular.filmhook.model.VisitPage;
-import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.FriendRequestRepository;
 import com.annular.filmhook.repository.LikeRepository;
@@ -47,16 +44,13 @@ import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteRepository;
-import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PinProfileService;
 import com.annular.filmhook.util.CalendarUtil;
-import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.S3Util;
-import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.UserProfilePinWebModel;
 
 @Service

@@ -112,70 +112,52 @@ public class ShootingLocationPropertyDetails {
 	private boolean businessOwner;
     private Integer createdBy;
     @CreationTimestamp
-     private LocalDateTime createdOn;
-
+    private LocalDateTime createdOn;
     private Integer updatedBy;
-
     @CreationTimestamp
     private LocalDateTime updatedOn;
-    
 	private Boolean status;
-
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "bank_details_id")
 	private ShootingLocationOwnerBankDetails bankDetails;
-
 	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JoinColumn(name = "business_information_id")
 	private ShootingLocationBusinessInformation businessInformation;
-
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "subcategory_selection_id")
 	private ShootingLocationSubcategorySelection subcategorySelection;
-	
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "category_id")
 	private ShootingLocationCategory category;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "sub_category_id", nullable = true)
 	private ShootingLocationSubcategory subCategory;
-	
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name="types_id")
 	private ShootingLocationTypes types;
-	
 	@ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-	
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL)
     private List<PropertyLike> likes;
-    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "industry_id")
     private Industry industry;
-
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ShootingLocationPropertyReview> reviews;
- 
     private String typeLocation;
-    private String locationLink;
-    
+    private String locationLink;   
     @Convert(converter = StringListConverter.class)
-    private List<String> hygienStatus;
-    
+    private List<String> hygienStatus;   
     @Convert(converter = StringListConverter.class)
-    private List<String> genderSpecific;
-    
+    private List<String> genderSpecific;   
     private String idNumber;
     private String ownerPermission;
     private String selfOwnedPropertyDocument;
     private String mortgagePropertyDocument; 
     private String ownerPermittedDocument; 
     private String propertyDamageDocument; 
-    private String crewAccidentDocument; 
-    
+    private String crewAccidentDocument;  
     private String localAuthorities;
     private String governmentPermission;
     @Column(columnDefinition = "TEXT")
@@ -184,11 +166,9 @@ public class ShootingLocationPropertyDetails {
 	private String propertyDamageDescription;
 	private String crewAccidentLiabilityDescription;
 	@Convert(converter = StringListConverter.class)
-	private List<String> insuranceRequired;
-	
+	private List<String> insuranceRequired;	
 	private LocalDate availabilityStartDate;
 	private LocalDate availabilityEndDate;
-
 	@Convert(converter = LocalDateListConverter.class)
 	@Column(columnDefinition = "TEXT")
 	private List<LocalDate> pausedDates; 

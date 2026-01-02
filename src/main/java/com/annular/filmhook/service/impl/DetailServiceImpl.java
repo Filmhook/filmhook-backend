@@ -76,8 +76,6 @@ import com.annular.filmhook.webmodel.IndustryUserPermanentDetailWebModel;
 import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.PlatformDetailsWebModel;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
-import com.annular.filmhook.webmodel.ShootingLocationWebModal;
-import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.SubProfessionsWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 

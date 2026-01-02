@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.FilmProfession;
-import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.Platform;
 import com.annular.filmhook.repository.FilmProfessionRepository;
 import com.annular.filmhook.repository.PlatformFilmProfessionMapRepository;

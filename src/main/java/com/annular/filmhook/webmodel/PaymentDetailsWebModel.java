@@ -20,7 +20,7 @@ public class PaymentDetailsWebModel {
     private String txnid;
     private String amount;
     private String productinfo;
-    private String firstname;
+    private String fullName;
     private String email;
     private Integer userId;
     private Integer postId;

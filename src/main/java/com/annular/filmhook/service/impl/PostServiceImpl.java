@@ -8,7 +8,7 @@ import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Link;
-import com.annular.filmhook.model.Audition;
+import com.annular.filmhook.model.AuditionNewTeamNeed;
 import com.annular.filmhook.model.Comment;
 import com.annular.filmhook.model.Share;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
@@ -50,7 +50,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
+
 
 import java.util.UUID;
 import java.util.Date;
@@ -80,7 +80,9 @@ import com.annular.filmhook.repository.LinkRepository;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PinMediaRepository;
 import com.annular.filmhook.repository.PinProfileRepository;
-import com.annular.filmhook.repository.AuditionRepository;
+import com.annular.filmhook.repository.AuditionNewTeamNeedRepository;
+
+
 import com.annular.filmhook.repository.CommentRepository;
 import com.annular.filmhook.repository.ShareRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyReviewRepository;
@@ -173,7 +175,7 @@ public class PostServiceImpl implements PostService {
 	@Autowired
 	PostViewRepository postViewRepository;
 	@Autowired
-	AuditionRepository auditionRepository;
+	AuditionNewTeamNeedRepository auditionRepository;
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
 
@@ -896,7 +898,7 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 		try {
 			Likes likeRowToSaveOrUpdate;
 			Posts post = null;
-			Audition audition = null;
+			AuditionNewTeamNeed audition = null;
 			Comment existingComment = null;
 			ShootingLocationPropertyReview review = null;
 

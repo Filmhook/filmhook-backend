@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice // works for both REST and normal controllers
+@RestControllerAdvice 
 public class GlobalExceptionHandler {
 
     // ✅ Specific handler for resource not found

@@ -81,7 +81,6 @@ import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.PaymentsDTO;
-import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
@@ -100,6 +99,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
@@ -123,7 +123,6 @@ import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-
 
 
 @Service
@@ -1110,8 +1109,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.id(review.getId())
 							.propertyId(review.getProperty().getId())
 							.userId(review.getUser().getUserId())
-							.userName(review.getUser().getFirstName() + " "
-									+ review.getUser().getLastName())
+							.userName(review.getUser().getName())
 							.profilePicUrl(
 									userService.getRecieverProfilePicUrl(
 											review.getUser().getUserId()))
@@ -1133,9 +1131,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 									)
 							.ownerReplyByName(
 									review.getOwnerReplyBy() != null
-									? review.getOwnerReplyBy().getFirstName()
-											+ " "
-											+ review.getOwnerReplyBy().getLastName()
+									? review.getOwnerReplyBy().getName()
 											: null
 									)
 							.build();
@@ -2597,7 +2593,7 @@ public List<LocalDate> getAvailableDatesForProperty(
 
 
 				mailNotification.sendEmail(
-						owner.getFirstName(),
+						owner.getName(),
 						owner.getEmail(),
 						"📢 Your Property Has Been Booked!",
 						ownerContent
@@ -3519,6 +3515,5 @@ public List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(
 
 		return 0.0;
 	}
-
-
 }
+

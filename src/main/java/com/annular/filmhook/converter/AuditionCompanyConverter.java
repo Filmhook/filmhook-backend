@@ -431,9 +431,9 @@ public class AuditionCompanyConverter {
 				.status(entity.getStatus())
 				.isOwner(false)
 				.createdDate(entity.getCreatedDate())
-				.assignedUserName(entity.getAssignedUser() != null ? entity.getAssignedUser().getFirstName() + " " + entity.getAssignedUser().getLastName() : null)
+				.assignedUserName(entity.getAssignedUser() != null ? entity.getAssignedUser().getName()  : null)
 				.assignedUserEmail(entity.getAssignedUser() != null ? entity.getAssignedUser().getEmail() : null)
-				.ownerName(entity.getOwner() != null ? entity.getOwner().getFirstName() + " " + entity.getOwner().getLastName() : null)
+				.ownerName(entity.getOwner() != null ? entity.getOwner().getName()  : null)
 				.ownerEmail(entity.getOwner() != null ? entity.getOwner().getEmail() : null)
 				.build();
 
@@ -455,10 +455,10 @@ public class AuditionCompanyConverter {
 				.isOwner(false)
 				.createdDate(entity.getCreatedDate())
 				.assignedUserName(entity.getAssignedUser() != null ? 
-						entity.getAssignedUser().getFirstName() + " " + entity.getAssignedUser().getLastName() : null)
+						entity.getAssignedUser().getName(): null)
 				.assignedUserEmail(entity.getAssignedUser() != null ? entity.getAssignedUser().getEmail() : null)
 				.ownerName(entity.getOwner() != null ? 
-						entity.getOwner().getFirstName() + " " + entity.getOwner().getLastName() : null)
+						entity.getOwner().getName(): null)
 				.ownerEmail(entity.getOwner() != null ? entity.getOwner().getEmail() : null)
 				.build();
 
@@ -536,7 +536,7 @@ public class AuditionCompanyConverter {
 		dto.setTotalAmount(entity.getTotalAmount());
 		dto.setTotalTeamNeed(entity.getTotalTeamNeeds());
 		dto.setKey(key);
-		dto.setFirstname(entity.getUser().getFirstName());
+		dto.setFirstname(entity.getUser().getName());
 		dto.setEmail(entity.getUser().getEmail());
 		dto.setProductinfo("Audition Booking");
 		dto.setPhoneNumber(entity.getUser().getPhoneNumber());

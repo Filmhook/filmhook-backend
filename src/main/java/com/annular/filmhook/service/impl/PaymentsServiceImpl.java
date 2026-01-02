@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.model.Payments;
-import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.PaymentsRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.PaymentsService;

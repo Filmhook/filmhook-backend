@@ -3,7 +3,6 @@ package com.annular.filmhook.service.impl;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
-import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
 import com.annular.filmhook.model.IndustrySignupDetails;
 import com.annular.filmhook.model.IndustryUserPermanentDetails;
@@ -897,7 +895,7 @@ public class AdminServiceImpl implements AdminService {
                 Map<String, Object> map = new HashMap<>();
                 map.put("paymentId", payment.getPaymentId());
                 map.put("userId", payment.getUserId());
-                map.put("firstname", payment.getFirstname());
+                map.put("fullName", payment.getFullName());
                 map.put("email", payment.getEmail());
                 map.put("amount", payment.getAmount());
                 map.put("postId", payment.getPostId());
@@ -979,7 +977,7 @@ public class AdminServiceImpl implements AdminService {
                     .txnid(payment.getTxnid())
                     .amount(payment.getAmount())
                     .productinfo(payment.getProductinfo())
-                    .firstname(payment.getFirstname())
+                    .fullName(payment.getFullName())
                     .email(payment.getEmail())
                     .postId(payment.getPostId())
                     .promotionStatus(payment.getPromotionStatus())

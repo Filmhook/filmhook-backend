@@ -11,10 +11,6 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
-import com.google.firebase.messaging.AndroidConfig;
-import com.google.firebase.messaging.AndroidNotification;
-import com.google.firebase.messaging.ApnsConfig;
-import com.google.firebase.messaging.Aps;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;

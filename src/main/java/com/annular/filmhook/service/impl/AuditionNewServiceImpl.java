@@ -10,10 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +23,6 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.layout.Document;
 
-import javax.annotation.PostConstruct;
 import javax.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -703,7 +699,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				payment.getTxnid(),
 				amountStr,
 				"Audition Booking",
-				user.getFirstName(),
+				user.getName(),
 				user.getEmail(),
 				salt
 				);

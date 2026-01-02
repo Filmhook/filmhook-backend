@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.model.LiveChannel;
 import com.annular.filmhook.model.LiveSubscribe;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.LiveDetailsRepository;

@@ -53,19 +53,4 @@ public class AuditionCompanyDetailsValidator implements Validator {
 		
 	}
 
-	//    public void updateCompany(AuditionCompanyDetailsDTO dto, Errors errors) {
-	//        String loggedUser = userDetails.userInfo().getUsername();
-	//        var now = DateUtils.getAsiaLocalDateTimeInCustomFormat();
-	//
-	//        if (CustomValidator.isEmpty(dto.getId()))
-	//            errors.rejectValue("id", BAD_REQUEST_ERROR_CD, "Company ID is required for update");
-	//        if (dto.isGstRegistered() && CustomValidator.isEmpty(dto.getGstNumber()))
-	//            errors.rejectValue("gstNumber", BAD_REQUEST_ERROR_CD, "GST Number required when GST registered");
-	//
-	//        if (CustomValidator.isEmpty(dto.getStatus()))
-	//            dto.setStatus("ACTIVE");
-	//
-	//        dto.setUpdatedBy(loggedUser);
-	//        dto.setUpdatedDate(now);
-	//    }
 }

@@ -38,8 +38,8 @@ public class PaymentDetails {
     @Column(name = "productinfo")
     private String productinfo;
 
-    @Column(name = "firstname")
-    private String firstname;
+    @Column(name = "full_name")
+    private String fullName;
 
     @Column(name = "email")
     private String email;
