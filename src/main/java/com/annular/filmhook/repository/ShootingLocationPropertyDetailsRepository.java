@@ -11,26 +11,39 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
+import com.annular.filmhook.model.ShootingPropertyStatus;
 
 @Repository
 public interface ShootingLocationPropertyDetailsRepository extends JpaRepository<ShootingLocationPropertyDetails, Integer>{
 	
-	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.user.id = :userId AND p.status = true")
-	List<ShootingLocationPropertyDetails> findAllByUserId(@Param("userId") Integer userId);
+	List<ShootingLocationPropertyDetails> findAllByUser_UserIdAndStatusIn(Integer userId, List<ShootingPropertyStatus> statuses);
+
 
 //	@Query("SELECT DISTINCT p FROM ShootingLocationPropertyDetails p LEFT JOIN FETCH p.mediaFiles")
 //	List<ShootingLocationPropertyDetails> findAllWithMediaFiles();
+	@Query(
+		    "SELECT p " +
+		    "FROM ShootingLocationPropertyDetails p " +
+		    "WHERE p.industry.industryId IN :industryIds " +
+		    "AND p.status = 'APPROVED'"
+		)
+		List<ShootingLocationPropertyDetails>
+		findAllActiveByIndustryIndustryId(
+		        @Param("industryIds") List<Integer> industryIds
+		);
 
-	@Query("SELECT p FROM ShootingLocationPropertyDetails p WHERE p.industry.industryId IN :industryIds AND p.status = true")
-	List<ShootingLocationPropertyDetails> findAllActiveByIndustryIndustryId(@Param("industryIds") List<Integer> industryIds);
+
 	 
 	 @Modifying
 	    @Transactional
-	    @Query("UPDATE ShootingLocationPropertyDetails s SET s.status = false WHERE s.user.id = :userId")
-	    void deactivateShootingPropertyByUserId(@Param("userId") Integer userId);
+	    @Query("UPDATE ShootingLocationPropertyDetails s SET s.status = :status WHERE s.user.id = :userId")
+	    void deactivateShootingPropertyByUserId(  @Param("userId") Integer userId, @Param("status") ShootingPropertyStatus status);
 	
 	 List<ShootingLocationPropertyDetails> findByIndustryIndustryIdAndStatusTrue(Integer industryId);
 	 boolean existsByPropertyCode(String propertyCode);
 
+	 List<ShootingLocationPropertyDetails> findByStatusOrderByIdDesc(ShootingPropertyStatus status);
+	 
+	 
 }
 	

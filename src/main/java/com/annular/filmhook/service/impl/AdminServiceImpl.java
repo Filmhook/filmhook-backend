@@ -365,6 +365,7 @@ public class AdminServiceImpl implements AdminService {
 //            return ResponseEntity.internalServerError().body("Failed to retrieve industry user permanent details.");
 //        }
 //    }
+   
     @Override
     public ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel) {
         try {

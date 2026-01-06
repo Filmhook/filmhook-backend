@@ -1560,7 +1560,7 @@ public class UserServiceImpl implements UserService {
 		auditionCompanyRepository.softDeleteByUserId(userId);
 
 		auditionProjectRepository.deactivateByCreatedBy(userId, userId);
-		shootingLocationRepository.deactivateShootingPropertyByUserId(userId);
+		shootingLocationRepository.deactivateShootingPropertyByUserId(userId, ShootingPropertyStatus.DELETED);
 
 	}
 
