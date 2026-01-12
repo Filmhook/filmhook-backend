@@ -27,7 +27,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.*;
 
@@ -88,7 +88,7 @@ public class UserServiceImpl implements UserService {
 	S3Util s3Util;
 
 	@Autowired
-	private  UserDetails userDetails;
+	private  CurrentUserContext userDetails;
 
 	@Autowired
 	MediaFilesService mediaFilesService;

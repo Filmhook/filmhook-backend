@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-import com.annular.filmhook.UserDetails; // ✅ use your own class
+import com.annular.filmhook.CurrentUserContext; // ✅ use your own class
 import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
 import com.annular.filmhook.util.CustomValidator;
 import com.annular.filmhook.util.DateUtils;
@@ -20,7 +20,7 @@ public class AuditionCompanyDetailsValidator implements Validator {
 	private static final String BAD_REQUEST_ERROR_CD = "400";
 
 	@Autowired 
-	private UserDetails userDetails; // ✅ inject your security-based user util
+	private CurrentUserContext userDetails; // ✅ inject your security-based user util
 
 	@Override
 	public boolean supports(Class<?> clazz) {

@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
@@ -48,7 +48,7 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	@Autowired
 	private MailNotification mailNotification; 
 	@Autowired
-	private  UserDetails userDetails;
+	private  CurrentUserContext userDetails;
 	@Autowired
 	private AuditionUserCompanyRoleRepository roleRepository;
 	@Autowired

@@ -1,3 +1,4 @@
+
 package com.annular.filmhook.security.jwt;
 
 import java.util.Date;
@@ -22,6 +23,9 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.Keys;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class JwtUtils {
@@ -96,6 +100,26 @@ public class JwtUtils {
             logger.error("JWT claims string is empty: {}", e.getMessage());
         }
         return false;
+    }
+    
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    // 🔥 ADD THIS FOR ADMIN
+    public String generateAdminJwt(String email, String role) {
+
+        Claims claims = Jwts.claims();
+        claims.put("userType", "ADMIN");
+        claims.put("role", role);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .setClaims(claims)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
+                .compact();
     }
 
 }

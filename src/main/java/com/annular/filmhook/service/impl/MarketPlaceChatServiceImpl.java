@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 import com.annular.filmhook.controller.MarketPlaceChatController;
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.InAppNotification;
@@ -57,7 +57,7 @@ import com.google.firebase.messaging.Notification;
 public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 	
 	@Autowired
-	UserDetails userDetails;
+	CurrentUserContext userDetails;
 	
 	@Autowired
 	UserRepository userRepository;

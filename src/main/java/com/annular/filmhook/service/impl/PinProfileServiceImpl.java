@@ -26,7 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
 import com.annular.filmhook.model.Likes;
@@ -63,7 +63,7 @@ import com.annular.filmhook.webmodel.UserProfilePinWebModel;
 public class PinProfileServiceImpl implements PinProfileService {
 
     @Autowired
-    UserDetails userDetails;
+    CurrentUserContext userDetails;
 
     @Autowired
     PinProfileRepository pinProfileRepository;

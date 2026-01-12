@@ -36,7 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 
 import com.annular.filmhook.model.AddressList;
 import com.annular.filmhook.model.Audition;
@@ -133,7 +133,7 @@ public class AuditionServiceImpl implements AuditionService {
 	AuditionIgnoranceRepository auditionIgnoranceRepository;
 
 	@Autowired
-	UserDetails userDetails;
+	CurrentUserContext userDetails;
 
 	@Autowired
 	UserRepository userRepository;

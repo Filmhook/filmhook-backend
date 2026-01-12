@@ -1,6 +1,7 @@
 package com.annular.filmhook.service.impl;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -24,11 +25,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.AdminRole;
+import com.annular.filmhook.model.AdminUser;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
@@ -39,6 +46,8 @@ import com.annular.filmhook.model.PaymentDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
 import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.AdminRoleRepository;
+import com.annular.filmhook.repository.AdminUserRepository;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.IndustrySignupDetailsRepository;
@@ -47,9 +56,11 @@ import com.annular.filmhook.repository.PaymentDetailsRepository;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.ReportRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.security.jwt.JwtUtils;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.webmodel.AdminRegisterRequest;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryUserResponseDTO;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
@@ -57,6 +68,7 @@ import com.annular.filmhook.webmodel.PlatformDetailDTO;
 import com.annular.filmhook.webmodel.ProfessionDetailDTO;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.util.AdminPasswordGenerator;
 import com.annular.filmhook.util.MailNotification;
 
 @Service
@@ -64,7 +76,19 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     UserRepository userRepository;
+    
+    @Autowired
+    AdminUserRepository adminUserRepository;
+    
+    @Autowired
+    AdminRoleRepository adminRoleRepository;
 
+    @Autowired
+    JwtUtils jwtUtils;
+    
+    @Autowired
+    AuthenticationManager authenticationManager;
+    
     @Autowired
     IndustryMediaFileRepository industryMediaFileRepository;
 
@@ -1123,6 +1147,164 @@ public class AdminServiceImpl implements AdminService {
             return new Response(-1, "Failed to fetch count", null);
         }
     }
+    
+    @Override
+    public Map<String, Object> generatePassword() {
+
+        String password = AdminPasswordGenerator.generate(16);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 1);
+        response.put("message", "Password generated");
+        response.put("password", password);
+
+        return response;
+    }
+    
+    @Override
+    public Map<String, Object> getRoles() {
+
+        List<Map<String, Object>> roles =
+        		adminRoleRepository.findAll().stream().map(r -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", r.getId());
+                map.put("roleName", r.getRoleName());
+                return map;
+            }).collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 1);
+        response.put("message", "Roles fetched");
+        response.put("data", roles);
+
+        return response;
+    }
+    
+    @Override
+    @Transactional
+    public ResponseEntity<Map<String, Object>> registerAdmin(AdminRegisterRequest wm) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        if (adminUserRepository.findByEmail(wm.getEmail()).isPresent()) {
+            response.put("status", 0);
+            response.put("message", "Email already exists");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        AdminRole role = adminRoleRepository.findById(wm.getRoleId())
+                .orElseThrow(() -> new RuntimeException("Invalid role"));
+
+        String encryptedPassword =
+                new BCryptPasswordEncoder().encode(wm.getPassword());
+
+        int otp = Integer.parseInt(Utility.generateOtp(4));
+
+        AdminUser admin = new AdminUser();
+        admin.setFullName(wm.getFullName());
+        admin.setEmail(wm.getEmail());
+        admin.setPhoneNumber(wm.getPhoneNumber());
+        admin.setJobTitle(wm.getJobTitle());
+        admin.setOrganizationUnit(wm.getOrganizationUnit());
+        admin.setPassword(encryptedPassword);
+        admin.setRole(role);
+        admin.setEmailOtp(otp);
+        admin.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+        admin.setIsEmailVerified(false);
+        admin.setCreatedAt(LocalDateTime.now());
+
+        adminUserRepository.save(admin);
+
+    //    mailNotification.sendOtpEmail(admin.getEmail(), otp);
+
+        response.put("status", 1);
+        response.put("message", "Admin registered. Verify email via OTP");
+
+        return ResponseEntity.ok(response);
+    }
+
+//    @Override
+//    public ResponseEntity<Map<String, Object>> login(AdminRegisterRequest wm) {
+//
+//        Map<String, Object> response = new HashMap<>();
+//
+//        Authentication authentication =
+//                authenticationManager.authenticate(
+//                        new UsernamePasswordAuthenticationToken(
+//                                wm.getEmail(),
+//                                wm.getPassword()
+//                        )
+//                );
+//
+//        SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//        AdminUser admin =
+//                adminUserRepository.findByEmail(wm.getEmail())
+//                        .orElseThrow(() -> new RuntimeException("Admin not found"));
+//
+//        if (!Boolean.TRUE.equals(admin.getIsEmailVerified())) {
+//            response.put("status", 0);
+//            response.put("message", "Email not verified");
+//            return ResponseEntity.badRequest().body(response);
+//        }
+//
+//        String jwt = jwtUtils.generateJwtToken(
+//                admin.getEmail(),
+//                "ADMIN",
+//                admin.getRole().getRoleCode() // ROLE_ADMIN / ROLE_SUPER_ADMIN
+//        );
+//
+//        response.put("status", 1);
+//        response.put("message", "Login successful");
+//
+//        Map<String, Object> data = new HashMap<>();
+//        data.put("jwt", jwt);
+//        data.put("fullName", admin.getFullName());
+//        data.put("email", admin.getEmail());
+//        data.put("role", admin.getRole().getRoleCode());
+//
+//        response.put("data", data);
+//
+//        return ResponseEntity.ok(response);
+//    }
+
+    @Override
+    public ResponseEntity<Map<String, Object>> verifyOtp(String email, String otp) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        AdminUser admin = adminUserRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        if (admin.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            response.put("status", 0);
+            response.put("message", "OTP expired");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        if (!otp.equals(admin.getEmailOtp())) {
+            response.put("status", 0);
+            response.put("message", "Invalid OTP");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        admin.setIsEmailVerified(true);
+        admin.setEmailOtp(null);
+        admin.setOtpExpiry(null);
+
+        adminUserRepository.save(admin);
+
+        response.put("status", 1);
+        response.put("message", "Email verified successfully");
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
+
+
+    
 
 	
 

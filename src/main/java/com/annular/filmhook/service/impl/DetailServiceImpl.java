@@ -23,7 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 import com.annular.filmhook.model.Country;
 import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.FilmProfession;
@@ -145,7 +145,7 @@ public class DetailServiceImpl implements DetailService {
     FilmSubProfessionDetailRepository filmSubProfessionDetailRepository;
 
     @Autowired
-    UserDetails userDetails;
+    CurrentUserContext userDetails;
 
     @Autowired
     FilmProfessionRepository filmProfessionRepository;

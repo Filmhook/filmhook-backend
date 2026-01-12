@@ -28,6 +28,7 @@ import com.annular.filmhook.webmodel.CommentInputWebModel;
 import com.annular.filmhook.webmodel.CommentOutputWebModel;
 import com.annular.filmhook.webmodel.ShareWebModel;
 import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidConfig.Priority;
 import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -47,7 +48,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -101,7 +102,7 @@ import java.time.Duration;
 public class PostServiceImpl implements PostService {
 
 	@Autowired
-	UserDetails userDetails;
+	CurrentUserContext userDetails;
 
 	public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
 
@@ -1331,9 +1332,11 @@ public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
 					AndroidNotification androidNotification = AndroidNotification.builder()
 							.setIcon("ic_notification") // matches Android app drawable
 							.setColor("#00A2E8") // optional tint
+							.setChannelId(postId)
 							.build();
 
 					AndroidConfig androidConfig = AndroidConfig.builder()
+							.setPriority(Priority.HIGH)
 							.setNotification(androidNotification)
 							.build();
 					Message firebaseMessage = Message.builder()

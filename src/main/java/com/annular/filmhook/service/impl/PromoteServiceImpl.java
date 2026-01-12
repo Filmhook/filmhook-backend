@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.VisitPage;
@@ -51,7 +51,7 @@ public class PromoteServiceImpl implements PromoteService {
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
 	@Autowired
-	UserDetails userDetails;
+	CurrentUserContext userDetails;
 	
 	@Autowired
 	PostsRepository postRepository;

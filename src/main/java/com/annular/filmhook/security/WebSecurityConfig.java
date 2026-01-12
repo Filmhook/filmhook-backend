@@ -3,6 +3,7 @@ package com.annular.filmhook.security;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,6 +24,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.annular.filmhook.security.jwt.AdminAuthTokenFilter;
 import com.annular.filmhook.security.jwt.AuthEntryPointJwt;
 import com.annular.filmhook.security.jwt.AuthTokenFilter;
 
@@ -31,8 +33,9 @@ import com.annular.filmhook.security.jwt.AuthTokenFilter;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
-    @Autowired
-    UserDetailsService userDetailsService;
+	@Autowired
+	@Qualifier("userDetailsServiceImpl")
+	private UserDetailsService userDetailsService;
 
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
@@ -40,6 +43,11 @@ public class WebSecurityConfig {
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
         return new AuthTokenFilter();
+    }
+    
+    @Bean
+    public AdminAuthTokenFilter adminAuthTokenFilter() {
+        return new AdminAuthTokenFilter(); // ADMIN filter
     }
 
     @Bean
@@ -85,13 +93,14 @@ public class WebSecurityConfig {
                                         "/v3/api-docs/**",
                                         "/v2/api-docs",   // for old swagger
                                         "/swagger-resources/**",
-                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/retry-payment/**","/audition/retry-payment/**")
+                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/retry-payment/**","/audition/retry-payment/**","/admin/register","/admin/login")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
                 );
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(adminAuthTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

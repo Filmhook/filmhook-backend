@@ -36,7 +36,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.CurrentUserContext;
 
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.ChatMediaDeleteTracker;
@@ -68,6 +68,7 @@ import com.annular.filmhook.webmodel.InAppNotificationWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 import com.annular.filmhook.webmodel.ChatUserWebModel;
 import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidConfig.Priority;
 import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -89,7 +90,7 @@ public class ChatServiceImpl implements ChatService {
 	MediaFilesService mediaFilesService;
 
 	@Autowired
-	UserDetails userDetails;
+	CurrentUserContext userDetails;
 
 
 
@@ -291,9 +292,11 @@ public class ChatServiceImpl implements ChatService {
 							AndroidNotification androidNotification = AndroidNotification.builder()
 									.setIcon("ic_notification")
 									.setColor("#00A2E8")
+									.setChannelId("default")
 									.build();
 
 							AndroidConfig androidConfig = AndroidConfig.builder()
+									
 									.setNotification(androidNotification)
 									.build();
 

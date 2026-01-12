@@ -1,5 +1,7 @@
 package com.annular.filmhook.controller;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +14,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.AdminUser;
+import com.annular.filmhook.repository.AdminUserRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.security.jwt.JwtUtils;
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.webmodel.AdminRegisterRequest;
 import com.annular.filmhook.webmodel.UserWebModel;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequestMapping("/admin")
@@ -27,6 +37,15 @@ public class AdminController {
 
 	@Autowired
 	AdminService adminService;
+	
+    @Autowired
+    JwtUtils jwtUtils;
+    
+    @Autowired
+    AuthenticationManager authenticationManager;
+    
+    @Autowired
+    AdminUserRepository adminUserRepository;
 
 	@PostMapping("adminRegister")
 	public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
@@ -290,5 +309,56 @@ public class AdminController {
    		}
    		return new Response(-1, "Success", "");
    	}
-       
+    
+    @GetMapping("/generate-password")
+    public ResponseEntity<Map<String, Object>> generatePassword() {
+        return ResponseEntity.ok(adminService.generatePassword());
+    }
+    
+    @GetMapping("/roles")
+    public ResponseEntity<Map<String, Object>> getRoles() {
+        return ResponseEntity.ok(adminService.getRoles());
+    }
+
+    
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, Object>> registerAdmin(
+            @RequestBody AdminRegisterRequest userWebModel) {
+        return adminService.registerAdmin(userWebModel);
+    }
+    
+//    @PostMapping("/login")
+//    public ResponseEntity<Map<String, Object>> login(
+//            @RequestBody AdminRegisterRequest userWebModel) {
+//        return adminService.login(userWebModel);
+//    }
+    
+    @PostMapping("/login")
+    public ResponseEntity<?> adminLogin(@RequestBody AdminRegisterRequest req) {
+
+        Authentication auth = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
+        );
+
+        AdminUser admin = adminUserRepository.findByEmail(req.getEmail()).orElseThrow();
+
+        String jwt = jwtUtils.generateAdminJwt(
+            admin.getEmail(),
+            admin.getRole().getRoleCode()
+        );
+
+        return ResponseEntity.ok(Map.of(
+            "status", 1,
+            "jwt", jwt,
+            "role", admin.getRole().getRoleCode()
+        ));
+    }
+
+    
+    @PostMapping("/verify-otp")
+    public ResponseEntity<Map<String, Object>> verifyOtp(
+            @RequestParam String email,
+            @RequestParam String otp) {
+        return adminService.verifyOtp(email, otp);
+    }
 }
