@@ -1,6 +1,6 @@
 package com.annular.filmhook.service.impl;
 
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Bookings;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.BookingsRepository;
@@ -26,7 +26,7 @@ public class BookingServiceImpl implements BookingService {
     public static final Logger logger = LoggerFactory.getLogger(BookingServiceImpl.class);
 
     @Autowired
-    CurrentUserContext loggedInUser;
+    UserDetails loggedInUser;
 
     @Autowired
     BookingsRepository bookingsRepository;

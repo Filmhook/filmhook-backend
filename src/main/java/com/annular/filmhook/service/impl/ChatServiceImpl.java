@@ -36,7 +36,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.ChatMediaDeleteTracker;
@@ -90,7 +90,7 @@ public class ChatServiceImpl implements ChatService {
 	MediaFilesService mediaFilesService;
 
 	@Autowired
-	CurrentUserContext userDetails;
+	UserDetails userDetails;
 
 
 

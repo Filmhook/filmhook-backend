@@ -48,7 +48,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -102,7 +102,7 @@ import java.time.Duration;
 public class PostServiceImpl implements PostService {
 
 	@Autowired
-	CurrentUserContext userDetails;
+	UserDetails userDetails;
 
 	public static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
 

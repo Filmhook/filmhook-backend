@@ -43,7 +43,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
 import com.annular.filmhook.exception.ResourceNotFoundException;
 import com.annular.filmhook.model.AuditionCartItems;
@@ -146,7 +146,7 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	@Autowired
 	private AuditionViewRepository auditionViewRepository;
 	@Autowired
-	private  CurrentUserContext userDetails;
+	private  UserDetails userDetails;
 	@Autowired
 	private  LikeRepository likesRepository;
 	@Autowired

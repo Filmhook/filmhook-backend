@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.UserRepository;
@@ -39,7 +39,7 @@ public class AuditionCompanyController {
     private AuditionCompanyDetailsValidator companyValidator;
     
     @Autowired
-	private  CurrentUserContext userDetails;
+	private  UserDetails userDetails;
     @Autowired
     private UserRepository userRepository;
 

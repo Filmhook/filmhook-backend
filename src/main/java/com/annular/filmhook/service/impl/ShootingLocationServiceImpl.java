@@ -38,7 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationConverter;
@@ -170,7 +170,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Autowired
 	private ShootingLocationBookingRepository bookingRepo;
 	@Autowired 
-	private CurrentUserContext userDetails;
+	private UserDetails userDetails;
 	@Autowired
 	private PropertyLikeRepository likeRepository;
 	@Autowired

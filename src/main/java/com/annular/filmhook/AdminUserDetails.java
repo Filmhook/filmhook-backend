@@ -1,5 +1,4 @@
 package com.annular.filmhook;
-
 import java.util.Collection;
 import java.util.List;
 
@@ -8,14 +7,19 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.annular.filmhook.model.AdminUser;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class AdminUserDetails implements UserDetails {
 
     private Integer id;
     private String email;
+
+    @JsonIgnore
     private String password;
+
     private String role;
 
+    // ✅ ADD THIS CONSTRUCTOR
     public AdminUserDetails(Integer id, String email, String password, String role) {
         this.id = id;
         this.email = email;

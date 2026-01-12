@@ -4,7 +4,7 @@ package com.annular.filmhook.service;
 
 import java.util.List;
 
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;

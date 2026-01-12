@@ -28,7 +28,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FollowersRequest;
 import com.annular.filmhook.model.Likes;
@@ -58,7 +58,7 @@ import com.annular.filmhook.webmodel.ReportPostWebModel;
 public class ReportServiceImpl implements ReportService {
 
     @Autowired
-    CurrentUserContext userDetails;
+    UserDetails userDetails;
     
 	@Autowired
 	private JavaMailSender javaMailSender;

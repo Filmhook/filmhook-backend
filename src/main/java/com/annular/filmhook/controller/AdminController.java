@@ -1,6 +1,7 @@
 package com.annular.filmhook.controller;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,8 @@ import com.annular.filmhook.repository.AdminUserRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.security.jwt.JwtUtils;
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.webmodel.AdminJwtResponse;
+import com.annular.filmhook.webmodel.AdminLoginRequest;
 import com.annular.filmhook.webmodel.AdminRegisterRequest;
 import com.annular.filmhook.webmodel.UserWebModel;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -333,26 +336,26 @@ public class AdminController {
 //        return adminService.login(userWebModel);
 //    }
     
-    @PostMapping("/login")
-    public ResponseEntity<?> adminLogin(@RequestBody AdminRegisterRequest req) {
-
-        Authentication auth = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
-        );
-
-        AdminUser admin = adminUserRepository.findByEmail(req.getEmail()).orElseThrow();
-
-        String jwt = jwtUtils.generateAdminJwt(
-            admin.getEmail(),
-            admin.getRole().getRoleCode()
-        );
-
-        return ResponseEntity.ok(Map.of(
-            "status", 1,
-            "jwt", jwt,
-            "role", admin.getRole().getRoleCode()
-        ));
-    }
+//    @PostMapping("/login")
+//    public ResponseEntity<?> adminLogin(@RequestBody AdminRegisterRequest req) {
+//
+//        Authentication auth = authenticationManager.authenticate(
+//            new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
+//        );
+//
+//        AdminUser admin = adminUserRepository.findByEmail(req.getEmail()).orElseThrow();
+//
+//        String jwt = jwtUtils.generateAdminJwt(
+//            admin.getEmail(),
+//            admin.getRole().getRoleCode()
+//        );
+//
+//        return ResponseEntity.ok(Map.of(
+//            "status", 1,
+//            "jwt", jwt,
+//            "role", admin.getRole().getRoleCode()
+//        ));
+//    }
 
     
     @PostMapping("/verify-otp")
@@ -360,5 +363,48 @@ public class AdminController {
             @RequestParam String email,
             @RequestParam String otp) {
         return adminService.verifyOtp(email, otp);
+    }
+    
+    @PostMapping("/login")
+    public ResponseEntity<?> adminLogin(@RequestBody AdminLoginRequest request) {
+
+        Optional<AdminUser> adminOpt =
+                adminUserRepository.findByEmail(request.getEmail());
+
+        if (adminOpt.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(new Response(-1, "Invalid Admin Email", null));
+        }
+
+        Authentication authentication =
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                request.getEmail(),
+                                request.getPassword()
+                        )
+                );
+
+        SecurityContextHolder.getContext()
+                .setAuthentication(authentication);
+
+        AdminUser admin = adminOpt.get();
+
+        // 🔐 ADMIN JWT (separate method)
+        String jwt = jwtUtils.generateAdminJwt(
+                admin.getEmail(),
+                admin.getRole().getRoleCode()
+        );
+
+        return ResponseEntity.ok(
+                AdminJwtResponse.builder()
+                        .jwt(jwt)
+                        .id(admin.getId())
+                        .email(admin.getEmail())
+                        .fullName(admin.getFullName())
+                        .role(admin.getRole().getRoleCode())
+                        .status(1)
+                        .message("Admin Login Successful")
+                        .build()
+        );
     }
 }

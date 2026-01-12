@@ -26,7 +26,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.HelpAndSupport;
@@ -65,7 +65,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	TwilioConfig twilioConfig;
 
 	@Autowired
-	CurrentUserContext userDetails;
+	UserDetails userDetails;
 
 	@Autowired
 	HelpAndSupportRepository helpAndSupportRepository;

@@ -5,6 +5,7 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.AdminRefreshToken;
 import com.annular.filmhook.webmodel.AdminRegisterRequest;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -62,4 +63,6 @@ public interface AdminService {
 //	ResponseEntity<Map<String, Object>> login(AdminRegisterRequest userWebModel);
 
 	ResponseEntity<Map<String, Object>> verifyOtp(String email, String otp);
+
+	AdminRefreshToken createToken(Integer id);
 }

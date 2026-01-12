@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.AdminRefreshToken;
 import com.annular.filmhook.model.AdminRole;
 import com.annular.filmhook.model.AdminUser;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
@@ -46,6 +48,7 @@ import com.annular.filmhook.model.PaymentDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
 import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.AdminRefreshTokenRepository;
 import com.annular.filmhook.repository.AdminRoleRepository;
 import com.annular.filmhook.repository.AdminUserRepository;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
@@ -82,6 +85,9 @@ public class AdminServiceImpl implements AdminService {
     
     @Autowired
     AdminRoleRepository adminRoleRepository;
+    
+    @Autowired
+    private AdminRefreshTokenRepository repository;
 
     @Autowired
     JwtUtils jwtUtils;
@@ -1300,6 +1306,15 @@ public class AdminServiceImpl implements AdminService {
         return ResponseEntity.ok(response);
     }
 
+    public AdminRefreshToken createToken(Integer adminId) {
+
+        AdminRefreshToken token = new AdminRefreshToken();
+        token.setAdminId(adminId);
+        token.setToken(UUID.randomUUID().toString());
+        token.setExpiryDate(LocalDateTime.now().plusDays(7));
+
+        return repository.save(token);
+    }
 
 
 

@@ -16,7 +16,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.core.io.ByteArrayResource;
 
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.HelpAndSupport;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.UserRepository;
@@ -26,7 +26,7 @@ public class MailNotification {
 
     public static final Logger logger = LoggerFactory.getLogger(MailNotification.class);
 	@Autowired
-	private  CurrentUserContext userDetails;
+	private  UserDetails userDetails;
     
 	@Autowired
 	private UserRepository userRepository;

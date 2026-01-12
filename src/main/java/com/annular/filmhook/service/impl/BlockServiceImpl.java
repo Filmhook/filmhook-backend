@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.CurrentUserContext;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Block;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.User;
@@ -30,7 +30,7 @@ import com.annular.filmhook.webmodel.BlockWebModel;
 public class BlockServiceImpl implements BlockService {
 
     @Autowired
-    CurrentUserContext userDetails;
+    UserDetails userDetails;
 
     @Autowired
     BlockRepository blockRepository;

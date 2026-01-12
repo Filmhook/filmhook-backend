@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import com.annular.filmhook.security.UserDetailsImpl;
 
 @Component
-public class CurrentUserContext {
+public class UserDetails {
 
     public UserDetailsImpl userInfo() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
