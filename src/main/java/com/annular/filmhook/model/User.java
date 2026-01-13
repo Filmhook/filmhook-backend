@@ -314,8 +314,11 @@ public class User {
 	@Column(name = "permanent_delete", columnDefinition = "BOOLEAN DEFAULT 0")
 	private Boolean permanentDelete = false;
 	
-    private String organizationUnit;
-    private String jobTitle;
+	@Column(name = "job_title", columnDefinition = "TEXT")
+	private String jobTitle;
+
+	@Column(name = "organization_unit", columnDefinition = "TEXT")
+	private String organizationUnit;
 
 	
 }
