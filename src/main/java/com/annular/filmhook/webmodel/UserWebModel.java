@@ -144,6 +144,7 @@ public class UserWebModel {
    	private int followersListCount;
     private Boolean pinProfileStatus;
     private boolean followingStatus;
-
+    private String organizationUnit;
+    private String jobTitle;
 
 }

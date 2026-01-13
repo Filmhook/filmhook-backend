@@ -313,6 +313,9 @@ public class User {
 	@Builder.Default
 	@Column(name = "permanent_delete", columnDefinition = "BOOLEAN DEFAULT 0")
 	private Boolean permanentDelete = false;
+	
+    private String organizationUnit;
+    private String jobTitle;
 
 	
 }

@@ -1,5 +1,7 @@
 package com.annular.filmhook.controller;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -290,5 +292,10 @@ public class AdminController {
    		}
    		return new Response(-1, "Success", "");
    	}
+    
+    @GetMapping("/generate-password")
+    public ResponseEntity<Map<String, Object>> generatePassword() {
+        return ResponseEntity.ok(adminService.generatePassword());
+    }
        
 }

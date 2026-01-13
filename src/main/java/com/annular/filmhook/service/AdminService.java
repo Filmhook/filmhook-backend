@@ -1,5 +1,7 @@
 package com.annular.filmhook.service;
 
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
@@ -48,5 +50,7 @@ public interface AdminService {
 	Response getIndustryUserCount();
 
 	Response getAllAdminUsersByUserType(String userType, Integer page, Integer size);
+
+	Map<String, Object> generatePassword();
 
 }
