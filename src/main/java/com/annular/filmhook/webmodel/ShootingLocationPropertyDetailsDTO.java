@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.persistence.Convert;
 
+import com.annular.filmhook.model.ShootingPropertyStatus;
 import com.annular.filmhook.util.StringListConverter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -140,7 +141,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<LocalDate> pausedDates; 
 	private LocalDateTime createdOn;
 	private Integer createdBy;
-	private Boolean status;
+	private ShootingPropertyStatus status;
 
 	public Double getTotalArea() {
 		return totalArea;

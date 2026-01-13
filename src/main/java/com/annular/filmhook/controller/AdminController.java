@@ -317,53 +317,7 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> generatePassword() {
         return ResponseEntity.ok(adminService.generatePassword());
     }
-    
-    @GetMapping("/roles")
-    public ResponseEntity<Map<String, Object>> getRoles() {
-        return ResponseEntity.ok(adminService.getRoles());
-    }
 
-    
-    @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> registerAdmin(
-            @RequestBody AdminRegisterRequest userWebModel) {
-        return adminService.registerAdmin(userWebModel);
-    }
-    
-//    @PostMapping("/login")
-//    public ResponseEntity<Map<String, Object>> login(
-//            @RequestBody AdminRegisterRequest userWebModel) {
-//        return adminService.login(userWebModel);
-//    }
-    
-//    @PostMapping("/login")
-//    public ResponseEntity<?> adminLogin(@RequestBody AdminRegisterRequest req) {
-//
-//        Authentication auth = authenticationManager.authenticate(
-//            new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword())
-//        );
-//
-//        AdminUser admin = adminUserRepository.findByEmail(req.getEmail()).orElseThrow();
-//
-//        String jwt = jwtUtils.generateAdminJwt(
-//            admin.getEmail(),
-//            admin.getRole().getRoleCode()
-//        );
-//
-//        return ResponseEntity.ok(Map.of(
-//            "status", 1,
-//            "jwt", jwt,
-//            "role", admin.getRole().getRoleCode()
-//        ));
-//    }
-
-    
-    @PostMapping("/verify-otp")
-    public ResponseEntity<Map<String, Object>> verifyOtp(
-            @RequestParam String email,
-            @RequestParam String otp) {
-        return adminService.verifyOtp(email, otp);
-    }
     
     @PostMapping("/login")
     public ResponseEntity<?> adminLogin(@RequestBody AdminLoginRequest request) {
@@ -407,4 +361,5 @@ public class AdminController {
                         .build()
         );
     }
+
 }

@@ -63,7 +63,7 @@ public class ShootingLocationController {
 	@Autowired
 	private ShootingLocationService service;
 	public static final Logger logger = LoggerFactory.getLogger(ShootingLocationController.class);
-	
+
 	@GetMapping("/types")
 	public ResponseEntity<?> getTypes() {
 		try {
@@ -279,38 +279,38 @@ public class ShootingLocationController {
 	@GetMapping("/getPropertiesByliked")
 	public ResponseEntity<Response> getLikedProperties(@RequestParam Integer userId) {
 
-	    Logger logger = LoggerFactory.getLogger(this.getClass());
+		Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	    try {
-	        logger.info("Fetching liked properties for userId: {}", userId);
+		try {
+			logger.info("Fetching liked properties for userId: {}", userId);
 
-	        List<ShootingLocationPropertyDetailsDTO> likedProperties =
-	                service.getPropertiesLikedByUser(userId);
+			List<ShootingLocationPropertyDetailsDTO> likedProperties =
+					service.getPropertiesLikedByUser(userId);
 
-	        // ✅ Return empty list instead of message map
-	        if (likedProperties == null || likedProperties.isEmpty()) {
-	            logger.info("No liked properties found for userId: {}", userId);
-	            return ResponseEntity.ok(
-	                    new Response(1, "No properties found in wishlist", Collections.emptyList())
-	            );
-	        }
+			// ✅ Return empty list instead of message map
+			if (likedProperties == null || likedProperties.isEmpty()) {
+				logger.info("No liked properties found for userId: {}", userId);
+				return ResponseEntity.ok(
+						new Response(1, "No properties found in wishlist", Collections.emptyList())
+						);
+			}
 
-	        logger.info("Found {} liked properties for userId: {}",
-	                likedProperties.size(), userId);
+			logger.info("Found {} liked properties for userId: {}",
+					likedProperties.size(), userId);
 
-	        return ResponseEntity.ok(
-	                new Response(1, "Success", likedProperties)
-	        );
+			return ResponseEntity.ok(
+					new Response(1, "Success", likedProperties)
+					);
 
-	    } catch (Exception ex) {
-	        logger.error("Error while fetching liked properties for userId {}",
-	                userId, ex);
+		} catch (Exception ex) {
+			logger.error("Error while fetching liked properties for userId {}",
+					userId, ex);
 
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                .body(new Response(-1,
-	                        "Something went wrong while fetching wishlist",
-	                        null));
-	    }
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1,
+							"Something went wrong while fetching wishlist",
+							null));
+		}
 	}
 
 
@@ -432,7 +432,7 @@ public class ShootingLocationController {
 					.body(new Response(-1, "Failed to get average rating", null));
 		}
 	}
-	
+
 	@GetMapping("/property/{propertyId}/{userId}")
 	public ResponseEntity<?> getReviewsByProperty(@PathVariable Integer propertyId, @PathVariable Integer userId ) {
 		logger.info("Fetching reviews for property ID: {}", propertyId);
@@ -483,7 +483,7 @@ public class ShootingLocationController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
-	
+
 	@DeleteMapping("/deleteReview")
 	public ResponseEntity<Response> deleteReview(
 			@RequestParam Integer reviewId,
@@ -596,7 +596,7 @@ public class ShootingLocationController {
 					.body(new Response(0, "Something went wrong", null));
 		}
 	}
-	
+
 	@PostMapping("/saveAdminRating")
 	public ResponseEntity<?> saveAdminRating(
 			@RequestBody ShootingLocationPropertyDetailsDTO request) {
@@ -642,8 +642,27 @@ public class ShootingLocationController {
 
 	}
 
+	@PostMapping("/approveProperty")
+	public ResponseEntity<Response> approve(@RequestParam Integer propertyId) {
+		Response response= service.approveProperty(propertyId);
+		return ResponseEntity.ok(response);
+	}
 
+	@PostMapping("/rejectProperty")
+	public ResponseEntity<Response> reject(
+			@RequestParam Integer propertyId,
+			@RequestParam String reason) {
 
+		Response response = service.rejectProperty(propertyId, reason);
+		return ResponseEntity.ok(response);
+	}
+	
+	
+	@GetMapping("/pendingProperties")
+	public ResponseEntity<Response> getPendingProperties(@RequestParam(required = false) PropertyBookingType propertyType) {
 
+	    Response response = service.getPendingProperties(propertyType);
+	    return ResponseEntity.ok(response);
+	}
 }
 

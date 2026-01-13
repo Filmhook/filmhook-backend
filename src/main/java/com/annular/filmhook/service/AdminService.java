@@ -53,16 +53,6 @@ public interface AdminService {
 
 	Response getAllAdminUsersByUserType(String userType, Integer page, Integer size);
 
-	// New Version
 	Map<String, Object> generatePassword();
 
-	Map<String, Object> getRoles();
-
-	ResponseEntity<Map<String, Object>> registerAdmin(AdminRegisterRequest userWebModel);
-
-//	ResponseEntity<Map<String, Object>> login(AdminRegisterRequest userWebModel);
-
-	ResponseEntity<Map<String, Object>> verifyOtp(String email, String otp);
-
-	AdminRefreshToken createToken(Integer id);
 }

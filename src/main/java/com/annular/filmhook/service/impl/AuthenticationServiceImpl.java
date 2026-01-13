@@ -779,13 +779,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		String email = model.getEmail();
 
 		// 1️⃣ ACTIVE USER EXISTS → LOGIN
-		Optional<User> activeUser =
-				userRepository.findByEmailAndStatusTrue(email);
+		 Optional<User> activeUser =
+		            userRepository.findByEmailAndStatusTrue(email);
 
-		if (activeUser.isPresent()) {
-			return ResponseEntity.unprocessableEntity()
-					.body(new Response(0, "This email already exists. Please login.", null));
-		}
+		    if (activeUser.isPresent()) {
+
+		        User existingUser = activeUser.get();
+		        		       
+		        String message;
+		        if ("Public User".equalsIgnoreCase(existingUser.getUserType())) {
+		            message = "This email is already registered as a Public User. Please login.";
+		        } else if ("Industry User".equalsIgnoreCase(existingUser.getUserType())) {
+		            message = "This email is already registered as an Industry User. Please login.";
+		        } else {
+		            message = "This email already exists. Please login.";
+		        }
+
+		        return ResponseEntity.unprocessableEntity()
+		                .body(new Response(0, message, null));
+		    }
 
 		// 2️⃣ INACTIVE + NOT PERMANENTLY DELETED → UPDATE SAME ROW
 		Optional<User> inactiveUser =

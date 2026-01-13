@@ -76,9 +76,9 @@ public interface ShootingLocationService {
 	List<BookingWithPropertyDTO> getBookingHistoryByClientId(Integer clientId);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(Integer industryId,String sortBy, String order, String propertyType, String priceType);
 
-
-
-
+	Response approveProperty(Integer propertyId);
+	Response rejectProperty(Integer propertyId, String rejectionReason);
+	Response getPendingProperties(PropertyBookingType propertyType);
 
 
 }
