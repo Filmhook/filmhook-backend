@@ -56,6 +56,14 @@ public class User {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_Name")
+    private String lastName;
+
+    @Column(name = "middle_Name")
+    private String middleName;
 
     @JsonIgnore
     @Column(name = "verification_code")
