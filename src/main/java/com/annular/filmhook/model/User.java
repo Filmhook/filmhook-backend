@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -250,6 +251,12 @@ public class User {
     
     @Column(name = "onlineStatus")
     private Boolean onlineStatus;
+    
+    @Column(name = "adminOnlineStatus")
+    private Boolean adminOnlineStatus;
+    
+    @Column(name = "last_seen_at")
+    private LocalDateTime lastSeenAt;
     
     @Column(name = "userFlag")
     private Boolean userFlag;

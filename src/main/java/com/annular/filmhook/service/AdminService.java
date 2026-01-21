@@ -1,29 +1,31 @@
 package com.annular.filmhook.service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.webmodel.AdminListResponse;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 public interface AdminService {
 
-    ResponseEntity<?> userRegister(UserWebModel userWebModel);
+	ResponseEntity<?> userRegister(UserWebModel userWebModel);
 
-    ResponseEntity<?> updateRegister(UserWebModel userWebModel);
+	ResponseEntity<?> updateRegister(UserWebModel userWebModel);
 
-    ResponseEntity<?> deleteRegister(UserWebModel userWebModel);
+	ResponseEntity<?> deleteRegister(UserWebModel userWebModel);
 
-    ResponseEntity<?> getRegister(UserWebModel userWebModel);
+	ResponseEntity<?> getRegister(UserWebModel userWebModel);
 
-    ResponseEntity<?> adminPageStatus(UserWebModel userWebModel);
+	ResponseEntity<?> adminPageStatus(UserWebModel userWebModel);
 
-    Response getAllUnverifiedIndustrialUsers(UserWebModel userWebModel);
+	Response getAllUnverifiedIndustrialUsers(UserWebModel userWebModel);
 
-    ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel);
+	ResponseEntity<?> getIndustryUserPermanentDetails(UserWebModel userWebModel);
 
-    Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel);
+	Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel);
 
 	Response getAllUsers(Integer page, Integer size, String startDate, String endDate);
 
@@ -53,4 +55,13 @@ public interface AdminService {
 
 	Map<String, Object> generatePassword();
 
+	void updateAdminOnlineStatus(String email, String userType);
+
+	void log(Integer adminId, String actionType, String targetType, Integer targetId);
+
+	double getDailyHours(Integer adminId);
+
+	int getWorkDone(Integer adminId);
+
+	List<AdminListResponse> getAdminList();
 }

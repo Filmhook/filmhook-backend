@@ -84,6 +84,7 @@ import com.annular.filmhook.repository.ShootingLocationSubcategorySelectionRepos
 import com.annular.filmhook.repository.ShootingLocationTypesRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.security.PropertyCodeGenerator;
+import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.ShootingLocationService;
@@ -236,6 +237,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	private MailNotification mailNotification;
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private AdminService adminService;
 
 
 	@Override
@@ -2513,38 +2516,38 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, booking.getProperty().getId())
 					.stream().map(FileOutputWebModel::getFilePath)
 					.collect(Collectors.toList());
-			
+
 			// 5️⃣ Call your mail util
 			ShootingLocationPropertyDetailsDTO dto =
-				    shootingLocationService.getPropertyByBookingId(booking.getId());
+					shootingLocationService.getPropertyByBookingId(booking.getId());
 
 
 			String clientMail =
-			        buildClientBookingMail(payment, booking, dto);
+					buildClientBookingMail(payment, booking, dto);
 
-		        // 5️⃣ Send client email
-//		        mailNotification.sendEmail(
-//		                payment.getFullName(),
-//		                payment.getEmail(),
-//		                "Shooting Location Booking Confirmed",
-//		                clientMail
-//		        );
+			// 5️⃣ Send client email
+			//		        mailNotification.sendEmail(
+			//		                payment.getFullName(),
+			//		                payment.getEmail(),
+			//		                "Shooting Location Booking Confirmed",
+			//		                clientMail
+			//		        );
 
 			User owner = booking.getProperty().getUser();
 			if (owner != null && owner.getEmail() != null) {
 
-			            String ownerMail = buildOwnerBookingMail(payment, booking);
+				String ownerMail = buildOwnerBookingMail(payment, booking);
 
-			            mailNotification.sendEmail(
-			                    owner.getFirstName(),
-			                    owner.getEmail(),
-			                    "New Booking for Your Property",
-			                    ownerMail
-			            );
+				mailNotification.sendEmail(
+						owner.getFirstName(),
+						owner.getEmail(),
+						"New Booking for Your Property",
+						ownerMail
+						);
 			}
 
 			byte[] pdfBytes = generateInvoicePdf(payment, booking);
-			
+
 			mailNotification.sendEmailWithAttachment(
 					payment.getFullName(),
 					payment.getEmail(),
@@ -2562,174 +2565,174 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.body(new Response(0, "Error: " + e.getMessage(), null));
 		}
 	}
-public String buildClientBookingMail(
-        Payments payment,
-        ShootingLocationBooking booking,
-        ShootingLocationPropertyDetailsDTO dto
-) {
+	public String buildClientBookingMail(
+			Payments payment,
+			ShootingLocationBooking booking,
+			ShootingLocationPropertyDetailsDTO dto
+			) {
 
-    StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder();
 
-    sb.append("<!DOCTYPE html>")
-      .append("<html><head><meta charset='UTF-8'>")
-      .append("<style>")
-      .append("body{margin:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#222;}")
+		sb.append("<!DOCTYPE html>")
+		.append("<html><head><meta charset='UTF-8'>")
+		.append("<style>")
+		.append("body{margin:0;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#222;}")
 
-      .append(".wrapper{width:100%;padding:30px 0;}")
-      .append(".card{max-width:760px;margin:auto;background:#ffffff;border-radius:10px;")
-      .append("box-shadow:0 4px 12px rgba(0,0,0,0.08);overflow:hidden;}")
+		.append(".wrapper{width:100%;padding:30px 0;}")
+		.append(".card{max-width:760px;margin:auto;background:#ffffff;border-radius:10px;")
+		.append("box-shadow:0 4px 12px rgba(0,0,0,0.08);overflow:hidden;}")
 
-      .append(".header{padding:28px;background:#0b62d6;color:#fff;}")
-      .append(".header h1{margin:0;font-size:24px;}")
-      .append(".header p{margin:6px 0 0;font-size:14px;opacity:0.9;}")
+		.append(".header{padding:28px;background:#0b62d6;color:#fff;}")
+		.append(".header h1{margin:0;font-size:24px;}")
+		.append(".header p{margin:6px 0 0;font-size:14px;opacity:0.9;}")
 
-      .append(".section{padding:26px;border-bottom:1px solid #eef2f7;}")
-      .append(".section:last-child{border-bottom:none;}")
+		.append(".section{padding:26px;border-bottom:1px solid #eef2f7;}")
+		.append(".section:last-child{border-bottom:none;}")
 
-      .append(".section-title{font-size:18px;font-weight:600;margin-bottom:14px;color:#111;}")
+		.append(".section-title{font-size:18px;font-weight:600;margin-bottom:14px;color:#111;}")
 
-      .append(".table{width:100%;border-collapse:collapse;font-size:14px;}")
-      .append(".table td{padding:10px 6px;border-bottom:1px solid #eef2f7;}")
-      .append(".table td:first-child{color:#666;width:35%;}")
+		.append(".table{width:100%;border-collapse:collapse;font-size:14px;}")
+		.append(".table td{padding:10px 6px;border-bottom:1px solid #eef2f7;}")
+		.append(".table td:first-child{color:#666;width:35%;}")
 
-      .append(".highlight{background:#f8fafc;border:1px solid #eef2f7;border-radius:8px;}")
-      .append(".highlight td{border:none;padding:8px;}")
+		.append(".highlight{background:#f8fafc;border:1px solid #eef2f7;border-radius:8px;}")
+		.append(".highlight td{border:none;padding:8px;}")
 
-      .append(".text{font-size:14px;color:#444;line-height:1.7;}")
+		.append(".text{font-size:14px;color:#444;line-height:1.7;}")
 
-      .append(".list{margin:0;padding-left:18px;font-size:14px;color:#444;}")
-      .append(".list li{margin-bottom:8px;}")
+		.append(".list{margin:0;padding-left:18px;font-size:14px;color:#444;}")
+		.append(".list li{margin-bottom:8px;}")
 
-      .append(".note{background:#fff8e6;border-left:4px solid #ffcc66;")
-      .append("padding:14px;border-radius:6px;font-size:13px;color:#5c4400;}")
+		.append(".note{background:#fff8e6;border-left:4px solid #ffcc66;")
+		.append("padding:14px;border-radius:6px;font-size:13px;color:#5c4400;}")
 
-      .append(".footer{padding:20px;text-align:center;font-size:12px;color:#888;}")
-      .append("</style></head><body>")
+		.append(".footer{padding:20px;text-align:center;font-size:12px;color:#888;}")
+		.append("</style></head><body>")
 
-      .append("<div class='wrapper'>")
-      .append("<div class='card'>");
+		.append("<div class='wrapper'>")
+		.append("<div class='card'>");
 
-    /* ================= HEADER ================= */
-    sb.append("<div class='header'>")
-      .append("<h1>Booking Confirmed</h1>")
-      .append("<p>Booking ID: ").append(booking.getId()).append("</p>")
-      .append("</div>");
+		/* ================= HEADER ================= */
+		sb.append("<div class='header'>")
+		.append("<h1>Booking Confirmed</h1>")
+		.append("<p>Booking ID: ").append(booking.getId()).append("</p>")
+		.append("</div>");
 
-    /* ================= OVERVIEW ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Booking Overview</div>")
-      .append("<table class='table highlight'>")
-      .append("<tr><td>Status</td><td>").append(booking.getStatus()).append("</td></tr>")
-      .append("<tr><td>Transaction ID</td><td>").append(payment.getTxnid()).append("</td></tr>")
-      .append("</table>")
-      .append("<p class='text'>")
-      .append("Your shooting location booking has been successfully confirmed. ")
-      .append("Please keep this email for entry verification and coordination with the property owner.")
-      .append("</p>")
-      .append("</div>");
+		/* ================= OVERVIEW ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Booking Overview</div>")
+		.append("<table class='table highlight'>")
+		.append("<tr><td>Status</td><td>").append(booking.getStatus()).append("</td></tr>")
+		.append("<tr><td>Transaction ID</td><td>").append(payment.getTxnid()).append("</td></tr>")
+		.append("</table>")
+		.append("<p class='text'>")
+		.append("Your shooting location booking has been successfully confirmed. ")
+		.append("Please keep this email for entry verification and coordination with the property owner.")
+		.append("</p>")
+		.append("</div>");
 
-    /* ================= PROPERTY ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Property & Location</div>")
-      .append("<table class='table'>")
-      .append("<tr><td>Property Name</td><td>").append(dto.getPropertyName()).append("</td></tr>")
-      .append("<tr><td>Property Type</td><td>").append(dto.getTypeLocation()).append("</td></tr>")
-      .append("<tr><td>Address</td><td>").append(dto.getLocation()).append("</td></tr>")
-      .append("<tr><td>Map</td><td>")
-      .append("<a href='").append(dto.getLocationLink()).append("'>View on Google Maps</a>")
-      .append("</td></tr>")
-      .append("</table>")
-      .append("</div>");
+		/* ================= PROPERTY ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Property & Location</div>")
+		.append("<table class='table'>")
+		.append("<tr><td>Property Name</td><td>").append(dto.getPropertyName()).append("</td></tr>")
+		.append("<tr><td>Property Type</td><td>").append(dto.getTypeLocation()).append("</td></tr>")
+		.append("<tr><td>Address</td><td>").append(dto.getLocation()).append("</td></tr>")
+		.append("<tr><td>Map</td><td>")
+		.append("<a href='").append(dto.getLocationLink()).append("'>View on Google Maps</a>")
+		.append("</td></tr>")
+		.append("</table>")
+		.append("</div>");
 
-    /* ================= PROPERTY OVERVIEW ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Property Overview</div>")
-      .append("<table class='table'>")
-      .append("<tr><td>Total Area</td><td>").append(dto.getTotalArea()).append(" sq.ft</td></tr>")
-      .append("<tr><td>Crew Allowed</td><td>").append(dto.getNumberOfPeopleAllowed()).append("</td></tr>")
-      .append("<tr><td>Rooms</td><td>").append(dto.getNumberOfRooms()).append("</td></tr>")
-      .append("<tr><td>Floors</td><td>").append(dto.getNumberOfFloor()).append("</td></tr>")
-      .append("<tr><td>Ceiling Height</td><td>").append(dto.getCeilingHeight()).append("</td></tr>")
-      .append("</table>")
-      .append("</div>");
+		/* ================= PROPERTY OVERVIEW ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Property Overview</div>")
+		.append("<table class='table'>")
+		.append("<tr><td>Total Area</td><td>").append(dto.getTotalArea()).append(" sq.ft</td></tr>")
+		.append("<tr><td>Crew Allowed</td><td>").append(dto.getNumberOfPeopleAllowed()).append("</td></tr>")
+		.append("<tr><td>Rooms</td><td>").append(dto.getNumberOfRooms()).append("</td></tr>")
+		.append("<tr><td>Floors</td><td>").append(dto.getNumberOfFloor()).append("</td></tr>")
+		.append("<tr><td>Ceiling Height</td><td>").append(dto.getCeilingHeight()).append("</td></tr>")
+		.append("</table>")
+		.append("</div>");
 
-    /* ================= FACILITIES ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Facilities & Amenities</div>")
-      .append("<ul class='list'>");
+		/* ================= FACILITIES ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Facilities & Amenities</div>")
+		.append("<ul class='list'>");
 
-    if (dto.getPowerSupply() != null)
-        sb.append("<li>Power Supply: ").append(dto.getPowerSupply()).append("</li>");
-    if (dto.getBakupGenerators() != null)
-        sb.append("<li>Backup generators available</li>");
-    if (dto.getAirConditionAndHeating() != null)
-        sb.append("<li>Air conditioning and heating available</li>");
-    if (dto.getNumberOfWashrooms() > 0)
-        sb.append("<li>Washrooms: ").append(dto.getNumberOfWashrooms()).append("</li>");
-    if (dto.getParkingCapacity() != null && !dto.getParkingCapacity().isEmpty())
-        sb.append("<li>Parking available for crew and vehicles</li>");
+		if (dto.getPowerSupply() != null)
+			sb.append("<li>Power Supply: ").append(dto.getPowerSupply()).append("</li>");
+		if (dto.getBakupGenerators() != null)
+			sb.append("<li>Backup generators available</li>");
+		if (dto.getAirConditionAndHeating() != null)
+			sb.append("<li>Air conditioning and heating available</li>");
+		if (dto.getNumberOfWashrooms() > 0)
+			sb.append("<li>Washrooms: ").append(dto.getNumberOfWashrooms()).append("</li>");
+		if (dto.getParkingCapacity() != null && !dto.getParkingCapacity().isEmpty())
+			sb.append("<li>Parking available for crew and vehicles</li>");
 
-    sb.append("</ul></div>");
+		sb.append("</ul></div>");
 
-    /* ================= RULES ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Filming Rules & Restrictions</div>")
-      .append("<ul class='list'>");
+		/* ================= RULES ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Filming Rules & Restrictions</div>")
+		.append("<ul class='list'>");
 
-    if (dto.getDroneUsage() != null)
-        sb.append("<li>Drone usage: ").append(dto.getDroneUsage()).append("</li>");
-    if (dto.getFirearms() != null)
-        sb.append("<li>Firearms: ").append(dto.getFirearms()).append("</li>");
-    if (dto.getActionScenes() != null)
-        sb.append("<li>Action scenes: ").append(dto.getActionScenes()).append("</li>");
-    if (dto.getInsuranceRequired() != null)
-        sb.append("<li>Insurance documentation may be required</li>");
+		if (dto.getDroneUsage() != null)
+			sb.append("<li>Drone usage: ").append(dto.getDroneUsage()).append("</li>");
+		if (dto.getFirearms() != null)
+			sb.append("<li>Firearms: ").append(dto.getFirearms()).append("</li>");
+		if (dto.getActionScenes() != null)
+			sb.append("<li>Action scenes: ").append(dto.getActionScenes()).append("</li>");
+		if (dto.getInsuranceRequired() != null)
+			sb.append("<li>Insurance documentation may be required</li>");
 
-    sb.append("</ul></div>");
+		sb.append("</ul></div>");
 
-    /* ================= IMPORTANT NOTES ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Important Notes</div>")
-      .append("<div class='note'>")
-      .append("<ul class='list'>")
-      .append("<li>Entry allowed only during booked slot.</li>")
-      .append("<li>Carry valid ID and booking confirmation.</li>")
-      .append("<li>Any property damage will be chargeable.</li>")
-      .append("<li>Temporary modifications require approval.</li>")
-      .append("<li>Local authority rules must be followed.</li>")
-      .append("</ul>")
-      .append("</div>")
-      .append("</div>");
+		/* ================= IMPORTANT NOTES ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Important Notes</div>")
+		.append("<div class='note'>")
+		.append("<ul class='list'>")
+		.append("<li>Entry allowed only during booked slot.</li>")
+		.append("<li>Carry valid ID and booking confirmation.</li>")
+		.append("<li>Any property damage will be chargeable.</li>")
+		.append("<li>Temporary modifications require approval.</li>")
+		.append("<li>Local authority rules must be followed.</li>")
+		.append("</ul>")
+		.append("</div>")
+		.append("</div>");
 
-    /* ================= PAYMENT ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Payment & Cancellation</div>")
-      .append("<p class='text'>")
-      .append("Payment has been successfully processed. This booking follows a strict ")
-      .append("cancellation policy. No-shows are treated as completed bookings.")
-      .append("</p>")
-      .append("</div>");
+		/* ================= PAYMENT ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Payment & Cancellation</div>")
+		.append("<p class='text'>")
+		.append("Payment has been successfully processed. This booking follows a strict ")
+		.append("cancellation policy. No-shows are treated as completed bookings.")
+		.append("</p>")
+		.append("</div>");
 
-    /* ================= LEGAL ================= */
-    sb.append("<div class='section'>")
-      .append("<div class='section-title'>Legal & Liability</div>")
-      .append("<p class='text'>")
-      .append("FilmHook acts as a booking platform connecting clients and property owners. ")
-      .append("On-site safety, compliance, and conduct remain the responsibility of the ")
-      .append("client and the property owner.")
-      .append("</p>")
-      .append("</div>");
+		/* ================= LEGAL ================= */
+		sb.append("<div class='section'>")
+		.append("<div class='section-title'>Legal & Liability</div>")
+		.append("<p class='text'>")
+		.append("FilmHook acts as a booking platform connecting clients and property owners. ")
+		.append("On-site safety, compliance, and conduct remain the responsibility of the ")
+		.append("client and the property owner.")
+		.append("</p>")
+		.append("</div>");
 
-    /* ================= FOOTER ================= */
-    sb.append("<div class='footer'>")
-      .append("Need help? Contact support@filmhookapps.com<br>")
-      .append("© FilmHook. All rights reserved.")
-      .append("</div>");
+		/* ================= FOOTER ================= */
+		sb.append("<div class='footer'>")
+		.append("Need help? Contact support@filmhookapps.com<br>")
+		.append("© FilmHook. All rights reserved.")
+		.append("</div>");
 
-    sb.append("</div></div></body></html>");
+		sb.append("</div></div></body></html>");
 
-    return sb.toString();
-}
+		return sb.toString();
+	}
 
 
 
@@ -2737,55 +2740,55 @@ public String buildClientBookingMail(
 
 	private String buildOwnerBookingMail(Payments payment, ShootingLocationBooking booking) {
 
-	    StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder();
 
-	    sb.append("<!DOCTYPE html>")
-	      .append("<html><head>")
-	      .append("<meta charset='UTF-8'>")
-	      .append("<meta name='viewport' content='width=device-width, initial-scale=1'>")
+		sb.append("<!DOCTYPE html>")
+		.append("<html><head>")
+		.append("<meta charset='UTF-8'>")
+		.append("<meta name='viewport' content='width=device-width, initial-scale=1'>")
 
-	      .append("<style>")
-	      .append("body{background:#f5f7fb;font-family:Arial,sans-serif;padding:20px;color:#333;}")
-	      .append(".card{max-width:600px;margin:auto;background:#fff;border-radius:8px;")
-	      .append("border:1px solid #e6ebf2;overflow:hidden;}")
-	      .append(".header{padding:18px;background:#f0f4ff;font-weight:bold;font-size:16px;}")
-	      .append(".content{padding:20px;}")
-	      .append(".row{display:flex;justify-content:space-between;margin:8px 0;font-size:14px;}")
-	      .append(".note{margin-top:15px;padding:12px;background:#fff7e6;")
-	      .append("border-left:4px solid #ffcc66;font-size:13px;color:#5c4400;}")
-	      .append(".cta{text-align:center;padding:16px;background:#fafbfe;border-top:1px solid #eef2f7;}")
-	      .append(".cta a{padding:10px 16px;background:#0b62d6;color:#fff;")
-	      .append("text-decoration:none;border-radius:6px;font-weight:bold;}")
-	      .append("</style></head><body>")
+		.append("<style>")
+		.append("body{background:#f5f7fb;font-family:Arial,sans-serif;padding:20px;color:#333;}")
+		.append(".card{max-width:600px;margin:auto;background:#fff;border-radius:8px;")
+		.append("border:1px solid #e6ebf2;overflow:hidden;}")
+		.append(".header{padding:18px;background:#f0f4ff;font-weight:bold;font-size:16px;}")
+		.append(".content{padding:20px;}")
+		.append(".row{display:flex;justify-content:space-between;margin:8px 0;font-size:14px;}")
+		.append(".note{margin-top:15px;padding:12px;background:#fff7e6;")
+		.append("border-left:4px solid #ffcc66;font-size:13px;color:#5c4400;}")
+		.append(".cta{text-align:center;padding:16px;background:#fafbfe;border-top:1px solid #eef2f7;}")
+		.append(".cta a{padding:10px 16px;background:#0b62d6;color:#fff;")
+		.append("text-decoration:none;border-radius:6px;font-weight:bold;}")
+		.append("</style></head><body>")
 
-	      .append("<div class='card'>")
-	      .append("<div class='header'>New Booking Received</div>")
+		.append("<div class='card'>")
+		.append("<div class='header'>New Booking Received</div>")
 
-	      .append("<div class='content'>")
-	      .append("<div class='row'><span>Property</span><span>")
-	      .append(booking.getProperty().getPropertyName()).append("</span></div>")
-	      .append("<div class='row'><span>Guest</span><span>")
-	      .append(payment.getFullName()).append("</span></div>")
-	      .append("<div class='row'><span>Email</span><span>")
-	      .append(payment.getEmail()).append("</span></div>")
-	      .append("<div class='row'><span>Amount</span><span>₹")
-	      .append(payment.getAmount()).append("</span></div>")
+		.append("<div class='content'>")
+		.append("<div class='row'><span>Property</span><span>")
+		.append(booking.getProperty().getPropertyName()).append("</span></div>")
+		.append("<div class='row'><span>Guest</span><span>")
+		.append(payment.getFullName()).append("</span></div>")
+		.append("<div class='row'><span>Email</span><span>")
+		.append(payment.getEmail()).append("</span></div>")
+		.append("<div class='row'><span>Amount</span><span>₹")
+		.append(payment.getAmount()).append("</span></div>")
 
-	      .append("<div class='note'>")
-	      .append("The payment has been credited to your FilmHook wallet. ")
-	      .append("You may withdraw the amount after the shoot is completed successfully.")
-	      .append("</div>")
-	      .append("</div>")
+		.append("<div class='note'>")
+		.append("The payment has been credited to your FilmHook wallet. ")
+		.append("You may withdraw the amount after the shoot is completed successfully.")
+		.append("</div>")
+		.append("</div>")
 
-	      .append("<div class='cta'>")
-	      .append("<a href='https://filmhookapps.com/owner/bookings/")
-	      .append(booking.getProperty().getId())
-	      .append("'>View Booking</a>")
-	      .append("</div>")
+		.append("<div class='cta'>")
+		.append("<a href='https://filmhookapps.com/owner/bookings/")
+		.append(booking.getProperty().getId())
+		.append("'>View Booking</a>")
+		.append("</div>")
 
-	      .append("</div></body></html>");
+		.append("</div></body></html>");
 
-	    return sb.toString();
+		return sb.toString();
 	}
 
 
@@ -3706,6 +3709,14 @@ public String buildClientBookingMail(
 		property.setRejectionReason(null);
 
 		propertyDetailsRepository.save(property);
+
+		adminService.log(
+				adminId,
+				"APPROVED",
+				"SHOOTING_LOCATION",
+				propertyId
+				);
+
 		return new Response(1, "Property approved successfully", null);
 	}
 
@@ -3736,82 +3747,90 @@ public String buildClientBookingMail(
 		property.setApprovedOn(LocalDateTime.now());
 		property.setRejectionReason(rejectionReason);
 		propertyDetailsRepository.save(property);
+
+		adminService.log(
+				adminId,
+				"REJECTED",
+				"SHOOTING_LOCATION",
+				propertyId
+				);
+
 		return new Response(1, "Property rejected successfully", null);
 	}
 
-@Override
-public Response getPendingProperties(PropertyBookingType propertyType) {
+	@Override
+	public Response getPendingProperties(PropertyBookingType propertyType) {
 
-    // 1️⃣ Fetch ALL pending properties
-    List<ShootingLocationPropertyDetails> properties =
-            propertyDetailsRepository
-                    .findByStatusOrderByIdDesc(ShootingPropertyStatus.PENDING);
+		// 1️⃣ Fetch ALL pending properties
+		List<ShootingLocationPropertyDetails> properties =
+				propertyDetailsRepository
+				.findByStatusOrderByIdDesc(ShootingPropertyStatus.PENDING);
 
-    if (properties == null || properties.isEmpty()) {
-        return new Response(1, "No pending properties found", List.of());
-    }
+		if (properties == null || properties.isEmpty()) {
+			return new Response(1, "No pending properties found", List.of());
+		}
 
-    // 2️⃣ Filter by property type ONLY if passed
-    if (propertyType != null) {
+		// 2️⃣ Filter by property type ONLY if passed
+		if (propertyType != null) {
 
-        properties = properties.stream()
-                .filter(p -> {
-                    ShootingLocationSubcategorySelection s =
-                            p.getSubcategorySelection();
-                    if (s == null) return false;
+			properties = properties.stream()
+					.filter(p -> {
+						ShootingLocationSubcategorySelection s =
+								p.getSubcategorySelection();
+						if (s == null) return false;
 
-                    if (propertyType == PropertyBookingType.ENTIRE_PROPERTY) {
-                        return Boolean.TRUE.equals(s.getEntireProperty());
-                    }
+						if (propertyType == PropertyBookingType.ENTIRE_PROPERTY) {
+							return Boolean.TRUE.equals(s.getEntireProperty());
+						}
 
-                    if (propertyType == PropertyBookingType.SINGLE_PROPERTY) {
-                        return Boolean.TRUE.equals(s.getSingleProperty());
-                    }
+						if (propertyType == PropertyBookingType.SINGLE_PROPERTY) {
+							return Boolean.TRUE.equals(s.getSingleProperty());
+						}
 
-                    return true;
-                })
-                .toList();
-    }
+						return true;
+					})
+					.toList();
+		}
 
-    // 3️⃣ Convert to DTO + enrich with media & reviews
-    List<ShootingLocationPropertyDetailsDTO> dtoList = new ArrayList<>();
+		// 3️⃣ Convert to DTO + enrich with media & reviews
+		List<ShootingLocationPropertyDetailsDTO> dtoList = new ArrayList<>();
 
-    for (ShootingLocationPropertyDetails p : properties) {
+		for (ShootingLocationPropertyDetails p : properties) {
 
-        ShootingLocationPropertyDetailsDTO dto =
-                shootingLocationPropertyConverter.entityToDto(p);
+			ShootingLocationPropertyDetailsDTO dto =
+					shootingLocationPropertyConverter.entityToDto(p);
 
-        // 🔹 Property images
-        List<String> imageUrls = mediaFilesService
-                .getMediaFilesByCategoryAndRefId(
-                        MediaFileCategory.shootingLocationImage, p.getId())
-                .stream()
-                .map(FileOutputWebModel::getFilePath)
-                .collect(Collectors.toList());
+			// 🔹 Property images
+			List<String> imageUrls = mediaFilesService
+					.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.shootingLocationImage, p.getId())
+					.stream()
+					.map(FileOutputWebModel::getFilePath)
+					.collect(Collectors.toList());
 
-        // 🔹 Government ID images
-        List<String> govtIdUrls = mediaFilesService
-                .getMediaFilesByCategoryAndRefId(
-                        MediaFileCategory.shootingGovermentId, p.getId())
-                .stream()
-                .map(FileOutputWebModel::getFilePath)
-                .collect(Collectors.toList());
+			// 🔹 Government ID images
+			List<String> govtIdUrls = mediaFilesService
+					.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.shootingGovermentId, p.getId())
+					.stream()
+					.map(FileOutputWebModel::getFilePath)
+					.collect(Collectors.toList());
 
-        // 🔹 Verification video
-        List<String> verificationVideo = mediaFilesService
-                .getMediaFilesByCategoryAndRefId(
-                        MediaFileCategory.shootingLocationVerificationVideo, p.getId())
-                .stream()
-                .map(FileOutputWebModel::getFilePath)
-                .collect(Collectors.toList());
+			// 🔹 Verification video
+			List<String> verificationVideo = mediaFilesService
+					.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.shootingLocationVerificationVideo, p.getId())
+					.stream()
+					.map(FileOutputWebModel::getFilePath)
+					.collect(Collectors.toList());
 
-        dto.setImageUrls(imageUrls);
-        dto.setGovernmentIdUrls(govtIdUrls);
-        dto.setVerificationVideo(verificationVideo);
+			dto.setImageUrls(imageUrls);
+			dto.setGovernmentIdUrls(govtIdUrls);
+			dto.setVerificationVideo(verificationVideo);
 
-        dtoList.add(dto);
-    }
+			dtoList.add(dto);
+		}
 
-    return new Response(1, "Pending properties fetched successfully", dtoList);
-}
+		return new Response(1, "Pending properties fetched successfully", dtoList);
+	}
 }

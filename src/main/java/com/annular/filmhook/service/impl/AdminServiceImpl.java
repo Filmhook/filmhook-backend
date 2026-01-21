@@ -1,6 +1,8 @@
 package com.annular.filmhook.service.impl;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -29,6 +31,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.AdminActivityLog;
+import com.annular.filmhook.model.AdminOnlineSession;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
@@ -39,6 +44,8 @@ import com.annular.filmhook.model.PaymentDetails;
 import com.annular.filmhook.model.PlatformPermanentDetail;
 import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.AdminActivityLogRepository;
+import com.annular.filmhook.repository.AdminOnlineSessionRepository;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.IndustrySignupDetailsRepository;
@@ -50,6 +57,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
+import com.annular.filmhook.webmodel.AdminListResponse;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryUserResponseDTO;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
@@ -95,6 +103,17 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	FilmSubProfessionRepository filmSubProfessionRepository;
+
+	@Autowired
+	private AdminActivityLogRepository repo;
+	@Autowired
+	private AdminService adminService;
+
+	@Autowired 
+	private UserDetails userDetails;
+
+	@Autowired
+	private AdminOnlineSessionRepository sessionRepo;
 
 	public static final Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
 
@@ -620,7 +639,7 @@ public class AdminServiceImpl implements AdminService {
 			Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
 			logger.info(">>>>>>>>>>>{}", userWebModel.getUserId());
 			if (userOptional.isEmpty()) return new Response(-1, "User not found", null); // Return an error response if user is not found
-
+			Integer adminId = userDetails.userInfo().getId();
 			User user = userOptional.get();
 			if (status) {
 				logger.info("User id -> {}", userWebModel.getUserId());
@@ -630,6 +649,13 @@ public class AdminServiceImpl implements AdminService {
 				user.setIndustryUserVerified(true);
 				user.setUnVerifiedList(true);
 				userRepository.save(user);
+
+				adminService.log(
+						adminId,
+						"APPROVED",
+						"INDUSTRY_USER",
+						userWebModel.getUserId()
+						);
 
 				// Send verification email
 				boolean emailSent = sendVerificationEmail(user, status);
@@ -644,6 +670,13 @@ public class AdminServiceImpl implements AdminService {
 				user.setUnVerifiedList(true);
 				user.setRejectReason(userWebModel.getRejectReason());
 				userRepository.save(user);
+
+				adminService.log(
+						adminId,
+						"REJECTED",
+						"INDUSTRY_USER",
+						userWebModel.getUserId()
+						);
 
 				// Send notification email
 				boolean emailSent = sendVerificationEmail(user, status);
@@ -1197,6 +1230,114 @@ public class AdminServiceImpl implements AdminService {
 		response.put("password", password);
 
 		return response;
+	}
+
+
+	@Override
+	@Transactional
+	public void updateAdminOnlineStatus(String email, String userType) {
+
+	    User user = userRepository.findByEmailAndUserType(email, userType)
+	            .orElse(null);
+
+	    if (user == null) return;
+
+	    LocalDateTime now = LocalDateTime.now();
+
+	    // If admin was offline previously → create new session
+	    if (Boolean.FALSE.equals(user.getAdminOnlineStatus())) {
+
+	        AdminOnlineSession session = new AdminOnlineSession();
+	        session.setAdminId(user.getUserId());
+	        session.setLoginTime(now);
+	        sessionRepo.save(session);
+	    }
+
+	    // Always update last seen
+	    userRepository.updateAdminLastSeen(email, userType, now);
+	}
+
+
+
+	@Override
+	public void log(Integer adminId, String actionType, String targetType, Integer targetId) {
+		AdminActivityLog log = AdminActivityLog.builder()
+				.adminId(adminId)
+				.actionType(actionType)
+				.targetType(targetType)
+				.targetId(targetId)
+				.createdOn(LocalDateTime.now())
+				.build();
+
+		repo.save(log);
+	}
+	
+	public String formatDailyHours(Integer adminId) {
+
+	    double hours = getDailyHours(adminId);   // your existing calculation
+	    long totalMinutes = Math.round(hours * 60);
+
+	    long hr = totalMinutes / 60;
+	    long min = totalMinutes % 60;
+
+	    if (hr > 0 && min > 0) {
+	        return hr + " : " + min + " min";
+	    } else if (hr > 0) {
+	        return hr + " hr";
+	    } else {
+	        return min + " min";
+	    }
+	}
+
+
+	@Override
+	public double getDailyHours(Integer adminId) {
+
+	    LocalDate today = LocalDate.now();
+	    LocalDateTime start = today.atStartOfDay();
+	    LocalDateTime end = today.atTime(23, 59, 59);
+
+	    List<AdminOnlineSession> sessions =
+	        sessionRepo.findTodaySessions(adminId, start, end);
+
+	    long totalMinutes = 0;
+
+	    for (AdminOnlineSession s : sessions) {
+	        LocalDateTime logout = (s.getLogoutTime() != null)
+	                ? s.getLogoutTime()
+	                : LocalDateTime.now();
+
+	        totalMinutes += Duration.between(s.getLoginTime(), logout).toMinutes();
+	    }
+
+	    return totalMinutes / 60.0;
+	}
+
+
+	@Override
+	public int getWorkDone(Integer adminId) {
+		return repo.countTodayActivities(adminId);
+	}
+
+	@Override
+	public List<AdminListResponse> getAdminList() {
+
+		List<User> admins =
+				userRepository.findByUserTypeIn(List.of("Admin", "Super Admin"));
+		return admins.stream()
+				.map(a -> {
+					User user = (User) a;
+					return AdminListResponse.builder()
+							.adminId(user.getUserId())
+							.name(user.getName())
+							.email(user.getEmail())
+							.role(user.getUserType())
+							.onlineStatus(Boolean.TRUE.equals(user.getAdminOnlineStatus()))
+							.dailyHours(formatDailyHours(user.getUserId()))
+							.workDone(getWorkDone(user.getUserId()))
+							.build();
+				})
+				.collect(Collectors.toList());
 	}
 
 

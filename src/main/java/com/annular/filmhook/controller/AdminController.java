@@ -1,5 +1,6 @@
 package com.annular.filmhook.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.webmodel.AdminListResponse;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 @RestController
@@ -111,10 +114,11 @@ public class AdminController {
     }
     
     @PostMapping("changeStatusUnverifiedIndustrialUsers")
-	public Response changeStatusUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel) {
+	public Response changeStatusUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel ) {
 		try {
 			logger.info("changeStatusUnverifiedIndustrialUsers controller start");
 			return adminService.changeStatusUnverifiedIndustrialUsers(userWebModel);
+			
 		} catch (Exception e) {
 			logger.error("changeStatusUnverifiedIndustrialUsers Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
@@ -298,4 +302,26 @@ public class AdminController {
         return ResponseEntity.ok(adminService.generatePassword());
     }
        
+    
+    @GetMapping("/list")
+    public List<AdminListResponse> getAdminList() {
+        return adminService.getAdminList();
+    }
+    
+//    @PostMapping("/industry-user/{userId}/approve")
+//    public ResponseEntity<?> approveIndustryUser(
+//            @PathVariable Long userId,
+//            @RequestParam Long adminId) {
+//
+//        industryUserService.approve(userId);
+//
+//        adminActivityService.log(
+//                adminId,
+//                "APPROVED",
+//                "INDUSTRY_USER",
+//                userId
+//        );
+//
+//        return ResponseEntity.ok("User Approved");
+//    }
 }
