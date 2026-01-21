@@ -358,17 +358,30 @@ public class AdminServiceImpl implements AdminService {
 			userMap.put("userId", user.getUserId());
 			userMap.put("name", user.getName());
 			userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
+			userMap.put("userCoverPic", userService.getCoverPic(userWebModel));
+			userMap.put("fhcode", user.getFilmHookCode());
+			userMap.put("email",user.getEmail());
+			userMap.put("DOB",user.getDob());
+			userMap.put("phoneNumber",user.getPhoneNumber());
+			userMap.put("workExperience",user.getEmail());
+			userMap.put("country",user.getCountry());
+			userMap.put("gender",user.getGender());
+			userMap.put("birthPlace",user.getBirthPlace());
+			userMap.put("livingPlace",user.getLivingPlace());
+			userMap.put("onlineStatus",user.getOnlineStatus());
+	
+			
 			responseList.add(userMap);
 		}
 
 		if (!responseList.isEmpty()) {
 			Map<String, Object> pageDetails = new HashMap<>();
 			pageDetails.put("totalPages", unverifiedIndustrialUsers.getTotalPages());
-			pageDetails.put("totalRecords", userIds.size()); // Count of unique users
+			pageDetails.put("totalRecords", userIds.size());
 
 			response.put("UserDetails", responseList);
 			response.put("PageInfo", pageDetails);
-			return new Response(1, "Success", response); // ✅ Fixed status code
+			return new Response(1, "Success", response); 
 		} else {
 			return new Response(0, "There are no unverified users found.", responseList);
 		}
