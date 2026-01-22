@@ -658,7 +658,6 @@ public class AdminServiceImpl implements AdminService {
 				logger.info("User id -> {}", userWebModel.getUserId());
 				user.setUserType("Industry User");
 				user.setAdminReview(userWebModel.getAdminReview());
-				user.setRejectReason(userWebModel.getRejectReason());
 				user.setIndustryUserVerified(true);
 				user.setUnVerifiedList(true);
 				userRepository.save(user);
@@ -1121,11 +1120,19 @@ public class AdminServiceImpl implements AdminService {
 			for (User user : usersPage.getContent()) {
 				Map<String, Object> userMap = new HashMap<>();
 				userMap.put("userId", user.getUserId());
-				userMap.put("name", user.getName());
-				userMap.put("email", user.getEmail());
-				userMap.put("rejectReason", user.getRejectReason());
-				userMap.put("industryUserVerified", user.getIndustryUserVerified());
-				userMap.put("status", user.getStatus());
+					userMap.put("name", user.getName());
+					userMap.put("email", user.getEmail());
+					userMap.put("rejectReason", user.getRejectReason());
+					userMap.put("industryUserVerified", user.getIndustryUserVerified());
+					userMap.put("status", user.getStatus());
+					userMap.put("userType", user.getUserType());
+					userMap.put("phoneNumber", user.getPhoneNumber());
+					userMap.put("gender", user.getGender());
+					userMap.put("dob", user.getDob());
+					userMap.put("country", user.getCountry());
+					userMap.put("state", user.getState());
+					userMap.put("verified", user.getVerified());
+					userMap.put("onlineStatus", user.getOnlineStatus());
 				userList.add(userMap);
 			}
 

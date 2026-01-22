@@ -23,8 +23,6 @@ public class MediaConversionUtil {
 	private static final List<String> HEIC_FORMATS =
 			Arrays.asList("heic", "heif", "avif");
 
-
-
 	public static void convertToWebP(String inputPath, String outputPath)
 			throws IOException, InterruptedException {
 
