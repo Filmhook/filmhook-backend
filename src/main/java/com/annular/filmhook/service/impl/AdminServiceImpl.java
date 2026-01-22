@@ -354,11 +354,13 @@ public class AdminServiceImpl implements AdminService {
 		// Batch fetch user details for performance
 		List<User> users = userRepository.findAllById(userIds);
 		for (User user : users) {
+			UserWebModel userModel = new UserWebModel();
+			userModel.setUserId(user.getUserId());
 			Map<String, Object> userMap = new HashMap<>();
 			userMap.put("userId", user.getUserId());
 			userMap.put("name", user.getName());
 			userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
-			userMap.put("userCoverPic", userService.getCoverPic(userWebModel));
+			userMap.put("userCoverPic", userService.getCoverPic(userModel));
 			userMap.put("fhcode", user.getFilmHookCode());
 			userMap.put("email",user.getEmail());
 			userMap.put("DOB",user.getDob());
@@ -1118,10 +1120,16 @@ public class AdminServiceImpl implements AdminService {
 
 			List<Map<String, Object>> userList = new ArrayList<>();
 			for (User user : usersPage.getContent()) {
+				UserWebModel userWebModel = new UserWebModel();
+				userWebModel.setUserId(user.getUserId());
 				Map<String, Object> userMap = new HashMap<>();
 				userMap.put("userId", user.getUserId());
 					userMap.put("name", user.getName());
 					userMap.put("email", user.getEmail());
+					userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
+				
+
+					userMap.put("userCoverPic", userService.getCoverPic(userWebModel));
 					userMap.put("rejectReason", user.getRejectReason());
 					userMap.put("industryUserVerified", user.getIndustryUserVerified());
 					userMap.put("status", user.getStatus());
