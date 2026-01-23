@@ -26,7 +26,9 @@ import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserMediaFilesService;
 import com.annular.filmhook.util.FileUtil;
 import com.annular.filmhook.util.FilmHookConstants;
+import com.annular.filmhook.util.MediaConversionUtil;
 import com.annular.filmhook.util.S3Util;
+import com.annular.filmhook.util.VideoThumbnail;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryFileInputWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationWebModal;
@@ -162,7 +164,7 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
             fileOutputWebModel.setFileType(mediaFile.getFileType());
             fileOutputWebModel.setFileSize(mediaFile.getFileSize());
             fileOutputWebModel.setFilePath(s3Util.getS3BaseURL() + S3Util.S3_PATH_DELIMITER + mediaFile.getFilePath() + mediaFile.getFileType());
-
+            fileOutputWebModel.setThumbnailPath(mediaFile.getThumbnailPath());
             fileOutputWebModel.setCreatedBy(mediaFile.getCreatedBy());
             fileOutputWebModel.setCreatedOn(mediaFile.getCreatedOn());
             fileOutputWebModel.setUpdatedBy(mediaFile.getUpdatedBy());
@@ -205,22 +207,90 @@ public class UserMediaFileServiceImpl implements UserMediaFilesService {
 //        }
 //        return null;
 //    }
-    public FileOutputWebModel uploadToS3(MultipartFile file, IndustryMediaFiles mediaFile) {
-        try {
-            File tempFile = File.createTempFile(mediaFile.getFileId(), null);
-            FileUtil.convertMultiPartFileToFile(file, tempFile);
-            String response = fileUtil.uploadFile(tempFile, mediaFile.getFilePath() + mediaFile.getFileType());
-            if (response != null && response.equalsIgnoreCase("File Uploaded")) {
-                tempFile.delete();// deleting temp file
-                return this.transformData(mediaFile);
-            }
-        } catch (Exception e) {
-            logger.error("Error at uploadToS3 -> ", e);
-            e.printStackTrace();
-            return null;
+public FileOutputWebModel uploadToS3(MultipartFile file, IndustryMediaFiles mediaFile) {
+
+    File originalFile = null;
+    File convertedFile = null;
+    File thumbnailFile = null;
+
+    try {
+        String ext = mediaFile.getFileType().toLowerCase();
+
+        // ===== 1. Multipart → TEMP file =====
+        originalFile = File.createTempFile("orig_", ext);
+        FileUtil.convertMultiPartFileToFile(file, originalFile);
+
+        boolean isImage =
+                ext.equals(".jpg") || ext.equals(".jpeg") || ext.equals(".png");
+
+        boolean isVideo =
+                ext.equals(".mp4") || ext.equals(".mov") || ext.equals(".avi");
+
+        // ===== 2. CONVERT =====
+        if (isImage) {
+            convertedFile = File.createTempFile("converted_", ".webp");
+            MediaConversionUtil.convertToWebP(
+                    originalFile.getAbsolutePath(),
+                    convertedFile.getAbsolutePath()
+            );
+            mediaFile.setFileType(".webp");
+
+        } else if (isVideo) {
+            convertedFile = File.createTempFile("converted_", ".webm");
+            MediaConversionUtil.convertToWebM(
+                    originalFile.getAbsolutePath(),
+                    convertedFile.getAbsolutePath()
+            );
+            mediaFile.setFileType(".webm");
+
+        } else {
+            convertedFile = originalFile;
         }
+
+        // ===== 3. Upload MAIN file =====
+        String mainS3Path = mediaFile.getFilePath() + mediaFile.getFileType();
+        fileUtil.uploadFile(convertedFile, mainS3Path);
+
+        // ===== 4. VIDEO THUMBNAIL =====
+        if (isVideo) {
+            try {
+                thumbnailFile = File.createTempFile("thumb_", ".webp");
+                String thumbS3Path = mediaFile.getFilePath() + "_thumb.webp";
+
+                VideoThumbnail.createVideoThumbnail(
+                        convertedFile.getAbsolutePath(), // WebM input
+                        thumbnailFile.getAbsolutePath()
+                );
+
+                fileUtil.uploadFile(thumbnailFile, thumbS3Path);
+
+                mediaFile.setThumbnailPath(
+                        s3Util.getS3BaseURL() + "/" + thumbS3Path
+                );
+
+            } catch (Exception e) {
+                logger.warn("Thumbnail failed, continuing without thumbnail", e);
+            }
+        }
+
+        // ===== 5. SAVE DB =====
+        industryMediaFileRepository.saveAndFlush(mediaFile);
+        return transformData(mediaFile);
+
+    } catch (Exception e) {
+        logger.error("Upload failed", e);
         return null;
+
+    } finally {
+        // ONLY temp files deleted
+        if (originalFile != null) originalFile.delete();
+        if (convertedFile != null && convertedFile != originalFile) convertedFile.delete();
+        if (thumbnailFile != null) thumbnailFile.delete();
     }
+}
+
+
+
 
     @Override
     public List<FileOutputWebModel> getMediaFilesByUserAndCategory(Integer userId) {
