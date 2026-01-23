@@ -64,4 +64,6 @@ public interface AdminService {
 	int getWorkDone(Integer adminId);
 
 	List<AdminListResponse> getAdminList();
+
+	Object getReviewedUsers(Integer adminId, String targetType);
 }

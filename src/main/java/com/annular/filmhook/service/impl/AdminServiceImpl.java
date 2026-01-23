@@ -58,6 +58,7 @@ import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.AdminListResponse;
+import com.annular.filmhook.webmodel.AdminUserRowDTO;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.IndustryUserResponseDTO;
 import com.annular.filmhook.webmodel.PaymentDetailsWebModel;
@@ -114,7 +115,8 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	private AdminOnlineSessionRepository sessionRepo;
-
+	
+	
 	public static final Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
 
 	private String getJobTitleCode(String jobTitle) {
@@ -1335,11 +1337,30 @@ public class AdminServiceImpl implements AdminService {
 							.onlineStatus(Boolean.TRUE.equals(user.getAdminOnlineStatus()))
 							.dailyHours(formatDailyHours(user.getUserId()))
 							.workDone(getWorkDone(user.getUserId()))
+							.profilePic(userService.getProfilePicUrl(user.getUserId()))
 							.build();
 				})
 				.collect(Collectors.toList());
 	}
 
+	  public Object getReviewedUsers(Integer adminId, String targetType) {
+
+	        switch (targetType.toUpperCase()) {
+
+	            case "INDUSTRY_USER":
+	                return repo.getIndustryUserRows(adminId);
+
+	            case "AUDITION":
+	                return repo.getAuditionRows(adminId);
+
+	            // FUTURE:
+	            // case "SHOOTING_LOCATION":
+	            // case "PUBLIC_USER":
+
+	            default:
+	                throw new RuntimeException("Invalid target type: " + targetType);
+	        }
+	    }
 
 
 

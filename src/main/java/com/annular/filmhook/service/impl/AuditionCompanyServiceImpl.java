@@ -24,7 +24,7 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.AuditionCompanyRepository;
 import com.annular.filmhook.repository.AuditionUserCompanyRoleRepository;
 import com.annular.filmhook.repository.UserRepository;
-
+import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.AuditionCompanyService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
@@ -53,6 +53,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	private AuditionUserCompanyRoleRepository roleRepository;
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private AdminService adminService;
 	@Override
 	public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 		User user = userRepository.findById(dto.getUserId())
@@ -221,6 +223,24 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 					approved ? AuditionCompanyDetails.VerificationStatus.SUCCESS 
 							: AuditionCompanyDetails.VerificationStatus.FAILED
 					);
+			Integer adminId = userDetails.userInfo().getId();
+			if(approved) {
+				adminService.log(
+						adminId,
+						"APPROVED",
+						"AUDITION",
+						company.getCreatedBy()
+						);
+			}
+			else {
+				adminService.log(
+						adminId,
+						"REJECTED",
+						"AUDITION",
+						company.getCreatedBy()
+						);
+			}
+		
 
 			return companyRepository.save(company);
 		} catch (Exception e) {
