@@ -308,20 +308,15 @@ public class AdminController {
         return adminService.getAdminList();
     }
     
-//    @PostMapping("/industry-user/{userId}/approve")
-//    public ResponseEntity<?> approveIndustryUser(
-//            @PathVariable Long userId,
-//            @RequestParam Long adminId) {
-//
-//        industryUserService.approve(userId);
-//
-//        adminActivityService.log(
-//                adminId,
-//                "APPROVED",
-//                "INDUSTRY_USER",
-//                userId
-//        );
-//
-//        return ResponseEntity.ok("User Approved");
-//    }
+    @GetMapping("/activity/{adminId}/{targetType}")
+    public ResponseEntity<?> getReviewedUsers(
+            @PathVariable Integer adminId,
+            @PathVariable String targetType) {
+
+        return ResponseEntity.ok(
+        		adminService.getReviewedUsers(adminId, targetType)
+        );
+    }
+    
+
 }

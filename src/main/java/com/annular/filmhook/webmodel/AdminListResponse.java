@@ -17,4 +17,5 @@ public class AdminListResponse {
     private boolean onlineStatus;
     private String dailyHours;
     private int workDone;
+    private String profilePic;
 }
