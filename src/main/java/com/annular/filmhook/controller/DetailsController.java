@@ -377,6 +377,23 @@ public class DetailsController {
 
 
 
+	
+	@RequestMapping(path = "/saveMoviePosts", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public Response saveMoviePosts(@ModelAttribute IndustryFileInputWebModel inputFileData) {
+		try {
+			logger.info("Inputs for industry user file save -> {}", inputFileData);
+
+			List<FileOutputWebModel> outputFilesList = detailService.saveMoviePosts(inputFileData);
+
+
+			return new Response(1, "File(s) saved successfully...", outputFilesList);
+
+		} catch (Exception e) {
+			logger.error("Error at saveIndustryUserFiles() -> {}", e.getMessage(), e);
+		}
+		return new Response(-1, "Error occurred while saving files...", null);
+	}
+
 
 }
 
