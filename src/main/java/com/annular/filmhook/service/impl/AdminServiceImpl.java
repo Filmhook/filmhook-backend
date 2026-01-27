@@ -1389,6 +1389,8 @@ public void DeleteUser(Integer userId) {
 	  // 🔴 UPDATE USER STATUS
 	  user.setStatus(false);
 	  user.setPermanentDelete(true);
+	  user.setIndustryUserVerified(false);
+	  user.setUnVerifiedList(false);
 	  user.setUpdatedBy(loggedInUserId);
 	  user.setUpdatedOn(new Date());
 	  
