@@ -621,84 +621,98 @@ public class AdminServiceImpl implements AdminService {
 	//	        return ResponseEntity.internalServerError().body("Failed to retrieve industry user permanent details.");
 	//	    }
 	//	}
-	  @Override
-	    public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
-	        // Check if userId is not null
-	        if (Utility.isNullOrZero(userWebModel.getUserId())) return new Response(-1, "User ID must not be null", null);
+	@Override
+	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
+		// Check if userId is not null
+		if (Utility.isNullOrZero(userWebModel.getUserId())) return new Response(-1, "User ID must not be null", null);
+ 
+		try {
+			List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
+ 
+			Boolean status = userWebModel.isStatus();
+			logger.info(">>>>>>>>>>>>{}", userWebModel.isStatus());
+ 
+			// Iterate over the list and set status to false
+			for (IndustryMediaFiles industryMediaFile : industryDbData) {
+				industryMediaFile.setStatus(true);
+				industryMediaFile.setUnverifiedList(status);
+ 
+ 
+				// You may perform additional operations if needed
+			}
+ 
+			// Save the updated records back to the database
+			industryMediaFileRepository.saveAll(industryDbData);
+ 
+			Optional<IndustrySignupDetails> signupOpt =
+					industrySignupDetailsRepository.findByUser_UserId(userWebModel.getUserId());
+ 
+			if (signupOpt.isPresent()) {
+				IndustrySignupDetails signupDetails = signupOpt.get();
+				signupDetails.setVerified(status); 
+				industrySignupDetailsRepository.save(signupDetails);
+			}
+ 
+ 
+			// Update the userType in the User table
+			Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
+			logger.info(">>>>>>>>>>>{}", userWebModel.getUserId());
+			if (userOptional.isEmpty()) return new Response(-1, "User not found", null); // Return an error response if user is not found
+			Integer adminId = userDetails.userInfo().getId();
+			User user = userOptional.get();
+			if (status) {
+				logger.info("User id -> {}", userWebModel.getUserId());
+				user.setUserType("Industry User");
+				user.setAdminReview(userWebModel.getAdminReview());
+				user.setIndustryUserVerified(true);
+				user.setUnVerifiedList(true);
+				userRepository.save(user);
+ 
+				adminService.log(
+						adminId,
+						"APPROVED",
+						"INDUSTRY_USER",
+						userWebModel.getUserId()
+						);
+ 
+				// Send verification email
+				boolean emailSent = sendVerificationEmail(user, status);
+				if (!emailSent) {
+					// Handle case where email sending fails
+					return new Response(-1, "Failed to send verification email", null);
+				}
+			} else {
+				// status true means userType change to Industry user and send mail notification
+				user.setUserType("Public User");
+				user.setIndustryUserVerified(false);
+				user.setUnVerifiedList(true);
+				user.setRejectReason(userWebModel.getRejectReason());
+				userRepository.save(user);
+ 
+				adminService.log(
+						adminId,
+						"REJECTED",
+						"INDUSTRY_USER",
+						userWebModel.getUserId()
+						);
+ 
+				// Send notification email
+				boolean emailSent = sendVerificationEmail(user, status);
+				if (!emailSent) {
+					// Handle case where email sending fails
+					return new Response(-1, "Failed to send notification email", null);
+				}
+			}
+ 
+			// Return a success response
+			return new Response(1, "Success", "Status updated successfully");
+		} catch (Exception e) {
+			logger.error("Error occurred while updating status: {}", e.getMessage());
+			e.printStackTrace();
+			return new Response(-1, "Failed to update status", e.getMessage());
+		}
+	}
 
-	        try {
-	            List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
-
-	            Boolean status = userWebModel.isStatus();
-	            logger.info(">>>>>>>>>>>>{}", userWebModel.isStatus());
-
-	            // Iterate over the list and set status to false
-	            for (IndustryMediaFiles industryMediaFile : industryDbData) {
-	                industryMediaFile.setStatus(true);
-	                industryMediaFile.setUnverifiedList(status);
-	                
-	                
-	                // You may perform additional operations if needed
-	            }
-
-	            // Save the updated records back to the database
-	            industryMediaFileRepository.saveAll(industryDbData);
-	           
-				Optional<IndustrySignupDetails> signupOpt =
-	                    industrySignupDetailsRepository.findByUser_UserId(userWebModel.getUserId());
-	            
-	            if (signupOpt.isPresent()) {
-	                IndustrySignupDetails signupDetails = signupOpt.get();
-	                signupDetails.setVerified(status); 
-	                industrySignupDetailsRepository.save(signupDetails);
-	            }
-	            
-	            
-	            // Update the userType in the User table
-	            Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
-	            logger.info(">>>>>>>>>>>{}", userWebModel.getUserId());
-	            if (userOptional.isEmpty()) return new Response(-1, "User not found", null); // Return an error response if user is not found
-
-	            User user = userOptional.get();
-	            if (status) {
-	                logger.info("User id -> {}", userWebModel.getUserId());
-	                user.setUserType("Industry User");
-	                user.setAdminReview(userWebModel.getAdminReview());
-	                user.setRejectReason(userWebModel.getRejectReason());
-	                user.setIndustryUserVerified(true);
-	                user.setUnVerifiedList(true);
-	                userRepository.save(user);
-
-	                // Send verification email
-	                boolean emailSent = sendVerificationEmail(user, status);
-	                if (!emailSent) {
-	                    // Handle case where email sending fails
-	                    return new Response(-1, "Failed to send verification email", null);
-	                }
-	            } else {
-	                // status true means userType change to Industry user and send mail notification
-	                user.setUserType("Public User");
-	                user.setIndustryUserVerified(false);
-	                user.setUnVerifiedList(true);
-	                user.setRejectReason(userWebModel.getRejectReason());
-	                userRepository.save(user);
-
-	                // Send notification email
-	                boolean emailSent = sendVerificationEmail(user, status);
-	                if (!emailSent) {
-	                    // Handle case where email sending fails
-	                    return new Response(-1, "Failed to send notification email", null);
-	                }
-	            }
-
-	            // Return a success response
-	            return new Response(1, "Success", "Status updated successfully");
-	        } catch (Exception e) {
-	            logger.error("Error occurred while updating status: {}", e.getMessage());
-	            e.printStackTrace();
-	            return new Response(-1, "Failed to update status", e.getMessage());
-	        }
-	    }
 
 	//	@Override
 	//	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
