@@ -227,7 +227,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	List<User> findByUserTypeIn(List<String> types);
 
 	
-
+	@Query(
+		    "SELECT u FROM User u " +
+		    "WHERE u.permanentDelete = true " +
+		    "ORDER BY u.userId DESC"
+		)
+		Page<User> findDeletedUsers(Pageable pageable);
 
 
 
