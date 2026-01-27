@@ -197,9 +197,9 @@ public class PostController {
     }
 
     @GetMapping("/getAllUsersPosts")
-    public Response getAllUsersPosts(@RequestParam("pageNo") Integer pageNo, @RequestParam("pageSize") Integer pageSize, @RequestParam("userId") Integer userId ) {
+    public Response getAllUsersPosts(@RequestParam("pageNo") Integer pageNo, @RequestParam("pageSize") Integer pageSize, @RequestParam("userId") Integer userId, @RequestParam("userCountry") String userCountry) {
         try {
-            List<PostWebModel> postWebModelList = postService.getAllUsersPosts(userId, pageNo, pageSize);
+            List<PostWebModel> postWebModelList = postService.getAllUsersPosts(userId, pageNo, pageSize, userCountry);
             if (!Utility.isNullOrEmptyList(postWebModelList)) return new Response(1, "Success", postWebModelList);
         } catch (Exception e) {
             logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());

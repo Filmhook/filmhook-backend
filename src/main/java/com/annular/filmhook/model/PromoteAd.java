@@ -26,6 +26,10 @@ public class PromoteAd {
 
     @Column(name = "headline")
     private String headline;
+    
+    @Column(name = "ad_type", columnDefinition = "TEXT")
+    private String adType;
+
 
     @Column(name = "promote_description", columnDefinition = "TEXT")
     private String promoteDescription;
