@@ -26,6 +26,7 @@ public enum MediaFileCategory {
     shootingLocationImageProof,
     AuditionScript,
     Promote,
+    PromoteDocs,
     AuditionProfilePicture,
     ShootingLocationReview,
     MoviePoster,

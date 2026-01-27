@@ -634,8 +634,8 @@ public ResponseEntity<?> selectPromoteOption(PromoteWebModel request) {
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
         // 5️⃣ Update post description
-        if (request.getDescription() != null && !request.getDescription().isBlank()) {
-            post.setDescription(request.getDescription());
+        if (request.getPromoteDescription() != null && !request.getPromoteDescription().isBlank()) {
+            post.setDescription(request.getPromoteDescription());
             postsRepository.save(post);
             logger.info("Post description updated for postId={}", postId);
         }
