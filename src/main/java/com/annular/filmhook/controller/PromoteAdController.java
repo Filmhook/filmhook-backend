@@ -1,0 +1,72 @@
+package com.annular.filmhook.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.model.PromoteAd;
+import com.annular.filmhook.service.PromoteAdService;
+import com.annular.filmhook.webmodel.PromoteWebModel;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/promote")
+@RequiredArgsConstructor
+public class PromoteAdController {
+
+    private final PromoteAdService promoteAdService;
+    @Autowired
+	private  UserDetails userDetails;
+
+    @PostMapping("/save")
+    public ResponseEntity<?> savePromote(
+            @ModelAttribute PromoteWebModel model,
+            @RequestParam Integer userId) {
+
+        PromoteAd promote = promoteAdService.savePromote(model, userId);
+        return ResponseEntity.ok(promote);
+    }
+
+    @GetMapping("/post/{postId}")
+    public ResponseEntity<?> getPromoteData(@PathVariable Integer postId) { 
+        PromoteAd result = promoteAdService.getPromoteByPostId(postId);
+        return ResponseEntity.ok(result);
+    }
+    
+    @PostMapping("/payment/success")
+    public ResponseEntity<Response> paymentSuccess(@RequestBody PromoteWebModel model) {
+        return ResponseEntity.ok(promoteAdService.updatePaymentSuccess(model));
+    }
+
+    @PostMapping("/payment/failure")
+    public ResponseEntity<Response> paymentFailed(@RequestBody PromoteWebModel model) {
+        return ResponseEntity.ok(promoteAdService.updatePaymentFailed(model));
+    }
+    
+   
+    // ⭐ GET RECENT PROMOTED (Running + Completed only)
+    
+    @GetMapping("/recent")
+    public ResponseEntity<Response> getRecentPromoted() {
+
+        Integer userId = userDetails.userInfo().getId();
+
+        return ResponseEntity.ok(promoteAdService.getRecentPromotions(userId));
+    }
+    
+    @PostMapping("/update-before-payment")
+    public ResponseEntity<Response> updateBeforePayment(@ModelAttribute PromoteWebModel model) {
+        return ResponseEntity.ok(promoteAdService.updateBeforePayment(model));
+    }
+
+}
