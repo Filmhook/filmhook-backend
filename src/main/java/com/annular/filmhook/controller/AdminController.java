@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -318,5 +319,31 @@ public class AdminController {
         );
     }
     
+    @PostMapping("/deleteUser")
+    public ResponseEntity<?> deleteUser(@RequestParam Integer userId) {
+    try {
 
+
+    	adminService.DeleteUser(userId);
+
+
+    return ResponseEntity.ok(
+    new Response(1, "User deleted successfully", null)
+    );
+
+
+    } catch (Exception e) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    .body(new Response(-1, "Failed to delete user", e.getMessage()));
+    }
+    }
+    
+    
+    @GetMapping("/deletedUsers")
+    public Response getAllDeletedUsers(
+    @RequestParam Integer pageNo,
+    @RequestParam Integer pageSize
+    ) {
+    return adminService.getAllDeletedUsers(pageNo, pageSize);
+    }
 }

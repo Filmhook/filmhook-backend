@@ -66,4 +66,8 @@ public interface AdminService {
 	List<AdminListResponse> getAdminList();
 
 	Object getReviewedUsers(Integer adminId, String targetType);
+	
+	public void DeleteUser(Integer userId);
+	
+	Response getAllDeletedUsers(Integer pageNo, Integer pageSize);
 }

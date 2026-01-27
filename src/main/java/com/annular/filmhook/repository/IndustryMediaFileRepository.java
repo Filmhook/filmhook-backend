@@ -16,8 +16,15 @@ public interface IndustryMediaFileRepository extends JpaRepository<IndustryMedia
     @Query("Select m from IndustryMediaFiles m where m.user.userId=:userId and m.status=true")
     List<IndustryMediaFiles> getMediaFilesByUserIdAndCategory(Integer userId);
     
-    @Query("SELECT imf FROM IndustryMediaFiles imf JOIN imf.user u WHERE imf.status = true AND imf.unverifiedList IS NULL")
-    Page<IndustryMediaFiles> getAllUnverifiedIndustrialUsers(Pageable paging);
+    @Query(
+    		  "SELECT DISTINCT imf " +
+    		  "FROM IndustryMediaFiles imf " +
+    		  "JOIN imf.user u " +
+    		  "WHERE imf.status = true " +
+    		  "AND imf.unverifiedList IS NULL " +
+    		  "AND (u.permanentDelete = false OR u.permanentDelete IS NULL)"
+    		)
+    		Page<IndustryMediaFiles> getAllUnverifiedIndustrialUsers(Pageable paging);
 
 
 

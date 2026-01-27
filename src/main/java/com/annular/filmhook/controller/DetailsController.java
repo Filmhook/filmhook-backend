@@ -375,8 +375,6 @@ public class DetailsController {
 	    return ResponseEntity.ok(detailService.getIndustrySignupDetails(userId));
 	}
 
-
-
 	
 	@RequestMapping(path = "/saveMoviePosts", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public Response saveMoviePosts(@ModelAttribute IndustryFileInputWebModel inputFileData) {

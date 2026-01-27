@@ -146,5 +146,6 @@ public class UserWebModel {
     private boolean followingStatus;
     private String organizationUnit;
     private String jobTitle;
+    private Boolean isEditRequest;
 
 }
