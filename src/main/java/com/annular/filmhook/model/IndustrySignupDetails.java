@@ -73,6 +73,10 @@ public class IndustrySignupDetails {
 	    @CreationTimestamp
 	    @Column(name = "created_on")
 	    private Date createdOn;
+	    
+	    @ManyToOne
+	    @JoinColumn(name = "platform_id")
+		private Platform platform;
 	
 
 }

@@ -84,6 +84,9 @@ public class IndustryMediaFiles {
     
     @Column(name = "unverifiedList")
     private Boolean unverifiedList;
+    
+    @Column(name = "thumbnail_path")
+    private String thumbnailPath;
 
 }
 

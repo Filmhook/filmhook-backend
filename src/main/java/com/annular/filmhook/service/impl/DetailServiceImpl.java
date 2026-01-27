@@ -1170,7 +1170,10 @@ public class DetailServiceImpl implements DetailService {
 
         Country country = countryRepository.findById(dto.getCountryId())
                 .orElseThrow(() -> new RuntimeException("Country not found"));
-
+        
+        Platform platform = platformRepository.findById(dto.getPlatformId())
+        		.orElseThrow(() -> new RuntimeException("Platform not found"));
+        
         Industry industry = industryRepository.findById(dto.getIndustryId())
                 .orElseThrow(() -> new RuntimeException("Industry not found"));
 
@@ -1198,6 +1201,7 @@ public class DetailServiceImpl implements DetailService {
 
             entity.setFullName(dto.getFullName());
             entity.setCountry(country);
+            entity.setPlatform(platform);
             entity.setIndustry(industry);
             entity.setProfession(profession);
             entity.setSubProfession(subProfession);
@@ -1211,6 +1215,7 @@ public class DetailServiceImpl implements DetailService {
                     .user(user)
                     .fullName(dto.getFullName())
                     .country(country)
+                    .platform(platform)
                     .industry(industry)
                     .profession(profession)
                     .subProfession(subProfession)
@@ -1239,6 +1244,9 @@ public class DetailServiceImpl implements DetailService {
 
              .countryId(details.getCountry().getId())
              .countryName(details.getCountry().getName())
+             
+             .platformId(details.getPlatform().getPlatformId())
+             .platformName(details.getPlatform().getPlatformName())
 
              .industryId(details.getIndustry().getIndustryId())
              .industryName(details.getIndustry().getIndustryName())
