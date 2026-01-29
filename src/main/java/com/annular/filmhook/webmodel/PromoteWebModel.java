@@ -40,6 +40,7 @@ public class PromoteWebModel {
     private String webSiteLink;
     private String contactNumber;
     private Integer selectOption;
+    private List<Integer> selectedMediaIds;
 
     // New Post Create Requirements
     private Integer userId;

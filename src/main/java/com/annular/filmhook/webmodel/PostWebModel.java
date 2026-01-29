@@ -76,6 +76,7 @@ public class PostWebModel {
     private List<Integer> deletedFileIds; // IDs of existing post files to delete
     private Boolean watchLater;
     private List<Integer> deletedTaggedUserIds;
+    private String adType;
 
 
 }

@@ -7,6 +7,7 @@ import com.annular.filmhook.model.VisitPage;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.PromoteAd;
+import com.annular.filmhook.model.PromoteMediaFiles;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Audition;
@@ -16,7 +17,7 @@ import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.model.PostTags;
 import com.annular.filmhook.model.PostView;
 import com.annular.filmhook.model.MediaFileCategory;
-
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.FollowersRequest;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.util.CalendarUtil;
@@ -75,6 +76,7 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteAdRepository;
+import com.annular.filmhook.repository.PromoteMediaFilesRepository;
 import com.annular.filmhook.repository.PromoteRepository;
 import com.annular.filmhook.repository.FilmProfessionPermanentDetailRepository;
 import com.annular.filmhook.repository.LikeRepository;
@@ -126,6 +128,9 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	PinMediaRepository pinMediaRepository;
+	
+	@Autowired
+	private PromoteMediaFilesRepository promoteMediaFilesRepository;
 
 	@Autowired
 	UserService userService;
@@ -568,252 +573,295 @@ public class PostServiceImpl implements PostService {
 	}
 
 
-	public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
-
-		List<PostWebModel> responseList = new ArrayList<>();
-
-		try {
 
 
-			// Logged-in user data
-			Integer loggedInUserTemp = null;
-			Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-			if (principal instanceof UserDetailsImpl) {
-				loggedInUserTemp = ((UserDetailsImpl) principal).getId();
-			}
-			final Integer finalLoggedInUser = loggedInUserTemp;
+public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
 
-			if (postList == null || postList.isEmpty()) return responseList;
+    List<PostWebModel> responseList = new ArrayList<>();
 
-			for (Posts post : postList) {
+    try {
+        // Logged-in user
+        Integer loggedInUserTemp = null;
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetailsImpl) {
+            loggedInUserTemp = ((UserDetailsImpl) principal).getId();
+        }
+        final Integer finalLoggedInUser = loggedInUserTemp;
 
-				if (post == null) continue;
+        if (postList == null || postList.isEmpty()) return responseList;
 
-				// ============================================================
-				// FILES FOR POST
-				// ============================================================
-				List<FileOutputWebModel> postFiles =
-						mediaFilesService.getMediaFilesByCategoryAndRefId(
-								MediaFileCategory.Post,
-								post.getId()
-								);
+        for (Posts post : postList) {
 
-				// ============================================================
-				// USER PROFESSION
-				// ============================================================
-				Set<String> professionNames = new HashSet<>();
-				String userType = post.getUser().getUserType();
-				professionNames.add(
-						(userType != null && !userType.isEmpty()) ? userType : "Public User"
-						);
+            if (post == null) continue;
 
-				// ============================================================
-				// FOLLOWERS
-				// ============================================================
-				List<FollowersRequest> followersList =
-						friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(
-								post.getUser().getUserId(), true);
+            // ============================================================
+            // PROMOTION LOGIC (latest Running + Success)
+            // ============================================================
+            PromoteAd promoteAd = null;
 
-				// ============================================================
-				// LIKE / UNLIKE STATUS FOR LOGGED USER
-				// ============================================================
-				Boolean likeStatus = false;
-				Boolean unlikeStatus = false;
-				Integer latestLikeId = null;
+            List<PromoteAd> promoteList =
+                    promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
 
-				if (finalLoggedInUser != null) {
+            for (PromoteAd p : promoteList) {
+                if (p.getStatus() == PromoteAd.PromoteStatus.Running &&
+                        "SUCCESS".equalsIgnoreCase(p.getPaymentStatus())) {
+                    promoteAd = p;
+                    break;
+                }
+            }
 
-					List<Likes> userLikes =
-							likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
+            // ============================================================
+            // PROMOTE → SELECTED MEDIA OR NORMAL POST MEDIA
+            // ============================================================
+            List<FileOutputWebModel> postFiles = new ArrayList<>();
 
-					Likes entry = userLikes.stream()
-							.filter(l -> l.getPostId().equals(post.getId()))
-							.findFirst()
-							.orElse(null);
+         // -------------------------------------------------------------
+         // CASE 1 : Promotion is Running → use ONLY selected promote files
+         // -------------------------------------------------------------
+         if (promoteAd != null && promoteAd.getStatus() == PromoteAd.PromoteStatus.Running) {
 
-					if (entry != null) {
-						latestLikeId = entry.getLikeId();
+             List<PromoteMediaFiles> selectedMedia =
+                     promoteMediaFilesRepository
+                             .findByPromote_PromoteIdAndSelected(promoteAd.getPromoteId(), true);
 
-						if ("LIKE".equalsIgnoreCase(entry.getReactionType())) {
-							likeStatus = true;
-							unlikeStatus = false;
-						} else if ("UNLIKE".equalsIgnoreCase(entry.getReactionType())) {
-							likeStatus = false;
-							unlikeStatus = true;
-						}
-					}
-				}
+             if (selectedMedia != null && !selectedMedia.isEmpty()) {
 
-				// ============================================================
-				// TOTAL LIKES / UNLIKES
-				// ============================================================
-				Long totalLikesCount =
-						likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "LIKE", "Post");
+                 for (PromoteMediaFiles pm : selectedMedia) {
+                     MediaFiles mf = pm.getMediaFile();
+                     if (mf != null) {
+                         postFiles.add(FileOutputWebModel.builder()
+                                 .id(mf.getId())
+                                 .fileId(mf.getFileId())
+                                 .fileName(mf.getFileName())
+                                 .filePath(mf.getFilePath())
+                                 .thumbnailPath(mf.getThumbnailPath())
+                                 .fileSize(mf.getFileSize())
+                                 .fileType(mf.getFileType())
+                                 .build());
+                     }
+                 }
+             }
 
-				Long totalUnlikesCount =
-						likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "UNLIKE", "Post");
+             // If promote is running and selected list empty → 
+             // you want to show NOTHING or NORMAL ??
+             // If NORMAL → enable below:
+             if (postFiles.isEmpty()) {
+                 postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+                         MediaFileCategory.Post,
+                         post.getId()
+                 );
+             }
 
-				// ============================================================
-				// WATCH LATER
-				// ============================================================
-				Boolean watchLater = false;
-				if (finalLoggedInUser != null) {
-					watchLater = watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(
-							finalLoggedInUser, post.getId(), true
-							);
-				}
+         }
+         // -------------------------------------------------------------
+         // CASE 2 : Promotion Completed / NotStarted / null → show NORMAL post media
+         // -------------------------------------------------------------
+         else {
 
-				// ============================================================
-				// PIN STATUS
-				// ============================================================
-				Boolean pinStatus = false;
-				if (finalLoggedInUser != null) {
-					Optional<UserProfilePin> p =
-							pinProfileRepository.findByPinProfileIdAndUserId(
-									finalLoggedInUser, post.getUser().getUserId());
+             postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+                     MediaFileCategory.Post,
+                     post.getId()
+             );
+         }
 
-					pinStatus = p.map(UserProfilePin::isStatus).orElse(false);
-				}
+            // ============================================================
+            // USER PROFESSION
+            // ============================================================
+            Set<String> professionNames = new HashSet<>();
+            String userType = post.getUser().getUserType();
+            professionNames.add(
+                    (userType != null && !userType.isEmpty()) ? userType : "Public User"
+            );
 
-				// PIN MEDIA
-				Boolean pinMediaStatus = false;
-				if (finalLoggedInUser != null) {
-					pinMediaStatus =
-							pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId())
-							.isPresent();
-				}
+            // ============================================================
+            // FOLLOWERS
+            // ============================================================
+            List<FollowersRequest> followersList =
+                    friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(
+                            post.getUser().getUserId(), true);
 
-				// ============================================================
-				// PROMOTE LOGIC (NEW PromoteAd)
-				// ============================================================
-				PromoteAd promoteAd = null;
+            // ============================================================
+            // LIKE / UNLIKE
+            // ============================================================
+            Boolean likeStatus = false;
+            Boolean unlikeStatus = false;
+            Integer latestLikeId = null;
 
-				List<PromoteAd> promoteList =
-				        promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
+            if (finalLoggedInUser != null) {
+                List<Likes> userLikes =
+                        likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
 
-				for (PromoteAd p : promoteList) {
-				    if (p.getStatus() == PromoteAd.PromoteStatus.Running) {
-				        promoteAd = p;
-				        break;
-				    }
-				}
+                Likes entry = userLikes.stream()
+                        .filter(l -> l.getPostId().equals(post.getId()))
+                        .findFirst()
+                        .orElse(null);
 
-				boolean isPromoted = false;
-				Integer promoteId = null;
-				Integer numberOfDays = null;
-				Integer amount = null;
-				String companyName = null;
-				String brandName = null;
-				String visitType= null;
-				String adType = null;
-				
-				
-				List<FileOutputWebModel> logoFiles = new ArrayList<>();
+                if (entry != null) {
+                    latestLikeId = entry.getLikeId();
 
-				if (promoteAd != null) {
+                    if ("LIKE".equalsIgnoreCase(entry.getReactionType())) {
+                        likeStatus = true;
+                    } else if ("UNLIKE".equalsIgnoreCase(entry.getReactionType())) {
+                        unlikeStatus = true;
+                    }
+                }
+            }
 
-				    if ("SUCCESS".equalsIgnoreCase(promoteAd.getPaymentStatus()) &&
-				        promoteAd.getStatus() == PromoteAd.PromoteStatus.Running) {
+            Long totalLikesCount =
+                    likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "LIKE", "Post");
 
-				        isPromoted = true;
-				        promoteId = promoteAd.getPromoteId();
-				        numberOfDays = promoteAd.getDays();
-				        amount = promoteAd.getAmount();
-				        companyName = promoteAd.getBusinessName();
-				        brandName = promoteAd.getBusinessType();
-				        visitType = promoteAd.getVisitType().getData();
-				        adType = promoteAd.getAdType();
+            Long totalUnlikesCount =
+                    likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "UNLIKE", "Post");
 
-				        logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-				                MediaFileCategory.Promote,
-				                post.getId()
-				        );
-				    }
-				}
+            // ============================================================
+            // WATCH LATER CHECK
+            // ============================================================
+            Boolean watchLater = false;
+            if (finalLoggedInUser != null) {
+                watchLater =
+                        watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(
+                                finalLoggedInUser, post.getId(), true);
+            }
 
-				// ============================================================
-				// TAGGED USERS
-				// ============================================================
-				List<Map<String, Object>> taggedUsers = null;
+            // ============================================================
+            // PIN STATUS
+            // ============================================================
+            Boolean pinStatus = false;
+            if (finalLoggedInUser != null) {
+                Optional<UserProfilePin> p =
+                        pinProfileRepository.findByPinProfileIdAndUserId(
+                                finalLoggedInUser, post.getUser().getUserId());
+                pinStatus = p.map(UserProfilePin::isStatus).orElse(false);
+            }
 
-				if (post.getPostTagsCollection() != null) {
-					taggedUsers = post.getPostTagsCollection().stream()
-							.filter(t -> Boolean.TRUE.equals(t.getStatus()))
-							.map(tag -> {
-								Map<String, Object> map = new HashMap<>();
-								Integer tuId = tag.getTaggedUser().getUserId();
-								map.put("userId", tuId);
-								userService.getUser(tuId).ifPresent(u -> {
-									map.put("username", u.getName());
-									map.put("userProfilePic", userService.getProfilePicUrl(tuId));
-								});
-								return map;
-							})
-							.collect(Collectors.toList());
-				}
+            Boolean pinMediaStatus = false;
+            if (finalLoggedInUser != null) {
+                pinMediaStatus =
+                        pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId())
+                                .isPresent();
+            }
 
-				// ============================================================
-				// ELAPSED TIME
-				// ============================================================
-				LocalDateTime createdOn =
-						LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
-				String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+            // ============================================================
+            // PROMOTED DATA
+            // ============================================================
+            boolean isPromoted = promoteAd != null;
 
-				// ============================================================
-				// BUILD FINAL RESPONSE
-				// ============================================================
-				PostWebModel model = PostWebModel.builder()
-						.id(post.getId())
-						.userId(post.getUser().getUserId())
-						.userName(post.getUser().getName())
-						.postId(post.getPostId())
-						.adminReview(post.getUser().getAdminReview())
-						.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
-						.description(post.getDescription())
-						.pinMediaStatus(pinMediaStatus)
-						.pinProfileStatus(pinStatus)
-						.userType(post.getUser().getUserType())
-						.likeCount(totalLikesCount.intValue())
-						.UnlikesCount(totalUnlikesCount.intValue())
-						.UnlikeStatus(unlikeStatus)
-						.shareCount(post.getSharesCount())
-						.commentCount(post.getCommentsCount())
-						.promoteFlag(isPromoted)   // <-- NEW promote logic applied
-						.promoteId(promoteId)
-						.numberOfDays(numberOfDays)
-						.amount(amount)
-						.companyName(companyName)
-						.brandName(brandName)
-						.companyLogoFiles(logoFiles)
-						.visitPageData(visitType)
-						.postFiles(postFiles)
-						.postLinkUrl(post.getPostLinkUrls())
-						.latitude(post.getLatitude())
-						.longitude(post.getLongitude())
-						.address(post.getAddress())
-						.likeStatus(likeStatus)
-						.likeId(latestLikeId)
-						.elapsedTime(elapsedTime)
-						.privateOrPublic(post.getPrivateOrPublic())
-						.locationName(post.getLocationName())
-						.professionNames(professionNames)
-						.followersCount(followersList.size())
-						.createdOn(post.getCreatedOn())
-						.createdBy(post.getCreatedBy())
-						.taggedUserss(taggedUsers)
-						.viewsCount(post.getViewsCount())
-						.watchLater(watchLater)
-						.build();
+            Integer promoteId = null;
+            Integer numberOfDays = null;
+            Integer amount = null;
+            String companyName = null;
+            String brandName = null;
+            String visitType = null;
+            String adType = null;
 
-				responseList.add(model);
-			}
+            List<FileOutputWebModel> logoFiles = new ArrayList<>();
 
-		} catch (Exception e) {
-			logger.error("Error at transformPostsDataToPostWebModel() -> {}", e.getMessage(), e);
-		}
+            if (promoteAd != null) {
+                promoteId = promoteAd.getPromoteId();
+                numberOfDays = promoteAd.getDays();
+                amount = promoteAd.getAmount();
+                companyName = promoteAd.getBusinessName();
+                brandName = promoteAd.getBusinessType();
+                visitType = promoteAd.getVisitType() != null
+                        ? promoteAd.getVisitType().getData()
+                        : null;
+                adType = promoteAd.getAdType();
 
-		return responseList;
-	}
+                logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.Promote,
+                        post.getId()
+                );
+            }
+
+            // ============================================================
+            // TAGGED USERS
+            // ============================================================
+            List<Map<String, Object>> taggedUsers = null;
+
+            if (post.getPostTagsCollection() != null) {
+                taggedUsers = post.getPostTagsCollection().stream()
+                        .filter(t -> Boolean.TRUE.equals(t.getStatus()))
+                        .map(tag -> {
+                            Map<String, Object> map = new HashMap<>();
+                            Integer tuId = tag.getTaggedUser().getUserId();
+                            map.put("userId", tuId);
+                            userService.getUser(tuId).ifPresent(u -> {
+                                map.put("username", u.getName());
+                                map.put("userProfilePic", userService.getProfilePicUrl(tuId));
+                            });
+                            return map;
+                        })
+                        .collect(Collectors.toList());
+            }
+
+            // ============================================================
+            // ELAPSED TIME
+            // ============================================================
+            LocalDateTime createdOn =
+                    LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
+            String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+
+            // ============================================================
+            // BUILD RESPONSE
+            // ============================================================
+            PostWebModel model = PostWebModel.builder()
+                    .id(post.getId())
+                    .userId(post.getUser().getUserId())
+                    .userName(post.getUser().getName())
+                    .postId(post.getPostId())
+                    .adminReview(post.getUser().getAdminReview())
+                    .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+
+                    .description(post.getDescription())
+                    .postFiles(postFiles)
+
+                    .pinMediaStatus(pinMediaStatus)
+                    .pinProfileStatus(pinStatus)
+                    .userType(post.getUser().getUserType())
+                    .likeCount(totalLikesCount.intValue())
+                    .UnlikesCount(totalUnlikesCount.intValue())
+                    .UnlikeStatus(unlikeStatus)
+                    .shareCount(post.getSharesCount())
+                    .commentCount(post.getCommentsCount())
+
+                    .promoteFlag(isPromoted)
+                    .promoteId(promoteId)
+                    .numberOfDays(numberOfDays)
+                    .amount(amount)
+                    .companyName(companyName)
+                    .brandName(brandName)
+                    .companyLogoFiles(logoFiles)
+                    .visitPageData(visitType)
+                    .adType(adType)
+
+                    .postLinkUrl(post.getPostLinkUrls())
+                    .latitude(post.getLatitude())
+                    .longitude(post.getLongitude())
+                    .address(post.getAddress())
+                    .likeStatus(likeStatus)
+                    .likeId(latestLikeId)
+                    .elapsedTime(elapsedTime)
+                    .privateOrPublic(post.getPrivateOrPublic())
+                    .locationName(post.getLocationName())
+                    .professionNames(professionNames)
+                    .followersCount(followersList.size())
+                    .createdOn(post.getCreatedOn())
+                    .createdBy(post.getCreatedBy())
+                    .taggedUserss(taggedUsers)
+                    .viewsCount(post.getViewsCount())
+                    .watchLater(watchLater)
+                    .build();
+
+            responseList.add(model);
+        }
+
+    } catch (Exception e) {
+        logger.error("Error in transformPostsDataToPostWebModel(): {}", e.getMessage(), e);
+    }
+
+    return responseList;
+}
+
 
 
 
