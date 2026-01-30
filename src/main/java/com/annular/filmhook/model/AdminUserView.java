@@ -22,9 +22,6 @@ import lombok.Setter;
 @Entity
 @Table(
     name = "admin_user_views",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "category"})
-    },
     indexes = {
         @Index(name = "idx_user_category", columnList = "user_id,category")
     }
@@ -51,7 +48,6 @@ public class AdminUserView {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @CreationTimestamp
     @Column(name = "viewed_at", updatable = false)
     private LocalDateTime viewedAt;
 }

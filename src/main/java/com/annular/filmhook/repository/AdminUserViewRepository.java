@@ -26,5 +26,5 @@ public interface AdminUserViewRepository extends JpaRepository<AdminUserView, Lo
 	)
 	void clearView(@Param("userId") Integer userId, @Param("category") String category);
 	
-	
+	 boolean existsByUserIdAndCategory(Integer userId, String category);
 }

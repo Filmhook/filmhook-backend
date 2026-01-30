@@ -1541,29 +1541,27 @@ clearView(userId, "unverified");
      }
  }
  
-
 @Override
 @Transactional
 public Response markViewed(Integer adminId, Integer userId, String category) {
 
     try {
-        // 1️⃣ CHECK user-level view FIRST
-        if (viewRepo.findByUserIdAndCategory(userId, category).isPresent()) {
-            return new Response(1, "View already marked", null);
+        // 1️⃣ User-level view (once)
+        if (!viewRepo.existsByUserIdAndCategory(userId, category)) {
+            viewRepo.save(
+                AdminUserView.builder()
+                    .userId(userId)
+                    .category(category)
+                    .active(true)
+                    .build()
+            );
         }
 
-        // 2️⃣ FIRST-TIME VIEW → create user view
-        viewRepo.save(
-            AdminUserView.builder()
-                .userId(userId)
-                .category(category)
-                .active(true)
-                .build()
-        );
-
-        // 3️⃣ OPTIONAL: log admin (best-effort)
+        // 2️⃣ Admin-level log (once per admin)
         try {
-            if (!logRepo.existsByAdminIdAndUserIdAndCategory(adminId, userId, category)) {
+            if (!logRepo.existsByAdminIdAndUserIdAndCategory(
+                    adminId, userId, category)) {
+
                 logRepo.save(
                     AdminUserViewLog.builder()
                         .adminId(adminId)
@@ -1572,16 +1570,17 @@ public Response markViewed(Integer adminId, Integer userId, String category) {
                         .build()
                 );
             }
-        } catch (Exception ignored) {
-            // logging must not affect main flow
-        }
+        } catch (DataIntegrityViolationException ignored) {}
 
         return new Response(1, "View marked successfully", null);
 
     } catch (Exception ex) {
+        ex.printStackTrace();
         return new Response(-1, "Failed to mark view", null);
     }
 }
+
+
 
      @Transactional
      @Override	
