@@ -37,5 +37,13 @@ public interface IndustryMediaFileRepository extends JpaRepository<IndustryMedia
     @Query("SELECT COUNT(DISTINCT imf.user.id) FROM IndustryMediaFiles imf WHERE imf.notificationCount IS NULL OR imf.notificationCount = 0")
     Integer countDistinctUsersByNotificationCountNullOrZero();
 
-
+    @Query(
+    		  "SELECT COUNT(DISTINCT imf.user.userId) " +
+    		  "FROM IndustryMediaFiles imf " +
+    		  "JOIN imf.user u " +
+    		  "WHERE imf.status = true " +
+    		  "AND imf.unverifiedList IS NULL " +
+    		  "AND (u.permanentDelete = false OR u.permanentDelete IS NULL)"
+    		)
+    		long countUnverifiedIndustryUsers();
 }

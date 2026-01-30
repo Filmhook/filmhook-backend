@@ -234,6 +234,27 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 		)
 		Page<User> findDeletedUsers(Pageable pageable);
 
-
-
+//Approved
+	@Query(
+			  "SELECT COUNT(u) FROM User u " +
+			  "WHERE u.industryUserVerified = true " +
+			  "AND u.status = true " +
+			  "AND (u.permanentDelete = false OR u.permanentDelete IS NULL)"
+			)
+			long countApprovedIndustryUsers();
+//reject
+	@Query(
+			  "SELECT COUNT(u) FROM User u " +
+			  "WHERE u.industryUserVerified = false " +
+			  "AND u.status = true " +
+			  "AND u.rejectReason IS NOT NULL " +
+			  "AND (u.permanentDelete = false OR u.permanentDelete IS NULL)"
+			)
+			long countRejectedIndustryUsers();
+	
+	@Query(
+			  "SELECT COUNT(u) FROM User u " +
+			  "WHERE u.permanentDelete = true"
+			)
+			long countDeletedUsers();
 }

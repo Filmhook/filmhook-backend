@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.webmodel.AdminListResponse;
@@ -33,6 +34,9 @@ public class AdminController {
 
 	@Autowired
 	AdminService adminService;
+	
+	@Autowired
+	UserDetails userDetails;
 
 	@PostMapping("adminRegister")
 	public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
@@ -346,4 +350,28 @@ public class AdminController {
     ) {
     return adminService.getAllDeletedUsers(pageNo, pageSize);
     }
+    
+    
+    @GetMapping("/counts")
+    public Response getIndustryUserSidebarCounts() {
+    return adminService.getIndustryUserSidebarCounts();
+    }
+    
+    @PostMapping("/viewUser")
+    public Response view(
+            @RequestParam Integer userId,
+            @RequestParam String category) {
+
+        Integer adminId = userDetails.userInfo().getId();
+
+        // ✅ RETURN SERVICE RESPONSE DIRECTLY
+        return adminService.markViewed(adminId, userId, category);
+    }
+    
+    @GetMapping("/getviewers")
+    public Response viewers(@RequestParam Integer userId, @RequestParam String category) {
+    return new Response(1, "Success",
+    		adminService.getViewers(userId, category));
+    }
+
 }

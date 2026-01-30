@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +35,8 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.AdminActivityLog;
 import com.annular.filmhook.model.AdminOnlineSession;
+import com.annular.filmhook.model.AdminUserView;
+import com.annular.filmhook.model.AdminUserViewLog;
 import com.annular.filmhook.model.FilmProfessionPermanentDetail;
 import com.annular.filmhook.model.FilmSubProfession;
 import com.annular.filmhook.model.IndustryMediaFiles;
@@ -46,6 +49,8 @@ import com.annular.filmhook.model.ReportPost;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.AdminActivityLogRepository;
 import com.annular.filmhook.repository.AdminOnlineSessionRepository;
+import com.annular.filmhook.repository.AdminUserViewLogRepository;
+import com.annular.filmhook.repository.AdminUserViewRepository;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.repository.IndustryMediaFileRepository;
 import com.annular.filmhook.repository.IndustrySignupDetailsRepository;
@@ -118,7 +123,10 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	private AdminOnlineSessionRepository sessionRepo;
-	
+	@Autowired
+    private AdminUserViewRepository viewRepo;
+	@Autowired
+    private  AdminUserViewLogRepository logRepo;
 	
 	public static final Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
 
@@ -361,6 +369,11 @@ public class AdminServiceImpl implements AdminService {
 		for (User user : users) {
 			UserWebModel userModel = new UserWebModel();
 			userModel.setUserId(user.getUserId());
+			 boolean isViewed =
+			            !logRepo
+			                .findByUserIdAndCategory(user.getUserId(), "unverified")
+			                .isEmpty();
+
 			Map<String, Object> userMap = new HashMap<>();
 			userMap.put("userId", user.getUserId());
 			userMap.put("name", user.getName());
@@ -376,7 +389,7 @@ public class AdminServiceImpl implements AdminService {
 			userMap.put("birthPlace",user.getBirthPlace());
 			userMap.put("livingPlace",user.getLivingPlace());
 			userMap.put("onlineStatus",user.getOnlineStatus());
-	
+			  userMap.put("isViewed", isViewed);
 			
 			responseList.add(userMap);
 		}
@@ -627,9 +640,10 @@ public class AdminServiceImpl implements AdminService {
 		if (Utility.isNullOrZero(userWebModel.getUserId())) return new Response(-1, "User ID must not be null", null);
  
 		try {
-			List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
- 
+			Integer userId = userWebModel.getUserId();
 			Boolean status = userWebModel.isStatus();
+			Integer adminId = userDetails.userInfo().getId();
+			List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
 			logger.info(">>>>>>>>>>>>{}", userWebModel.isStatus());
  
 			// Iterate over the list and set status to false
@@ -658,7 +672,7 @@ public class AdminServiceImpl implements AdminService {
 			Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
 			logger.info(">>>>>>>>>>>{}", userWebModel.getUserId());
 			if (userOptional.isEmpty()) return new Response(-1, "User not found", null); // Return an error response if user is not found
-			Integer adminId = userDetails.userInfo().getId();
+			
 			User user = userOptional.get();
 			if (status) {
 				logger.info("User id -> {}", userWebModel.getUserId());
@@ -703,7 +717,8 @@ public class AdminServiceImpl implements AdminService {
 					return new Response(-1, "Failed to send notification email", null);
 				}
 			}
- 
+			
+			clearView(userId, "unverified");
 			// Return a success response
 			return new Response(1, "Success", "Status updated successfully");
 		} catch (Exception e) {
@@ -1124,9 +1139,15 @@ public class AdminServiceImpl implements AdminService {
 
 
 			List<Map<String, Object>> userList = new ArrayList<>();
+			
+			 String category = status ? "approved" : "rejected";
 			for (User user : usersPage.getContent()) {
 				UserWebModel userWebModel = new UserWebModel();
 				userWebModel.setUserId(user.getUserId());
+				 boolean isViewed =
+				            !logRepo
+				                .findByUserIdAndCategory(user.getUserId(), category)
+				                .isEmpty();
 				Map<String, Object> userMap = new HashMap<>();
 				userMap.put("userId", user.getUserId());
 					userMap.put("name", user.getName());
@@ -1146,6 +1167,7 @@ public class AdminServiceImpl implements AdminService {
 					userMap.put("state", user.getState());
 					userMap.put("verified", user.getVerified());
 					userMap.put("onlineStatus", user.getOnlineStatus());
+					 userMap.put("isViewed", isViewed);
 				userList.add(userMap);
 			}
 
@@ -1308,7 +1330,7 @@ public class AdminServiceImpl implements AdminService {
 	
 	public String formatDailyHours(Integer adminId) {
 
-	    double hours = getDailyHours(adminId);   // your existing calculation
+	    double hours = getDailyHours(adminId);   
 	    long totalMinutes = Math.round(hours * 60);
 
 	    long hr = totalMinutes / 60;
@@ -1400,25 +1422,26 @@ public void DeleteUser(Integer userId) {
 	  Integer loggedInUserId = userDetails.userInfo().getId();
 	  User user = userRepository.findById(userId)
 	  .orElseThrow(() -> new RuntimeException("User not found"));
-	  // 🔴 UPDATE USER STATUS
+	  
 	  user.setStatus(false);
 	  user.setPermanentDelete(true);
 	  user.setIndustryUserVerified(false);
 	  user.setUnVerifiedList(false);
 	  user.setUpdatedBy(loggedInUserId);
 	  user.setUpdatedOn(new Date());
-	  
+	  ;
 	  userRepository.save(user);
-	  userServiceImpl. softDeleteUserData(userId);
-
-
-	// 🧾 ADMIN AUDIT LOG
-	adminService.log(
-	loggedInUserId,
-	"DELETED",
-	"USER",
-	userId
-	);
+	  adminService.log(
+				loggedInUserId,
+				"DELETED",
+				"USER",
+				userId
+				);
+	  userServiceImpl. softDeleteUserData(userId);	
+clearView(userId, "unverified");
+	clearView(userId, "approved");
+	 clearView(userId, "rejected");
+	clearView(userId, "deleted");
 	}
 
  
@@ -1438,7 +1461,10 @@ public void DeleteUser(Integer userId) {
          for (User user : usersPage.getContent()) {
              UserWebModel userWebModel = new UserWebModel();
              userWebModel.setUserId(user.getUserId());
-
+             boolean isViewed =
+			            !logRepo
+			                .findByUserIdAndCategory(user.getUserId(), "deleted")
+			                .isEmpty();
              Map<String, Object> userMap = new HashMap<>();
              userMap.put("userId", user.getUserId());
              userMap.put("name", user.getName());
@@ -1463,7 +1489,7 @@ public void DeleteUser(Integer userId) {
 
              userMap.put("verified", user.getVerified());
              userMap.put("onlineStatus", user.getOnlineStatus());
-
+             userMap.put("isViewed", isViewed);
              userList.add(userMap);
          }
 
@@ -1489,5 +1515,83 @@ public void DeleteUser(Integer userId) {
          );
      }
  }
+ 
+ 
+ @Override
+ public Response getIndustryUserSidebarCounts() {
+     try {
+         Map<String, Long> counts = new HashMap<>();
 
+         counts.put("unverified",
+             industryMediaFileRepository.countUnverifiedIndustryUsers());
+
+         counts.put("approved",
+             userRepository.countApprovedIndustryUsers());
+
+         counts.put("rejected",
+             userRepository.countRejectedIndustryUsers());
+
+         counts.put("deleted",
+             userRepository.countDeletedUsers());
+
+         return new Response(1, "Success", counts);
+     } catch (Exception e) {
+         e.printStackTrace();
+         return new Response(-1, "Failed to fetch counts", null);
+     }
+ }
+ 
+
+@Override
+@Transactional
+public Response markViewed(Integer adminId, Integer userId, String category) {
+
+    try {
+        // 1️⃣ CHECK user-level view FIRST
+        if (viewRepo.findByUserIdAndCategory(userId, category).isPresent()) {
+            return new Response(1, "View already marked", null);
+        }
+
+        // 2️⃣ FIRST-TIME VIEW → create user view
+        viewRepo.save(
+            AdminUserView.builder()
+                .userId(userId)
+                .category(category)
+                .active(true)
+                .build()
+        );
+
+        // 3️⃣ OPTIONAL: log admin (best-effort)
+        try {
+            if (!logRepo.existsByAdminIdAndUserIdAndCategory(adminId, userId, category)) {
+                logRepo.save(
+                    AdminUserViewLog.builder()
+                        .adminId(adminId)
+                        .userId(userId)
+                        .category(category)
+                        .build()
+                );
+            }
+        } catch (Exception ignored) {
+            // logging must not affect main flow
+        }
+
+        return new Response(1, "View marked successfully", null);
+
+    } catch (Exception ex) {
+        return new Response(-1, "Failed to mark view", null);
+    }
+}
+
+     @Transactional
+     @Override	
+     public void clearView(Integer userId, String category) {
+         viewRepo.clearView(userId, category);
+     }
+
+     @Override
+  public List<AdminUserViewLog> getViewers(Integer userId, String category) {
+         return logRepo.findByUserIdAndCategory(userId, category);
+     }
+ 
 }
