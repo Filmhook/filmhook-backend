@@ -1553,7 +1553,6 @@ public Response markViewed(Integer adminId, Integer userId, String category) {
                     .userId(userId)
                     .category(category)
                     .active(true)
-                    .viewedAt(LocalDateTime.now())
                     .build()
             );
         }
@@ -1568,7 +1567,6 @@ public Response markViewed(Integer adminId, Integer userId, String category) {
                         .adminId(adminId)
                         .userId(userId)
                         .category(category)
-                        .viewedAt(LocalDateTime.now())
                         .build()
                 );
             }

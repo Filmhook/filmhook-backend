@@ -1,6 +1,7 @@
 package com.annular.filmhook.model;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -49,7 +50,7 @@ public class AdminUserViewLog {
     @Column(nullable = false, length = 20)
     private String category;
 
-    @CreationTimestamp
     @Column(name = "viewed_at", updatable = false)
-    private LocalDateTime viewedAt;
+    @CreationTimestamp
+    private OffsetDateTime viewedAt;
 }
