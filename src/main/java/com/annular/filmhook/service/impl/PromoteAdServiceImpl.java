@@ -10,13 +10,17 @@ import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.PromoteAd;
 import com.annular.filmhook.model.PromoteAd.PromoteStatus;
+import com.annular.filmhook.model.PromoteMediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.VisitPage;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteAdRepository;
+import com.annular.filmhook.repository.PromoteMediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.service.MediaFilesService;
@@ -40,6 +44,10 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	private final UserRepository userRepository;
 	@Autowired
 	PostService postService;
+	@Autowired
+	private PromoteMediaFilesRepository promoteMediaFilesRepo;
+	@Autowired
+	private MediaFilesRepository mediaFilesRepository;
 
 	@Override
 	public PromoteAd savePromote(PromoteWebModel model, Integer userId) {
@@ -49,9 +57,9 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 
 		Integer postId;
 
-		// ==================================
-		// CASE 1: postId provided → use existing post
-		// ==================================
+		// ==================================================
+		// CASE 1: Existing post
+		// ==================================================
 		if (model.getPostId() != null && model.getPostId() > 0) {
 
 			postsRepository.findById(model.getPostId())
@@ -60,14 +68,14 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			postId = model.getPostId();
 
 		} else {
-			// ==================================
-			// CASE 2: No postId → Create New Post
-			// ==================================
+
+			// ==================================================
+			// CASE 2: No post → create a fresh post
+			// ==================================================
 			PostWebModel postModel = new PostWebModel();
 			postModel.setUserId(model.getUserId());
 			postModel.setFiles(model.getFiles());
 			postModel.setDescription(model.getDescription());
-
 			postModel.setPostLinkUrl(model.getPostLinkUrl());
 			postModel.setLatitude(model.getLatitude());
 			postModel.setLongitude(model.getLongitude());
@@ -81,9 +89,10 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 		Posts post = postsRepository.findById(postId)
 				.orElseThrow(() -> new RuntimeException("Post not found after creation"));
 
-		// ==================================
+
+		// ==================================================
 		// CREATE PROMOTION ENTRY
-		// ==================================
+		// ==================================================
 		PromoteAd promote = PromoteAd.builder()
 				.post(post)
 				.headline(model.getHeadline())
@@ -107,22 +116,22 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 				.cgst(model.getCgst())
 				.sgst(model.getSgst())
 				.price(model.getPrice())
-
 				.build();
 
 
-		// ==================================
-		// VISIT TYPE SETTING
-		// ==================================
+		// ==================================================
+		// SET VISIT TYPE
+		// ==================================================
 		if (model.getVisitTypeId() != null) {
 			VisitPage visitPage = visitPageRepository.findById(model.getVisitTypeId())
 					.orElseThrow(() -> new RuntimeException("Visit Type not found"));
 			promote.setVisitType(visitPage);
 		}
 
-		// ==================================
-		// UPLOAD COMPANY LOGO
-		// ==================================
+
+		// ==================================================
+		// SAVE COMPANY LOGO
+		// ==================================================
 		if (model.getCompanyLogo() != null && !model.getCompanyLogo().isEmpty()) {
 
 			FileInputWebModel fileInput = FileInputWebModel.builder()
@@ -136,9 +145,10 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			promote.setCompanyLogo(model.getCompanyLogo().getOriginalFilename());
 		}
 
-		// ==================================
-		// UPLOAD ADDRESS DOCUMENT
-		// ==================================
+
+		// ==================================================
+		// SAVE BUSINESS ADDRESS DOCUMENT
+		// ==================================================
 		if (model.getBusinessAddressDoc() != null &&
 				!model.getBusinessAddressDoc().isEmpty()) {
 
@@ -153,8 +163,55 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			promote.setBusinessAddress(model.getBusinessAddressDoc().getOriginalFilename());
 		}
 
+
 		// SAVE PROMOTE ENTRY
-		return promoteAdRepository.save(promote);
+		PromoteAd savedPromote = promoteAdRepository.save(promote);
+
+
+		// ==================================================================
+		// CASE: Existing Post + New Uploaded Photos → save as POST + PROMOTE
+		// ==================================================================
+		if (model.getFiles() != null && !model.getFiles().isEmpty()) {
+
+			FileInputWebModel uploadInput = FileInputWebModel.builder()
+					.userId(userId)
+					.category(MediaFileCategory.Post)
+					.categoryRefId(postId)
+					.files(model.getFiles())
+					.build();
+
+			// saveMediaFilesAndReturn → return list<MediaFiles>
+			mediaFilesService.saveMediaFiles(uploadInput, user);
+
+
+		}
+
+
+		// ==========================================================
+		// CASE: SELECTED MEDIA IDS COMING FROM FRONT-END
+		// ==========================================================
+		if (model.getSelectedMediaIds() != null && !model.getSelectedMediaIds().isEmpty()) {
+
+			// Remove old entries (edit case)
+			promoteMediaFilesRepo.deleteByPromote_PromoteId(savedPromote.getPromoteId());
+
+			for (Integer mediaId : model.getSelectedMediaIds()) {
+
+				MediaFiles media = mediaFilesRepository.findById(mediaId)
+						.orElseThrow(() -> new RuntimeException("Media file not found: " + mediaId));
+
+				PromoteMediaFiles pm = PromoteMediaFiles.builder()
+						.promote(savedPromote)
+						.mediaFile(media)
+						.selected(true)
+						.build();
+
+				promoteMediaFilesRepo.save(pm);
+			}
+		}
+
+
+		return savedPromote;
 	}
 
 	@Override
@@ -248,107 +305,107 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	@Override
 	public Response updateBeforePayment(PromoteWebModel model) {
 
-	    PromoteAd promote = promoteAdRepository.findById(model.getPromoteId())
-	            .orElseThrow(() -> new RuntimeException("Promote record not found"));
+		PromoteAd promote = promoteAdRepository.findById(model.getPromoteId())
+				.orElseThrow(() -> new RuntimeException("Promote record not found"));
 
-	    // ====== UPDATE ONLY IF NON-NULL ======
-	    if (model.getHeadline() != null)
-	        promote.setHeadline(model.getHeadline());
+		// ====== UPDATE ONLY IF NON-NULL ======
+		if (model.getHeadline() != null)
+			promote.setHeadline(model.getHeadline());
 
-	    if (model.getPromoteDescription() != null)
-	        promote.setPromoteDescription(model.getPromoteDescription());
+		if (model.getPromoteDescription() != null)
+			promote.setPromoteDescription(model.getPromoteDescription());
 
-	    if (model.getBusinessLocation() != null)
-	        promote.setBusinessLocation(model.getBusinessLocation());
+		if (model.getBusinessLocation() != null)
+			promote.setBusinessLocation(model.getBusinessLocation());
 
-	    if (model.getBusinessType() != null)
-	        promote.setBusinessType(model.getBusinessType());
+		if (model.getBusinessType() != null)
+			promote.setBusinessType(model.getBusinessType());
 
-	    if (model.getAdvObject() != null)
-	        promote.setAdvObject(model.getAdvObject());
+		if (model.getAdvObject() != null)
+			promote.setAdvObject(model.getAdvObject());
 
-	    if (model.getAdvObjectValue() != null)
-	        promote.setAdvObjectValue(model.getAdvObjectValue());
+		if (model.getAdvObjectValue() != null)
+			promote.setAdvObjectValue(model.getAdvObjectValue());
 
-	    if (model.getBusinessName() != null)
-	        promote.setBusinessName(model.getBusinessName());
+		if (model.getBusinessName() != null)
+			promote.setBusinessName(model.getBusinessName());
 
-	    if (model.getBudget() != null)
-	        promote.setBudget(model.getBudget());
+		if (model.getBudget() != null)
+			promote.setBudget(model.getBudget());
 
-	    if (model.getDays() != null)
-	        promote.setDays(model.getDays());
+		if (model.getDays() != null)
+			promote.setDays(model.getDays());
 
-	    if (model.getTargetCountries() != null)
-	        promote.setTargetCountries(model.getTargetCountries());
+		if (model.getTargetCountries() != null)
+			promote.setTargetCountries(model.getTargetCountries());
 
-	    if (model.getReachMin() != null)
-	        promote.setReachMin(model.getReachMin());
+		if (model.getReachMin() != null)
+			promote.setReachMin(model.getReachMin());
 
-	    if (model.getReachMax() != null)
-	        promote.setReachMax(model.getReachMax());
+		if (model.getReachMax() != null)
+			promote.setReachMax(model.getReachMax());
 
-	    if (model.getAmount() != null)
-	        promote.setAmount(model.getAmount());
+		if (model.getAmount() != null)
+			promote.setAmount(model.getAmount());
 
-	    if (model.getTotalCost() != null)
-	        promote.setTotalCost(model.getTotalCost());
+		if (model.getTotalCost() != null)
+			promote.setTotalCost(model.getTotalCost());
 
-	    if (model.getTaxFee() != null)
-	        promote.setTaxFee(model.getTaxFee());
+		if (model.getTaxFee() != null)
+			promote.setTaxFee(model.getTaxFee());
 
-	    if (model.getCgst() != null)
-	        promote.setCgst(model.getCgst());
+		if (model.getCgst() != null)
+			promote.setCgst(model.getCgst());
 
-	    if (model.getSgst() != null)
-	        promote.setSgst(model.getSgst());
+		if (model.getSgst() != null)
+			promote.setSgst(model.getSgst());
 
-	    if (model.getPrice() != null)
-	        promote.setPrice(model.getPrice());
+		if (model.getPrice() != null)
+			promote.setPrice(model.getPrice());
 
-	    // ====== UPDATE LOGO FILE ======
-	    if (model.getCompanyLogo() != null && !model.getCompanyLogo().isEmpty()) {
+		// ====== UPDATE LOGO FILE ======
+		if (model.getCompanyLogo() != null && !model.getCompanyLogo().isEmpty()) {
 
-	        FileInputWebModel fileModel = FileInputWebModel.builder()
-	                .userId(promote.getPost().getUser().getUserId())
-	                .category(MediaFileCategory.Promote)
-	                .categoryRefId(promote.getPost().getId())
-	                .files(List.of(model.getCompanyLogo()))
-	                .build();
+			FileInputWebModel fileModel = FileInputWebModel.builder()
+					.userId(promote.getPost().getUser().getUserId())
+					.category(MediaFileCategory.Promote)
+					.categoryRefId(promote.getPost().getId())
+					.files(List.of(model.getCompanyLogo()))
+					.build();
 
-	        mediaFilesService.saveMediaFiles(fileModel, promote.getPost().getUser());
+			mediaFilesService.saveMediaFiles(fileModel, promote.getPost().getUser());
 
-	        promote.setCompanyLogo(model.getCompanyLogo().getOriginalFilename());
-	    }
+			promote.setCompanyLogo(model.getCompanyLogo().getOriginalFilename());
+		}
 
-	    // ====== UPDATE BUSINESS DOC ======
-	    if (model.getBusinessAddressDoc() != null 
-	            && !model.getBusinessAddressDoc().isEmpty()) {
+		// ====== UPDATE BUSINESS DOC ======
+		if (model.getBusinessAddressDoc() != null 
+				&& !model.getBusinessAddressDoc().isEmpty()) {
 
-	        FileInputWebModel docModel = FileInputWebModel.builder()
-	                .userId(promote.getPost().getUser().getUserId())
-	                .category(MediaFileCategory.PromoteDocs)
-	                .categoryRefId(promote.getPost().getId())
-	                .files(List.of(model.getBusinessAddressDoc()))
-	                .build();
+			FileInputWebModel docModel = FileInputWebModel.builder()
+					.userId(promote.getPost().getUser().getUserId())
+					.category(MediaFileCategory.PromoteDocs)
+					.categoryRefId(promote.getPost().getId())
+					.files(List.of(model.getBusinessAddressDoc()))
+					.build();
 
-	        mediaFilesService.saveMediaFiles(docModel, promote.getPost().getUser());
+			mediaFilesService.saveMediaFiles(docModel, promote.getPost().getUser());
 
-	        promote.setBusinessAddress(model.getBusinessAddressDoc().getOriginalFilename());
-	    }
+			promote.setBusinessAddress(model.getBusinessAddressDoc().getOriginalFilename());
+		}
 
-	    // ====== RESET PAYMENT STATE ======
-	    promote.setPaymentStatus("PENDING");
-	    promote.setTransactionId(null);
+		// ====== RESET PAYMENT STATE ======
+		promote.setPaymentStatus("PENDING");
+		promote.setTransactionId(null);
 
-	    // ====== RESET PROMOTE LIFECYCLE ======
-	    promote.setStatus(PromoteStatus.NotStarted);
-	    promote.setStartDate(null);
-	    promote.setEndDate(null);
+		// ====== RESET PROMOTE LIFECYCLE ======
+		promote.setStatus(PromoteStatus.NotStarted);
+		promote.setStartDate(null);
+		promote.setEndDate(null);
 
-	    PromoteAd updated = promoteAdRepository.save(promote);
+		PromoteAd updated = promoteAdRepository.save(promote);
 
-	    return new Response(1, "Promote updated successfully", updated);
+		return new Response(1, "Promote updated successfully", updated);
 	}
 
 

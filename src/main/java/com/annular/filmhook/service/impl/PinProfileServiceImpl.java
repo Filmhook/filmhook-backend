@@ -405,12 +405,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                 .promoteStatus(promoteDetails != null)
                 .promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
                 .numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
-                .amount(promoteDetails != null ? promoteDetails.getAmount() : null)
-                .contactNumber(promoteDetails != null ? promoteDetails.getContactNumber() : null)
-                .webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
-                .selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
-                .visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
-                .visitPageData(fetchVisitPageData(promoteDetails))
+                .amount(promoteDetails != null ? promoteDetails.getAmount() : null)                                       
                 .viewsCount(post.getViewsCount())
                 .build();
 

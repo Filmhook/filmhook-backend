@@ -11,6 +11,9 @@ public interface PromoteAdRepository extends JpaRepository<PromoteAd, Integer> {
 
     PromoteAd findByPost_Id(Integer postId);
     
+    @Query("SELECT p FROM PromoteAd p WHERE p.post.id = :postId ORDER BY p.createdOn DESC")
+    List<PromoteAd> findAllByPostIdOrderByCreatedOnDesc(@Param("postId") Integer postId);
+    
     @Query("SELECT p FROM PromoteAd p WHERE p.paymentStatus='SUCCESS' ORDER BY p.createdOn DESC")
     List<PromoteAd> findRecentSuccessPromotions();
     
