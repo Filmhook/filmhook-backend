@@ -76,7 +76,7 @@ public interface AdminService {
 	
 	Response markViewed(Integer adminId, Integer userId, String category);
 	void clearView(Integer userId, String category);
-	List<AdminUserViewLog> getViewers(Integer userId, String category);
+	List<Map<String, Object>> getViewers(Integer userId, String category);
 
 	//Response getIndustryUserSidebarCounts();
 	

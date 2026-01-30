@@ -1590,8 +1590,30 @@ public Response markViewed(Integer adminId, Integer userId, String category) {
      }
 
      @Override
-  public List<AdminUserViewLog> getViewers(Integer userId, String category) {
-         return logRepo.findByUserIdAndCategory(userId, category);
+     public List<Map<String, Object>> getViewers(Integer userId, String category) {
+
+         List<AdminUserViewLog> logs =
+                 logRepo.findByUserIdAndCategory(userId, category);
+
+         List<Map<String, Object>> response = new ArrayList<>();
+
+         for (AdminUserViewLog log : logs) {
+
+             Map<String, Object> map = new HashMap<>();
+
+             map.put("id", log.getId());
+             map.put("adminId", log.getAdminId());
+             map.put("viewedAt", log.getViewedAt());
+
+             // 🔹 fetch only admin name
+             String adminName = userRepository.findNameById(log.getAdminId());
+             map.put("adminName", adminName);
+
+             response.add(map);
+         }
+
+         return response;
      }
+
  
 }

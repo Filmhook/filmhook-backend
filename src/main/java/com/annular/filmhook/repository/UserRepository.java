@@ -257,4 +257,8 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 			  "WHERE u.permanentDelete = true"
 			)
 			long countDeletedUsers();
+	
+	
+	@Query("SELECT u.name FROM User u WHERE u.id = :id")
+	String findNameById(@Param("id") Integer id);
 }
