@@ -6,7 +6,7 @@ import com.annular.filmhook.webmodel.PromoteWebModel;
 
 public interface PromoteAdService {
 
-    PromoteAd savePromote(PromoteWebModel promoteWebModel, Integer userId);
+    Response savePromote(PromoteWebModel promoteWebModel, Integer userId);
 
     PromoteAd getPromoteByPostId(Integer postId);
     

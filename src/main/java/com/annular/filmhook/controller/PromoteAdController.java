@@ -29,12 +29,12 @@ public class PromoteAdController {
 	private  UserDetails userDetails;
 
     @PostMapping("/save")
-    public ResponseEntity<?> savePromote(
+    public ResponseEntity<Response> savePromote(
             @ModelAttribute PromoteWebModel model,
             @RequestParam Integer userId) {
 
-        PromoteAd promote = promoteAdService.savePromote(model, userId);
-        return ResponseEntity.ok(promote);
+        return ResponseEntity.ok(promoteAdService.savePromote(model, userId));
+       
     }
 
     @GetMapping("/post/{postId}")
@@ -68,5 +68,7 @@ public class PromoteAdController {
     public ResponseEntity<Response> updateBeforePayment(@ModelAttribute PromoteWebModel model) {
         return ResponseEntity.ok(promoteAdService.updateBeforePayment(model));
     }
+    
+    
 
 }
