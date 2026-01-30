@@ -50,13 +50,86 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	private MediaFilesRepository mediaFilesRepository;
 
 	@Override
-	public PromoteAd savePromote(PromoteWebModel model, Integer userId) {
+	public Response savePromote(PromoteWebModel model, Integer userId) {
 
 		User user = userRepository.findByUserId(userId)
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		Integer postId;
+		
+	    PromoteAd promoteId;
+		 if (model.getPromoteId() != null && model.getPromoteId() > 0) {
 
+			 promoteId = promoteAdRepository.findById(model.getPromoteId())
+		                .orElseThrow(() -> new RuntimeException("Promote record not found"));
+
+		        // ---------------------------------
+		        // UPDATE ONLY NON-NULL FIELDS
+		        // ---------------------------------
+		        if (model.getHeadline() != null) promoteId.setHeadline(model.getHeadline());
+		        if (model.getPromoteDescription() != null) promoteId.setPromoteDescription(model.getPromoteDescription());
+		        if (model.getBusinessLocation() != null) promoteId.setBusinessLocation(model.getBusinessLocation());
+		        if (model.getBusinessType() != null) promoteId.setBusinessType(model.getBusinessType());
+		        if (model.getAdvObject() != null) promoteId.setAdvObject(model.getAdvObject());
+		        if (model.getAdvObjectValue() != null) promoteId.setAdvObjectValue(model.getAdvObjectValue());
+		        if (model.getBusinessName() != null) promoteId.setBusinessName(model.getBusinessName());
+		        if (model.getBudget() != null) promoteId.setBudget(model.getBudget());
+		        if (model.getDays() != null) promoteId.setDays(model.getDays());
+		        if (model.getTargetCountries() != null) promoteId.setTargetCountries(model.getTargetCountries());
+		        if (model.getReachMin() != null) promoteId.setReachMin(model.getReachMin());
+		        if (model.getReachMax() != null) promoteId.setReachMax(model.getReachMax());
+		        if (model.getAmount() != null) promoteId.setAmount(model.getAmount());
+		        if (model.getTotalCost() != null) promoteId.setTotalCost(model.getTotalCost());
+		        if (model.getTaxFee() != null) promoteId.setTaxFee(model.getTaxFee());
+		        if (model.getCgst() != null) promoteId.setCgst(model.getCgst());
+		        if (model.getSgst() != null) promoteId.setSgst(model.getSgst());
+		        if (model.getPrice() != null) promoteId.setPrice(model.getPrice());
+
+		        // ---------------------------------
+		        // Update logo
+		        // ---------------------------------
+		        if (model.getCompanyLogo() != null && !model.getCompanyLogo().isEmpty()) {
+
+		            FileInputWebModel fm = FileInputWebModel.builder()
+		                    .userId(userId)
+		                    .category(MediaFileCategory.Promote)
+		                    .categoryRefId(promoteId.getPost().getId())
+		                    .files(List.of(model.getCompanyLogo()))
+		                    .build();
+
+		            mediaFilesService.saveMediaFiles(fm, user);
+		            promoteId.setCompanyLogo(model.getCompanyLogo().getOriginalFilename());
+		        }
+
+		        // ---------------------------------
+		        // Update business address doc
+		        // ---------------------------------
+		        if (model.getBusinessAddressDoc() != null && !model.getBusinessAddressDoc().isEmpty()) {
+
+		            FileInputWebModel doc = FileInputWebModel.builder()
+		                    .userId(userId)
+		                    .category(MediaFileCategory.PromoteDocs)
+		                    .categoryRefId(promoteId.getPost().getId())
+		                    .files(List.of(model.getBusinessAddressDoc()))
+		                    .build();
+
+		            mediaFilesService.saveMediaFiles(doc, user);
+		            promoteId.setBusinessAddress(model.getBusinessAddressDoc().getOriginalFilename());
+		        }
+
+		        // ---------------------------------
+		        // RESET PAYMENT + LIFECYCLE
+		        // ---------------------------------
+		        promoteId.setPaymentStatus("PENDING");
+		        promoteId.setTransactionId(null);
+		        promoteId.setStatus(PromoteStatus.NotStarted);
+		        promoteId.setStartDate(null);
+		        promoteId.setEndDate(null);
+		        
+		        PromoteAd save = promoteAdRepository.save(promoteId);
+
+		        return new Response(1, "Success", null);
+		    }
 		// ==================================================
 		// CASE 1: Existing post
 		// ==================================================
@@ -211,7 +284,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 		}
 
 
-		return savedPromote;
+		return new Response(1, "Success", null);
 	}
 
 	@Override

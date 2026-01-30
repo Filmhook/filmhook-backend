@@ -161,7 +161,7 @@ public class PromoteController {
             return ResponseEntity.ok(new Response(-1, "Fail", ""));
         }
     }
-//    
+    
 //    @GetMapping("/getVisitType")
 //    public ResponseEntity<?> getVisitType() {
 //        try {
