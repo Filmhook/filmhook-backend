@@ -178,7 +178,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 //	@Query("SELECT u FROM User u WHERE u.industryUserVerified = :status OR (u.industryUserVerified IS NOT NULL AND u.status = true)")
 //	Page<User> findUnverifiedOrRejectedUsers(Boolean status,Pageable pageable);
 	
-	@Query("SELECT u FROM User u WHERE (u.industryUserVerified = :status OR (:status IS NULL AND u.industryUserVerified IS NULL)) AND u.status = true")
+	@Query("SELECT u FROM User u WHERE (u.industryUserVerified = :status OR (:status IS NULL AND u.industryUserVerified IS NULL)) AND u.status = true AND (u.permanentDelete = false OR u.permanentDelete IS NULL)" )
 	Page<User> findUnverifiedOrRejectedUsers(@Param("status") Boolean status, Pageable pageable);
 
 	
@@ -242,13 +242,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 			  "AND (u.permanentDelete = false OR u.permanentDelete IS NULL)"
 			)
 			long countApprovedIndustryUsers();
-//reject
 	@Query(
 			  "SELECT COUNT(u) FROM User u " +
 			  "WHERE u.industryUserVerified = false " +
 			  "AND u.status = true " +
-			  "AND u.rejectReason IS NOT NULL " +
-			  "AND (u.permanentDelete = false OR u.permanentDelete IS NULL)"
+			  "AND u.permanentDelete=false"
 			)
 			long countRejectedIndustryUsers();
 	

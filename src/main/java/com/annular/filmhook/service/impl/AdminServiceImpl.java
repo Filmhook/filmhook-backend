@@ -909,8 +909,7 @@ public class AdminServiceImpl implements AdminService {
 
 			Pageable pageable = PageRequest.of(pageNo - 1, pageSize, Sort.by("userId").descending());
 			Page<User> userPage = userRepository.findByUserTypeAndStatusTrueAndCreatedOnBetween(
-					userType, startDateTime, endDateTime, pageable);
-
+					userType, startDateTime, endDateTime, pageable);		
 			List<Map<String, Object>> responseList = new ArrayList<>();
 			for (User user : userPage.getContent()) {
 				Map<String, Object> userMap = new HashMap<>();

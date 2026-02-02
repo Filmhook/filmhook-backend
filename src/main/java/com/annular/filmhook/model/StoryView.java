@@ -44,5 +44,6 @@ public class StoryView {
     @Column(name = "viewed_on", nullable = false, updatable = false)
     private Date viewedOn;
     
+    private Boolean isSeen;
    
 }
