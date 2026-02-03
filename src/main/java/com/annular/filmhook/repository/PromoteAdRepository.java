@@ -1,5 +1,6 @@
 package com.annular.filmhook.repository;
 import com.annular.filmhook.model.PromoteAd;
+import com.annular.filmhook.model.PromoteAd.PromoteStatus;
 
 import java.util.List;
 
@@ -32,6 +33,9 @@ public interface PromoteAdRepository extends JpaRepository<PromoteAd, Integer> {
     	List<PromoteAd> findRecentRunningOrCompletedByUserId(@Param("userId") Integer userId);
     
     List<PromoteAd> findByStatus(PromoteAd.PromoteStatus status);
+    
+    @Query("SELECT p FROM PromoteAd p JOIN FETCH p.post WHERE p.status = :status")
+    List<PromoteAd> findRunningPromotesWithPost(@Param("status") PromoteStatus status);
 
 
 

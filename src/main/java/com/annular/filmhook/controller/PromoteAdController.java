@@ -1,5 +1,6 @@
 package com.annular.filmhook.controller;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,12 +11,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.PromoteAd;
 import com.annular.filmhook.service.PromoteAdService;
 import com.annular.filmhook.webmodel.PromoteWebModel;
+import com.annular.filmhook.webmodel.VisitPageWebModel;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,7 +28,7 @@ public class PromoteAdController {
     private final PromoteAdService promoteAdService;
     @Autowired
 	private  UserDetails userDetails;
-
+      
     @PostMapping("/save")
     public ResponseEntity<Response> savePromote(
             @ModelAttribute PromoteWebModel model,
@@ -63,12 +64,23 @@ public class PromoteAdController {
 
         return ResponseEntity.ok(promoteAdService.getRecentPromotions(userId));
     }
+   
     
-    @PostMapping("/update-before-payment")
-    public ResponseEntity<Response> updateBeforePayment(@ModelAttribute PromoteWebModel model) {
-        return ResponseEntity.ok(promoteAdService.updateBeforePayment(model));
+    @GetMapping("/getObjectiveTypes")
+    public ResponseEntity<List<VisitPageWebModel>> getAllCategories() {
+        return ResponseEntity.ok(promoteAdService.getAllObjectives());
     }
-    
-    
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<VisitPageWebModel>> getPagesByCategory(@PathVariable Integer categoryId) {
+        return ResponseEntity.ok(promoteAdService.getPagesByCategoryId(categoryId));
+    }
+
+    @GetMapping("/page/{visitPageId}/details")
+    public ResponseEntity<List<VisitPageWebModel>> getVisitPageDetails(
+            @PathVariable Integer visitPageId) {
+        return ResponseEntity.ok(promoteAdService.getDetailsByVisitPageId(visitPageId));
+    }
+
 
 }

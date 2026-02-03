@@ -17,11 +17,15 @@ import com.annular.filmhook.model.PromoteAd.PromoteStatus;
 import com.annular.filmhook.model.PromoteMediaFiles;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.VisitPage;
+import com.annular.filmhook.model.VisitPageDetails;
+import com.annular.filmhook.model.VisitePageCategory;
 import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.PostsRepository;
 import com.annular.filmhook.repository.PromoteAdRepository;
 import com.annular.filmhook.repository.PromoteMediaFilesRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.repository.VisitPageCategoryRepository;
+import com.annular.filmhook.repository.VisitPageDetailsRepository;
 import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PostService;
@@ -30,6 +34,7 @@ import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
 import com.annular.filmhook.webmodel.PromoteWebModel;
+import com.annular.filmhook.webmodel.VisitPageWebModel;
 
 import lombok.RequiredArgsConstructor;
 
@@ -48,6 +53,10 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	private PromoteMediaFilesRepository promoteMediaFilesRepo;
 	@Autowired
 	private MediaFilesRepository mediaFilesRepository;
+	@Autowired
+	VisitPageCategoryRepository categoryRepository;
+	@Autowired
+	VisitPageDetailsRepository visitPageDetailsRepository;
 
 	@Override
 	public Response savePromote(PromoteWebModel model, Integer userId) {
@@ -56,80 +65,80 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 				.orElseThrow(() -> new RuntimeException("User not found"));
 
 		Integer postId;
-		
-	    PromoteAd promoteId;
-		 if (model.getPromoteId() != null && model.getPromoteId() > 0) {
 
-			 promoteId = promoteAdRepository.findById(model.getPromoteId())
-		                .orElseThrow(() -> new RuntimeException("Promote record not found"));
+		PromoteAd promoteId;
+		if (model.getPromoteId() != null && model.getPromoteId() > 0) {
 
-		        // ---------------------------------
-		        // UPDATE ONLY NON-NULL FIELDS
-		        // ---------------------------------
-		        if (model.getHeadline() != null) promoteId.setHeadline(model.getHeadline());
-		        if (model.getPromoteDescription() != null) promoteId.setPromoteDescription(model.getPromoteDescription());
-		        if (model.getBusinessLocation() != null) promoteId.setBusinessLocation(model.getBusinessLocation());
-		        if (model.getBusinessType() != null) promoteId.setBusinessType(model.getBusinessType());
-		        if (model.getAdvObject() != null) promoteId.setAdvObject(model.getAdvObject());
-		        if (model.getAdvObjectValue() != null) promoteId.setAdvObjectValue(model.getAdvObjectValue());
-		        if (model.getBusinessName() != null) promoteId.setBusinessName(model.getBusinessName());
-		        if (model.getBudget() != null) promoteId.setBudget(model.getBudget());
-		        if (model.getDays() != null) promoteId.setDays(model.getDays());
-		        if (model.getTargetCountries() != null) promoteId.setTargetCountries(model.getTargetCountries());
-		        if (model.getReachMin() != null) promoteId.setReachMin(model.getReachMin());
-		        if (model.getReachMax() != null) promoteId.setReachMax(model.getReachMax());
-		        if (model.getAmount() != null) promoteId.setAmount(model.getAmount());
-		        if (model.getTotalCost() != null) promoteId.setTotalCost(model.getTotalCost());
-		        if (model.getTaxFee() != null) promoteId.setTaxFee(model.getTaxFee());
-		        if (model.getCgst() != null) promoteId.setCgst(model.getCgst());
-		        if (model.getSgst() != null) promoteId.setSgst(model.getSgst());
-		        if (model.getPrice() != null) promoteId.setPrice(model.getPrice());
+			promoteId = promoteAdRepository.findById(model.getPromoteId())
+					.orElseThrow(() -> new RuntimeException("Promote record not found"));
 
-		        // ---------------------------------
-		        // Update logo
-		        // ---------------------------------
-		        if (model.getCompanyLogo() != null && !model.getCompanyLogo().isEmpty()) {
+			// ---------------------------------
+			// UPDATE ONLY NON-NULL FIELDS
+			// ---------------------------------
+			if (model.getHeadline() != null) promoteId.setHeadline(model.getHeadline());
+			if (model.getPromoteDescription() != null) promoteId.setPromoteDescription(model.getPromoteDescription());
+			if (model.getBusinessLocation() != null) promoteId.setBusinessLocation(model.getBusinessLocation());
+			if (model.getBusinessType() != null) promoteId.setBusinessType(model.getBusinessType());
+			if (model.getAdvObject() != null) promoteId.setAdvObject(model.getAdvObject());
+			if (model.getAdvObjectValue() != null) promoteId.setAdvObjectValue(model.getAdvObjectValue());
+			if (model.getBusinessName() != null) promoteId.setBusinessName(model.getBusinessName());
+			if (model.getBudget() != null) promoteId.setBudget(model.getBudget());
+			if (model.getDays() != null) promoteId.setDays(model.getDays());
+			if (model.getTargetCountries() != null) promoteId.setTargetCountries(model.getTargetCountries());
+			if (model.getReachMin() != null) promoteId.setReachMin(model.getReachMin());
+			if (model.getReachMax() != null) promoteId.setReachMax(model.getReachMax());
+			if (model.getAmount() != null) promoteId.setAmount(model.getAmount());
+			if (model.getTotalCost() != null) promoteId.setTotalCost(model.getTotalCost());
+			if (model.getTaxFee() != null) promoteId.setTaxFee(model.getTaxFee());
+			if (model.getCgst() != null) promoteId.setCgst(model.getCgst());
+			if (model.getSgst() != null) promoteId.setSgst(model.getSgst());
+			if (model.getPrice() != null) promoteId.setPrice(model.getPrice());
 
-		            FileInputWebModel fm = FileInputWebModel.builder()
-		                    .userId(userId)
-		                    .category(MediaFileCategory.Promote)
-		                    .categoryRefId(promoteId.getPost().getId())
-		                    .files(List.of(model.getCompanyLogo()))
-		                    .build();
+			// ---------------------------------
+			// Update logo
+			// ---------------------------------
+			if (model.getCompanyLogo() != null && !model.getCompanyLogo().isEmpty()) {
 
-		            mediaFilesService.saveMediaFiles(fm, user);
-		            promoteId.setCompanyLogo(model.getCompanyLogo().getOriginalFilename());
-		        }
+				FileInputWebModel fm = FileInputWebModel.builder()
+						.userId(userId)
+						.category(MediaFileCategory.Promote)
+						.categoryRefId(promoteId.getPost().getId())
+						.files(List.of(model.getCompanyLogo()))
+						.build();
 
-		        // ---------------------------------
-		        // Update business address doc
-		        // ---------------------------------
-		        if (model.getBusinessAddressDoc() != null && !model.getBusinessAddressDoc().isEmpty()) {
+				mediaFilesService.saveMediaFiles(fm, user);
+				promoteId.setCompanyLogo(model.getCompanyLogo().getOriginalFilename());
+			}
 
-		            FileInputWebModel doc = FileInputWebModel.builder()
-		                    .userId(userId)
-		                    .category(MediaFileCategory.PromoteDocs)
-		                    .categoryRefId(promoteId.getPost().getId())
-		                    .files(List.of(model.getBusinessAddressDoc()))
-		                    .build();
+			// ---------------------------------
+			// Update business address doc
+			// ---------------------------------
+			if (model.getBusinessAddressDoc() != null && !model.getBusinessAddressDoc().isEmpty()) {
 
-		            mediaFilesService.saveMediaFiles(doc, user);
-		            promoteId.setBusinessAddress(model.getBusinessAddressDoc().getOriginalFilename());
-		        }
+				FileInputWebModel doc = FileInputWebModel.builder()
+						.userId(userId)
+						.category(MediaFileCategory.PromoteDocs)
+						.categoryRefId(promoteId.getPost().getId())
+						.files(List.of(model.getBusinessAddressDoc()))
+						.build();
 
-		        // ---------------------------------
-		        // RESET PAYMENT + LIFECYCLE
-		        // ---------------------------------
-		        promoteId.setPaymentStatus("PENDING");
-		        promoteId.setTransactionId(null);
-		        promoteId.setStatus(PromoteStatus.NotStarted);
-		        promoteId.setStartDate(null);
-		        promoteId.setEndDate(null);
-		        
-		        PromoteAd save = promoteAdRepository.save(promoteId);
+				mediaFilesService.saveMediaFiles(doc, user);
+				promoteId.setBusinessAddress(model.getBusinessAddressDoc().getOriginalFilename());
+			}
 
-		        return new Response(1, "Success", null);
-		    }
+			// ---------------------------------
+			// RESET PAYMENT + LIFECYCLE
+			// ---------------------------------
+			promoteId.setPaymentStatus("PENDING");
+			promoteId.setTransactionId(null);
+			promoteId.setStatus(PromoteStatus.NotStarted);
+			promoteId.setStartDate(null);
+			promoteId.setEndDate(null);
+
+			PromoteAd save = promoteAdRepository.save(promoteId);
+
+			return new Response(1, "Success", save.getPromoteId());
+		}
 		// ==================================================
 		// CASE 1: Existing post
 		// ==================================================
@@ -284,7 +293,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 		}
 
 
-		return new Response(1, "Success", null);
+		return new Response(1, "Success", savedPromote.getPromoteId());
 	}
 
 	@Override
@@ -375,110 +384,54 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 		return new Response(1, "Recent promoted posts", response);
 	}
 
+
+
 	@Override
-	public Response updateBeforePayment(PromoteWebModel model) {
+	public List<VisitPageWebModel> getAllObjectives() {
 
-		PromoteAd promote = promoteAdRepository.findById(model.getPromoteId())
-				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+	    List<VisitePageCategory> list = categoryRepository.findAll();
 
-		// ====== UPDATE ONLY IF NON-NULL ======
-		if (model.getHeadline() != null)
-			promote.setHeadline(model.getHeadline());
+	    return list.stream().map(cat ->
+	            VisitPageWebModel.builder()
+	                    .categoryId(cat.getCategoryId())
+	                    .categoryName(cat.getCategoryName())
+	                    .build()
+	    ).toList();
+	}
+	
+	@Override
+	public List<VisitPageWebModel> getPagesByCategoryId(Integer categoryId) {
 
-		if (model.getPromoteDescription() != null)
-			promote.setPromoteDescription(model.getPromoteDescription());
+	    List<VisitPage> pages = visitPageRepository.findByCategory_CategoryId(categoryId);
 
-		if (model.getBusinessLocation() != null)
-			promote.setBusinessLocation(model.getBusinessLocation());
+	    return pages.stream().map(p ->
+	            VisitPageWebModel.builder()
+	                    .categoryId(p.getCategory().getCategoryId())
+	                    .categoryName(p.getCategory().getCategoryName())
+	                    .pageId(p.getVisitPageId())
+	                    .pageData(p.getData())
+	                   
+	                    .build()
+	    ).toList();
+	}
+	
+	@Override
+	public List<VisitPageWebModel> getDetailsByVisitPageId(Integer visitPageId) {
 
-		if (model.getBusinessType() != null)
-			promote.setBusinessType(model.getBusinessType());
+	    List<VisitPageDetails> list = visitPageDetailsRepository.findByVisitPage_VisitPageId(visitPageId);
 
-		if (model.getAdvObject() != null)
-			promote.setAdvObject(model.getAdvObject());
-
-		if (model.getAdvObjectValue() != null)
-			promote.setAdvObjectValue(model.getAdvObjectValue());
-
-		if (model.getBusinessName() != null)
-			promote.setBusinessName(model.getBusinessName());
-
-		if (model.getBudget() != null)
-			promote.setBudget(model.getBudget());
-
-		if (model.getDays() != null)
-			promote.setDays(model.getDays());
-
-		if (model.getTargetCountries() != null)
-			promote.setTargetCountries(model.getTargetCountries());
-
-		if (model.getReachMin() != null)
-			promote.setReachMin(model.getReachMin());
-
-		if (model.getReachMax() != null)
-			promote.setReachMax(model.getReachMax());
-
-		if (model.getAmount() != null)
-			promote.setAmount(model.getAmount());
-
-		if (model.getTotalCost() != null)
-			promote.setTotalCost(model.getTotalCost());
-
-		if (model.getTaxFee() != null)
-			promote.setTaxFee(model.getTaxFee());
-
-		if (model.getCgst() != null)
-			promote.setCgst(model.getCgst());
-
-		if (model.getSgst() != null)
-			promote.setSgst(model.getSgst());
-
-		if (model.getPrice() != null)
-			promote.setPrice(model.getPrice());
-
-		// ====== UPDATE LOGO FILE ======
-		if (model.getCompanyLogo() != null && !model.getCompanyLogo().isEmpty()) {
-
-			FileInputWebModel fileModel = FileInputWebModel.builder()
-					.userId(promote.getPost().getUser().getUserId())
-					.category(MediaFileCategory.Promote)
-					.categoryRefId(promote.getPost().getId())
-					.files(List.of(model.getCompanyLogo()))
-					.build();
-
-			mediaFilesService.saveMediaFiles(fileModel, promote.getPost().getUser());
-
-			promote.setCompanyLogo(model.getCompanyLogo().getOriginalFilename());
-		}
-
-		// ====== UPDATE BUSINESS DOC ======
-		if (model.getBusinessAddressDoc() != null 
-				&& !model.getBusinessAddressDoc().isEmpty()) {
-
-			FileInputWebModel docModel = FileInputWebModel.builder()
-					.userId(promote.getPost().getUser().getUserId())
-					.category(MediaFileCategory.PromoteDocs)
-					.categoryRefId(promote.getPost().getId())
-					.files(List.of(model.getBusinessAddressDoc()))
-					.build();
-
-			mediaFilesService.saveMediaFiles(docModel, promote.getPost().getUser());
-
-			promote.setBusinessAddress(model.getBusinessAddressDoc().getOriginalFilename());
-		}
-
-		// ====== RESET PAYMENT STATE ======
-		promote.setPaymentStatus("PENDING");
-		promote.setTransactionId(null);
-
-		// ====== RESET PROMOTE LIFECYCLE ======
-		promote.setStatus(PromoteStatus.NotStarted);
-		promote.setStartDate(null);
-		promote.setEndDate(null);
-
-		PromoteAd updated = promoteAdRepository.save(promote);
-
-		return new Response(1, "Promote updated successfully", updated);
+	    return list.stream().map(d ->
+	            VisitPageWebModel.builder()
+	                    .categoryId(d.getVisitPage().getCategory().getCategoryId())
+	                    .categoryName(d.getVisitPage().getCategory().getCategoryName())
+	                    .pageId(d.getVisitPage().getVisitPageId())
+	                    .pageData(d.getVisitPage().getData())	                  
+	                    .detailId(d.getDetailId())
+	                    .detailTitle(d.getTitle())
+	                    .detailDescription(d.getDescription())
+	                    .detailMediaUrl(d.getMediaUrl())
+	                    .build()
+	    ).toList();
 	}
 
 
