@@ -94,6 +94,67 @@ public class AuditionCompanyConverter {
 			mediaFilesService.saveMediaFiles(fileInputWebModel, user);
 		}
 	}
+	public static void handleCompanyCertificateFile(
+	        AuditionCompanyDetailsDTO dto,
+	        AuditionCompanyDetails savedEntity,
+	        User user,
+	        MediaFilesService mediaFilesService) {
+
+	    if (dto != null
+	            && dto.getCompanyCertificateFiles() != null
+	            && !dto.getCompanyCertificateFiles().isEmpty()) {
+
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(user.getUserId())
+	                .category(MediaFileCategory.AuditionCompanyCertificate)
+	                .categoryRefId(savedEntity.getId())
+	                .files(dto.getCompanyCertificateFiles())
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
+	}
+
+	public static void handleBusinessCertificateFile(
+	        AuditionCompanyDetailsDTO dto,
+	        AuditionCompanyDetails savedEntity,
+	        User user,
+	        MediaFilesService mediaFilesService) {
+
+	    if (dto != null
+	            && dto.getBusinessCertificateFiles() != null
+	            && !dto.getBusinessCertificateFiles().isEmpty()) {
+
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(user.getUserId())
+	                .category(MediaFileCategory.AuditionBusinessCertificate)
+	                .categoryRefId(savedEntity.getId())
+	                .files(dto.getBusinessCertificateFiles())
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
+	}
+	public static void handleGstCertificateFile(
+	        AuditionCompanyDetailsDTO dto,
+	        AuditionCompanyDetails savedEntity,
+	        User user,
+	        MediaFilesService mediaFilesService) {
+
+	    if (dto != null
+	            && dto.getGstCertificateFiles() != null
+	            && !dto.getGstCertificateFiles().isEmpty()) {
+
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(user.getUserId())
+	                .category(MediaFileCategory.AuditionGSTDocuments)
+	                .categoryRefId(savedEntity.getId())
+	                .files(dto.getGstCertificateFiles())
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
+	}
 
 
 	// ======================

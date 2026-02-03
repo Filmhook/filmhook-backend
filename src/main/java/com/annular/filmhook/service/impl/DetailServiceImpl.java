@@ -1231,39 +1231,59 @@ public class DetailServiceImpl implements DetailService {
     }
 
 
- @Override
- public Response getIndustrySignupDetails(Integer userId) {
+@Override
+public Response getIndustrySignupDetails(Integer userId) {
 
-     IndustrySignupDetails details = industrySignupDetailsRepository
-             .findByUser_UserId(userId)
-             .orElseThrow(() -> new RuntimeException("Industry signup details not found"));
+    IndustrySignupDetails details = industrySignupDetailsRepository
+            .findByUser_UserId(userId)
+            .orElse(null);
 
-     IndustrySignupDetailsDTO dto = IndustrySignupDetailsDTO.builder()
-             .userId(details.getUser().getUserId())
-             .fullName(details.getFullName())
+    // ✅ No signup started
+    if (details == null) {
+        return new Response(
+                1,
+                "Industry signup details not found",
+                null
+        );
+    }
 
-             .countryId(details.getCountry().getId())
-             .countryName(details.getCountry().getName())
-             
-             .platformId(details.getPlatform().getPlatformId())
-             .platformName(details.getPlatform().getPlatformName())
+    Country country = details.getCountry();
+    Industry industry = details.getIndustry();
+    Platform platform = details.getPlatform();
+    FilmProfession profession = details.getProfession();
+    FilmSubProfession subProfession = details.getSubProfession();
 
-             .industryId(details.getIndustry().getIndustryId())
-             .industryName(details.getIndustry().getIndustryName())
+    IndustrySignupDetailsDTO dto = IndustrySignupDetailsDTO.builder()
+            .userId(details.getUser().getUserId())
+            .fullName(details.getFullName())
+            .yearsOfExperience(details.getYearsOfExperience())
 
-             .professionId(details.getProfession().getFilmProfessionId())
-             .professionName(details.getProfession().getProfessionName())
+            .countryId(country != null ? country.getId() : null)
+            .countryName(country != null ? country.getName() : null)
 
-             .subProfessionId(details.getSubProfession().getSubProfessionId())
-             .subProfessionName(details.getSubProfession().getSubProfessionName())
+            .industryId(industry != null ? industry.getIndustryId() : null)
+            .industryName(industry != null ? industry.getIndustryName() : null)
 
-             .yearsOfExperience(details.getYearsOfExperience())
-             .verificationCode(details.getVerificationCode())
-             .verified(details.getVerified())
-             .build();
+            .platformId(platform != null ? platform.getPlatformId() : null)
+            .platformName(platform != null ? platform.getPlatformName() : null)
 
-     return new Response(1, "Industry signup details fetched successfully", dto);
- }
+            .professionId(profession != null ? profession.getFilmProfessionId() : null)
+            .professionName(profession != null ? profession.getProfessionName() : null)
+
+            .subProfessionId(subProfession != null ? subProfession.getSubProfessionId() : null)
+            .subProfessionName(subProfession != null ? subProfession.getSubProfessionName() : null)
+
+            .verificationCode(details.getVerificationCode())
+            .verified(details.getVerified())
+            .build();
+
+    return new Response(
+            1,
+            "Industry signup details fetched successfully",
+            dto
+    );
+}
+
 
 
  

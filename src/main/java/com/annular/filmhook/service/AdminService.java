@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.AdminUserViewLog;
 import com.annular.filmhook.webmodel.AdminListResponse;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -70,4 +71,13 @@ public interface AdminService {
 	public void DeleteUser(Integer userId);
 	
 	Response getAllDeletedUsers(Integer pageNo, Integer pageSize);
+
+	Response getIndustryUserSidebarCounts();
+	
+	Response markViewed(Integer adminId, Integer userId, String category);
+	void clearView(Integer userId, String category);
+	List<Map<String, Object>> getViewers(Integer userId, String category);
+
+	//Response getIndustryUserSidebarCounts();
+	
 }
