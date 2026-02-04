@@ -487,6 +487,54 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		}
 		return outputWebModelList;
 	}
+	
+	@Override
+	public List<FileOutputWebModel> getAllMediaFiles(Integer ownerId,
+	                                                 MediaFileCategory category,
+	                                                 Integer refId) {
+
+	    List<FileOutputWebModel> outputList = new ArrayList<>();
+
+	    try {
+	        List<MediaFiles> mediaFiles = mediaFilesRepository.getAllMediaFiles(ownerId, category, refId);
+
+	        if (!Utility.isNullOrEmptyList(mediaFiles)) {
+	            outputList = mediaFiles.stream()
+	                    .map(this::transformData)
+	                    .collect(Collectors.toList());
+	        }
+
+	    } catch (Exception e) {
+	        logger.error("Error at getAllMediaFiles() -> {}", e.getMessage());
+	        e.printStackTrace();
+	    }
+
+	    return outputList;
+	}
+	
+	@Override
+	public List<FileOutputWebModel> getApprovedMediaFiles(Integer ownerId,
+	                                                      MediaFileCategory category,
+	                                                      Integer refId) {
+
+	    List<FileOutputWebModel> outputList = new ArrayList<>();
+
+	    try {
+	        List<MediaFiles> mediaFiles = mediaFilesRepository.getApprovedMediaFiles(ownerId, category, refId);
+
+	        if (!Utility.isNullOrEmptyList(mediaFiles)) {
+	            outputList = mediaFiles.stream()
+	                    .map(this::transformData)
+	                    .collect(Collectors.toList());
+	        }
+
+	    } catch (Exception e) {
+	        logger.error("Error at getApprovedMediaFiles() -> {}", e.getMessage());
+	        e.printStackTrace();
+	    }
+
+	    return outputList;
+	}
 
 	@Override
 	public List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndStatus(

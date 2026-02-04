@@ -699,7 +699,7 @@ public class DetailServiceImpl implements DetailService {
         try {
             // Fetch platform details
             List<PlatformPermanentDetail> platformDetails = platformPermanentDetailRepository.findByUserId(userId);
-
+            Integer loginUserId = userDetails.userInfo().getId();
             List<Map<String, Object>> responseList = new ArrayList<>();
             Set<String> processedPlatforms = new HashSet<>(); // To store processed platform names
 
@@ -758,9 +758,15 @@ public class DetailServiceImpl implements DetailService {
                     platformMap.put("dailySalary", detail.getDailySalary());
 
                     // Fetch media files
-                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefIdAndStatus(userId, MediaFileCategory.Project, detail.getPlatformPermanentId(), FileStatus.APPROVED);
+                   
+                    if (loginUserId == userId) {                   	
+                    	 List<FileOutputWebModel> outputWebModelList = mediaFilesService.getAllMediaFiles(userId, MediaFileCategory.Project, detail.getPlatformPermanentId());
+                         platformMap.put("outputWebModelList", outputWebModelList);
+                    }
+                    else {               
+                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getApprovedMediaFiles(userId, MediaFileCategory.Project, detail.getPlatformPermanentId());                
                     platformMap.put("outputWebModelList", outputWebModelList);
-
+                    }
                     // Fetch professions
                     List<Map<String, Object>> professionsList = new ArrayList<>();
                     for (FilmProfessionPermanentDetail professionDetail : detail.getProfessionDetails()) {
