@@ -11,6 +11,7 @@ public class VisitPageWebModel {
 
     private Integer categoryId;
     private String categoryName;
+    private String description;
 
     private Integer pageId;
     private String pageData;
@@ -18,6 +19,5 @@ public class VisitPageWebModel {
 
     private Integer detailId;
     private String detailTitle;
-    private String detailDescription;
-    private String detailMediaUrl;
+
 }

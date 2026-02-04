@@ -395,6 +395,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	            VisitPageWebModel.builder()
 	                    .categoryId(cat.getCategoryId())
 	                    .categoryName(cat.getCategoryName())
+	                    .description(cat.getDescription())
 	                    .build()
 	    ).toList();
 	}
@@ -427,9 +428,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	                    .pageId(d.getVisitPage().getVisitPageId())
 	                    .pageData(d.getVisitPage().getData())	                  
 	                    .detailId(d.getDetailId())
-	                    .detailTitle(d.getTitle())
-	                    .detailDescription(d.getDescription())
-	                    .detailMediaUrl(d.getMediaUrl())
+	                    .detailTitle(d.getTitle())	                   
 	                    .build()
 	    ).toList();
 	}
