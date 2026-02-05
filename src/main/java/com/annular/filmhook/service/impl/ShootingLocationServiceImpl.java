@@ -1,38 +1,33 @@
 package com.annular.filmhook.service.impl;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,24 +35,22 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
-import com.annular.filmhook.controller.ShootingLocationController;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationConverter;
-import com.annular.filmhook.exception.ResourceNotFoundException;
-import com.annular.filmhook.model.ShootingLocationOwnerBankDetails;
 import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.InAppNotification;
-import com.annular.filmhook.model.ShootingLocationBusinessInformation;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.MediaFileCategory;
+import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.PaymentModule;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.PropertyLike;
 import com.annular.filmhook.model.ShootingLocationBooking;
+import com.annular.filmhook.model.ShootingLocationBusinessInformation;
 import com.annular.filmhook.model.ShootingLocationCategory;
-
+import com.annular.filmhook.model.ShootingLocationOwnerBankDetails;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
 import com.annular.filmhook.model.ShootingLocationSubcategory;
@@ -71,12 +64,12 @@ import com.annular.filmhook.repository.BusinessInformationRepository;
 import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.repository.IndustryRepository;
 import com.annular.filmhook.repository.LikeRepository;
+import com.annular.filmhook.repository.MediaFilesRepository;
 import com.annular.filmhook.repository.MultiMediaFileRepository;
 import com.annular.filmhook.repository.PaymentsRepository;
 import com.annular.filmhook.repository.PropertyLikeRepository;
 import com.annular.filmhook.repository.ShootingLocationBookingRepository;
 import com.annular.filmhook.repository.ShootingLocationCategoryRepository;
-
 import com.annular.filmhook.repository.ShootingLocationPropertyDetailsRepository;
 import com.annular.filmhook.repository.ShootingLocationPropertyReviewRepository;
 import com.annular.filmhook.repository.ShootingLocationSubcategoryRepository;
@@ -90,7 +83,6 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
-import com.annular.filmhook.util.NumberToWordsConverter;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
@@ -99,58 +91,39 @@ import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.PaymentsDTO;
-import com.annular.filmhook.webmodel.PropertyAvailabilityDTO;
 import com.annular.filmhook.webmodel.ShootingLocationBookingDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertySummaryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
-import com.google.firebase.messaging.AndroidConfig;
-import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.URL;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-
 import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
-import com.itextpdf.kernel.geom.AffineTransform;
-import com.itextpdf.kernel.geom.PageSize;
-import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
-import com.itextpdf.kernel.pdf.canvas.PdfCanvasConstants;
 import com.itextpdf.kernel.pdf.extgstate.PdfExtGState;
 import com.itextpdf.layout.Canvas;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Image;
-import com.itextpdf.layout.element.Cell;
-import com.itextpdf.layout.element.Paragraph;
-import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.borders.SolidBorder;
-
-import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
@@ -158,9 +131,6 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
-import com.itextpdf.layout.properties.VerticalAlignment;
-import com.itextpdf.layout.borders.Border;
-import com.itextpdf.layout.borders.SolidBorder;
 
 
 @Service
@@ -239,6 +209,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	private UserService userService;
 	@Autowired
 	private AdminService adminService;
+	@Autowired
+	private MediaFilesRepository mediaFilesRepository;
 
 
 	@Override
@@ -3833,4 +3805,144 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 		return new Response(1, "Pending properties fetched successfully", dtoList);
 	}
+	
+	@Override
+	public List<ShootingLocationPropertySummaryDTO> getPropertySummaryByTypesStatusAndUserType(
+	        Integer typesId,
+	        ShootingPropertyStatus status,
+	        String userType) {
+
+	    List<ShootingLocationPropertyDetails> list =
+	    		propertyDetailsRepository.findByTypesStatusAndUserType(typesId, status, userType);
+
+	    return list.stream()
+	            .map(p -> ShootingLocationPropertySummaryDTO.builder()
+	                    .id(p.getId())
+	                    .propertyName(p.getPropertyName())
+	                    .fullName(p.getFullName())
+	                    .propertyCode(p.getPropertyCode())
+	                    .approvedOn(p.getApprovedOn())
+	                    .createdOn(p.getCreatedOn())
+	                    .status(p.getStatus())
+	                    .build())
+	            .toList();
+	}
+	
+	@Override
+	@Cacheable(value = "propertyCache", key = "#propertyId")
+	public ShootingLocationPropertyDetailsDTO getPropertyById(Integer propertyId) {
+
+	    ShootingLocationPropertyDetails entity = 
+	            propertyDetailsRepository.fetchPropertyFull(propertyId);
+
+	    if (entity == null) return null;
+
+	    ShootingLocationPropertyDetailsDTO dto = 
+	            shootingLocationPropertyConverter.entityToDto(entity);
+
+	    Integer userId   = userDetails.userInfo().getId();
+	    String userType  = userDetails.userInfo().getUserType();
+	    boolean isOwner  = entity.getUser().getUserId().equals(userId);
+	    boolean isAdmin  = userType.equals("Admin");
+
+	    /* ======================================================
+	     * 1) LOAD MEDIA (ONE QUERY)
+	     * ====================================================== */
+	    List<String> imageUrls = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, propertyId)
+				.stream()
+				.map(FileOutputWebModel::getFilePath)
+				.collect(Collectors.toList());
+
+		List<String> govtIdUrls = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingGovermentId, propertyId)
+				.stream()
+				.map(FileOutputWebModel::getFilePath)
+				.collect(Collectors.toList());
+
+		List<String> verificationVideo = mediaFilesService
+				.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationVerificationVideo, propertyId)
+				.stream()
+				.map(FileOutputWebModel::getFilePath)
+				.collect(Collectors.toList());
+
+		dto.setImageUrls(imageUrls);
+		dto.setGovernmentIdUrls(govtIdUrls);
+		dto.setVerificationVideo(verificationVideo);
+
+
+	    /* ======================================================
+	     * 2) REVIEWS + RATING SUMMARY
+	     * (USE EXISTING METHOD → NO reviewConverter error)
+	     * ====================================================== */
+	    ShootingLocationPropertyReviewResponseDTO reviewResponse =
+	            getReviewsByPropertyId(propertyId, userId);
+
+	    dto.setReviews(reviewResponse.getReviews());
+	    dto.setAverageRating(reviewResponse.getAverageRating());
+	    dto.setTotalReviews(reviewResponse.getTotalReviews());
+	    dto.setFiveStarPercentage(reviewResponse.getFiveStarPercentage());
+	    dto.setFourStarPercentage(reviewResponse.getFourStarPercentage());
+	    dto.setThreeStarPercentage(reviewResponse.getThreeStarPercentage());
+	    dto.setTwoStarPercentage(reviewResponse.getTwoStarPercentage());
+	    dto.setOneStarPercentage(reviewResponse.getOneStarPercentage());
+
+
+	    /* ======================================================
+	     * 3) LIKES (USE YOUR EXISTING LIKE REPOSITORY LOGIC)
+	     * ====================================================== */
+
+	    // Get all liked properties by this user
+	    List<PropertyLike> userLikes = likeRepository.findByLikedById(userId);
+
+	    Set<Integer> likedPropertyIds = userLikes.stream()
+	            .filter(PropertyLike::getStatus)
+	            .map(l -> l.getProperty().getId())
+	            .collect(Collectors.toSet());
+
+	    dto.setLikedByUser(likedPropertyIds.contains(propertyId));
+
+	    // Total likes (use existing property-based method)
+	    dto.setLikeCount(
+	            likeRepository.countLikesByPropertyId(propertyId)
+	    );
+
+
+	    /* ======================================================
+	     * 4) AVAILABILITY (USE YOUR EXISTING METHOD)
+	     * ====================================================== */
+//	    dto.setAvailabilityDates(
+//	            getPropertyAvailability(propertyId)
+//	    );
+
+
+	    /* ======================================================
+	     * 5) ADMIN RATING
+	     * ====================================================== */
+	    dto.setAdminRating(entity.getAdminRating());
+	    dto.setAdminRatedOn(entity.getAdminRatedOn());
+	    dto.setAdminRatedBy(entity.getAdminRatedBy());
+
+
+	    /* ======================================================
+	     * 6) ROLE-BASED DATA HIDING
+	     * ====================================================== */
+	    if (!isAdmin && !isOwner) {
+	        dto.setBankDetailsDTO(null);
+	        dto.setGovernmentIdUrls(null);
+	        dto.setSelfOwnedPropertyDocument(null);
+	        dto.setMortgagePropertyDocument(null);
+	        dto.setOwnerPermittedDocument(null);
+	        dto.setCrewAccidentDocument(null);
+	        dto.setPropertyDamageDocument(null);
+	        dto.setIdNumber(null);
+	    }
+
+	    return dto;
+	}
+
+
+
+
+
 }

@@ -35,6 +35,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
+import com.annular.filmhook.model.ShootingPropertyStatus;
 import com.annular.filmhook.model.SlotType;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.ShootingLocationService;
@@ -48,6 +49,7 @@ import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertySummaryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
@@ -664,5 +666,34 @@ public class ShootingLocationController {
 	    Response response = service.getPendingProperties(propertyType);
 	    return ResponseEntity.ok(response);
 	}
+	
+	@GetMapping("/admin/summary")
+	public ResponseEntity<?> getPropertySummaryFiltered(
+	        @RequestParam(required = false) Integer typesId,
+	        @RequestParam(required = false) ShootingPropertyStatus status,
+	        @RequestParam(required = false) String userType) {
+
+	    try {
+	        List<ShootingLocationPropertySummaryDTO> list =
+	                service.getPropertySummaryByTypesStatusAndUserType(typesId, status, userType);
+
+	        return ResponseEntity.ok(new Response(1, "Success", list));
+
+	    } catch (Exception e) {
+	        return ResponseEntity.internalServerError()
+	                .body(new Response(-1, "Error", e.getMessage()));
+	    }
+	}
+	
+	@GetMapping("/property/{propertyId}")
+	public ResponseEntity<?> getPropertyById(@PathVariable Integer propertyId) {
+	    ShootingLocationPropertyDetailsDTO dto = service.getPropertyById(propertyId);
+
+	    if (dto == null)
+	        return ResponseEntity.ok(new Response(-1, "Property not found", ""));
+
+	    return ResponseEntity.ok(new Response(1, "Success", dto));
+	}
+
 }
 

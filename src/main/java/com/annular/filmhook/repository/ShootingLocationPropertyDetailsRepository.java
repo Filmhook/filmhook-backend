@@ -44,6 +44,27 @@ public interface ShootingLocationPropertyDetailsRepository extends JpaRepository
 
 	 List<ShootingLocationPropertyDetails> findByStatusOrderByIdDesc(ShootingPropertyStatus status);
 	 
+	 @Query("SELECT p FROM ShootingLocationPropertyDetails p " +
+		       "WHERE (:typesId IS NULL OR p.types.id = :typesId) " +
+		       "AND (:status IS NULL OR p.status = :status) " +
+		       "AND (:userType IS NULL OR p.user.userType = :userType)")
+		List<ShootingLocationPropertyDetails> findByTypesStatusAndUserType(
+		        @Param("typesId") Integer typesId,
+		        @Param("status") ShootingPropertyStatus status,
+		        @Param("userType") String userType);
+	 
+	 @Query("SELECT p FROM ShootingLocationPropertyDetails p " +
+		        "LEFT JOIN FETCH p.category " +
+		        "LEFT JOIN FETCH p.subCategory " +
+		        "LEFT JOIN FETCH p.types " +
+		        "LEFT JOIN FETCH p.subcategorySelection " +
+		        "LEFT JOIN FETCH p.businessInformation " +
+		        "LEFT JOIN FETCH p.bankDetails " +
+		        "LEFT JOIN FETCH p.industry " +
+		        "WHERE p.id = :propertyId")
+		ShootingLocationPropertyDetails fetchPropertyFull(@Param("propertyId") Integer propertyId);
+
+	 
 	 
 }
 	
