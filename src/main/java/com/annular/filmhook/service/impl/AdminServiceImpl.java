@@ -1428,7 +1428,6 @@ public void DeleteUser(Integer userId) {
 	  user.setUnVerifiedList(false);
 	  user.setUpdatedBy(loggedInUserId);
 	  user.setUpdatedOn(new Date());
-	  ;
 	  userRepository.save(user);
 	  adminService.log(
 				loggedInUserId,

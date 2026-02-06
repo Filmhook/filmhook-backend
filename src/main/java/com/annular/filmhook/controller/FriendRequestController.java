@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.service.FriendRequestService;
 import com.annular.filmhook.webmodel.FollowersRequestWebModel;
 
@@ -24,7 +25,8 @@ import com.annular.filmhook.webmodel.FollowersRequestWebModel;
 public class FriendRequestController {
 
     public static final Logger logger = LoggerFactory.getLogger(FriendRequestController.class);
-
+    @Autowired
+   	private  UserDetails userDetails;
     @Autowired
     FriendRequestService friendRequestService;
 
@@ -40,7 +42,8 @@ public class FriendRequestController {
     }
 
     @GetMapping("/getFriendRequest")
-    public ResponseEntity<?> getFriendRequest(@RequestParam("userId") Integer userId) {
+    public ResponseEntity<?> getFriendRequest() {
+    	Integer userId = userDetails.userInfo().getId();
         try {
             return friendRequestService.getFriendRequest(userId);
         } catch (Exception e) {

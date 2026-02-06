@@ -17,8 +17,8 @@ import ws.schild.jave.info.VideoSize;
 
 public class MediaConversionUtil {
 
-          private static final String CWEBP_PATH = "/usr/bin/cwebp";
-		 //private static final String CWEBP_PATH = "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe";
+	private static final String CWEBP_PATH = "/usr/bin/cwebp";
+		//  private static final String CWEBP_PATH = "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe";
 	private static final String MAGICK_PATH = "/usr/bin/convert"; 
 	private static final List<String> HEIC_FORMATS =
 			Arrays.asList("heic", "heif", "avif");
