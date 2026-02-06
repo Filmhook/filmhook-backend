@@ -831,6 +831,3 @@ public class MarketPlaceChatServiceImpl implements MarketPlaceChatService{
 
 
 	}
-
-
-

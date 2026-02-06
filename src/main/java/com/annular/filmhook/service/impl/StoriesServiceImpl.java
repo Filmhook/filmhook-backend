@@ -753,5 +753,3 @@ public class StoriesServiceImpl implements StoriesService {
 		        }
 
 }}}
-
-

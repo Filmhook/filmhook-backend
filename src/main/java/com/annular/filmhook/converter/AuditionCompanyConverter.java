@@ -6,8 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
-
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.service.MediaFilesService;
