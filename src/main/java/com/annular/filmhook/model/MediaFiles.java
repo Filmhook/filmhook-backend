@@ -50,7 +50,7 @@ public class MediaFiles {
     @Enumerated(value = EnumType.STRING)
     private MediaFileCategory category;
 
-    @Column(name = "category_ref_id") // for all referred table's[Post,Story] primary key
+    @Column(name = "category_ref_id") 
     private Integer categoryRefId;
 
     @Column(name = "file_id")
@@ -97,5 +97,8 @@ public class MediaFiles {
     @Column(name = "file_status")
     @Enumerated(EnumType.STRING)
     private FileStatus fileStatus;
+    
+    @Column(name = "duration")
+    private Long duration;
 
 }

@@ -45,4 +45,10 @@ public class FileOutputWebModel {
     private Boolean isStoryLiked;
     private String thumbnailPath;
     private FileStatus fileStatus; 
+    
+    
+    public Long getDuration() {
+        return this.duration;
+    }
+
 }
