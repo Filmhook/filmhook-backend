@@ -150,11 +150,18 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 						convertedFile = File.createTempFile("converted_", ".webm");
 						MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(),
 								convertedFile.getAbsolutePath());
-						s3FileExtension = ".webm";
+						
+						// ✅ GET VIDEO DURATION (seconds)
+						Long duration = MediaConversionUtil.getVideoDurationInSeconds(
+						        convertedFile.getAbsolutePath()
+						);
 
+						// ✅ SAVE DURATION
+						mediaFile.setDuration(duration);
+						s3FileExtension = ".webm";
 						// ✅ Generate thumbnail from video
 
-						//	String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+					//		String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 						String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
 						String ffmpegPath = "/usr/bin/ffmpeg";
 						String inputPath = convertedFile.getAbsolutePath();
@@ -337,6 +344,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
 		try {
 			List<MediaFiles> mediaFiles = mediaFilesRepository.getMediaFilesByCategoryAndRefId(category, refId);
+			
 			if (!Utility.isNullOrEmptyList(mediaFiles)) {
 				outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
 			}
@@ -379,6 +387,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 			fileOutputWebModel.setFileName(mediaFile.getFileName());
 			fileOutputWebModel.setFileType(mediaFile.getFileType());
 			fileOutputWebModel.setFileSize(mediaFile.getFileSize());
+
 			fileOutputWebModel
 			.setFilePath(s3Util.generateS3FilePath(mediaFile.getFilePath() + mediaFile.getFileType()));
 			fileOutputWebModel.setDescription(mediaFile.getDescription());
@@ -390,6 +399,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 			fileOutputWebModel.setFilmHookCode(mediaFile.getUser().getFilmHookCode());
 			fileOutputWebModel.setThumbnailPath(mediaFile.getThumbnailPath());
 			fileOutputWebModel.setFileStatus(mediaFile.getFileStatus());
+			fileOutputWebModel.setDuration(mediaFile.getDuration()); 
 			// Handle category type STORY
 			if (mediaFile.getCategory() == MediaFileCategory.Stories) {
 				Story story = storiesrRepository.findById(mediaFile.getCategoryRefId()).orElseThrow(
