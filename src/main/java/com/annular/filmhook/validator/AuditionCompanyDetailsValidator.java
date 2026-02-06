@@ -42,11 +42,50 @@ public class AuditionCompanyDetailsValidator implements Validator {
 			errors.rejectValue("location", BAD_REQUEST_ERROR_CD, "Location is empty or invalid");
 		if (CustomValidator.isEmpty(dto.getCompanyType()))
 			errors.rejectValue("companyType", BAD_REQUEST_ERROR_CD, "Company Type is empty or invalid");
-		if (dto.isGstRegistered() && CustomValidator.isEmpty(dto.getGstNumber()))
-			errors.rejectValue("gstNumber", BAD_REQUEST_ERROR_CD, "GST Number required when GST registered");
-		if (dto.isBusinessCertificate() && CustomValidator.isEmpty(dto.getBusinessCertificateNumber()))
-			errors.rejectValue("businessCertificateNumber", BAD_REQUEST_ERROR_CD, 
-					"BusinessCertificate Number required when BusinessCertificate registered");
+		 if (dto.getCompanyCertificateFiles() == null || dto.getCompanyCertificateFiles().isEmpty()) {
+	            errors.rejectValue(
+	                    "companyCertificateFiles",
+	                    BAD_REQUEST_ERROR_CD,
+	                    "Company Certificate file is required");
+	        }
+	       // =========================
+	        // GST (ONLY WHEN REGISTERED)
+	        // =========================
+		  if (Boolean.TRUE.equals(dto.isGstRegistered())) {
+
+	            boolean hasGstNumber =
+	                    !CustomValidator.isEmpty(dto.getGstNumber());
+
+	            boolean hasGstCertificate =
+	                    dto.getGstCertificateFiles() != null
+	                            && !dto.getGstCertificateFiles().isEmpty();
+
+	            // Either GST number OR GST certificate is required
+	            if (!hasGstNumber && !hasGstCertificate) {
+	                errors.rejectValue(
+	                        "gstNumber",
+	                        BAD_REQUEST_ERROR_CD,
+	                        "GST Number or GST Certificate file is required");
+	            }
+	        }
+		  
+	       // =========================
+	        // BUSINESS CERTIFICATE (ONLY WHEN TRUE)
+	        // =========================
+
+		 if (Boolean.TRUE.equals(dto.isBusinessCertificate())) {
+
+	            // File is mandatory ONLY when businessCertificate = true
+	            if (dto.getBusinessCertificateFiles() == null
+	                    || dto.getBusinessCertificateFiles().isEmpty()) {
+
+	                errors.rejectValue(
+	                        "businessCertificateFiles",
+	                        BAD_REQUEST_ERROR_CD,
+	                        "Business Certificate file is required");
+	            }
+	            
+	            
 		if (dto.isGovtVerified() && CustomValidator.isEmpty(dto.getGovtVerificationLink())) 
 		    errors.rejectValue("govtVerificationLink", BAD_REQUEST_ERROR_CD,
 		        "Government Verification Link is required when the company is government verified");
@@ -68,4 +107,5 @@ public class AuditionCompanyDetailsValidator implements Validator {
 	//        dto.setUpdatedBy(loggedUser);
 	//        dto.setUpdatedDate(now);
 	//    }
-}
+	}
+	}

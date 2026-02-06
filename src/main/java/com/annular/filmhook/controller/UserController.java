@@ -1,15 +1,12 @@
 package com.annular.filmhook.controller;
 
 import com.annular.filmhook.Response;
-import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.Location;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.service.UserService;
-import com.annular.filmhook.service.impl.UserServiceImpl;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.LocationWebModel;
-import com.annular.filmhook.webmodel.ProfessionIconWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -27,22 +24,18 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.ResponseEntity;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.persistence.NonUniqueResultException;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
 
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-    @Autowired
-	private  UserDetails userDetails;
+
     @Autowired
     UserService userService;
 
@@ -53,9 +46,7 @@ public class UserController {
     }
 
     @GetMapping("/getUserByUserId")
-    public Response getUserByUserId() {
-    	
-    	Integer userId = userDetails.userInfo().getId();
+    public Response getUserByUserId(@RequestParam("userId") Integer userId) {
         logger.info("🔍 getUserByUserId API called with userId: {}", userId);
         try {
             Optional<UserWebModel> user = userService.getUserByUserId(userId);
@@ -189,8 +180,8 @@ public class UserController {
      * @return Response
      */
     @PostMapping("/getProfilePic")
-    public Response getProfilePic() {
-        FileOutputWebModel profilePic = userService.getProfilePic();
+    public Response getProfilePic(@RequestBody UserWebModel userWebModel) {
+        FileOutputWebModel profilePic = userService.getProfilePic(userWebModel);
         if (profilePic != null) return new Response(1, "Profile pic found successfully...", profilePic);
         return new Response(-1, "User profile pic not found...", null);
     }

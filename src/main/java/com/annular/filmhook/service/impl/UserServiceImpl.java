@@ -270,7 +270,7 @@ public class UserServiceImpl implements UserService {
 		userWebModel.setUpdatedBy(user.getUpdatedBy());
 		userWebModel.setUpdateOn(user.getUpdatedOn());
 
-		userWebModel.setProfilePicOutput(this.getProfilePic());
+		userWebModel.setProfilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()));
 
 		List<FileOutputWebModel> coverPicList = mediaFilesService.getMediaFilesByCategoryAndUserId(
 				MediaFileCategory.CoverPic, user.getUserId()
@@ -471,7 +471,7 @@ public class UserServiceImpl implements UserService {
 			user = userRepository.getUserByUserId(userWebModel.getUserId());
 			if (user.isPresent()) {
 				// Find and delete old profile pic
-				FileOutputWebModel fileOutputWebModel = this.getProfilePic();
+				FileOutputWebModel fileOutputWebModel = this.getProfilePic(userWebModel);
 				if (fileOutputWebModel != null) {
 					logger.info("Existing profile pic data [{}]", fileOutputWebModel);
 					List<Integer> profilePicIdsList = Collections.singletonList(fileOutputWebModel.getCategoryRefId());
@@ -493,25 +493,16 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public FileOutputWebModel getRecieverProfilePic(UserWebModel userWebModel) {
+	public FileOutputWebModel getProfilePic(UserWebModel userWebModel) {
 		List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, userWebModel.getUserId());
 		if (!Utility.isNullOrEmptyList(outputWebModelList)) return outputWebModelList.get(0);
 		return null;
 	}
-	
-	@Override
-	public FileOutputWebModel getProfilePic() {
-		Integer userId = userDetails.userInfo().getId();
-		List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.ProfilePic, userId);
-		if (!Utility.isNullOrEmptyList(outputWebModelList)) return outputWebModelList.get(0);
-		return null;
-	}
-
 
 	@Override
 	public void deleteUserProfilePic(UserWebModel userWebModel) {
 		try {
-			FileOutputWebModel fileOutputWebModel = this.getProfilePic();
+			FileOutputWebModel fileOutputWebModel = this.getProfilePic(userWebModel);
 			if (fileOutputWebModel != null) {
 				List<Integer> profilePicIdsList = Collections.singletonList(fileOutputWebModel.getCategoryRefId());
 				mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.ProfilePic, profilePicIdsList);
@@ -877,7 +868,7 @@ public class UserServiceImpl implements UserService {
 						map.put("adminReview", user.getAdminReview());
 						map.put("dob", CalendarUtil.convertDateFormat(CalendarUtil.MYSQL_DATE_FORMAT, CalendarUtil.UI_DATE_FORMAT, user.getDob()));
 
-						FileOutputWebModel profilePic = this.getProfilePic();
+						FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build());
 						map.put("userProfilePic", profilePic != null ? profilePic.getFilePath() : "");
 
 
@@ -975,7 +966,7 @@ public class UserServiceImpl implements UserService {
 			userMap.put("firstName", user.getFirstName());
 			userMap.put("lastName", user.getLastName());
 			userMap.put("userName", user.getName());
-			userMap.put("userProfilePic", userService.getProfilePicUrl());
+			userMap.put("userProfilePic", userService.getProfilePicUrl(userWebModel.getUserId()));
 			userMap.put("adminRating", user.getAdminReview().toString());
 			userMap.put("userType", user.getUserType());	
 			// Fetching the user Profession
@@ -999,16 +990,11 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public String getProfilePicUrl() {
-		FileOutputWebModel profilePic = this.getProfilePic();
+	public String getProfilePicUrl(Integer userId) {
+		FileOutputWebModel profilePic = this.getProfilePic(UserWebModel.builder().userId(userId).build());
 		return profilePic != null ? profilePic.getFilePath() : "";
 	}
 
-	@Override
-	public String getRecieverProfilePicUrl(Integer userId) {
-		FileOutputWebModel profilePic = this.getRecieverProfilePic(UserWebModel.builder().userId(userId).build());
-		return profilePic != null ? profilePic.getFilePath() : "";
-	}
 	@Override
 	public List<UserWebModel> getUserByName(String name) {
 		List<UserWebModel> responseList = new ArrayList<>();
@@ -1022,7 +1008,8 @@ public class UserServiceImpl implements UserService {
 								.name(user.getName())
 								.adminReview(user.getAdminReview())
 								.userType(user.getUserType())
-								.profilePicUrl(this.getProfilePicUrl())
+								.profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
+								.profilePicUrl(this.getProfilePicUrl(user.getUserId()))
 								.userType(user.getUserType())
 								.build())
 						.collect(Collectors.toList());
@@ -1320,7 +1307,7 @@ public class UserServiceImpl implements UserService {
 					response.put("address", location.getAddress());
 					response.put("locationName", location.getLocationName());
 					response.put("landMark", location.getLandMark());
-					response.put("profilePic", userService.getProfilePicUrl());
+					response.put("profilePic", userService.getProfilePicUrl(location.getUser().getUserId()));
 					response.put("userName", location.getUser().getName());
 
 					return ResponseEntity.ok(response);
@@ -1367,7 +1354,7 @@ public class UserServiceImpl implements UserService {
 				loggedInUserDetails.put("longitude", loggedInUserLocation.getLongitude());
 				loggedInUserDetails.put("distance", 0);
 				loggedInUserDetails.put("distanceUnit", "Km");
-				loggedInUserDetails.put("profilePic", userService.getProfilePicUrl());
+				loggedInUserDetails.put("profilePic", userService.getProfilePicUrl(user.getUserId()));
 				loggedInUserDetails.put("userName", user.getName());
 				loggedInUserDetails.put("professionNames", getProfessionNames(user.getUserId()));
 				loggedInUserDetails.put("userType", user.getUserType());
@@ -1392,7 +1379,7 @@ public class UserServiceImpl implements UserService {
 						userDetails.put("longitude", location.getLongitude());
 						userDetails.put("distance", Math.round(distance));
 						userDetails.put("distanceUnit", "Km");
-						userDetails.put("profilePic", userService.getProfilePicUrl());
+						userDetails.put("profilePic", userService.getProfilePicUrl(userData.getUserId()));
 						userDetails.put("userName", userData.getName());
 						userDetails.put("professionNames", getProfessionNames(userData.getUserId()));
 						userDetails.put("userType", userData.getUserType());
@@ -1560,7 +1547,7 @@ public class UserServiceImpl implements UserService {
 		auditionCompanyRepository.softDeleteByUserId(userId);
 
 		auditionProjectRepository.deactivateByCreatedBy(userId, userId);
-		shootingLocationRepository.deactivateShootingPropertyByUserId(userId);
+		shootingLocationRepository.deactivateShootingPropertyByUserId(userId, ShootingPropertyStatus.DELETED);
 
 	}
 
@@ -1782,7 +1769,8 @@ public class UserServiceImpl implements UserService {
 								.name(user.getName())
 								.adminReview(user.getAdminReview())
 								.userType(user.getUserType())
-								.profilePicUrl(this.getProfilePicUrl())
+								.profilePicOutput(this.getProfilePic(UserWebModel.builder().userId(user.getUserId()).build()))
+								.profilePicUrl(this.getProfilePicUrl(user.getUserId()))
 								.userType(user.getUserType())
 								.filmHookCode(user.getFilmHookCode())
 								.build())

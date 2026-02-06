@@ -181,7 +181,7 @@ public class FriendRequestServiceImpl implements FriendRequestService {
                                     .userGender(user.getGender())
                                     .userType(user.getUserType())
                                     .review(user.getAdminReview())
-                                    .userProfilePicUrl(userService.getProfilePicUrl())
+                                    .userProfilePicUrl(userService.getProfilePicUrl(user.getUserId()))
                                     .followersRequestCreatedBy(request.getFollowersRequestCreatedBy())
                                     .followersRequestCreatedOn(request.getFollowersRequestCreatedOn())
                                     .followersRequestUpdatedBy(request.getFollowersRequestUpdatedBy())

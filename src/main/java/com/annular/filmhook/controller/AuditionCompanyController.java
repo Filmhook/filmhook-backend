@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +29,7 @@ import com.annular.filmhook.validator.AuditionCompanyDetailsValidator;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/api/companies")
@@ -46,35 +49,60 @@ public class AuditionCompanyController {
     /**
      * Save Company Details
      */
-    @PostMapping(consumes = {"multipart/form-data"}, path = "/saveAuditionCompany")
+    @PostMapping(
+            value = "/saveAuditionCompany",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<?> saveCompany(
+
             @RequestPart("company") AuditionCompanyDetailsDTO dto,
-            @RequestPart(value = "logoFiles", required = false) MultipartFile[] logoFiles) {
 
-        // Attach files
-        if (logoFiles != null && logoFiles.length > 0) {
+            @RequestPart(value = "logoFiles", required = false)
+            MultipartFile[] logoFiles,
+
+            @RequestPart(value = "companyCertificateFiles", required = true)
+            MultipartFile[] companyCertificateFiles,
+
+            @RequestPart(value = "businessCertificateFiles", required = false)
+            MultipartFile[] businessCertificateFiles,
+
+            @RequestPart(value = "gstCertificateFiles", required = false)
+            MultipartFile[] gstCertificateFiles
+    ) {
+
+        // Attach files to DTO
+        if (logoFiles != null)
             dto.setLogoFiles(Arrays.asList(logoFiles));
-        }
 
-        // Validate DTO
-        BindingResult bindingResult = new BeanPropertyBindingResult(dto, "auditionCompanyDetailsDTO");
+        dto.setCompanyCertificateFiles(Arrays.asList(companyCertificateFiles));
+
+        if (businessCertificateFiles != null)
+            dto.setBusinessCertificateFiles(Arrays.asList(businessCertificateFiles));
+
+        if (gstCertificateFiles != null)
+            dto.setGstCertificateFiles(Arrays.asList(gstCertificateFiles));
+
+        // Validate DTO (FORM + BASIC)
+        BindingResult bindingResult =
+                new BeanPropertyBindingResult(dto, "auditionCompanyDetailsDTO");
         companyValidator.validate(dto, bindingResult);
 
         if (bindingResult.hasErrors()) {
-            StringBuilder errors = new StringBuilder();
-            bindingResult.getAllErrors().forEach(error ->
-                    errors.append(error.getDefaultMessage()).append("; ")
-            );
-            return ResponseEntity.badRequest().body(new Response(0, "Validation failed", errors.toString()));
+            String errors = bindingResult.getAllErrors().stream()
+                    .map(ObjectError::getDefaultMessage)
+                    .collect(Collectors.joining("; "));
+            return ResponseEntity.badRequest()
+                    .body(new Response(0, "Validation failed", errors));
         }
 
-        // Save company
-        AuditionCompanyDetailsDTO saved = companyService.saveCompany(dto);
+        AuditionCompanyDetailsDTO saved =
+                companyService.saveCompany(dto);
 
-        return ResponseEntity.ok(new Response(1, "Success", saved));
+        return ResponseEntity.ok(
+                new Response(1, "Success", saved)
+        );
     }
-    
-    
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getCompanyByUserId(@PathVariable Integer userId) {
         // Simply call the service without validation

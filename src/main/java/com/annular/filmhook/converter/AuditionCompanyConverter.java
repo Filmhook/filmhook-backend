@@ -6,8 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
-
 import com.annular.filmhook.model.*;
 import com.annular.filmhook.repository.FilmSubProfessionRepository;
 import com.annular.filmhook.service.MediaFilesService;
@@ -93,6 +91,67 @@ public class AuditionCompanyConverter {
 
 			mediaFilesService.saveMediaFiles(fileInputWebModel, user);
 		}
+	}
+	public static void handleCompanyCertificateFile(
+	        AuditionCompanyDetailsDTO dto,
+	        AuditionCompanyDetails savedEntity,
+	        User user,
+	        MediaFilesService mediaFilesService) {
+
+	    if (dto != null
+	            && dto.getCompanyCertificateFiles() != null
+	            && !dto.getCompanyCertificateFiles().isEmpty()) {
+
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(user.getUserId())
+	                .category(MediaFileCategory.AuditionCompanyCertificate)
+	                .categoryRefId(savedEntity.getId())
+	                .files(dto.getCompanyCertificateFiles())
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
+	}
+
+	public static void handleBusinessCertificateFile(
+	        AuditionCompanyDetailsDTO dto,
+	        AuditionCompanyDetails savedEntity,
+	        User user,
+	        MediaFilesService mediaFilesService) {
+
+	    if (dto != null
+	            && dto.getBusinessCertificateFiles() != null
+	            && !dto.getBusinessCertificateFiles().isEmpty()) {
+
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(user.getUserId())
+	                .category(MediaFileCategory.AuditionBusinessCertificate)
+	                .categoryRefId(savedEntity.getId())
+	                .files(dto.getBusinessCertificateFiles())
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
+	}
+	public static void handleGstCertificateFile(
+	        AuditionCompanyDetailsDTO dto,
+	        AuditionCompanyDetails savedEntity,
+	        User user,
+	        MediaFilesService mediaFilesService) {
+
+	    if (dto != null
+	            && dto.getGstCertificateFiles() != null
+	            && !dto.getGstCertificateFiles().isEmpty()) {
+
+	        FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                .userId(user.getUserId())
+	                .category(MediaFileCategory.AuditionGSTDocuments)
+	                .categoryRefId(savedEntity.getId())
+	                .files(dto.getGstCertificateFiles())
+	                .build();
+
+	        mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	    }
 	}
 
 
@@ -464,7 +523,7 @@ public class AuditionCompanyConverter {
 
 		// ✅ Attach assigned user profile picture using userService
 		if (entity.getAssignedUser() != null) {
-			String profilePicUrl = userService.getRecieverProfilePicUrl(entity.getAssignedUser().getUserId());
+			String profilePicUrl = userService.getProfilePicUrl(entity.getAssignedUser().getUserId());
 			dto.setAssignedUserProfilePicture(profilePicUrl);
 		}
 

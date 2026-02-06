@@ -24,7 +24,7 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.AuditionCompanyRepository;
 import com.annular.filmhook.repository.AuditionUserCompanyRoleRepository;
 import com.annular.filmhook.repository.UserRepository;
-
+import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.AuditionCompanyService;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
@@ -53,72 +53,125 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	private AuditionUserCompanyRoleRepository roleRepository;
 	@Autowired
 	private UserService userService;
-	@Override
-	public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
-		User user = userRepository.findById(dto.getUserId())
-				.orElseThrow(() -> new RuntimeException("User not found with ID: " + dto.getUserId()));
+	@Autowired
+	private AdminService adminService;
 
-		LocalDateTime now = LocalDateTime.now();
-		AuditionCompanyDetails entity;
+	@Transactional
+@Override
+public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 
-		if (dto.getId() != null) {
-			// ✅ Existing company update
-			entity = companyRepository.findById(dto.getId())
-					.orElseThrow(() -> new RuntimeException("Company not found with ID: " + dto.getId()));
+    User user = userRepository.findById(dto.getUserId())
+            .orElseThrow(() ->
+                    new RuntimeException("User not found with ID: " + dto.getUserId()));
 
-			// If previously FAILED, reset verification to PENDING
-			if (entity.getVerificationStatus() == AuditionCompanyDetails.VerificationStatus.FAILED) {
-				entity.setVerificationStatus(AuditionCompanyDetails.VerificationStatus.PENDING);
-			}
+    LocalDateTime now = LocalDateTime.now();
+    AuditionCompanyDetails entity;
 
-			// Update fields from DTO
-			entity.setCompanyName(dto.getCompanyName());
-			entity.setLocation(dto.getLocation());
-			entity.setCompanyType(dto.getCompanyType());
-			entity.setGstRegistered(dto.isGstRegistered());
-			entity.setBusinessCertificate(dto.isBusinessCertificate());
-			entity.setBusinessCertificateNumber(dto.getBusinessCertificateNumber());
-			entity.setGstNumber(dto.getGstNumber());
-			entity.setState(dto.getState());
-			entity.setHouseNumber(dto.getHouseNumber());
-			entity.setLandMark(dto.getLandMark());
-			entity.setPinCode(dto.getPinCode());
-			entity.setGovtVerified(dto.isGovtVerified());
-			entity.setGovtVerificationLink(dto.getGovtVerificationLink());
-			entity.setUpdatedBy(user.getUserId());
-			entity.setUpdatedDate(now);
-			entity.setStatus(false);
-			entity.setVerificationStatus(VerificationStatus.PENDING);
+    // =========================
+    // ✏️ UPDATE
+    // =========================
+    if (dto.getId() != null) {
 
-			// ✅ Handle logo update: delete existing and upload new
-			if (dto.getLogoFiles() != null) {
-				mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
-						MediaFileCategory.Audition, 
-						List.of(entity.getId())
-						);
-				AuditionCompanyConverter.handleCompanyLogoFile(dto, entity, user, mediaFilesService);
-			}
+        entity = companyRepository.findById(dto.getId())
+                .orElseThrow(() ->
+                        new RuntimeException("Company not found with ID: " + dto.getId()));
 
-		} else {
-			// ✅ New company creation
-			entity = AuditionCompanyConverter.toCompanyEntity(dto, user);
-			entity.setCreatedBy(user.getUserId());
-			entity.setCreatedDate(now);
-			entity.setUpdatedDate(now);
+        // Reset verification if previously failed
+        if (entity.getVerificationStatus()
+                == AuditionCompanyDetails.VerificationStatus.FAILED) {
+            entity.setVerificationStatus(
+                    AuditionCompanyDetails.VerificationStatus.PENDING);
+        }
 
-			AuditionCompanyDetails saved = companyRepository.save(entity);
+        // Update fields
+        entity.setCompanyName(dto.getCompanyName());
+        entity.setLocation(dto.getLocation());
+        entity.setCompanyType(dto.getCompanyType());
+        entity.setGstRegistered(dto.isGstRegistered());
+        entity.setBusinessCertificate(dto.isBusinessCertificate());
+        entity.setBusinessCertificateNumber(dto.getBusinessCertificateNumber());
+        entity.setGstNumber(dto.getGstNumber());
+        entity.setState(dto.getState());
+        entity.setHouseNumber(dto.getHouseNumber());
+        entity.setLandMark(dto.getLandMark());
+        entity.setPinCode(dto.getPinCode());
+        entity.setGovtVerified(dto.isGovtVerified());
+        entity.setGovtVerificationLink(dto.getGovtVerificationLink());
+        entity.setUpdatedBy(user.getUserId());
+        entity.setUpdatedDate(now);
+        entity.setStatus(false);
+        entity.setVerificationStatus(VerificationStatus.PENDING);
 
-			// Save logo if provided
-			if (dto.getLogoFiles() != null) {
-				AuditionCompanyConverter.handleCompanyLogoFile(dto, saved, user, mediaFilesService);
-			}
+        // Logo update
+        if (dto.getLogoFiles() != null) {
+            mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
+                    MediaFileCategory.Audition,
+                    List.of(entity.getId())
+            );
+            AuditionCompanyConverter.handleCompanyLogoFile(
+                    dto, entity, user, mediaFilesService);
+        }
 
-			return AuditionCompanyConverter.toCompanyDTO(saved);
-		}
+    }
+    // =========================
+    // ➕ CREATE
+    // =========================
+    else {
 
-		AuditionCompanyDetails saved = companyRepository.save(entity);
-		return AuditionCompanyConverter.toCompanyDTO(saved);
-	}
+        entity = AuditionCompanyConverter.toCompanyEntity(dto, user);
+        entity.setCreatedBy(user.getUserId());
+        entity.setCreatedDate(now);
+        entity.setUpdatedDate(now);
+
+        entity = companyRepository.save(entity);
+
+        // Logo upload
+        if (dto.getLogoFiles() != null) {
+            AuditionCompanyConverter.handleCompanyLogoFile(
+                    dto, entity, user, mediaFilesService);
+        }
+    }
+
+    // =========================
+    // 💾 SAVE ENTITY (FINAL)
+    // =========================
+    entity = companyRepository.save(entity);
+
+    // =========================
+    // 📁 CERTIFICATE UPLOADS
+    // =========================
+
+    // Company Certificate (ALWAYS)
+    mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
+            MediaFileCategory.AuditionCompanyCertificate,
+            List.of(entity.getId())
+    );
+    AuditionCompanyConverter.handleCompanyCertificateFile(
+            dto, entity, user, mediaFilesService);
+
+    // Business Certificate (ONLY if true)
+    if (Boolean.TRUE.equals(dto.isBusinessCertificate())) {
+        mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
+                MediaFileCategory.AuditionBusinessCertificate,
+                List.of(entity.getId())
+        );
+        AuditionCompanyConverter.handleBusinessCertificateFile(
+                dto, entity, user, mediaFilesService);
+    }
+
+    // GST Certificate (ONLY if provided)
+    if (dto.getGstCertificateFiles() != null) {
+        mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
+                MediaFileCategory.AuditionGSTDocuments,
+                List.of(entity.getId())
+        );
+        AuditionCompanyConverter.handleGstCertificateFile(
+                dto, entity, user, mediaFilesService);
+    }
+
+    return AuditionCompanyConverter.toCompanyDTO(entity);
+}
+
 
 
 
@@ -206,6 +259,39 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 			if (!logoFiles.isEmpty()) {
 				dto.setLogoFilesOutput(logoFiles);
 			}
+			
+			 List<FileOutputWebModel> companyCertFiles =
+		                mediaFilesService.getMediaFilesByCategoryAndRefId(
+		                        MediaFileCategory.AuditionCompanyCertificate,
+		                        company.getId());
+
+		        if (!companyCertFiles.isEmpty()) {
+		            dto.setCompanyCertificateFilesOutput(companyCertFiles);
+		        }
+
+		        // =====================
+		        // BUSINESS CERTIFICATE
+		        // =====================
+		        List<FileOutputWebModel> businessCertFiles =
+		                mediaFilesService.getMediaFilesByCategoryAndRefId(
+		                        MediaFileCategory.AuditionBusinessCertificate,
+		                        company.getId());
+
+		        if (!businessCertFiles.isEmpty()) {
+		            dto.setBusinessCertificateFilesOutput(businessCertFiles);
+		        }
+
+		        // =====================
+		        // GST CERTIFICATE
+		        // =====================
+		        List<FileOutputWebModel> gstCertFiles =
+		                mediaFilesService.getMediaFilesByCategoryAndRefId(
+		                        MediaFileCategory.AuditionGSTDocuments,
+		                        company.getId());
+
+		        if (!gstCertFiles.isEmpty()) {
+		            dto.setGstCertificateFilesOutput(gstCertFiles);
+		        }
 
 			return dto;
 		}).toList();
@@ -221,6 +307,24 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 					approved ? AuditionCompanyDetails.VerificationStatus.SUCCESS 
 							: AuditionCompanyDetails.VerificationStatus.FAILED
 					);
+			Integer adminId = userDetails.userInfo().getId();
+			if(approved) {
+				adminService.log(
+						adminId,
+						"APPROVED",
+						"AUDITION",
+						company.getCreatedBy()
+						);
+			}
+			else {
+				adminService.log(
+						adminId,
+						"REJECTED",
+						"AUDITION",
+						company.getCreatedBy()
+						);
+			}
+		
 
 			return companyRepository.save(company);
 		} catch (Exception e) {

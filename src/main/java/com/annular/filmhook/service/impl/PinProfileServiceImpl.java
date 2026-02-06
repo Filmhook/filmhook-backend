@@ -360,7 +360,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                     taggedUserDetails.put("userId", taggedUserId);
                     userService.getUser(taggedUserId).ifPresent(user -> {
                         taggedUserDetails.put("username", user.getName());
-                        taggedUserDetails.put("userProfilePic", userService.getRecieverProfilePicUrl(taggedUserId));
+                        taggedUserDetails.put("userProfilePic", userService.getProfilePicUrl(taggedUserId));
                     });
                     return taggedUserDetails;
                 })
@@ -376,7 +376,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                 .userName(post.getUser().getName())
                 .postId(post.getPostId())
                 .adminReview(post.getUser().getAdminReview())
-                .userProfilePic(userService.getProfilePicUrl())
+                .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                 .description(post.getDescription())
                 .pinMediaStatus(pinMediaStatus)
                 .pinProfileStatus(pinStatus)
@@ -405,12 +405,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                 .promoteStatus(promoteDetails != null)
                 .promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
                 .numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
-                .amount(promoteDetails != null ? promoteDetails.getAmount() : null)
-                .contactNumber(promoteDetails != null ? promoteDetails.getContactNumber() : null)
-                .webSiteLink(promoteDetails != null ? promoteDetails.getWebSiteLink() : null)
-                .selectOption(promoteDetails != null ? promoteDetails.getSelectOption() : null)
-                .visitPage(promoteDetails != null ? promoteDetails.getVisitPage() : null)
-                .visitPageData(fetchVisitPageData(promoteDetails))
+                .amount(promoteDetails != null ? promoteDetails.getAmount() : null)                                       
                 .viewsCount(post.getViewsCount())
                 .build();
 

@@ -23,7 +23,9 @@
 	    private boolean gstRegistered;
 	    private boolean businessCertificate;
 	    private String businessCertificateNumber;
+	    private List<MultipartFile> businessCertificateFiles;
 	    private String gstNumber;
+	    private List<MultipartFile> gstCertificateFiles;
 	    private String state;
 	    private Integer userId;
 	    private String houseNumber;
@@ -39,5 +41,9 @@
 	    private Integer updatedBy;
 	    private LocalDateTime createdDate;
 	    private LocalDateTime updatedDate;
+	    private List<MultipartFile> companyCertificateFiles;
+	    private List<FileOutputWebModel> companyCertificateFilesOutput;
+	    private List<FileOutputWebModel> businessCertificateFilesOutput;
+	    private List<FileOutputWebModel> gstCertificateFilesOutput;
 	}
 	

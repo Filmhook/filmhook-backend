@@ -1,13 +1,17 @@
 package com.annular.filmhook.repository;
 
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -174,7 +178,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 //	@Query("SELECT u FROM User u WHERE u.industryUserVerified = :status OR (u.industryUserVerified IS NOT NULL AND u.status = true)")
 //	Page<User> findUnverifiedOrRejectedUsers(Boolean status,Pageable pageable);
 	
-	@Query("SELECT u FROM User u WHERE (u.industryUserVerified = :status OR (:status IS NULL AND u.industryUserVerified IS NULL)) AND u.status = true")
+	@Query("SELECT u FROM User u WHERE (u.industryUserVerified = :status OR (:status IS NULL AND u.industryUserVerified IS NULL)) AND u.status = true AND (u.permanentDelete = false OR u.permanentDelete IS NULL)" )
 	Page<User> findUnverifiedOrRejectedUsers(@Param("status") Boolean status, Pageable pageable);
 
 	
@@ -194,9 +198,65 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("SELECT u FROM User u WHERE u.email = :email AND u.status = false")
 	Optional<User> findInactiveUserByEmail(@Param("email") String email);
 	
+	 @Query("SELECT u FROM User u " +
+	           "WHERE u.lastSeenAt < :threshold " +
+	           "AND u.adminOnlineStatus = true " +
+	           "AND u.userType IN ('Admin', 'Super Admin')")
+	    List<User> findAdminsToMarkOffline(@Param("threshold") LocalDateTime threshold);
+
+
+	    @Modifying
+	    @Transactional
+	    @Query("UPDATE User u SET u.adminOnlineStatus = false " +
+	           "WHERE u.lastSeenAt < :threshold " +
+	           "AND u.userType IN ('Admin', 'Super Admin')")
+	    void markAdminsOffline(@Param("threshold") LocalDateTime threshold);
+
+
+	    @Modifying
+	    @Transactional
+	    @Query("UPDATE User u SET u.adminOnlineStatus = true, u.lastSeenAt = :time " +
+	           "WHERE u.email = :email AND u.userType = :userType")
+	    void updateAdminLastSeen(
+	            @Param("email") String email,
+	            @Param("userType") String userType,
+	            @Param("time") LocalDateTime time
+	    );
+
+
+	List<User> findByUserTypeIn(List<String> types);
+
 	
+	@Query(
+		    "SELECT u FROM User u " +
+		    "WHERE u.permanentDelete = true " +
+		    "ORDER BY u.userId DESC"
+		)
+		Page<User> findDeletedUsers(Pageable pageable);
 
-
-
-
+//Approved
+	@Query(
+			  "SELECT COUNT(u) FROM User u " +
+			  "WHERE u.industryUserVerified = true " +
+			  "AND u.status = true " +
+			  "AND (u.permanentDelete = false OR u.permanentDelete IS NULL)"
+			)
+			long countApprovedIndustryUsers();
+	@Query(
+			  "SELECT COUNT(u) FROM User u " +
+			  "WHERE u.industryUserVerified = false " +
+			  "AND u.status = true " +
+			  "AND u.permanentDelete=false"
+			)
+			long countRejectedIndustryUsers();
+	
+	@Query(
+			  "SELECT COUNT(u) FROM User u " +
+			  "WHERE u.permanentDelete = true"
+			)
+			long countDeletedUsers();
+	
+	
+	@Query("SELECT u.name FROM User u WHERE u.id = :id")
+	String findNameById(@Param("id") Integer id);
 }

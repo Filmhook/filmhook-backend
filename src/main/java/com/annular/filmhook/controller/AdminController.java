@@ -1,10 +1,15 @@
 package com.annular.filmhook.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,8 +17,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.webmodel.AdminListResponse;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 @RestController
@@ -27,6 +34,9 @@ public class AdminController {
 
 	@Autowired
 	AdminService adminService;
+	
+	@Autowired
+	UserDetails userDetails;
 
 	@PostMapping("adminRegister")
 	public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
@@ -109,10 +119,11 @@ public class AdminController {
     }
     
     @PostMapping("changeStatusUnverifiedIndustrialUsers")
-	public Response changeStatusUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel) {
+	public Response changeStatusUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel ) {
 		try {
 			logger.info("changeStatusUnverifiedIndustrialUsers controller start");
 			return adminService.changeStatusUnverifiedIndustrialUsers(userWebModel);
+			
 		} catch (Exception e) {
 			logger.error("changeStatusUnverifiedIndustrialUsers Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
@@ -290,5 +301,77 @@ public class AdminController {
    		}
    		return new Response(-1, "Success", "");
    	}
+    
+    @GetMapping("/generate-password")
+    public ResponseEntity<Map<String, Object>> generatePassword() {
+        return ResponseEntity.ok(adminService.generatePassword());
+    }
        
+    
+    @GetMapping("/list")
+    public List<AdminListResponse> getAdminList() {
+        return adminService.getAdminList();
+    }
+    
+    @GetMapping("/activity/{adminId}/{targetType}")
+    public ResponseEntity<?> getReviewedUsers(
+            @PathVariable Integer adminId,
+            @PathVariable String targetType) {
+
+        return ResponseEntity.ok(
+        		adminService.getReviewedUsers(adminId, targetType)
+        );
+    }
+    
+    @PostMapping("/deleteUser")
+    public ResponseEntity<?> deleteUser(@RequestParam Integer userId) {
+    try {
+
+
+    	adminService.DeleteUser(userId);
+
+
+    return ResponseEntity.ok(
+    new Response(1, "User deleted successfully", null)
+    );
+
+
+    } catch (Exception e) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    .body(new Response(-1, "Failed to delete user", e.getMessage()));
+    }
+    }
+    
+    
+    @GetMapping("/deletedUsers")
+    public Response getAllDeletedUsers(
+    @RequestParam Integer pageNo,
+    @RequestParam Integer pageSize
+    ) {
+    return adminService.getAllDeletedUsers(pageNo, pageSize);
+    }
+    
+    
+    @GetMapping("/counts")
+    public Response getIndustryUserSidebarCounts() {
+    return adminService.getIndustryUserSidebarCounts();
+    }
+    
+    @PostMapping("/viewUser")
+    public Response view(
+            @RequestParam Integer userId,
+            @RequestParam String category) {
+
+        Integer adminId = userDetails.userInfo().getId();
+
+        // ✅ RETURN SERVICE RESPONSE DIRECTLY
+        return adminService.markViewed(adminId, userId, category);
+    }
+    
+    @GetMapping("/getviewers")
+    public Response viewers(@RequestParam Integer userId, @RequestParam String category) {
+    return new Response(1, "Success",
+    		adminService.getViewers(userId, category));
+    }
+
 }

@@ -292,7 +292,7 @@ public class ReportServiceImpl implements ReportService {
                         .userId(post.getUser().getUserId())
                         .userName(post.getUser().getName())
                         .postId(post.getPostId())
-                        .userProfilePic(userService.getProfilePicUrl())
+                        .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                         .description(post.getDescription())
                         .pinMediaStatus(pinMediaStatus)
                         .likeCount(post.getLikesCount())
@@ -394,7 +394,7 @@ public class ReportServiceImpl implements ReportService {
                         .userId(post.getUser().getUserId())
                         .userName(post.getUser().getName())
                         .postId(post.getPostId())
-                        .userProfilePic(userService.getProfilePicUrl())
+                        .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                         .description(post.getDescription())
                         .pinMediaStatus(pinMediaStatus)
                         .likeCount(post.getLikesCount())
@@ -507,7 +507,7 @@ public class ReportServiceImpl implements ReportService {
                     .userId(post.getUser().getUserId())
                     .userName(post.getUser().getName())
                     .postId(post.getPostId())
-                    .userProfilePic(userService.getProfilePicUrl())
+                    .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
                     .description(post.getDescription())
                     .pinMediaStatus(pinMediaStatus)
                     .likeCount(post.getLikesCount())
@@ -737,4 +737,3 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 }
-

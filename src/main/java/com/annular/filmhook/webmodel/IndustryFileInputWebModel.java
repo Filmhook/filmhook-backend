@@ -19,5 +19,6 @@ public class IndustryFileInputWebModel {
     private MultipartFile adharCard;
     private List<MultipartFile> oneMinuteVideos;
     private List<MultipartFile> govermentId;
+    private List<MultipartFile> moviePoster;
 
 }

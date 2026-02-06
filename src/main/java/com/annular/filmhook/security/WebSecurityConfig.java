@@ -82,10 +82,10 @@ public class WebSecurityConfig {
                                         "/industryUser/saveIndustryUserFiles", "/industryUser/updateTemporaryDetails","/user/updateUserFlag","/industryUser/saveOneMinuteVideo","/user/updateRerferrralcode","/industryUser/saveGovermentIdProof",
                                         "/payment/payment-failure", "/payment/payment-success","/deeplink/**","/retry-payment/**", "/audition-post/**",  "/swagger-ui.html",
                                         "/swagger-ui/**","/masterData/getCountries", "/industryUser/saveIndustrySignupDetails",
-                                        "/v3/api-docs/**",
+                                        "/v3/api-docs/**", "/industryUser/saveMoviePosts",
                                         "/v2/api-docs",   // for old swagger
                                         "/swagger-resources/**",
-                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/retry-payment/**","/audition/retry-payment/**")
+                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/audition/retry-payment/**", "/api/promote/payment/success", "/api/promote/payment/success")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()

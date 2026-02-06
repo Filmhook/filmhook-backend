@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.impl.UserDetailsServiceImpl;
 
 public class AuthTokenFilter extends OncePerRequestFilter {
@@ -27,6 +28,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
+    
+    @Autowired
+    private AdminService adminService;
 
     private static final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
 
@@ -38,11 +42,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
                 logger.info("JWT available...");
 
-                // Old one
-                // String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                // UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                // New one Username and usertype based login
+           
                 String userName = jwtUtils.getDataFromJwtToken(jwt, "userName");
                 String userType = jwtUtils.getDataFromJwtToken(jwt, "userType");
                 StringBuilder userNameWithUserType = new StringBuilder().append(userName).append("^").append(userType);
@@ -53,9 +53,12 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                
+              
 
             } else {
                 logger.info("JWT not available...");
+               
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication...", e);

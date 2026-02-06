@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -251,6 +252,12 @@ public class User {
     @Column(name = "onlineStatus")
     private Boolean onlineStatus;
     
+    @Column(name = "adminOnlineStatus")
+    private Boolean adminOnlineStatus;
+    
+    @Column(name = "last_seen_at")
+    private LocalDateTime lastSeenAt;
+    
     @Column(name = "userFlag")
     private Boolean userFlag;
     
@@ -313,6 +320,12 @@ public class User {
 	@Builder.Default
 	@Column(name = "permanent_delete", columnDefinition = "BOOLEAN DEFAULT 0")
 	private Boolean permanentDelete = false;
+	
+	@Column(name = "job_title", columnDefinition = "TEXT")
+	private String jobTitle;
+
+	@Column(name = "organization_unit", columnDefinition = "TEXT")
+	private String organizationUnit;
 
 	
 }

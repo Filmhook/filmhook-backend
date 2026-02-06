@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.PropertyBookingType;
+import com.annular.filmhook.model.ShootingPropertyStatus;
 import com.annular.filmhook.model.SlotType;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.webmodel.BookingWithPropertyDTO;
@@ -20,6 +21,7 @@ import com.annular.filmhook.webmodel.ShootingLocationFileInputModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertySummaryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
@@ -76,9 +78,15 @@ public interface ShootingLocationService {
 	List<BookingWithPropertyDTO> getBookingHistoryByClientId(Integer clientId);
 	List<ShootingLocationPropertyDetailsDTO> getPropertiesSorted(Integer industryId,String sortBy, String order, String propertyType, String priceType);
 
-
-
-
+	Response approveProperty(Integer propertyId);
+	Response rejectProperty(Integer propertyId, String rejectionReason);
+	Response getPendingProperties(PropertyBookingType propertyType);
+	
+	List<ShootingLocationPropertySummaryDTO> getPropertySummaryByTypesStatusAndUserType(
+	        Integer typesId,
+	        ShootingPropertyStatus status,
+	        String userType);
+	ShootingLocationPropertyDetailsDTO getPropertyById(Integer propertyId);
 
 
 }

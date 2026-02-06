@@ -119,7 +119,50 @@ public class ChatServiceImpl implements ChatService {
 
 	public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
-	
+	//    @Override
+	//    public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
+	//        try {
+	//            logger.info("Save Message Method Start");
+	//
+	//            Integer userId = userDetails.userInfo().getId();
+	//            Optional<User> userOptional = userRepository.findById(userId);
+	//
+	//            if (userOptional.isPresent()) {
+	//                User user = userOptional.get();
+	//                Chat chat = Chat.builder()
+	//                        .message(chatWebModel.getMessage())
+	//                        .chatReceiverId(chatWebModel.getChatReceiverId())
+	//                        .userAccountName(user.getName())
+	//                        .chatSenderId(userId)
+	//                        .userType(user.getUserType())
+	//                        .timeStamp(new Date())
+	//                        .chatIsActive(true)
+	//                        .chatCreatedBy(userId)
+	//                        .senderRead(true)
+	//                        .receiverRead(false)
+	//                        .chatCreatedOn(new Date())
+	//                        .build();
+	//                chatRepository.save(chat);
+	//
+	//                if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
+	//                    // Saving the chat files in the media_files table
+	//                    FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	//                            .userId(chatWebModel.getUserId())
+	//                            .category(MediaFileCategory.Chat)
+	//                            .categoryRefId(chat.getChatId())
+	//                            .files(chatWebModel.getFiles())
+	//                            .build();
+	//                    mediaFilesService.saveMediaFiles(fileInputWebModel, userOptional.get());
+	//                }
+	//                return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
+	//            } else {
+	//                return ResponseEntity.notFound().build();
+	//            }
+	//        } catch (Exception e) {
+	//            logger.error("Error occurred while saving message -> {}", e.getMessage());
+	//            return ResponseEntity.internalServerError().build();
+	//        }
+	//    }
 	@Override
 	public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
 		try {
@@ -260,7 +303,7 @@ public class ChatServiceImpl implements ChatService {
 									.setAndroidConfig(androidConfig)
 									.putData("chatId", String.valueOf(chat.getChatId()))
 									.putData("type", "chat")
-									.putData("profilePic", userService.getProfilePicUrl())
+									.putData("profilePic", userService.getProfilePicUrl(userId))
 									.putData("senderId", String.valueOf(user.getUserId()))
 									.putData("senderName", senderName) 
 		                            .putData("allUnread", allUnread)   
@@ -382,7 +425,7 @@ public class ChatServiceImpl implements ChatService {
 			chatUserWebModel.setUserName(user.getName());
 			chatUserWebModel.setUserType(user.getUserType());
 			chatUserWebModel.setAdminReview(user.getAdminReview());
-			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl());
+			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
 			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
 
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
@@ -582,8 +625,18 @@ public class ChatServiceImpl implements ChatService {
 			}
 
 			// Adjust pagination to accumulate messages from page 1 to the current page
-			int end = Math.min(message.getPageNo() * message.getPageSize(), uniqueMessages.size());
-			List<Chat> paginatedMessages = uniqueMessages.subList(0, end);
+			int pageNo = message.getPageNo();
+			int pageSize = message.getPageSize();
+
+			int start = (pageNo - 1) * pageSize;
+
+			List<Chat> paginatedMessages = new ArrayList<>();
+
+			if (start < uniqueMessages.size()) {
+			    int end = Math.min(start + pageSize, uniqueMessages.size());
+			    paginatedMessages = uniqueMessages.subList(start, end);
+			}
+
 
 			// Construct the response structure
 			List<ChatWebModel> messagesWithFiles = new ArrayList<>();
@@ -599,8 +652,8 @@ public class ChatServiceImpl implements ChatService {
 				Optional<User> userDatas = userRepository.findById(receiverId);
 
 				// Fetch profile picture URLs
-				String senderProfilePicUrl = userService.getProfilePicUrl();
-				String receiverProfilePicUrl = userService.getRecieverProfilePicUrl(chat.getChatReceiverId());
+				String senderProfilePicUrl = userService.getProfilePicUrl(chat.getChatSenderId());
+				String receiverProfilePicUrl = userService.getProfilePicUrl(chat.getChatReceiverId());
 
 				if (userData.isPresent()) {
 					List<FileOutputWebModel> mediaFiles = mediaFilesService
@@ -927,7 +980,7 @@ public Response getAllSearchByChat(String searchKey) {
 			chatUserWebModel.setUserId(user.getUserId());
 			chatUserWebModel.setUserName(user.getName());
 			chatUserWebModel.setUserType(user.getUserType());
-			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl());
+			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
 			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
 			chatUserWebModel.setAdminReview(user.getAdminReview());
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
@@ -1012,8 +1065,8 @@ public Response getAllSearchByChat(String searchKey) {
 				InAppNotificationWebModel dto = new InAppNotificationWebModel();
 				dto.setInAppNotificationId(notification.getInAppNotificationId());
 				dto.setSenderId(notification.getSenderId());
-				dto.setProfilePicUrl(userService.getProfilePicUrl());
-				dto.setProfilePicUrl2(userService.getRecieverProfilePicUrl(notification.getSenderId2()));
+				dto.setProfilePicUrl(userService.getProfilePicUrl(notification.getSenderId()));
+				dto.setProfilePicUrl2(userService.getProfilePicUrl(notification.getSenderId2()));
 				dto.setReceiverId(notification.getReceiverId());
 				dto.setTitle(notification.getTitle());
 				dto.setMessage(notification.getMessage());

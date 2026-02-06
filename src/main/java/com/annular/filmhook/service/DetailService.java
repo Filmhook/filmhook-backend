@@ -62,5 +62,7 @@ public interface DetailService {
 	
 	Response getIndustrySignupDetails(Integer userId);
 
+	List<FileOutputWebModel> saveMoviePosts(IndustryFileInputWebModel inputFileData);
+
 
 }

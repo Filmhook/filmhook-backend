@@ -699,7 +699,7 @@ public class DetailServiceImpl implements DetailService {
         try {
             // Fetch platform details
             List<PlatformPermanentDetail> platformDetails = platformPermanentDetailRepository.findByUserId(userId);
-
+            Integer loginUserId = userDetails.userInfo().getId();
             List<Map<String, Object>> responseList = new ArrayList<>();
             Set<String> processedPlatforms = new HashSet<>(); // To store processed platform names
 
@@ -758,9 +758,15 @@ public class DetailServiceImpl implements DetailService {
                     platformMap.put("dailySalary", detail.getDailySalary());
 
                     // Fetch media files
-                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getMediaFilesByUserIdAndCategoryAndRefIdAndStatus(userId, MediaFileCategory.Project, detail.getPlatformPermanentId(), FileStatus.APPROVED);
+                   
+                    if (loginUserId == userId) {                   	
+                    	 List<FileOutputWebModel> outputWebModelList = mediaFilesService.getAllMediaFiles(userId, MediaFileCategory.Project, detail.getPlatformPermanentId());
+                         platformMap.put("outputWebModelList", outputWebModelList);
+                    }
+                    else {               
+                    List<FileOutputWebModel> outputWebModelList = mediaFilesService.getApprovedMediaFiles(userId, MediaFileCategory.Project, detail.getPlatformPermanentId());                
                     platformMap.put("outputWebModelList", outputWebModelList);
-
+                    }
                     // Fetch professions
                     List<Map<String, Object>> professionsList = new ArrayList<>();
                     for (FilmProfessionPermanentDetail professionDetail : detail.getProfessionDetails()) {
@@ -1170,7 +1176,10 @@ public class DetailServiceImpl implements DetailService {
 
         Country country = countryRepository.findById(dto.getCountryId())
                 .orElseThrow(() -> new RuntimeException("Country not found"));
-
+        
+        Platform platform = platformRepository.findById(dto.getPlatformId())
+        		.orElseThrow(() -> new RuntimeException("Platform not found"));
+        
         Industry industry = industryRepository.findById(dto.getIndustryId())
                 .orElseThrow(() -> new RuntimeException("Industry not found"));
 
@@ -1198,6 +1207,7 @@ public class DetailServiceImpl implements DetailService {
 
             entity.setFullName(dto.getFullName());
             entity.setCountry(country);
+            entity.setPlatform(platform);
             entity.setIndustry(industry);
             entity.setProfession(profession);
             entity.setSubProfession(subProfession);
@@ -1211,6 +1221,7 @@ public class DetailServiceImpl implements DetailService {
                     .user(user)
                     .fullName(dto.getFullName())
                     .country(country)
+                    .platform(platform)
                     .industry(industry)
                     .profession(profession)
                     .subProfession(subProfession)
@@ -1226,38 +1237,80 @@ public class DetailServiceImpl implements DetailService {
     }
 
 
+@Override
+public Response getIndustrySignupDetails(Integer userId) {
+
+    IndustrySignupDetails details = industrySignupDetailsRepository
+            .findByUser_UserId(userId)
+            .orElse(null);
+
+    // ✅ No signup started
+    if (details == null) {
+        return new Response(
+                1,
+                "Industry signup details not found",
+                null
+        );
+    }
+
+    Country country = details.getCountry();
+    Industry industry = details.getIndustry();
+    Platform platform = details.getPlatform();
+    FilmProfession profession = details.getProfession();
+    FilmSubProfession subProfession = details.getSubProfession();
+
+    IndustrySignupDetailsDTO dto = IndustrySignupDetailsDTO.builder()
+            .userId(details.getUser().getUserId())
+            .fullName(details.getFullName())
+            .yearsOfExperience(details.getYearsOfExperience())
+
+            .countryId(country != null ? country.getId() : null)
+            .countryName(country != null ? country.getName() : null)
+
+            .industryId(industry != null ? industry.getIndustryId() : null)
+            .industryName(industry != null ? industry.getIndustryName() : null)
+
+            .platformId(platform != null ? platform.getPlatformId() : null)
+            .platformName(platform != null ? platform.getPlatformName() : null)
+
+            .professionId(profession != null ? profession.getFilmProfessionId() : null)
+            .professionName(profession != null ? profession.getProfessionName() : null)
+
+            .subProfessionId(subProfession != null ? subProfession.getSubProfessionId() : null)
+            .subProfessionName(subProfession != null ? subProfession.getSubProfessionName() : null)
+
+            .verificationCode(details.getVerificationCode())
+            .verified(details.getVerified())
+            .build();
+
+    return new Response(
+            1,
+            "Industry signup details fetched successfully",
+            dto
+    );
+}
+
+
+
+ 
+ 
  @Override
- public Response getIndustrySignupDetails(Integer userId) {
-
-     IndustrySignupDetails details = industrySignupDetailsRepository
-             .findByUser_UserId(userId)
-             .orElseThrow(() -> new RuntimeException("Industry signup details not found"));
-
-     IndustrySignupDetailsDTO dto = IndustrySignupDetailsDTO.builder()
-             .userId(details.getUser().getUserId())
-             .fullName(details.getFullName())
-
-             .countryId(details.getCountry().getId())
-             .countryName(details.getCountry().getName())
-
-             .industryId(details.getIndustry().getIndustryId())
-             .industryName(details.getIndustry().getIndustryName())
-
-             .professionId(details.getProfession().getFilmProfessionId())
-             .professionName(details.getProfession().getProfessionName())
-
-             .subProfessionId(details.getSubProfession().getSubProfessionId())
-             .subProfessionName(details.getSubProfession().getSubProfessionName())
-
-             .yearsOfExperience(details.getYearsOfExperience())
-             .verificationCode(details.getVerificationCode())
-             .verified(details.getVerified())
-             .build();
-
-     return new Response(1, "Industry signup details fetched successfully", dto);
+ public List<FileOutputWebModel> saveMoviePosts(IndustryFileInputWebModel inputFileData) {
+     List<FileOutputWebModel> fileOutputWebModelList = null;
+     try {
+         Optional<User> userFromDB = userService.getUser(inputFileData.getUserId());
+         if (userFromDB.isPresent()) {
+             logger.info("User found: {}", userFromDB.get().getName());
+             fileOutputWebModelList = userMediaFileService.saveMoviePoster(inputFileData, userFromDB.get()); // Save
+             // media files in MySQL
+             fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
+         }
+     } catch (Exception e) {
+         logger.error("Error at saveIndustryUserFiles(): ", e);
+         e.printStackTrace();
+     }
+     return fileOutputWebModelList;
  }
-
-
 
 }
 

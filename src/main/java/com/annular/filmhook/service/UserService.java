@@ -34,8 +34,7 @@ public interface UserService {
 
     FileOutputWebModel saveProfilePhoto(UserWebModel userWebModel);
 
-    FileOutputWebModel getProfilePic();
-    FileOutputWebModel getRecieverProfilePic(UserWebModel userWebModel);
+    FileOutputWebModel getProfilePic(UserWebModel userWebModel);
 
     void deleteUserProfilePic(UserWebModel userWebModel);
 
@@ -61,8 +60,7 @@ public interface UserService {
 
     Optional<?> getUserId(UserWebModel userWebModel);
 
-    String getProfilePicUrl();
-    String getRecieverProfilePicUrl(Integer userId);
+    String getProfilePicUrl(Integer userId);
 
     List<UserWebModel> getUserByName(String name);
 

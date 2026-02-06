@@ -67,12 +67,7 @@ public class PostWebModel {
     private Integer promoteId;
     private Integer numberOfDays;
     private Integer amount;
-    private String contactNumber;
-    private String webSiteLink;
     private Integer selectOption;
-    private String visitPage;
-//    private String visitType;
-    // Add visitPageData field
     private String visitPageData;
     private Integer viewsCount;
     private String companyName;
@@ -81,6 +76,7 @@ public class PostWebModel {
     private List<Integer> deletedFileIds; // IDs of existing post files to delete
     private Boolean watchLater;
     private List<Integer> deletedTaggedUserIds;
+    private String adType;
 
 
 }

@@ -7,22 +7,24 @@ import lombok.Builder;
 @Data
 public class IndustrySignupDetailsDTO {
 
-	 private Integer userId;
-	    private String fullName;
+	private Integer userId;
+	private String fullName;
 
-	    private Integer countryId;
-	    private String countryName;
+	private Integer countryId;
+	private String countryName;
+	private Integer platformId;
+	private String platformName;
 
-	    private Integer industryId;
-	    private String industryName;
+	private Integer industryId;
+	private String industryName;
 
-	    private Integer professionId;
-	    private String professionName;
+	private Integer professionId;
+	private String professionName;
 
-	    private Integer subProfessionId;
-	    private String subProfessionName;
+	private Integer subProfessionId;
+	private String subProfessionName;
 
-	    private Integer yearsOfExperience;
-	    private String verificationCode;
-	    private Boolean verified;
+	private Integer yearsOfExperience;
+	private String verificationCode;
+	private Boolean verified;
 }

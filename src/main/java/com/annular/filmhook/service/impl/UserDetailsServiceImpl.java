@@ -15,6 +15,7 @@ import com.annular.filmhook.UserStatusConfig;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.security.UserDetailsImpl;
+import com.annular.filmhook.service.AdminService;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -25,6 +26,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     UserRepository userRepo;
+    
+    @Autowired
+    private AdminService adminService;
 
 //	JwtUtils jwtUtils;
 
@@ -61,6 +65,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             logger.info("User from DB --> {} -- {} -- {}", user.getUserId(), user.getEmail(), user.getUserType());
+            if ("Admin".equalsIgnoreCase(user.getUserType())
+                    || "Super Admin".equalsIgnoreCase(user.getUserType())) {
+
+            	adminService.updateAdminOnlineStatus(user.getEmail(), user.getUserType());
+                }
             return UserDetailsImpl.build(user);
         } else {
             throw new UsernameNotFoundException("User Not Found with email: " + email);

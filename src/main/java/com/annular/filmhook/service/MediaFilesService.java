@@ -43,4 +43,11 @@ public interface MediaFilesService {
              FileInputWebModel newFiles,
              boolean replaceMode);
 
+	List<FileOutputWebModel> getAllMediaFiles(Integer userId, MediaFileCategory project, Integer platformPermanentId);
+
+	List<FileOutputWebModel> getApprovedMediaFiles(Integer userId, MediaFileCategory project,
+			Integer platformPermanentId);
+
+	
+
 }

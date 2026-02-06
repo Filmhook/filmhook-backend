@@ -2,6 +2,7 @@ package com.annular.filmhook.converter;
 import org.springframework.stereotype.Component;
 import com.annular.filmhook.model.ShootingLocationPropertyDetails;
 import com.annular.filmhook.model.ShootingLocationSubcategorySelection;
+import com.annular.filmhook.model.ShootingPropertyStatus;
 import com.annular.filmhook.webmodel.BankDetailsDTO;
 import com.annular.filmhook.webmodel.BusinessInformationDTO;
 import com.annular.filmhook.webmodel.ShootingLocationCategoryDTO;
@@ -258,8 +259,7 @@ public class ShootingLocationConverter {
 	            .crewAccidentLiabilityDescription(dto.getCrewAccidentLiabilityDescription())
 	            .additionalChargesForOverTime(dto.getAdditionalChargesForOverTime())
 	            .shootingHeldDescription(dto.getShootingHeldDescription())
-
-	            .status(true)
+	            .status(ShootingPropertyStatus.PENDING)
 	            .build();
 
 	    return e;

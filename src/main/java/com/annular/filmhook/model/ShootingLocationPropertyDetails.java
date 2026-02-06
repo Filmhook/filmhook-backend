@@ -8,6 +8,8 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -118,9 +120,11 @@ public class ShootingLocationPropertyDetails {
 
     @CreationTimestamp
     private LocalDateTime updatedOn;
-    
-	private Boolean status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 30)
+    private ShootingPropertyStatus status;
+    
 	@OneToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "bank_details_id")
 	private ShootingLocationOwnerBankDetails bankDetails;
@@ -203,6 +207,10 @@ public class ShootingLocationPropertyDetails {
 	
 	@Column(name = "property_code", unique = true, nullable = false, length = 12)
 	private String propertyCode;
+	
+	private Integer approvedBy;       
+	private LocalDateTime approvedOn;
 
+	private String rejectionReason;
 
 }
