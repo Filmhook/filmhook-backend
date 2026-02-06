@@ -42,6 +42,10 @@ public class VisitePageCategory {
 	    
 	    @Column(name = "visitType")
 	    private String visitType;
+	    
+	    @Column(name = "description", columnDefinition = "TEXT")
+	    private String description;
+	    
 
 	    @Column(name = "created_by")
 	    private Integer createdBy;

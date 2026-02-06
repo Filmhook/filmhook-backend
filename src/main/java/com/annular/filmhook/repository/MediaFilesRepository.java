@@ -43,6 +43,17 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 	                                                                        @Param("category") MediaFileCategory category,
 	                                                                        @Param("refId") Integer refId,
 	                                                                        @Param("status") FileStatus status);
+	  
+	  @Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :category AND m.categoryRefId = :refId AND m.fileStatus = com.annular.filmhook.model.FileStatus.APPROVED")
+	  List<MediaFiles> getApprovedMediaFiles(@Param("userId") Integer userId,
+	                                         @Param("category") MediaFileCategory category,
+	                                         @Param("refId") Integer refId);
+	  
+	  @Query("SELECT m FROM MediaFiles m WHERE m.user.id = :userId AND m.category = :category AND m.categoryRefId = :refId")
+	  List<MediaFiles> getAllMediaFiles(@Param("userId") Integer userId,
+	                                    @Param("category") MediaFileCategory category,
+	                                    @Param("refId") Integer refId);
+	  
 	  List<MediaFiles> findByCategoryAndFileStatus(String category, FileStatus fileStatus);
 	
 	  List<MediaFiles> findByUser_UserIdAndCategoryAndFileStatus(
@@ -69,6 +80,10 @@ public interface MediaFilesRepository extends JpaRepository<MediaFiles, Integer>
 	  
 	  @Query("SELECT m FROM MediaFiles m WHERE m.category = :category AND m.id IN (:fileIds) AND m.status = true")
 	  List<MediaFiles> getMediaFilesByCategoryAndFileIds(MediaFileCategory category, List<Integer> fileIds);
+	 //===============================
+	  
+	  @Query("SELECT m FROM MediaFiles m WHERE m.categoryRefId = :propertyId")
+	  List<MediaFiles> findAllPropertyMedia(@Param("propertyId") Integer propertyId);
 
 
 }

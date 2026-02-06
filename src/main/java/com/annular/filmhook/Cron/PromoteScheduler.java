@@ -1,10 +1,12 @@
 package com.annular.filmhook.Cron;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.PromoteAd;
@@ -21,26 +23,40 @@ public class PromoteScheduler {
     private final PromoteAdRepository promoteAdRepository;
     private final PostsRepository postsRepository;
 
-    @Scheduled(cron = "0 0 * * * *") // every 1 hour
+    @Transactional
+    @Scheduled(cron = "0 0 * * * *")  // every 1 hour
     public void autoCompletePromotions() {
 
         Date now = new Date();
 
-        List<PromoteAd> running = promoteAdRepository.findByStatus(PromoteStatus.Running);
+        // 1) Load promote + post together in one query
+        List<PromoteAd> runningPromotes =
+                promoteAdRepository.findRunningPromotesWithPost(PromoteStatus.Running);
 
-        for (PromoteAd promote : running) {
+        if (runningPromotes.isEmpty()) return;
+
+        // Lists for batch updates
+        List<PromoteAd> toUpdatePromotes = new ArrayList<>();
+        List<Posts> toUpdatePosts = new ArrayList<>();
+
+        for (PromoteAd promote : runningPromotes) {
 
             if (promote.getEndDate() != null && promote.getEndDate().before(now)) {
 
                 promote.setStatus(PromoteStatus.Completed);
 
-                // turn off promoted flag in posts table
                 Posts post = promote.getPost();
                 post.setPromoteFlag(false);
-                postsRepository.save(post);
 
-                promoteAdRepository.save(promote);
+                toUpdatePromotes.add(promote);
+                toUpdatePosts.add(post);
             }
         }
+
+        // 2) Batch update only if needed
+        if (!toUpdatePosts.isEmpty()) postsRepository.saveAll(toUpdatePosts);
+        if (!toUpdatePromotes.isEmpty()) promoteAdRepository.saveAll(toUpdatePromotes);
+
+        System.out.println("Scheduler updated " + toUpdatePromotes.size() + " promotions.");
     }
 }

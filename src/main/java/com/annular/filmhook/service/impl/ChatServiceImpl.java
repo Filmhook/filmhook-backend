@@ -625,8 +625,18 @@ public class ChatServiceImpl implements ChatService {
 			}
 
 			// Adjust pagination to accumulate messages from page 1 to the current page
-			int end = Math.min(message.getPageNo() * message.getPageSize(), uniqueMessages.size());
-			List<Chat> paginatedMessages = uniqueMessages.subList(0, end);
+			int pageNo = message.getPageNo();
+			int pageSize = message.getPageSize();
+
+			int start = (pageNo - 1) * pageSize;
+
+			List<Chat> paginatedMessages = new ArrayList<>();
+
+			if (start < uniqueMessages.size()) {
+			    int end = Math.min(start + pageSize, uniqueMessages.size());
+			    paginatedMessages = uniqueMessages.subList(start, end);
+			}
+
 
 			// Construct the response structure
 			List<ChatWebModel> messagesWithFiles = new ArrayList<>();
