@@ -763,7 +763,7 @@ public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList)
                 companyName = promoteAd.getBusinessName();
                 brandName = promoteAd.getBusinessType();
                 visitType = promoteAd.getVisitType() != null
-                        ? promoteAd.getVisitType().getData()
+                        ? promoteAd.getVisitType().getTitle()
                         : null;
                 adType = promoteAd.getAdType();
 

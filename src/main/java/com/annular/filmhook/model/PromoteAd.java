@@ -56,8 +56,10 @@ public class PromoteAd {
     private String businessAddress; // Document S3 URL
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "visit_type_id", referencedColumnName = "visitPageId")
-    private VisitPage visitType;
+    @JoinColumn(name = "visit_type_id", referencedColumnName = "detail_id")
+    private VisitPageDetails visitType;
+    
+    
 
     @Column(name = "budget")
     private Double budget;

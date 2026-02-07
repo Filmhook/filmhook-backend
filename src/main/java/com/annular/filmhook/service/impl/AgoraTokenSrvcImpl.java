@@ -9,7 +9,9 @@ import com.annular.filmhook.util.Utility;
 
 import io.agora.chat.ChatTokenBuilder2;
 import io.agora.media.RtcTokenBuilder;
+import io.agora.media.RtcTokenBuilder2;
 import io.agora.rtm.RtmTokenBuilder;
+import io.agora.rtm.RtmTokenBuilder2;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,100 +24,113 @@ import java.util.Optional;
 @Service
 public class AgoraTokenSrvcImpl implements AgoraTokenService {
 
+    @Autowired
+    private AgoraConfig config;
+
+    @Autowired
+    private UserRepository userRepository;
+
     private static final Logger logger = LoggerFactory.getLogger(AgoraTokenSrvcImpl.class);
 
-    @Autowired
-    AgoraConfig agoraConfig;
 
-    @Autowired
-    UserRepository userRepository;
-
+    /* ---------------------------------------------------
+     * RTC TOKEN (AUDIO / VIDEO CALL)
+     * --------------------------------------------------- */
     @Override
-    public String getAgoraRTCToken(AgoraWebModel agoraWebModel) {
+    public String getRTCToken(AgoraWebModel model) {
         try {
-            RtcTokenBuilder rtcTokenBuilder = new RtcTokenBuilder();
 
-            String channelName = Utility.isNullOrBlankWithTrim(agoraWebModel.getChannelName()) ? agoraConfig.getChannelName() : agoraWebModel.getChannelName();
-            logger.info("channelName {}", agoraWebModel.getChannelName());
-            int expireTime = agoraWebModel.getExpirationTimeInSeconds() == 0 ? agoraConfig.getExpirationTimeInSeconds() : agoraWebModel.getExpirationTimeInSeconds();
-            logger.info("expireTime {}", expireTime);
-            RtcTokenBuilder.Role role = this.getRtcTokenBuilderRole(agoraWebModel.getRole());
-            logger.info("role {}", role);
-            int uid = agoraWebModel.getUserId() == 0 ? agoraConfig.getUid() : agoraWebModel.getUserId();
-            logger.info("userId {}", uid);
-            if (channelName == null) return "Channel ID cannot be blank"; // check for null channelName
-            int timestamp = (int) (System.currentTimeMillis() / 1000 + expireTime);
-            logger.info("timestamp {}", timestamp);
-            return rtcTokenBuilder.buildTokenWithUid(
-                    agoraConfig.getAppId(),
-                    agoraConfig.getAppCertificate(),
-                    channelName,
+            if (model.getChannelName() == null || model.getChannelName().isEmpty())
+                return "Channel name cannot be blank";
+
+            int uid = model.getUserId();
+            if (uid <= 0) return "Invalid userId";
+
+            int expire = model.getExpirationTimeInSeconds() == 0
+                    ? config.getExpireSeconds()
+                    : model.getExpirationTimeInSeconds();
+
+            int expireTs = (int) (System.currentTimeMillis() / 1000 + expire);
+
+            RtcTokenBuilder2 builder = new RtcTokenBuilder2();
+
+            return builder.buildTokenWithUid(
+                    config.getAppId(),
+                    config.getAppCertificate(),
+                    model.getChannelName(),
                     uid,
-                    role,
-                    timestamp
+                    RtcTokenBuilder2.Role.ROLE_PUBLISHER,   // ✔ RTC uses roles
+                    expireTs,
+                    expireTs
             );
+
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("RTC token failed: {}", e.getMessage());
             return null;
         }
     }
 
-    private RtcTokenBuilder.Role getRtcTokenBuilderRole(int role) {
-        RtcTokenBuilder.Role responseRole = null;
-        if (role == 0) {
-            responseRole = RtcTokenBuilder.Role.Role_Attendee;
-        } else if (role == 1) {
-            responseRole = RtcTokenBuilder.Role.Role_Publisher;
-        } else if (role == 2) {
-            responseRole = RtcTokenBuilder.Role.Role_Subscriber;
-        }
-        return responseRole;
-    }
 
+    /* ---------------------------------------------------
+     * RTM TOKEN (Real-time Messaging)
+     * --------------------------------------------------- */
     @Override
-    public String getAgoraRTMToken(AgoraWebModel agoraWebModel) {
+    public String getRTMToken(AgoraWebModel model) {
         try {
-            if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
-            RtmTokenBuilder token = new RtmTokenBuilder();
-            return token.buildToken(
-                    agoraConfig.getAppId(),
-                    agoraConfig.getAppCertificate(),
-                    String.valueOf(agoraWebModel.getUserId()),
-                    RtmTokenBuilder.Role.Rtm_User,
-                    agoraConfig.getExpirationTimeInSeconds()
+            if (model.getUserId() == null)
+                return "User ID cannot be blank";
+
+            RtmTokenBuilder2 builder = new RtmTokenBuilder2();
+
+            int expireTs = (int) (System.currentTimeMillis() / 1000 + config.getExpireSeconds());
+
+            return builder.buildToken(
+                    config.getAppId(),
+                    config.getAppCertificate(),
+                    String.valueOf(model.getUserId()),
+                    expireTs
             );
+
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("RTM token error: {}", e.getMessage());
             return null;
         }
     }
 
+
+    /* ---------------------------------------------------
+     * CHAT TOKEN (Agora Chat)
+     * --------------------------------------------------- */
     @Override
-    public String getAgoraChatToken(AgoraWebModel agoraWebModel) {
+    public String getChatToken(AgoraWebModel model) {
         try {
-            if (agoraWebModel.getUserId() == null) return "User ID cannot be blank";
-            Optional<User> user = userRepository.findById(agoraWebModel.getUserId());
-            // User dbUser = null;
-            if (user.isPresent()) {
-                User dbUser = user.get();
-                ChatTokenBuilder2 builder = new ChatTokenBuilder2();
-                String token = builder.buildUserToken(
-                        agoraConfig.getAppId(),
-                        agoraConfig.getAppCertificate(),
-                        String.valueOf(agoraWebModel.getUserId()),
-                        agoraWebModel.getExpirationTimeInSeconds()
-                );
-                // Save the token to the user table
-                dbUser.setTempToken(token);
-                userRepository.saveAndFlush(dbUser);
-                return token;
+            if (model.getUserId() == null)
+                return "User ID cannot be blank";
 
-            }
+            Optional<User> opt = userRepository.findById(model.getUserId());
+            if (opt.isEmpty()) return "Invalid user";
+
+            User user = opt.get();
+
+            ChatTokenBuilder2 builder = new ChatTokenBuilder2();
+
+            int expireTs = (int) (System.currentTimeMillis() / 1000 + config.getExpireSeconds());
+
+            String token = builder.buildUserToken(
+                    config.getAppId(),
+                    config.getAppCertificate(),
+                    String.valueOf(user.getUserId()),
+                    expireTs
+            );
+
+            user.setTempToken(token);
+            userRepository.save(user);
+
+            return token;
+
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Chat token failed: {}", e.getMessage());
             return null;
         }
-        return null;
     }
-
 }

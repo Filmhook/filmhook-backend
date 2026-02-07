@@ -205,7 +205,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 		// SET VISIT TYPE
 		// ==================================================
 		if (model.getVisitTypeId() != null) {
-			VisitPage visitPage = visitPageRepository.findById(model.getVisitTypeId())
+			VisitPageDetails visitPage = visitPageDetailsRepository.findById(model.getVisitTypeId())
 					.orElseThrow(() -> new RuntimeException("Visit Type not found"));
 			promote.setVisitType(visitPage);
 		}

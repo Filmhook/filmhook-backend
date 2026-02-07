@@ -4,10 +4,10 @@ import com.annular.filmhook.webmodel.AgoraWebModel;
 
 public interface AgoraTokenService {
 
-    String getAgoraRTCToken(AgoraWebModel agoraWebModel);
+    String getRTCToken(AgoraWebModel model);
 
-    String getAgoraRTMToken(AgoraWebModel agoraWebModel);
+    String getRTMToken(AgoraWebModel model);
 
-    String getAgoraChatToken(AgoraWebModel agoraWebModel);
+    String getChatToken(AgoraWebModel model);
 
 }
