@@ -21,8 +21,6 @@ public class AgoraConfig {
     @Value("${annular.app.agora.expire.second}")
     private Integer expireSeconds;
 
-    @Value("${annular.app.agora.appKey}")
-    private String appKey;
 
     @Value("${annular.app.agora.domain}")
     private String domain;
