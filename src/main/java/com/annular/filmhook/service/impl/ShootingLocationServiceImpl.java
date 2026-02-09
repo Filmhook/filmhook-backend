@@ -3864,11 +3864,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationVerificationVideo, propertyId)
 				.stream()
 				.map(FileOutputWebModel::getFilePath)
-				.collect(Collectors.toList());
+				.collect(Collectors.toList());		
+
 
 		dto.setImageUrls(imageUrls);
 		dto.setGovernmentIdUrls(govtIdUrls);
 		dto.setVerificationVideo(verificationVideo);
+	//	dto.setSelfOwnedPropertyDocument(selfOwnerPropertyDoc);
+		
 
 
 	    /* ======================================================
@@ -3927,7 +3930,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	    /* ======================================================
 	     * 6) ROLE-BASED DATA HIDING
 	     * ====================================================== */
-	    if (!isAdmin && !isOwner) {
+	    if (!isAdmin || !isOwner) {
 	        dto.setBankDetailsDTO(null);
 	        dto.setGovernmentIdUrls(null);
 	        dto.setSelfOwnedPropertyDocument(null);

@@ -685,7 +685,7 @@ public class ShootingLocationController {
 	    }
 	}
 	
-	@GetMapping("/property/{propertyId}")
+	@GetMapping("/admin/property/{propertyId}")
 	public ResponseEntity<?> getPropertyById(@PathVariable Integer propertyId) {
 	    ShootingLocationPropertyDetailsDTO dto = service.getPropertyById(propertyId);
 
