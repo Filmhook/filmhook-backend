@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.CallService;
+import com.annular.filmhook.webmodel.AgoraWebModel;
 import com.annular.filmhook.webmodel.EndCallRequest;
 import com.annular.filmhook.webmodel.StartCallRequest;
 
@@ -26,5 +27,11 @@ public class CallController {
     @PostMapping("/end")
     public Response end(@RequestBody EndCallRequest request) {
         return callService.endCall(request);
+    }
+    
+    @PostMapping("/get-rtc")
+    public Response getRtc(@RequestBody AgoraWebModel model) {
+      
+        return callService.getRtcTokenByChannel(model.getChannelName());
     }
 }

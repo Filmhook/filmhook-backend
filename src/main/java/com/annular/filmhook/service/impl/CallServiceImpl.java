@@ -116,4 +116,15 @@ public class CallServiceImpl implements CallService {
 
 	        return new Response(1, "Call updated: " + req.getStatus(), null);
 	    }
+	    
+	    @Override
+	    public Response getRtcTokenByChannel(String channelName) {
+	        CallLog callLog = callRepo.findByChannelName(channelName);
+
+	        if (callLog == null) {
+	            return new Response(-1, "Invalid channel name", null);
+	        }
+
+	        return new Response(1, "Success", callLog.getRtcToken());
+	    }
 }

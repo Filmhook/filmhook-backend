@@ -11,4 +11,6 @@ public interface CallService {
 
 	Response endCall(EndCallRequest req);
 
+	Response getRtcTokenByChannel(String channelName);
+
 }
