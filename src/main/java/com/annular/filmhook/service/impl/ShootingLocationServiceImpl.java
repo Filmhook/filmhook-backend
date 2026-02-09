@@ -3843,7 +3843,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	    Integer userId   = userDetails.userInfo().getId();
 	    String userType  = userDetails.userInfo().getUserType();
 	    boolean isOwner  = entity.getUser().getUserId().equals(userId);
-	    boolean isAdmin  = userType.equals("Admin");
+	   
 
 	    /* ======================================================
 	     * 1) LOAD MEDIA (ONE QUERY)
@@ -3926,20 +3926,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	    dto.setAdminRatedOn(entity.getAdminRatedOn());
 	    dto.setAdminRatedBy(entity.getAdminRatedBy());
 
-
-	    /* ======================================================
-	     * 6) ROLE-BASED DATA HIDING
-	     * ====================================================== */
-	    if (!isAdmin || !isOwner) {
-	        dto.setBankDetailsDTO(null);
-	        dto.setGovernmentIdUrls(null);
-	        dto.setSelfOwnedPropertyDocument(null);
-	        dto.setMortgagePropertyDocument(null);
-	        dto.setOwnerPermittedDocument(null);
-	        dto.setCrewAccidentDocument(null);
-	        dto.setPropertyDamageDocument(null);
-	        dto.setIdNumber(null);
-	    }
 
 	    return dto;
 	}
