@@ -48,6 +48,6 @@ public interface MediaFilesService {
 	List<FileOutputWebModel> getApprovedMediaFiles(Integer userId, MediaFileCategory project,
 			Integer platformPermanentId);
 
-	
-
+	List<FileOutputWebModel> saveMediaFilesShootingProperty(FileInputWebModel fileInputWebModel, User user);
+	List<FileOutputWebModel> getAllMediaFilesByCategoryAndRefId(MediaFileCategory category, Integer refId) ;
 }

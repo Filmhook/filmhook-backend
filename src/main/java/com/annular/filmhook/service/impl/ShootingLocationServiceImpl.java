@@ -102,6 +102,7 @@ import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategorySelectionDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
+import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
@@ -419,7 +420,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					propertyDetailsRepository.saveAndFlush(property);
 
 			// 8. Save Business Info
-
 			if (dto.getBusinessInformation() != null) {
 				ShootingLocationBusinessInformation business = ShootingLocationBusinessInformation.builder()
 						.propertyDetails(savedProperty)
@@ -466,7 +466,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 							.files(inputFile.getImages())
 							.build();
 
-					mediaFilesService.saveMediaFiles(imagesInput, user);
+					mediaFilesService.saveMediaFilesShootingProperty(imagesInput, user);
 				}
 
 				// government ID
@@ -618,7 +618,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.map(FileOutputWebModel::getFilePath)
 						.collect(Collectors.toList());
 
-				dto.setImageUrls(imageUrls);
+//				dto.setImageUrls(imageUrls);
 				dto.setGovernmentIdUrls(govtIdUrls);
 				dto.setVerificationVideo(verificationVideo);
 
@@ -701,14 +701,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				dto.setLikeCount(likeRepository.countLikesByPropertyId(propertyId));
 
 				// 4️⃣ Media files
-				dto.setImageUrls(
-						mediaFilesService
-						.getMediaFilesByCategoryAndRefId(
-								MediaFileCategory.shootingLocationImage, propertyId)
-						.stream()
-						.map(FileOutputWebModel::getFilePath)
-						.collect(Collectors.toList())
-						);
+//				dto.setImageUrls(
+//						mediaFilesService
+//						.getMediaFilesByCategoryAndRefId(
+//								MediaFileCategory.shootingLocationImage, propertyId)
+//						.stream()
+//						.map(FileOutputWebModel::getFilePath)
+//						.collect(Collectors.toList())
+//						);
 
 				dto.setGovernmentIdUrls(
 						mediaFilesService
@@ -816,7 +816,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.map(FileOutputWebModel::getFilePath)
 						.collect(Collectors.toList());
 
-				dto.setImageUrls(imageUrls);
+//				dto.setImageUrls(imageUrls);
 				dto.setGovernmentIdUrls(govtIdUrls);
 				dto.setVerificationVideo(verificationVedio);
 
@@ -959,7 +959,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationVerificationVideo, p.getId())
 						.stream().map(FileOutputWebModel::getFilePath).collect(Collectors.toList());
 
-				dto.setImageUrls(imageUrls);
+//				dto.setImageUrls(imageUrls);
 				dto.setGovernmentIdUrls(govtIdUrls);
 				dto.setVerificationVideo(verificationVideo);
 
@@ -1649,14 +1649,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						);
 
 				// D) Media files
-				dto.setImageUrls(
-						mediaFilesService
-						.getMediaFilesByCategoryAndRefId(
-								MediaFileCategory.shootingLocationImage, pid)
-						.stream()
-						.map(FileOutputWebModel::getFilePath)
-						.toList()
-						);
+//				dto.setImageUrls(
+//						mediaFilesService
+//						.getMediaFilesByCategoryAndRefId(
+//								MediaFileCategory.shootingLocationImage, pid)
+//						.stream()
+//						.map(FileOutputWebModel::getFilePath)
+//						.toList()
+//						);
 
 				dto.setGovernmentIdUrls(
 						mediaFilesService
@@ -3585,14 +3585,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			dto.setLikeCount(likeRepository.countLikesByPropertyId(p.getId()));
 
 			// ---------- Media ----------
-			dto.setImageUrls(
-					mediaFilesService
-					.getMediaFilesByCategoryAndRefId(
-							MediaFileCategory.shootingLocationImage, p.getId())
-					.stream()
-					.map(FileOutputWebModel::getFilePath)
-					.collect(Collectors.toList())
-					);
+//			dto.setImageUrls(
+//					mediaFilesService
+//					.getMediaFilesByCategoryAndRefId(
+//							MediaFileCategory.shootingLocationImage, p.getId())
+//					.stream()
+//					.map(FileOutputWebModel::getFilePath)
+//					.collect(Collectors.toList())
+//					);
 
 			dto.setGovernmentIdUrls(
 					mediaFilesService
@@ -3773,13 +3773,10 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					shootingLocationPropertyConverter.entityToDto(p);
 
 			// 🔹 Property images
-			List<String> imageUrls = mediaFilesService
+			List<FileOutputWebModel> imageUrls = mediaFilesService
 					.getMediaFilesByCategoryAndRefId(
-							MediaFileCategory.shootingLocationImage, p.getId())
-					.stream()
-					.map(FileOutputWebModel::getFilePath)
-					.collect(Collectors.toList());
-
+							MediaFileCategory.shootingLocationImage, p.getId());
+					
 			// 🔹 Government ID images
 			List<String> govtIdUrls = mediaFilesService
 					.getMediaFilesByCategoryAndRefId(
@@ -3848,11 +3845,10 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	    /* ======================================================
 	     * 1) LOAD MEDIA (ONE QUERY)
 	     * ====================================================== */
-	    List<String> imageUrls = mediaFilesService
-				.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, propertyId)
-				.stream()
-				.map(FileOutputWebModel::getFilePath)
-				.collect(Collectors.toList());
+	 
+	    
+	    List<FileOutputWebModel> imageUrls = mediaFilesService
+				.getAllMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, propertyId);
 
 		List<String> govtIdUrls = mediaFilesService
 				.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingGovermentId, propertyId)
@@ -3931,6 +3927,41 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 
 
+@Override
+	@Transactional
+	public Response reviewShootingLocationMedia(
+        ShootingPropertyMediaRequest request
+) {
+	
+	Integer userId = userDetails.userInfo().getId();
+	MediaFiles media = mediaFilesRepository.findById(request.getMediaId())
+            .orElse(null);
+    if (media == null) {
+        return new Response(-1, "Media not found", null);
+    }
+
+    // ❌ Reject case → reason mandatory
+    if (Boolean.FALSE.equals(request.getApproved())) {
+        if (request.getReason() == null || request.getReason().isBlank()) {
+            return new Response(-1, "Rejection reason is required", null);
+        }
+
+        media.setStatus(false);
+        media.setDescription(request.getReason());
+    }
+    // ✅ Approve case
+    else {
+        media.setStatus(true);
+        media.setDescription(null);
+    }
+
+    media.setUpdatedBy(userId);
+    media.setUpdatedOn(new Date());
+
+    mediaFilesRepository.save(media);
+
+    return new Response(1, "Media review updated successfully", null);
+}
 
 
 
