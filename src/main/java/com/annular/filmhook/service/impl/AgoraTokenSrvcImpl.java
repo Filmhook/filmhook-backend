@@ -59,7 +59,7 @@ public class AgoraTokenSrvcImpl implements AgoraTokenService {
                     config.getAppCertificate(),
                     model.getChannelName(),
                     uid,
-                    RtcTokenBuilder2.Role.ROLE_PUBLISHER,   // ✔ RTC uses roles
+                    RtcTokenBuilder2.Role.ROLE_SUBSCRIBER,   // ✔ RTC uses roles
                     expireTs,
                     expireTs
             );
