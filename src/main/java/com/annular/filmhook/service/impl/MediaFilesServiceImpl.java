@@ -416,7 +416,8 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 			fileOutputWebModel.setThumbnailPath(mediaFile.getThumbnailPath());
 			fileOutputWebModel.setFileStatus(mediaFile.getFileStatus());
 			fileOutputWebModel.setDuration(mediaFile.getDuration()); 
-			fileOutputWebModel.setStatus(mediaFile.getStatus());
+			fileOutputWebModel.setStatus(mediaFile.isStatus());
+
 			// Handle category type STORY
 			if (mediaFile.getCategory() == MediaFileCategory.Stories) {
 				Story story = storiesrRepository.findById(mediaFile.getCategoryRefId()).orElseThrow(
@@ -487,7 +488,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		FileOutputWebModel output = null;
 		try {
 			Optional<MediaFiles> mediaFileOpt = mediaFilesRepository.findById(id);
-			if (mediaFileOpt.isPresent() && mediaFileOpt.get().getStatus()) {
+			if (mediaFileOpt.isPresent() && mediaFileOpt.get().isStatus()) {
 				output = transformData(mediaFileOpt.get());
 			} else {
 				logger.warn("Media file not found or inactive for id: {}", id);

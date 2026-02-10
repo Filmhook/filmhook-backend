@@ -3928,28 +3928,35 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 @Override
-	@Transactional
-	public Response reviewShootingLocationMedia(
-        ShootingPropertyMediaRequest request
-) {
-	
-	Integer userId = userDetails.userInfo().getId();
-	MediaFiles media = mediaFilesRepository.findById(request.getMediaId())
+@Transactional
+public Response reviewShootingLocationMedia(ShootingPropertyMediaRequest request) {
+
+    Integer userId = userDetails.userInfo().getId();
+
+    MediaFiles media = mediaFilesRepository.findById(request.getMediaId())
             .orElse(null);
+
     if (media == null) {
         return new Response(-1, "Media not found", null);
     }
 
-    // ❌ Reject case → reason mandatory
-    if (Boolean.FALSE.equals(request.getApproved())) {
+    // 🚨 Mandatory flag check (VERY IMPORTANT)
+    if (request.getApproved() == null) {
+        return new Response(-1, "Approved flag is required", null);
+    }
+
+    // ❌ Reject
+    if (!request.getApproved()) {
+
         if (request.getReason() == null || request.getReason().isBlank()) {
             return new Response(-1, "Rejection reason is required", null);
         }
 
         media.setStatus(false);
         media.setDescription(request.getReason());
+
     }
-    // ✅ Approve case
+    // ✅ Approve
     else {
         media.setStatus(true);
         media.setDescription(null);
