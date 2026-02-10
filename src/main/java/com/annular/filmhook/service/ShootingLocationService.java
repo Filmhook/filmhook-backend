@@ -25,6 +25,7 @@ import com.annular.filmhook.webmodel.ShootingLocationPropertySummaryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
+import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
 
 
 public interface ShootingLocationService {
@@ -88,5 +89,7 @@ public interface ShootingLocationService {
 	        String userType);
 	ShootingLocationPropertyDetailsDTO getPropertyById(Integer propertyId);
 
-
+	Response reviewShootingLocationMedia(
+	        ShootingPropertyMediaRequest request
+	);
 }

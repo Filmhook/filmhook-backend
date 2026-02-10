@@ -120,7 +120,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private List<PropertyAvailabilityDTO> availabilityDates;
 	private String typeLocation;
 	private String locationLink;
-	private List<String> imageUrls;
+	private   List<FileOutputWebModel> imageUrls;
 	private String idNumber;
 	private List<String> governmentIdUrls;
 	private List<String> verificationVideo;

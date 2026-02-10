@@ -3,6 +3,8 @@ package com.annular.filmhook.controller;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.Valid;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +22,9 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.webmodel.AdminListResponse;
+import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 @RestController
@@ -37,6 +41,9 @@ public class AdminController {
 	
 	@Autowired
 	UserDetails userDetails;
+	
+	@Autowired
+	ShootingLocationService shootingService;
 
 	@PostMapping("adminRegister")
 	public ResponseEntity<?> userRegister(@RequestBody UserWebModel userWebModel) {
@@ -372,6 +379,13 @@ public class AdminController {
     public Response viewers(@RequestParam Integer userId, @RequestParam String category) {
     return new Response(1, "Success",
     		adminService.getViewers(userId, category));
+    }
+    
+    @PostMapping("/approveOrRejectImage")
+    public Response reviewMedia(
+            @Valid @RequestBody ShootingPropertyMediaRequest request
+    ) {
+        return shootingService.reviewShootingLocationMedia(request);
     }
 
 }

@@ -354,6 +354,22 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		}
 		return outputWebModelList;
 	}
+	
+	@Override
+	public List<FileOutputWebModel> getAllMediaFilesByCategoryAndRefId(MediaFileCategory category, Integer refId) {
+		List<FileOutputWebModel> outputWebModelList = new ArrayList<>();
+		try {
+			List<MediaFiles> mediaFiles = mediaFilesRepository.getAllMediaFilesByCategoryAndRefId(category, refId);
+			
+			if (!Utility.isNullOrEmptyList(mediaFiles)) {
+				outputWebModelList = mediaFiles.stream().map(this::transformData).collect(Collectors.toList());
+			}
+		} catch (Exception e) {
+			logger.error("Error at getMediaFilesByCategoryAndRefId() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return outputWebModelList;
+	}
 
 	@Override
 	public List<FileOutputWebModel> getMediaFilesByUserIdAndCategoryAndRefId(Integer userId, MediaFileCategory category,
@@ -400,6 +416,8 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 			fileOutputWebModel.setThumbnailPath(mediaFile.getThumbnailPath());
 			fileOutputWebModel.setFileStatus(mediaFile.getFileStatus());
 			fileOutputWebModel.setDuration(mediaFile.getDuration()); 
+			fileOutputWebModel.setStatus(mediaFile.isStatus());
+
 			// Handle category type STORY
 			if (mediaFile.getCategory() == MediaFileCategory.Stories) {
 				Story story = storiesrRepository.findById(mediaFile.getCategoryRefId()).orElseThrow(
@@ -470,7 +488,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 		FileOutputWebModel output = null;
 		try {
 			Optional<MediaFiles> mediaFileOpt = mediaFilesRepository.findById(id);
-			if (mediaFileOpt.isPresent() && mediaFileOpt.get().getStatus()) {
+			if (mediaFileOpt.isPresent() && mediaFileOpt.get().isStatus()) {
 				output = transformData(mediaFileOpt.get());
 			} else {
 				logger.warn("Media file not found or inactive for id: {}", id);
@@ -603,6 +621,179 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 	    }
 	}
 
+	@Override
+	public List<FileOutputWebModel> saveMediaFilesShootingProperty(FileInputWebModel fileInputWebModel, User user) {
+		List<FileOutputWebModel> fileOutputWebModelList = new ArrayList<>();
+		try {
+			Map<MediaFiles, MultipartFile> mediaFilesMap = this.prepareMultipleMediaFilesDataShootingPropertyImages(fileInputWebModel, user);
+			logger.info("Saved MediaFiles rows list size :- [{}]", mediaFilesMap.size());
 
+			mediaFilesMap.forEach((mediaFile, inputFile) -> {
+				mediaFilesRepository.saveAndFlush(mediaFile);
+
+				File originalFile = null;
+				File convertedFile = null;
+				File thumbnailFile = null;
+
+				try {
+					String originalExtension = mediaFile.getFileType();
+					originalFile = File.createTempFile(mediaFile.getFileId(), originalExtension);
+					FileUtil.convertMultiPartFileToFile(inputFile, originalFile);
+
+					String contentType = inputFile.getContentType();
+					String s3FileExtension;
+
+					if (contentType != null && contentType.startsWith("image/")) {
+						convertedFile = File.createTempFile("converted_", ".webp");
+						MediaConversionUtil.convertToWebP(originalFile.getAbsolutePath(),
+								convertedFile.getAbsolutePath());
+						s3FileExtension = ".webp";
+
+					} else if (contentType != null && contentType.startsWith("video/")) {
+						convertedFile = File.createTempFile("converted_", ".webm");
+						MediaConversionUtil.convertToWebM(originalFile.getAbsolutePath(),
+								convertedFile.getAbsolutePath());
+						
+						// ✅ GET VIDEO DURATION (seconds)
+						Long duration = MediaConversionUtil.getVideoDurationInSeconds(
+						        convertedFile.getAbsolutePath()
+						);
+
+						// ✅ SAVE DURATION
+						mediaFile.setDuration(duration);
+						s3FileExtension = ".webm";
+						// ✅ Generate thumbnail from video
+
+					//		String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+						String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
+						String ffmpegPath = "/usr/bin/ffmpeg";
+						String inputPath = convertedFile.getAbsolutePath();
+						thumbnailFile = File.createTempFile("thumb_", ".webp");
+						String thumbPath = thumbnailFile.getAbsolutePath();
+
+						List<String> command = Arrays.asList(
+								ffmpegPath, "-y",
+								"-i", inputPath,
+								"-i", playIconPath, // PNG play icon
+								"-ss", "00:00:01.000",
+								"-vframes", "1",
+								"-filter_complex", "[1:v]scale=200:200[icon];[0:v][icon]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2",
+
+								thumbPath
+								);
+
+						ProcessBuilder pb = new ProcessBuilder(command);
+						pb.redirectErrorStream(true); // Combine stdout and stderr
+						Process process = pb.start();
+
+						BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+						String line;
+						while ((line = reader.readLine()) != null) {
+							logger.info("FFmpeg output: {}", line);
+						}
+
+						int exitCode = process.waitFor();
+						logger.info("FFmpeg exited with code: {}", exitCode);
+
+						if (exitCode == 0 && thumbnailFile.exists()) {
+							String thumbS3Path = mediaFile.getFilePath() + "_thumb.webp";
+							String thumbUploadResult = fileUtil.uploadFile(thumbnailFile, thumbS3Path);
+
+							if ("File Uploaded".equalsIgnoreCase(thumbUploadResult)) {
+								String thumbFullUrl = "https://d3cb2xboyh9a9l.cloudfront.net/" + thumbS3Path;
+								mediaFile.setThumbnailPath(thumbFullUrl);
+								logger.info("Thumbnail with play icon uploaded: {}", thumbFullUrl);
+							} else {
+								logger.warn("Thumbnail upload failed for: {}", mediaFile.getFileId());
+							}
+						} else {
+							logger.warn("Thumbnail generation failed for: {}", mediaFile.getFileId());
+						}
+					} else {
+						convertedFile = originalFile;
+						s3FileExtension = originalExtension;
+					}
+
+					// ✅ Upload main file
+					String s3Path = mediaFile.getFilePath() + s3FileExtension;
+					String response = fileUtil.uploadFile(convertedFile, s3Path);
+
+					if ("File Uploaded".equalsIgnoreCase(response)) {
+						mediaFile.setFileType(s3FileExtension);
+						mediaFilesRepository.saveAndFlush(mediaFile);
+						fileOutputWebModelList.add(this.transformData(mediaFile));
+					} else {
+						logger.error("S3 upload failed for media file: {}", mediaFile.getFileId());
+					}
+
+				} catch (Exception e) {
+					logger.error("Error during media conversion or upload -> {}", e.getMessage(), e);
+				} finally {
+					if (originalFile != null && originalFile.exists())
+						originalFile.delete();
+					if (convertedFile != null && convertedFile.exists() && !convertedFile.equals(originalFile))
+						convertedFile.delete();
+					if (thumbnailFile != null && thumbnailFile.exists())
+						thumbnailFile.delete();
+				}
+			});
+
+			fileOutputWebModelList.sort(Comparator.comparing(FileOutputWebModel::getId));
+		} catch (Exception e) {
+			logger.error("Error at saveMediaFiles() -> {}", e.getMessage(), e);
+		}
+
+		return fileOutputWebModelList;
+	}
+	private Map<MediaFiles, MultipartFile> prepareMultipleMediaFilesDataShootingPropertyImages(FileInputWebModel fileInput, User user) {
+		Map<MediaFiles, MultipartFile> mediaFilesMap = new HashMap<>();
+		try {
+			if (!Utility.isNullOrEmptyList(fileInput.getFiles())) {
+				fileInput.getFiles().stream().filter(Objects::nonNull).forEach(file -> {
+					MediaFiles mediaFiles = new MediaFiles();
+					mediaFiles.setUser(user);
+					mediaFiles.setCategory(fileInput.getCategory());
+					mediaFiles.setCategoryRefId(fileInput.getCategoryRefId());
+					mediaFiles.setFileStatus(fileInput.getFileStatus());
+					mediaFiles.setDescription(fileInput.getDescription());
+					mediaFiles.setFileId(UUID.randomUUID().toString());
+					mediaFiles.setFileName(file.getOriginalFilename());
+					mediaFiles.setFilePath(FileUtil.generateFilePath(mediaFiles.getUser(),
+							fileInput.getCategory().toString(), mediaFiles.getFileId()));
+					mediaFiles.setFileType(!Utility.isNullOrBlankWithTrim(file.getOriginalFilename())
+							? file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."))
+									: "");
+					mediaFiles.setFileSize(file.getSize());
+					mediaFiles.setStatus(false);
+					mediaFiles.setCreatedBy(user.getUserId());
+					mediaFiles.setCreatedOn(new Date());
+					mediaFilesRepository.save(mediaFiles);
+
+					// Save multiMediaTable
+					try {
+						MultiMediaFiles multiMediaFiles = new MultiMediaFiles();
+						multiMediaFiles.setFileName(mediaFiles.getFileName());
+						multiMediaFiles.setFileOriginalName(file.getOriginalFilename());
+						multiMediaFiles.setFileDomainId(FilmHookConstants.GALLERY);
+						multiMediaFiles.setFileDomainReferenceId(mediaFiles.getId());
+						multiMediaFiles.setFileIsActive(true);
+						multiMediaFiles.setFileCreatedBy(user.getUserId());
+						multiMediaFiles.setFileSize(mediaFiles.getFileSize());
+						multiMediaFiles.setFileType(mediaFiles.getFileType());
+						multiMediaFiles = multiMediaFilesRepository.save(multiMediaFiles);
+						logger.info("MultiMediaFiles entity saved in the database with ID: {}",
+								multiMediaFiles.getMultiMediaFileId());
+					} catch (Exception e) {
+						logger.error("Error saving MultiMediaFiles -> {}", e.getMessage());
+					}
+					mediaFilesMap.put(mediaFiles, file);
+				});
+			}
+		} catch (Exception e) {
+			logger.error("Error occurred at prepareMultipleMediaFilesData() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return mediaFilesMap;
+	}
 
 }
