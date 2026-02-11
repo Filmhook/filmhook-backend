@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "MediaFiles", uniqueConstraints = @UniqueConstraint(name = "UNIQUE_FILE_ID_CATEGORY_REF_ID_STATUS",
-        columnNames = {"file_id", "category", "category_ref_id"})
+        columnNames = {"file_id", "category", "category_ref_id","status"})
 )
 @Builder
 @Getter
@@ -68,7 +68,7 @@ public class MediaFiles {
     @Column(name = "file_path")
     private String filePath;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private Boolean status;
 
     @Column(name = "created_by")

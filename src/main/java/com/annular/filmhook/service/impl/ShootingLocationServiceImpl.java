@@ -3836,7 +3836,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	}
 	
 	@Override
-	@Cacheable(value = "propertyCache", key = "#propertyId")
 	public ShootingLocationPropertyDetailsDTO getPropertyById(Integer propertyId) {
 
 	    ShootingLocationPropertyDetails entity = 
