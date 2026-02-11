@@ -391,6 +391,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 			property.setCategory(category);
 			property.setSubCategory(subCategory);
 			property.setTypes(type);
+			
+			if (type != null) {
+			    if (type.getId() == 1) {
+			        property.setStatus(ShootingPropertyStatus.PENDING);
+			    } else if (type.getId() == 2) {
+			        property.setStatus(ShootingPropertyStatus.ACTIVE);
+			    }
+			}
 			property.setUser(user);
 			property.setIndustry(industry);
 
@@ -3821,6 +3829,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	                    .approvedOn(p.getApprovedOn())
 	                    .createdOn(p.getCreatedOn())
 	                    .status(p.getStatus())
+	                    .governmentPermission(p.getGovernmentPermission())
+	                    .publicPermission(p.getPublicPermission())
 	                    .build())
 	            .toList();
 	}
@@ -3968,6 +3978,33 @@ public Response reviewShootingLocationMedia(ShootingPropertyMediaRequest request
     mediaFilesRepository.save(media);
 
     return new Response(1, "Media review updated successfully", null);
+}
+
+
+@Transactional
+@Override
+public Response updatePermission(ShootingLocationPropertyDetailsDTO dto) {
+
+    ShootingLocationPropertyDetails property =
+            propertyDetailsRepository.findById(dto.getId()).orElse(null);
+
+    if (property == null) {
+        return new Response(-1, "Property not found", null);
+    }
+
+    // Update Government Permission
+    if (dto.getGovernmentPermission() != null) {
+        property.setGovernmentPermission(dto.getGovernmentPermission());
+    }
+
+    // Update Public Permission
+    if (dto.getPublicPermission() != null) {
+        property.setPublicPermission(dto.getPublicPermission());
+    }
+
+    propertyDetailsRepository.save(property);
+
+    return new Response(1, "Permission updated successfully", null);
 }
 
 

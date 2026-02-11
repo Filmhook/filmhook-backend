@@ -92,4 +92,5 @@ public interface ShootingLocationService {
 	Response reviewShootingLocationMedia(
 	        ShootingPropertyMediaRequest request
 	);
+	Response updatePermission(ShootingLocationPropertyDetailsDTO dto);
 }

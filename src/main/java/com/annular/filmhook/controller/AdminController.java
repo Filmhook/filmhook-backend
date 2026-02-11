@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,7 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.webmodel.AdminListResponse;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -386,6 +388,14 @@ public class AdminController {
             @Valid @RequestBody ShootingPropertyMediaRequest request
     ) {
         return shootingService.reviewShootingLocationMedia(request);
+    }
+
+    
+    @PutMapping("/property/updatePermission")
+    public Response updatePermission(
+            @RequestBody ShootingLocationPropertyDetailsDTO dto) {
+
+        return shootingService.updatePermission(dto);
     }
 
 }

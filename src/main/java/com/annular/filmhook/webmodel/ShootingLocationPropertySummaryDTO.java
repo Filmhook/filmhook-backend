@@ -18,4 +18,6 @@ public class ShootingLocationPropertySummaryDTO {
     private LocalDateTime approvedOn;
     private LocalDateTime createdOn;
     private ShootingPropertyStatus status;
+    private String governmentPermission;
+    private String publicPermission;
 }

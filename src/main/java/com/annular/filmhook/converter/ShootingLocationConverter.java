@@ -71,7 +71,6 @@ public class ShootingLocationConverter {
 	            // ----- Misc -----
 	            .description(e.getDescription())
 	            .businessOwner(e.isBusinessOwner())
-//	            .govtLicenseAndPermissions(e.getGovtLicenseAndPermissions())
 	            .createdBy(e.getCreatedBy())
 	            .createdOn(e.getCreatedOn())
 	            .status(e.getStatus())
@@ -90,6 +89,7 @@ public class ShootingLocationConverter {
 	            .crewAccidentDocument(e.getCrewAccidentDocument())
 	            .localAuthorities(e.getLocalAuthorities())
 	            .governmentPermission(e.getGovernmentPermission())
+	            .publicPermission(e.getPublicPermission())
 	            .additionalChargesForOverTime(e.getAdditionalChargesForOverTime())
 	            .adminRatedBy(e.getAdminRatedBy())
 	            .adminRatedOn(e.getAdminRatedOn())
@@ -259,7 +259,7 @@ public class ShootingLocationConverter {
 	            .crewAccidentLiabilityDescription(dto.getCrewAccidentLiabilityDescription())
 	            .additionalChargesForOverTime(dto.getAdditionalChargesForOverTime())
 	            .shootingHeldDescription(dto.getShootingHeldDescription())
-	            .status(ShootingPropertyStatus.PENDING)
+//	            .status(ShootingPropertyStatus.PENDING)
 	            .build();
 
 	    return e;
