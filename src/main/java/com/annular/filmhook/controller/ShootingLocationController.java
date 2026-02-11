@@ -694,6 +694,8 @@ public class ShootingLocationController {
 
 	    return ResponseEntity.ok(new Response(1, "Success", dto));
 	}
+	
+	
 
 }
 
