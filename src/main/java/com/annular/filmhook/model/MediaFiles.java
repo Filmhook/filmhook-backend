@@ -69,7 +69,7 @@ public class MediaFiles {
     private String filePath;
 
     @Column(name = "status", nullable = false)
-    private boolean status;
+    private Boolean status;
 
     @Column(name = "created_by")
     private Integer createdBy;

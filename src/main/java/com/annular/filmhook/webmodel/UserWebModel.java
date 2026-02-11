@@ -149,5 +149,6 @@ public class UserWebModel {
     private Boolean isEditRequest;
     
     private String deviceName;
+    private String ipAddress;
 
 }

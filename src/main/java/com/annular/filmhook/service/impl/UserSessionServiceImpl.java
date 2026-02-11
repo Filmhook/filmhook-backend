@@ -1,7 +1,10 @@
 package com.annular.filmhook.service.impl;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -12,11 +15,16 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.model.UserSession;
 import com.annular.filmhook.repository.UserSessionRepository;
 import com.annular.filmhook.service.UserSessionService;
+import com.annular.filmhook.util.LastSeenService;
 @Service
 public class UserSessionServiceImpl implements UserSessionService{
 
 	@Autowired
 	private UserSessionRepository userSessionRepository;
+	
+    @Autowired
+    LastSeenService lastSeenService;
+
 
 	public UserSession createSession(Integer userId, String firebaseToken, String deviceName, String ip) {
 
@@ -93,6 +101,32 @@ public class UserSessionServiceImpl implements UserSessionService{
 	    userSessionRepository.save(session);
 
 	    return new Response(1, "Device logged out successfully", null);
+	}
+
+	public List<Map<String, Object>> getActiveDevices(Integer userId) {
+
+	    List<UserSession> sessions =
+	            userSessionRepository.findByUserIdAndIsActive(userId, true);
+
+	    List<Map<String, Object>> result = new ArrayList<>();
+
+	    for (UserSession session : sessions) {
+
+	        Map<String, Object> map = new HashMap<>();
+	        map.put("deviceName", session.getDeviceName());
+	        map.put("ipAddress", session.getIpAddress());
+	        map.put("sessionToken", session.getSessionToken());
+	        map.put("createdOn", session.getCreatedOn());
+	        map.put("lastUsedOn", session.getLastUsedOn());
+
+	        // Human readable last-active time (like Instagram)
+	        String formattedLastSeen = lastSeenService.formatLastSeen(session.getLastUsedOn());
+	        map.put("lastSeen", formattedLastSeen);
+
+	        result.add(map);
+	    }
+
+	    return result;
 	}
 
 

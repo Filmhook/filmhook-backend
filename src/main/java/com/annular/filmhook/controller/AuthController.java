@@ -2,13 +2,14 @@ package com.annular.filmhook.controller;
 
 import java.time.LocalTime;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,10 +38,9 @@ import com.annular.filmhook.security.jwt.JwtUtils;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.service.UserSessionService;
+import com.annular.filmhook.util.LastSeenService;
 import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
-import com.annular.filmhook.util.LastSeenService;
-import com.annular.filmhook.util.Utility;
 
 @RestController
 @RequestMapping("/user")
@@ -120,46 +120,7 @@ public class AuthController {
         }
     }
 
-//    @PostMapping("login")
-//    public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel) {
-//        try {
-//            Optional<User> checkUsername = userRepository.findByEmail(userWebModel.getEmail());
-//            if (checkUsername.isPresent()) {              
-//
-//                Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
-//                SecurityContextHolder.getContext().setAuthentication(authentication);
-//                RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
-//
-//                User user = checkUsername.get();
-//                // Update device token if provided
-//                if (!Utility.isNullOrBlankWithTrim(userWebModel.getFirebaseDeviceToken())) {
-//                    user.setFirebaseDeviceToken(userWebModel.getFirebaseDeviceToken());
-//                    userRepository.save(user);
-//                }
-//
-//                String jwt = jwtUtils.generateJwtToken(authentication);
-//                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-//                logger.info("Login Controller ---- Finished");
-//                return ResponseEntity.ok(new JwtResponse(jwt,
-//                        userDetails.getId(),
-//                        userDetails.getUsername(),
-//                        userDetails.getEmail(),
-//                        "Login Successful",
-//                        1,
-//                        refreshToken.getToken(),
-//                        userDetails.getUserType(),
-//                        user.getFilmHookCode(),
-//                        user.getAdminReview(),
-//                        user.getLastName(),userServices.getProfilePicUrl(user.getUserId()),user.getPhoneNumber(),user.getLivingPlace()));
-//            }
-//        } catch (Exception e) {
-//            logger.error("Error at login() -> {}", e.getMessage());
-//            e.printStackTrace();
-//            return ResponseEntity.internalServerError().body(new Response(-1, "Error while validating the user credentials. Please try again...", null));
-//        }
-//        return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
-//    }
-    
+ 
     @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody UserWebModel userWebModel, HttpServletRequest request) {
 
@@ -190,7 +151,7 @@ public class AuthController {
                     user.getUserId(),
                     userWebModel.getFirebaseDeviceToken(),
                     userWebModel.getDeviceName(),
-                    request.getRemoteAddr()
+                    userWebModel.getIpAddress()
             );
 
             return ResponseEntity.ok(new JwtResponse(
@@ -560,6 +521,19 @@ public class AuthController {
         Response result = userSessionService.logoutSpecificDevice(userId, deviceName, ipAddress);
         return ResponseEntity.ok(result);
     }
+    
+    @GetMapping("/devices")
+    public ResponseEntity<?> getDeviceList(@RequestParam Integer userId) {
+
+        List<Map<String, Object>> devices = userSessionService.getActiveDevices(userId);
+
+        if (devices.isEmpty()) {
+            return ResponseEntity.ok(new Response(1, "No active devices found", devices));
+        }
+
+        return ResponseEntity.ok(new Response(1, "Active devices", devices));
+    }
+
 
 
 }
