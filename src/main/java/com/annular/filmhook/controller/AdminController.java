@@ -26,6 +26,7 @@ import com.annular.filmhook.service.AdminService;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.webmodel.AdminListResponse;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
+import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
 import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
 import com.annular.filmhook.webmodel.UserWebModel;
 
@@ -396,6 +397,15 @@ public class AdminController {
             @RequestBody ShootingLocationPropertyDetailsDTO dto) {
 
         return shootingService.updatePermission(dto);
+    }
+    
+    
+    @GetMapping("/GetReviewsByproperty/{propertyId}")
+    public ResponseEntity<ShootingLocationPropertyReviewResponseDTO> getReviews(@PathVariable Integer propertyId) {
+
+        return ResponseEntity.ok(
+        		shootingService.getAllReviewsByPropertyId(propertyId)
+        );
     }
 
 }

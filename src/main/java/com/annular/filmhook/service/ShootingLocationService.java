@@ -93,4 +93,7 @@ public interface ShootingLocationService {
 	        ShootingPropertyMediaRequest request
 	);
 	Response updatePermission(ShootingLocationPropertyDetailsDTO dto);
+	List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
+	
+	ShootingLocationPropertyReviewResponseDTO getAllReviewsByPropertyId(Integer propertyId);
 }

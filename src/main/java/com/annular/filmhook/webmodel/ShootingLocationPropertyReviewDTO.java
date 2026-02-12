@@ -23,7 +23,7 @@ public class ShootingLocationPropertyReviewDTO {
     private List<MultipartFile> file; 
     
     private String ownerReplyText;
-    private Integer ownerReplyBy;   // property owner userId
+    private Integer ownerReplyBy;
     private LocalDateTime ownerReplyOn;
     private Boolean likeStatus;
     private Boolean unlikeStatus;
