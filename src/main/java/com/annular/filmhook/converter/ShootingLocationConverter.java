@@ -55,6 +55,8 @@ public class ShootingLocationConverter {
 	            .changingRooms(e.getChangingRooms())
 	            .kitchen(e.getKitchen())
 	           
+	            .approved(e.getApprovedBy())
+	            .approvedOn(e.getApprovedOn())
 	            .neutralLightingConditions(e.getNeutralLightingConditions())
 	            .artificialLightingAvailability(e.getArtificialLightingAvailability())
 	            .parkingCapacity(e.getParkingCapacity())

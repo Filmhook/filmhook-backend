@@ -848,9 +848,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 	@Override
-	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIdsAndDates(
-			Integer industryId,
-			Integer userId,
+	public List<ShootingLocationPropertyDetailsDTO> getPropertiesByIndustryIdsAndDates(Integer industryId,Integer userId,
 			LocalDate startDate,
 			LocalDate endDate,
 			PropertyBookingType propertyType) {
@@ -3857,11 +3855,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		boolean isOwner  = entity.getUser().getUserId().equals(userId);
 
 
-		/* ======================================================
-		 * 1) LOAD MEDIA (ONE QUERY)
-		 * ====================================================== */
-
-
 		List<FileOutputWebModel> imageUrls = mediaFilesService
 				.getAllMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, propertyId);
 
@@ -3881,14 +3874,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		dto.setImageUrls(imageUrls);
 		dto.setGovernmentIdUrls(govtIdUrls);
 		dto.setVerificationVideo(verificationVideo);
-		//	dto.setSelfOwnedPropertyDocument(selfOwnerPropertyDoc);
-
-
-
-		/* ======================================================
-		 * 2) REVIEWS + RATING SUMMARY
-		 * (USE EXISTING METHOD → NO reviewConverter error)
-		 * ====================================================== */
+		dto.setApprovedBy(userRepository.findNameById(entity.getApprovedBy()));
 		ShootingLocationPropertyReviewResponseDTO reviewResponse =
 				getReviewsByPropertyId(propertyId, userId);
 
@@ -3901,12 +3887,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		dto.setTwoStarPercentage(reviewResponse.getTwoStarPercentage());
 		dto.setOneStarPercentage(reviewResponse.getOneStarPercentage());
 
-
-		/* ======================================================
-		 * 3) LIKES (USE YOUR EXISTING LIKE REPOSITORY LOGIC)
-		 * ====================================================== */
-
-		// Get all liked properties by this user
 		List<PropertyLike> userLikes = likeRepository.findByLikedById(userId);
 
 		Set<Integer> likedPropertyIds = userLikes.stream()

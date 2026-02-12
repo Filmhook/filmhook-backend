@@ -113,7 +113,7 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String industryName;
 	private List<Integer> industryIds;
 	private Integer industryId;	
-	
+
 	private boolean likedByUser;
 	private int likeCount;
 
@@ -124,25 +124,27 @@ public class ShootingLocationPropertyDetailsDTO {
 	private String idNumber;
 	private List<String> governmentIdUrls;
 	private List<String> verificationVideo;
-    private String ownerPermission;
-    private String selfOwnedPropertyDocument;
-    private String mortgagePropertyDocument; 
-    private String ownerPermittedDocument; 
-    private String propertyDamageDocument; 
+	private String ownerPermission;
+	private String selfOwnedPropertyDocument;
+	private String mortgagePropertyDocument; 
+	private String ownerPermittedDocument; 
+	private String propertyDamageDocument; 
 	private String propertyDamageDescription;
-    private String crewAccidentDocument; 
-    private String crewAccidentLiabilityDescription;
-    private String localAuthorities;
-    private String governmentPermission;
-    private String publicPermission;
-    private Double additionalChargesForOverTime;
+	private String crewAccidentDocument; 
+	private String crewAccidentLiabilityDescription;
+	private String localAuthorities;
+	private String governmentPermission;
+	private String publicPermission;
+	private Double additionalChargesForOverTime;
 	private LocalDate availabilityStartDate;
 	private LocalDate availabilityEndDate;
 	private List<LocalDate> pausedDates; 
 	private LocalDateTime createdOn;
 	private Integer createdBy;
 	private ShootingPropertyStatus status;
-
+	private Integer approved;
+	private String approvedBy;
+	private LocalDateTime  approvedOn;
 	public Double getTotalArea() {
 		return totalArea;
 	}
@@ -154,11 +156,11 @@ public class ShootingLocationPropertyDetailsDTO {
 	private double oneStarPercentage;
 	private double averageRating;
 	private List<ShootingLocationPropertyReviewDTO> reviews;
-	
+
 	private Double adminRating;                  
 	private LocalDateTime adminRatedOn;          
 	private Integer adminRatedBy;
-	
+
 	private String shootingHeldDescription;
 	private String propertyCode;
 }
