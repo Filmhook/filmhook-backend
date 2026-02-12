@@ -9,9 +9,9 @@ public interface FcmService {
 
     void sendFCMMessage(FCMRequestWebModel request);
 
-	void sendIncomingCallNotification(Integer callerId, Integer receiverId, String callType, String channelName,
-			String token);
-
 	void sendCallStatusNotification(CallLog log, Integer userId, String status, String token);
+
+	void sendIncomingCallNotification(Integer callerId, Integer receiverId, String callType, String channelName,
+			String deviceToken, String callerName, String callerPicUrl);
 
 }

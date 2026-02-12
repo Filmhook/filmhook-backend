@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +18,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.service.UserSessionService;
 import com.annular.filmhook.service.impl.UserDetailsServiceImpl;
 
 public class AuthTokenFilter extends OncePerRequestFilter {
@@ -31,6 +31,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     
     @Autowired
     private AdminService adminService;
+    
+    @Autowired
+    private UserSessionService userSessionService;
 
     private static final Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
 
@@ -54,7 +57,10 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 
-              
+                String sessionToken = request.getHeader("sessionToken");
+                if (sessionToken != null && !sessionToken.trim().isEmpty()) {
+                    userSessionService.updateLastUsed(sessionToken);
+                }
 
             } else {
                 logger.info("JWT not available...");

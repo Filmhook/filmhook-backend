@@ -464,8 +464,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			// 10. FILE UPLOAD
 			if (inputFile != null && user != null) {
-
 				if ( inputFile.getImages() != null 
+
 						&& !inputFile.getImages().isEmpty()) {
 
 					FileInputWebModel imagesInput = FileInputWebModel.builder()
@@ -4011,7 +4011,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 		return new Response(1, "Permission updated successfully", null);
 	}
-
 
 	@Override
 	public List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId) {

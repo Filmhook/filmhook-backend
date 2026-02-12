@@ -2,6 +2,7 @@ package com.annular.filmhook.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -11,14 +12,20 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.CallLog;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.UserSession;
 import com.annular.filmhook.repository.CallLogRepository;
 import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.repository.UserSessionRepository;
 import com.annular.filmhook.service.AgoraTokenService;
 import com.annular.filmhook.service.CallService;
 import com.annular.filmhook.service.FcmService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.AgoraWebModel;
 import com.annular.filmhook.webmodel.EndCallRequest;
 import com.annular.filmhook.webmodel.StartCallRequest;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 @Service
 public class CallServiceImpl implements CallService {
 	
@@ -33,6 +40,12 @@ public class CallServiceImpl implements CallService {
 
 	    @Autowired
 	    private FcmService fcm;
+	    
+	    @Autowired
+	    private UserService userServices;
+	    
+	    @Autowired
+	    private UserSessionRepository userSessionRepository;
 
 
 	    /* ---------------------------------------------------------
@@ -56,7 +69,8 @@ public class CallServiceImpl implements CallService {
 	        model.setExpirationTimeInSeconds(6000);
 
 	        String rtcToken = agoraTokenService.getRTCToken(model);
-
+	        
+	     
 	        // 4. Save DB
 	        CallLog log = new CallLog();
 	        log.setCallerId(req.getCallerId());
@@ -68,23 +82,49 @@ public class CallServiceImpl implements CallService {
 	        log.setStartTime(LocalDateTime.now());
 	        callRepo.save(log);
 	        
+	        User caller = userRepository.findById(req.getCallerId()).orElse(null);
+	        User receiver = userRepository.findById(req.getReceiverId()).orElse(null);
+
+	        String callerPic = userServices.getProfilePicUrl(req.getCallerId());
+	        String receiverPic = userServices.getProfilePicUrl(req.getReceiverId());
+
+	        String callerName = caller != null ? caller.getName() : "";
+	        String receiverName = receiver != null ? receiver.getName() : "";
+
+	        
 	        Optional<User> receiverOpt = userRepository.findById(req.getReceiverId());
 	    	
-	        // 5. Send Push Notification
-	        String receiverToken = receiverOpt.get().getFirebaseDeviceToken();
-	        if (receiverToken != null) {
-	            fcm.sendIncomingCallNotification(
-	                    req.getCallerId(), req.getReceiverId(),
-	                    req.getCallType(), channelName,
-	                    receiverToken
-	            );
+	        // 6. Push Notification to All Active Devices (Receiver)
+	        List<UserSession> activeSessions =
+	                userSessionRepository.findByUserIdAndIsActive(req.getReceiverId(), true);
+
+	        for (UserSession session : activeSessions) {
+
+	            String deviceToken = session.getFirebaseToken();
+
+	            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+
+	                fcm.sendIncomingCallNotification(
+	                        req.getCallerId(),
+	                        req.getReceiverId(),
+	                        req.getCallType(),
+	                        channelName,
+	                        deviceToken,         // Send to this device
+	                        callerName,          // NEW
+	                        callerPic            // NEW
+	                );
+	            }
 	        }
 
-	        // 6. Response
+	        // 7. Response Payload
 	        Map<String, Object> result = new HashMap<>();
 	        result.put("channelName", channelName);
 	        result.put("rtcToken", rtcToken);
 	        result.put("callType", req.getCallType());
+	        result.put("callerName", callerName);
+	        result.put("receiverName", receiverName);
+	        result.put("callerPic", callerPic);
+	        result.put("receiverPic", receiverPic);
 
 	        return new Response(1, "Call Started", result);
 	    }
@@ -126,5 +166,25 @@ public class CallServiceImpl implements CallService {
 	        }
 
 	        return new Response(1, "Success", callLog.getRtcToken());
+	    }
+	    
+	    public void sendTestNotification(String token, String title, String body) {
+	        try {
+	            Notification notification = Notification.builder()
+	                    .setTitle(title)
+	                    .setBody(body)
+	                    .build();
+
+	            Message message = Message.builder()
+	                    .setToken(token)
+	                    .setNotification(notification)
+	                    .build();
+
+	            String response = FirebaseMessaging.getInstance().send(message);
+	            System.out.println("FCM Response: " + response);
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
 	    }
 }

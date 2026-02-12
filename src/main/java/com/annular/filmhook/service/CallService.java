@@ -13,4 +13,6 @@ public interface CallService {
 
 	Response getRtcTokenByChannel(String channelName);
 
+	void sendTestNotification(String deviceToken, String title, String body);
+
 }

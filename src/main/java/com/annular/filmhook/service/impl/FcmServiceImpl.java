@@ -12,6 +12,7 @@ import com.annular.filmhook.model.CallLog;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.FcmService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
@@ -24,6 +25,9 @@ public class FcmServiceImpl implements FcmService {
 
 	@Autowired
 	private UserRepository userRepository;
+	
+    @Autowired
+    private UserService userServices;
 
 	private static final Logger logger = LoggerFactory.getLogger(FcmServiceImpl.class);
 
@@ -108,28 +112,47 @@ public class FcmServiceImpl implements FcmService {
 	//    }
 
 	@Override
-	public void sendIncomingCallNotification(Integer callerId, Integer receiverId, 
-			String callType, String channelName,
-			String token) {
+	public void sendIncomingCallNotification(
+	        Integer callerId,
+	        Integer receiverId,
+	        String callType,
+	        String channelName,
+	        String deviceToken,
+	        String callerName,
+	        String callerPicUrl
+	) {
 
-		User caller = userRepository.findById(callerId).orElse(null);
-		if (caller == null) return;
+	    try {
 
-		Message message = Message.builder()
-				.setNotification(
-						Notification.builder()
-						.setBody(caller.getName() + " is calling you (" + callType + ")")
-						.build()
-						)
-				.putData("type", "incoming_call")
-				.putData("callerId", callerId.toString())
-				.putData("receiverId", receiverId.toString())
-				.putData("callType", callType)
-				.putData("channelName", channelName)
-				.setToken(token)
-				.build();
+	        // Notification title and body (displayed to user)
+	        Notification notification = Notification.builder()
+	                .setTitle("Incoming " + callType + " call")
+	                .setBody(callerName + " is calling you")
+	                .build();
 
-		FirebaseMessaging.getInstance().sendAsync(message);
+	        // Payload sent to the device
+	        Message message = Message.builder()
+	                .setNotification(notification)
+	                .putData("type", "incoming_call")
+	                .putData("callerId", callerId.toString())
+	                .putData("receiverId", receiverId.toString())
+	                .putData("callerName", callerName)
+	                .putData("callerPic", callerPicUrl)
+	                .putData("callType", callType)
+	                .putData("channelName", channelName)
+	                .putData("timestamp", String.valueOf(System.currentTimeMillis()))
+	                .setToken(deviceToken)
+	                .build();
+
+	        // Send async
+	        FirebaseMessaging.getInstance().sendAsync(message)
+	                .addListener(() -> System.out.println("FCM Sent to: " + deviceToken),
+	                        Runnable::run);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        System.out.println("Error sending FCM: " + e.getMessage());
+	    }
 	}
 
 

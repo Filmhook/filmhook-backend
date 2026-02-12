@@ -147,5 +147,8 @@ public class UserWebModel {
     private String organizationUnit;
     private String jobTitle;
     private Boolean isEditRequest;
+    
+    private String deviceName;
+    private String ipAddress;
 
 }
