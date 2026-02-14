@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Posts;
@@ -30,6 +31,7 @@ import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.PromoteAdService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
@@ -58,8 +60,13 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	@Autowired
 	VisitPageDetailsRepository visitPageDetailsRepository;
 
+	@Autowired
+	UserDetails userDetails;
+
 	@Override
-	public Response savePromote(PromoteWebModel model, Integer userId) {
+	public Response savePromote(PromoteWebModel model) {
+
+		Integer userId = userDetails.userInfo().getId();
 
 		User user = userRepository.findByUserId(userId)
 				.orElseThrow(() -> new RuntimeException("User not found"));
@@ -302,14 +309,15 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	}
 
 	@Override
-	public Response updatePaymentSuccess(PromoteWebModel model) {
+	public Response updatePaymentSuccess(String txnid, String promoteId, Double amount) {
 
-		PromoteAd promote = promoteAdRepository.findById(model.getPromoteId())
+		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
 				.orElseThrow(() -> new RuntimeException("Promote record not found"));
 
 		promote.setPaymentStatus("SUCCESS");
 		promote.setStatus(PromoteStatus.Running);
-		promote.setTransactionId(model.getTransactionId());
+		promote.setTransactionId(txnid);
+
 
 		Date start = new Date();
 		promote.setStartDate(start);
@@ -332,14 +340,15 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 
 
 	@Override
-	public Response updatePaymentFailed(PromoteWebModel model) {
+	public Response updatePaymentFailed(String txnid, String promoteId, Double amount) {
 
-		PromoteAd promote = promoteAdRepository.findById(model.getPromoteId())
+		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
 				.orElseThrow(() -> new RuntimeException("Promote record not found"));
 
 		promote.setPaymentStatus("FAILED");
-		promote.setTransactionId(model.getTransactionId());
+		promote.setTransactionId(txnid);
 		promote.setStatus(PromoteStatus.NotStarted); // reset status if needed
+		
 
 		Posts post = promote.getPost();
 		post.setPromoteFlag(false);
@@ -389,48 +398,48 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	@Override
 	public List<VisitPageWebModel> getAllObjectives() {
 
-	    List<VisitePageCategory> list = categoryRepository.findAll();
+		List<VisitePageCategory> list = categoryRepository.findAll();
 
-	    return list.stream().map(cat ->
-	            VisitPageWebModel.builder()
-	                    .categoryId(cat.getCategoryId())
-	                    .categoryName(cat.getCategoryName())
-	                    .description(cat.getDescription())
-	                    .build()
-	    ).toList();
+		return list.stream().map(cat ->
+		VisitPageWebModel.builder()
+		.categoryId(cat.getCategoryId())
+		.categoryName(cat.getCategoryName())
+		.description(cat.getDescription())
+		.build()
+				).toList();
 	}
-	
+
 	@Override
 	public List<VisitPageWebModel> getPagesByCategoryId(Integer categoryId) {
 
-	    List<VisitPage> pages = visitPageRepository.findByCategory_CategoryId(categoryId);
+		List<VisitPage> pages = visitPageRepository.findByCategory_CategoryId(categoryId);
 
-	    return pages.stream().map(p ->
-	            VisitPageWebModel.builder()
-	                    .categoryId(p.getCategory().getCategoryId())
-	                    .categoryName(p.getCategory().getCategoryName())
-	                    .pageId(p.getVisitPageId())
-	                    .pageData(p.getData())
-	                   
-	                    .build()
-	    ).toList();
+		return pages.stream().map(p ->
+		VisitPageWebModel.builder()
+		.categoryId(p.getCategory().getCategoryId())
+		.categoryName(p.getCategory().getCategoryName())
+		.pageId(p.getVisitPageId())
+		.pageData(p.getData())
+
+		.build()
+				).toList();
 	}
-	
+
 	@Override
 	public List<VisitPageWebModel> getDetailsByVisitPageId(Integer visitPageId) {
 
-	    List<VisitPageDetails> list = visitPageDetailsRepository.findByVisitPage_VisitPageId(visitPageId);
+		List<VisitPageDetails> list = visitPageDetailsRepository.findByVisitPage_VisitPageId(visitPageId);
 
-	    return list.stream().map(d ->
-	            VisitPageWebModel.builder()
-	                    .categoryId(d.getVisitPage().getCategory().getCategoryId())
-	                    .categoryName(d.getVisitPage().getCategory().getCategoryName())
-	                    .pageId(d.getVisitPage().getVisitPageId())
-	                    .pageData(d.getVisitPage().getData())	                  
-	                    .detailId(d.getDetailId())
-	                    .detailTitle(d.getTitle())	                   
-	                    .build()
-	    ).toList();
+		return list.stream().map(d ->
+		VisitPageWebModel.builder()
+		.categoryId(d.getVisitPage().getCategory().getCategoryId())
+		.categoryName(d.getVisitPage().getCategory().getCategoryName())
+		.pageId(d.getVisitPage().getVisitPageId())
+		.pageData(d.getVisitPage().getData())	                  
+		.detailId(d.getDetailId())
+		.detailTitle(d.getTitle())	                   
+		.build()
+				).toList();
 	}
 
 

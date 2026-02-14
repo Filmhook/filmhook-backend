@@ -177,31 +177,60 @@ public class AuthController {
         }
     }
 
-
+   
     @PostMapping("logins")
     public ResponseEntity<?> logins(@RequestBody UserWebModel userWebModel) {
-        Optional<User> checkUsername = userRepository.findByEmailAndAdminStatus(userWebModel.getEmail());
-        if (checkUsername.isPresent()) {
-            loginConstants.setUserType(userWebModel.getUserType());
-            logger.info("In logins() User type from constants -> {}", loginConstants.getUserType());
-            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userWebModel.getEmail(), userWebModel.getPassword()));
+    	try {
+    		 Optional<User> checkUsername = userRepository.findByEmailAndAdminStatus(userWebModel.getEmail());
+            if (!checkUsername.isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(new Response(-1, "Invalid EmailId", ""));
+            }
+
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            userWebModel.getEmail(),
+                            userWebModel.getPassword()
+                    )
+            );
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            RefreshToken refreshToken = userService.createRefreshToken(userWebModel);
-            String jwt = jwtUtils.generateJwtToken(authentication);
+
             User user = checkUsername.get();
+
+            // generate JWT
+            String jwt = jwtUtils.generateJwtToken(authentication);
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            logger.info("Admin Login ---- Finished");
-            return ResponseEntity.ok(new JwtResponse(jwt,
+
+            // Create session
+            UserSession session = userSessionService.createSession(
+                    user.getUserId(),
+                    userWebModel.getFirebaseDeviceToken(),
+                    userWebModel.getDeviceName(),
+                    userWebModel.getIpAddress()
+            );
+
+            return ResponseEntity.ok(new JwtResponse(
+                    jwt,
                     userDetails.getId(),
                     userDetails.getUsername(),
                     userDetails.getEmail(),
-                    "Login Successfully",
+                    "Login Successful",
                     1,
-                    refreshToken.getToken(),
+                    session.getSessionToken(),
                     userDetails.getUserType(),
-                    "",user.getAdminReview(), "","",user.getPhoneNumber(),""));
+                    user.getFilmHookCode(),
+                    user.getAdminReview(),
+                    user.getLastName(),
+                    userServices.getProfilePicUrl(user.getUserId()),
+                    user.getPhoneNumber(),
+                    user.getLivingPlace()
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new Response(-1, "Error while validating the user credentials", null));
         }
-        return ResponseEntity.badRequest().body(new Response(-1, "Invalid EmailId", ""));
     }
 
     @PostMapping("refreshToken")

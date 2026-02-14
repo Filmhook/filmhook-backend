@@ -12,13 +12,13 @@ import com.annular.filmhook.webmodel.VisitPageWebModel;
 
 public interface PromoteAdService {
 
-    Response savePromote(PromoteWebModel promoteWebModel, Integer userId);
+    Response savePromote(PromoteWebModel promoteWebModel);
 
     PromoteAd getPromoteByPostId(Integer postId);
     
-    Response updatePaymentSuccess(PromoteWebModel model);
+    Response updatePaymentSuccess(String txnid, String promoteId, Double amount );
 
-    Response updatePaymentFailed(PromoteWebModel model);
+    Response updatePaymentFailed(String txnid, String promoteId, Double amount );
 
     Response getRecentPromotions(Integer userId);
 

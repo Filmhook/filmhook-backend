@@ -85,7 +85,7 @@ public class WebSecurityConfig {
                                         "/v3/api-docs/**", "/industryUser/saveMoviePosts",
                                         "/v2/api-docs",   // for old swagger
                                         "/swagger-resources/**",
-                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/audition/retry-payment/**", "/api/promote/payment/success", "/api/promote/payment/success", "/user/refresh-jwt","/ws/**")
+                                        "/webjars/**","/audition/payment-failure/**", "/audition/payment-success/**","/deeplink/**","/audition/retry-payment/**", "/api/promote/payment/success", "/api/promote/payment/failure", "/user/refresh-jwt","/ws/**")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
