@@ -162,7 +162,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			// CASE 2: No post → create a fresh post
 			// ==================================================
 			PostWebModel postModel = new PostWebModel();
-			postModel.setUserId(model.getUserId());
+			postModel.setUserId(userId);
 			postModel.setFiles(model.getFiles());
 			postModel.setDescription(model.getDescription());
 			postModel.setPostLinkUrl(model.getPostLinkUrl());
