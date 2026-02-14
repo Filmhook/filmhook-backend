@@ -356,7 +356,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 
 		List<PromoteAd> list = promoteAdRepository.findRecentRunningOrCompletedByUserId(userId);
 
-		List<PromoteWebModel> response = list.stream().map(promote -> {
+		List<PromoteWebModel> response = list.stream().filter(postFilter->postFilter.getPost().getStatus()).map(promote -> {
 
 			List<FileOutputWebModel> postFiles =
 					mediaFilesService.getMediaFilesByCategoryAndRefId(
