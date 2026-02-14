@@ -1,5 +1,6 @@
 package com.annular.filmhook.configuration;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -10,18 +11,21 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
+	@Autowired
+	private WebSocketAuthInterceptor webSocketAuthInterceptor;
 
-    	registry.addEndpoint("/ws")
-        .setAllowedOrigins("https://www.filmhookapps.com");
-    }
+	@Override
+	public void registerStompEndpoints(StompEndpointRegistry registry) {
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
+		registry.addEndpoint("/ws")
+		.setAllowedOrigins("https://www.filmhookapps.com");
+	}
 
-        registry.enableSimpleBroker("/user");
-        registry.setApplicationDestinationPrefixes("/app");
-        registry.setUserDestinationPrefix("/user");
-    }
+	@Override
+	public void configureMessageBroker(MessageBrokerRegistry registry) {
+
+		registry.enableSimpleBroker("/user");
+		registry.setApplicationDestinationPrefixes("/app");
+		registry.setUserDestinationPrefix("/user");
+	}
 }

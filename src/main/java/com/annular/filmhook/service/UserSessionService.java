@@ -23,4 +23,6 @@ public interface UserSessionService {
 	
 	public List<Map<String, Object>> getActiveDevices(Integer userId);
 
+	public void logoutSpecificDevice(String targetSessionToken);
+
 }

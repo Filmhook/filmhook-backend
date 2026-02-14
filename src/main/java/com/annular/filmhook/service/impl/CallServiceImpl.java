@@ -197,27 +197,8 @@ public class CallServiceImpl implements CallService {
          * Push Notification to All Active Devices (UserSession)
          * --------------------------------------------------------- */
 
-        List<UserSession> activeSessions =
-                userSessionRepository.findByUserIdAndIsActive(otherUser, true);
-
-        System.out.println("📱 Active devices for user " + otherUser + ": " + activeSessions.size());
-
-        for (UserSession s : activeSessions) {
-
-            String deviceToken = s.getFirebaseToken();
-
-            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-
-                System.out.println("📤 Sending Push Notification to device: " + deviceToken);
-
-                fcm.sendCallStatusNotification(
-                        log,
-                        req.getUserId(),
-                        req.getStatus(),
-                        deviceToken
-                );
-            }
-        }
+       
+        
 
         return new Response(1, "Call updated: " + req.getStatus(), null);
     }

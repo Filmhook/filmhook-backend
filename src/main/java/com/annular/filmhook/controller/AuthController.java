@@ -513,14 +513,23 @@ public class AuthController {
         );
     }
     
+//    @PostMapping("/logout-device")
+//    public ResponseEntity<?> logoutDevice(@RequestParam Integer userId,
+//                                          @RequestParam String deviceName,
+//                                          @RequestParam String ipAddress) {
+//
+//        Response result = userSessionService.logoutSpecificDevice(userId, deviceName, ipAddress);
+//        return ResponseEntity.ok(result);
+//    }
+    
     @PostMapping("/logout-device")
-    public ResponseEntity<?> logoutDevice(@RequestParam Integer userId,
-                                          @RequestParam String deviceName,
-                                          @RequestParam String ipAddress) {
-
-        Response result = userSessionService.logoutSpecificDevice(userId, deviceName, ipAddress);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<?> logoutSpecificDevice(
+            @RequestParam String targetSessionToken
+    ) {
+        userSessionService.logoutSpecificDevice(targetSessionToken);
+        return ResponseEntity.ok(new Response(1, "Device logged out", null));
     }
+
     
     @GetMapping("/devices")
     public ResponseEntity<?> getDeviceList(@RequestParam Integer userId) {
