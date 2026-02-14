@@ -715,14 +715,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				dto.setLikeCount(likeRepository.countLikesByPropertyId(propertyId));
 
 				// 4️⃣ Media files
-				//				dto.setImageUrls(
-				//						mediaFilesService
-				//						.getMediaFilesByCategoryAndRefId(
-				//								MediaFileCategory.shootingLocationImage, propertyId)
-				//						.stream()
-				//						.map(FileOutputWebModel::getFilePath)
-				//						.collect(Collectors.toList())
-				//						);
+				List<FileOutputWebModel> imageUrls = mediaFilesService
+						.getAllMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, p.getId());
+      dto.setImageUrls(imageUrls);
 
 				dto.setGovernmentIdUrls(
 						mediaFilesService
