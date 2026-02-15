@@ -1,7 +1,11 @@
 package com.annular.filmhook.controller;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,7 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.PromoteAd;
 import com.annular.filmhook.service.PromoteAdService;
+import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.webmodel.PromoteWebModel;
 import com.annular.filmhook.webmodel.VisitPageWebModel;
 
@@ -30,6 +35,10 @@ public class PromoteAdController {
 	private final PromoteAdService promoteAdService;
 	@Autowired
 	private  UserDetails userDetails;
+
+	@Autowired
+	private HashGenerator hashGenerator;
+
 
 	@PostMapping("/save")
 	public ResponseEntity<Response> savePromote(
@@ -47,38 +56,93 @@ public class PromoteAdController {
 	}
 
 	@PostMapping("/payment/success")
-	public ResponseEntity<Response> paymentSuccess(@RequestParam Map<String, String> params) {
-
-		params.forEach((k,v) -> System.out.println(k + " = " + v));
+	public void paymentSuccess(@RequestParam Map<String, String> params,
+			HttpServletResponse response) throws IOException {
 
 		String txnid = params.get("txnid");
-
-		String amountStr = params.get("amount");
-		Double amount = amountStr != null ? Double.parseDouble(amountStr) : 0.0;
-
-		String promoteId = params.get("udf1");
-
-		if (txnid == null || promoteId == null) {
-			return ResponseEntity.badRequest()
-					.body(new Response(-1, "Missing required parameters", null));
-		}
-
-		return ResponseEntity.ok(
-				promoteAdService.updatePaymentSuccess(txnid, promoteId, amount)
-				);
-	}
-
-	@PostMapping("/payment/failure")
-	public ResponseEntity<Response> paymentFailed(@RequestParam Map<String, String> params) {
-		String txnid = params.get("txnid");        // Merchant Ref ID
 		String status = params.get("status");
 		String amountStr = params.get("amount");
-		Double amount = amountStr != null ? Double.parseDouble(amountStr) : 0.0;
+		String receivedHash = params.get("hash");
 		String promoteId = params.get("udf1");
-		String mobile = params.get("udf2");
-		String address = params.get("udf3");
 
-		return ResponseEntity.ok(promoteAdService.updatePaymentFailed(txnid, promoteId, amount));
+		if (txnid == null || promoteId == null || status == null) {
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
+
+		// 🔐 Verify hash
+		String calculatedHash = hashGenerator.generateResponseHash(
+				status,
+				txnid,
+				amountStr,
+				params.get("productinfo"),
+				params.get("firstname"),
+				params.get("email"),
+				params.getOrDefault("udf1",""),
+				params.getOrDefault("udf2",""),
+				params.getOrDefault("udf3","")
+				);
+
+		if (!calculatedHash.equals(receivedHash)) {
+			System.out.println("Hash mismatch!");
+			response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
+			return;
+		}
+
+		if (!"success".equalsIgnoreCase(status)) {
+			response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
+			return;
+		}
+		
+		BigDecimal amount = new BigDecimal(amountStr);
+
+		promoteAdService.updatePaymentSuccess(txnid, promoteId, amount);
+
+		//Redirect to app
+		response.sendRedirect("filmhook://promote-payment-success?txnid=" + txnid);
+	}
+
+
+	@PostMapping("/payment/failure")
+	public void paymentFailure(@RequestParam Map<String, String> params,
+			HttpServletResponse response) throws IOException {
+		String txnid = params.get("txnid");
+		String status = params.get("status");
+		String amountStr = params.get("amount");
+		String receivedHash = params.get("hash");
+		String promoteId = params.get("udf1");
+
+		if (txnid == null || status == null) {
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
+
+		//Verify Response Hash
+		String calculatedHash = hashGenerator.generateResponseHash(
+				status,
+				txnid,
+				amountStr,
+				params.get("productinfo"),
+				params.get("firstname"),
+				params.get("email"),
+				params.getOrDefault("udf1", ""),
+				params.getOrDefault("udf2", ""),
+				params.getOrDefault("udf3", "")
+				);
+
+		if (!calculatedHash.equals(receivedHash)) {
+			System.out.println("Failure Hash mismatch!");
+			response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
+			return;
+		}
+
+		//Update DB as FAILED
+		BigDecimal amount = new BigDecimal(amountStr);
+
+		promoteAdService.updatePaymentFailed(txnid, promoteId, amount);
+
+		// Redirect Back to App
+		response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
 	}
 
 

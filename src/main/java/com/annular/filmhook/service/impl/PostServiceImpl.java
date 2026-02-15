@@ -99,6 +99,8 @@ import com.annular.filmhook.repository.InAppNotificationRepository;
 import com.annular.filmhook.util.Utility;
 import com.annular.filmhook.util.FileUtil;
 import software.amazon.awssdk.services.s3.model.S3Object;
+
+import java.math.BigDecimal;
 import java.time.Duration;
 
 @Service
@@ -748,7 +750,7 @@ public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList)
 
             Integer promoteId = null;
             Integer numberOfDays = null;
-            Integer amount = null;
+            BigDecimal amount = null;
             String companyName = null;
             String brandName = null;
             String visitType = null;

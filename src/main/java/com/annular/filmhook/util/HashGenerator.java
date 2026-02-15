@@ -3,11 +3,20 @@ package com.annular.filmhook.util;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.StringJoiner;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class HashGenerator {
+	
+
+    @Value("${payu.key}")
+    private String merchantKey;
+
+    @Value("${payu.salt}")
+    private String merchantSalt;
 
     public static String generateHash(String key, String txnid, String amount, String productinfo,
                                       String firstname, String email, String salt) {
@@ -33,4 +42,93 @@ public class HashGenerator {
             throw new RuntimeException("SHA-512 algorithm not found", e);
         }
     }
+    
+    // 🔹 Request Hash (Before Payment)
+    public String generateRequestHash(
+            String txnid,
+            String amount,
+            String productinfo,
+            String firstname,
+            String email,
+            String udf1,
+            String udf2,
+            String udf3
+    ) {
+
+        StringJoiner joiner = new StringJoiner("|");
+
+        joiner.add(merchantKey)
+              .add(txnid)
+              .add(amount)
+              .add(productinfo)
+              .add(firstname)
+              .add(email)
+              .add(udf1)
+              .add(udf2)
+              .add(udf3)
+              .add("") // udf4
+              .add("") // udf5
+              .add("") // empty
+              .add("")
+              .add("")
+              .add("")
+              .add("")
+              .add(merchantSalt);
+
+        return hashCal("SHA-512", joiner.toString());
+    }
+
+
+    // 🔹 Response Hash (After Payment)
+    public String generateResponseHash(
+            String status,
+            String txnid,
+            String amount,
+            String productinfo,
+            String firstname,
+            String email,
+            String udf1,
+            String udf2,
+            String udf3
+    ) {
+
+        StringJoiner joiner = new StringJoiner("|");
+
+        joiner.add(merchantSalt)
+              .add(status)
+              .add("").add("").add("").add("").add("").add("").add("").add("").add("").add("")
+              .add("") // udf5
+              .add("") // udf4
+              .add(udf3)
+              .add(udf2)
+              .add(udf1)
+              .add(email)
+              .add(firstname)
+              .add(productinfo)
+              .add(amount)
+              .add(txnid)
+              .add(merchantKey);
+
+        return hashCal("SHA-512", joiner.toString());
+    }
+    
+    
+    private String hashCal(String type, String str) {
+        try {
+            MessageDigest md = MessageDigest.getInstance(type);
+            byte[] digest = md.digest(str.getBytes());
+            StringBuilder hexString = new StringBuilder();
+
+            for (byte b : digest) {
+                String hex = Integer.toHexString(0xFF & b);
+                if (hex.length() == 1) hexString.append("0");
+                hexString.append(hex);
+            }
+
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating hash", e);
+        }
+    }
+    
 }

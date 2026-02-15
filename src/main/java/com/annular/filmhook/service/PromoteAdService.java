@@ -1,5 +1,6 @@
 package com.annular.filmhook.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.annular.filmhook.Response;
@@ -16,9 +17,9 @@ public interface PromoteAdService {
 
     PromoteAd getPromoteByPostId(Integer postId);
     
-    Response updatePaymentSuccess(String txnid, String promoteId, Double amount );
+    Response updatePaymentSuccess(String txnid, String promoteId, BigDecimal amount );
 
-    Response updatePaymentFailed(String txnid, String promoteId, Double amount );
+    Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount );
 
     Response getRecentPromotions(Integer userId);
 

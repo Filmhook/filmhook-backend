@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
@@ -309,7 +310,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	}
 
 	@Override
-	public Response updatePaymentSuccess(String txnid, String promoteId, Double amount) {
+	public Response updatePaymentSuccess(String txnid, String promoteId, BigDecimal amount) {
 
 		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
 				.orElseThrow(() -> new RuntimeException("Promote record not found"));
@@ -340,7 +341,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 
 
 	@Override
-	public Response updatePaymentFailed(String txnid, String promoteId, Double amount) {
+	public Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount) {
 
 		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
 				.orElseThrow(() -> new RuntimeException("Promote record not found"));
