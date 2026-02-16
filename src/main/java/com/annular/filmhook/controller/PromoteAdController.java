@@ -83,22 +83,25 @@ public class PromoteAdController {
 				params.getOrDefault("udf3","")
 				);
 
+		System.out.println("calculated hash  "+ calculatedHash);
 		if (!calculatedHash.equals(receivedHash)) {
 			System.out.println("Hash mismatch!");
 			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
 			return;
 		}
 
-		if (!"success".equalsIgnoreCase(status)) {
-			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
-			return;
-		}
+//		if (!"success".equalsIgnoreCase(status)) {
+//			System.out.println("Trigger failure redirect!");
+//			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
+//			return;
+//		}
 		
 		BigDecimal amount = new BigDecimal(amountStr);
 
 		promoteAdService.updatePaymentSuccess(txnid, promoteId, amount);
 
 		//Redirect to app
+		System.out.println("Trigger success redirect!");
 		response.sendRedirect("filmhook://promote-payment-success?txnid=" + txnid);
 	}
 
