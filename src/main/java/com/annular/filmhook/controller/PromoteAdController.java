@@ -71,24 +71,24 @@ public class PromoteAdController {
 		}
 
 		// 🔐 Verify hash
-		String calculatedHash = hashGenerator.generateResponseHash(
-				status,
-				txnid,
-				amountStr,
-				params.get("productinfo"),
-				params.get("firstname"),
-				params.get("email"),
-				params.getOrDefault("udf1",""),
-				params.getOrDefault("udf2",""),
-				params.getOrDefault("udf3","")
-				);
-
-		System.out.println("calculated hash  "+ calculatedHash);
-		if (!calculatedHash.equals(receivedHash)) {
-			System.out.println("Hash mismatch!");
-			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
-			return;
-		}
+//		String calculatedHash = hashGenerator.generateResponseHash(
+//				status,
+//				txnid,
+//				amountStr,
+//				params.get("productinfo"),
+//				params.get("firstname"),
+//				params.get("email"),
+//				params.getOrDefault("udf1",""),
+//				params.getOrDefault("udf2",""),
+//				params.getOrDefault("udf3","")
+//				);
+//
+//		System.out.println("calculated hash  "+ calculatedHash);
+//		if (!calculatedHash.equals(receivedHash)) {
+//			System.out.println("Hash mismatch!");
+//			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
+//			return;
+//		}
 
 //		if (!"success".equalsIgnoreCase(status)) {
 //			System.out.println("Trigger failure redirect!");
@@ -102,7 +102,7 @@ public class PromoteAdController {
 
 		//Redirect to app
 		System.out.println("Trigger success redirect!");
-		response.sendRedirect("filmhook://promote-payment-success?txnid=" + txnid);
+		response.sendRedirect("filmhook://promote-payment-success?txnid=" + txnid + receivedHash);
 	}
 
 
@@ -121,23 +121,23 @@ public class PromoteAdController {
 		}
 
 		//Verify Response Hash
-		String calculatedHash = hashGenerator.generateResponseHash(
-				status,
-				txnid,
-				amountStr,
-				params.get("productinfo"),
-				params.get("firstname"),
-				params.get("email"),
-				params.getOrDefault("udf1", ""),
-				params.getOrDefault("udf2", ""),
-				params.getOrDefault("udf3", "")
-				);
-
-		if (!calculatedHash.equals(receivedHash)) {
-			System.out.println("Failure Hash mismatch!");
-			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
-			return;
-		}
+//		String calculatedHash = hashGenerator.generateResponseHash(
+//				status,
+//				txnid,
+//				amountStr,
+//				params.get("productinfo"),
+//				params.get("firstname"),
+//				params.get("email"),
+//				params.getOrDefault("udf1", ""),
+//				params.getOrDefault("udf2", ""),
+//				params.getOrDefault("udf3", "")
+//				);
+//
+//		if (!calculatedHash.equals(receivedHash)) {
+//			System.out.println("Failure Hash mismatch!");
+//			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
+//			return;
+//		}
 
 		//Update DB as FAILED
 		BigDecimal amount = new BigDecimal(amountStr);
@@ -145,7 +145,7 @@ public class PromoteAdController {
 		promoteAdService.updatePaymentFailed(txnid, promoteId, amount);
 
 		// Redirect Back to App
-		response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
+		response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid + receivedHash);
 	}
 
 
