@@ -3,6 +3,7 @@ package com.annular.filmhook.util;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 import java.util.StringJoiner;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -80,37 +81,68 @@ public class HashGenerator {
 
 
     // 🔹 Response Hash (After Payment)
-    public String generateResponseHash(
-            String status,
-            String txnid,
-            String amount,
-            String productinfo,
-            String firstname,
-            String email,
-            String udf1,
-            String udf2,
-            String udf3
-    ) {
+    public String generateResponseHash(Map<String, String> params) {
 
-        StringJoiner joiner = new StringJoiner("|");
+        String status = params.get("status");
+        String txnid = params.get("txnid");
+        String amount = params.get("amount");
+        String productinfo = params.get("productinfo");
+        String firstname = params.get("firstname");
+        String email = params.get("email");
 
-        joiner.add(merchantSalt)
-              .add(status)
-              .add("").add("").add("").add("").add("").add("").add("").add("").add("").add("")
-              .add("") // udf5
-              .add("") // udf4
-              .add(udf3)
-              .add(udf2)
-              .add(udf1)
-              .add(email)
-              .add(firstname)
-              .add(productinfo)
-              .add(amount)
-              .add(txnid)
-              .add(merchantKey);
+        String udf1 = params.getOrDefault("udf1", "");
+        String udf2 = params.getOrDefault("udf2", "");
+        String udf3 = params.getOrDefault("udf3", "");
+        String udf4 = params.getOrDefault("udf4", "");
+        String udf5 = params.getOrDefault("udf5", "");
 
-        return hashCal("SHA-512", joiner.toString());
+        String additionalCharges = params.get("additionalCharges");
+
+        String hashString;
+
+        if (additionalCharges != null && !additionalCharges.isEmpty()) {
+
+            hashString =
+                    additionalCharges + "|" +
+                    merchantSalt + "|" +
+                    status + "|" +
+                    "||||||" +   // 🔥 EXACT 6 EMPTY
+                    udf5 + "|" +
+                    udf4 + "|" +
+                    udf3 + "|" +
+                    udf2 + "|" +
+                    udf1 + "|" +
+                    email + "|" +
+                    firstname + "|" +
+                    productinfo + "|" +
+                    amount + "|" +
+                    txnid + "|" +
+                    merchantKey;
+
+        } else {
+
+            hashString =
+                    merchantSalt + "|" +
+                    status + "||||||" +               
+                    udf5 + "|" +
+                    udf4 + "|" +
+                    udf3 + "|" +
+                    udf2 + "|" +
+                    udf1 + "|" +
+                    email + "|" +
+                    firstname + "|" +
+                    productinfo + "|" +
+                    amount + "|" +
+                    txnid + "|" +
+                    merchantKey;
+        }
+
+        System.out.println("FINAL RAW STRING: " + hashString);
+
+        return hashCal("SHA-512", hashString);
     }
+
+
     
     
     private String hashCal(String type, String str) {

@@ -57,96 +57,101 @@ public class PromoteAdController {
 
 	@PostMapping("/payment/success")
 	public void paymentSuccess(@RequestParam Map<String, String> params,
-			HttpServletResponse response) throws IOException {
+	                           HttpServletResponse response) throws IOException {
 
-		String txnid = params.get("txnid");
-		String status = params.get("status");
-		String amountStr = params.get("amount");
-		String receivedHash = params.get("hash");
-		String promoteId = params.get("udf1");
+	    String txnid = params.get("txnid");
+	    String status = params.get("status");
+	    String amountStr = params.get("amount");
+	    String receivedHash = params.get("hash");
+	    String promoteId = params.get("udf1");
 
-		if (txnid == null || promoteId == null || status == null) {
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			return;
-		}
+	    if (txnid == null || promoteId == null || status == null) {
+	        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	        return;
+	    }
 
-		// 🔐 Verify hash
-//		String calculatedHash = hashGenerator.generateResponseHash(
-//				status,
-//				txnid,
-//				amountStr,
-//				params.get("productinfo"),
-//				params.get("firstname"),
-//				params.get("email"),
-//				params.getOrDefault("udf1",""),
-//				params.getOrDefault("udf2",""),
-//				params.getOrDefault("udf3","")
-//				);
-//
-//		System.out.println("calculated hash  "+ calculatedHash);
-//		if (!calculatedHash.equals(receivedHash)) {
-//			System.out.println("Hash mismatch!");
-//			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
-//			return;
-//		}
+	    // 🔐 Verify hash
+	    String calculatedHash = hashGenerator.generateResponseHash(params);
 
-//		if (!"success".equalsIgnoreCase(status)) {
-//			System.out.println("Trigger failure redirect!");
-//			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
-//			return;
-//		}
-		
-		BigDecimal amount = new BigDecimal(amountStr);
+	    if (!calculatedHash.equals(receivedHash)) {
+	        response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
+	        return;
+	    }
 
-		promoteAdService.updatePaymentSuccess(txnid, promoteId, amount);
+	    if (!"success".equalsIgnoreCase(status)) {
+	        response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
+	        return;
+	    }
 
-		//Redirect to app
-		System.out.println("Trigger success redirect!");
-		response.sendRedirect("filmhook://promote-payment-success?txnid=" + txnid + receivedHash);
+	    BigDecimal amount = new BigDecimal(amountStr);
+
+	    promoteAdService.updatePaymentSuccess(txnid, promoteId, amount);
+
+	    // ✅ Success time (epoch millis)
+	    long successTime = System.currentTimeMillis();
+
+	    // 🔥 Send all values to frontend
+	    String redirectUrl = String.format(
+	            "filmhook://promote-payment-success?txnid=%s&amount=%s&status=%s&time=%d",
+	            txnid,
+	            amountStr,
+	            status,
+	            successTime
+	    );
+	   
+
+	    response.sendRedirect(redirectUrl);
 	}
+
 
 
 	@PostMapping("/payment/failure")
 	public void paymentFailure(@RequestParam Map<String, String> params,
-			HttpServletResponse response) throws IOException {
-		String txnid = params.get("txnid");
-		String status = params.get("status");
-		String amountStr = params.get("amount");
-		String receivedHash = params.get("hash");
-		String promoteId = params.get("udf1");
+	                           HttpServletResponse response) throws IOException {
 
-		if (txnid == null || status == null) {
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			return;
-		}
+	    String txnid = params.get("txnid");
+	    String status = params.get("status");
+	    String amountStr = params.get("amount");
+	    String receivedHash = params.get("hash");
+	    String promoteId = params.get("udf1");
 
-		//Verify Response Hash
-//		String calculatedHash = hashGenerator.generateResponseHash(
-//				status,
-//				txnid,
-//				amountStr,
-//				params.get("productinfo"),
-//				params.get("firstname"),
-//				params.get("email"),
-//				params.getOrDefault("udf1", ""),
-//				params.getOrDefault("udf2", ""),
-//				params.getOrDefault("udf3", "")
-//				);
-//
-//		if (!calculatedHash.equals(receivedHash)) {
-//			System.out.println("Failure Hash mismatch!");
-//			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
-//			return;
-//		}
+	    if (txnid == null || status == null) {
+	        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	        return;
+	    }
 
-		//Update DB as FAILED
-		BigDecimal amount = new BigDecimal(amountStr);
+	    // 🔐 Verify Response Hash
+	    String calculatedHash = hashGenerator.generateResponseHash(params);
 
-		promoteAdService.updatePaymentFailed(txnid, promoteId, amount);
+	    if (!calculatedHash.equals(receivedHash)) {
+	        response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
+	        return;
+	    }
 
-		// Redirect Back to App
-		response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid + receivedHash);
+	    // ✅ Convert amount safely
+	    BigDecimal amount = BigDecimal.ZERO;
+	    if (amountStr != null) {
+	        amount = new BigDecimal(amountStr);
+	    }
+
+	    // ✅ Update DB as FAILED
+	    promoteAdService.updatePaymentFailed(txnid, promoteId, amount);
+
+	    // ✅ Failure time
+	    long failureTime = System.currentTimeMillis();
+
+	    // 🔥 Send values to frontend
+	    String redirectUrl = String.format(
+	            "filmhook://promote-payment-failure?txnid=%s&amount=%s&status=%s&time=%d",
+	            txnid,
+	            amountStr,
+	            status,
+	            failureTime
+	    );
+
+	    response.sendRedirect(redirectUrl);
 	}
+
 
 
 	// ⭐ GET RECENT PROMOTED (Running + Completed only)

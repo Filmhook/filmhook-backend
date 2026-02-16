@@ -44,7 +44,7 @@ public class AuditionPayUHashController {
 				request.getOrDefault("udf2", ""),
 				request.getOrDefault("udf3", "")
 				);
-
+       System.out.println(hash + "          hash gener");
 		Map<String, String> response = new HashMap<>();
 		response.put("hash", hash);
 		return response;
