@@ -85,12 +85,12 @@ public class PromoteAdController {
 
 		if (!calculatedHash.equals(receivedHash)) {
 			System.out.println("Hash mismatch!");
-			response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
+			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
 			return;
 		}
 
 		if (!"success".equalsIgnoreCase(status)) {
-			response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
+			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
 			return;
 		}
 		
@@ -132,7 +132,7 @@ public class PromoteAdController {
 
 		if (!calculatedHash.equals(receivedHash)) {
 			System.out.println("Failure Hash mismatch!");
-			response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
+			response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
 			return;
 		}
 
@@ -142,7 +142,7 @@ public class PromoteAdController {
 		promoteAdService.updatePaymentFailed(txnid, promoteId, amount);
 
 		// Redirect Back to App
-		response.sendRedirect("filmhook://promote-payment-failure?txnid==" + txnid);
+		response.sendRedirect("filmhook://promote-payment-failure?txnid=" + txnid);
 	}
 
 
