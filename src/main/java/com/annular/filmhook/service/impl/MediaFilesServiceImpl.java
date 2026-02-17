@@ -766,6 +766,7 @@ public class MediaFilesServiceImpl implements MediaFilesService {
 									: "");
 					mediaFiles.setFileSize(file.getSize());
 					mediaFiles.setStatus(false);
+					mediaFiles.setFileStatus(FileStatus.PENDING);
 					mediaFiles.setCreatedBy(user.getUserId());
 					mediaFiles.setCreatedOn(new Date());
 					mediaFilesRepository.save(mediaFiles);
