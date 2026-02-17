@@ -64,6 +64,7 @@ public class PromoteAdController {
 	    String amountStr = params.get("amount");
 	    String receivedHash = params.get("hash");
 	    String promoteId = params.get("udf1");
+	    String realStatus = params.get("field9");
 
 	    if (txnid == null || promoteId == null || status == null) {
 	        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -92,13 +93,14 @@ public class PromoteAdController {
 
 	    // 🔥 Send all values to frontend
 	    String redirectUrl = String.format(
-	            "filmhook://promote-payment-success?txnid=%s&amount=%s&status=%s&time=%d",
+	            "filmhook://promote-payment-success?txnid=%s&amount=%s&status=%s&realStatus=%s&time=%d",
 	            txnid,
 	            amountStr,
 	            status,
+	            realStatus,
 	            successTime
 	    );
-	   
+	    System.out.println("Payment success redirect   "+ redirectUrl);
 
 	    response.sendRedirect(redirectUrl);
 	}
@@ -114,6 +116,7 @@ public class PromoteAdController {
 	    String amountStr = params.get("amount");
 	    String receivedHash = params.get("hash");
 	    String promoteId = params.get("udf1");
+	    String realStatus = params.get("field9");
 
 	    if (txnid == null || status == null) {
 	        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -142,12 +145,15 @@ public class PromoteAdController {
 
 	    // 🔥 Send values to frontend
 	    String redirectUrl = String.format(
-	            "filmhook://promote-payment-failure?txnid=%s&amount=%s&status=%s&time=%d",
+	            "filmhook://promote-payment-failure?txnid=%s&amount=%s&status=%s&realStatus=%s&time=%d",
 	            txnid,
 	            amountStr,
 	            status,
+	            realStatus,
 	            failureTime
 	    );
+	    
+	    System.out.println("Payment failure redirect   "+ redirectUrl);
 
 	    response.sendRedirect(redirectUrl);
 	}

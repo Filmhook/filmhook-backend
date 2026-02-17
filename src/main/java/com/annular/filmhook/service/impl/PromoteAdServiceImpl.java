@@ -101,6 +101,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			if (model.getCgst() != null) promoteId.setCgst(model.getCgst());
 			if (model.getSgst() != null) promoteId.setSgst(model.getSgst());
 			if (model.getPrice() != null) promoteId.setPrice(model.getPrice());
+			if (model.getAdType() != null) promoteId.setAdType(model.getAdType());
 
 			// ---------------------------------
 			// Update logo
@@ -171,9 +172,10 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			postModel.setLongitude(model.getLongitude());
 			postModel.setAddress(model.getAddress());
 			postModel.setPrivateOrPublic(model.getPrivateOrPublic());
-
+			System.out.println("Check post First time");
 			PostWebModel savedPost = postService.savePostsWithFiles(postModel);
 			postId = savedPost.getId();
+			model.setFiles(null);
 		}
 
 		Posts post = postsRepository.findById(postId)
@@ -269,7 +271,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 					.categoryRefId(postId)
 					.files(model.getFiles())
 					.build();
-
+System.out.println("Check post second time");
 			// saveMediaFilesAndReturn → return list<MediaFiles>
 			mediaFilesService.saveMediaFiles(uploadInput, user);
 
