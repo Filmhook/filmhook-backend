@@ -550,11 +550,11 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void deleteUserCoverPic(UserWebModel userWebModel) {
 		try {
-			List<FileOutputWebModel> outputWebModelList = this.getCoverPic(userWebModel);
-			if (!Utility.isNullOrEmptyList(outputWebModelList)) {
-				List<Integer> coverPicIdsList = outputWebModelList.stream().map(FileOutputWebModel::getCategoryRefId).collect(Collectors.toList());
-				mediaFilesService.deleteMediaFilesByCategoryAndRefIds(MediaFileCategory.CoverPic, coverPicIdsList);
-			}
+//			List<FileOutputWebModel> outputWebModelList = this.getCoverPic(userWebModel);
+//			if (!Utility.isNullOrEmptyList(outputWebModelList)) {
+//				List<Integer> coverPicIdsList = outputWebModelList.stream().map(FileOutputWebModel::getCategoryRefId).collect(Collectors.toList());
+				mediaFilesService.deleteMediaFilesByCategoryAndIds(MediaFileCategory.CoverPic, userWebModel.getId());
+			
 		} catch (Exception e) {
 			logger.error("Error at deleteUserCoverPic() -> [{}]", e.getMessage());
 			e.printStackTrace();

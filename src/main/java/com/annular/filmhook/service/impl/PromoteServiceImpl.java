@@ -87,11 +87,10 @@ public class PromoteServiceImpl implements PromoteService {
 			Integer userId = userDetails.userInfo().getId();
 
 			// Update fields with values from the request
-			promote.setAmount(promoteWebModel.getAmount());
+//			promote.setAmount(promoteWebModel.getAmount());
 			promote.setCgst(promoteWebModel.getCgst());
 			promote.setPrice(promoteWebModel.getPrice());
 			promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
-			promote.setTotalCost(promoteWebModel.getTotalCost());
 			promote.setTaxFee(promoteWebModel.getTaxFee());
 			promote.setSgst(promoteWebModel.getSgst());
 			promote.setStatus(true); 
@@ -139,11 +138,11 @@ public class PromoteServiceImpl implements PromoteService {
 			Optional<Promote> data = promoteRepository.findById(promoteId);
 			if (data.isPresent()) {
 				Promote promote = data.get();
-				promote.setAmount(promoteWebModel.getAmount());
+//				promote.setAmount(promoteWebModel.getAmount());
 				promote.setCgst(promoteWebModel.getCgst());
 				//				promote.setEndDate(promoteWebModel.getEndDate());
 				promote.setPrice(promoteWebModel.getPrice());
-				promote.setTotalCost(promoteWebModel.getTotalCost());
+//				promote.setTotalCost(promoteWebModel.getTotalCost());
 				promote.setTaxFee(promoteWebModel.getTaxFee());
 				promote.setNumberOfDays(promoteWebModel.getNumberOfDays());
 				promote.setSgst(promoteWebModel.getSgst());
