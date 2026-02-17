@@ -368,23 +368,23 @@ public class UserController {
                 .orElseGet(() -> new Response(-1, "User not found...", null));
     }
 
-//    @GetMapping("/getNearByUsers")
-//    public Response getNearByUsers(@RequestParam("userId") Integer userId,
-//                                   @RequestParam(value = "range", required = false) Integer range,
-//                                   @RequestParam(value = "profession", required = false) String profession) {
-//        try {
-//            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId, range, profession);
-//
-//            if (!Utility.isNullOrEmptyList(nearbyUsers)) {
-//                return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
-//            } else {
-//                return new Response(-1, "Nearby user(s) not found...", "");
-//            }
-//        } catch (RuntimeException e) {
-//            e.printStackTrace();
-//            return new Response(-1, "Error", e.getMessage());
-//        }
-//    }
+    @GetMapping("/getAllNearByUsers")
+    public Response getNearByUsers(@RequestParam("userId") Integer userId,
+                                   @RequestParam(value = "range", required = false) Integer range,
+                                   @RequestParam(value = "profession", required = false) String profession) {
+        try {
+            List<Map<String, Object>> nearbyUsers = userService.findNearByUsers(userId, range, profession);
+
+            if (!Utility.isNullOrEmptyList(nearbyUsers)) {
+                return new Response(1, "Nearby user(s) found successfully...", nearbyUsers);
+            } else {
+                return new Response(-1, "Nearby user(s) not found...", "");
+            }
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return new Response(-1, "Error", e.getMessage());
+        }
+    }
     @GetMapping("/getNearByUsers")
     public Response getNearByUsers(@RequestParam("userId") Integer userId) {
         try {
