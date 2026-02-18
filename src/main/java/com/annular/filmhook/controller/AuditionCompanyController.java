@@ -60,7 +60,7 @@ public class AuditionCompanyController {
             @RequestPart(value = "logoFiles", required = false)
             MultipartFile[] logoFiles,
 
-            @RequestPart(value = "companyCertificateFiles", required = true)
+            @RequestPart(value = "companyCertificateFiles", required = false)
             MultipartFile[] companyCertificateFiles,
 
             @RequestPart(value = "businessCertificateFiles", required = false)
