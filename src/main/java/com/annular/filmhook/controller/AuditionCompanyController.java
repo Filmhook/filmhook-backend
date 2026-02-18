@@ -74,7 +74,8 @@ public class AuditionCompanyController {
         if (logoFiles != null)
             dto.setLogoFiles(Arrays.asList(logoFiles));
 
-        dto.setCompanyCertificateFiles(Arrays.asList(companyCertificateFiles));
+        if (companyCertificateFiles != null)
+            dto.setCompanyCertificateFiles(Arrays.asList(companyCertificateFiles));
 
         if (businessCertificateFiles != null)
             dto.setBusinessCertificateFiles(Arrays.asList(businessCertificateFiles));

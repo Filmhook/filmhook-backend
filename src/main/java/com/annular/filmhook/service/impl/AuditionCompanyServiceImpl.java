@@ -141,7 +141,7 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
     // 📁 CERTIFICATE UPLOADS
     // =========================
 
-    // Company Certificate (ALWAYS)
+    // Company Certificate 
     mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
             MediaFileCategory.AuditionCompanyCertificate,
             List.of(entity.getId())
