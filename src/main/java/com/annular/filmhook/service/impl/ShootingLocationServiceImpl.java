@@ -1658,14 +1658,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						);
 
 				// D) Media files
-				//				dto.setImageUrls(
-				//						mediaFilesService
-				//						.getMediaFilesByCategoryAndRefId(
-				//								MediaFileCategory.shootingLocationImage, pid)
-				//						.stream()
-				//						.map(FileOutputWebModel::getFilePath)
-				//						.toList()
-				//						);
+								dto.setImageUrls(
+										mediaFilesService
+										.getMediaFilesByCategoryAndRefId(
+												MediaFileCategory.shootingLocationImage, pid)
+										);
 
 				dto.setGovernmentIdUrls(
 						mediaFilesService
