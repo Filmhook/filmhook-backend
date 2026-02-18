@@ -34,9 +34,9 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
     	                    .getHeader("sessionToken");
 
     	    if (sessionToken == null) {
-    	        return false;
-    	    }
-
+    	    	sessionToken =
+    	    	servletRequest.getServletRequest().getParameter("sessionToken");
+    	    	}
     	    UserSession session =
     	            userSessionRepository.findBySessionToken(sessionToken);
 
