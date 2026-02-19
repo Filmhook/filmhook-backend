@@ -42,7 +42,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.setUserDestinationPrefix("/user");
     }
 
-    // ✅ SECURITY — Token Validation Happens Here
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {
@@ -55,21 +54,33 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
 
+                    System.out.println("==== WS CONNECT ATTEMPT ====");
+
                     String sessionToken =
                             accessor.getFirstNativeHeader("sessionToken");
 
-                    if (sessionToken == null) {
-                        throw new IllegalArgumentException("Missing sessionToken");
+                    System.out.println("TOKEN RECEIVED: " + sessionToken);
+
+                    if (sessionToken == null || sessionToken.trim().isEmpty()) {
+                        System.out.println("❌ Missing sessionToken");
+                        return null; // reject connection safely
                     }
 
                     UserSession session =
                             userSessionRepository.findBySessionToken(sessionToken);
 
-                    if (session == null || !session.getIsActive()) {
-                        throw new IllegalArgumentException("Invalid sessionToken");
+                    if (session == null) {
+                        System.out.println("❌ Session not found in DB");
+                        return null;
                     }
 
-                    // 🔐 Bind user to Principal
+                    if (!Boolean.TRUE.equals(session.getIsActive())) {
+                        System.out.println("❌ Session is not active");
+                        return null;
+                    }
+
+                    System.out.println("✅ Session validated for user: " + session.getUserId());
+
                     accessor.setUser(
                             new UsernamePasswordAuthenticationToken(
                                     session.getUserId().toString(),
@@ -77,6 +88,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                     Collections.emptyList()
                             )
                     );
+
+                    System.out.println("==== WS AUTH SUCCESS ====");
                 }
 
                 return message;
