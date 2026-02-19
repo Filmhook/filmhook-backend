@@ -13,10 +13,10 @@ public class WebSocketService {
     private SimpMessagingTemplate messagingTemplate;
 
     public void notifyUser(Integer userId, String eventType, Object payload) {
-        messagingTemplate.convertAndSendToUser(
-                String.valueOf(userId),
-                "/queue/call",
-                new WebSocketMessage(eventType, payload)
-        );
+    	messagingTemplate.convertAndSendToUser(
+    	        String.valueOf(userId),
+    	        "/queue/call",
+    	        new WebSocketMessage(eventType, payload)
+    	);
     }
 }
