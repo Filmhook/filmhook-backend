@@ -29,8 +29,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Autowired
     private UserSessionRepository userSessionRepository;
-    private static final Logger log =
-            LoggerFactory.getLogger(WebSocketConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(WebSocketConfig.class);
     // ✅ WebSocket Endpoint
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -55,7 +54,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                 StompHeaderAccessor accessor =
                         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-
+                if (accessor != null) {
+                    log.info(">>> Interceptor triggered. Command: {}", accessor.getCommand());
+                } else {
+                    log.info(">>> Interceptor triggered but accessor is NULL");
+                }
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
 
                     log.info("==== WS CONNECT ATTEMPT ====");
