@@ -17,9 +17,9 @@ public interface PromoteAdService {
 
     PromoteAd getPromoteByPostId(Integer postId);
     
-    Response updatePaymentSuccess(String txnid, String promoteId, BigDecimal amount );
-
-    Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount );
+//    Response updatePaymentSuccess(String txnid, String promoteId, BigDecimal amount );
+//
+//    Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount );
 
     Response getRecentPromotions(Integer userId);
 
@@ -30,5 +30,9 @@ public interface PromoteAdService {
 	List<VisitPageWebModel> getPagesByCategoryId(Integer categoryId);
 
 	List<VisitPageWebModel> getDetailsByVisitPageId(Integer visitPageId);
+	
+	void activatePromote(Integer promoteId, String txnId);
+
+	void markPromotePaymentFailed(Integer promoteId, String txnId);
 
 }

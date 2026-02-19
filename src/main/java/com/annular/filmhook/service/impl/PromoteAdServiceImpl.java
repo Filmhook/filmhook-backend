@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
@@ -310,56 +311,100 @@ System.out.println("Check post second time");
 	public PromoteAd getPromoteByPostId(Integer postId) {
 		return promoteAdRepository.findByPost_Id(postId);
 	}
-
+//
+//	@Override
+//	public Response updatePaymentSuccess(String txnid, String promoteId, BigDecimal amount) {
+//
+//		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
+//				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+//
+//		promote.setPaymentStatus("SUCCESS");
+//		promote.setStatus(PromoteStatus.Running);
+//		promote.setTransactionId(txnid);
+//
+//
+//		Date start = new Date();
+//		promote.setStartDate(start);
+//
+//		// calculate end date
+//		Date endDate = Date.from(
+//				start.toInstant().plus(Duration.ofDays(promote.getDays()))
+//				);
+//		promote.setEndDate(endDate);
+//
+//		// update post flag
+//		Posts post = promote.getPost();
+//		post.setPromoteFlag(true);
+//		postsRepository.save(post);
+//
+//		promoteAdRepository.save(promote);
+//
+//		return new Response(1, "Payment Success", null);
+//	}
+	
 	@Override
-	public Response updatePaymentSuccess(String txnid, String promoteId, BigDecimal amount) {
+	@Transactional
+	public void activatePromote(Integer promoteId, String txnId) {
 
-		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
-				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+	    PromoteAd promote = promoteAdRepository.findById(promoteId)
+	            .orElseThrow(() -> new RuntimeException("Promote not found"));
 
-		promote.setPaymentStatus("SUCCESS");
-		promote.setStatus(PromoteStatus.Running);
-		promote.setTransactionId(txnid);
+	    promote.setPaymentStatus("SUCCESS");
+	    promote.setStatus(PromoteStatus.Running);
+	    promote.setTransactionId(txnId);
 
+	    Date start = new Date();
+	    promote.setStartDate(start);
 
-		Date start = new Date();
-		promote.setStartDate(start);
+	    Date endDate = Date.from(
+	            start.toInstant().plus(Duration.ofDays(promote.getDays()))
+	    );
+	    promote.setEndDate(endDate);
 
-		// calculate end date
-		Date endDate = Date.from(
-				start.toInstant().plus(Duration.ofDays(promote.getDays()))
-				);
-		promote.setEndDate(endDate);
+	    Posts post = promote.getPost();
+	    post.setPromoteFlag(true);
+	    postsRepository.save(post);
 
-		// update post flag
-		Posts post = promote.getPost();
-		post.setPromoteFlag(true);
-		postsRepository.save(post);
-
-		promoteAdRepository.save(promote);
-
-		return new Response(1, "Payment Success", null);
+	    promoteAdRepository.save(promote);
 	}
 
 
+//	@Override
+//	public Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount) {
+//
+//		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
+//				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+//
+//		promote.setPaymentStatus("FAILED");
+//		promote.setTransactionId(txnid);
+//		promote.setStatus(PromoteStatus.NotStarted); // reset status if needed
+//		
+//
+//		Posts post = promote.getPost();
+//		post.setPromoteFlag(false);
+//		postsRepository.save(post);
+//
+//		PromoteAd updated = promoteAdRepository.save(promote);
+//
+//		return new Response(-1, "Payment Failed", null);
+//	}
+
 	@Override
-	public Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount) {
+	@Transactional
+	public void markPromotePaymentFailed(Integer promoteId, String txnId) {
 
-		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
-				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+	    PromoteAd promote = promoteAdRepository.findById(promoteId)
+	            .orElseThrow(() -> new RuntimeException("Promote not found"));
 
-		promote.setPaymentStatus("FAILED");
-		promote.setTransactionId(txnid);
-		promote.setStatus(PromoteStatus.NotStarted); // reset status if needed
-		
+	    promote.setPaymentStatus("FAILED");
+	    promote.setTransactionId(txnId);
+	    promote.setStatus(PromoteStatus.NotStarted);
 
-		Posts post = promote.getPost();
-		post.setPromoteFlag(false);
-		postsRepository.save(post);
+	    Posts post = promote.getPost();
+	    post.setPromoteFlag(false);
+	    postsRepository.save(post);
 
-		PromoteAd updated = promoteAdRepository.save(promote);
-
-		return new Response(-1, "Payment Failed", null);
+	    promoteAdRepository.save(promote);
 	}
 
 
