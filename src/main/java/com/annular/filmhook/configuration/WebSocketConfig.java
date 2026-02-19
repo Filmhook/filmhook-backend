@@ -2,6 +2,9 @@ package com.annular.filmhook.configuration;
 
 import java.util.Collections;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
@@ -26,7 +29,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Autowired
     private UserSessionRepository userSessionRepository;
-
+    private static final Logger log =
+            LoggerFactory.getLogger(WebSocketConfig.class);
     // ✅ WebSocket Endpoint
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -54,32 +58,32 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
 
-                    System.out.println("==== WS CONNECT ATTEMPT ====");
+                    log.info("==== WS CONNECT ATTEMPT ====");
 
                     String sessionToken =
                             accessor.getFirstNativeHeader("sessionToken");
 
-                    System.out.println("TOKEN RECEIVED: " + sessionToken);
+                    log.info("TOKEN RECEIVED: {}", sessionToken);
 
                     if (sessionToken == null || sessionToken.trim().isEmpty()) {
-                        System.out.println("❌ Missing sessionToken");
-                        return null; // reject connection safely
+                        log.warn("❌ Missing sessionToken");
+                        return null;
                     }
 
                     UserSession session =
                             userSessionRepository.findBySessionToken(sessionToken);
 
                     if (session == null) {
-                        System.out.println("❌ Session not found in DB");
+                        log.warn("❌ Session not found in DB");
                         return null;
                     }
 
                     if (!Boolean.TRUE.equals(session.getIsActive())) {
-                        System.out.println("❌ Session is not active");
+                        log.warn("❌ Session is not active");
                         return null;
                     }
 
-                    System.out.println("✅ Session validated for user: " + session.getUserId());
+                    log.info("✅ WS AUTH SUCCESS for user {}", session.getUserId());
 
                     accessor.setUser(
                             new UsernamePasswordAuthenticationToken(
@@ -88,8 +92,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                     Collections.emptyList()
                             )
                     );
-
-                    System.out.println("==== WS AUTH SUCCESS ====");
                 }
 
                 return message;
