@@ -5,7 +5,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
@@ -25,10 +24,10 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
                                    WebSocketHandler wsHandler,
                                    Map<String, Object> attributes) {
 
-    	if (request instanceof ServletServerHttpRequest) {
+    	if (request instanceof org.springframework.http.server.ServletServerHttpRequest) {
 
-    	   ServletServerHttpRequest servletRequest =
-    	            (ServletServerHttpRequest) request;
+    	    org.springframework.http.server.ServletServerHttpRequest servletRequest =
+    	            (org.springframework.http.server.ServletServerHttpRequest) request;
 
     	    String sessionToken =
     	            servletRequest.getServletRequest()
@@ -39,7 +38,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
     	    	servletRequest.getServletRequest().getParameter("sessionToken");
     	    	}
     	    if (sessionToken == null) {
-    	        return true;
+    	        return false;
     	    }
 
     	    UserSession session =
