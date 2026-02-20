@@ -68,7 +68,7 @@ public class PostWebModel {
     private Integer promoteId;
     private Integer numberOfDays;
     private BigDecimal amount;
-    private Integer selectOption;
+    private String selectOption;
     private String visitPageData;
     private Integer viewsCount;
     private String companyName;
@@ -78,6 +78,7 @@ public class PostWebModel {
     private Boolean watchLater;
     private List<Integer> deletedTaggedUserIds;
     private String adType;
+    private String objValue;
 
 
 }

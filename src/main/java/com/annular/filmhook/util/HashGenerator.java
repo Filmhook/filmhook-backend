@@ -1,3 +1,4 @@
+
 package com.annular.filmhook.util;
 
 import java.nio.charset.StandardCharsets;
@@ -105,7 +106,7 @@ public class HashGenerator {
             hashString =
                     additionalCharges + "|" +
                     merchantSalt + "|" +
-                    status + "|" +
+                    status +
                     "||||||" +   // 🔥 EXACT 6 EMPTY
                     udf5 + "|" +
                     udf4 + "|" +

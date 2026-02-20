@@ -172,7 +172,6 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			postModel.setLongitude(model.getLongitude());
 			postModel.setAddress(model.getAddress());
 			postModel.setPrivateOrPublic(model.getPrivateOrPublic());
-			System.out.println("Check post First time");
 			PostWebModel savedPost = postService.savePostsWithFiles(postModel);
 			postId = savedPost.getId();
 			model.setFiles(null);
@@ -448,4 +447,3 @@ System.out.println("Check post second time");
 
 
 }
-

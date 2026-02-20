@@ -167,6 +167,13 @@ public class CallServiceImpl implements CallService {
                 ws.notifyUser(otherUser, "CALL_REJECTED",
                         Map.of("channelName", req.getChannelName()));
                 break;
+                
+            case "cancelled":
+                System.out.println("🚫 CALL_CANCELLED event sent to user " + otherUser);
+
+                ws.notifyUser(otherUser, "CALL_CANCELLED",
+                        Map.of("channelName", req.getChannelName()));
+                break;
 
             case "accepted":
                 System.out.println("📞 CALL_ACCEPTED event sent to user " + otherUser);
