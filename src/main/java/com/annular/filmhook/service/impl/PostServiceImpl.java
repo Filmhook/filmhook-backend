@@ -753,6 +753,8 @@ public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList)
             String brandName = null;
             String visitType = null;
             String adType = null;
+            String objValue = null;
+            String selectOption = null;
 
             List<FileOutputWebModel> logoFiles = new ArrayList<>();
 
@@ -766,7 +768,8 @@ public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList)
                         ? promoteAd.getVisitType().getTitle()
                         : null;
                 adType = promoteAd.getAdType();
-
+                objValue = promoteAd.getAdvObjectValue();
+                selectOption = promoteAd.getAdvObject().getVisitType();
                 logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
                         MediaFileCategory.Promote,
                         post.getId()
@@ -833,7 +836,10 @@ public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList)
                     .companyLogoFiles(logoFiles)
                     .visitPageData(visitType)
                     .adType(adType)
-
+                    .selectOption(selectOption)
+                    .objValue(objValue)
+                    
+                    
                     .postLinkUrl(post.getPostLinkUrls())
                     .latitude(post.getLatitude())
                     .longitude(post.getLongitude())

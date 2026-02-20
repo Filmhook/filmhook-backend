@@ -40,8 +40,9 @@ public class PromoteAd {
     @Column(name = "business_type")
     private String businessType;
 
-    @Column(name = "adv_object")
-    private String advObject;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "adv_object", referencedColumnName = "category_id")
+    private VisitePageCategory advObject;
 
     @Column(name = "adv_object_value")
     private String advObjectValue;
