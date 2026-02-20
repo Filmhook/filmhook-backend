@@ -4,6 +4,8 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
+
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
@@ -89,11 +91,11 @@ public class PromoteAd {
     private PromoteStatus status = PromoteStatus.NotStarted;
 
     // NEW PAYMENT FIELDS
-    @Column(name = "amount")
-    private Integer amount;
+    @Column(name = "amount", precision = 10, scale = 2)
+    private BigDecimal amount;
 
-    @Column(name = "total_cost")
-    private Integer totalCost;
+    @Column(name = "total_cost", precision = 10, scale = 2)
+    private BigDecimal totalCost;
 
     @Column(name = "tax_fee")
     private Integer taxFee;

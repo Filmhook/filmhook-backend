@@ -1,5 +1,6 @@
 package com.annular.filmhook.webmodel;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -88,8 +89,8 @@ public class PromoteWebModel {
     private String postDescription;
 
     // Payment
-    private Integer amount;
-    private Integer totalCost;
+    private BigDecimal amount;
+    private BigDecimal totalCost;
     private Integer taxFee;
     private Integer cgst;
     private Integer sgst;
