@@ -138,7 +138,7 @@ public class CallServiceImpl implements CallService {
 
         CallLog log = callRepo.findByChannelName(req.getChannelName());
         if (log == null) {
-            System.out.println("❌ Invalid channel: " + req.getChannelName());
+            System.out.println("Invalid channel: " + req.getChannelName());
             return new Response(-1, "Invalid channel", null);
         }
 
@@ -151,10 +151,10 @@ public class CallServiceImpl implements CallService {
                 req.getUserId().equals(log.getCallerId()) ?
                         log.getReceiverId() : log.getCallerId();
 
-        System.out.println("📞 EndCall Triggered by User " + req.getUserId());
-        System.out.println("👉 Other User: " + otherUser);
-        System.out.println("🔔 Call Status: " + req.getStatus());
-        System.out.println("🔗 Channel Name: " + req.getChannelName());
+        System.out.println("EndCall Triggered by User " + req.getUserId());
+        System.out.println("Other User: " + otherUser);
+        System.out.println("Call Status: " + req.getStatus());
+        System.out.println("Channel Name: " + req.getChannelName());
 
         /* ---------------------------------------------------------
          * WebSocket Call Events (Real-time)

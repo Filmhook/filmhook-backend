@@ -19,8 +19,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
+import com.annular.filmhook.enums.PaymentMode;
+import com.annular.filmhook.enums.TransactionType;
 import com.annular.filmhook.model.PromoteAd;
+import com.annular.filmhook.model.User;
+import com.annular.filmhook.repository.PromoteAdRepository;
+import com.annular.filmhook.repository.UserRepository;
+import com.annular.filmhook.service.PaymentService;
 import com.annular.filmhook.service.PromoteAdService;
+import com.annular.filmhook.service.TransactionService;
 import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.webmodel.PromoteWebModel;
 import com.annular.filmhook.webmodel.VisitPageWebModel;
@@ -38,6 +45,17 @@ public class PromoteAdController {
 
 	@Autowired
 	private HashGenerator hashGenerator;
+
+	@Autowired
+	PaymentService paymentService;
+	
+	@Autowired
+	UserRepository userRepository;
+	@Autowired
+	PromoteAdRepository promoteAdRepository;
+	
+	@Autowired
+	TransactionService transactionService;
 
 
 	@PostMapping("/save")
@@ -85,9 +103,14 @@ public class PromoteAdController {
 	    }
 
 	    BigDecimal amount = new BigDecimal(amountStr);
-
-	    promoteAdService.updatePaymentSuccess(txnid, promoteId, amount);
-
+	    
+	    paymentService.handleGatewaySuccess(
+	            txnid,
+	            amount,
+	            TransactionType.PROMOTE,
+	            Integer.parseInt(promoteId),
+	            params.toString()
+	    );
 	    // ✅ Success time (epoch millis)
 	    long successTime = System.currentTimeMillis();
 
@@ -138,7 +161,12 @@ public class PromoteAdController {
 	    }
 
 	    // ✅ Update DB as FAILED
-	    promoteAdService.updatePaymentFailed(txnid, promoteId, amount);
+	   // promoteAdService.updatePaymentFailed(txnid, promoteId, amount);
+	    paymentService.handleGatewayFailure(txnid,
+        amount,
+        TransactionType.PROMOTE,
+        Integer.parseInt(promoteId),
+        params.toString());
 
 	    // ✅ Failure time
 	    long failureTime = System.currentTimeMillis();
@@ -185,6 +213,33 @@ public class PromoteAdController {
 	public ResponseEntity<List<VisitPageWebModel>> getVisitPageDetails(
 			@PathVariable Integer visitPageId) {
 		return ResponseEntity.ok(promoteAdService.getDetailsByVisitPageId(visitPageId));
+	}
+	
+	@PostMapping("/pay/{userId}/{promoteId}/{txnId}")
+	public Response startPromotePayment(@PathVariable Integer userId, @PathVariable Integer promoteId, @PathVariable String txnId) {
+
+	    User user = userRepository.getUserByUserId(userId)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
+
+	    PromoteAd promote = promoteAdRepository.findById(promoteId)
+	            .orElseThrow(() -> new RuntimeException("Promote not found"));
+
+	   
+
+	    BigDecimal amount = promote.getAmount();
+
+	    // 🔥 VERY IMPORTANT → CREATE TRANSACTION FIRST
+	    transactionService.createTransaction(
+	            user,
+	            txnId,
+	            TransactionType.PROMOTE,
+	            PaymentMode.PAYU,
+	            promote.getPromoteId(),
+	            amount
+	    );
+
+	    // Now return txnId to frontend for gateway
+	    return new Response(1, "Proceed to Payment", txnId);
 	}
 
 

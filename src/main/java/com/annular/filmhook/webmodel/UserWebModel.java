@@ -100,6 +100,7 @@ public class UserWebModel {
     private Boolean adminPageStatus;
     private String countryCode;
     private String refCode;
+    private List<Integer> id;
     
 
     // Profile & Cover Photo

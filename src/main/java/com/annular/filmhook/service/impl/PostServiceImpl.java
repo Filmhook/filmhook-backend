@@ -758,6 +758,7 @@ public class PostServiceImpl implements PostService {
 				String objValue = null;
 				String selectOption = null;
 
+
 				List<FileOutputWebModel> logoFiles = new ArrayList<>();
 
 				if (promoteAd != null) {

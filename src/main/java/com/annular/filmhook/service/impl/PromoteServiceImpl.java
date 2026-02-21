@@ -71,10 +71,6 @@ public class PromoteServiceImpl implements PromoteService {
 	MediaFilesService mediaFilesService;
 
 	
-
-
-	
-
 	@Override
 	public ResponseEntity<?> deletePromote(PromoteWebModel promoteWebModel) {
 		try {
