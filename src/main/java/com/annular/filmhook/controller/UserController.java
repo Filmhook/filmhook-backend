@@ -14,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Map;
@@ -360,13 +364,13 @@ public class UserController {
             return new Response(-1, "User not found...", null);
         }
     }
-
-    @PostMapping("/saveUserLocation")
-    public Response saveUserLocation(@RequestBody LocationWebModel locationWebModel) {
-        Optional<Location> updatedLocation = userService.saveUserLocation(locationWebModel);
-        return updatedLocation.map(location -> new Response(1, "Location saved/updated successfully...", location))
-                .orElseGet(() -> new Response(-1, "User not found...", null));
-    }
+//
+//    @PostMapping("/saveUserLocation")
+//    public Response saveUserLocation(@RequestBody LocationWebModel locationWebModel) {
+//        Optional<Location> updatedLocation = userService.saveUserLocation(locationWebModel);
+//        return updatedLocation.map(location -> new Response(1, "Location saved/updated successfully...", location))
+//                .orElseGet(() -> new Response(-1, "User not found...", null));
+//    }
 
     @GetMapping("/getAllNearByUsers")
     public Response getNearByUsers(@RequestParam("userId") Integer userId,
@@ -542,4 +546,33 @@ public class UserController {
         }
     }
 
+    
+    @PostMapping("/saveLocation")
+    public Response saveUserLocation(@RequestBody LocationWebModel locationWebModel) {
+
+        Optional<Location> savedLocation =
+        		userService.saveUserLocation(locationWebModel);
+
+        if (savedLocation.isPresent()) {
+            return new Response(1, "Location saved successfully",
+                    savedLocation.get());
+        }
+
+        return new Response(-1, "User not found or unable to save location", null);
+    }
+
+    
+    @GetMapping("/nearby")
+    public ResponseEntity<List<Map<String, Object>>> getNearbyUsers(
+           @ RequestParam Integer userId,   @ RequestParam  (defaultValue = "0") int pageNo,
+           @ RequestParam(defaultValue = "10") int pageSize,  @RequestParam(required = false) Double range
+    ) {
+
+        List<Map<String, Object>> response =
+        		userService.findNearUsers(userId,pageNo,pageSize, range);
+
+        return ResponseEntity.ok(response);
+    }
+ 
+    
 }
