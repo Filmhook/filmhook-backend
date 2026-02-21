@@ -1826,7 +1826,6 @@ public class UserServiceImpl implements UserService {
 		return Optional.empty();
 	}
 
-
 @Override
 public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
         int pageSize, Double range
@@ -1873,9 +1872,11 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
         if (hasLoggedLocation) {
             loggedMap.put("latitude", loggedLocation.getLatitude());
             loggedMap.put("longitude", loggedLocation.getLongitude());
+            loggedMap.put("visbility", loggedLocation.getVisibility());
         } else {
             loggedMap.put("latitude", null);
             loggedMap.put("longitude", null);
+            loggedMap.put("visbility", null);
         }
 
         loggedMap.put("distance", "0 m");
@@ -1886,7 +1887,6 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                 getProfessionNames(loggedInUser.getUserId()));
         loggedMap.put("userType", loggedInUser.getUserType());
         loggedMap.put("review", loggedInUser.getAdminReview());
-
         nearbyUsersList.add(loggedMap);
 
 
