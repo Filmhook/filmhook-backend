@@ -4,12 +4,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.annular.filmhook.configuration.PaymentConfig;
+import com.annular.filmhook.enums.TransactionType;
 import com.annular.filmhook.model.PaymentWebModel;
+import com.annular.filmhook.service.AuditionService;
+import com.annular.filmhook.service.BookingService;
 import com.annular.filmhook.service.PaymentService;
+import com.annular.filmhook.service.PromoteAdService;
+import com.annular.filmhook.service.TransactionService;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +27,10 @@ import com.cashfree.model.CreateOrderRequest;
 import com.cashfree.model.CustomerDetails;
 import com.cashfree.model.OrderEntity;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     public static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
@@ -109,5 +119,76 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentSessionId(orderResponse.getPaymentSessionId())
                 .build();
     }
+    
+    //New one 
+    
+    private final TransactionService transactionService;
+    private final PromoteAdService promoteAdService;
+    private final AuditionService auditionService;
+    private final BookingService bookingService;
+
+    @Override
+    @Transactional
+    public void handleGatewaySuccess(String txnId,
+                                     BigDecimal amount,
+                                     TransactionType type,
+                                     Integer referenceId,
+                                     String gatewayResponse) {
+
+        // 1️⃣ Mark Transaction Success
+        transactionService.markSuccess(txnId, gatewayResponse);
+
+        // 2️⃣ Activate Business Logic
+        switch (type) {
+
+            case PROMOTE:
+            	System.out.println("Check to enter promoteAdservice ");
+                promoteAdService.activatePromote(referenceId, txnId);
+                break;
+
+//            case AUDITION:
+//                auditionService.markPaymentSuccess(referenceId, txnId);
+//                break;
+//
+//            case BOOKING:
+//                bookingService.markPaymentSuccess(referenceId, txnId);
+//                break;
+
+            default:
+                break;
+        }
+    }
+
+    @Override
+    @Transactional
+    public void handleGatewayFailure(String txnId,
+            BigDecimal amount,
+            TransactionType type,
+            Integer referenceId,
+            String gatewayResponse) {
+
+        // 1️⃣ Mark Transaction Failed
+        transactionService.markFailed(txnId, gatewayResponse);
+
+        // 2️⃣ Reverse Business State
+        switch (type) {
+
+            case PROMOTE:
+                promoteAdService.markPromotePaymentFailed(referenceId, txnId);
+                break;
+
+//            case AUDITION:
+//                auditionService.markPaymentFailed(referenceId, txnId);
+//                break;
+//
+//            case BOOKING:
+//                bookingService.markPaymentFailed(referenceId, txnId);
+//                break;
+
+            default:
+                break;
+        }
+    }
+    
 
 }

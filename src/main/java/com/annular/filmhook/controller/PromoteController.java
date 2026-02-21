@@ -44,17 +44,17 @@ public class PromoteController {
     @Autowired
     PostService postService;
     
-    @PostMapping("/addPromote")
-    public ResponseEntity<?> addPromote(@RequestBody PromoteWebModel promoteWebModel) {
-        try {
-            logger.info("addPromote controller start");
-            return promoteService.addPromote(promoteWebModel);
-        } catch (Exception e) {
-            logger.error("addPromote  Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
-        }
-    }
+//    @PostMapping("/addPromote")
+//    public ResponseEntity<?> addPromote(@RequestBody PromoteWebModel promoteWebModel) {
+//        try {
+//            logger.info("addPromote controller start");
+//            return promoteService.addPromote(promoteWebModel);
+//        } catch (Exception e) {
+//            logger.error("addPromote  Method Exception -> {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+//        }
+//    }
     
     @RequestMapping(value = "/addPromoteApi", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> addPromotes(@ModelAttribute PromoteWebModel promoteWebModel) {
@@ -75,17 +75,17 @@ public class PromoteController {
     }
 
 
-    @PostMapping("/updatePromote")
-    public ResponseEntity<?> updatePromote(@RequestBody PromoteWebModel promoteWebModel) {
-        try {
-            logger.info("updatePromote controller start");
-            return promoteService.updatePromote(promoteWebModel);
-        } catch (Exception e) {
-            logger.error("updatePromote  Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
-        }
-    }
+//    @PostMapping("/updatePromote")
+//    public ResponseEntity<?> updatePromote(@RequestBody PromoteWebModel promoteWebModel) {
+//        try {
+//            logger.info("updatePromote controller start");
+//            return promoteService.updatePromote(promoteWebModel);
+//        } catch (Exception e) {
+//            logger.error("updatePromote  Method Exception -> {}", e.getMessage());
+//            e.printStackTrace();
+//            return ResponseEntity.ok(new Response(-1, "Fail", ""));
+//        }
+//    }
 
     @PostMapping("/deletePromote")
     public ResponseEntity<?> deletePromote(@RequestBody PromoteWebModel promoteWebModel) {

@@ -130,7 +130,7 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	PinMediaRepository pinMediaRepository;
-	
+
 	@Autowired
 	private PromoteMediaFilesRepository promoteMediaFilesRepository;
 
@@ -577,298 +577,299 @@ public class PostServiceImpl implements PostService {
 
 
 
-public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
+	public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
 
-    List<PostWebModel> responseList = new ArrayList<>();
+		List<PostWebModel> responseList = new ArrayList<>();
 
-    try {
-        // Logged-in user
-        Integer loggedInUserTemp = null;
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof UserDetailsImpl) {
-            loggedInUserTemp = ((UserDetailsImpl) principal).getId();
-        }
-        final Integer finalLoggedInUser = loggedInUserTemp;
+		try {
+			// Logged-in user
+			Integer loggedInUserTemp = null;
+			Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			if (principal instanceof UserDetailsImpl) {
+				loggedInUserTemp = ((UserDetailsImpl) principal).getId();
+			}
+			final Integer finalLoggedInUser = loggedInUserTemp;
 
-        if (postList == null || postList.isEmpty()) return responseList;
+			if (postList == null || postList.isEmpty()) return responseList;
 
-        for (Posts post : postList) {
+			for (Posts post : postList) {
 
-            if (post == null) continue;
+				if (post == null) continue;
 
-            // ============================================================
-            // PROMOTION LOGIC (latest Running + Success)
-            // ============================================================
-            PromoteAd promoteAd = null;
+				// ============================================================
+				// PROMOTION LOGIC (latest Running + Success)
+				// ============================================================
+				PromoteAd promoteAd = null;
 
-            List<PromoteAd> promoteList =
-                    promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
+				List<PromoteAd> promoteList =
+						promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
 
-            for (PromoteAd p : promoteList) {
-                if (p.getStatus() == PromoteAd.PromoteStatus.Running &&
-                        "SUCCESS".equalsIgnoreCase(p.getPaymentStatus())) {
-                    promoteAd = p;
-                    break;
-                }
-            }
+				for (PromoteAd p : promoteList) {
+					if (p.getStatus() == PromoteAd.PromoteStatus.Running &&
+							"SUCCESS".equalsIgnoreCase(p.getPaymentStatus())) {
+						promoteAd = p;
+						break;
+					}
+				}
 
-            // ============================================================
-            // PROMOTE → SELECTED MEDIA OR NORMAL POST MEDIA
-            // ============================================================
-            List<FileOutputWebModel> postFiles = new ArrayList<>();
+				// ============================================================
+				// PROMOTE → SELECTED MEDIA OR NORMAL POST MEDIA
+				// ============================================================
+				List<FileOutputWebModel> postFiles = new ArrayList<>();
 
-         // -------------------------------------------------------------
-         // CASE 1 : Promotion is Running → use ONLY selected promote files
-         // -------------------------------------------------------------
-         if (promoteAd != null && promoteAd.getStatus() == PromoteAd.PromoteStatus.Running) {
+				// -------------------------------------------------------------
+				// CASE 1 : Promotion is Running → use ONLY selected promote files
+				// -------------------------------------------------------------
+				if (promoteAd != null && promoteAd.getStatus() == PromoteAd.PromoteStatus.Running) {
 
-             List<PromoteMediaFiles> selectedMedia =
-                     promoteMediaFilesRepository
-                             .findByPromote_PromoteIdAndSelected(promoteAd.getPromoteId(), true);
+					List<PromoteMediaFiles> selectedMedia =
+							promoteMediaFilesRepository
+							.findByPromote_PromoteIdAndSelected(promoteAd.getPromoteId(), true);
 
-             if (selectedMedia != null && !selectedMedia.isEmpty()) {
+					if (selectedMedia != null && !selectedMedia.isEmpty()) {
 
-                 for (PromoteMediaFiles pm : selectedMedia) {
-                     MediaFiles mf = pm.getMediaFile();
-                     if (mf != null) {
-                         postFiles.add(FileOutputWebModel.builder()
-                                 .id(mf.getId())
-                                 .fileId(mf.getFileId())
-                                 .fileName(mf.getFileName())
-                                 .filePath(mf.getFilePath())
-                                 .thumbnailPath(mf.getThumbnailPath())
-                                 .fileSize(mf.getFileSize())
-                                 .fileType(mf.getFileType())
-                                 .build());
-                     }
-                 }
-             }
+						for (PromoteMediaFiles pm : selectedMedia) {
+							MediaFiles mf = pm.getMediaFile();
+							if (mf != null) {
+								postFiles.add(FileOutputWebModel.builder()
+										.id(mf.getId())
+										.fileId(mf.getFileId())
+										.fileName(mf.getFileName())
+										.filePath(mf.getFilePath())
+										.thumbnailPath(mf.getThumbnailPath())
+										.fileSize(mf.getFileSize())
+										.fileType(mf.getFileType())
+										.build());
+							}
+						}
+					}
 
-             // If promote is running and selected list empty → 
-             // you want to show NOTHING or NORMAL ??
-             // If NORMAL → enable below:
-             if (postFiles.isEmpty()) {
-                 postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-                         MediaFileCategory.Post,
-                         post.getId()
-                 );
-             }
+					// If promote is running and selected list empty → 
+					// you want to show NOTHING or NORMAL ??
+							// If NORMAL → enable below:
+								if (postFiles.isEmpty()) {
+									postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+											MediaFileCategory.Post,
+											post.getId()
+											);
+								}
 
-         }
-         // -------------------------------------------------------------
-         // CASE 2 : Promotion Completed / NotStarted / null → show NORMAL post media
-         // -------------------------------------------------------------
-         else {
+				}
+				// -------------------------------------------------------------
+				// CASE 2 : Promotion Completed / NotStarted / null → show NORMAL post media
+				// -------------------------------------------------------------
+				else {
 
-             postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-                     MediaFileCategory.Post,
-                     post.getId()
-             );
-         }
+					postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.Post,
+							post.getId()
+							);
+				}
 
-            // ============================================================
-            // USER PROFESSION
-            // ============================================================
-            Set<String> professionNames = new HashSet<>();
-            String userType = post.getUser().getUserType();
-            professionNames.add(
-                    (userType != null && !userType.isEmpty()) ? userType : "Public User"
-            );
+				// ============================================================
+				// USER PROFESSION
+				// ============================================================
+				Set<String> professionNames = new HashSet<>();
+				String userType = post.getUser().getUserType();
+				professionNames.add(
+						(userType != null && !userType.isEmpty()) ? userType : "Public User"
+						);
 
-            // ============================================================
-            // FOLLOWERS
-            // ============================================================
-            List<FollowersRequest> followersList =
-                    friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(
-                            post.getUser().getUserId(), true);
+				// ============================================================
+				// FOLLOWERS
+				// ============================================================
+				List<FollowersRequest> followersList =
+						friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(
+								post.getUser().getUserId(), true);
 
-            // ============================================================
-            // LIKE / UNLIKE
-            // ============================================================
-            Boolean likeStatus = false;
-            Boolean unlikeStatus = false;
-            Integer latestLikeId = null;
+				// ============================================================
+				// LIKE / UNLIKE
+				// ============================================================
+				Boolean likeStatus = false;
+				Boolean unlikeStatus = false;
+				Integer latestLikeId = null;
 
-            if (finalLoggedInUser != null) {
-                List<Likes> userLikes =
-                        likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
+				if (finalLoggedInUser != null) {
+					List<Likes> userLikes =
+							likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
 
-                Likes entry = userLikes.stream()
-                        .filter(l -> l.getPostId().equals(post.getId()))
-                        .findFirst()
-                        .orElse(null);
+					Likes entry = userLikes.stream()
+							.filter(l -> l.getPostId().equals(post.getId()))
+							.findFirst()
+							.orElse(null);
 
-                if (entry != null) {
-                    latestLikeId = entry.getLikeId();
+					if (entry != null) {
+						latestLikeId = entry.getLikeId();
 
-                    if ("LIKE".equalsIgnoreCase(entry.getReactionType())) {
-                        likeStatus = true;
-                    } else if ("UNLIKE".equalsIgnoreCase(entry.getReactionType())) {
-                        unlikeStatus = true;
-                    }
-                }
-            }
+						if ("LIKE".equalsIgnoreCase(entry.getReactionType())) {
+							likeStatus = true;
+						} else if ("UNLIKE".equalsIgnoreCase(entry.getReactionType())) {
+							unlikeStatus = true;
+						}
+					}
+				}
 
-            Long totalLikesCount =
-                    likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "LIKE", "Post");
+				Long totalLikesCount =
+						likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "LIKE", "Post");
 
-            Long totalUnlikesCount =
-                    likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "UNLIKE", "Post");
+				Long totalUnlikesCount =
+						likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "UNLIKE", "Post");
 
-            // ============================================================
-            // WATCH LATER CHECK
-            // ============================================================
-            Boolean watchLater = false;
-            if (finalLoggedInUser != null) {
-                watchLater =
-                        watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(
-                                finalLoggedInUser, post.getId(), true);
-            }
+				// ============================================================
+				// WATCH LATER CHECK
+				// ============================================================
+				Boolean watchLater = false;
+				if (finalLoggedInUser != null) {
+					watchLater =
+							watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(
+									finalLoggedInUser, post.getId(), true);
+				}
 
-            // ============================================================
-            // PIN STATUS
-            // ============================================================
-            Boolean pinStatus = false;
-            if (finalLoggedInUser != null) {
-                Optional<UserProfilePin> p =
-                        pinProfileRepository.findByPinProfileIdAndUserId(
-                                finalLoggedInUser, post.getUser().getUserId());
-                pinStatus = p.map(UserProfilePin::isStatus).orElse(false);
-            }
+				// ============================================================
+				// PIN STATUS
+				// ============================================================
+				Boolean pinStatus = false;
+				if (finalLoggedInUser != null) {
+					Optional<UserProfilePin> p =
+							pinProfileRepository.findByPinProfileIdAndUserId(
+									finalLoggedInUser, post.getUser().getUserId());
+					pinStatus = p.map(UserProfilePin::isStatus).orElse(false);
+				}
 
-            Boolean pinMediaStatus = false;
-            if (finalLoggedInUser != null) {
-                pinMediaStatus =
-                        pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId())
-                                .isPresent();
-            }
+				Boolean pinMediaStatus = false;
+				if (finalLoggedInUser != null) {
+					pinMediaStatus =
+							pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId())
+							.isPresent();
+				}
 
-            // ============================================================
-            // PROMOTED DATA
-            // ============================================================
-            boolean isPromoted = promoteAd != null;
+				// ============================================================
+				// PROMOTED DATA
+				// ============================================================
+				boolean isPromoted = promoteAd != null;
 
-            Integer promoteId = null;
-            Integer numberOfDays = null;
-            BigDecimal amount = null;
-            String companyName = null;
-            String brandName = null;
-            String visitType = null;
-            String adType = null;
-            String objValue = null;
-            String selectOption = null;
+				Integer promoteId = null;
+				Integer numberOfDays = null;
+				BigDecimal amount = null;
+				String companyName = null;
+				String brandName = null;
+				String visitType = null;
+				String adType = null;
+				String objValue = null;
+				String selectOption = null;
 
-            List<FileOutputWebModel> logoFiles = new ArrayList<>();
 
-            if (promoteAd != null) {
-                promoteId = promoteAd.getPromoteId();
-                numberOfDays = promoteAd.getDays();
-                amount = promoteAd.getAmount();
-                companyName = promoteAd.getBusinessName();
-                brandName = promoteAd.getBusinessType();
-                visitType = promoteAd.getVisitType() != null
-                        ? promoteAd.getVisitType().getTitle()
-                        : null;
-                adType = promoteAd.getAdType();
-                objValue = promoteAd.getAdvObjectValue();
-                selectOption = promoteAd.getAdvObject().getVisitType();
-                logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-                        MediaFileCategory.Promote,
-                        post.getId()
-                );
-            }
+				List<FileOutputWebModel> logoFiles = new ArrayList<>();
 
-            // ============================================================
-            // TAGGED USERS
-            // ============================================================
-            List<Map<String, Object>> taggedUsers = null;
+				if (promoteAd != null) {
+					promoteId = promoteAd.getPromoteId();
+					numberOfDays = promoteAd.getDays();
+					amount = promoteAd.getAmount();
+					companyName = promoteAd.getBusinessName();
+					brandName = promoteAd.getBusinessType();
+					visitType = promoteAd.getVisitType() != null
+							? promoteAd.getVisitType().getTitle()
+									: null;
+					adType = promoteAd.getAdType();
+					objValue = promoteAd.getAdvObjectValue();
+					selectOption = promoteAd.getAdvObject().getVisitType();
+					logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
+							MediaFileCategory.Promote,
+							post.getId()
+							);
+				}
 
-            if (post.getPostTagsCollection() != null) {
-                taggedUsers = post.getPostTagsCollection().stream()
-                        .filter(t -> Boolean.TRUE.equals(t.getStatus()))
-                        .map(tag -> {
-                            Map<String, Object> map = new HashMap<>();
-                            Integer tuId = tag.getTaggedUser().getUserId();
-                            map.put("userId", tuId);
-                            userService.getUser(tuId).ifPresent(u -> {
-                                map.put("username", u.getName());
-                                map.put("userProfilePic", userService.getProfilePicUrl(tuId));
-                            });
-                            return map;
-                        })
-                        .collect(Collectors.toList());
-            }
+				// ============================================================
+						// TAGGED USERS
+						// ============================================================
+						List<Map<String, Object>> taggedUsers = null;
 
-            // ============================================================
-            // ELAPSED TIME
-            // ============================================================
-            LocalDateTime createdOn =
-                    LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
-            String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+						if (post.getPostTagsCollection() != null) {
+							taggedUsers = post.getPostTagsCollection().stream()
+									.filter(t -> Boolean.TRUE.equals(t.getStatus()))
+									.map(tag -> {
+										Map<String, Object> map = new HashMap<>();
+										Integer tuId = tag.getTaggedUser().getUserId();
+										map.put("userId", tuId);
+										userService.getUser(tuId).ifPresent(u -> {
+											map.put("username", u.getName());
+											map.put("userProfilePic", userService.getProfilePicUrl(tuId));
+										});
+										return map;
+									})
+									.collect(Collectors.toList());
+						}
 
-            // ============================================================
-            // BUILD RESPONSE
-            // ============================================================
-            PostWebModel model = PostWebModel.builder()
-                    .id(post.getId())
-                    .userId(post.getUser().getUserId())
-                    .userName(post.getUser().getName())
-                    .postId(post.getPostId())
-                    .adminReview(post.getUser().getAdminReview())
-                    .userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+						// ============================================================
+						// ELAPSED TIME
+						// ============================================================
+						LocalDateTime createdOn =
+								LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
+						String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
 
-                    .description(post.getDescription())
-                    .postFiles(postFiles)
+						// ============================================================
+						// BUILD RESPONSE
+						// ============================================================
+						PostWebModel model = PostWebModel.builder()
+								.id(post.getId())
+								.userId(post.getUser().getUserId())
+								.userName(post.getUser().getName())
+								.postId(post.getPostId())
+								.adminReview(post.getUser().getAdminReview())
+								.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
 
-                    .pinMediaStatus(pinMediaStatus)
-                    .pinProfileStatus(pinStatus)
-                    .userType(post.getUser().getUserType())
-                    .likeCount(totalLikesCount.intValue())
-                    .UnlikesCount(totalUnlikesCount.intValue())
-                    .UnlikeStatus(unlikeStatus)
-                    .shareCount(post.getSharesCount())
-                    .commentCount(post.getCommentsCount())
+								.description(post.getDescription())
+								.postFiles(postFiles)
 
-                    .promoteFlag(isPromoted)
-                    .promoteId(promoteId)
-                    .numberOfDays(numberOfDays)
-                    .amount(amount)
-                    .companyName(companyName)
-                    .brandName(brandName)
-                    .companyLogoFiles(logoFiles)
-                    .visitPageData(visitType)
-                    .adType(adType)
-                    .selectOption(selectOption)
-                    .objValue(objValue)
-                    
-                    
-                    .postLinkUrl(post.getPostLinkUrls())
-                    .latitude(post.getLatitude())
-                    .longitude(post.getLongitude())
-                    .address(post.getAddress())
-                    .likeStatus(likeStatus)
-                    .likeId(latestLikeId)
-                    .elapsedTime(elapsedTime)
-                    .privateOrPublic(post.getPrivateOrPublic())
-                    .locationName(post.getLocationName())
-                    .professionNames(professionNames)
-                    .followersCount(followersList.size())
-                    .createdOn(post.getCreatedOn())
-                    .createdBy(post.getCreatedBy())
-                    .taggedUserss(taggedUsers)
-                    .viewsCount(post.getViewsCount())
-                    .watchLater(watchLater)
-                    .build();
+								.pinMediaStatus(pinMediaStatus)
+								.pinProfileStatus(pinStatus)
+								.userType(post.getUser().getUserType())
+								.likeCount(totalLikesCount.intValue())
+								.UnlikesCount(totalUnlikesCount.intValue())
+								.UnlikeStatus(unlikeStatus)
+								.shareCount(post.getSharesCount())
+								.commentCount(post.getCommentsCount())
 
-            responseList.add(model);
-        }
+								.promoteFlag(isPromoted)
+								.promoteId(promoteId)
+								.numberOfDays(numberOfDays)
+								.amount(amount)
+								.companyName(companyName)
+								.brandName(brandName)
+								.companyLogoFiles(logoFiles)
+								.visitPageData(visitType)
+								.adType(adType)
+								.selectOption(selectOption)
+								.objValue(objValue)
 
-    } catch (Exception e) {
-        logger.error("Error in transformPostsDataToPostWebModel(): {}", e.getMessage(), e);
-    }
 
-    return responseList;
-}
+								.postLinkUrl(post.getPostLinkUrls())
+								.latitude(post.getLatitude())
+								.longitude(post.getLongitude())
+								.address(post.getAddress())
+								.likeStatus(likeStatus)
+								.likeId(latestLikeId)
+								.elapsedTime(elapsedTime)
+								.privateOrPublic(post.getPrivateOrPublic())
+								.locationName(post.getLocationName())
+								.professionNames(professionNames)
+								.followersCount(followersList.size())
+								.createdOn(post.getCreatedOn())
+								.createdBy(post.getCreatedBy())
+								.taggedUserss(taggedUsers)
+								.viewsCount(post.getViewsCount())
+								.watchLater(watchLater)
+								.build();
+
+						responseList.add(model);
+			}
+
+		} catch (Exception e) {
+			logger.error("Error in transformPostsDataToPostWebModel(): {}", e.getMessage(), e);
+		}
+
+		return responseList;
+	}
 
 
 
@@ -937,154 +938,154 @@ public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList)
 	//            return null;
 	//        }
 	//    }
-@Override
-public List<PostWebModel> getAllUsersPosts(
-        Integer userId,
-        Integer pageNo,
-        Integer pageSize,
-        String userCountry
-) {
-    try {
+	@Override
+	public List<PostWebModel> getAllUsersPosts(
+			Integer userId,
+			Integer pageNo,
+			Integer pageSize,
+			String userCountry
+			) {
+		try {
 
-        // Normalize country text
-        final String userCountryFinal = 
-                (userCountry == null ? "" : userCountry.trim().toLowerCase());
+			// Normalize country text
+			final String userCountryFinal = 
+					(userCountry == null ? "" : userCountry.trim().toLowerCase());
 
-        List<Posts> allPosts = postsRepository.getAllActivePosts();
+			List<Posts> allPosts = postsRepository.getAllActivePosts();
 
-        if (allPosts == null || allPosts.isEmpty()) {
-            return Collections.emptyList();
-        }
+			if (allPosts == null || allPosts.isEmpty()) {
+				return Collections.emptyList();
+			}
 
-        // ========================================================
-        // 1. FILTER BASED ON PRIVACY RULES
-        // ========================================================
-        List<Posts> visiblePosts = allPosts.stream()
-                .filter(Objects::nonNull)
-                .filter(post -> {
-                    Integer ownerId = post.getUser().getUserId();
+			// ========================================================
+			// 1. FILTER BASED ON PRIVACY RULES
+			// ========================================================
+			List<Posts> visiblePosts = allPosts.stream()
+					.filter(Objects::nonNull)
+					.filter(post -> {
+						Integer ownerId = post.getUser().getUserId();
 
-                    // Owner can always see
-                    if (ownerId.equals(userId)) return true;
+						// Owner can always see
+						if (ownerId.equals(userId)) return true;
 
-                    // Public posts visible to all
-                    if (!Boolean.TRUE.equals(post.getPrivateOrPublic())) return true;
+						// Public posts visible to all
+						if (!Boolean.TRUE.equals(post.getPrivateOrPublic())) return true;
 
-                    // Private → only followers allowed
-                    return followersRequestRepository
-                            .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
-                                    ownerId, userId, true
-                            );
-                })
-                .collect(Collectors.toList());
-
-
-        // ========================================================
-        // 2. COUNTRY FILTER FOR RUNNING PROMOTIONS
-        // ========================================================
-        List<Posts> filteredByCountry = visiblePosts.stream()
-                .filter(post -> {
-
-                    // Not promoted → visible
-                    if (!Boolean.TRUE.equals(post.getPromoteFlag())) {
-                        return true;
-                    }
-
-                    // Get all promotions for post
-                    List<PromoteAd> promoteList =
-                            promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
-
-                    if (promoteList == null || promoteList.isEmpty()) {
-                        return true;
-                    }
-
-                    // Get only Running promotions
-                    List<PromoteAd> runningPromotions = promoteList.stream()
-                            .filter(p -> p.getStatus() == PromoteAd.PromoteStatus.Running)
-                            .collect(Collectors.toList());
-
-                    if (runningPromotions.isEmpty()) {
-                        return true; // No running → no block
-                    }
-
-                    // Check if ALL running promotions contain userCountry
-                    boolean allContainUserCountry = runningPromotions.stream()
-                            .allMatch(p -> {
-                                String countries = (p.getTargetCountries() == null)
-                                        ? ""
-                                        : p.getTargetCountries().toLowerCase();
-                                return countries.contains(userCountryFinal);
-                            });
-
-                    // If ALL contain → BLOCK the post
-                    return !allContainUserCountry;
-
-                })
-                .collect(Collectors.toList());
+						// Private → only followers allowed
+						return followersRequestRepository
+								.existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
+										ownerId, userId, true
+										);
+					})
+					.collect(Collectors.toList());
 
 
-        // ========================================================
-        // 3. SORT NEWEST FIRST
-        // ========================================================
-        filteredByCountry.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+			// ========================================================
+			// 2. COUNTRY FILTER FOR RUNNING PROMOTIONS
+			// ========================================================
+			List<Posts> filteredByCountry = visiblePosts.stream()
+					.filter(post -> {
+
+						// Not promoted → visible
+						if (!Boolean.TRUE.equals(post.getPromoteFlag())) {
+							return true;
+						}
+
+						// Get all promotions for post
+						List<PromoteAd> promoteList =
+								promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
+
+						if (promoteList == null || promoteList.isEmpty()) {
+							return true;
+						}
+
+						// Get only Running promotions
+						List<PromoteAd> runningPromotions = promoteList.stream()
+								.filter(p -> p.getStatus() == PromoteAd.PromoteStatus.Running)
+								.collect(Collectors.toList());
+
+						if (runningPromotions.isEmpty()) {
+							return true; // No running → no block
+						}
+
+						// Check if ALL running promotions contain userCountry
+						boolean allContainUserCountry = runningPromotions.stream()
+								.allMatch(p -> {
+									String countries = (p.getTargetCountries() == null)
+											? ""
+													: p.getTargetCountries().toLowerCase();
+									return countries.contains(userCountryFinal);
+								});
+
+						// If ALL contain → BLOCK the post
+						return !allContainUserCountry;
+
+					})
+					.collect(Collectors.toList());
 
 
-        // ========================================================
-        // 4. SPLIT PROMOTED VS NORMAL POSTS
-        // ========================================================
-        List<Posts> promotedPosts = new ArrayList<>();
-        List<Posts> normalPosts = new ArrayList<>();
-
-        for (Posts post : filteredByCountry) {
-            if (Boolean.TRUE.equals(post.getPromoteFlag())) {
-                promotedPosts.add(post);
-            } else {
-                normalPosts.add(post);
-            }
-        }
+			// ========================================================
+			// 3. SORT NEWEST FIRST
+			// ========================================================
+			filteredByCountry.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
 
 
-        // ========================================================
-        // 5. INTERLEAVE: 1 promoted + 5 normal
-        // ========================================================
-        List<Posts> orderedPosts = new ArrayList<>();
-        int promoIdx = 0, normalIdx = 0;
+			// ========================================================
+			// 4. SPLIT PROMOTED VS NORMAL POSTS
+			// ========================================================
+			List<Posts> promotedPosts = new ArrayList<>();
+			List<Posts> normalPosts = new ArrayList<>();
 
-        while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
-
-            if (promoIdx < promotedPosts.size()) {
-                orderedPosts.add(promotedPosts.get(promoIdx++));
-            }
-
-            for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
-                orderedPosts.add(normalPosts.get(normalIdx++));
-            }
-        }
+			for (Posts post : filteredByCountry) {
+				if (Boolean.TRUE.equals(post.getPromoteFlag())) {
+					promotedPosts.add(post);
+				} else {
+					normalPosts.add(post);
+				}
+			}
 
 
-        // ========================================================
-        // 6. PAGINATION
-        // ========================================================
-        int start = (pageNo - 1) * pageSize;
-        int end = Math.min(start + pageSize, orderedPosts.size());
+			// ========================================================
+			// 5. INTERLEAVE: 1 promoted + 5 normal
+			// ========================================================
+			List<Posts> orderedPosts = new ArrayList<>();
+			int promoIdx = 0, normalIdx = 0;
 
-        if (start >= orderedPosts.size()) {
-            return Collections.emptyList();
-        }
+			while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
 
-        List<Posts> paginatedPosts = orderedPosts.subList(start, end);
+				if (promoIdx < promotedPosts.size()) {
+					orderedPosts.add(promotedPosts.get(promoIdx++));
+				}
+
+				for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
+					orderedPosts.add(normalPosts.get(normalIdx++));
+				}
+			}
 
 
-        // ========================================================
-        // 7. TRANSFORM TO WEB MODEL
-        // ========================================================
-        return transformPostsDataToPostWebModel(paginatedPosts);
+			// ========================================================
+			// 6. PAGINATION
+			// ========================================================
+			int start = (pageNo - 1) * pageSize;
+			int end = Math.min(start + pageSize, orderedPosts.size());
 
-    } catch (Exception e) {
-        logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
-        return Collections.emptyList();
-    }
-}
+			if (start >= orderedPosts.size()) {
+				return Collections.emptyList();
+			}
+
+			List<Posts> paginatedPosts = orderedPosts.subList(start, end);
+
+
+			// ========================================================
+			// 7. TRANSFORM TO WEB MODEL
+			// ========================================================
+			return transformPostsDataToPostWebModel(paginatedPosts);
+
+		} catch (Exception e) {
+			logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
+			return Collections.emptyList();
+		}
+	}
 
 
 	@Override

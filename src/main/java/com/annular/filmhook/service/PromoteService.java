@@ -13,9 +13,6 @@ import com.annular.filmhook.webmodel.PromoteWebModel;
 
 public interface PromoteService {
 
-    ResponseEntity<?> updatePromote(PromoteWebModel promoteWebModel);
-
-    ResponseEntity<?> addPromote(PromoteWebModel promoteWebModel);
 
     ResponseEntity<?> deletePromote(PromoteWebModel promoteWebModel);
 
