@@ -38,6 +38,7 @@ import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.converter.ShootingLocationBookingConverter;
 import com.annular.filmhook.converter.ShootingLocationConverter;
 import com.annular.filmhook.model.BookingStatus;
+import com.annular.filmhook.model.FileStatus;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.Industry;
 import com.annular.filmhook.model.Likes;
@@ -954,9 +955,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				dto.setLikeCount(likeRepository.countLikesByPropertyId(p.getId()));
 
 				// Media files
-				List<String> imageUrls = mediaFilesService
-						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, p.getId())
-						.stream().map(FileOutputWebModel::getFilePath).collect(Collectors.toList());
+				List<FileOutputWebModel> imageUrls = mediaFilesService
+						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, p.getId());
+						
 
 				List<String> govtIdUrls = mediaFilesService
 						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingGovermentId, p.getId())
@@ -969,6 +970,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				//				dto.setImageUrls(imageUrls);
 				dto.setGovernmentIdUrls(govtIdUrls);
 				dto.setVerificationVideo(verificationVideo);
+				dto.setImageUrls(imageUrls);
 
 
 				ShootingLocationPropertyReviewResponseDTO reviewData = getReviewsByPropertyId(p.getId(), userId);
@@ -1656,14 +1658,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						);
 
 				// D) Media files
-				//				dto.setImageUrls(
-				//						mediaFilesService
-				//						.getMediaFilesByCategoryAndRefId(
-				//								MediaFileCategory.shootingLocationImage, pid)
-				//						.stream()
-				//						.map(FileOutputWebModel::getFilePath)
-				//						.toList()
-				//						);
+								dto.setImageUrls(
+										mediaFilesService
+										.getMediaFilesByCategoryAndRefId(
+												MediaFileCategory.shootingLocationImage, pid)
+										);
 
 				dto.setGovernmentIdUrls(
 						mediaFilesService
@@ -3945,12 +3944,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 			media.setStatus(false);
 			media.setDescription(request.getReason());
+			media.setFileStatus(FileStatus.REJECTED);;
 
 		}
 		// ✅ Approve
 		else {
 			media.setStatus(true);
 			media.setDescription(null);
+			media.setFileStatus(FileStatus.APPROVED);
 		}
 
 		media.setUpdatedBy(userId);

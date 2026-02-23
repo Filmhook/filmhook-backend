@@ -13,7 +13,8 @@ import com.annular.filmhook.webmodel.LocationWebModel;
 import com.annular.filmhook.webmodel.ProfessionIconWebModel;
 import com.annular.filmhook.webmodel.UserSearchWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 public interface UserService {
 
     List<UserWebModel> getAllUsers();
@@ -64,9 +65,9 @@ public interface UserService {
 
     List<UserWebModel> getUserByName(String name);
 
-    Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
+//    Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
 
-   // List<Map<String, Object>> findNearByUsers(Integer userId, Integer range, String profession);
+    List<Map<String, Object>> findNearByUsers(Integer userId, Integer range, String profession);
 
     Optional<User> changePrimaryEmaiId(UserWebModel userWebModel);
 
@@ -94,6 +95,7 @@ public interface UserService {
 
 	List<UserWebModel> getUserByFhId(String filmHookCode);
 	
+	Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
 	
-
+	List<Map<String, Object>> findNearUsers(Integer userId,int pageNo, int pageSize, Double range );
 }

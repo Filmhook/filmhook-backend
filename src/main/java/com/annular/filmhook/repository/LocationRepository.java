@@ -1,10 +1,15 @@
 package com.annular.filmhook.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.annular.filmhook.model.Location;
+import com.annular.filmhook.model.LocationVisibility;
+import com.annular.filmhook.webmodel.LocationWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
 
 import java.util.Collection;
@@ -30,6 +35,14 @@ public interface LocationRepository extends JpaRepository<Location, Integer> {
 
     @Query("SELECT l FROM Location l WHERE l.user.id = :userId")
 	Optional<Location> findByUserId(Integer userId);
+    
+    Optional<Location> findByUser_UserId(Integer userId);
 
-	
+    Page<Location> findByStatusTrueAndUser_UserIdNot(
+            Integer userId,
+            Pageable pageable
+    );
+    
+    
+
 }

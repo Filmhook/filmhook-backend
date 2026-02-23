@@ -218,6 +218,7 @@ public class PromoteAdController {
 	@PostMapping("/pay/{userId}/{promoteId}/{txnId}")
 	public Response startPromotePayment(@PathVariable Integer userId, @PathVariable Integer promoteId, @PathVariable String txnId) {
 
+
 	    User user = userRepository.getUserByUserId(userId)
 	            .orElseThrow(() -> new RuntimeException("User not found"));
 
