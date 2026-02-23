@@ -840,7 +840,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 		Map<String, Object> responseData = new HashMap<>();
 		responseData.put("userId", user.getUserId());
-
+		responseData.put("emailOtp", user.getEmailOtp());
 		return ResponseEntity.ok(
 				new Response(1, "OTP sent successfully", responseData)
 				);
@@ -889,7 +889,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 			// Prepare response with userId
 			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("userId", user.getUserId());
+			responseData.put("userId", user.getUserId());			
 
 			return ResponseEntity.ok(
 					new Response(1, "Email OTP verified successfully", responseData)
