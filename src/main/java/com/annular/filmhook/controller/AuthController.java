@@ -570,6 +570,16 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(new Response(1, "Active devices", devices));
+    }     
+
+    // Forgot Password (Primary OR Secondary email)
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam String email, @RequestParam String secondaryMail) {
+        try {
+            return ResponseEntity.ok(userService.forgotPasswordSecondaryMail(email, secondaryMail));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new Response(-1, "Error",  e.getMessage()));
+        }
     }
 
 

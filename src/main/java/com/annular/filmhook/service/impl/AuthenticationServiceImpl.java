@@ -978,6 +978,34 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 					.body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
 		}
 	}
+	
+	@Override
+	public Response forgotPasswordSecondaryMail(String email, String secondaryMail) {
+
+	    User user = userRepository.findByEmailOrSecondaryEmail(email, email)
+	            .orElseThrow(() -> new RuntimeException("No active account found for this email"));
+	    
+	    if(user.getForgotOtp() != null) {
+	    	return new Response(1, "Secondary Mail not verified", false);
+	    }
+	    
+	    else {
+		String forgotOtp = Utility.generateOtp(6);
+
+	    user.setForgotOtp(forgotOtp);
+	    userRepository.save(user);
+
+	    String subject = "FilmHook – Password Reset OTP";
+	    String mailContent =
+	            "<p>Your password reset OTP is: <b style='font-size:16px;'>" + forgotOtp + "</b></p>"
+	                    + "<p>Use this OTP to reset your password.</p>";
+
+	    mailNotification.sendOTPEmail(user.getName(), secondaryMail, subject, mailContent);
+
+	    return new Response(1, "Password reset OTP sent", true);
+	    }
+	}
+
 
 
 
