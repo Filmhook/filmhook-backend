@@ -51,72 +51,83 @@ public class CallServiceImpl implements CallService {
     @Override
     public Response startCall(StartCallRequest req) {
 
-        // 1. Busy Check
-        if (callRepo.isUserInActiveCall(req.getReceiverId())) {
+        Integer callerId = req.getCallerId();
+        Integer receiverId = req.getReceiverId();
 
-            // Notify caller through WebSocket
-            ws.notifyUser(req.getCallerId(), "CALL_BUSY",
-                    Map.of("receiverId", req.getReceiverId()));
+        /* ---------------------------------------------------------
+         * 1. Generate Unique Channel
+         * --------------------------------------------------------- */
+        String channelName = "call_" + callerId + "_" + receiverId + "_" + System.currentTimeMillis();
 
-            return new Response(-1, "User is busy", null);
-        }
-
-        // 2. Generate Channel
-        String channelName = "call_" + req.getCallerId() + "_" +
-                req.getReceiverId() + "_" + System.currentTimeMillis();
-
-        // 3. Generate RTC Token
         AgoraWebModel model = new AgoraWebModel();
         model.setChannelName(channelName);
-        model.setUserId(req.getCallerId());
+        model.setUserId(callerId);
         model.setExpirationTimeInSeconds(6000);
 
         String rtcToken = agoraTokenService.getRTCToken(model);
 
-        // 4. Save CallLog
+        /* ---------------------------------------------------------
+         * 2. Save CallLog (ALWAYS save, even if receiver is busy)
+         * --------------------------------------------------------- */
         CallLog log = new CallLog();
         log.setCallerId(req.getCallerId());
         log.setReceiverId(req.getReceiverId());
         log.setChannelName(channelName);
         log.setCallType(req.getCallType());
-        log.setStatus("initiated");
+        log.setStatus("incoming");    
         log.setRtcToken(rtcToken);
         log.setStartTime(LocalDateTime.now());
         callRepo.save(log);
 
-        // Caller & Receiver details
-        User caller = userRepository.findById(req.getCallerId()).orElse(null);
-        User receiver = userRepository.findById(req.getReceiverId()).orElse(null);
-
-        String callerPic = userService.getProfilePicUrl(req.getCallerId());
-        String receiverPic = userService.getProfilePicUrl(req.getReceiverId());
+        /* ---------------------------------------------------------
+         * 3. Load Caller / Receiver Details
+         * --------------------------------------------------------- */
+        User caller = userRepository.findById(callerId).orElse(null);
+        User receiver = userRepository.findById(receiverId).orElse(null);
 
         String callerName = caller != null ? caller.getName() : "";
         String receiverName = receiver != null ? receiver.getName() : "";
+        String callerPic = userService.getProfilePicUrl(callerId);
+        String receiverPic = userService.getProfilePicUrl(receiverId);
 
-        // 5. Push Notification to all active receiver devices
+        /* ---------------------------------------------------------
+         * 4. Send Push Notification to Receiver (ALL DEVICES)
+         * --------------------------------------------------------- */
         List<UserSession> activeSessions =
-                userSessionRepository.findByUserIdAndIsActive(req.getReceiverId(), true);
+                userSessionRepository.findByUserIdAndIsActive(receiverId, true);
 
         for (UserSession s : activeSessions) {
 
-            String token = s.getFirebaseToken();
-
-            if (token != null && !token.trim().isEmpty()) {
+            if (s.getFirebaseToken() != null && !s.getFirebaseToken().trim().isEmpty()) {
 
                 fcm.sendIncomingCallNotification(
-                        req.getCallerId(),
-                        req.getReceiverId(),
+                        callerId,
+                        receiverId,
                         req.getCallType(),
                         channelName,
-                        token,
+                        s.getFirebaseToken(),
                         callerName,
                         callerPic
                 );
             }
         }
 
-        // 6. Response to Caller
+        /* ---------------------------------------------------------
+         * 5. WebSocket event -> NEW CALL
+         * --------------------------------------------------------- */
+        ws.notifyUser(receiverId, "NEW_CALL_INCOMING",
+                Map.of(
+                        "fromUserId", callerId,
+                        "channelName", channelName,
+                        "callType", req.getCallType(),
+                        "callerName", callerName,
+                        "callerPic", callerPic
+                )
+        );
+
+        /* ---------------------------------------------------------
+         * 6. Response to Caller
+         * --------------------------------------------------------- */
         Map<String, Object> result = new HashMap<>();
         result.put("channelName", channelName);
         result.put("rtcToken", rtcToken);
@@ -126,10 +137,12 @@ public class CallServiceImpl implements CallService {
         result.put("callerPic", callerPic);
         result.put("receiverPic", receiverPic);
 
+        /* ----------- IMPORTANT: DO NOT BLOCK CALL IF BUSY ----------- */
+        // Caller should always be allowed to call
+        // Receiver will handle busy situation only when ACCEPT new call
+
         return new Response(1, "Call Started", result);
     }
-
-
     /* ---------------------------------------------------------
      * END / REJECT / MISSED
      * --------------------------------------------------------- */

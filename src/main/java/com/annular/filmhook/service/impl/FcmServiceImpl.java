@@ -132,7 +132,7 @@ public class FcmServiceImpl implements FcmService {
 
 	        // Payload sent to the device
 	        Message message = Message.builder()
-	                .setNotification(notification)
+	               // .setNotification(notification)
 	                .putData("type", "incoming_call")
 	                .putData("callerId", callerId.toString())
 	                .putData("receiverId", receiverId.toString())

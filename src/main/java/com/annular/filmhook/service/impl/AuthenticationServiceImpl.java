@@ -602,12 +602,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			// Verify the OTP
 			if (user.getEmailOtp() == providedOtp) {
 				// OTP matches
+				user.setEmailOtp(null);
 				return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
-			} else {
-				// OTP does not match, clear secondary email and OTP fields
-				user.setSecondaryEmail(null);
-				user.setSecondaryemailOtp(0);
-				userRepository.save(user);
+			} else {				
 
 				return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
 			}
@@ -631,6 +628,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (user.getSecondaryemailOtp() == providedOtp) {
 				// OTP matches, mark the secondary email as verified
 				user.setVerified(true);
+				user.setSecondaryemailOtp(null);
 				userRepository.save(user);
 
 				return ResponseEntity.ok(new Response(1, "Secondary email verified successfully", "success"));
