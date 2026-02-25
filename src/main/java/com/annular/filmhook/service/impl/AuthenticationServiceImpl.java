@@ -603,6 +603,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (user.getEmailOtp() == providedOtp) {
 				// OTP matches
 				user.setEmailOtp(null);
+				userRepository.save(user);
 				return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
 			} else {				
 
@@ -984,7 +985,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	    User user = userRepository.findByEmailOrSecondaryEmail(email, email)
 	            .orElseThrow(() -> new RuntimeException("No active account found for this email"));
 	    
-	    if(user.getForgotOtp() != null) {
+	    if(user.getSecondaryemailOtp() != null) {
 	    	return new Response(1, "Secondary Mail not verified", false);
 	    }
 	    

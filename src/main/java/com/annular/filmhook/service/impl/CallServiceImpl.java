@@ -1,25 +1,40 @@
 package com.annular.filmhook.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.CallLog;
+import com.annular.filmhook.model.GroupCall;
+import com.annular.filmhook.model.GroupCallMember;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserSession;
 import com.annular.filmhook.repository.CallLogRepository;
+import com.annular.filmhook.repository.GroupCallMemberRepository;
+import com.annular.filmhook.repository.GroupCallRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSessionRepository;
-import com.annular.filmhook.service.*;
+import com.annular.filmhook.service.AgoraTokenService;
+import com.annular.filmhook.service.CallService;
+import com.annular.filmhook.service.FcmService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.WebSocketService;
 import com.annular.filmhook.webmodel.AgoraWebModel;
 import com.annular.filmhook.webmodel.EndCallRequest;
+import com.annular.filmhook.webmodel.GroupCallEndRequest;
+import com.annular.filmhook.webmodel.GroupCallInviteRequest;
+import com.annular.filmhook.webmodel.GroupCallJoinRequest;
+import com.annular.filmhook.webmodel.GroupCallStartRequest;
 import com.annular.filmhook.webmodel.StartCallRequest;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.Message; import com.google.firebase.messaging.Notification;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 
 @Service
 public class CallServiceImpl implements CallService {
@@ -44,6 +59,12 @@ public class CallServiceImpl implements CallService {
 
     @Autowired
     private WebSocketService ws;
+    
+    @Autowired
+    private GroupCallRepository groupRepo;
+
+    @Autowired
+    private GroupCallMemberRepository groupMemberRepo;
 
     /* ---------------------------------------------------------
      * START CALL
@@ -236,6 +257,225 @@ public class CallServiceImpl implements CallService {
 
         return new Response(1, "Success", log.getRtcToken());
     }
+    
+    @Override
+    public Response startGroupCall(GroupCallStartRequest req) {
+        Integer hostId = req.getHostUserId();
+        List<Integer> members = new ArrayList<>(req.getMemberIds());
+        members.add(hostId);
+
+        /* ---------------------------------------------------------
+         * 1. Determine channelName
+         * --------------------------------------------------------- */
+        String channelName;
+
+        if (req.getChannelName() != null && !req.getChannelName().isBlank()) {
+            // 🔥 Reuse existing channel – converting 1-on-1 → group call
+            channelName = req.getChannelName();
+            System.out.println("Reusing existing channel for group call: " + channelName);
+        } else {
+            // 🔥 Fresh group call
+            channelName = "group_" + hostId + "_" + System.currentTimeMillis();
+            System.out.println("New group call created with channel: " + channelName);
+        }
+
+        /* ---------------------------------------------------------
+         * 2. Create group_call record
+         * --------------------------------------------------------- */
+        GroupCall gc = new GroupCall();
+        gc.setHostUserId(hostId);
+        gc.setChannelName(channelName);
+        gc.setCallType(req.getCallType());
+        gc.setStatus("active");
+        gc.setCreatedOn(LocalDateTime.now());
+        groupRepo.save(gc);
+
+        List<Map<String, Object>> tokenList = new ArrayList<>();
+
+        /* ---------------------------------------------------------
+         * 3. Create Agora tokens for all members
+         * --------------------------------------------------------- */
+        for (Integer uid : members) {
+
+            AgoraWebModel model = new AgoraWebModel();
+            model.setChannelName(channelName);
+            model.setUserId(uid);
+            model.setExpirationTimeInSeconds(7200);
+
+            String token = agoraTokenService.getRTCToken(model);
+
+            GroupCallMember m = new GroupCallMember();
+            m.setGroupCallId(gc.getId());
+            m.setUserId(uid);
+            m.setRtcToken(token);
+            m.setJoined(false);
+            groupMemberRepo.save(m);
+
+            tokenList.add(Map.of("userId", uid, "rtcToken", token));
+        }
+
+        /* ---------------------------------------------------------
+         * 4. Notify all invited users (WebSocket + FCM)
+         * --------------------------------------------------------- */
+        for (Integer uid : members) {
+
+            if (!uid.equals(hostId)) {
+
+                // WebSocket
+                ws.notifyUser(
+                        uid,
+                        "NEW_GROUP_CALL",
+                        Map.of(
+                            "channelName", channelName,
+                            "fromUserId", hostId,
+                            "callType", req.getCallType()
+                        )
+                );
+
+                // FCM
+                List<UserSession> sessions =
+                        userSessionRepository.findByUserIdAndIsActive(uid, true);
+
+                for (UserSession s : sessions) {
+                    if (s.getFirebaseToken() != null) {
+
+                        fcm.sendGroupCallNotification(
+                              hostId, uid,
+                              req.getCallType(),
+                              channelName,
+                              s.getFirebaseToken(),
+                              req.getHostName(),
+                              req.getHostPic()
+                        );
+                    }
+                }
+            }
+        }
+
+        /* ---------------------------------------------------------
+         * 5. Return response
+         * --------------------------------------------------------- */
+        return new Response(1, "Group Call Started", Map.of(
+                "groupCallId", gc.getId(),
+                "channelName", channelName,
+                "members", tokenList
+        ));
+    }
+
+
+    /* ===========================================================
+     * 5️⃣ JOIN GROUP CALL (Late Join)
+     * =========================================================== */
+    @Override
+    public Response joinGroupCall(GroupCallJoinRequest req) {
+
+        GroupCallMember m = groupMemberRepo
+                .findByGroupCallIdAndUserId(req.getGroupCallId(), req.getUserId());
+
+        if (m == null) return new Response(-1, "Not part of call", null);
+
+        m.setJoined(true);
+        m.setJoinTime(LocalDateTime.now());
+        groupMemberRepo.save(m);
+
+        ws.notifyGroup(
+                req.getGroupCallId(),
+                "GROUP_USER_JOINED",
+                Map.of("userId", req.getUserId())
+        );
+
+        return new Response(1, "Joined", null);
+    }
+
+
+    /* ===========================================================
+     * 6️⃣ LEAVE GROUP CALL
+     * =========================================================== */
+    @Override
+    public Response leaveGroupCall(GroupCallJoinRequest req) {
+
+        GroupCallMember m = groupMemberRepo
+                .findByGroupCallIdAndUserId(req.getGroupCallId(), req.getUserId());
+
+        m.setJoined(false);
+        m.setLeaveTime(LocalDateTime.now());
+        groupMemberRepo.save(m);
+
+        ws.notifyGroup(
+                req.getGroupCallId(),
+                "GROUP_USER_LEFT",
+                Map.of("userId", req.getUserId())
+        );
+
+        return new Response(1, "Left", null);
+    }
+
+
+    /* ===========================================================
+     * 7️⃣ END GROUP CALL
+     * =========================================================== */
+    @Override
+    public Response endGroupCall(GroupCallEndRequest req) {
+
+        GroupCall gc = groupRepo.findById(req.getGroupCallId()).orElse(null);
+        if (gc == null) return new Response(-1, "Invalid group call", null);
+
+        gc.setStatus("ended");
+        groupRepo.save(gc);
+
+        ws.notifyGroup(
+                req.getGroupCallId(),
+                "GROUP_CALL_ENDED",
+                Map.of("hostId", req.getHostId())
+        );
+
+        return new Response(1, "Ended", null);
+    }
+
+
+    /* ===========================================================
+     * 8️⃣ INVITE Into Existing 1-1 Call → Group Call
+     * =========================================================== */
+    @Override
+    public Response inviteToGroup(GroupCallInviteRequest req) {
+
+        String channel = req.getChannelName();
+        Integer hostId = req.getHostUserId();
+
+        List<Map<String, Object>> list = new ArrayList<>();
+
+        for (Integer uid : req.getMemberIds()) {
+
+            AgoraWebModel model = new AgoraWebModel();
+            model.setChannelName(channel);
+            model.setUserId(uid);
+            model.setExpirationTimeInSeconds(7200);
+
+            String token = agoraTokenService.getRTCToken(model);
+
+            GroupCallMember m = new GroupCallMember();
+            m.setGroupCallId(req.getGroupCallId());
+            m.setUserId(uid);
+            m.setRtcToken(token);
+            groupMemberRepo.save(m);
+
+            list.add(Map.of("userId", uid, "rtcToken", token));
+
+            ws.notifyUser(
+                    uid,
+                    "GROUP_CALL_INVITE",
+                    Map.of("channelName", channel, "fromUserId", hostId)
+            );
+        }
+
+        return new Response(1, "Invited", Map.of(
+                "channelName", channel,
+                "members", list
+        ));
+    }
+    
+    
+    
 
     /* ---------------------------------------------------------
      * Test Push Message
