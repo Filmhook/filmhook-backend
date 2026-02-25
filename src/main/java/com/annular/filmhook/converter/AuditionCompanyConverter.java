@@ -76,6 +76,9 @@ public class AuditionCompanyConverter {
 				.createdDate(entity.getCreatedDate())
 				.updatedBy(entity.getUpdatedBy())
 				.updatedDate(entity.getUpdatedDate())
+				.fhCode(entity.getUser() != null 
+                ? entity.getUser().getFilmHookCode() 
+                : null)
 				.build();
 	}
 

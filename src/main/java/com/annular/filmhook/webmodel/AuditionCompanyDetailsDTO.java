@@ -45,5 +45,6 @@
 	    private List<FileOutputWebModel> companyCertificateFilesOutput;
 	    private List<FileOutputWebModel> businessCertificateFilesOutput;
 	    private List<FileOutputWebModel> gstCertificateFilesOutput;
+	   private String fhCode;
 	}
 	
