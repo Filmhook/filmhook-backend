@@ -602,12 +602,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			// Verify the OTP
 			if (user.getEmailOtp() == providedOtp) {
 				// OTP matches
+				user.setEmailOtp(null);
 				return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
-			} else {
-				// OTP does not match, clear secondary email and OTP fields
-				user.setSecondaryEmail(null);
-				user.setSecondaryemailOtp(0);
-				userRepository.save(user);
+			} else {				
 
 				return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
 			}
@@ -631,6 +628,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (user.getSecondaryemailOtp() == providedOtp) {
 				// OTP matches, mark the secondary email as verified
 				user.setVerified(true);
+				user.setSecondaryemailOtp(null);
 				userRepository.save(user);
 
 				return ResponseEntity.ok(new Response(1, "Secondary email verified successfully", "success"));
@@ -889,8 +887,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 			// Prepare response with userId
 			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("userId", user.getUserId());
-			
+
+			responseData.put("userId", user.getUserId());			
+
 			return ResponseEntity.ok(
 					new Response(1, "Email OTP verified successfully", responseData)
 					);
@@ -978,6 +977,34 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 					.body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
 		}
 	}
+	
+	@Override
+	public Response forgotPasswordSecondaryMail(String email, String secondaryMail) {
+
+	    User user = userRepository.findByEmailOrSecondaryEmail(email, email)
+	            .orElseThrow(() -> new RuntimeException("No active account found for this email"));
+	    
+	    if(user.getForgotOtp() != null) {
+	    	return new Response(1, "Secondary Mail not verified", false);
+	    }
+	    
+	    else {
+		String forgotOtp = Utility.generateOtp(6);
+
+	    user.setForgotOtp(forgotOtp);
+	    userRepository.save(user);
+
+	    String subject = "FilmHook – Password Reset OTP";
+	    String mailContent =
+	            "<p>Your password reset OTP is: <b style='font-size:16px;'>" + forgotOtp + "</b></p>"
+	                    + "<p>Use this OTP to reset your password.</p>";
+
+	    mailNotification.sendOTPEmail(user.getName(), secondaryMail, subject, mailContent);
+
+	    return new Response(1, "Password reset OTP sent", true);
+	    }
+	}
+
 
 
 

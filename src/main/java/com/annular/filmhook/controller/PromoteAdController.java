@@ -227,7 +227,7 @@ public class PromoteAdController {
 
 	   
 
-	    BigDecimal amount = promote.getAmount();
+	    BigDecimal amount = promote.getTotalCost();
 
 	    // 🔥 VERY IMPORTANT → CREATE TRANSACTION FIRST
 	    transactionService.createTransaction(
