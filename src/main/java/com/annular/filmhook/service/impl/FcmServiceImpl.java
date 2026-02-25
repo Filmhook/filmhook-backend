@@ -14,6 +14,8 @@ import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
+import com.google.firebase.messaging.AndroidConfig;
+import com.google.firebase.messaging.AndroidNotification;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -171,6 +173,47 @@ public class FcmServiceImpl implements FcmService {
 
 		FirebaseMessaging.getInstance().sendAsync(msg);
 	}
+	@Override
+	public void sendGroupCallNotification(
+		    Integer hostId,
+		    Integer receiverId,
+		    String callType,
+		    String channelName,
+		    String deviceToken,
+		    String hostName,
+		    String hostPic
+		) {
+		    try {
+		        Message message = Message.builder()
+		                .setToken(deviceToken)
+		                .setAndroidConfig(AndroidConfig.builder()
+		                        .setTtl(3600 * 1000)
+		                        .setPriority(AndroidConfig.Priority.HIGH)
+		                        .setNotification(AndroidNotification.builder()
+		                                .setSound("default")
+		                                .setChannelId("incoming_call")
+		                                .build())
+		                        .build())
+		                .putData("type", "incoming_group_call")
+		                .putData("fromUserId", hostId.toString())
+		                .putData("receiverId", receiverId.toString())
+		                .putData("callType", callType)
+		                .putData("channelName", channelName)
+		                .putData("callerName", hostName != null ? hostName : "")
+		                .putData("callerPic", hostPic != null ? hostPic : "")
+		                .putData("title", "Group Call")
+		                .putData("body", hostName + " is inviting you to a group " + callType + " call")
+		                .build();
+
+		        FirebaseMessaging.getInstance().send(message);
+
+		        System.out.println("FCM → Group call sent to: " + receiverId);
+
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		}
+
 }
 
 

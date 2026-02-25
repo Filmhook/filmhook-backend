@@ -983,7 +983,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	    User user = userRepository.findByEmailOrSecondaryEmail(email, email)
 	            .orElseThrow(() -> new RuntimeException("No active account found for this email"));
 	    
-	    if(user.getForgotOtp() != null) {
+	    if(user.getSecondaryemailOtp() != null) {
 	    	return new Response(1, "Secondary Mail not verified", false);
 	    }
 	    

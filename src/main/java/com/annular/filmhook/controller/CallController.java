@@ -1,4 +1,4 @@
-package com.annular.filmhook.service.impl;
+package com.annular.filmhook.controller;
 
 import java.util.List;
 
@@ -16,6 +16,10 @@ import com.annular.filmhook.repository.UserSessionRepository;
 import com.annular.filmhook.service.CallService;
 import com.annular.filmhook.webmodel.AgoraWebModel;
 import com.annular.filmhook.webmodel.EndCallRequest;
+import com.annular.filmhook.webmodel.GroupCallEndRequest;
+import com.annular.filmhook.webmodel.GroupCallInviteRequest;
+import com.annular.filmhook.webmodel.GroupCallJoinRequest;
+import com.annular.filmhook.webmodel.GroupCallStartRequest;
 import com.annular.filmhook.webmodel.StartCallRequest;
 
 @RestController
@@ -42,6 +46,37 @@ public class CallController {
       
         return callService.getRtcTokenByChannel(model.getChannelName());
     }
+    
+    /* ----------------------- Group Call START ------------------------ */
+    @PostMapping("/group/start")
+    public Response startGroupCall(@RequestBody GroupCallStartRequest req) {
+        return callService.startGroupCall(req);
+    }
+
+    /* ----------------------- Join Group Call (Late Join) ------------- */
+    @PostMapping("/group/join")
+    public Response joinGroupCall(@RequestBody GroupCallJoinRequest req) {
+        return callService.joinGroupCall(req);
+    }
+
+    /* ----------------------- Leave Group Call ------------------------ */
+    @PostMapping("/group/leave")
+    public Response leaveGroupCall(@RequestBody GroupCallJoinRequest req) {
+        return callService.leaveGroupCall(req);
+    }
+
+    /* ----------------------- End Entire Group Call ------------------ */
+    @PostMapping("/group/end")
+    public Response endGroupCall(@RequestBody GroupCallEndRequest req) {
+        return callService.endGroupCall(req);
+    }
+
+    /* ----------------------- Invite to existing 1-1 call → group ----- */
+    @PostMapping("/group/invite")
+    public Response inviteToGroup(@RequestBody GroupCallInviteRequest req) {
+        return callService.inviteToGroup(req);
+    }
+
     
     @PostMapping("/test-push")
     public ResponseEntity<?> testPush(@RequestParam Integer userId, 
