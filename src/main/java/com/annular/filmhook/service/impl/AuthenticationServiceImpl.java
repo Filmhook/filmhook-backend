@@ -603,6 +603,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (user.getEmailOtp() == providedOtp) {
 				// OTP matches
 				user.setEmailOtp(null);
+				userRepository.save(user);
 				return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
 			} else {				
 
