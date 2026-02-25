@@ -45,11 +45,7 @@ public class ShootingLocationBooking {
 	    @ManyToOne
 	    @JoinColumn(name = "client_id", nullable = false)
 	    private User client;
-
-//	    // Booking Dates
-//	    private LocalDate shootStartDate;
-//	    private LocalDate shootEndDate;
-//	    
+    
 	    @Convert(converter = LocalDateListConverter.class)
 		@Column(columnDefinition = "TEXT")
 		private List<LocalDate> bookingDates; 
@@ -86,6 +82,9 @@ public class ShootingLocationBooking {
 	    private LocalDateTime createdAt;
 
 	    private LocalDateTime updatedAt;
+	    
+		@Column(name = "booking_code", unique = true)
+		private String bookingCode;
 	
   
 }

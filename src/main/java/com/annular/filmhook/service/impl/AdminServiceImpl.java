@@ -1183,7 +1183,7 @@ public class AdminServiceImpl implements AdminService {
 			return new Response(-1, "Failed to fetch unverified/rejected users", e.getMessage());
 		}
 	}
-	
+
 
 	@Override
 	public Response changeNotificationStatus() {

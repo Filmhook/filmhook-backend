@@ -1907,6 +1907,7 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                 continue;
             }
 
+            Double distanceValue = null;
             String distanceText = null;
 
             if (hasLoggedLocation) {
@@ -1922,6 +1923,8 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                     continue; 
                 }
 
+                distanceValue = distanceKm;  // always store numeric
+
                 if (distanceKm < 1) {
                     long meters = Math.round(distanceKm * 1000);
                     distanceText = meters + " m";
@@ -1934,7 +1937,8 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
             userMap.put("userId", targetUser.getUserId());
             userMap.put("latitude", location.getLatitude());
             userMap.put("longitude", location.getLongitude());
-            userMap.put("distance", distanceText);
+            userMap.put("distanceValue", distanceValue);  
+            userMap.put("distance", distanceText);   
             userMap.put("profilePic",
                     userService.getProfilePicUrl(targetUser.getUserId()));
             userMap.put("userName", targetUser.getName());
@@ -1947,19 +1951,13 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
         }
 
         if (hasLoggedLocation && nearbyUsersList.size() > 1) {
-            nearbyUsersList.subList(1, nearbyUsersList.size())
-                    .sort(Comparator.comparing(
-                            u -> {
-                                String d = (String) u.get("distance");
-                                if (d == null) return Double.MAX_VALUE;
-
-                                if (d.contains("m")) {
-                                    return Double.parseDouble(d.replace(" m", "")) / 1000;
-                                } else {
-                                    return Double.parseDouble(d.replace(" Km", ""));
-                                }
-                            }
-                    ));
+        	nearbyUsersList.subList(1, nearbyUsersList.size())
+            .sort(Comparator.comparing(
+                    u -> {
+                        Double d = (Double) u.get("distanceValue");
+                        return d != null ? d : Double.MAX_VALUE;
+                    }
+            ));
         }
 
         return nearbyUsersList;

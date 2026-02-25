@@ -40,6 +40,7 @@ import com.annular.filmhook.UserDetails;
 
 import com.annular.filmhook.model.Chat;
 import com.annular.filmhook.model.ChatMediaDeleteTracker;
+import com.annular.filmhook.model.ChatType;
 import com.annular.filmhook.model.InAppNotification;
 import com.annular.filmhook.model.MarketPlaceChat;
 import com.annular.filmhook.model.MediaFileCategory;
@@ -174,8 +175,8 @@ public class ChatServiceImpl implements ChatService {
 			if (userOptional.isPresent()) {
 				User user = userOptional.get();
 
-				Chat chat = Chat.builder()
-						.message(chatWebModel.getMessage())
+				Chat.ChatBuilder chatBuilder = Chat.builder()
+						
 						.chatReceiverId(chatWebModel.getChatReceiverId())
 						.userAccountName(user.getName())
 						.chatSenderId(userId)
@@ -189,11 +190,24 @@ public class ChatServiceImpl implements ChatService {
 						.chatCreatedOn(new Date())
 						.storyId(chatWebModel.getStoryId())
 						.replyType(chatWebModel.getStoryId() != null ? "story" : "normal")
-						.replyToMessageId(chatWebModel.getReplyToMessageId())
-						.build();
+						.replyToMessageId(chatWebModel.getReplyToMessageId());
 
+				if (chatWebModel.getChatType() == ChatType.LOCATION) {
 
+				    chatBuilder
+				        .chatType(ChatType.LOCATION)
+				        .latitude(chatWebModel.getLatitude())
+				        .longitude(chatWebModel.getLongitude())
+				        .locationAddress(chatWebModel.getLocationAddress())
+				        .message(null); 
 
+				} else {
+
+				    chatBuilder
+				        .message(chatWebModel.getMessage());
+				}
+				
+				Chat chat = chatBuilder.build();
 				chatRepository.save(chat);
 
 				//optional
@@ -263,7 +277,11 @@ public class ChatServiceImpl implements ChatService {
 							}
 
 						} else {
-							latestMessage = chatWebModel.getMessage();
+						    if (chatWebModel.getChatType() == ChatType.LOCATION) {
+						        latestMessage = "📍 Location";
+						    } else {
+						        latestMessage = chatWebModel.getMessage();
+						    }
 						}
 
 						// Add current latestMessage if not already present
@@ -312,6 +330,12 @@ public class ChatServiceImpl implements ChatService {
 									.putData("groupKey", "filmhook_chat") 
 									.putData("mediaType", mediaType)  
 									.putData("mediaUrl", imageUrl != null ? imageUrl : "")
+									.putData("chatType",
+										    chat.getChatType() != null
+										        ? chat.getChatType().name()
+										        : "")
+									.putData("latitude", chat.getLatitude() != null ? chat.getLatitude().toString() : "")
+									.putData("longitude", chat.getLongitude() != null ? chat.getLongitude().toString() : "")
 									.setToken(deviceToken)
 									.build();
 
@@ -706,6 +730,10 @@ public class ChatServiceImpl implements ChatService {
 							.edited(chat.getEdited())
 							.editedOn(chat.getEditedOn())
 							.isDeletedForEveryone(chat.getIsDeletedForEveryone())
+							.chatType(chat.getChatType())
+							.latitude(chat.getLatitude())
+							.longitude(chat.getLongitude())
+							.locationAddress(chat.getLocationAddress())
 							.build();
 
 					// 👉 Fetch replied message if present

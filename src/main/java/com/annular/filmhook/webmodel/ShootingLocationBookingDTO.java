@@ -21,8 +21,6 @@ public class ShootingLocationBookingDTO {
     private PropertyBookingType bookingType;
     private SlotType slotType;
     private String slotTimings;
-//    private LocalDate shootStartDate;
-//    private LocalDate shootEndDate;
     private List<LocalDate> bookingDates; 
     private String bookingMessage;
     private Integer bookingId;
@@ -37,7 +35,10 @@ public class ShootingLocationBookingDTO {
     private Double gstAmount;
     private Double netAmount;
     private String bookingStatus;
-
+	private List<FileOutputWebModel> imageUrls;
+	  private String propertyName; 
+	  private String PropertyCode;
+private String bookingCode;
 
 }
 

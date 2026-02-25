@@ -214,7 +214,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	@Autowired
 	private MediaFilesRepository mediaFilesRepository;
 
-
+	@Autowired
+	private ShootingLocationBookingConverter shootingLocationBookingConverter;
+	
 	@Override
 	public List<ShootingLocationTypeDTO> getAllTypes() {
 		try {
@@ -2305,75 +2307,134 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 
-	@Override
-	public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
-		{
+@Override
+public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
 
-			if (dto.getBookingDates() == null || dto.getBookingDates().isEmpty()) {
-				throw new RuntimeException("Booking dates are required");
-			}
-			// --- 1. Build entity from DTO (only input fields) ---
-			ShootingLocationBooking booking = ShootingLocationBookingConverter.toEntity(dto);
+    if (dto.getBookingDates() == null || dto.getBookingDates().isEmpty()) {
+        throw new RuntimeException("Booking dates are required");
+    }
 
-			ShootingLocationPropertyDetails property = propertyDetailsRepository.findById(dto.getPropertyId())
-					.orElseThrow(() -> new RuntimeException("Property not found"));
-			User client = userRepository.findById(dto.getClientId())
-					.orElseThrow(() -> new RuntimeException("Client not found"));
+    // 1️⃣ Fetch Property & Client
+    ShootingLocationPropertyDetails property =
+            propertyDetailsRepository.findById(dto.getPropertyId())
+                    .orElseThrow(() -> new RuntimeException("Property not found"));
 
-			booking.setProperty(property);
-			booking.setClient(client);
+    User client =
+            userRepository.findById(dto.getClientId())
+                    .orElseThrow(() -> new RuntimeException("Client not found"));
 
-			// Validate availability based on SLOT TYPE
-			List<LocalDate> availableDates =
-					getAvailableDatesForProperty(property.getId(), dto.getSlotType());
+    // 2️⃣ Check existing pending booking
+    Optional<ShootingLocationBooking> existingBookingOpt =
+            bookingRepository.findByClient_UserIdAndProperty_IdAndStatus(
+                    dto.getClientId(),
+                    dto.getPropertyId(),
+                    BookingStatus.PENDING
+            );
 
-			for (LocalDate date : dto.getBookingDates()) {
-				if (!availableDates.contains(date)) {
-					throw new RuntimeException(
-							"Selected date " + date + " is not available for "
-									+ dto.getSlotType());
-				}
-			}
+    ShootingLocationBooking booking;
 
-			int totalDays = dto.getBookingDates().size();
-			booking.setTotalDays(totalDays);
+    if (existingBookingOpt.isPresent()) {
 
-			// --- 4. Fetch pricing rules from SubcategorySelection ---
-			ShootingLocationSubcategorySelection sel = property.getSubcategorySelection();
-			if (sel == null) {
-				throw new RuntimeException("Property pricing not configured");
-			}
+        // 🔁 UPDATE EXISTING ROW
+        booking = existingBookingOpt.get();
+     
+        booking.setBookingType(dto.getBookingType());
+        booking.setSlotType(dto.getSlotType());
+        booking.setSlotTimings(dto.getSlotTimings());
+        booking.setBookingDates(dto.getBookingDates());
+        booking.setBookingMessage(dto.getBookingMessage());
 
-			double pricePerDay = getPrice(sel, dto.getBookingType(), dto.getSlotType());
-			double discountPercent = getDiscount(sel, dto.getBookingType(), dto.getSlotType());
+    } else {
 
-			// --- 5. Price Breakdown Calculations ---
-			double subtotal = pricePerDay * totalDays;
-			double discountAmount = subtotal * (discountPercent / 100.0);
-			double amountAfterDiscount = subtotal - discountAmount;
+        // 🆕 CREATE NEW ROW
+    	 booking = ShootingLocationBookingConverter.toEntity(dto);
+        booking.setProperty(property);
+        booking.setClient(client);
+        booking.setStatus(BookingStatus.PENDING);
+    }
 
-			double gstPercent = 18.0;
-			double gstAmount = amountAfterDiscount * (gstPercent / 100.0);
-			double netAmount = amountAfterDiscount + gstAmount;
+    // 3️⃣ Validate Availability
+    List<LocalDate> availableDates =
+            getAvailableDatesForProperty(property.getId(), dto.getSlotType());
 
-			// --- 6. Set all calculated values into entity ---
-			booking.setPricePerDay(pricePerDay);
-			booking.setSubtotal(subtotal);
-			booking.setDiscountPercent(discountPercent);
-			booking.setDiscountAmount(discountAmount);
-			booking.setAmountAfterDiscount(amountAfterDiscount);
-			booking.setGstPercent(gstPercent);
-			booking.setGstAmount(gstAmount);
-			booking.setNetAmount(netAmount);
+    for (LocalDate date : dto.getBookingDates()) {
+        if (!availableDates.contains(date)) {
+            throw new RuntimeException(
+                    "Selected date " + date + " is not available for "
+                            + dto.getSlotType());
+        }
+    }
 
-			booking.setStatus(BookingStatus.PENDING);
-			booking.setUpdatedAt(LocalDateTime.now());
+    booking.setBookingDates(dto.getBookingDates());
+    int totalDays = dto.getBookingDates().size();
+    booking.setTotalDays(totalDays);
 
-			// --- 7. Save in DB ---
-			ShootingLocationBooking savedBooking = bookingRepository.save(booking);
+    // 4️⃣ Pricing Config
+    ShootingLocationSubcategorySelection sel =
+            property.getSubcategorySelection();
 
-			return ShootingLocationBookingConverter.toDTO(savedBooking);
-		}
+    if (sel == null) {
+        throw new RuntimeException("Property pricing not configured");
+    }
+
+    double pricePerDay = getPrice(sel, dto.getBookingType(), dto.getSlotType());
+    double discountPercent = getDiscount(sel, dto.getBookingType(), dto.getSlotType());
+
+    // 5️⃣ Price Calculation
+    double subtotal = pricePerDay * totalDays;
+    double discountAmount = subtotal * (discountPercent / 100.0);
+    double amountAfterDiscount = subtotal - discountAmount;
+
+    double gstPercent = 18.0;
+    double gstAmount = amountAfterDiscount * gstPercent / 100.0;
+    double netAmount = amountAfterDiscount + gstAmount;
+
+    // 6️⃣ Set Pricing Fields
+    booking.setPricePerDay(pricePerDay);
+    booking.setSubtotal(subtotal);
+    booking.setDiscountPercent(discountPercent);
+    booking.setDiscountAmount(discountAmount);
+    booking.setAmountAfterDiscount(amountAfterDiscount);
+    booking.setGstPercent(gstPercent);
+    booking.setGstAmount(gstAmount);
+    booking.setNetAmount(netAmount);
+
+    booking.setUpdatedAt(LocalDateTime.now());
+
+    // 7️⃣ Save first (for ID if new booking)
+    booking = bookingRepository.save(booking);
+
+    // 8️⃣ Generate Booking Code ONLY IF NEW
+    if (booking.getBookingCode() == null) {
+
+        String bookingCode = generateBookingCode(
+                booking.getProperty().getPropertyName(),
+                booking.getId()
+        );
+
+        booking.setBookingCode(bookingCode);
+        booking = bookingRepository.save(booking);
+    }
+
+    return ShootingLocationBookingConverter.toDTO(booking);
+}
+
+	private String generateBookingCode(String propertyName, Integer bookingId) {
+
+	    // 1️⃣ First 2 letters of property name
+	    String cleanedName = propertyName.replaceAll("\\s+", "");
+	    String prefix = cleanedName
+	            .substring(0, Math.min(2, cleanedName.length()))
+	            .toUpperCase();
+
+	    // 2️⃣ Current date in YYMMDD format
+	    String datePart = java.time.LocalDate.now()
+	            .format(java.time.format.DateTimeFormatter.ofPattern("yyMMdd"));
+
+	    // 3️⃣ Last 2 digits of booking ID
+	    String idPart = String.format("%02d", bookingId % 100);
+
+	    return prefix + datePart +"-" + idPart;
 	}
 	// ------------ PRICE HELPERS ------------
 
@@ -4101,6 +4162,74 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	            .build();
 	}
 
+//	=========================================================================================================================================
 
+	@Override
+	public List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status) {
 
+	    List<ShootingLocationBooking> bookings =
+	            bookingRepository.findBookingsForOwner(ownerId, status);
+
+	    return bookings.stream()
+	            .map(shootingLocationBookingConverter::convertToDTO)
+	            .toList();
+	}
+	
+	
+	@Override
+	public ShootingLocationBookingDTO updateBookingStatus(
+	        Integer bookingId,
+	        Integer ownerId,
+	        BookingStatus newStatus) {
+
+	    // 1️⃣ Fetch booking
+	    ShootingLocationBooking booking = bookingRepository.findById(bookingId)
+	            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+	    
+	    // 2️⃣ Validate owner
+	    if (!booking.getProperty().getUser().getUserId().equals(ownerId)) {
+	        throw new RuntimeException("You are not authorized to update this booking");
+	    }
+
+	    // 3️⃣ Only allow approve or reject
+	    if (booking.getStatus() != BookingStatus.PENDING) {
+	        throw new RuntimeException("Only pending bookings can be updated");
+	    }
+
+	    if (newStatus != BookingStatus.APPROVED &&
+	        newStatus != BookingStatus.REJECTED) {
+	        throw new RuntimeException("Invalid status update");
+	    }
+
+	    // 4️⃣ Update status
+	    booking.setStatus(newStatus);
+	    booking.setUpdatedAt(LocalDateTime.now());
+	    booking = bookingRepository.save(booking);
+
+	    return shootingLocationBookingConverter.convertToDTO(booking);
+	}
+	
+	
+	@Override
+	public Response getClientBookingsByStatus(Integer clientId, BookingStatus status) {
+
+	    try {
+
+	        List<ShootingLocationBooking> bookings =
+	                bookingRepository
+	                        .findByClient_UserIdAndStatusOrderByUpdatedAtDesc(
+	                                clientId, status);
+
+	        List<ShootingLocationBookingDTO> dtoList = bookings.stream()
+	                .map(shootingLocationBookingConverter::convertToDTO)
+	                .toList();
+
+	        return new Response(1, "Filtered bookings fetched successfully", dtoList);
+
+	    } catch (Exception e) {
+
+	        return new Response(-1, "Error", e.getMessage());
+	    }
+	}
 }

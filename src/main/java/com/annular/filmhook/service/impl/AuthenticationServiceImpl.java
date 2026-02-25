@@ -887,6 +887,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 			// Prepare response with userId
 			Map<String, Object> responseData = new HashMap<>();
+
 			responseData.put("userId", user.getUserId());			
 
 			return ResponseEntity.ok(

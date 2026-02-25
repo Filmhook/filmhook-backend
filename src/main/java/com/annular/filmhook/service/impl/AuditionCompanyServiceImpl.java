@@ -231,71 +231,96 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 		}).toList();
 	} 
 
-	@Override
-	public List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
-			AuditionCompanyDetails.VerificationStatus verificationStatus) {
+@Override
+public List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
+        AuditionCompanyDetails.VerificationStatus verificationStatus) {
 
-		List<AuditionCompanyDetails> companies;
+    List<AuditionCompanyDetails> companies;
 
-		if (verificationStatus == AuditionCompanyDetails.VerificationStatus.SUCCESS) {
-			// Success → status = true
-			companies = companyRepository.findByVerificationStatusAndStatusAndDeletedFalse(
-					AuditionCompanyDetails.VerificationStatus.SUCCESS, true);
-		} else if (verificationStatus == AuditionCompanyDetails.VerificationStatus.PENDING ||
-				verificationStatus == AuditionCompanyDetails.VerificationStatus.FAILED) {
-			// Pending/Failed → status = false
-			companies = companyRepository.findByVerificationStatusAndStatusAndDeletedFalse(
-					verificationStatus, false);
-		} else {
-			companies = new ArrayList<>();
-		}
+    // ✅ CASE 1: GET ALL COMPANIES
+    if (verificationStatus == null) {
 
-		return companies.stream().map(company -> {
-			AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
+        companies = companyRepository.findByDeletedFalse();
 
-			List<FileOutputWebModel> logoFiles = mediaFilesService
-					.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+    }
+    // ✅ CASE 2: SUCCESS (Approved)
+    else if (verificationStatus == AuditionCompanyDetails.VerificationStatus.SUCCESS) {
 
-			if (!logoFiles.isEmpty()) {
-				dto.setLogoFilesOutput(logoFiles);
-			}
-			
-			 List<FileOutputWebModel> companyCertFiles =
-		                mediaFilesService.getMediaFilesByCategoryAndRefId(
-		                        MediaFileCategory.AuditionCompanyCertificate,
-		                        company.getId());
+        companies = companyRepository
+                .findByVerificationStatusAndStatusAndDeletedFalse(
+                        AuditionCompanyDetails.VerificationStatus.SUCCESS,
+                        true);
 
-		        if (!companyCertFiles.isEmpty()) {
-		            dto.setCompanyCertificateFilesOutput(companyCertFiles);
-		        }
+    }
+    // ✅ CASE 3: PENDING or FAILED
+    else {
 
-		        // =====================
-		        // BUSINESS CERTIFICATE
-		        // =====================
-		        List<FileOutputWebModel> businessCertFiles =
-		                mediaFilesService.getMediaFilesByCategoryAndRefId(
-		                        MediaFileCategory.AuditionBusinessCertificate,
-		                        company.getId());
+        companies = companyRepository
+                .findByVerificationStatusAndStatusAndDeletedFalse(
+                        verificationStatus,
+                        false);
+    }
 
-		        if (!businessCertFiles.isEmpty()) {
-		            dto.setBusinessCertificateFilesOutput(businessCertFiles);
-		        }
+    // ✅ Convert to DTO
+    return companies.stream().map(company -> {
 
-		        // =====================
-		        // GST CERTIFICATE
-		        // =====================
-		        List<FileOutputWebModel> gstCertFiles =
-		                mediaFilesService.getMediaFilesByCategoryAndRefId(
-		                        MediaFileCategory.AuditionGSTDocuments,
-		                        company.getId());
+        AuditionCompanyDetailsDTO dto =
+                AuditionCompanyConverter.toCompanyDTO(company);
 
-		        if (!gstCertFiles.isEmpty()) {
-		            dto.setGstCertificateFilesOutput(gstCertFiles);
-		        }
+        Integer companyId = company.getId();
 
-			return dto;
-		}).toList();
-	}
+        // =====================
+        // LOGO FILES
+        // =====================
+        List<FileOutputWebModel> logoFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.Audition,
+                        companyId);
+
+        if (!logoFiles.isEmpty()) {
+            dto.setLogoFilesOutput(logoFiles);
+        }
+
+        // =====================
+        // COMPANY CERTIFICATE
+        // =====================
+        List<FileOutputWebModel> companyCertFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.AuditionCompanyCertificate,
+                        companyId);
+
+        if (!companyCertFiles.isEmpty()) {
+            dto.setCompanyCertificateFilesOutput(companyCertFiles);
+        }
+
+        // =====================
+        // BUSINESS CERTIFICATE
+        // =====================
+        List<FileOutputWebModel> businessCertFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.AuditionBusinessCertificate,
+                        companyId);
+
+        if (!businessCertFiles.isEmpty()) {
+            dto.setBusinessCertificateFilesOutput(businessCertFiles);
+        }
+
+        // =====================
+        // GST CERTIFICATE
+        // =====================
+        List<FileOutputWebModel> gstCertFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.AuditionGSTDocuments,
+                        companyId);
+
+        if (!gstCertFiles.isEmpty()) {
+            dto.setGstCertificateFilesOutput(gstCertFiles);
+        }
+
+        return dto;
+
+    }).toList();
+}
 
 	@Override
 	public AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved) {

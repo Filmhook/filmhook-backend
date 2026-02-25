@@ -5,6 +5,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -97,7 +99,18 @@ public class Chat {
     @Column(name = "reply_type")
     private String replyType;
     
+    @Column(name = "latitude")
+    private Double latitude;
 
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "location_address")
+    private String locationAddress;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "message_type")
+    private ChatType chatType;
 
 
 

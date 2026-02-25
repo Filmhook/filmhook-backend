@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.ShootingPropertyStatus;
@@ -96,4 +97,9 @@ public interface ShootingLocationService {
 	List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
 	
 	ShootingLocationPropertyReviewResponseDTO getAllReviewsByPropertyId(Integer propertyId);
+	
+	List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status);
+	ShootingLocationBookingDTO updateBookingStatus(Integer bookingId, Integer ownerId, BookingStatus newStatus);
+	Response getClientBookingsByStatus(Integer clientId, BookingStatus status);
+	
 }

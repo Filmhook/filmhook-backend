@@ -32,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
@@ -695,6 +696,41 @@ public class ShootingLocationController {
 	    return ResponseEntity.ok(new Response(1, "Success", dto));
 	}
 	
+	
+	  @GetMapping("/getBookingsByOwner")
+	    public Response getOwnerBookings(
+	    		@RequestParam Integer ownerId,
+	            @RequestParam(required = false) BookingStatus status) {
+
+	        try {
+	            List<ShootingLocationBookingDTO> bookings =
+	            		service.getOwnerBookings(ownerId, status);
+
+	            return new Response(1, "Success", bookings);
+
+	        } catch (Exception e) {
+	            return new Response(-1, "Error", e.getMessage());
+	        }
+	    } 
+	  
+	  
+	  @PutMapping("/updateBookingStatus")
+	  public ResponseEntity<ShootingLocationBookingDTO> updateBookingStatus(
+			  @RequestParam Integer bookingId,
+	          @RequestParam Integer ownerId,
+	          @RequestParam BookingStatus status) {
+
+	      return ResponseEntity.ok(
+	    		  service.updateBookingStatus(bookingId, ownerId, status)
+	      );
+	  }
+	  
+	  
+	  @GetMapping("/getClientBookings")
+	  public Response getClientBookings(@RequestParam Integer clientId, @RequestParam (required = false) BookingStatus status) {
+	      return service.getClientBookingsByStatus(clientId, status);
+	  }
+	  
 	
 
 }
