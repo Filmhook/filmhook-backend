@@ -500,7 +500,9 @@ public class ChatServiceImpl implements ChatService {
 			// ✅ Deleted message placeholder
 			if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
 				latestMsg = "🚫 This message was deleted";
+			} else if (ChatType.LOCATION.equals(chat.getChatType())) {
 
+			    latestMsg = "📍 Location";
 				// ✅ Story reply
 			} else if ("story".equalsIgnoreCase(chat.getReplyType())) {
 				isLatestStory = true;
