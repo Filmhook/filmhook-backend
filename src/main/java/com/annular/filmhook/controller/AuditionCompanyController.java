@@ -122,13 +122,16 @@ public class AuditionCompanyController {
   
     @GetMapping("/getByVerificationStatus")
     public ResponseEntity<List<AuditionCompanyDetailsDTO>> getCompaniesByVerificationStatus(
-            @RequestParam(name = "verificationStatus", defaultValue = "PENDING") String verificationStatus) {
+    		@RequestParam(name = "verificationStatus", required = false) String verificationStatus) {
 
-        AuditionCompanyDetails.VerificationStatus statusEnum;
-        try {
-            statusEnum = AuditionCompanyDetails.VerificationStatus.valueOf(verificationStatus.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+    	AuditionCompanyDetails.VerificationStatus statusEnum = null;
+        if (verificationStatus != null && !verificationStatus.isBlank()) {
+            try {
+                statusEnum = AuditionCompanyDetails.VerificationStatus
+                        .valueOf(verificationStatus.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
         }
 
         List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesByVerificationStatus(statusEnum);
