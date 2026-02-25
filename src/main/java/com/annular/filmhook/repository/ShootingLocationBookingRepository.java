@@ -63,11 +63,23 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
              @Param("propertyId") Integer propertyId,
              @Param("since") LocalDateTime since
      );
-
     
     List<ShootingLocationBooking> findByClient_UserIdOrderByUpdatedAtDesc(Integer clientId);
     boolean existsByProperty_IdAndStatusIn(
             Integer propertyId,
             List<BookingStatus> statuses
     );
+    
+    @Query("SELECT b FROM ShootingLocationBooking b " +
+    	       "WHERE b.property.user.userId = :ownerId " +
+    	       "AND (:status IS NULL OR b.status = :status)")
+    	List<ShootingLocationBooking> findBookingsForOwner(
+    	        @Param("ownerId") Integer ownerId,
+    	        @Param("status") BookingStatus status);
+    
+    Optional<ShootingLocationBooking>
+    findByClient_UserIdAndProperty_IdAndStatus(Integer userId,Integer propertyId,  BookingStatus status);
+    
+    List<ShootingLocationBooking>findByClient_UserIdAndStatusOrderByUpdatedAtDesc( Integer userId, BookingStatus status);
+
 }
