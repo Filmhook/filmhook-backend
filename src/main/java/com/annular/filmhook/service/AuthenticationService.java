@@ -71,6 +71,8 @@ public interface AuthenticationService {
 	ResponseEntity<?> sendEmailOtp(UserWebModel model);
 	
 	 Response forgotPasswordSecondaryMail(String email, String secondaryMail);
+
+	ResponseEntity<?> sendPrimaryEmailOtp(UserWebModel model);
 	
 	
 }

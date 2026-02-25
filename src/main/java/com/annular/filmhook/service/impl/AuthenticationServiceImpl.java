@@ -544,16 +544,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			userRepository.save(user);
 
 			// Generate OTP
-			int primaryMailOtp = Integer.parseInt(Utility.generateOtp(4));
-			user.setEmailOtp(primaryMailOtp);
-			userRepository.save(user);
-
-			// Send verification email
-			boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
-			if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
-
-			// Generate OTP
-			int secondaryMailOtp = Integer.parseInt(Utility.generateOtp(4));
+			int secondaryMailOtp = Integer.parseInt(Utility.generateOtp(6));
 			user.setSecondaryemailOtp(secondaryMailOtp);
 			userRepository.save(user);
 
@@ -565,9 +556,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			}
 			// Prepare response
 			Map<String, Object> response = new HashMap<>();
-			response.put("message", "OTP sent to primary and secondary email addresses.");
-			response.put("newEmail", newEmail);
-			response.put("oldEmailMessage", "OTP has been sent to " + user.getEmail());
+		
+			response.put("message", "OTP has been sent to " + user.getSecondaryEmail());
 
 			return ResponseEntity.ok(response);
 
@@ -603,8 +593,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (user.getEmailOtp() == providedOtp) {
 				// OTP matches
 				user.setEmailOtp(null);
+				user.setSecondaryemailOtp(null);
 				userRepository.save(user);
-				return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
+				return ResponseEntity.ok(new Response(1, "Added Backup mail", "success"));
 			} else {				
 
 				return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
@@ -629,10 +620,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (user.getSecondaryemailOtp() == providedOtp) {
 				// OTP matches, mark the secondary email as verified
 				user.setVerified(true);
-				user.setSecondaryemailOtp(null);
+				//user.setSecondaryemailOtp(null);
 				userRepository.save(user);
 
-				return ResponseEntity.ok(new Response(1, "Secondary email verified successfully", "success"));
+				return ResponseEntity.ok(new Response(1, "Backup email successfully", "success"));
 			} else {
 				// OTP does not match
 				return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP", "error"));
@@ -1004,6 +995,30 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	    return new Response(1, "Password reset OTP sent", true);
 	    }
+	}
+
+	@Override
+	public ResponseEntity<?> sendPrimaryEmailOtp(UserWebModel model) {
+		
+		Optional<User> userOptional = userRepository.findById(model.getUserId());
+		if (userOptional.isEmpty()) return ResponseEntity.ok().body("User not found");
+
+		User user = userOptional.get();
+		
+		// Generate OTP
+		int primaryMailOtp = Integer.parseInt(Utility.generateOtp(6));
+		user.setEmailOtp(primaryMailOtp);
+		userRepository.save(user);
+
+		// Send verification email
+		boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
+		if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
+		Map<String, Object> response = new HashMap<>();
+	
+		response.put("message", "OTP has been sent to " + user.getEmail());
+
+		return ResponseEntity.ok(response);
+
 	}
 
 
