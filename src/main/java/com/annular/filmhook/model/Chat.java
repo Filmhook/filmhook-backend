@@ -81,12 +81,14 @@ public class Chat {
     @Column(name = "receiverRead")
     private Boolean receiverRead;
     
+    @Builder.Default
     private Boolean deletedBySender = false;
+    @Builder.Default
     private Boolean deletedByReceiver = false;
-      
+    @Builder.Default
     @Column(name = "is_deleted_for_everyone")
     private Boolean isDeletedForEveryone = false;
-
+    @Builder.Default
     private Boolean edited = false;
     private Date editedOn;
     

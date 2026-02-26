@@ -81,9 +81,18 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
             nativeQuery = true)
     Optional<Chat> findPreviousVisibleMessage(Integer senderId, Integer receiverId, Date lastMessageTime);
     
-    boolean existsByChatSenderIdAndChatReceiverIdAndSenderChatIsActiveTrueAndDeletedBySenderFalseAndIsDeletedForEveryoneFalse(
-            Integer senderId,
-            Integer receiverId
-    );
+    @Query(
+    	    "SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END " +
+    	    "FROM Chat c " +
+    	    "WHERE c.chatSenderId = :senderId " +
+    	    "AND c.chatReceiverId = :receiverId " +
+    	    "AND c.senderChatIsActive = true " +
+    	    "AND (c.deletedBySender = false OR c.deletedBySender IS NULL) " +
+    	    "AND (c.isDeletedForEveryone = false OR c.isDeletedForEveryone IS NULL)"
+    	)
+    	boolean existsActiveChatFromSender(
+    	        @Param("senderId") Integer senderId,
+    	        @Param("receiverId") Integer receiverId
+    	);
 
    }
