@@ -328,6 +328,7 @@ public class CallServiceImpl implements CallService {
                         Map.of(
                             "channelName", channelName,
                             "fromUserId", hostId,
+                            "fromUserName", req.getHostName(),
                             "callType", req.getCallType()
                         )
                 );
@@ -381,7 +382,7 @@ public class CallServiceImpl implements CallService {
         ws.notifyGroup(
                 req.getGroupCallId(),
                 "GROUP_USER_JOINED",
-                Map.of("userId", req.getUserId())
+                Map.of("userId", req.getUserId(), "userName", req.getUserName() )
         );
 
         return new Response(1, "Joined", null);
@@ -438,6 +439,10 @@ public class CallServiceImpl implements CallService {
      * =========================================================== */
     @Override
     public Response inviteToGroup(GroupCallInviteRequest req) {
+    	
+    	User host = userRepository.findById(req.getHostUserId()).orElse(null);
+    	String hostName = host != null ? host.getName() : "";
+    	String hostPic = userService.getProfilePicUrl(req.getHostUserId());
 
         String channel = req.getChannelName();
         Integer hostId = req.getHostUserId();
@@ -464,8 +469,15 @@ public class CallServiceImpl implements CallService {
             ws.notifyUser(
                     uid,
                     "GROUP_CALL_INVITE",
-                    Map.of("channelName", channel, "fromUserId", hostId)
-            );
+                    Map.of(
+                        "fromUserId", hostId,
+                        "fromUserName", hostName,
+                        "fromUserPic", hostPic,
+                        "channelName", channel,
+                        "groupCallId", req.getGroupCallId(),
+                        "callType", req.getCallType()
+                    )
+                );
         }
 
         return new Response(1, "Invited", Map.of(

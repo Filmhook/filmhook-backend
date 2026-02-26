@@ -6,4 +6,5 @@ import lombok.Data;
 public class GroupCallJoinRequest {
     private Integer groupCallId;
     private Integer userId;
+    private String userName;
 }
