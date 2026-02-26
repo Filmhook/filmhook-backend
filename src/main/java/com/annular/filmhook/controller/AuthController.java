@@ -581,6 +581,11 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new Response(-1, "Error",  e.getMessage()));
         }
     }
+    
+    @PostMapping("/sendPrimaryEmailOtp")
+    public ResponseEntity<?> sendPrimaryEmailOtp(@RequestBody UserWebModel model) {
+        return userService.sendPrimaryEmailOtp(model);
+    }
 
 
 
