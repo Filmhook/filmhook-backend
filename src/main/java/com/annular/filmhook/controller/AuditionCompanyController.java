@@ -139,9 +139,9 @@ public class AuditionCompanyController {
     }
 
     
-    @PutMapping("/{companyId}/verify")
-    public ResponseEntity<?> verifyCompany(@PathVariable Integer companyId, @RequestParam boolean approved) {
-        AuditionCompanyDetails updatedCompany = companyService.updateVerificationStatus(companyId, approved);
+    @PutMapping("verifyAuditionCompany")
+    public ResponseEntity<?> verifyCompany(@RequestParam Integer companyId, @RequestParam boolean approved , @RequestParam String rejectReason) {
+        AuditionCompanyDetails updatedCompany = companyService.updateVerificationStatus(companyId, approved, rejectReason);
 
         Map<String, Object> response = new HashMap<>();
         response.put("companyId", updatedCompany.getId());

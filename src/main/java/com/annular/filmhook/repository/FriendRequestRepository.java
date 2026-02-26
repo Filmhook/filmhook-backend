@@ -31,4 +31,10 @@ public interface FriendRequestRepository extends JpaRepository<FollowersRequest,
 	);
 	
 	List<FollowersRequest> findByFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(String status);
+	
+    boolean existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
+            Integer senderId,
+            Integer receiverId,
+            String status
+    );
 }

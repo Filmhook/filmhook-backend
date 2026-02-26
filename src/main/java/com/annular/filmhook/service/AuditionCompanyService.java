@@ -17,8 +17,8 @@ public interface AuditionCompanyService {
 	 List<AuditionCompanyDetailsDTO> getCompaniesByUserId(Integer userId);
 	 List<AuditionCompanyDetailsDTO> getAllCompanies();
 	 List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
-		        AuditionCompanyDetails.VerificationStatus verificationStatus);
-	 AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved);
+    AuditionCompanyDetails.VerificationStatus verificationStatus);
+	 AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved, String reason );
 	 AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId);
 	 AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request);
 	 Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode);	 

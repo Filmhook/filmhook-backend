@@ -6,6 +6,8 @@ public enum LocationVisibility {
     PUBLIC_USER_ONLY,
     INDUSTRY_USER_ONLY,
     FOLLOWERS_ONLY,
-    DISABLED
+    DISABLED,
+    FOLLOWINGS_ONLY, 
+    CHAT_USERS_ONLY,
 
 }

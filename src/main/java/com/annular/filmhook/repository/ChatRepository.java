@@ -80,5 +80,10 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
             "ORDER BY c.time_stamp DESC LIMIT 1",
             nativeQuery = true)
     Optional<Chat> findPreviousVisibleMessage(Integer senderId, Integer receiverId, Date lastMessageTime);
+    
+    boolean existsByChatSenderIdAndChatReceiverIdAndSenderChatIsActiveTrueAndDeletedBySenderFalseAndIsDeletedForEveryoneFalse(
+            Integer senderId,
+            Integer receiverId
+    );
 
    }

@@ -61,6 +61,9 @@ public interface AdminActivityLogRepository extends JpaRepository<AdminActivityL
     List<AuditionRowDTO> getAuditionRows(@Param("adminId") Integer adminId);
 
 
-
+    List<AdminActivityLog> findByTargetTypeAndTargetId(
+            String targetType,
+            Integer targetId
+    );
 
 }
