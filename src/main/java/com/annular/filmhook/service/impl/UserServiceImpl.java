@@ -130,7 +130,9 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	PlatformFilmProfessionMapRepository platformFilmProfessionMapRepository;
-
+	
+	@Autowired
+	ChatRepository chatRepository;
 	@Autowired
 	BookingService bookingService;
 
@@ -1856,9 +1858,6 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
         	Page<Location> locationPage =
         		    locationRepository.findByStatusTrueAndUser_UserIdNot(userId, pageable);
         	List<Location> otherLocations = locationPage.getContent();
-        List<FollowersRequest> followedRelations =
-                friendRequestRepository
-                        .findByFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase("Followed");
 
         List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
 
@@ -1901,8 +1900,7 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                     userId,
                     targetUser.getUserId(),
                     isPublicUser,
-                    isIndustryUser,
-                    followedRelations
+                    isIndustryUser
             )) {
                 continue;
             }
@@ -1932,6 +1930,42 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                     distanceText = String.format("%.2f Km", distanceKm);
                 }
             }
+            
+            boolean isFollowing = friendRequestRepository
+                    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
+                            userId,
+                            targetUser.getUserId(),
+                            "Followed"
+                    );
+
+            boolean isFollower = friendRequestRepository
+                    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
+                            targetUser.getUserId(),
+                            userId,
+                            "Followed"
+                    );
+
+            boolean isChatUser = chatRepository
+                    .existsByChatSenderIdAndChatReceiverIdAndSenderChatIsActiveTrueAndDeletedBySenderFalseAndIsDeletedForEveryoneFalse(
+                            userId,
+                            targetUser.getUserId()
+                    );
+            
+            String relationshipType = "NONE";
+
+            if (isFollowing && isFollower) {
+                relationshipType = "BOTH";
+            } else if (isFollowing) {
+                relationshipType = "FOLLOWING";
+            } else if (isFollower) {
+                relationshipType = "FOLLOWER";
+            } else if (isChatUser) {
+                relationshipType = "CHAT_USER";
+            }
+            
+            String visibilityType = location.getVisibility() != null
+                    ? location.getVisibility().name()
+                    : "UNKNOWN";
 
             Map<String, Object> userMap = new LinkedHashMap<>();
             userMap.put("userId", targetUser.getUserId());
@@ -1946,7 +1980,8 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                     getProfessionNames(targetUser.getUserId()));
             userMap.put("userType", targetUser.getUserType());
             userMap.put("review", targetUser.getAdminReview());
-
+            userMap.put("relationshipType", relationshipType);
+            userMap.put("visibilityType", visibilityType);
             nearbyUsersList.add(userMap);
         }
 
@@ -1976,8 +2011,7 @@ private boolean isVisibleUsingYourFollowersRequest(
         Integer loggedUserId,
         Integer targetUserId,
         boolean isPublicUser,
-        boolean isIndustryUser,
-        List<FollowersRequest> followedRelations
+        boolean isIndustryUser
 ) {
 
     if (visibility == null) return false;
@@ -1994,17 +2028,28 @@ private boolean isVisibleUsingYourFollowersRequest(
             return isIndustryUser;
 
         case FOLLOWERS_ONLY:
+        	   return friendRequestRepository
+                       .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
+                               loggedUserId,
+                               targetUserId,
+                               "Followed"
+                       );
 
-            return followedRelations.stream().anyMatch(r ->
-                    (
-                            (r.getFollowersRequestSenderId().equals(loggedUserId)
-                                    && r.getFollowersRequestReceiverId().equals(targetUserId))
-                                    ||
-                            (r.getFollowersRequestSenderId().equals(targetUserId)
-                                    && r.getFollowersRequestReceiverId().equals(loggedUserId))
-                    )
-            );
-
+        case FOLLOWINGS_ONLY:
+            return friendRequestRepository
+                    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
+                            targetUserId,
+                            loggedUserId,
+                            "Followed"
+                    );
+            
+        case CHAT_USERS_ONLY:
+	
+		return chatRepository
+                    .existsByChatSenderIdAndChatReceiverIdAndSenderChatIsActiveTrueAndDeletedBySenderFalseAndIsDeletedForEveryoneFalse(
+                            loggedUserId,
+                            targetUserId
+                    );
         case DISABLED:
             return false;
 

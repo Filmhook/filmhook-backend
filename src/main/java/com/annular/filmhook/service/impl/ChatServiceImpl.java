@@ -502,7 +502,7 @@ public class ChatServiceImpl implements ChatService {
 				latestMsg = "🚫 This message was deleted";
 			} else if (ChatType.LOCATION.equals(chat.getChatType())) {
 
-			    latestMsg = "📍 Location";
+			    latestMsg = "📍Location";
 				// ✅ Story reply
 			} else if ("story".equalsIgnoreCase(chat.getReplyType())) {
 				isLatestStory = true;

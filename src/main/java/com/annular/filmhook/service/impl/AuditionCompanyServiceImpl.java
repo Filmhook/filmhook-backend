@@ -15,12 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
+import com.annular.filmhook.model.AdminActivityLog;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
 import com.annular.filmhook.model.AuditionUserCompanyRole;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.User;
-
+import com.annular.filmhook.repository.AdminActivityLogRepository;
 import com.annular.filmhook.repository.AuditionCompanyRepository;
 import com.annular.filmhook.repository.AuditionUserCompanyRoleRepository;
 import com.annular.filmhook.repository.UserRepository;
@@ -55,7 +56,8 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	private UserService userService;
 	@Autowired
 	private AdminService adminService;
-
+	@Autowired
+	private AdminActivityLogRepository repo;
 	@Transactional
 @Override
 public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
@@ -268,7 +270,25 @@ public List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
                 AuditionCompanyConverter.toCompanyDTO(company);
 
         Integer companyId = company.getId();
+        List<AdminActivityLog> logs =
+                repo.findByTargetTypeAndTargetId(
+                                "AUDITION",
+                                companyId 
+                        );
 
+        if (!logs.isEmpty()) {
+
+            List<AdminActivityLog> logDTOs =
+                    logs.stream()
+                        .map(log -> AdminActivityLog.builder()
+                                .adminId(log.getAdminId())
+                                .actionType(log.getActionType())
+                                .createdOn(log.getCreatedOn())
+                                .build())
+                        .toList();
+
+            dto.setAdminHistory(logDTOs);
+        }
         // =====================
         // LOGO FILES
         // =====================
@@ -322,42 +342,48 @@ public List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
     }).toList();
 }
 
-	@Override
-	public AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved) {
-		try {
-			AuditionCompanyDetails company = companyRepository.findById(companyId)
-					.orElseThrow(() -> new RuntimeException("Company not found with id: " + companyId));
+public AuditionCompanyDetails updateVerificationStatus(
+        Integer companyId,
+        boolean approved,
+        String reason
+) {
 
-			company.setVerificationStatus(
-					approved ? AuditionCompanyDetails.VerificationStatus.SUCCESS 
-							: AuditionCompanyDetails.VerificationStatus.FAILED
-					);
-			Integer adminId = userDetails.userInfo().getId();
-			if(approved) {
-				adminService.log(
-						adminId,
-						"APPROVED",
-						"AUDITION",
-						company.getCreatedBy()
-						);
-			}
-			else {
-				adminService.log(
-						adminId,
-						"REJECTED",
-						"AUDITION",
-						company.getCreatedBy()
-						);
-			}
-		
+    AuditionCompanyDetails company = companyRepository.findById(companyId)
+            .orElseThrow(() -> new RuntimeException("Company not found with id: " + companyId));
 
-			return companyRepository.save(company);
-		} catch (Exception e) {
-			e.printStackTrace(); 
-			throw e; 
-		}
-	}
+    Integer adminId = userDetails.userInfo().getId();
 
+    if (approved) {
+
+        company.setVerificationStatus(AuditionCompanyDetails.VerificationStatus.SUCCESS);
+        company.setRejectionReason(null); // clear old reason if any
+
+        adminService.log(
+                adminId,
+                "APPROVED",
+                "AUDITION",
+                companyId
+        );
+
+    } else {
+
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new RuntimeException("Rejection reason must be provided");
+        }
+
+        company.setVerificationStatus(AuditionCompanyDetails.VerificationStatus.FAILED);
+        company.setRejectionReason(reason);
+
+        adminService.log(
+                adminId,
+                "REJECTED : " + reason,  
+                "AUDITION",
+                companyId
+        );
+    }
+
+    return companyRepository.save(company);
+}
 	@Override
 	public AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId) {
 		AuditionCompanyDetails company = companyRepository.findById(companyId)
