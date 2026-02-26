@@ -1930,39 +1930,7 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                     distanceText = String.format("%.2f Km", distanceKm);
                 }
             }
-            
-            boolean isFollowing = friendRequestRepository
-                    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
-                            userId,
-                            targetUser.getUserId(),
-                            "Followed"
-                    );
-
-            boolean isFollower = friendRequestRepository
-                    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
-                            targetUser.getUserId(),
-                            userId,
-                            "Followed"
-                    );
-
-            boolean isChatUser = chatRepository
-                    .existsByChatSenderIdAndChatReceiverIdAndSenderChatIsActiveTrueAndDeletedBySenderFalseAndIsDeletedForEveryoneFalse(
-                            userId,
-                            targetUser.getUserId()
-                    );
-            
-            String relationshipType = "NONE";
-
-            if (isFollowing && isFollower) {
-                relationshipType = "BOTH";
-            } else if (isFollowing) {
-                relationshipType = "FOLLOWING";
-            } else if (isFollower) {
-                relationshipType = "FOLLOWER";
-            } else if (isChatUser) {
-                relationshipType = "CHAT_USER";
-            }
-            
+        
             String visibilityType = location.getVisibility() != null
                     ? location.getVisibility().name()
                     : "UNKNOWN";
@@ -1980,7 +1948,6 @@ public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
                     getProfessionNames(targetUser.getUserId()));
             userMap.put("userType", targetUser.getUserType());
             userMap.put("review", targetUser.getAdminReview());
-            userMap.put("relationshipType", relationshipType);
             userMap.put("visibilityType", visibilityType);
             nearbyUsersList.add(userMap);
         }
@@ -2046,7 +2013,7 @@ private boolean isVisibleUsingYourFollowersRequest(
         case CHAT_USERS_ONLY:
 	
 		return chatRepository
-                    .existsByChatSenderIdAndChatReceiverIdAndSenderChatIsActiveTrueAndDeletedBySenderFalseAndIsDeletedForEveryoneFalse(
+                    .existsActiveChatFromSender(
                             loggedUserId,
                             targetUserId
                     );
