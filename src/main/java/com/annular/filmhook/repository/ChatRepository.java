@@ -94,5 +94,9 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     	        @Param("senderId") Integer senderId,
     	        @Param("receiverId") Integer receiverId
     	);
+    
+    @Query("SELECT c FROM Chat c WHERE c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId AND c.receiverRead = false")
+    List<Chat> findUnreadMessages(@Param("senderId") Integer senderId,
+                                  @Param("receiverId") Integer receiverId);
 
    }

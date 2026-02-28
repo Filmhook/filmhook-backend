@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import com.annular.filmhook.configuration.FirebaseConfig;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.FileUtil;
+import com.annular.filmhook.util.S3Util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,7 @@ import com.annular.filmhook.service.ChatService;
 import com.annular.filmhook.service.MediaFilesService;
 
 import com.annular.filmhook.util.Utility;
-
+import com.annular.filmhook.util.WebSocketService;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
@@ -92,8 +93,6 @@ public class ChatServiceImpl implements ChatService {
 	@Autowired
 	UserDetails userDetails;
 
-
-
 	@Autowired
 	private UserService userService;
 
@@ -117,6 +116,11 @@ public class ChatServiceImpl implements ChatService {
 
 	@Autowired
 	ChatMediaDeleteTrackerRepository chatMediaDeleteTrackerRepository;
+	@Autowired
+	WebSocketService webSocketService;
+	
+	@Autowired
+	S3Util s3Util;
 
 	public static final Logger logger = LoggerFactory.getLogger(ChatServiceImpl.class);
 
@@ -170,9 +174,9 @@ public class ChatServiceImpl implements ChatService {
 			logger.info("Save Message Method Start");
 
 			Integer userId = userDetails.userInfo().getId();
-			Optional<User> userOptional = userRepository.	findById(userId);
+			Optional<User> userOptional = userRepository.findById(userId);
 
-			if (userOptional.isPresent()) {
+			if (userOptional.isPresent()) {    
 				User user = userOptional.get();
 
 				Chat.ChatBuilder chatBuilder = Chat.builder()
@@ -228,6 +232,47 @@ public class ChatServiceImpl implements ChatService {
 					mediaFilesService.saveMediaFiles(fileInputWebModel, user);
 				}
 
+				Map<String, Object> wsPayload = new HashMap<>();
+				wsPayload.put("chatId", chat.getChatId());
+				wsPayload.put("chatSenderId", chat.getChatSenderId());
+				wsPayload.put("chatReceiverId", chat.getChatReceiverId());
+				wsPayload.put("message", chatWebModel.getMessage());
+				wsPayload.put("chatType", chatWebModel.getChatType());
+				wsPayload.put("latitude", chat.getLatitude());
+				wsPayload.put("longitude", chat.getLongitude());
+				wsPayload.put("locationAddress", chat.getLocationAddress());
+				wsPayload.put("timeStamp", chat.getTimeStamp());
+
+				// 🔥 Add media files
+				List<MediaFiles> chatFiles =
+				    mediaFileRepository.findByCategoryAndCategoryRefId(
+				        MediaFileCategory.Chat, chat.getChatId()
+				    );
+
+				if (!chatFiles.isEmpty()) {
+				    MediaFiles file = chatFiles.get(0);
+
+				    wsPayload.put("mediaUrl", s3Util.generateS3FilePath(file.getFilePath() + file.getFileType()));
+				    wsPayload.put("mediaType", file.getFileType()); // ".webp", ".webm"
+
+				    // Detect type (image/video)
+				    String fileType = file.getFileType().toLowerCase();
+				    if (fileType.contains("jpg") || fileType.contains("jpeg") || fileType.contains("png") || fileType.contains("webp")) {
+				        wsPayload.put("mediaCategory", "image");
+				    } else if (fileType.contains("mp4") || fileType.contains("mov") || fileType.contains("avi") || fileType.contains("webm")) {
+				        wsPayload.put("mediaCategory", "video");
+				    }
+
+				    // Optional thumbnail
+				    wsPayload.put("thumbnail", file.getThumbnailPath());
+				}
+				
+				  // Notify sender
+	            webSocketService.notifyChatUser(
+	                    chat.getChatReceiverId(),
+	                    "NEW_MESSAGE",
+	                    wsPayload
+	            );
 
 				// ✅ Firebase Push Notification
 				Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
@@ -790,8 +835,66 @@ public class ChatServiceImpl implements ChatService {
 		}
 	}
 
+	  @Override
+	    public ResponseEntity<?> markRead(Integer chatId) {
+	        try {
+	            Chat chat = chatRepository.findById(chatId).orElse(null);
 
+	            if (chat == null) {
+	                return ResponseEntity.badRequest().body("Invalid chatId");
+	            }
 
+	            chat.setReceiverRead(true);
+	            chatRepository.save(chat);
+
+	            // Prepare data for WebSocket
+	            Map<String, Object> payload = new HashMap<>();
+	            payload.put("chatId", chatId);
+	            payload.put("receiverRead", true);
+
+	            // Notify sender
+	            webSocketService.notifyUser(
+	                    chat.getChatSenderId(),
+	                    "MESSAGE_READ",
+	                    payload
+	            );
+
+	            return ResponseEntity.ok("OK");
+
+	        } catch (Exception e) {
+	            return ResponseEntity.internalServerError().body("Error marking message read");
+	        }
+	    }
+	  
+	  @Override
+	  public ResponseEntity<?> markAllRead(Integer senderId, Integer receiverId) {
+
+	      List<Chat> unread = chatRepository.findUnreadMessages(senderId, receiverId);
+
+	      if (unread.isEmpty()) {
+	          return ResponseEntity.ok("No unread messages");
+	      }
+
+	      List<Integer> readIds = new ArrayList<>();
+
+	      for (Chat c : unread) {
+	          c.setReceiverRead(true);
+	          chatRepository.save(c);
+	          readIds.add(c.getChatId());
+	      }
+
+	      // 🔥 SEND BULK READ EVENT ONLY ONCE
+	      Map<String, Object> payload = new HashMap<>();
+	      payload.put("chatIds", readIds);
+
+	      webSocketService.notifyUser(
+	              senderId,           // notify the SENDER!!
+	              "MESSAGE_READ_BULK",
+	              payload
+	      );
+
+	      return ResponseEntity.ok("OK");
+	  }
 
 	//    @Override
 	//    public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
