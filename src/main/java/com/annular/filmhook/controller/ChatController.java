@@ -76,6 +76,18 @@ public class ChatController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+	
+	@PostMapping("/chat/markRead")
+	public ResponseEntity<?> markRead(@RequestBody Map<String, Integer> body) {
+	    return chatService.markRead(body.get("chatId"));
+	}
+	
+	  @PostMapping("/markAllRead")
+	    public ResponseEntity<?> markAllRead(@RequestBody Map<String, Integer> body) {
+	        Integer senderId = body.get("senderId");
+	        Integer receiverId = body.get("receiverId");
+	        return chatService.markAllRead(senderId, receiverId);
+	    }
 
 	@PostMapping("/send-fcm-message")
 	public ResponseEntity<?> sendFCMMessage(@RequestBody FCMRequestWebModel request) {

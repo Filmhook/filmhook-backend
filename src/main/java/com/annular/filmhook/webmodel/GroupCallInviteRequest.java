@@ -10,4 +10,5 @@ public class GroupCallInviteRequest {
     private Integer hostUserId;
     private List<Integer> memberIds;
     private String channelName;
+    private String callType;  
 }
