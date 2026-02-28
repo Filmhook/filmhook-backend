@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -112,7 +113,7 @@ public class User {
     @Column(name = "hair_color")
     private String hairColor;
 
-    @Column(name = "bmi")
+    @Column(name = "bmi", columnDefinition = "TEXT")
     private String bmi;
 
     @Column(name = "chest_size")
@@ -121,7 +122,7 @@ public class User {
     @Column(name = "waist_size")
     private String waistSize;
 
-    @Column(name = "biceps")
+    @Column(name = "biceps", columnDefinition = "TEXT")
     private String biceps;
 
     @Column(name = "religion")
@@ -145,7 +146,7 @@ public class User {
     @Column(name = "fatherName")
     private String fatherName;
 
-    @Column(name = "brother_names")
+    @Column(name = "brother_names", columnDefinition = "TEXT")
     private String brotherNames;
 
     @Column(name = "sister_names")
@@ -211,7 +212,7 @@ public class User {
     @Column(name = "living_place")
     private String livingPlace;
 
-    @Column(name = "birth_place")
+    @Column(name = "birth_place", columnDefinition = "TEXT")
     private String birthPlace;
 
     @Column(name = "experience")
@@ -237,7 +238,7 @@ public class User {
     @Column(name = "changeEmailId")
     private String changeEmailId;
     
-    @Column(name = "bust")
+    @Column(name = "bust", columnDefinition = "TEXT")
     private String bust;
     
     @Column(name = "hip")
@@ -326,6 +327,20 @@ public class User {
 
 	@Column(name = "organization_unit", columnDefinition = "TEXT")
 	private String organizationUnit;
+	
+	@Column(name = "security_verified")
+	private Boolean securityQuestionsVerified;
+	
+	@Column(name = "security_attempt_count")
+	private Integer securityAttemptCount;
+
+	@Column(name = "security_attempt_date")
+	private LocalDate securityAttemptDate;
+
+	@Column(name = "security_locked")
+	private Boolean securityLocked;
+	@Column(name = "security_failed_days")
+	private Integer securityFailedDays;
 
 	
 }
