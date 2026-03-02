@@ -622,18 +622,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				return ResponseEntity.ok(new Response(-1, "OTP not requested or already verified", null));
 			}
 
-			LocalDateTime otpCreatedOn = user.getEmailOtpCreatedOn()
-					.toInstant()
-					.atZone(ZoneId.systemDefault())
-					.toLocalDateTime();
+			long diffMinutes =
+					(new Date().getTime() - user.getEmailOtpCreatedOn().getTime())
+					/ (60 * 1000);
 
-			long minutes = Duration.between(
-					otpCreatedOn,
-					LocalDateTime.now()
-					).toMinutes();
-
-			if (minutes > 2) {
-				return ResponseEntity.badRequest().body(new Response(-1, "OTP expired", null));
+			if (diffMinutes > 1) {
+				return ResponseEntity.badRequest()
+						.body(new Response(-1, "OTP expired. Please resend OTP.", ""));
 			}
 
 			// Verify the OTP
