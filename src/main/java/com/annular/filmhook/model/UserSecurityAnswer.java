@@ -1,10 +1,7 @@
 package com.annular.filmhook.model;
 
-import java.time.LocalDateTime;
-
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EntityListeners;
+
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -33,18 +30,6 @@ public class UserSecurityAnswer extends BaseEntity {
     private UserSecurityQuestion question;
     
     private String answerHash;
-
-    @Column(name = "security_otp")
-    private String securityEmailOtp;
-
-    @Column(name = "security_otp_created_on")
-    private LocalDateTime securityEmailOtpCreatedOn;
-    
-    @Column(name = "security_otp_verified")
-    private Boolean securityOtpVerified;
-    
-    
-
     
     
 }
