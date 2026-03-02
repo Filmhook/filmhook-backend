@@ -199,6 +199,9 @@ public class User {
 
     @Column(name = "forgotOtp")
     private String forgotOtp;
+    
+    @Column(name = "forgot_otp_created_on")
+    private LocalDate forgotOtpCreatedOn;
 
     @Column(name = "admin_Page_Status")
     private Boolean adminPageStatus;
@@ -226,6 +229,9 @@ public class User {
 
     @Column(name = "secondaryemail_otp")
     private Integer secondaryemailOtp;
+    
+    @Column(name = "secondaryemail_otp_created_on")
+    private LocalDate secondaryemailOtpCreatedOn;
 
     @Column(name = "verified")
     private Boolean verified;

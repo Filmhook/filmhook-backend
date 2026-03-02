@@ -428,7 +428,7 @@ public class AuthController {
     @PostMapping("addSecondaryEmail")
     public ResponseEntity<?> addSecondaryEmail(@RequestBody UserWebModel userWebModel) {
         try {
-            logger.info("addSecondaryEmail :- {}", userWebModel);
+           
             return userService.addSecondaryEmail(userWebModel);
         } catch (Exception e) {
             logger.error("addSecondaryEmail Method Exception -> {}", e.getMessage());

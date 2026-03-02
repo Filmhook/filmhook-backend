@@ -1,7 +1,9 @@
 package com.annular.filmhook.service.impl;
 
 import java.text.SimpleDateFormat;
-
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -588,6 +590,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 			User user = userOptional.get();
 			int providedOtp = userWebModel.getEmailOtp();
+			
+			LocalDateTime otpCreatedOn = user.getEmailOtpCreatedOn()
+			        .toInstant()
+			        .atZone(ZoneId.systemDefault())
+			        .toLocalDateTime();
+
+			long minutes = Duration.between(
+			        otpCreatedOn,
+			        LocalDateTime.now()
+			).toMinutes();
+
+			if (minutes > 1) {
+			    return ResponseEntity.badRequest().body(new Response(-1, "OTP expired", null));
+			}
 
 			// Verify the OTP
 			if (user.getEmailOtp() == providedOtp) {
@@ -615,18 +631,30 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 			User user = userOptional.get();
 			int providedOtp = userWebModel.getSecondaryemailOtp();
+			
+			
+			long minutes = Duration.between(
+					user.getSecondaryemailOtpCreatedOn(),
+					LocalDateTime.now()
+					).toMinutes();
+
+
+			if (minutes > 2) {
+				
+				 return ResponseEntity.ok().body(new Response(-1, "OTP expired. Please resend OTP.", null));
+			}
 
 			// Verify the OTP
 			if (user.getSecondaryemailOtp() == providedOtp) {
 				// OTP matches, mark the secondary email as verified
-				user.setVerified(true);
-				//user.setSecondaryemailOtp(null);
+				user.setVerified(true);				
+				user.setSecondaryemailOtpCreatedOn(null);				
 				userRepository.save(user);
 
 				return ResponseEntity.ok(new Response(1, "Backup email successfully", "success"));
 			} else {
 				// OTP does not match
-				return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP", "error"));
+				return ResponseEntity.ok().body(new Response(-1, "Invalid OTP", "error"));
 			}
 		} catch (Exception e) {
 			return ResponseEntity.internalServerError().body("Error verifying secondary email OTP: " + e.getMessage());
@@ -1008,6 +1036,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		// Generate OTP
 		int primaryMailOtp = Integer.parseInt(Utility.generateOtp(6));
 		user.setEmailOtp(primaryMailOtp);
+		user.setEmailOtpCreatedOn(new Date());
 		userRepository.save(user);
 
 		// Send verification email
