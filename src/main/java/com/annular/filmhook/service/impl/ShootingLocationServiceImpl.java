@@ -389,8 +389,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 				property.setPropertyCode(propertyCode);
 			}
-
-
 			property.setCategory(category);
 			property.setSubCategory(subCategory);
 			property.setTypes(type);

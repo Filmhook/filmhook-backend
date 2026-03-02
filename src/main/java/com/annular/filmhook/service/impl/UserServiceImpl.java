@@ -130,7 +130,7 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	PlatformFilmProfessionMapRepository platformFilmProfessionMapRepository;
-	
+
 	@Autowired
 	ChatRepository chatRepository;
 	@Autowired
@@ -269,7 +269,8 @@ public class UserServiceImpl implements UserService {
 		userWebModel.setQualification(user.getQualification());
 
 		userWebModel.setWorkCategory(user.getWorkCategory());
-
+		userWebModel.setVerified(user.getVerified());
+		userWebModel.setSecondaryEmail(user.getSecondaryEmail());
 		userWebModel.setStatus(user.getStatus());
 
 		userWebModel.setCreatedBy(user.getCreatedBy());
@@ -1828,200 +1829,200 @@ public class UserServiceImpl implements UserService {
 		return Optional.empty();
 	}
 
-@Override
-public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
-        int pageSize, Double range
-) {
+	@Override
+	public List<Map<String, Object>> findNearUsers(Integer userId,int pageNo,
+			int pageSize, Double range
+			) {
 
-    try {
+		try {
 
-        if (userId == null) {
-            throw new RuntimeException("User ID must be provided");
-        }
+			if (userId == null) {
+				throw new RuntimeException("User ID must be provided");
+			}
 
-        User loggedInUser = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+			User loggedInUser = userRepository.findById(userId)
+					.orElseThrow(() -> new RuntimeException("User not found"));
 
-        Optional<Location> loggedLocationOpt =
-                locationRepository.findByUser_UserId(userId);
+			Optional<Location> loggedLocationOpt =
+					locationRepository.findByUser_UserId(userId);
 
-        Location loggedLocation = loggedLocationOpt.orElse(null);
-        boolean hasLoggedLocation = (loggedLocation != null);
+			Location loggedLocation = loggedLocationOpt.orElse(null);
+			boolean hasLoggedLocation = (loggedLocation != null);
 
-        boolean isPublicUser =
-        	    loggedInUser.getUserType().equalsIgnoreCase("Public User");
+			boolean isPublicUser =
+					loggedInUser.getUserType().equalsIgnoreCase("Public User");
 
-        	boolean isIndustryUser =
-        	    loggedInUser.getUserType().equalsIgnoreCase("Industry User");
-        	
-        	Pageable pageable = PageRequest.of(pageNo, pageSize);
-        	Page<Location> locationPage =
-        		    locationRepository.findByStatusTrueAndUser_UserIdNot(userId, pageable);
-        	List<Location> otherLocations = locationPage.getContent();
+			boolean isIndustryUser =
+					loggedInUser.getUserType().equalsIgnoreCase("Industry User");
 
-        List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
+			Pageable pageable = PageRequest.of(pageNo, pageSize);
+			Page<Location> locationPage =
+					locationRepository.findByStatusTrueAndUser_UserIdNot(userId, pageable);
+			List<Location> otherLocations = locationPage.getContent();
 
-        // ============================
-        // ADD LOGGED USER (ALWAYS)
-        // ============================
+			List<Map<String, Object>> nearbyUsersList = new ArrayList<>();
 
-        Map<String, Object> loggedMap = new LinkedHashMap<>();
-        loggedMap.put("userId", loggedInUser.getUserId());
+			// ============================
+			// ADD LOGGED USER (ALWAYS)
+			// ============================
 
-        if (hasLoggedLocation) {
-            loggedMap.put("latitude", loggedLocation.getLatitude());
-            loggedMap.put("longitude", loggedLocation.getLongitude());
-            loggedMap.put("visbility", loggedLocation.getVisibility());
-        } else {
-            loggedMap.put("latitude", null);
-            loggedMap.put("longitude", null);
-            loggedMap.put("visbility", null);
-        }
+			Map<String, Object> loggedMap = new LinkedHashMap<>();
+			loggedMap.put("userId", loggedInUser.getUserId());
 
-        loggedMap.put("distance", "0 m");
-        loggedMap.put("profilePic",
-                userService.getProfilePicUrl(loggedInUser.getUserId()));
-        loggedMap.put("userName", loggedInUser.getName());
-        loggedMap.put("professionNames",
-                getProfessionNames(loggedInUser.getUserId()));
-        loggedMap.put("userType", loggedInUser.getUserType());
-        loggedMap.put("review", loggedInUser.getAdminReview());
-        nearbyUsersList.add(loggedMap);
+			if (hasLoggedLocation) {
+				loggedMap.put("latitude", loggedLocation.getLatitude());
+				loggedMap.put("longitude", loggedLocation.getLongitude());
+				loggedMap.put("visbility", loggedLocation.getVisibility());
+			} else {
+				loggedMap.put("latitude", null);
+				loggedMap.put("longitude", null);
+				loggedMap.put("visbility", null);
+			}
 
-
-        for (Location location : otherLocations) {
-
-            User targetUser = location.getUser();
-            if (targetUser == null) continue;
-
-            // VISIBILITY CHECK
-            if (!isVisibleUsingYourFollowersRequest(
-                    location.getVisibility(),
-                    userId,
-                    targetUser.getUserId(),
-                    isPublicUser,
-                    isIndustryUser
-            )) {
-                continue;
-            }
-
-            Double distanceValue = null;
-            String distanceText = null;
-
-            if (hasLoggedLocation) {
-
-                double distanceKm = Utility.calculateDistance(
-                        loggedLocation.getLatitude(),
-                        loggedLocation.getLongitude(),
-                        location.getLatitude(),
-                        location.getLongitude()
-                );
-                
-                if (range != null && distanceKm > range) {
-                    continue; 
-                }
-
-                distanceValue = distanceKm;  // always store numeric
-
-                if (distanceKm < 1) {
-                    long meters = Math.round(distanceKm * 1000);
-                    distanceText = meters + " m";
-                } else {
-                    distanceText = String.format("%.2f Km", distanceKm);
-                }
-            }
-        
-            String visibilityType = location.getVisibility() != null
-                    ? location.getVisibility().name()
-                    : "UNKNOWN";
-
-            Map<String, Object> userMap = new LinkedHashMap<>();
-            userMap.put("userId", targetUser.getUserId());
-            userMap.put("latitude", location.getLatitude());
-            userMap.put("longitude", location.getLongitude());
-            userMap.put("distanceValue", distanceValue);  
-            userMap.put("distance", distanceText);   
-            userMap.put("profilePic",
-                    userService.getProfilePicUrl(targetUser.getUserId()));
-            userMap.put("userName", targetUser.getName());
-            userMap.put("professionNames",
-                    getProfessionNames(targetUser.getUserId()));
-            userMap.put("userType", targetUser.getUserType());
-            userMap.put("review", targetUser.getAdminReview());
-            userMap.put("visibilityType", visibilityType);
-            nearbyUsersList.add(userMap);
-        }
-
-        if (hasLoggedLocation && nearbyUsersList.size() > 1) {
-        	nearbyUsersList.subList(1, nearbyUsersList.size())
-            .sort(Comparator.comparing(
-                    u -> {
-                        Double d = (Double) u.get("distanceValue");
-                        return d != null ? d : Double.MAX_VALUE;
-                    }
-            ));
-        }
-
-        return nearbyUsersList;
-
-    } catch (Exception e) {
-        logger.error("Error at findNearUsers() -> {}", e.getMessage());
-        e.printStackTrace();
-    }
-
-    return Collections.emptyList();
-}
+			loggedMap.put("distance", "0 m");
+			loggedMap.put("profilePic",
+					userService.getProfilePicUrl(loggedInUser.getUserId()));
+			loggedMap.put("userName", loggedInUser.getName());
+			loggedMap.put("professionNames",
+					getProfessionNames(loggedInUser.getUserId()));
+			loggedMap.put("userType", loggedInUser.getUserType());
+			loggedMap.put("review", loggedInUser.getAdminReview());
+			nearbyUsersList.add(loggedMap);
 
 
-private boolean isVisibleUsingYourFollowersRequest(
-        LocationVisibility visibility,
-        Integer loggedUserId,
-        Integer targetUserId,
-        boolean isPublicUser,
-        boolean isIndustryUser
-) {
+			for (Location location : otherLocations) {
 
-    if (visibility == null) return false;
+				User targetUser = location.getUser();
+				if (targetUser == null) continue;
 
-    switch (visibility) {
+				// VISIBILITY CHECK
+				if (!isVisibleUsingYourFollowersRequest(
+						location.getVisibility(),
+						userId,
+						targetUser.getUserId(),
+						isPublicUser,
+						isIndustryUser
+						)) {
+					continue;
+				}
 
-        case EVERYONE:
-            return true;
+				Double distanceValue = null;
+				String distanceText = null;
 
-        case PUBLIC_USER_ONLY:
-            return isPublicUser;
+				if (hasLoggedLocation) {
 
-        case INDUSTRY_USER_ONLY:
-            return isIndustryUser;
+					double distanceKm = Utility.calculateDistance(
+							loggedLocation.getLatitude(),
+							loggedLocation.getLongitude(),
+							location.getLatitude(),
+							location.getLongitude()
+							);
 
-        case FOLLOWERS_ONLY:
-        	   return friendRequestRepository
-                       .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
-                               loggedUserId,
-                               targetUserId,
-                               "Followed"
-                       );
+					if (range != null && distanceKm > range) {
+						continue; 
+					}
 
-        case FOLLOWINGS_ONLY:
-            return friendRequestRepository
-                    .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
-                            targetUserId,
-                            loggedUserId,
-                            "Followed"
-                    );
-            
-        case CHAT_USERS_ONLY:
-	
-		return chatRepository
-                    .existsActiveChatFromSender(
-                            loggedUserId,
-                            targetUserId
-                    );
-        case DISABLED:
-            return false;
+					distanceValue = distanceKm;  // always store numeric
 
-        default:
-            return false;
-    }
-}
+					if (distanceKm < 1) {
+						long meters = Math.round(distanceKm * 1000);
+						distanceText = meters + " m";
+					} else {
+						distanceText = String.format("%.2f Km", distanceKm);
+					}
+				}
+
+				String visibilityType = location.getVisibility() != null
+						? location.getVisibility().name()
+								: "UNKNOWN";
+
+				Map<String, Object> userMap = new LinkedHashMap<>();
+				userMap.put("userId", targetUser.getUserId());
+				userMap.put("latitude", location.getLatitude());
+				userMap.put("longitude", location.getLongitude());
+				userMap.put("distanceValue", distanceValue);  
+				userMap.put("distance", distanceText);   
+				userMap.put("profilePic",
+						userService.getProfilePicUrl(targetUser.getUserId()));
+				userMap.put("userName", targetUser.getName());
+				userMap.put("professionNames",
+						getProfessionNames(targetUser.getUserId()));
+				userMap.put("userType", targetUser.getUserType());
+				userMap.put("review", targetUser.getAdminReview());
+				userMap.put("visibilityType", visibilityType);
+				nearbyUsersList.add(userMap);
+			}
+
+			if (hasLoggedLocation && nearbyUsersList.size() > 1) {
+				nearbyUsersList.subList(1, nearbyUsersList.size())
+				.sort(Comparator.comparing(
+						u -> {
+							Double d = (Double) u.get("distanceValue");
+							return d != null ? d : Double.MAX_VALUE;
+						}
+						));
+			}
+
+			return nearbyUsersList;
+
+		} catch (Exception e) {
+			logger.error("Error at findNearUsers() -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+
+		return Collections.emptyList();
+	}
+
+
+	private boolean isVisibleUsingYourFollowersRequest(
+			LocationVisibility visibility,
+			Integer loggedUserId,
+			Integer targetUserId,
+			boolean isPublicUser,
+			boolean isIndustryUser
+			) {
+
+		if (visibility == null) return false;
+
+		switch (visibility) {
+
+		case EVERYONE:
+			return true;
+
+		case PUBLIC_USER_ONLY:
+			return isPublicUser;
+
+		case INDUSTRY_USER_ONLY:
+			return isIndustryUser;
+
+		case FOLLOWERS_ONLY:
+			return friendRequestRepository
+					.existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
+							loggedUserId,
+							targetUserId,
+							"Followed"
+							);
+
+		case FOLLOWINGS_ONLY:
+			return friendRequestRepository
+					.existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActiveTrueAndFollowersRequestStatusIgnoreCase(
+							targetUserId,
+							loggedUserId,
+							"Followed"
+							);
+
+		case CHAT_USERS_ONLY:
+
+			return chatRepository
+					.existsActiveChatFromSender(
+							loggedUserId,
+							targetUserId
+							);
+		case DISABLED:
+			return false;
+
+		default:
+			return false;
+		}
+	}
 }

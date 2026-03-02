@@ -21,9 +21,12 @@ import org.springframework.stereotype.Service;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.converter.UserSecurityAnswerConverter;
+import com.annular.filmhook.exception.UserVerificationAttemptRepository;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserSecurityAnswer;
 import com.annular.filmhook.model.UserSecurityQuestion;
+import com.annular.filmhook.model.UserVerificationAttempt;
+import com.annular.filmhook.enums.VerificationType;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSecurityAnswerRepository;
 import com.annular.filmhook.repository.UserSecurityQuestionRepository;
@@ -52,11 +55,10 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 
 	@Autowired
 	private UserDetails userDetails;
-
+	@Autowired
+	UserVerificationAttemptRepository attemptRepository;
 	@Override
-	public List<UserSecurityAnswerDTO> saveSecurityQuestions(
-			List<UserSecurityAnswerDTO> dtoList,
-			Integer loggedInUserId) {
+	public List<UserSecurityAnswerDTO> saveSecurityQuestions( List<UserSecurityAnswerDTO> dtoList, Integer loggedInUserId) {
 
 		if (dtoList == null || dtoList.size() != 5) {
 			throw new RuntimeException("Exactly 5 questions must be selected");
@@ -84,11 +86,23 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 		// 🔐 If already configured → require OTP verification
 		if (!existingAnswers.isEmpty()) {
 
-			UserSecurityAnswer first = existingAnswers.get(0);
-
-			if (!Boolean.TRUE.equals(first.getSecurityOtpVerified())) {
+			if (!Boolean.TRUE.equals(user.getSecurityOtpVerified())) {
 				throw new RuntimeException(
 						"Please verify OTP before editing security questions");
+			}
+
+			if (user.getSecurityEmailOtpCreatedOn() == null) {
+				throw new RuntimeException("OTP session expired. Please request new OTP.");
+			}
+
+			long minutes = Duration.between(
+					user.getSecurityEmailOtpCreatedOn(),
+					LocalDateTime.now()
+					).toMinutes();
+
+			if (minutes > 60) {
+				throw new RuntimeException(
+						"OTP session expired. Please request new OTP.");
 			}
 		}
 
@@ -139,14 +153,10 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 		}
 
 		// ✅ After successful edit → clear OTP fields
-		for (UserSecurityAnswer ans : existingAnswers) {
-			ans.setSecurityEmailOtp(null);
-			ans.setSecurityEmailOtpCreatedOn(null);
-			ans.setSecurityOtpVerified(false);
-		}
-
-		repository.saveAll(existingAnswers);
-
+		user.setSecurityEmailOtp(null);
+		user.setSecurityEmailOtpCreatedOn(null);
+		user.setSecurityOtpVerified(false);
+		userRepository.save(user);
 		return responseList;
 	}
 
@@ -193,62 +203,70 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 
 
 	@Override
-	public Response verifySecurityAnswers( Integer userId, List<UserSecurityAnswerDTO> requestList) {
-		  User user = userRepository.findById(userId)
-		            .orElseThrow(() -> new RuntimeException("User not found"));
+	public Response verifySecurityAnswers(
+			Integer userId,
+			List<UserSecurityAnswerDTO> requestList) {
 
-		    // 🔐 Permanent lock check
-		    if (Boolean.TRUE.equals(user.getSecurityLocked())) {
-		        return new Response(-1,
-		                "Your account is locked due to multiple failed attempts. Please contact support team.",
-		                null);
-		    }
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-		    LocalDate today = LocalDate.now();
+		UserVerificationAttempt attempt =
+				getOrCreateAttempt(user, VerificationType.SECURITY_QUESTION);
 
-		    // Initialize null values
-		    if (user.getSecurityAttemptCount() == null)
-		        user.setSecurityAttemptCount(0);
+		LocalDateTime now = LocalDateTime.now();
 
-		    if (user.getSecurityFailedDays() == null)
-		        user.setSecurityFailedDays(0);
+		// 🔒 Permanent Lock Check
+		if (Boolean.TRUE.equals(attempt.getLocked())) {
+			return new Response(-1,
+					"Account locked due to multiple failed attempts. Please contact support team.",
+					null);
+		}
 
-		    // 🔄 Reset daily attempt if new day
-		    if (user.getSecurityAttemptDate() == null ||
-		            !today.equals(user.getSecurityAttemptDate())) {
+		// ⏳ 24-Hour Rolling Reset Logic
+		if (attempt.getAttemptDate() != null) {
 
-		        user.setSecurityAttemptCount(0);
-		        user.setSecurityAttemptDate(today);
-		    }
+			LocalDateTime unlockTime =
+					attempt.getAttemptDate().plusHours(24);
 
-		    int attempts = user.getSecurityAttemptCount();
+			// If 24 hours passed → reset window
+			if (now.isAfter(unlockTime)) {
 
-		    // 🚫 Already 3 attempts today
-		    if (attempts >= 3) {
-		        return new Response(-1,
-		                "Maximum attempts reached for today. Try again after 24 hours.",
-		                null);
-		    }
+				attempt.setAttemptCount(0);
+				attempt.setAttemptDate(null);
+				attemptRepository.save(attempt);
+			}
+			// Still inside 24 hours and already 3 attempts
+			else if (attempt.getAttemptCount() >= 3) {
 
-		List<UserSecurityAnswer> savedAnswers =repository.findByUser_UserIdAndStatusTrue(userId);
+				long minutesLeft =
+						Duration.between(now, unlockTime).toMinutes();
+
+				return new Response(-1,
+						"Maximum attempts reached. Try again after "
+								+ minutesLeft + " minutes.",
+								null);
+			}
+		}
+
+		List<UserSecurityAnswer> savedAnswers =
+				repository.findByUser_UserIdAndStatusTrue(userId);
 
 		if (savedAnswers.isEmpty()) {
-			return new Response(-1, "Security questions not configured", null);
+			return new Response(-1,
+					"Security questions not configured",
+					null);
 		}
 
 		List<Map<String, Object>> resultList = new ArrayList<>();
-
 		boolean allCorrect = true;
 
 		for (UserSecurityAnswerDTO request : requestList) {
 
 			Map<String, Object> result = new HashMap<>();
-
 			Integer questionId = request.getQuestion().getId();
 
 			UserSecurityAnswer stored = savedAnswers.stream()
-					.filter(a -> a.getQuestion().getId()
-							.equals(questionId))
+					.filter(a -> a.getQuestion().getId().equals(questionId))
 					.findFirst()
 					.orElse(null);
 
@@ -278,52 +296,76 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 			resultList.add(result);
 		}
 
+		// ✅ SUCCESS
 		if (allCorrect) {
-			  user.setSecurityAttemptCount(0);
-		        user.setSecurityFailedDays(0);
-		        user.setSecurityQuestionsVerified(true);
-		        userRepository.save(user);
+
+			attempt.setAttemptCount(0);
+			attempt.setAttemptDate(null);
+			attempt.setFailedDays(0);
+			attemptRepository.save(attempt);
 
 			return new Response(1,
 					"All security answers verified successfully",
 					resultList);
-		} else {
-			
-			  attempts++;
-			    user.setSecurityAttemptCount(attempts);
-
-			    // If reached 3 attempts today
-			    if (attempts >= 3) {
-
-			        int failedDays = user.getSecurityFailedDays() + 1;
-			        user.setSecurityFailedDays(failedDays);
-
-			        // 🔒 If failed 3 different days → permanent lock
-			        if (failedDays >= 3) {
-			            user.setSecurityLocked(true);
-			            userRepository.save(user);
-
-			            return new Response(-1,
-			                    "Account locked due to multiple failed attempts. Please contact support team.",
-			                    resultList);
-			        }
-
-			        userRepository.save(user);
-
-			        return new Response(-1,
-			                "Maximum attempts reached for today. Try again after 24 hours.",
-			                resultList);
-			    }
-
-			    userRepository.save(user);
-
-			    return new Response(-1,
-			            "Incorrect security answers. Attempts left: "
-			                    + (3 - attempts),
-			            resultList);
 		}
+
+		// ❌ FAILURE
+
+		// If first failure in this cycle
+		if (attempt.getAttemptDate() == null) {
+			attempt.setAttemptDate(now);
+		}
+
+		int attempts = attempt.getAttemptCount() + 1;
+		attempt.setAttemptCount(attempts);
+
+		// If 3 attempts within 24 hours
+		if (attempts >= 3) {
+
+			int failedCycles = attempt.getFailedDays() + 1;
+			attempt.setFailedDays(failedCycles);
+
+			// 🔐 Permanent lock after 3 cycles
+			if (failedCycles >= 3) {
+				attempt.setLocked(true);
+				attemptRepository.save(attempt);
+
+				return new Response(-1,
+						"Account permanently locked due to multiple failed attempts.",
+						resultList);
+			}
+
+			attemptRepository.save(attempt);
+
+			return new Response(-1,
+					"Maximum attempts reached. Try again after 24 hours.",
+					resultList);
+		}
+
+		attemptRepository.save(attempt);
+
+		return new Response(-1,
+				"Incorrect answers. Attempts left: "
+						+ (3 - attempts),
+						resultList);
 	}
 
+	public UserVerificationAttempt getOrCreateAttempt(
+			User user,
+			VerificationType type) {
+
+		return attemptRepository
+				.findByUser_UserIdAndVerificationType(
+						user.getUserId(), type)
+				.orElseGet(() ->
+				attemptRepository.save(
+						UserVerificationAttempt.builder()
+						.user(user)
+						.verificationType(type)
+						.build()
+						)
+						);
+	}
 	@Override
 	public Response sendSecurityEditOtp(Integer userId) {
 
@@ -341,12 +383,10 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 		int otpNumber = 100000 + random.nextInt(900000); 
 		String otp = String.valueOf(otpNumber);
 
-		for (UserSecurityAnswer ans : answers) {
-			ans.setSecurityEmailOtp(otp);
-			ans.setSecurityEmailOtpCreatedOn(LocalDateTime.now());
-		}
+		user.setSecurityEmailOtp(otp);
+		user.setSecurityEmailOtpCreatedOn(LocalDateTime.now());
 
-		repository.saveAll(answers);
+		userRepository.save(user);  
 
 		String subject = "FilmHook Security Question Verification Code";
 		String content = "<p>For your protection, we require verification before modifying your security questions.</p>"
@@ -369,44 +409,36 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 	@Override
 	public Response verifySecurityEditOtp(Integer userId, String otpInput) {
 
-		List<UserSecurityAnswer> answers =
-				repository.findByUser_UserId(userId);
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-		if (answers.isEmpty()) {
-			return new Response(-1, "Security questions not configured", null);
+		if (user.getSecurityEmailOtp() == null) {
+			return new Response(-1, "OTP not generated", null);
 		}
 
-		UserSecurityAnswer first = answers.get(0);
-
-		if (first.getSecurityEmailOtp() == null) {
+		if (user.getSecurityEmailOtpCreatedOn() == null) {
 			return new Response(-1, "OTP not generated", null);
 		}
 
 		long minutes = Duration.between(
-				first.getSecurityEmailOtpCreatedOn(),
+				user.getSecurityEmailOtpCreatedOn(),
 				LocalDateTime.now()
 				).toMinutes();
 
-
 		if (minutes > 2) {
-			
 			return new Response(-1, "OTP expired", null);
 		}
 
-		if (!first.getSecurityEmailOtp().equals(otpInput)) {
+		if (!user.getSecurityEmailOtp().equals(otpInput)) {
 			return new Response(-1, "Invalid OTP", null);
 		}
+		user.setSecurityOtpVerified(true);
+		user.setSecurityEmailOtp(null);
+		userRepository.save(user);
 
-		// ✅ Mark verified
-		for (UserSecurityAnswer ans : answers) {
-			ans.setSecurityOtpVerified(true);
-		}
-
-		repository.saveAll(answers);
 
 		return new Response(1, "OTP verified successfully", null);
 	}
-
 
 
 	@Override
