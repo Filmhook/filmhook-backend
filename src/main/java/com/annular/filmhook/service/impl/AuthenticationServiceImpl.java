@@ -618,7 +618,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 						new Response(-1, "Account locked due to too many failed attempts", null));
 			}
 
-			if (user.getSecondaryemailOtpCreatedOn() == null) {
+			if (user.getEmailOtpCreatedOn() == null) {
 				return ResponseEntity.ok(new Response(-1, "OTP not requested or already verified", null));
 			}
 
