@@ -263,4 +263,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	@Query("SELECT u FROM User u WHERE (u.email = :email OR u.secondaryEmail = :secondaryEmail) AND u.status = true")
 	Optional<User> findByEmailOrSecondaryEmail(@Param("email") String email,
 	                                           @Param("secondaryEmail") String secondaryEmail);
+
 }

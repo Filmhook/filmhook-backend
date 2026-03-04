@@ -76,6 +76,12 @@ public class CallController {
     public Response inviteToGroup(@RequestBody GroupCallInviteRequest req) {
         return callService.inviteToGroup(req);
     }
+    
+    @PostMapping("/history")
+    public Response getCallHistory(@RequestParam Integer userId) {
+
+        return callService.getCallHistory(userId);
+    }
 
     
     @PostMapping("/test-push")

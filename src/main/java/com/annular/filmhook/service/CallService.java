@@ -28,6 +28,8 @@ public interface CallService {
 	Response endGroupCall(GroupCallEndRequest req);
 
 	Response inviteToGroup(GroupCallInviteRequest req);
+	
+	Response getCallHistory(Integer userId);
 
 
 }

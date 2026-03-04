@@ -26,6 +26,7 @@ import com.annular.filmhook.service.FcmService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.WebSocketService;
 import com.annular.filmhook.webmodel.AgoraWebModel;
+import com.annular.filmhook.webmodel.CallHistoryResponse;
 import com.annular.filmhook.webmodel.EndCallRequest;
 import com.annular.filmhook.webmodel.GroupCallEndRequest;
 import com.annular.filmhook.webmodel.GroupCallInviteRequest;
@@ -65,6 +66,9 @@ public class CallServiceImpl implements CallService {
 
     @Autowired
     private GroupCallMemberRepository groupMemberRepo;
+    
+    @Autowired
+    UserService userServices;
 
     /* ---------------------------------------------------------
      * START CALL
@@ -486,8 +490,142 @@ public class CallServiceImpl implements CallService {
         ));
     }
     
+    @Override
+    public Response getCallHistory(Integer userId) {
+
+        List<CallHistoryResponse> list = new ArrayList<>();
+
+        /* -------------------------
+           1️⃣ 1-1 CALL HISTORY
+         ------------------------- */
+
+        List<CallLog> calls = callRepo.findCallHistory(userId);
+
+        for (CallLog c : calls) {
+
+            CallHistoryResponse r = new CallHistoryResponse();
+
+            boolean outgoing = c.getCallerId().equals(userId);
+
+            Integer otherUser = outgoing ? c.getReceiverId() : c.getCallerId();
     
+            User host = userRepository.findById(otherUser).orElse(null);
+        	String hostName = host != null ? host.getName() : "";
+            r.setUserId(otherUser);
+            r.setUserName(hostName);         
+            r.setProfilePicUrl( userServices.getProfilePicUrl(otherUser));
+
+            r.setGroupCall(false);
+            r.setCallType(c.getCallType());
+            r.setDirection(outgoing ? "outgoing" : "incoming");
+
+            /* Missed call logic */
+
+            String status;
+
+            if ("rejected".equalsIgnoreCase(c.getStatus())) {
+                status = outgoing ? "rejected" : "missed";
+            }
+            else if (c.getEndTime() == null) {
+                status = "missed";
+            }
+            else {
+                status = "completed";
+            }
+
+            r.setStatus(status);
+
+            r.setStartTime(c.getStartTime());
+            r.setEndTime(c.getEndTime());
+
+            r.setDurationSeconds(getDuration(c.getStartTime(), c.getEndTime()));
+
+            list.add(r);
+        }
+
+
+        /* -------------------------
+           2️⃣ GROUP CALL HISTORY
+         ------------------------- */
+
+        List<GroupCall> groups = groupRepo.findGroupCalls(userId);
+
+        for (GroupCall g : groups) {
+
+            CallHistoryResponse r = new CallHistoryResponse();
+
+            r.setGroupCall(true);
+            r.setCallType(g.getCallType());
+
+            r.setDirection(
+                    g.getHostUserId().equals(userId) ? "outgoing" : "incoming"
+            );
+
+            /* Get group member names */
+
+            List<Object[]> members =
+            		groupMemberRepo.findGroupMembers(g.getId(), userId);
+
+            r.setGroupName(buildGroupName(members));
+
+            /* Missed group call detection */
+           GroupCallMember member = groupMemberRepo
+                    .findByGroupCallIdAndUserId(g.getId(), userId);
+
+          
+            String status;
+
+            if (member != null && member.getJoined() == false) {
+                status = "missed";
+            } else {
+                status = "completed";
+            }
+
+            r.setStatus(status);
+
+            r.setStartTime(g.getCreatedOn());
+            r.setDurationSeconds(0L);
+
+            list.add(r);
+        }
+
+
+        /* -------------------------
+           3️⃣ SORT BY LATEST
+         ------------------------- */
+
+        list.sort((a, b) -> b.getStartTime().compareTo(a.getStartTime()));
+
+        return new Response(1, "Call history", list);
+    }
     
+    private Long getDuration(LocalDateTime start, LocalDateTime end) {
+
+        if (start == null || end == null)
+            return 0L;
+
+        return java.time.Duration.between(start, end).getSeconds();
+    }
+    
+    private String buildGroupName(List<Object[]> members) {
+
+        List<String> names = new ArrayList<>();
+
+        for (Object[] obj : members) {
+            names.add((String) obj[1]);
+        }
+
+        if (names.size() == 0)
+            return "Group Call";
+
+        if (names.size() == 1)
+            return names.get(0);
+
+        if (names.size() == 2)
+            return names.get(0) + " & " + names.get(1);
+
+        return names.get(0) + ", " + names.get(1) + " & " + (names.size() - 2) + " others";
+    }
 
     /* ---------------------------------------------------------
      * Test Push Message
