@@ -33,7 +33,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.stereotype.Service;
 
 import com.annular.filmhook.Response;
@@ -273,6 +272,20 @@ public class ChatServiceImpl implements ChatService {
 	                    "NEW_MESSAGE",
 	                    wsPayload
 	            );
+	            
+	         // 🔥 Notify chat list update for receiver
+	            webSocketService.notifyChatUser(
+	                chat.getChatReceiverId(),
+	                "CHAT_LIST_UPDATE",
+	                buildChatListUpdate(chat)
+	            );
+
+	            // 🔥 Also notify sender (to update own list)
+	            webSocketService.notifyChatUser(
+	                chat.getChatSenderId(),
+	                "CHAT_LIST_UPDATE",
+	                buildChatListUpdate(chat)
+	            );
 
 				// ✅ Firebase Push Notification
 				Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
@@ -395,7 +408,11 @@ public class ChatServiceImpl implements ChatService {
 						logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
 					}
 				}
-				return ResponseEntity.ok(new Response(1, "Success", "Message Saved Successfully"));
+				
+
+				Map<String, Object> response = new HashMap<>();
+				response.put("chatId", chat.getChatId());
+				return ResponseEntity.ok(new Response(1, "Success", response));
 			} else {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Failed", "Sender user not found"));
 			}
@@ -404,7 +421,8 @@ public class ChatServiceImpl implements ChatService {
 			return ResponseEntity.internalServerError().body(new Response(0, "Failed", "An error occurred while saving message"));
 		}	
 	}
-
+	
+	
 	// Full Java code for getAllUser in ChatServiceImpl
 
 	@Override
@@ -498,13 +516,36 @@ public class ChatServiceImpl implements ChatService {
 			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
 
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
-
 			int unreadCount = chatRepository.countUnreadMessages(loggedInUserId, user.getUserId());
-
+		
 			chatUserWebModel.setReceiverUnreadCount(unreadCount);
 
 			return chatUserWebModel;
 		}).collect(Collectors.toList());
+	}
+	
+	private Map<String, Object> buildChatListUpdate(Chat chat) {
+
+	    Map<String, Object> map = new HashMap<>();
+
+	    User sender = userRepository.findById(chat.getChatSenderId()).orElse(null);
+
+	    map.put("userId", sender.getUserId());
+	    map.put("userName", sender.getName());
+	    map.put("profilePicUrl", userService.getProfilePicUrl(sender.getUserId()));
+	    map.put("userType", sender.getUserType());
+	    map.put("adminReview", sender.getAdminReview());
+
+	    map.put("latestMessage", chat.getMessage());
+	    map.put("latestMsgTime", chat.getTimeStamp());
+
+	    // unread count
+	    int unreadCount = chatRepository.countUnreadMessages(
+	    		chat.getChatReceiverId(), chat.getChatSenderId());
+	    
+	    map.put("receiverUnreadCount", unreadCount);
+
+	    return map;
 	}
 
 	public void getLatestChatMessage(User user, ChatUserWebModel chatUserWebModel, Integer loggedInUserId) {
@@ -853,7 +894,7 @@ public class ChatServiceImpl implements ChatService {
 	            payload.put("receiverRead", true);
 
 	            // Notify sender
-	            webSocketService.notifyUser(
+	            webSocketService.notifyChatUser(
 	                    chat.getChatSenderId(),
 	                    "MESSAGE_READ",
 	                    payload
@@ -887,7 +928,7 @@ public class ChatServiceImpl implements ChatService {
 	      Map<String, Object> payload = new HashMap<>();
 	      payload.put("chatIds", readIds);
 
-	      webSocketService.notifyUser(
+	      webSocketService.notifyChatUser(
 	              senderId,           // notify the SENDER!!
 	              "MESSAGE_READ_BULK",
 	              payload
@@ -895,7 +936,8 @@ public class ChatServiceImpl implements ChatService {
 
 	      return ResponseEntity.ok("OK");
 	  }
-
+	  
+	
 	//    @Override
 	//    public ResponseEntity<?> getMessageByUserId(ChatWebModel message) {
 	//        Map<String, Object> response = new HashMap<>();
