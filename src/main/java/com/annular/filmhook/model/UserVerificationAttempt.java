@@ -3,6 +3,8 @@ import java.time.LocalDateTime;
 
 import javax.persistence.*;
 
+import com.annular.filmhook.enums.VerificationType;
+
 import lombok.*;
 
 

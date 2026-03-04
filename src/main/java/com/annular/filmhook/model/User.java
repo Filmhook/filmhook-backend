@@ -197,8 +197,11 @@ public class User {
 	@Column(name = "mobile_Number_status")
 	private Boolean mobileNumberStatus;
 
-	@Column(name = "forgotOtp")
-	private String forgotOtp;
+    @Column(name = "forgotOtp")
+    private String forgotOtp;
+    
+    @Column(name = "forgot_otp_created_on")
+    private LocalDateTime forgotOtpCreatedOn;
 
 	@Column(name = "admin_Page_Status")
 	private Boolean adminPageStatus;
@@ -224,11 +227,15 @@ public class User {
 	@Column(name = "secondary_email")
 	private String secondaryEmail;
 
-	@Column(name = "secondaryemail_otp")
-	private Integer secondaryemailOtp;
+    @Column(name = "secondaryemail_otp")
+    private Integer secondaryemailOtp;
+    
+    @Column(name = "secondaryemail_otp_created_on")
+    private LocalDateTime secondaryemailOtpCreatedOn;
 
 	@Column(name = "verified")
-	private Boolean verified;
+	@Builder.Default
+	private Boolean verified= false;
 
 	@OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
 	@ToString.Exclude
@@ -331,7 +338,7 @@ public class User {
 	@Column(name = "security_verified")
 	private Boolean securityQuestionsVerified;
 
-	@Column(name = "security_otp")
+	@Column(name = "security_otp", columnDefinition = "VARCHAR(10)")
 	private String securityEmailOtp;
 
 	@Column(name = "security_otp_created_on")

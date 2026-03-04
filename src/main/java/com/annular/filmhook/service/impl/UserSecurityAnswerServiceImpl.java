@@ -25,7 +25,7 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserSecurityAnswer;
 import com.annular.filmhook.model.UserSecurityQuestion;
 import com.annular.filmhook.model.UserVerificationAttempt;
-import com.annular.filmhook.model.VerificationType;
+import com.annular.filmhook.enums.VerificationType;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSecurityAnswerRepository;
 import com.annular.filmhook.repository.UserSecurityQuestionRepository;
@@ -307,8 +307,6 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 					resultList);
 		}
 
-
-
 		// If first failure in this cycle
 		if (attempt.getAttemptDate() == null) {
 			attempt.setAttemptDate(now);
@@ -348,7 +346,7 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 						resultList);
 	}
 
-	private UserVerificationAttempt getOrCreateAttempt(
+	public UserVerificationAttempt getOrCreateAttempt(
 			User user,
 			VerificationType type) {
 
