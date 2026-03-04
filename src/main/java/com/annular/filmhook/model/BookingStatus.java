@@ -2,12 +2,13 @@
 
 public enum BookingStatus {
 	  PENDING,
-	    INPROGRESS,
-	  
+	  IN_PROGRESS,
+	    MODIFICATION_REQUESTED,
 	    APPROVED,
 	    REJECTED,
 	    COMPLETED,
 	    CANCELLED,
 	    CONFIRMED,
-	    FAILED
+	    FAILED,
+	    DELETED
 }

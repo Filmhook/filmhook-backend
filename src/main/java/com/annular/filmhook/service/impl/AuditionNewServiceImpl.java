@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.time.LocalDateTime;
+
 import java.time.format.DateTimeFormatter;
 
 
@@ -84,11 +84,14 @@ import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.webmodel.AuditionCompaniesWithProjectsDTO;
 import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
 import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
+import com.annular.filmhook.webmodel.AuditionProjectSummaryDTO;
+
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
@@ -1382,6 +1385,146 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	        }
 	        return userOfferRepository.save(userOffer);
 	    }
+	 
+	 
+	 @Override
+	 public List<AuditionCompaniesWithProjectsDTO> getAllCompaniesWithAllProjects() {
+
+	     List<AuditionCompanyDetails> companies =
+	             companyRepository
+	                     .findAllByDeletedFalseAndStatusTrueAndVerificationStatusOrderByIdDesc(
+	                             AuditionCompanyDetails.VerificationStatus.SUCCESS
+	                     );
+
+	     return companies.stream().map(company -> {
+
+	         // 1️⃣ Fetch projects for company
+	         List<AuditionNewProject> projects =
+	                 projectRepository.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(
+	                         company.getId()
+	                 );
+
+	         // 2️⃣ Fetch all SUCCESS payments for those projects (single query)
+	         List<AuditionPayment> payments =
+	        		    projects.isEmpty()
+	        		        ? List.of()
+	        		        : paymentRepository.findByProjectIn(projects);
+
+	         // 3️⃣ Create Map<projectId, LatestPayment>
+	         Map<Integer, AuditionPayment> paymentMap =
+	                 payments.stream()
+	                         .collect(Collectors.toMap(
+	                                 p -> p.getProject().getId(),
+	                                 p -> p,
+	                                 (existing, replacement) ->
+	                                         existing.getExpiryDateTime().isAfter(
+	                                                 replacement.getExpiryDateTime()
+	                                         )
+	                                                 ? existing
+	                                                 : replacement
+	                         ));
+
+	         // 4️⃣ Convert projects to DTO
+	         List<AuditionProjectSummaryDTO> projectDtos =
+	                 projects.stream()
+	                         .map(project ->AuditionProjectSummaryDTO(
+	                                         project,
+	                                         paymentMap.get(project.getId())
+	                                 )
+	                         )
+	                         .collect(Collectors.toList());
+
+	         // 5️⃣ Calculate total job posts
+	         int totalJobPosts = projects.stream()
+	                 .filter(p -> p.getTeamNeeds() != null)
+	                 .flatMap(p -> p.getTeamNeeds().stream())
+	                 .mapToInt(tn -> 1)
+	                 .sum();
+
+	         // 6️⃣ Calculate active posts
+	         int activePosts = projects.stream()
+	                 .filter(p -> p.getTeamNeeds() != null)
+	                 .flatMap(p -> p.getTeamNeeds().stream())
+	                 .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+	                 .mapToInt(tn -> 1)
+	                 .sum();
+
+	         return AuditionCompaniesWithProjectsDTO.builder()
+	                 .companyId(company.getId())
+	                 .companyName(company.getCompanyName())
+	                 .ownerName(company.getUser() != null
+	                         ? company.getUser().getName()
+	                         : null)
+	                 .gstNumber(company.getGstNumber())
+	                 .totalJobPosts(totalJobPosts)
+	                 .activePosts(activePosts)
+	                 .projects(projectDtos)
+	                 .build();
+
+	     }).collect(Collectors.toList());
+	 }
+	 
+	 
+	 public static AuditionProjectSummaryDTO AuditionProjectSummaryDTO(
+		        AuditionNewProject project,
+		        AuditionPayment payment
+		) {
+
+		    // 🔹 Calculate validTill
+		    LocalDateTime validTill = null;
+		    String paymentStatus = null;
+		    Boolean activeStatus = false;
+
+		    if (payment != null) {
+
+		        paymentStatus = payment.getPaymentStatus();
+
+		        if (payment.getSelectedDays() != null &&
+		                project.getCreatedOn() != null) {
+
+		            validTill = project.getCreatedOn()
+		                    .plusDays(payment.getSelectedDays());
+
+		            // 🔥 Auto active/inactive based on expiry
+		            activeStatus = validTill.isAfter(LocalDateTime.now());
+		        }
+		    }
+
+		    return AuditionProjectSummaryDTO.builder()
+		            .id(project.getId())
+		            .projectTitle(project.getProjectTitle())
+
+		            .industry(
+		                    project.getIndustries() != null &&
+		                            !project.getIndustries().isEmpty()
+		                            ? project.getIndustries().get(0)
+		                            : null
+		            )
+
+		            .category(
+		                    project.getMovieTypes() != null &&
+		                            !project.getMovieTypes().isEmpty()
+		                            ? project.getMovieTypes().get(0)
+		                            : null
+		            )
+
+		            .postedOn(project.getCreatedOn())
+		            .validTill(validTill)
+
+		        
+		            .status(paymentStatus) 
+
+		            .build();
+		}
+	 
+	 @Override
+	 public AuditionNewProject getProjectById(Integer projectId) {
+
+	     return projectRepository.findById(projectId)
+	             .orElseThrow(() -> 
+	                 new RuntimeException("Project not found with id: " + projectId)
+	             );
+	 }
 }
 
 

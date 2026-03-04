@@ -85,6 +85,23 @@ public class ShootingLocationBooking {
 	    
 		@Column(name = "booking_code", unique = true)
 		private String bookingCode;
-	
+		
+		@Convert(converter = LocalDateListConverter.class)
+		@Column(columnDefinition = "TEXT")
+		private List<LocalDate> confirmedBookingDates;
+		
+	    private Boolean modificationRequested;
+
+	    private LocalDateTime cancelledAt;
+	    private String cancellationReason;
+	    private Integer cancelledBy;
+	    @Builder.Default
+	    private Boolean deletedByClient = false;
+
+	    @Builder.Default
+	    private Boolean deletedByOwner = false;
+	    private String shootOtp;
+	    @Builder.Default
+	    private Boolean shootVerified = false;
   
 }

@@ -2,7 +2,6 @@ package com.annular.filmhook.service.impl;
 
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +29,6 @@ import com.annular.filmhook.model.VerificationType;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSecurityAnswerRepository;
 import com.annular.filmhook.repository.UserSecurityQuestionRepository;
-import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserSecurityAnswerService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.UserSecurityAnswerDTO;
@@ -56,7 +54,7 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 	@Autowired
 	private UserDetails userDetails;
 	@Autowired
-    UserVerificationAttemptRepository attemptRepository;
+	UserVerificationAttemptRepository attemptRepository;
 	@Override
 	public List<UserSecurityAnswerDTO> saveSecurityQuestions( List<UserSecurityAnswerDTO> dtoList, Integer loggedInUserId) {
 
@@ -86,24 +84,24 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 		// 🔐 If already configured → require OTP verification
 		if (!existingAnswers.isEmpty()) {
 
-		    if (!Boolean.TRUE.equals(user.getSecurityOtpVerified())) {
-		        throw new RuntimeException(
-		                "Please verify OTP before editing security questions");
-		    }
+			if (!Boolean.TRUE.equals(user.getSecurityOtpVerified())) {
+				throw new RuntimeException(
+						"Please verify OTP before editing security questions");
+			}
 
-		    if (user.getSecurityEmailOtpCreatedOn() == null) {
-		        throw new RuntimeException("OTP session expired. Please request new OTP.");
-		    }
+			if (user.getSecurityEmailOtpCreatedOn() == null) {
+				throw new RuntimeException("OTP session expired. Please request new OTP.");
+			}
 
-		    long minutes = Duration.between(
-		            user.getSecurityEmailOtpCreatedOn(),
-		            LocalDateTime.now()
-		    ).toMinutes();
+			long minutes = Duration.between(
+					user.getSecurityEmailOtpCreatedOn(),
+					LocalDateTime.now()
+					).toMinutes();
 
-		    if (minutes > 60) {
-		        throw new RuntimeException(
-		                "OTP session expired. Please request new OTP.");
-		    }
+			if (minutes > 60) {
+				throw new RuntimeException(
+						"OTP session expired. Please request new OTP.");
+			}
 		}
 
 		List<UserSecurityAnswerDTO> responseList = new ArrayList<>();
@@ -153,11 +151,11 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 		}
 
 		// ✅ After successful edit → clear OTP fields
-		   user.setSecurityEmailOtp(null);
-		    user.setSecurityEmailOtpCreatedOn(null);
-		    user.setSecurityOtpVerified(false);
-		    userRepository.save(user);
-	     	return responseList;
+		user.setSecurityEmailOtp(null);
+		user.setSecurityEmailOtpCreatedOn(null);
+		user.setSecurityOtpVerified(false);
+		userRepository.save(user);
+		return responseList;
 	}
 
 	@Override
@@ -202,170 +200,170 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 	}
 
 
-@Override
-public Response verifySecurityAnswers(
-        Integer userId,
-        List<UserSecurityAnswerDTO> requestList) {
+	@Override
+	public Response verifySecurityAnswers(
+			Integer userId,
+			List<UserSecurityAnswerDTO> requestList) {
 
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-    UserVerificationAttempt attempt =
-            getOrCreateAttempt(user, VerificationType.SECURITY_QUESTION);
+		UserVerificationAttempt attempt =
+				getOrCreateAttempt(user, VerificationType.SECURITY_QUESTION);
 
-    LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now();
 
-    // 🔒 Permanent Lock Check
-    if (Boolean.TRUE.equals(attempt.getLocked())) {
-        return new Response(-1,
-                "Account locked due to multiple failed attempts. Please contact support team.",
-                null);
-    }
+		// 🔒 Permanent Lock Check
+		if (Boolean.TRUE.equals(attempt.getLocked())) {
+			return new Response(-1,
+					"Account locked due to multiple failed attempts. Please contact support team.",
+					null);
+		}
 
-    // ⏳ 24-Hour Rolling Reset Logic
-    if (attempt.getAttemptDate() != null) {
+		// ⏳ 24-Hour Rolling Reset Logic
+		if (attempt.getAttemptDate() != null) {
 
-        LocalDateTime unlockTime =
-                attempt.getAttemptDate().plusHours(24);
+			LocalDateTime unlockTime =
+					attempt.getAttemptDate().plusHours(24);
 
-        // If 24 hours passed → reset window
-        if (now.isAfter(unlockTime)) {
+			// If 24 hours passed → reset window
+			if (now.isAfter(unlockTime)) {
 
-            attempt.setAttemptCount(0);
-            attempt.setAttemptDate(null);
-            attemptRepository.save(attempt);
-        }
-        // Still inside 24 hours and already 3 attempts
-        else if (attempt.getAttemptCount() >= 3) {
+				attempt.setAttemptCount(0);
+				attempt.setAttemptDate(null);
+				attemptRepository.save(attempt);
+			}
+			// Still inside 24 hours and already 3 attempts
+			else if (attempt.getAttemptCount() >= 3) {
 
-            long minutesLeft =
-                    Duration.between(now, unlockTime).toMinutes();
+				long minutesLeft =
+						Duration.between(now, unlockTime).toMinutes();
 
-            return new Response(-1,
-                    "Maximum attempts reached. Try again after "
-                            + minutesLeft + " minutes.",
-                    null);
-        }
-    }
+				return new Response(-1,
+						"Maximum attempts reached. Try again after "
+								+ minutesLeft + " minutes.",
+								null);
+			}
+		}
 
-    List<UserSecurityAnswer> savedAnswers =
-            repository.findByUser_UserIdAndStatusTrue(userId);
+		List<UserSecurityAnswer> savedAnswers =
+				repository.findByUser_UserIdAndStatusTrue(userId);
 
-    if (savedAnswers.isEmpty()) {
-        return new Response(-1,
-                "Security questions not configured",
-                null);
-    }
+		if (savedAnswers.isEmpty()) {
+			return new Response(-1,
+					"Security questions not configured",
+					null);
+		}
 
-    List<Map<String, Object>> resultList = new ArrayList<>();
-    boolean allCorrect = true;
+		List<Map<String, Object>> resultList = new ArrayList<>();
+		boolean allCorrect = true;
 
-    for (UserSecurityAnswerDTO request : requestList) {
+		for (UserSecurityAnswerDTO request : requestList) {
 
-        Map<String, Object> result = new HashMap<>();
-        Integer questionId = request.getQuestion().getId();
+			Map<String, Object> result = new HashMap<>();
+			Integer questionId = request.getQuestion().getId();
 
-        UserSecurityAnswer stored = savedAnswers.stream()
-                .filter(a -> a.getQuestion().getId().equals(questionId))
-                .findFirst()
-                .orElse(null);
+			UserSecurityAnswer stored = savedAnswers.stream()
+					.filter(a -> a.getQuestion().getId().equals(questionId))
+					.findFirst()
+					.orElse(null);
 
-        result.put("questionId", questionId);
+			result.put("questionId", questionId);
 
-        if (stored == null) {
-            result.put("status", "INVALID_QUESTION");
-            result.put("verified", false);
-            allCorrect = false;
-        } else {
+			if (stored == null) {
+				result.put("status", "INVALID_QUESTION");
+				result.put("verified", false);
+				allCorrect = false;
+			} else {
 
-            boolean match = passwordEncoder.matches(
-                    request.getAnswer().trim().toLowerCase(),
-                    stored.getAnswerHash()
-            );
+				boolean match = passwordEncoder.matches(
+						request.getAnswer().trim().toLowerCase(),
+						stored.getAnswerHash()
+						);
 
-            if (match) {
-                result.put("status", "CORRECT");
-                result.put("verified", true);
-            } else {
-                result.put("status", "INCORRECT");
-                result.put("verified", false);
-                allCorrect = false;
-            }
-        }
+				if (match) {
+					result.put("status", "CORRECT");
+					result.put("verified", true);
+				} else {
+					result.put("status", "INCORRECT");
+					result.put("verified", false);
+					allCorrect = false;
+				}
+			}
 
-        resultList.add(result);
-    }
+			resultList.add(result);
+		}
 
-    // ✅ SUCCESS
-    if (allCorrect) {
+		// ✅ SUCCESS
+		if (allCorrect) {
 
-        attempt.setAttemptCount(0);
-        attempt.setAttemptDate(null);
-        attempt.setFailedDays(0);
-        attemptRepository.save(attempt);
+			attempt.setAttemptCount(0);
+			attempt.setAttemptDate(null);
+			attempt.setFailedDays(0);
+			attemptRepository.save(attempt);
 
-        return new Response(1,
-                "All security answers verified successfully",
-                resultList);
-    }
+			return new Response(1,
+					"All security answers verified successfully",
+					resultList);
+		}
 
-    // ❌ FAILURE
 
-    // If first failure in this cycle
-    if (attempt.getAttemptDate() == null) {
-        attempt.setAttemptDate(now);
-    }
 
-    int attempts = attempt.getAttemptCount() + 1;
-    attempt.setAttemptCount(attempts);
+		// If first failure in this cycle
+		if (attempt.getAttemptDate() == null) {
+			attempt.setAttemptDate(now);
+		}
 
-    // If 3 attempts within 24 hours
-    if (attempts >= 3) {
+		int attempts = attempt.getAttemptCount() + 1;
+		attempt.setAttemptCount(attempts);
 
-        int failedCycles = attempt.getFailedDays() + 1;
-        attempt.setFailedDays(failedCycles);
+		// If 3 attempts within 24 hours
+		if (attempts >= 3) {
 
-        // 🔐 Permanent lock after 3 cycles
-        if (failedCycles >= 3) {
-            attempt.setLocked(true);
-            attemptRepository.save(attempt);
+			int failedCycles = attempt.getFailedDays() + 1;
+			attempt.setFailedDays(failedCycles);
 
-            return new Response(-1,
-                    "Account permanently locked due to multiple failed attempts.",
-                    resultList);
-        }
+			// 🔐 Permanent lock after 3 cycles
+			if (failedCycles >= 3) {
+				attempt.setLocked(true);
+				attemptRepository.save(attempt);
 
-        attemptRepository.save(attempt);
+				return new Response(-1,
+						"Account permanently locked due to multiple failed attempts.",
+						resultList);
+			}
 
-        return new Response(-1,
-                "Maximum attempts reached. Try again after 24 hours.",
-                resultList);
-    }
+			attemptRepository.save(attempt);
 
-    attemptRepository.save(attempt);
+			return new Response(-1,
+					"Maximum attempts reached. Try again after 24 hours.",
+					resultList);
+		}
 
-    return new Response(-1,
-            "Incorrect answers. Attempts left: "
-                    + (3 - attempts),
-            resultList);
-}
+		attemptRepository.save(attempt);
 
-private UserVerificationAttempt getOrCreateAttempt(
-        User user,
-        VerificationType type) {
+		return new Response(-1,
+				"Incorrect answers. Attempts left: "
+						+ (3 - attempts),
+						resultList);
+	}
 
-    return attemptRepository
-            .findByUser_UserIdAndVerificationType(
-                    user.getUserId(), type)
-            .orElseGet(() ->
-                    attemptRepository.save(
-                            UserVerificationAttempt.builder()
-                                    .user(user)
-                                    .verificationType(type)
-                                    .build()
-                    )
-            );
-}
+	private UserVerificationAttempt getOrCreateAttempt(
+			User user,
+			VerificationType type) {
+
+		return attemptRepository
+				.findByUser_UserIdAndVerificationType(
+						user.getUserId(), type)
+				.orElseGet(() ->
+				attemptRepository.save(
+						UserVerificationAttempt.builder()
+						.user(user)
+						.verificationType(type)
+						.build()
+						)
+						);
+	}
 	@Override
 	public Response sendSecurityEditOtp(Integer userId) {
 
@@ -383,10 +381,10 @@ private UserVerificationAttempt getOrCreateAttempt(
 		int otpNumber = 100000 + random.nextInt(900000); 
 		String otp = String.valueOf(otpNumber);
 
-	    user.setSecurityEmailOtp(otp);
-	    user.setSecurityEmailOtpCreatedOn(LocalDateTime.now());
+		user.setSecurityEmailOtp(otp);
+		user.setSecurityEmailOtpCreatedOn(LocalDateTime.now());
 
-	    userRepository.save(user);  
+		userRepository.save(user);  
 
 		String subject = "FilmHook Security Question Verification Code";
 		String content = "<p>For your protection, we require verification before modifying your security questions.</p>"
@@ -406,39 +404,39 @@ private UserVerificationAttempt getOrCreateAttempt(
 		return new Response(1, "OTP sent successfully", null);
 	}
 
-@Override
-public Response verifySecurityEditOtp(Integer userId, String otpInput) {
+	@Override
+	public Response verifySecurityEditOtp(Integer userId, String otpInput) {
 
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-    if (user.getSecurityEmailOtp() == null) {
-        return new Response(-1, "OTP not generated", null);
-    }
+		if (user.getSecurityEmailOtp() == null) {
+			return new Response(-1, "OTP not generated", null);
+		}
 
-    if (user.getSecurityEmailOtpCreatedOn() == null) {
-        return new Response(-1, "OTP not generated", null);
-    }
+		if (user.getSecurityEmailOtpCreatedOn() == null) {
+			return new Response(-1, "OTP not generated", null);
+		}
 
-    long minutes = Duration.between(
-            user.getSecurityEmailOtpCreatedOn(),
-            LocalDateTime.now()
-    ).toMinutes();
+		long minutes = Duration.between(
+				user.getSecurityEmailOtpCreatedOn(),
+				LocalDateTime.now()
+				).toMinutes();
 
-    if (minutes > 2) {
-        return new Response(-1, "OTP expired", null);
-    }
+		if (minutes > 2) {
+			return new Response(-1, "OTP expired", null);
+		}
 
-    if (!user.getSecurityEmailOtp().equals(otpInput)) {
-        return new Response(-1, "Invalid OTP", null);
-    }
-    user.setSecurityOtpVerified(true);
-    user.setSecurityEmailOtp(null);
+		if (!user.getSecurityEmailOtp().equals(otpInput)) {
+			return new Response(-1, "Invalid OTP", null);
+		}
+		user.setSecurityOtpVerified(true);
+		user.setSecurityEmailOtp(null);
 
-    userRepository.save(user);
+		userRepository.save(user);
 
-    return new Response(1, "OTP verified successfully", null);
-}
+		return new Response(1, "OTP verified successfully", null);
+	}
 
 
 	@Override
@@ -470,6 +468,19 @@ public Response verifySecurityEditOtp(Integer userId, String otpInput) {
 
 			userRepository.save(user);
 
+
+			String subject = "Security Alert: Your FilmHook Password Was Changed";
+
+			String content =
+					"<p>Your password was changed successfully.</p>"
+							+ "<p><b>Time:</b> " + LocalDateTime.now() + "</p>"
+							+ "<p>If this was not you, secure your account immediately.</p>";
+			mailNotification.sendEmailAsync(
+					user.getName(),
+					user.getEmail(),
+					subject,
+					content
+					);
 			return ResponseEntity.ok()
 					.body(new Response(1,
 							"Password changed successfully",

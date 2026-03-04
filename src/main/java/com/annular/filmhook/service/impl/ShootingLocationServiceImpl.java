@@ -147,8 +147,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	ShootingLocationService shootingLocationService;
 	@Autowired
 	private ShootingLocationBookingRepository bookingRepo;
-	@Autowired 
-	private UserDetails userDetails;
+
 	@Autowired
 	private PropertyLikeRepository likeRepository;
 	@Autowired
@@ -189,7 +188,8 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 	InAppNotificationRepository inAppNotificationRepo;
 	@Autowired
 	S3Util s3Util;
-
+	@Autowired
+	private  UserDetails userDetails;
 	@Autowired
 	ShootingLocationConverter shootingLocationPropertyConverter;
 	@Autowired
@@ -216,7 +216,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 	@Autowired
 	private ShootingLocationBookingConverter shootingLocationBookingConverter;
-	
+
 	@Override
 	public List<ShootingLocationTypeDTO> getAllTypes() {
 		try {
@@ -718,7 +718,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// 4️⃣ Media files
 				List<FileOutputWebModel> imageUrls = mediaFilesService
 						.getAllMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, p.getId());
-      dto.setImageUrls(imageUrls);
+				dto.setImageUrls(imageUrls);
 
 				dto.setGovernmentIdUrls(
 						mediaFilesService
@@ -957,7 +957,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 				// Media files
 				List<FileOutputWebModel> imageUrls = mediaFilesService
 						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingLocationImage, p.getId());
-						
+
 
 				List<String> govtIdUrls = mediaFilesService
 						.getMediaFilesByCategoryAndRefId(MediaFileCategory.shootingGovermentId, p.getId())
@@ -1209,7 +1209,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					bookingRepository.existsByProperty_IdAndStatusIn(
 							id,
 							List.of(
-									BookingStatus.INPROGRESS,
+									BookingStatus.IN_PROGRESS,
 									BookingStatus.CONFIRMED
 									)
 							);
@@ -1658,11 +1658,11 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 						);
 
 				// D) Media files
-								dto.setImageUrls(
-										mediaFilesService
-										.getMediaFilesByCategoryAndRefId(
-												MediaFileCategory.shootingLocationImage, pid)
-										);
+				dto.setImageUrls(
+						mediaFilesService
+						.getMediaFilesByCategoryAndRefId(
+								MediaFileCategory.shootingLocationImage, pid)
+						);
 
 				dto.setGovernmentIdUrls(
 						mediaFilesService
@@ -2230,6 +2230,84 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		return "Your review has been deleted successfully";
 	}
 
+	public List<LocalDate> getAvailableDatesForProperty(
+	        Integer propertyId,
+	        SlotType requestedSlot,
+	        Integer excludeBookingId) {
+
+	    ShootingLocationPropertyDetails property =
+	            propertyDetailsRepository.findById(propertyId)
+	                    .orElseThrow(() -> new RuntimeException("Property not found"));
+
+	    LocalDate start = property.getAvailabilityStartDate();
+	    LocalDate end = property.getAvailabilityEndDate();
+
+	    if (start == null || end == null) {
+	        throw new RuntimeException("Availability dates not set");
+	    }
+
+	    // 1️⃣ Create full date range
+	    Set<LocalDate> availableDates = start
+	            .datesUntil(end.plusDays(1))
+	            .collect(Collectors.toSet());
+
+	    // 2️⃣ Remove paused dates
+	    if (property.getPausedDates() != null) {
+	        availableDates.removeAll(property.getPausedDates());
+	    }
+
+	    // 3️⃣ Fetch confirmed bookings
+	    List<ShootingLocationBooking> confirmedBookings =
+	            bookingRepo.findByProperty_IdAndStatus(
+	                    propertyId,
+	                    BookingStatus.CONFIRMED
+	            );
+
+	    // 4️⃣ Remove blocked dates based on slot
+	    for (ShootingLocationBooking booking : confirmedBookings) {
+
+	        // 🔥 Ignore current booking when editing
+	        if (excludeBookingId != null &&
+	            booking.getId().equals(excludeBookingId)) {
+	            continue;
+	        }
+
+	        if (booking.getConfirmedBookingDates() == null) continue;
+
+	        for (LocalDate bookedDate : booking.getConfirmedBookingDates()) {
+
+	            SlotType bookedSlot = booking.getSlotType();
+
+	            boolean blockDate = false;
+
+	            if (requestedSlot == SlotType.FULL_DAY) {
+	                // Full day needs full availability
+	                blockDate = true;
+	            }
+
+	            else if (requestedSlot == SlotType.DAY) {
+	                blockDate =
+	                        bookedSlot == SlotType.DAY ||
+	                        bookedSlot == SlotType.FULL_DAY;
+	            }
+
+	            else if (requestedSlot == SlotType.NIGHT) {
+	                blockDate =
+	                        bookedSlot == SlotType.NIGHT ||
+	                        bookedSlot == SlotType.FULL_DAY;
+	            }
+
+	            if (blockDate) {
+	                availableDates.remove(bookedDate);
+	            }
+	        }
+	    }
+
+	    // 5️⃣ Return sorted list
+	    return availableDates.stream()
+	            .sorted()
+	            .collect(Collectors.toList());
+	}
 	@Override
 	public List<LocalDate> getAvailableDatesForProperty(
 			Integer propertyId,
@@ -2266,9 +2344,9 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 		// 4️⃣ Remove blocked dates BASED ON SLOT
 		for (ShootingLocationBooking booking : confirmedBookings) {
 
-			if (booking.getBookingDates() == null) continue;
+			if (booking.getConfirmedBookingDates() == null) continue;
 
-			for (LocalDate bookedDate : booking.getBookingDates()) {
+			for (LocalDate bookedDate : booking.getConfirmedBookingDates()) {
 
 				SlotType bookedSlot = booking.getSlotType();
 
@@ -2306,68 +2384,145 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 
 
 @Override
-public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) {
+public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingDTO dto) {
 
     if (dto.getBookingDates() == null || dto.getBookingDates().isEmpty()) {
         throw new RuntimeException("Booking dates are required");
     }
 
-    // 1️⃣ Fetch Property & Client
+    // 1️⃣ Fetch Property
     ShootingLocationPropertyDetails property =
             propertyDetailsRepository.findById(dto.getPropertyId())
-                    .orElseThrow(() -> new RuntimeException("Property not found"));
+            .orElseThrow(() -> new RuntimeException("Property not found"));
 
+    // 2️⃣ Fetch Client
     User client =
             userRepository.findById(dto.getClientId())
-                    .orElseThrow(() -> new RuntimeException("Client not found"));
+            .orElseThrow(() -> new RuntimeException("Client not found"));
 
-    // 2️⃣ Check existing pending booking
+    // 3️⃣ Check Existing Booking
     Optional<ShootingLocationBooking> existingBookingOpt =
-            bookingRepository.findByClient_UserIdAndProperty_IdAndStatus(
+            bookingRepository.findTopByClient_UserIdAndProperty_IdOrderByCreatedAtDesc(
                     dto.getClientId(),
-                    dto.getPropertyId(),
-                    BookingStatus.PENDING
+                    dto.getPropertyId()
             );
 
     ShootingLocationBooking booking;
 
-    if (existingBookingOpt.isPresent()) {
+    // ----------------------------------------------------
+    // 4️⃣ CREATE NEW BOOKING
+    // ----------------------------------------------------
 
-        // 🔁 UPDATE EXISTING ROW
-        booking = existingBookingOpt.get();
-     
-        booking.setBookingType(dto.getBookingType());
-        booking.setSlotType(dto.getSlotType());
-        booking.setSlotTimings(dto.getSlotTimings());
-        booking.setBookingDates(dto.getBookingDates());
-        booking.setBookingMessage(dto.getBookingMessage());
+    if (existingBookingOpt.isEmpty()) {
 
-    } else {
+        booking = ShootingLocationBookingConverter.toEntity(dto);
 
-        // 🆕 CREATE NEW ROW
-    	 booking = ShootingLocationBookingConverter.toEntity(dto);
         booking.setProperty(property);
         booking.setClient(client);
         booking.setStatus(BookingStatus.PENDING);
+
+        booking.setTotalDays(dto.getBookingDates().size());
+
+        booking = bookingRepository.save(booking);
+
+        // Generate booking code
+        String bookingCode = generateBookingCode(
+                property.getPropertyName(),
+                booking.getId()
+        );
+
+        booking.setBookingCode(bookingCode);
+        booking = bookingRepository.save(booking);
     }
 
-    // 3️⃣ Validate Availability
-    List<LocalDate> availableDates =
-            getAvailableDatesForProperty(property.getId(), dto.getSlotType());
+    // ----------------------------------------------------
+    // 5️⃣ UPDATE EXISTING BOOKING
+    // ----------------------------------------------------
 
-    for (LocalDate date : dto.getBookingDates()) {
-        if (!availableDates.contains(date)) {
-            throw new RuntimeException(
-                    "Selected date " + date + " is not available for "
-                            + dto.getSlotType());
+    else {
+
+        booking = existingBookingOpt.get();
+
+        // PENDING → edit everything
+        if (booking.getStatus() == BookingStatus.PENDING) {
+
+            updateAllFields(booking, dto);
+        }
+
+        // APPROVED → edit but send again for approval
+        else if (booking.getStatus() == BookingStatus.APPROVED) {
+
+            updateAllFields(booking, dto);
+
+            booking.setStatus(BookingStatus.PENDING);
+        }
+
+        // CONFIRMED → allow modification request
+        else if (booking.getStatus() == BookingStatus.CONFIRMED) {
+
+            int oldDays = booking.getTotalDays();
+            int newDays = dto.getBookingDates().size();
+
+            
+            if (oldDays != newDays) {
+                throw new RuntimeException(
+                        "You must select exactly " + oldDays + " days."
+                );
+            }
+
+            booking.setBookingDates(dto.getBookingDates());
+            booking.setModificationRequested(true);
+
+            // send again for owner approval
+            booking.setStatus(BookingStatus.PENDING);
+        }
+
+        // REJECTED or COMPLETED → create new booking
+        else {
+
+            booking = ShootingLocationBookingConverter.toEntity(dto);
+
+            booking.setProperty(property);
+            booking.setClient(client);
+            booking.setStatus(BookingStatus.PENDING);
+
+            booking.setTotalDays(dto.getBookingDates().size());
+
+            booking = bookingRepository.save(booking);
+
+            String bookingCode = generateBookingCode(
+                    property.getPropertyName(),
+                    booking.getId()
+            );
+
+            booking.setBookingCode(bookingCode);
         }
     }
 
-    booking.setBookingDates(dto.getBookingDates());
-    int totalDays = dto.getBookingDates().size();
-    booking.setTotalDays(totalDays);
+    // ----------------------------------------------------
+    // 6️⃣ AVAILABILITY VALIDATION
+    // ----------------------------------------------------
 
-    // 4️⃣ Pricing Config
+    List<LocalDate> availableDates =
+            getAvailableDatesForProperty(
+                    property.getId(),
+                    dto.getSlotType(),
+                    booking.getId()
+            );
+
+    for (LocalDate date : dto.getBookingDates()) {
+
+        if (!availableDates.contains(date)) {
+            throw new RuntimeException(
+                    "Selected date " + date + " is not available"
+            );
+        }
+    }
+
+    // ----------------------------------------------------
+    // 7️⃣ PRICE CALCULATION
+    // ----------------------------------------------------
+
     ShootingLocationSubcategorySelection sel =
             property.getSubcategorySelection();
 
@@ -2375,19 +2530,26 @@ public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) 
         throw new RuntimeException("Property pricing not configured");
     }
 
-    double pricePerDay = getPrice(sel, dto.getBookingType(), dto.getSlotType());
-    double discountPercent = getDiscount(sel, dto.getBookingType(), dto.getSlotType());
+    double pricePerDay =
+            getPrice(sel, dto.getBookingType(), dto.getSlotType());
 
-    // 5️⃣ Price Calculation
+    double discountPercent =
+            getDiscount(sel, dto.getBookingType(), dto.getSlotType());
+
+    int totalDays = booking.getTotalDays();
+
     double subtotal = pricePerDay * totalDays;
+
     double discountAmount = subtotal * (discountPercent / 100.0);
+
     double amountAfterDiscount = subtotal - discountAmount;
 
     double gstPercent = 18.0;
-    double gstAmount = amountAfterDiscount * gstPercent / 100.0;
+
+    double gstAmount = amountAfterDiscount * gstPercent / 100;
+
     double netAmount = amountAfterDiscount + gstAmount;
 
-    // 6️⃣ Set Pricing Fields
     booking.setPricePerDay(pricePerDay);
     booking.setSubtotal(subtotal);
     booking.setDiscountPercent(discountPercent);
@@ -2399,40 +2561,42 @@ public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) 
 
     booking.setUpdatedAt(LocalDateTime.now());
 
-    // 7️⃣ Save first (for ID if new booking)
     booking = bookingRepository.save(booking);
-
-    // 8️⃣ Generate Booking Code ONLY IF NEW
-    if (booking.getBookingCode() == null) {
-
-        String bookingCode = generateBookingCode(
-                booking.getProperty().getPropertyName(),
-                booking.getId()
-        );
-
-        booking.setBookingCode(bookingCode);
-        booking = bookingRepository.save(booking);
-    }
 
     return ShootingLocationBookingConverter.toDTO(booking);
 }
 
+	private void updateAllFields(ShootingLocationBooking booking,
+			ShootingLocationBookingDTO dto) {
+
+		booking.setBookingType(dto.getBookingType());
+		booking.setSlotType(dto.getSlotType());
+		booking.setSlotTimings(dto.getSlotTimings());
+		booking.setBookingDates(dto.getBookingDates());
+		booking.setBookingMessage(dto.getBookingMessage());
+
+		int totalDays = dto.getBookingDates().size();
+
+		booking.setTotalDays(totalDays);
+
+	}
+
 	private String generateBookingCode(String propertyName, Integer bookingId) {
 
-	    // 1️⃣ First 2 letters of property name
-	    String cleanedName = propertyName.replaceAll("\\s+", "");
-	    String prefix = cleanedName
-	            .substring(0, Math.min(2, cleanedName.length()))
-	            .toUpperCase();
+		// 1️⃣ First 2 letters of property name
+		String cleanedName = propertyName.replaceAll("\\s+", "");
+		String prefix = cleanedName
+				.substring(0, Math.min(2, cleanedName.length()))
+				.toUpperCase();
 
-	    // 2️⃣ Current date in YYMMDD format
-	    String datePart = java.time.LocalDate.now()
-	            .format(java.time.format.DateTimeFormatter.ofPattern("yyMMdd"));
+		// 2️⃣ Current date in YYMMDD format
+		String datePart = java.time.LocalDate.now()
+				.format(java.time.format.DateTimeFormatter.ofPattern("yyMMdd"));
 
-	    // 3️⃣ Last 2 digits of booking ID
-	    String idPart = String.format("%02d", bookingId % 100);
+		// 3️⃣ Last 2 digits of booking ID
+		String idPart = String.format("%02d", bookingId % 100);
 
-	    return prefix + datePart +"-" + idPart;
+		return prefix + datePart +"-" + idPart;
 	}
 	// ------------ PRICE HELPERS ------------
 
@@ -3259,7 +3423,7 @@ public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) 
 
 			try {
 				// 2️⃣ Validate bookingDates
-				List<LocalDate> bookingDates = booking.getBookingDates();
+				List<LocalDate> bookingDates = booking.getConfirmedBookingDates();
 				if (bookingDates == null || bookingDates.isEmpty()) {
 					continue;
 				}
@@ -3388,7 +3552,7 @@ public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) 
 
 			try {
 				// 1️⃣ Validate booking dates
-				List<LocalDate> bookingDates = booking.getBookingDates();
+				List<LocalDate> bookingDates = booking.getConfirmedBookingDates();
 				if (bookingDates == null || bookingDates.isEmpty()) continue;
 
 				// 2️⃣ LAST booking date
@@ -4077,104 +4241,103 @@ public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) 
 		}).collect(Collectors.toList());
 	}
 
-	
+
 	@Override
 	public ShootingLocationPropertyReviewResponseDTO getAllReviewsByPropertyId(Integer propertyId) {
 
-	    List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findAllByPropertyId(propertyId);
+		List<ShootingLocationPropertyReview> reviews = propertyReviewRepository.findAllByPropertyId(propertyId);
 
-	    long totalReviews = reviews.size();
+		long totalReviews = reviews.size();
 
-	    long five = 0, four = 0, three = 0, two = 0, one = 0;
-	    double averageRating = 0;
+		long five = 0, four = 0, three = 0, two = 0, one = 0;
+		double averageRating = 0;
 
-	    if (totalReviews > 0) {
+		if (totalReviews > 0) {
 
-	        int totalRatingSum = 0;
+			int totalRatingSum = 0;
 
-	        for (ShootingLocationPropertyReview r : reviews) {
+			for (ShootingLocationPropertyReview r : reviews) {
 
-	            totalRatingSum += r.getRating();
+				totalRatingSum += r.getRating();
 
-	            switch (r.getRating()) {
-	                case 5: five++; break;
-	                case 4: four++; break;
-	                case 3: three++; break;
-	                case 2: two++; break;
-	                case 1: one++; break;
-	            }
-	        }
+				switch (r.getRating()) {
+				case 5: five++; break;
+				case 4: four++; break;
+				case 3: three++; break;
+				case 2: two++; break;
+				case 1: one++; break;
+				}
+			}
 
-	        averageRating = (double) totalRatingSum / totalReviews;
-	    }
+			averageRating = (double) totalRatingSum / totalReviews;
+		}
 
-	    double fivePercent = totalReviews > 0 ? (five * 100.0) / totalReviews : 0;
-	    double fourPercent = totalReviews > 0 ? (four * 100.0) / totalReviews : 0;
-	    double threePercent = totalReviews > 0 ? (three * 100.0) / totalReviews : 0;
-	    double twoPercent = totalReviews > 0 ? (two * 100.0) / totalReviews : 0;
-	    double onePercent = totalReviews > 0 ? (one * 100.0) / totalReviews : 0;
+		double fivePercent = totalReviews > 0 ? (five * 100.0) / totalReviews : 0;
+		double fourPercent = totalReviews > 0 ? (four * 100.0) / totalReviews : 0;
+		double threePercent = totalReviews > 0 ? (three * 100.0) / totalReviews : 0;
+		double twoPercent = totalReviews > 0 ? (two * 100.0) / totalReviews : 0;
+		double onePercent = totalReviews > 0 ? (one * 100.0) / totalReviews : 0;
 
-	    List<ShootingLocationPropertyReviewDTO> reviewDTOList =
-	            reviews.stream()
-	                    .map(r -> {
+		List<ShootingLocationPropertyReviewDTO> reviewDTOList =
+				reviews.stream()
+				.map(r -> {
 
-	                        List<FileOutputWebModel> mediaDTOs =
-	                                mediaFilesService.getMediaFilesByCategoryAndRefId(
-	                                        MediaFileCategory.ShootingLocationReview,
-	                                        r.getId()
-	                                );
+					List<FileOutputWebModel> mediaDTOs =
+							mediaFilesService.getMediaFilesByCategoryAndRefId(
+									MediaFileCategory.ShootingLocationReview,
+									r.getId()
+									);
 
-	                        return ShootingLocationPropertyReviewDTO.builder()
-	                                .id(r.getId())
-	                                .propertyId(propertyId)
-	                                .userId(r.getUser().getUserId())
-	                                .userName(r.getUser() != null ? r.getUser().getName() : "")
-	                                .profilePicUrl(
-	                                        userService.getProfilePicUrl(
-	                                                r.getUser().getUserId()))
-	                                .rating(r.getRating())
-	                                .reviewText(r.getReviewText())
-	                                .createdOn(r.getCreatedOn())
-	                                .ownerReplyText(r.getOwnerReplyText())
-	                                .ownerReplyOn(r.getOwnerReplyOn())
-	                                .ownerReplyBy(
-	                                        r.getOwnerReplyBy() != null ?
-	                                        r.getOwnerReplyBy().getUserId() : null)
-	                                .ownerReplyByName(
-	                                        r.getOwnerReplyBy() != null ?
-	                                        r.getOwnerReplyBy().getName() : null)
-	                                .files(mediaDTOs)
-	                                .build();
-	                    })
-	                    .collect(Collectors.toList());
+					return ShootingLocationPropertyReviewDTO.builder()
+							.id(r.getId())
+							.propertyId(propertyId)
+							.userId(r.getUser().getUserId())
+							.userName(r.getUser() != null ? r.getUser().getName() : "")
+							.profilePicUrl(
+									userService.getProfilePicUrl(
+											r.getUser().getUserId()))
+							.rating(r.getRating())
+							.reviewText(r.getReviewText())
+							.createdOn(r.getCreatedOn())
+							.ownerReplyText(r.getOwnerReplyText())
+							.ownerReplyOn(r.getOwnerReplyOn())
+							.ownerReplyBy(
+									r.getOwnerReplyBy() != null ?
+											r.getOwnerReplyBy().getUserId() : null)
+							.ownerReplyByName(
+									r.getOwnerReplyBy() != null ?
+											r.getOwnerReplyBy().getName() : null)
+							.files(mediaDTOs)
+							.build();
+				})
+				.collect(Collectors.toList());
 
-	    return ShootingLocationPropertyReviewResponseDTO.builder()
-	            .averageRating(averageRating)
-	            .totalReviews(totalReviews)
-	            .fiveStarPercentage(fivePercent)
-	            .fourStarPercentage(fourPercent)
-	            .threeStarPercentage(threePercent)
-	            .twoStarPercentage(twoPercent)
-	            .oneStarPercentage(onePercent)
-	            .reviews(reviewDTOList)
-	            .build();
+		return ShootingLocationPropertyReviewResponseDTO.builder()
+				.averageRating(averageRating)
+				.totalReviews(totalReviews)
+				.fiveStarPercentage(fivePercent)
+				.fourStarPercentage(fourPercent)
+				.threeStarPercentage(threePercent)
+				.twoStarPercentage(twoPercent)
+				.oneStarPercentage(onePercent)
+				.reviews(reviewDTOList)
+				.build();
 	}
 
-//	=========================================================================================================================================
+	//	=========================================================================================================================================
 
 	@Override
 	public List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status) {
 
-	    List<ShootingLocationBooking> bookings =
-	            bookingRepository.findBookingsForOwner(ownerId, status);
+		List<ShootingLocationBooking> bookings =
+				bookingRepository.findBookingsForOwner(ownerId, status);
 
-	    return bookings.stream()
-	            .map(shootingLocationBookingConverter::convertToDTO)
-	            .toList();
+		return bookings.stream()
+				.map(shootingLocationBookingConverter::convertToDTO)
+				.toList();
 	}
-	
-	
-	@Override
+
+
 	public ShootingLocationBookingDTO updateBookingStatus(
 	        Integer bookingId,
 	        Integer ownerId,
@@ -4184,50 +4347,367 @@ public ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto) 
 	    ShootingLocationBooking booking = bookingRepository.findById(bookingId)
 	            .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-	    
 	    // 2️⃣ Validate owner
 	    if (!booking.getProperty().getUser().getUserId().equals(ownerId)) {
 	        throw new RuntimeException("You are not authorized to update this booking");
 	    }
-
-	    // 3️⃣ Only allow approve or reject
 	    if (booking.getStatus() != BookingStatus.PENDING) {
-	        throw new RuntimeException("Only pending bookings can be updated");
+	        throw new RuntimeException("Only PENDING bookings can be approved or rejected");
 	    }
-
+	    // 3️⃣ Validate status update request
 	    if (newStatus != BookingStatus.APPROVED &&
 	        newStatus != BookingStatus.REJECTED) {
-	        throw new RuntimeException("Invalid status update");
+
+	        throw new RuntimeException("Invalid status update. Only APPROVED or REJECTED allowed.");
 	    }
 
-	    // 4️⃣ Update status
-	    booking.setStatus(newStatus);
+	    // ------------------------------------------------
+	    // OWNER APPROVES BOOKING
+	    // ------------------------------------------------
+
+	    if (newStatus == BookingStatus.APPROVED) {
+
+	        if (Boolean.TRUE.equals(booking.getModificationRequested())) {
+
+	            // Apply edited dates
+	            booking.setConfirmedBookingDates(
+	                    new ArrayList<>(booking.getBookingDates())
+	            );
+
+	            booking.setModificationRequested(false);
+
+	            // 🔥 Keep booking CONFIRMED
+	            booking.setStatus(BookingStatus.CONFIRMED);
+	        }
+
+	        else {
+
+	            // First time approval
+	            booking.setConfirmedBookingDates(
+	                    new ArrayList<>(booking.getBookingDates())
+	            );
+
+	            booking.setStatus(BookingStatus.APPROVED);
+	        }
+	    }
+
+	    // ------------------------------------------------
+	    // REJECT
+	    // ------------------------------------------------
+
+	    if (newStatus == BookingStatus.REJECTED) {
+
+	        if (Boolean.TRUE.equals(booking.getModificationRequested())) {
+
+	            // Restore previous confirmed dates
+	            booking.setBookingDates(
+	                    new ArrayList<>(booking.getConfirmedBookingDates())
+	            );
+
+	            booking.setModificationRequested(false);
+
+	            // 🔥 Status stays CONFIRMED
+	            booking.setStatus(BookingStatus.CONFIRMED);
+	        }
+
+	        else {
+	            booking.setStatus(BookingStatus.REJECTED);
+	        }
+	    }
+
 	    booking.setUpdatedAt(LocalDateTime.now());
+
 	    booking = bookingRepository.save(booking);
 
-	    return shootingLocationBookingConverter.convertToDTO(booking);
+	    return ShootingLocationBookingConverter.toDTO(booking);
 	}
-	
 	
 	@Override
 	public Response getClientBookingsByStatus(Integer clientId, BookingStatus status) {
 
-	    try {
+		try {
 
-	        List<ShootingLocationBooking> bookings =
-	                bookingRepository
-	                        .findByClient_UserIdAndStatusOrderByUpdatedAtDesc(
-	                                clientId, status);
+			List<ShootingLocationBooking> bookings =
+					bookingRepository
+					.findByClient_UserIdAndStatusAndDeletedByClientFalseOrderByUpdatedAtDesc(
+							clientId, status);
 
-	        List<ShootingLocationBookingDTO> dtoList = bookings.stream()
-	                .map(shootingLocationBookingConverter::convertToDTO)
-	                .toList();
+			List<ShootingLocationBookingDTO> dtoList = bookings.stream()
+					.map(shootingLocationBookingConverter::convertToDTO)
+					.toList();
 
-	        return new Response(1, "Filtered bookings fetched successfully", dtoList);
+			return new Response(1, "Filtered bookings fetched successfully", dtoList);
 
-	    } catch (Exception e) {
+		} catch (Exception e) {
 
-	        return new Response(-1, "Error", e.getMessage());
-	    }
+			return new Response(-1, "Error", e.getMessage());
+		}
 	}
+	
+	@Override
+	public ShootingLocationBookingDTO cancelBooking(  Integer bookingId, Integer clientId, String reason) {
+	
+		Integer userId = userDetails.userInfo().getId();
+	    ShootingLocationBooking booking = bookingRepository.findById(bookingId)
+	            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+	    // Validate owner of booking
+	    if (!booking.getClient().getUserId().equals(clientId)) {
+	        throw new RuntimeException("You cannot cancel this booking");
+	    }
+
+	    // Only allow cancellation before payment
+	    if (booking.getStatus() != BookingStatus.PENDING &&
+	        booking.getStatus() != BookingStatus.APPROVED) {
+
+	        throw new RuntimeException(
+	                "Booking cannot be cancelled after confirmation/payment");
+	    }
+
+	    booking.setStatus(BookingStatus.CANCELLED);
+	    booking.setCancelledAt(LocalDateTime.now());
+	    booking.setCancellationReason(reason);
+	    booking.setCancelledBy(userId);
+
+	    booking.setUpdatedAt(LocalDateTime.now());
+
+	    booking = bookingRepository.save(booking);
+
+	    return ShootingLocationBookingConverter.toDTO(booking);
+	}
+	
+	@Override
+	public void deleteBooking(Integer bookingId, Integer userId) {
+
+	    ShootingLocationBooking booking = bookingRepository.findById(bookingId)
+	            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+	    if (booking.getClient().getUserId().equals(userId)) {
+
+	        booking.setDeletedByClient(true);
+
+	    } else if (booking.getProperty().getUser().getUserId().equals(userId)) {
+
+	        booking.setDeletedByOwner(true);
+
+	    } else {
+
+	        throw new RuntimeException("Not authorized");
+	    }
+
+	    booking.setUpdatedAt(LocalDateTime.now());
+
+	    bookingRepository.save(booking);
+	}
+	
+@Override
+public void generateShootOtp(String bookingCode, Integer ownerId) {
+
+    ShootingLocationBooking booking = bookingRepository.findByBookingCode(bookingCode)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+    if (!booking.getProperty().getUser().getUserId().equals(ownerId)) {
+        throw new RuntimeException("You are not authorized to generate OTP");
+    }
+
+    if (booking.getStatus() != BookingStatus.CONFIRMED) {
+        throw new RuntimeException("OTP can only be generated for confirmed bookings");
+    }
+    // 🔹 If already verified
+    if (Boolean.TRUE.equals(booking.getShootVerified())) {
+        throw new RuntimeException("Shoot already verified for this booking");
+    }
+
+
+    if (booking.getConfirmedBookingDates() == null || booking.getConfirmedBookingDates().isEmpty()) {
+        throw new RuntimeException("No confirmed booking dates available");
+    }
+
+    // 🔹 Get first shoot date
+    LocalDate firstShootDate = booking.getConfirmedBookingDates()
+            .stream()
+            .sorted()
+            .findFirst()
+            .get();
+  
+    if (!LocalDate.now().equals(firstShootDate)) {
+        throw new RuntimeException("OTP can only be generated on the first shoot date");
+    }
+
+    String otp = String.valueOf(new java.util.Random().nextInt(900000) + 100000);
+
+    booking.setShootOtp(otp);
+
+    bookingRepository.save(booking);
+
+    String subject = "FilmHook – Shoot Verification OTP";
+
+    String content =
+            "<p>Your shooting session verification details are below:</p>" +
+            "<p><b>Booking Code:</b> " + booking.getBookingCode() + "</p>" +
+            "<p><b>Shoot Date:</b> " + firstShootDate + "</p>" +
+            "<p>Your One-Time Password (OTP) to start the shoot is:</p>" +
+            "<h2 style='color:#2c7be5;'>" + otp + "</h2>" +
+            "<p>Please share this OTP with the property owner for verification.</p>";
+
+    mailNotification.sendEmailSync(
+            booking.getClient().getName(),
+            booking.getClient().getEmail(),
+            subject,
+            content
+    );
+}
+	
+@Override
+public void verifyShootOtp(String bookingCode, String otp) {
+
+    ShootingLocationBooking booking = bookingRepository.findByBookingCode(bookingCode)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+    if (booking.getStatus() != BookingStatus.CONFIRMED) {
+        throw new RuntimeException("Booking not eligible for verification");
+    }
+
+    if (booking.getConfirmedBookingDates() == null || booking.getConfirmedBookingDates().isEmpty()) {
+        throw new RuntimeException("No confirmed booking dates available");
+    }
+
+    LocalDate firstShootDate = booking.getConfirmedBookingDates()
+            .stream()
+            .sorted()
+            .findFirst()
+            .get();
+
+    if (!LocalDate.now().equals(firstShootDate)) {
+        throw new RuntimeException("OTP verification allowed only on first shoot date");
+    }
+
+    if (booking.getShootOtp() == null) {
+        throw new RuntimeException("OTP not generated for this booking");
+    }
+
+    if (!otp.equals(booking.getShootOtp())) {
+        throw new RuntimeException("Invalid OTP");
+    }
+
+    booking.setShootVerified(true);
+    booking.setStatus(BookingStatus.IN_PROGRESS);
+    booking.setShootOtp(null);
+
+    bookingRepository.save(booking);
+
+    // Email notification
+    String subject = "FilmHook – Shoot Started Successfully";
+
+    String content =
+            "<p>Your shooting session has been successfully verified by the property owner.</p>" +
+            "<p><b>Booking Code:</b> " + booking.getBookingCode() + "</p>" +
+            "<p>The shoot has now officially started.</p>";
+
+    mailNotification.sendEmailSync(
+            booking.getClient().getName(),
+            booking.getClient().getEmail(),
+            subject,
+            content
+    );
+    
+    
+}
+
+@Override
+public void generateCompletionOtp(String bookingCode, Integer ownerId) {
+
+    ShootingLocationBooking booking = bookingRepository.findByBookingCode(bookingCode)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+    if (!booking.getProperty().getUser().getUserId().equals(ownerId)) {
+        throw new RuntimeException("You are not authorized");
+    }
+
+    if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+        throw new RuntimeException("Booking must be in progress");
+    }
+
+    if (booking.getConfirmedBookingDates() == null || booking.getConfirmedBookingDates().isEmpty()) {
+        throw new RuntimeException("No confirmed booking dates");
+    }
+
+    // 🔹 Get last shoot date
+    LocalDate lastShootDate = booking.getConfirmedBookingDates()
+            .stream()
+            .sorted()
+            .reduce((first, second) -> second)
+            .get();
+
+    if (!LocalDate.now().equals(lastShootDate)) {
+        throw new RuntimeException("Completion allowed only on last shoot date");
+    }
+
+    String otp = String.valueOf(new java.util.Random().nextInt(900000) + 100000);
+
+    booking.setShootOtp(otp);
+
+    bookingRepository.save(booking);
+
+    String subject = "FilmHook – Shoot Completion OTP";
+
+    String content =
+            "<p>Your shoot session is ready for completion.</p>" +
+            "<p><b>Booking Code:</b> " + booking.getBookingCode() + "</p>" +
+            "<p>Your OTP to complete the shoot is:</p>" +
+            "<h2 style='color:#2c7be5'>" + otp + "</h2>" +
+            "<p>Please share this OTP with the property owner.</p>";
+
+    mailNotification.sendEmailSync(
+            booking.getClient().getName(),
+            booking.getClient().getEmail(),
+            subject,
+            content
+    );
+}
+
+
+@Override
+public void verifyCompletionOtp(String bookingCode, String otp) {
+
+    ShootingLocationBooking booking = bookingRepository.findByBookingCode(bookingCode)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+    if (booking.getStatus() != BookingStatus.IN_PROGRESS) {
+        throw new RuntimeException("Booking not in progress");
+    }
+
+    if (booking.getShootOtp() == null) {
+        throw new RuntimeException("OTP not generated");
+    }
+
+    if (!otp.equals(booking.getShootOtp())) {
+        throw new RuntimeException("Invalid OTP");
+    }
+
+    booking.setStatus(BookingStatus.COMPLETED);
+    booking.setShootOtp(null);
+
+    bookingRepository.save(booking);
+
+    // Rating link
+    String ratingLink =
+            "https://filmhookapp.com/rate-property?propertyId="
+            + booking.getProperty().getId();
+
+    String subject = "FilmHook – Rate Your Shooting Location";
+
+    String content =
+            "<p>Your shooting session has been completed successfully.</p>" +
+            "<p><b>Booking Code:</b> " + booking.getBookingCode() + "</p>" +
+            "<p>Please rate the property:</p>" +
+            "<a href='" + ratingLink + "' style='padding:10px 15px;background:#2c7be5;color:white;text-decoration:none;border-radius:5px;'>Rate Property</a>";
+
+    mailNotification.sendEmailSync(
+            booking.getClient().getName(),
+            booking.getClient().getEmail(),
+            subject,
+            content
+    );
+}
 }

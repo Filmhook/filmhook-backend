@@ -23,8 +23,11 @@ import com.annular.filmhook.Response;
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
+import com.annular.filmhook.service.AuditionNewService;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.webmodel.AdminListResponse;
+import com.annular.filmhook.webmodel.AuditionCompaniesWithProjectsDTO;
+
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
 import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
@@ -41,10 +44,12 @@ public class AdminController {
 
 	@Autowired
 	AdminService adminService;
-	
+
 	@Autowired
 	UserDetails userDetails;
-	
+	@Autowired
+	private AuditionNewService auditionNewService;
+
 	@Autowired
 	ShootingLocationService shootingService;
 
@@ -114,51 +119,51 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-	
 
-    @PostMapping("/getAdminIndustryUserPermanentDetails")
-    public ResponseEntity<?> getIndustryUserPermanentDetails(@RequestBody UserWebModel userWebModel) {
-        try {
-            logger.info("getAdminIndustryUserPermanentDetails controller start");
-            return adminService.getIndustryUserPermanentDetails(userWebModel);
-        } catch (Exception e) {
-            logger.error("getIndustryUserPermanentDetails Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.ok(new Response(-1, "Fail", ""));
-        }
-    }
-    
-    @PostMapping("changeStatusUnverifiedIndustrialUsers")
+
+	@PostMapping("/getAdminIndustryUserPermanentDetails")
+	public ResponseEntity<?> getIndustryUserPermanentDetails(@RequestBody UserWebModel userWebModel) {
+		try {
+			logger.info("getAdminIndustryUserPermanentDetails controller start");
+			return adminService.getIndustryUserPermanentDetails(userWebModel);
+		} catch (Exception e) {
+			logger.error("getIndustryUserPermanentDetails Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.ok(new Response(-1, "Fail", ""));
+		}
+	}
+
+	@PostMapping("changeStatusUnverifiedIndustrialUsers")
 	public Response changeStatusUnverifiedIndustrialUsers(@RequestBody UserWebModel userWebModel ) {
 		try {
 			logger.info("changeStatusUnverifiedIndustrialUsers controller start");
 			return adminService.changeStatusUnverifiedIndustrialUsers(userWebModel);
-			
+
 		} catch (Exception e) {
 			logger.error("changeStatusUnverifiedIndustrialUsers Method Exception -> {}", e.getMessage());
 			e.printStackTrace();
 		}
 		return new Response(-1, "Success", "");
 	}
-    @GetMapping("getAllUsers")
-    public Response getAllUsers(
-            @RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
-        try {
-            logger.info("getAllUsers controller start - Page: {}, Size: {}", page, size);
-            return adminService.getAllUsers(page, size, startDate,endDate);
-        } catch (Exception e) {
-            logger.error("getAllUsers Method Exception -> {}", e.getMessage());
-            e.printStackTrace();
-            return new Response(-1, "Error occurred", "");
-        }
-    }
+	@GetMapping("getAllUsers")
+	public Response getAllUsers(
+			@RequestParam("pageNo") Integer page,
+			@RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+			@RequestParam("endDate") String endDate) {
+		try {
+			logger.info("getAllUsers controller start - Page: {}, Size: {}", page, size);
+			return adminService.getAllUsers(page, size, startDate,endDate);
+		} catch (Exception e) {
+			logger.error("getAllUsers Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+			return new Response(-1, "Error occurred", "");
+		}
+	}
 
-    @GetMapping("getAllUsersByUserType")
+	@GetMapping("getAllUsersByUserType")
 	public Response getAllUsersByUserType(@RequestParam("userType") String userType,@RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
+			@RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+			@RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllUsersByUserType controller start");
 			return adminService.getAllUsersByUserType(userType,page,size,startDate,endDate);
@@ -168,13 +173,13 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    
 
-    @GetMapping("getAllAdminUsersByUserType")
+
+	@GetMapping("getAllAdminUsersByUserType")
 	public Response getAllAdminUsersByUserType(@RequestParam("userType") String userType,@RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size) {
+			@RequestParam("pageSize") Integer size) {
 		try {
-			
+
 			logger.info("getAllAdminUsersByUserType controller start");
 			return adminService.getAllAdminUsersByUserType(userType,page,size);
 		} catch (Exception e) {
@@ -183,9 +188,9 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    @GetMapping("getAllUsersManagerCount")
-    public Response getAllUsersManagerCount(@RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
+	@GetMapping("getAllUsersManagerCount")
+	public Response getAllUsersManagerCount(@RequestParam("startDate") String startDate,
+			@RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllUsersManagerCount controller start");
 			return adminService.getAllUsersManagerCount(startDate,endDate);
@@ -196,9 +201,9 @@ public class AdminController {
 		return new Response(-1, "Success", "");
 	}
 
-    @GetMapping("getAllReportPostCount")
+	@GetMapping("getAllReportPostCount")
 	public Response getAllReportPostCount(@RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
+			@RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllReportPostCount controller start");
 			return adminService.getAllReportPostCount(startDate,endDate);
@@ -208,11 +213,11 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    
-    @GetMapping("getAllPaymentUserData")
+
+	@GetMapping("getAllPaymentUserData")
 	public Response getAllPaymentUserData(@RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
+			@RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+			@RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllPaymentUserData controller start");
 			return adminService.getAllPaymentUserData(page,size,startDate,endDate);
@@ -222,10 +227,10 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    
-    @GetMapping("getAllPaymentStatusCount")
+
+	@GetMapping("getAllPaymentStatusCount")
 	public Response getAllPaymentStatusCount(@RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
+			@RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllPaymentStatusCount controller start");
 			return adminService.getAllPaymentStatusCount(startDate,endDate);
@@ -235,12 +240,12 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    
-    
-    @GetMapping("getAllPaymentStatus")
+
+
+	@GetMapping("getAllPaymentStatus")
 	public Response getAllPaymentStatus(@RequestParam("status")String status,@RequestParam("pageNo") Integer page,
-            @RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate) {
+			@RequestParam("pageSize") Integer size,@RequestParam("startDate") String startDate,
+			@RequestParam("endDate") String endDate) {
 		try {
 			logger.info("getAllPaymentStatusCount controller start");
 			return adminService.getAllPaymentStatus(status,page,size,startDate,endDate);
@@ -250,10 +255,10 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    
-    @GetMapping("getAllUnVerifiedRejectedList")
+
+	@GetMapping("getAllUnVerifiedRejectedList")
 	public Response getAllUnVerifiedRejectedList(@RequestParam("pageNo") Integer pageNo,
-            @RequestParam("pageSize") Integer pageSize,@RequestParam("status")Boolean status) {
+			@RequestParam("pageSize") Integer pageSize,@RequestParam("status")Boolean status) {
 		try {
 			logger.info("getAllUnVerifiedRejectedList controller start");
 			return adminService.getAllUnVerifiedRejectedList(pageNo,pageSize,status);
@@ -263,8 +268,8 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    
-    @PostMapping("changeNotificationStatus")
+
+	@PostMapping("changeNotificationStatus")
 	public Response changeNotificationStatus() {
 		try {
 			logger.info("changeNotificationStatus controller start");
@@ -276,7 +281,7 @@ public class AdminController {
 		return new Response(-1, "Success", "");
 	}
 
-    @GetMapping("getTotalNotificationCount")
+	@GetMapping("getTotalNotificationCount")
 	public Response getTotalNotificationCount() {
 		try {
 			logger.info("getTotalNotificationCount controller start");
@@ -287,125 +292,139 @@ public class AdminController {
 		}
 		return new Response(-1, "Success", "");
 	}
-    
-    @PostMapping("changeNotificationStatusByIndustryUsers")
-   	public Response changeNotificationStatusByIndustryUsers() {
-   		try {
-   			logger.info("changeNotificationStatusByIndustryUsers controller start");
-   			return adminService.changeNotificationStatusByIndustryUsers();
-   		} catch (Exception e) {
-   			logger.error("changeNotificationStatusByIndustryUsers Method Exception -> {}", e.getMessage());
-   			e.printStackTrace();
-   		}
-   		return new Response(-1, "Success", "");
-   	}
 
-    @GetMapping("getIndustryUserCount")
-   	public Response getIndustryUserCount() {
-   		try {
-   			logger.info("getIndustryUserCount controller start");
-   			return adminService.getIndustryUserCount();
-   		} catch (Exception e) {
-   			logger.error("getIndustryUserCount Method Exception -> {}", e.getMessage());
-   			e.printStackTrace();
-   		}
-   		return new Response(-1, "Success", "");
-   	}
-    
-    @GetMapping("/generate-password")
-    public ResponseEntity<Map<String, Object>> generatePassword() {
-        return ResponseEntity.ok(adminService.generatePassword());
-    }
-       
-    
-    @GetMapping("/list")
-    public List<AdminListResponse> getAdminList() {
-        return adminService.getAdminList();
-    }
-    
-    @GetMapping("/activity/{adminId}/{targetType}")
-    public ResponseEntity<?> getReviewedUsers(
-            @PathVariable Integer adminId,
-            @PathVariable String targetType) {
+	@PostMapping("changeNotificationStatusByIndustryUsers")
+	public Response changeNotificationStatusByIndustryUsers() {
+		try {
+			logger.info("changeNotificationStatusByIndustryUsers controller start");
+			return adminService.changeNotificationStatusByIndustryUsers();
+		} catch (Exception e) {
+			logger.error("changeNotificationStatusByIndustryUsers Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
 
-        return ResponseEntity.ok(
-        		adminService.getReviewedUsers(adminId, targetType)
-        );
-    }
-    
-    @PostMapping("/deleteUser")
-    public ResponseEntity<?> deleteUser(@RequestParam Integer userId) {
-    try {
+	@GetMapping("getIndustryUserCount")
+	public Response getIndustryUserCount() {
+		try {
+			logger.info("getIndustryUserCount controller start");
+			return adminService.getIndustryUserCount();
+		} catch (Exception e) {
+			logger.error("getIndustryUserCount Method Exception -> {}", e.getMessage());
+			e.printStackTrace();
+		}
+		return new Response(-1, "Success", "");
+	}
+
+	@GetMapping("/generate-password")
+	public ResponseEntity<Map<String, Object>> generatePassword() {
+		return ResponseEntity.ok(adminService.generatePassword());
+	}
 
 
-    	adminService.DeleteUser(userId);
+	@GetMapping("/list")
+	public List<AdminListResponse> getAdminList() {
+		return adminService.getAdminList();
+	}
+
+	@GetMapping("/activity/{adminId}/{targetType}")
+	public ResponseEntity<?> getReviewedUsers(
+			@PathVariable Integer adminId,
+			@PathVariable String targetType) {
+
+		return ResponseEntity.ok(
+				adminService.getReviewedUsers(adminId, targetType)
+				);
+	}
+
+	@PostMapping("/deleteUser")
+	public ResponseEntity<?> deleteUser(@RequestParam Integer userId) {
+		try {
 
 
-    return ResponseEntity.ok(
-    new Response(1, "User deleted successfully", null)
-    );
+			adminService.DeleteUser(userId);
 
 
-    } catch (Exception e) {
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    .body(new Response(-1, "Failed to delete user", e.getMessage()));
-    }
-    }
-    
-    
-    @GetMapping("/deletedUsers")
-    public Response getAllDeletedUsers(
-    @RequestParam Integer pageNo,
-    @RequestParam Integer pageSize
-    ) {
-    return adminService.getAllDeletedUsers(pageNo, pageSize);
-    }
-    
-    
-    @GetMapping("/counts")
-    public Response getIndustryUserSidebarCounts() {
-    return adminService.getIndustryUserSidebarCounts();
-    }
-    
-    @PostMapping("/viewUser")
-    public Response view(
-            @RequestParam Integer userId,
-            @RequestParam String category) {
+			return ResponseEntity.ok(
+					new Response(1, "User deleted successfully", null)
+					);
 
-        Integer adminId = userDetails.userInfo().getId();
 
-        // ✅ RETURN SERVICE RESPONSE DIRECTLY
-        return adminService.markViewed(adminId, userId, category);
-    }
-    
-    @GetMapping("/getviewers")
-    public Response viewers(@RequestParam Integer userId, @RequestParam String category) {
-    return new Response(1, "Success",
-    		adminService.getViewers(userId, category));
-    }
-    
-    @PostMapping("/approveOrRejectImage")
-    public Response reviewMedia(
-            @Valid @RequestBody ShootingPropertyMediaRequest request
-    ) {
-        return shootingService.reviewShootingLocationMedia(request);
-    }
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new Response(-1, "Failed to delete user", e.getMessage()));
+		}
+	}
 
-    
-    @PutMapping("/property/updatePermission")
-    public Response updatePermission(
-            @RequestBody ShootingLocationPropertyDetailsDTO dto) {
 
-        return shootingService.updatePermission(dto);
-    }
-    
-    
-    @GetMapping("/GetReviewsByproperty/{propertyId}")
-    public ResponseEntity<ShootingLocationPropertyReviewResponseDTO> getReviews(@PathVariable Integer propertyId) {
+	@GetMapping("/deletedUsers")
+	public Response getAllDeletedUsers(
+			@RequestParam Integer pageNo,
+			@RequestParam Integer pageSize
+			) {
+		return adminService.getAllDeletedUsers(pageNo, pageSize);
+	}
 
-        return ResponseEntity.ok(
-        		shootingService.getAllReviewsByPropertyId(propertyId)
-        );
-    }
+
+	@GetMapping("/counts")
+	public Response getIndustryUserSidebarCounts() {
+		return adminService.getIndustryUserSidebarCounts();
+	}
+
+	@PostMapping("/viewUser")
+	public Response view(
+			@RequestParam Integer userId,
+			@RequestParam String category) {
+
+		Integer adminId = userDetails.userInfo().getId();
+
+		// ✅ RETURN SERVICE RESPONSE DIRECTLY
+		return adminService.markViewed(adminId, userId, category);
+	}
+
+	@GetMapping("/getviewers")
+	public Response viewers(@RequestParam Integer userId, @RequestParam String category) {
+		return new Response(1, "Success",
+				adminService.getViewers(userId, category));
+	}
+
+	@PostMapping("/approveOrRejectImage")
+	public Response reviewMedia(
+			@Valid @RequestBody ShootingPropertyMediaRequest request
+			) {
+		return shootingService.reviewShootingLocationMedia(request);
+	}
+
+
+	@PutMapping("/property/updatePermission")
+	public Response updatePermission(
+			@RequestBody ShootingLocationPropertyDetailsDTO dto) {
+
+		return shootingService.updatePermission(dto);
+	}
+
+
+	@GetMapping("/GetReviewsByproperty/{propertyId}")
+	public ResponseEntity<ShootingLocationPropertyReviewResponseDTO> getReviews(@PathVariable Integer propertyId) {
+
+		return ResponseEntity.ok(
+				shootingService.getAllReviewsByPropertyId(propertyId)
+				);
+	}
+
+		@GetMapping("/companiesWithProjects")
+		public ResponseEntity<List<AuditionCompaniesWithProjectsDTO>> getAllCompaniesWithProjects() {
+
+			List<AuditionCompaniesWithProjectsDTO> response =
+					auditionNewService.getAllCompaniesWithAllProjects();
+
+			return ResponseEntity.ok(response);
+		}
+	
+		@GetMapping("/getByProject/{id}")
+		public ResponseEntity<?> getProjectById(@PathVariable Integer id) {
+		    return ResponseEntity.ok(auditionNewService.getProjectById(id));
+		}
 
 }

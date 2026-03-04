@@ -12,6 +12,7 @@ import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 
 
+
 public interface AuditionCompanyService {
 	 AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto);
 	 List<AuditionCompanyDetailsDTO> getCompaniesByUserId(Integer userId);
@@ -30,5 +31,7 @@ public interface AuditionCompanyService {
 	 List<AuditionCompanyDetailsDTO> getCompaniesForLoggedInUser(Integer userId);
 	 AuditionUserCompanyRoleDTO editAccess(Integer roleId, AuditionUserCompanyRoleDTO request);
 	 List<AuditionUserCompanyRoleDTO> assignAccess(AuditionUserCompanyAccessRequestDTO request);
+	 
+
 
 }

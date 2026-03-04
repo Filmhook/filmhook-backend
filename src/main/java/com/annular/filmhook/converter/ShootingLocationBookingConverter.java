@@ -53,6 +53,8 @@ public class ShootingLocationBookingConverter {
 				.slotType(b.getSlotType())
 				.slotTimings(b.getSlotTimings())
 				.bookingDates(b.getBookingDates())
+				.confirmedBookingDates(b.getConfirmedBookingDates())
+				.modificationRequested(b.getModificationRequested())
 				.totalDays(b.getTotalDays())
 
 				// ------- PRICE BREAKDOWN -------
@@ -110,8 +112,14 @@ public class ShootingLocationBookingConverter {
 	            .bookingMessage(booking.getBookingMessage())
 	            .PropertyCode(property.getPropertyCode())
 	            .bookingCode(booking.getBookingCode())
+	            .confirmedBookingDates(booking.getConfirmedBookingDates())
+	            .modificationRequested(booking.getModificationRequested())
+	            .shootVerified(booking.getShootVerified())
 	            .build();
 	}
+	
+	
+	
 
 
 }

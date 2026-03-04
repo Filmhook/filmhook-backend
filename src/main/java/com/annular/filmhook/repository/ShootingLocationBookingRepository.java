@@ -72,6 +72,7 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
     
     @Query("SELECT b FROM ShootingLocationBooking b " +
     	       "WHERE b.property.user.userId = :ownerId " +
+    	       "AND b.deletedByOwner = false " +
     	       "AND (:status IS NULL OR b.status = :status)")
     	List<ShootingLocationBooking> findBookingsForOwner(
     	        @Param("ownerId") Integer ownerId,
@@ -80,6 +81,12 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
     Optional<ShootingLocationBooking>
     findByClient_UserIdAndProperty_IdAndStatus(Integer userId,Integer propertyId,  BookingStatus status);
     
-    List<ShootingLocationBooking>findByClient_UserIdAndStatusOrderByUpdatedAtDesc( Integer userId, BookingStatus status);
-
+    List<ShootingLocationBooking> findByClient_UserIdAndStatusAndDeletedByClientFalseOrderByUpdatedAtDesc(Integer userId,  BookingStatus status);
+    
+    Optional<ShootingLocationBooking> findTopByClient_UserIdAndProperty_IdOrderByCreatedAtDesc(
+            Integer clientId,
+            Integer propertyId
+    );
+    
+    Optional<ShootingLocationBooking> findByBookingCode(String bookingCode);
 }
