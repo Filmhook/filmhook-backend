@@ -115,6 +115,11 @@ public class ShootingLocationBookingConverter {
 	            .confirmedBookingDates(booking.getConfirmedBookingDates())
 	            .modificationRequested(booking.getModificationRequested())
 	            .shootVerified(booking.getShootVerified())
+	            .clientName(booking.getClient().getName())
+	            .ownerName(property.getFullName())
+	            .locationLink(property.getLocationLink())
+	            .location(property.getLocation())
+	            .subCategoryName(property.getSubCategory().getName())
 	            .build();
 	}
 	

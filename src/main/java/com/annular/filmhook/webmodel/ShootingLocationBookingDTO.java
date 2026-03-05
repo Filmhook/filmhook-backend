@@ -46,6 +46,11 @@ public class ShootingLocationBookingDTO {
 	private Double refundAmount;
 	private LocalDateTime cancelledAt;
 	private Boolean shootVerified;
+	private String clientName;
+	private String ownerName;
+	private String subCategoryName;
+	private String locationLink;
+	private String location;
 
 }
 

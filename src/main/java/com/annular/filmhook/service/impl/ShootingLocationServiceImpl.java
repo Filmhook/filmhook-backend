@@ -4329,12 +4329,27 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 	@Override
 	public List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status) {
 
-		List<ShootingLocationBooking> bookings =
-				bookingRepository.findBookingsForOwner(ownerId, status);
+	    List<ShootingLocationBooking> bookings;
 
-		return bookings.stream()
-				.map(shootingLocationBookingConverter::convertToDTO)
-				.toList();
+	    if (status == BookingStatus.ACTIVE) {
+
+	        bookings = bookingRepository.findByOwnerAndStatuses(
+	                ownerId,
+	                List.of(
+	                        BookingStatus.APPROVED,
+	                        BookingStatus.CONFIRMED,
+	                        BookingStatus.FAILED
+	                )
+	        );
+
+	    } else {
+
+	        bookings = bookingRepository.findBookingsForOwner(ownerId, status);
+	    }
+
+	    return bookings.stream()
+	            .map(shootingLocationBookingConverter::convertToDTO)
+	            .toList();
 	}
 
 
