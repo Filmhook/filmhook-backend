@@ -4353,7 +4353,7 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 	}
 
 
-	public ShootingLocationBookingDTO updateBookingStatus(
+	public Response  updateBookingStatus(
 	        Integer bookingId,
 	        Integer ownerId,
 	        BookingStatus newStatus) {
@@ -4376,6 +4376,7 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 	        throw new RuntimeException("Invalid status update. Only APPROVED or REJECTED allowed.");
 	    }
 
+	    String message="";
 	    // ------------------------------------------------
 	    // OWNER APPROVES BOOKING
 	    // ------------------------------------------------
@@ -4393,6 +4394,7 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 
 	            // 🔥 Keep booking CONFIRMED
 	            booking.setStatus(BookingStatus.CONFIRMED);
+	            message = "Booking approved successfully";
 	        }
 
 	        else {
@@ -4403,6 +4405,7 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 	            );
 
 	            booking.setStatus(BookingStatus.APPROVED);
+	            message = "Booking approved successfully";
 	        }
 	    }
 
@@ -4423,10 +4426,12 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 
 	            // 🔥 Status stays CONFIRMED
 	            booking.setStatus(BookingStatus.CONFIRMED);
+	            message = "Booking rejected successfully";
 	        }
 
 	        else {
 	            booking.setStatus(BookingStatus.REJECTED);
+	            message = "Booking rejected successfully";
 	        }
 	    }
 
@@ -4434,7 +4439,12 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 
 	    booking = bookingRepository.save(booking);
 
-	    return ShootingLocationBookingConverter.toDTO(booking);
+
+	    ShootingLocationBookingDTO dto =
+	            ShootingLocationBookingConverter.toDTO(booking);
+	
+
+	    return new Response(1, message, dto);
 	}
 	
 	@Override

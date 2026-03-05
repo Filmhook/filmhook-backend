@@ -99,7 +99,7 @@ public interface ShootingLocationService {
 	ShootingLocationPropertyReviewResponseDTO getAllReviewsByPropertyId(Integer propertyId);
 	
 	List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status);
-	ShootingLocationBookingDTO updateBookingStatus(Integer bookingId, Integer ownerId, BookingStatus newStatus);
+	Response updateBookingStatus(Integer bookingId, Integer ownerId, BookingStatus newStatus);
 	Response getClientBookingsByStatus(Integer clientId, BookingStatus status);
 	ShootingLocationBookingDTO cancelBooking(  Integer bookingId, Integer clientId, String reason);
 	void deleteBooking(Integer bookingId, Integer userId);
