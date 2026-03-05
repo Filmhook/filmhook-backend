@@ -203,35 +203,35 @@ public class CallServiceImpl implements CallService {
                 System.out.println("🚫 CALL_REJECTED event sent to user " + otherUser);
 
                 ws.notifyUser(otherUser, "CALL_REJECTED",
-                        Map.of("channelName", req.getChannelName()));
+                        Map.of("channelName", req.getChannelName(), "userName", req.getUserName()));
                 break;
                 
             case "cancelled":
                 System.out.println("🚫 CALL_CANCELLED event sent to user " + otherUser);
 
                 ws.notifyUser(otherUser, "CALL_CANCELLED",
-                        Map.of("channelName", req.getChannelName()));
+                        Map.of("channelName", req.getChannelName(),"userName", req.getUserName()));
                 break;
 
             case "accepted":
                 System.out.println("📞 CALL_ACCEPTED event sent to user " + otherUser);
 
                 ws.notifyUser(otherUser, "CALL_ACCEPTED",
-                        Map.of("channelName", req.getChannelName()));
+                        Map.of("channelName", req.getChannelName(),"userName", req.getUserName()));
                 break;
 
             case "ended":
                 System.out.println("🛑 CALL_ENDED event sent to user " + otherUser);
 
                 ws.notifyUser(otherUser, "CALL_ENDED",
-                        Map.of("channelName", req.getChannelName()));
+                        Map.of("channelName", req.getChannelName(),"userName", req.getUserName()));
                 break;
 
             case "missed":
                 System.out.println("⏰ CALL_MISSED event sent to user " + otherUser);
 
                 ws.notifyUser(otherUser, "CALL_MISSED",
-                        Map.of("channelName", req.getChannelName()));
+                        Map.of("channelName", req.getChannelName(),"userName", req.getUserName()));
                 break;
 
             default:
