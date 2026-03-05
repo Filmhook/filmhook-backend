@@ -281,11 +281,11 @@ public class ChatServiceImpl implements ChatService {
 	            );
 
 	            // 🔥 Also notify sender (to update own list)
-	            webSocketService.notifyChatUser(
-	                chat.getChatSenderId(),
-	                "CHAT_LIST_UPDATE",
-	                buildChatListUpdate(chat)
-	            );
+//	            webSocketService.notifyChatUser(
+//	                chat.getChatSenderId(),
+//	                "CHAT_LIST_UPDATE",
+//	                buildChatListUpdate(chat)
+//	            );
 
 				// ✅ Firebase Push Notification
 				Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());

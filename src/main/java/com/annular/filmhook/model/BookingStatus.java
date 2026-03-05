@@ -1,6 +1,7 @@
- package com.annular.filmhook.model;
+package com.annular.filmhook.model;
 
 public enum BookingStatus {
+
 	  PENDING,
 	  IN_PROGRESS,
 	    MODIFICATION_REQUESTED,
@@ -12,4 +13,5 @@ public enum BookingStatus {
 	    FAILED,
 	    DELETED,
 	    ACTIVE
+
 }
