@@ -346,8 +346,11 @@ public class CallServiceImpl implements CallService {
                         Map.of(
                             "channelName", channelName,
                             "fromUserId", hostId,
-                            "fromUserName", groupNames,
-                            "callType", req.getCallType()
+                            "fromUserName", req.getHostName(),
+                            "profilePicture", req.getHostPic(),
+                            "callType", req.getCallType(),
+                            "groupCallId", gc.getId(),
+                            "groupNames", groupNames
                         )
                 );
 
@@ -364,7 +367,7 @@ public class CallServiceImpl implements CallService {
                               channelName,
                               s.getFirebaseToken(),
                               req.getHostName(),
-                              req.getHostPic(), groupNames
+                              req.getHostPic(), groupNames, gc.getId()
                         );
                     }
                 }

@@ -181,7 +181,7 @@ public class FcmServiceImpl implements FcmService {
 		    String channelName,
 		    String deviceToken,
 		    String hostName,
-		    String hostPic, String groupNames
+		    String hostPic, String groupNames,Integer groupId
 		) {
 		    try {
 		        Message message = Message.builder()
@@ -196,6 +196,7 @@ public class FcmServiceImpl implements FcmService {
 		                .putData("title", "Group Call")
 		                .putData("body", groupNames + " invited you to a group " + callType + " call")
 		                .putData("groupUsers", groupNames)
+		                .putData("groupId", groupId.toString())
 		                .build();
 
 		        FirebaseMessaging.getInstance().send(message);
