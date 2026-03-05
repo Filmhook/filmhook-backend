@@ -4329,16 +4329,31 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 	@Override
 	public List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status) {
 
-		List<ShootingLocationBooking> bookings =
-				bookingRepository.findBookingsForOwner(ownerId, status);
+	    List<ShootingLocationBooking> bookings;
 
-		return bookings.stream()
-				.map(shootingLocationBookingConverter::convertToDTO)
-				.toList();
+	    if (status == BookingStatus.ACTIVE) {
+
+	        bookings = bookingRepository.findByOwnerAndStatuses(
+	                ownerId,
+	                List.of(
+	                        BookingStatus.APPROVED,
+	                        BookingStatus.CONFIRMED,
+	                        BookingStatus.FAILED
+	                )
+	        );
+
+	    } else {
+
+	        bookings = bookingRepository.findBookingsForOwner(ownerId, status);
+	    }
+
+	    return bookings.stream()
+	            .map(shootingLocationBookingConverter::convertToDTO)
+	            .toList();
 	}
 
 
-	public ShootingLocationBookingDTO updateBookingStatus(
+	public Response  updateBookingStatus(
 	        Integer bookingId,
 	        Integer ownerId,
 	        BookingStatus newStatus) {
@@ -4361,6 +4376,7 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 	        throw new RuntimeException("Invalid status update. Only APPROVED or REJECTED allowed.");
 	    }
 
+	    String message="";
 	    // ------------------------------------------------
 	    // OWNER APPROVES BOOKING
 	    // ------------------------------------------------
@@ -4378,6 +4394,7 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 
 	            // 🔥 Keep booking CONFIRMED
 	            booking.setStatus(BookingStatus.CONFIRMED);
+	            message = "Booking approved successfully";
 	        }
 
 	        else {
@@ -4388,6 +4405,7 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 	            );
 
 	            booking.setStatus(BookingStatus.APPROVED);
+	            message = "Booking approved successfully";
 	        }
 	    }
 
@@ -4408,10 +4426,12 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 
 	            // 🔥 Status stays CONFIRMED
 	            booking.setStatus(BookingStatus.CONFIRMED);
+	            message = "Booking rejected successfully";
 	        }
 
 	        else {
 	            booking.setStatus(BookingStatus.REJECTED);
+	            message = "Booking rejected successfully";
 	        }
 	    }
 
@@ -4419,7 +4439,12 @@ public ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingD
 
 	    booking = bookingRepository.save(booking);
 
-	    return ShootingLocationBookingConverter.toDTO(booking);
+
+	    ShootingLocationBookingDTO dto =
+	            ShootingLocationBookingConverter.toDTO(booking);
+	
+
+	    return new Response(1, message, dto);
 	}
 	
 	@Override

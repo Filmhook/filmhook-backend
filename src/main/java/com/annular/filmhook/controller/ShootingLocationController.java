@@ -715,7 +715,7 @@ public class ShootingLocationController {
 
 
 	@PutMapping("/updateBookingStatus")
-	public ResponseEntity<ShootingLocationBookingDTO> updateBookingStatus(
+	public ResponseEntity<?> updateBookingStatus(
 			@RequestParam Integer bookingId,
 			@RequestParam Integer ownerId,
 			@RequestParam BookingStatus status) {

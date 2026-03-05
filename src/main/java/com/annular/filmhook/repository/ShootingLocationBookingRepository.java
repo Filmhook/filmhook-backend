@@ -89,4 +89,12 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
     );
     
     Optional<ShootingLocationBooking> findByBookingCode(String bookingCode);
+    
+    @Query("SELECT b FROM ShootingLocationBooking b " +
+    	       "WHERE b.property.user.userId = :ownerId " +
+    	       "AND b.deletedByOwner = false " +
+    	       "AND b.status IN :statuses")
+    	List<ShootingLocationBooking> findByOwnerAndStatuses(
+    	        @Param("ownerId") Integer ownerId,
+    	        @Param("statuses") List<BookingStatus> statuses);
 }
