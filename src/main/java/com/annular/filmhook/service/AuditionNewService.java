@@ -9,8 +9,9 @@ import com.annular.filmhook.model.MovieSubCategory;
 import com.annular.filmhook.model.UserOffer;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
-
+import com.annular.filmhook.model.AuditionNewProject;
 import com.annular.filmhook.model.AuditionPayment;
+import com.annular.filmhook.webmodel.AuditionCompaniesWithProjectsDTO;
 import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
@@ -48,6 +49,8 @@ public interface AuditionNewService {
 	List<FilmSubProfessionResponseDTO> getCart(Integer userId, Integer companyId);
 	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);
 	UserOffer saveOffer(UserOffer userOffer);
+	 List<AuditionCompaniesWithProjectsDTO> getAllCompaniesWithAllProjects();
+	 AuditionNewProject getProjectById(Integer projectId);
 }
 
 

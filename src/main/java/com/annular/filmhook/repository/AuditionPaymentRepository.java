@@ -30,6 +30,8 @@ public interface AuditionPaymentRepository extends JpaRepository<AuditionPayment
 
 
 	    List<AuditionPayment> findAllByProjectIdAndPaymentStatus(Integer projectId, String paymentStatus);
+	    
+	    List<AuditionPayment> findByProjectIn(List<AuditionNewProject> projects);
 	
 }
 

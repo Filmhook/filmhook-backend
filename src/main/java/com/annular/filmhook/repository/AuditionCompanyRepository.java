@@ -39,7 +39,9 @@ public interface AuditionCompanyRepository extends JpaRepository<AuditionCompany
 
     List<AuditionCompanyDetails> findByDeletedFalse();
 
-
+    List<AuditionCompanyDetails>
+    findAllByDeletedFalseAndStatusTrueAndVerificationStatusOrderByIdDesc(
+            AuditionCompanyDetails.VerificationStatus verificationStatus);
 
 
 }

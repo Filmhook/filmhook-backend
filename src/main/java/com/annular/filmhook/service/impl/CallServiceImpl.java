@@ -32,6 +32,7 @@ import com.annular.filmhook.webmodel.GroupCallEndRequest;
 import com.annular.filmhook.webmodel.GroupCallInviteRequest;
 import com.annular.filmhook.webmodel.GroupCallJoinRequest;
 import com.annular.filmhook.webmodel.GroupCallStartRequest;
+import com.annular.filmhook.webmodel.GroupNameResult;
 import com.annular.filmhook.webmodel.StartCallRequest;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
@@ -564,9 +565,11 @@ public class CallServiceImpl implements CallService {
             /* Get group member names */
 
             List<Object[]> members =
-            		groupMemberRepo.findGroupMembers(g.getId(), userId);
+                    groupMemberRepo.findGroupMembers(g.getId(), userId);
+            GroupNameResult groupData = buildGroupName(members);
 
-            r.setGroupName(buildGroupName(members));
+            r.setGroupName(groupData.getGroupName());
+            r.setGroupUserIds(groupData.getUserIds());
 
             /* Missed group call detection */
            GroupCallMember member = groupMemberRepo
@@ -607,26 +610,29 @@ public class CallServiceImpl implements CallService {
         return java.time.Duration.between(start, end).getSeconds();
     }
     
-    private String buildGroupName(List<Object[]> members) {
+    private GroupNameResult buildGroupName(List<Object[]> members) {
 
         List<String> names = new ArrayList<>();
+        List<Integer> ids = new ArrayList<>();
 
         for (Object[] obj : members) {
+            ids.add((Integer) obj[0]);
             names.add((String) obj[1]);
         }
 
+        String groupName;
+
         if (names.size() == 0)
-            return "Group Call";
+            groupName = "Group Call";
+        else if (names.size() == 1)
+            groupName = names.get(0);
+        else if (names.size() == 2)
+            groupName = names.get(0) + " & " + names.get(1);
+        else
+            groupName = names.get(0) + ", " + names.get(1) + " & " + (names.size()-2) + " others";
 
-        if (names.size() == 1)
-            return names.get(0);
-
-        if (names.size() == 2)
-            return names.get(0) + " & " + names.get(1);
-
-        return names.get(0) + ", " + names.get(1) + " & " + (names.size() - 2) + " others";
+        return new GroupNameResult(groupName, ids);
     }
-
     /* ---------------------------------------------------------
      * Test Push Message
      * --------------------------------------------------------- */

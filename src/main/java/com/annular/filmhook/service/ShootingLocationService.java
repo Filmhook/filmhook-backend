@@ -61,8 +61,8 @@ public interface ShootingLocationService {
 	ShootingLocationPropertyReviewDTO updateReview(Integer reviewId, Integer propertyId, Integer userId, int rating,
 			String reviewText, List<MultipartFile> files, List<Integer> deletedFileIds);
 	List<LocalDate> getAvailableDatesForProperty( Integer propertyId, SlotType requestedSlot) ;
-	ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto);
 	
+	ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingDTO dto);
 	
 	Payments createShootingPayment(ShootingPaymentModel model);
 	public ResponseEntity<Response> handleShootingLocationPaymentSuccess(String txnid);
@@ -101,5 +101,10 @@ public interface ShootingLocationService {
 	List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status);
 	ShootingLocationBookingDTO updateBookingStatus(Integer bookingId, Integer ownerId, BookingStatus newStatus);
 	Response getClientBookingsByStatus(Integer clientId, BookingStatus status);
-	
+	ShootingLocationBookingDTO cancelBooking(  Integer bookingId, Integer clientId, String reason);
+	void deleteBooking(Integer bookingId, Integer userId);
+	void generateShootOtp(String bookingCode, Integer ownerId) ;
+	void verifyShootOtp(String bookingCode, String otp);
+	void generateCompletionOtp(String bookingCode, Integer ownerId);
+	void verifyCompletionOtp(String bookingCode, String otp);
 }

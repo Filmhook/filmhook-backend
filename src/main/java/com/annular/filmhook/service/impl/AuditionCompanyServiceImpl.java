@@ -18,11 +18,13 @@ import com.annular.filmhook.converter.AuditionCompanyConverter;
 import com.annular.filmhook.model.AdminActivityLog;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
+import com.annular.filmhook.model.AuditionNewProject;
 import com.annular.filmhook.model.AuditionUserCompanyRole;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.AdminActivityLogRepository;
 import com.annular.filmhook.repository.AuditionCompanyRepository;
+import com.annular.filmhook.repository.AuditionProjectRepository;
 import com.annular.filmhook.repository.AuditionUserCompanyRoleRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
@@ -31,9 +33,11 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionUserAccessDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
+
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
 @Service
@@ -58,6 +62,9 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	private AdminService adminService;
 	@Autowired
 	private AdminActivityLogRepository repo;
+	@Autowired
+	private AuditionProjectRepository projectRepository;
+	
 	@Transactional
 @Override
 public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
@@ -915,5 +922,7 @@ public AuditionCompanyDetails updateVerificationStatus(
 				+ "<p><b>Updated Access Key:</b> " + accessKey + "</p>";
 		mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
 	}
+	
+	
 } 
 

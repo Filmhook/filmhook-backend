@@ -2,7 +2,6 @@ package com.annular.filmhook.service.impl;
 
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +29,6 @@ import com.annular.filmhook.enums.VerificationType;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.repository.UserSecurityAnswerRepository;
 import com.annular.filmhook.repository.UserSecurityQuestionRepository;
-import com.annular.filmhook.service.AwsS3Service;
 import com.annular.filmhook.service.UserSecurityAnswerService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.UserSecurityAnswerDTO;
@@ -309,8 +307,6 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 					resultList);
 		}
 
-		// ❌ FAILURE
-
 		// If first failure in this cycle
 		if (attempt.getAttemptDate() == null) {
 			attempt.setAttemptDate(now);
@@ -434,8 +430,8 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 		}
 		user.setSecurityOtpVerified(true);
 		user.setSecurityEmailOtp(null);
-		userRepository.save(user);
 
+		userRepository.save(user);
 
 		return new Response(1, "OTP verified successfully", null);
 	}
@@ -470,6 +466,19 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 
 			userRepository.save(user);
 
+
+			String subject = "Security Alert: Your FilmHook Password Was Changed";
+
+			String content =
+					"<p>Your password was changed successfully.</p>"
+							+ "<p><b>Time:</b> " + LocalDateTime.now() + "</p>"
+							+ "<p>If this was not you, secure your account immediately.</p>";
+			mailNotification.sendEmailAsync(
+					user.getName(),
+					user.getEmail(),
+					subject,
+					content
+					);
 			return ResponseEntity.ok()
 					.body(new Response(1,
 							"Password changed successfully",

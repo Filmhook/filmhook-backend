@@ -1,6 +1,7 @@
 package com.annular.filmhook.webmodel;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.Data;
 
@@ -13,6 +14,7 @@ public class CallHistoryResponse {
 
     private String groupName;
     private Boolean groupCall;
+    private List<Integer> groupUserIds; 
 
     private String callType;     // voice / video
     private String direction;    // incoming / outgoing
