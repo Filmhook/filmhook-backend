@@ -181,28 +181,21 @@ public class FcmServiceImpl implements FcmService {
 		    String channelName,
 		    String deviceToken,
 		    String hostName,
-		    String hostPic
+		    String hostPic, String groupNames
 		) {
 		    try {
 		        Message message = Message.builder()
 		                .setToken(deviceToken)
-		                .setAndroidConfig(AndroidConfig.builder()
-		                        .setTtl(3600 * 1000)
-		                        .setPriority(AndroidConfig.Priority.HIGH)
-		                        .setNotification(AndroidNotification.builder()
-		                                .setSound("default")
-		                                .setChannelId("incoming_call")
-		                                .build())
-		                        .build())
 		                .putData("type", "incoming_group_call")
 		                .putData("fromUserId", hostId.toString())
 		                .putData("receiverId", receiverId.toString())
 		                .putData("callType", callType)
 		                .putData("channelName", channelName)
-		                .putData("callerName", hostName != null ? hostName : "")
+		                .putData("callerName", hostName)
 		                .putData("callerPic", hostPic != null ? hostPic : "")
 		                .putData("title", "Group Call")
-		                .putData("body", hostName + " is inviting you to a group " + callType + " call")
+		                .putData("body", groupNames + " invited you to a group " + callType + " call")
+		                .putData("groupUsers", groupNames)
 		                .build();
 
 		        FirebaseMessaging.getInstance().send(message);
