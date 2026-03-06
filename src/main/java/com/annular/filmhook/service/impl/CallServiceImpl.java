@@ -318,7 +318,20 @@ public class CallServiceImpl implements CallService {
 
             tokenList.add(Map.of("userId", uid, "rtcToken", token));
         }
+        
+        
+        List<String> memberNames = new ArrayList<>();
 
+        for (Integer uid : members) {
+
+            User u = userRepository.findById(uid).orElse(null);
+
+            if (u != null && u.getName() != null) {
+                memberNames.add(u.getName());
+            }
+        }
+        String groupNames = buildGroupUserNames(memberNames);
+        System.out.println("Check group names for group call " + groupNames);
         /* ---------------------------------------------------------
          * 4. Notify all invited users (WebSocket + FCM)
          * --------------------------------------------------------- */
@@ -334,7 +347,10 @@ public class CallServiceImpl implements CallService {
                             "channelName", channelName,
                             "fromUserId", hostId,
                             "fromUserName", req.getHostName(),
-                            "callType", req.getCallType()
+                            "profilePicture", req.getHostPic(),
+                            "callType", req.getCallType(),
+                            "groupCallId", gc.getId(),
+                            "groupNames", groupNames
                         )
                 );
 
@@ -351,7 +367,7 @@ public class CallServiceImpl implements CallService {
                               channelName,
                               s.getFirebaseToken(),
                               req.getHostName(),
-                              req.getHostPic()
+                              req.getHostPic(), groupNames, gc.getId()
                         );
                     }
                 }
@@ -367,7 +383,19 @@ public class CallServiceImpl implements CallService {
                 "members", tokenList
         ));
     }
+    private String buildGroupUserNames(List<String> names) {
 
+        if (names.size() == 0)
+            return "";
+
+        if (names.size() == 1)
+            return names.get(0);
+
+        if (names.size() == 2)
+            return names.get(0) + " & " + names.get(1);
+
+        return names.get(0) + ", " + names.get(1) + " & " + (names.size() - 2) + " others";
+    }
 
     /* ===========================================================
      * 5️⃣ JOIN GROUP CALL (Late Join)
