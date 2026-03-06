@@ -58,8 +58,8 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 	@Override
 	public List<UserSecurityAnswerDTO> saveSecurityQuestions( List<UserSecurityAnswerDTO> dtoList, Integer loggedInUserId) {
 
-		if (dtoList == null || dtoList.size() != 5) {
-			throw new RuntimeException("Exactly 5 questions must be selected");
+		if (dtoList == null || dtoList.size() != 3) {
+			throw new RuntimeException("Exactly 3 questions must be selected");
 		}
 
 		Set<Integer> uniqueQuestions = dtoList.stream()
@@ -71,7 +71,7 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 				})
 				.collect(Collectors.toSet());
 
-		if (uniqueQuestions.size() != 5) {
+		if (uniqueQuestions.size() != 3) {
 			throw new RuntimeException("Duplicate questions not allowed");
 		}
 
