@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -159,6 +160,7 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 	}
 
 	@Override
+	@CacheEvict(value = "securityQuestions", key = "#id")
 	public Response getAllSecurityQuestions() {
 		try {
 
