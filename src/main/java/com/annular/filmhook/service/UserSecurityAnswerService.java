@@ -20,4 +20,5 @@ public interface UserSecurityAnswerService {
 	     Response sendSecurityEditOtp(Integer userId);
 	     Response verifySecurityEditOtp(Integer userId, String otpInput) ;
 	     ResponseEntity<?> changingPassword(UserWebModel userWebModel);
+	     Response getUserSecurityQuestionsWithAnswers(String email);
 }

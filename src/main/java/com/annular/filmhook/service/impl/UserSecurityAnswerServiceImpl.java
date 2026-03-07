@@ -493,4 +493,34 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 					.body("An error occurred while changing the password.");
 		}
 	}
+	
+	
+	public Response getUserSecurityQuestionsWithAnswers(String email) {
+
+	    Optional<User> userOpt =
+	            userRepository.findByEmailAndStatusTrueAndPermanentDeleteFalse(email);
+
+	    if (userOpt.isEmpty()) {
+	        return new Response(-1, "User not found or inactive", null);
+	    }
+
+	    Integer userId = userOpt.get().getUserId();
+
+	    List<UserSecurityAnswer> list =
+	            repository.findByUser_UserIdAndStatusTrue(userId);
+
+	    if (list.isEmpty()) {
+	        return new Response(-1, "No security questions configured", null);
+	    }
+
+	    List<UserSecurityAnswerDTO> dtoList = list.stream()
+	            .map(a -> UserSecurityAnswerDTO.builder()
+	                    .id(a.getId())
+	                    .userId(a.getUser().getUserId())
+	                    .question(a.getQuestion())
+	                    .build())
+	            .collect(Collectors.toList());
+
+	    return new Response(1, "Security questions fetched successfully", dtoList);
+	}
 }

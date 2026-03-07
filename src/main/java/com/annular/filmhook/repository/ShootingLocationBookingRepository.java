@@ -48,10 +48,7 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
                                                                         @Param("user2") Integer user2,
                                                                         @Param("propertyId") Integer propertyId);
     
-
     List<ShootingLocationBooking> findByStatus(BookingStatus status);
-
-
     Optional<ShootingLocationBooking> findById(Integer bookingId);
 
     

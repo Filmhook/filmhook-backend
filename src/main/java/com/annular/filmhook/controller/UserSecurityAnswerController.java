@@ -86,11 +86,11 @@ public class UserSecurityAnswerController {
         );
     }
     
-    @GetMapping("/myQuestions/{userId}")
-    public ResponseEntity<Response> getQuestions(@PathVariable Integer userId) {
+    @GetMapping("/myQuestions")
+    public ResponseEntity<Response> getQuestions(@RequestParam String email) {
 
         return ResponseEntity.ok(
-                service.getUserSecurityQuestionsWithAnswers(userId)
+                service.getUserSecurityQuestionsWithAnswers(email)
         );
     }
 }
