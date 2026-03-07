@@ -938,155 +938,173 @@ public class PostServiceImpl implements PostService {
 	//            return null;
 	//        }
 	//    }
-	@Override
-	public List<PostWebModel> getAllUsersPosts(
-			Integer userId,
-			Integer pageNo,
-			Integer pageSize,
-			String userCountry
-			) {
-		try {
+@Override
+public List<PostWebModel> getAllUsersPosts(
+        Integer userId,
+        Integer pageNo,
+        Integer pageSize,
+        String userCountry
+) {
+    try {
 
-			// Normalize country text
-			final String userCountryFinal = 
-					(userCountry == null ? "" : userCountry.trim().toLowerCase());
+        final String userCountryFinal =
+                (userCountry == null ? "" : userCountry.trim().toLowerCase());
 
-			List<Posts> allPosts = postsRepository.getAllActivePosts();
+        List<Posts> allPosts = postsRepository.getAllActivePosts();
 
-			if (allPosts == null || allPosts.isEmpty()) {
-				return Collections.emptyList();
-			}
+        if (allPosts == null || allPosts.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-			// ========================================================
-			// 1. FILTER BASED ON PRIVACY RULES
-			// ========================================================
-			List<Posts> visiblePosts = allPosts.stream()
-					.filter(Objects::nonNull)
-					.filter(post -> {
-						Integer ownerId = post.getUser().getUserId();
+        // ========================================================
+        // 1. FILTER BASED ON PRIVACY RULES
+        // ========================================================
+        List<Posts> visiblePosts = allPosts.stream()
+                .filter(Objects::nonNull)
+                .filter(post -> {
 
-						// Owner can always see
-						if (ownerId.equals(userId)) return true;
+                    Integer ownerId = post.getUser().getUserId();
 
-						// Public posts visible to all
-						if (!Boolean.TRUE.equals(post.getPrivateOrPublic())) return true;
+                    if (ownerId.equals(userId)) return true;
 
-						// Private → only followers allowed
-						return followersRequestRepository
-								.existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
-										ownerId, userId, true
-										);
-					})
-					.collect(Collectors.toList());
+                    if (!Boolean.TRUE.equals(post.getPrivateOrPublic())) return true;
+
+                    return followersRequestRepository
+                            .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
+                                    ownerId, userId, true
+                            );
+                })
+                .collect(Collectors.toList());
 
 
-			// ========================================================
-			// 2. COUNTRY FILTER FOR RUNNING PROMOTIONS
-			// ========================================================
-			List<Posts> filteredByCountry = visiblePosts.stream()
-					.filter(post -> {
+        // ========================================================
+        // 2. COUNTRY FILTER FOR RUNNING PROMOTIONS
+        // ========================================================
+        Map<Integer, Date> promotionStartDateMap = new HashMap<>();
 
-						// Not promoted → visible
-						if (!Boolean.TRUE.equals(post.getPromoteFlag())) {
-							return true;
-						}
+        List<Posts> filteredByCountry = visiblePosts.stream()
+                .filter(post -> {
 
-						// Get all promotions for post
-						List<PromoteAd> promoteList =
-								promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
+                    if (!Boolean.TRUE.equals(post.getPromoteFlag())) {
+                        return true;
+                    }
 
-						if (promoteList == null || promoteList.isEmpty()) {
-							return true;
-						}
+                    List<PromoteAd> promoteList =
+                            promoteAdRepository.findAllByPostIdOrderByStartDateDesc(post.getId());
 
-						// Get only Running promotions
-						List<PromoteAd> runningPromotions = promoteList.stream()
-								.filter(p -> p.getStatus() == PromoteAd.PromoteStatus.Running)
-								.collect(Collectors.toList());
+                    if (promoteList == null || promoteList.isEmpty()) {
+                        return true;
+                    }
 
-						if (runningPromotions.isEmpty()) {
-							return true; // No running → no block
-						}
+                    List<PromoteAd> runningPromotions = promoteList.stream()
+                            .filter(p -> p.getStatus() == PromoteAd.PromoteStatus.Running)
+                            .collect(Collectors.toList());
 
-						// Check if ALL running promotions contain userCountry
-						boolean allContainUserCountry = runningPromotions.stream()
-								.allMatch(p -> {
-									String countries = (p.getTargetCountries() == null)
-											? ""
-													: p.getTargetCountries().toLowerCase();
-									return countries.contains(userCountryFinal);
-								});
+                    if (runningPromotions.isEmpty()) {
+                        return true;
+                    }
 
-						// If ALL contain → BLOCK the post
-						return !allContainUserCountry;
+                    // store latest startDate for sorting later
+                    promotionStartDateMap.put(
+                            post.getId(),
+                            runningPromotions.get(0).getStartDate()
+                    );
 
-					})
-					.collect(Collectors.toList());
+                    boolean allContainUserCountry = runningPromotions.stream()
+                            .allMatch(p -> {
+                                String countries = (p.getTargetCountries() == null)
+                                        ? ""
+                                        : p.getTargetCountries().toLowerCase();
+                                return countries.contains(userCountryFinal);
+                            });
 
+                    return !allContainUserCountry;
 
-			// ========================================================
-			// 3. SORT NEWEST FIRST
-			// ========================================================
-			filteredByCountry.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
+                })
+                .collect(Collectors.toList());
 
 
-			// ========================================================
-			// 4. SPLIT PROMOTED VS NORMAL POSTS
-			// ========================================================
-			List<Posts> promotedPosts = new ArrayList<>();
-			List<Posts> normalPosts = new ArrayList<>();
-
-			for (Posts post : filteredByCountry) {
-				if (Boolean.TRUE.equals(post.getPromoteFlag())) {
-					promotedPosts.add(post);
-				} else {
-					normalPosts.add(post);
-				}
-			}
+        // ========================================================
+        // 3. SORT POSTS BY CREATED DATE
+        // ========================================================
+        filteredByCountry.sort(
+                Comparator.comparing(Posts::getCreatedOn).reversed()
+        );
 
 
-			// ========================================================
-			// 5. INTERLEAVE: 1 promoted + 5 normal
-			// ========================================================
-			List<Posts> orderedPosts = new ArrayList<>();
-			int promoIdx = 0, normalIdx = 0;
+        // ========================================================
+        // 4. SPLIT PROMOTED VS NORMAL POSTS
+        // ========================================================
+        List<Posts> promotedPosts = new ArrayList<>();
+        List<Posts> normalPosts = new ArrayList<>();
 
-			while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
+        for (Posts post : filteredByCountry) {
 
-				if (promoIdx < promotedPosts.size()) {
-					orderedPosts.add(promotedPosts.get(promoIdx++));
-				}
+            if (Boolean.TRUE.equals(post.getPromoteFlag())) {
+                promotedPosts.add(post);
+            } else {
+                normalPosts.add(post);
+            }
 
-				for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
-					orderedPosts.add(normalPosts.get(normalIdx++));
-				}
-			}
-
-
-			// ========================================================
-			// 6. PAGINATION
-			// ========================================================
-			int start = (pageNo - 1) * pageSize;
-			int end = Math.min(start + pageSize, orderedPosts.size());
-
-			if (start >= orderedPosts.size()) {
-				return Collections.emptyList();
-			}
-
-			List<Posts> paginatedPosts = orderedPosts.subList(start, end);
+        }
 
 
-			// ========================================================
-			// 7. TRANSFORM TO WEB MODEL
-			// ========================================================
-			return transformPostsDataToPostWebModel(paginatedPosts);
+        // ========================================================
+        // 5. SORT PROMOTED POSTS BY LATEST START DATE
+        // ========================================================
+        promotedPosts.sort((p1, p2) -> {
 
-		} catch (Exception e) {
-			logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
-			return Collections.emptyList();
-		}
-	}
+            Date d1 = promotionStartDateMap.getOrDefault(p1.getId(), new Date(0));
+            Date d2 = promotionStartDateMap.getOrDefault(p2.getId(), new Date(0));
 
+            return d2.compareTo(d1); // latest promoted first
+        });
+
+
+        // ========================================================
+        // 6. INTERLEAVE: 1 promoted + 5 normal
+        // ========================================================
+        List<Posts> orderedPosts = new ArrayList<>();
+
+        int promoIdx = 0;
+        int normalIdx = 0;
+
+        while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
+
+            if (promoIdx < promotedPosts.size()) {
+                orderedPosts.add(promotedPosts.get(promoIdx++));
+            }
+
+            for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
+                orderedPosts.add(normalPosts.get(normalIdx++));
+            }
+
+        }
+
+
+        // ========================================================
+        // 7. PAGINATION
+        // ========================================================
+        int start = (pageNo - 1) * pageSize;
+        int end = Math.min(start + pageSize, orderedPosts.size());
+
+        if (start >= orderedPosts.size()) {
+            return Collections.emptyList();
+        }
+
+        List<Posts> paginatedPosts = orderedPosts.subList(start, end);
+
+
+        // ========================================================
+        // 8. TRANSFORM TO WEB MODEL
+        // ========================================================
+        return transformPostsDataToPostWebModel(paginatedPosts);
+
+    } catch (Exception e) {
+        logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
+        return Collections.emptyList();
+    }
+}
 
 	@Override
 	public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
