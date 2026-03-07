@@ -73,7 +73,9 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
     @Query("SELECT b FROM ShootingLocationBooking b " +
     	       "WHERE b.property.user.userId = :ownerId " +
     	       "AND b.deletedByOwner = false " +
-    	       "AND (:status IS NULL OR b.status = :status)")
+    	       "AND (:status IS NULL OR b.status = :status)" +
+    	       "ORDER BY b.modificationRequested DESC, " +
+    	       "COALESCE(b.updatedAt, b.createdAt) DESC")
     	List<ShootingLocationBooking> findBookingsForOwner(
     	        @Param("ownerId") Integer ownerId,
     	        @Param("status") BookingStatus status);

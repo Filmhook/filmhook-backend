@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 public class UserSecurityAnswerDTO extends BasicFeildsDTO {
 
     private Integer id;
-    private Integer user;  
+    private Integer userId;  
     private UserSecurityQuestion question;
     private String answer;
 

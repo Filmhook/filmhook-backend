@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -159,6 +161,7 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 	}
 
 	@Override
+	@Cacheable(value = "securityQuestionsCache")
 	public Response getAllSecurityQuestions() {
 		try {
 
@@ -189,7 +192,7 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 		List<UserSecurityAnswerDTO> dtoList = list.stream()
 				.map(a -> UserSecurityAnswerDTO.builder()
 						.id(a.getId())
-						.user(a.getUser().getUserId())
+						.userId(a.getUser().getUserId())
 						.question(a.getQuestion())
 						.answer(a.getAnswerHash())  
 						.build()

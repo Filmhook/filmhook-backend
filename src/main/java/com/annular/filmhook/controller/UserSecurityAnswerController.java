@@ -3,6 +3,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,16 +49,6 @@ public class UserSecurityAnswerController {
         );
     }
     
-    @PostMapping("/verifySecurityQuestion")
-    public ResponseEntity<Response> verifySecurityAnswers(
-            @RequestBody List<UserSecurityAnswerDTO> requestList) {
-
-        Integer userId = userDetails.userInfo().getId();
-
-        return ResponseEntity.ok(
-                service.verifySecurityAnswers(userId, requestList)
-        );
-    }
     
     @PostMapping("/sendSeurityEmailOtp")
     public ResponseEntity<Response> sendSecurityOtp() {
@@ -87,6 +78,19 @@ public class UserSecurityAnswerController {
         return service.changingPassword(userWebModel);
     }
 
+    @PostMapping("/verifySecurityQuestion/{userId}")
+    public ResponseEntity<Response> verifySecurityAnswers(@PathVariable Integer userId,
+            @RequestBody List<UserSecurityAnswerDTO> requestList) {
+        return ResponseEntity.ok(
+                service.verifySecurityAnswers(userId, requestList)
+        );
+    }
     
-    
+    @GetMapping("/myQuestions/{userId}")
+    public ResponseEntity<Response> getQuestions(@PathVariable Integer userId) {
+
+        return ResponseEntity.ok(
+                service.getUserSecurityQuestionsWithAnswers(userId)
+        );
+    }
 }

@@ -13,7 +13,7 @@ public class UserSecurityAnswerConverter {
 
 	        UserSecurityAnswerDTO dto = UserSecurityAnswerDTO.builder()
 	                .id(entity.getId())
-	                .user(entity.getUser() != null 
+	                .userId(entity.getUser() != null 
 	                        ? entity.getUser().getUserId() 
 	                        : null)
 	                .question(entity.getQuestion())

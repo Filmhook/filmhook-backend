@@ -480,9 +480,6 @@ public class PostServiceImpl implements PostService {
 		return null;
 	}
 
-
-
-
 	@Override
 	public Resource getPostFile(Integer userId, String category, String fileId, String fileType) {
 		try {
