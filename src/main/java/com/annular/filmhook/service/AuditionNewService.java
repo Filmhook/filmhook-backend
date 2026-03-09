@@ -50,7 +50,7 @@ public interface AuditionNewService {
 	void addToCart(Integer userId, Integer companyId, Integer subProfessionId, Integer count);
 	UserOffer saveOffer(UserOffer userOffer);
 	 List<AuditionCompaniesWithProjectsDTO> getAllCompaniesWithAllProjects();
-	 AuditionNewProject getProjectById(Integer projectId);
+	 AuditionNewProjectWebModel getProjectByProjectId(Integer projectId);
 }
 
 

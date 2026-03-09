@@ -27,7 +27,7 @@ import com.annular.filmhook.service.AuditionNewService;
 import com.annular.filmhook.service.ShootingLocationService;
 import com.annular.filmhook.webmodel.AdminListResponse;
 import com.annular.filmhook.webmodel.AuditionCompaniesWithProjectsDTO;
-
+import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyDetailsDTO;
 import com.annular.filmhook.webmodel.ShootingLocationPropertyReviewResponseDTO;
 import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
@@ -422,9 +422,12 @@ public class AdminController {
 			return ResponseEntity.ok(response);
 		}
 	
-		@GetMapping("/getByProject/{id}")
-		public ResponseEntity<?> getProjectById(@PathVariable Integer id) {
-		    return ResponseEntity.ok(auditionNewService.getProjectById(id));
-		}
+		@GetMapping("/project/{projectId}")
+		public ResponseEntity<?> getProjectById(@PathVariable Integer projectId) {
 
+		    AuditionNewProjectWebModel project =
+		    		auditionNewService.getProjectByProjectId(projectId);
+
+		    return ResponseEntity.ok(project);
+		}
 }
