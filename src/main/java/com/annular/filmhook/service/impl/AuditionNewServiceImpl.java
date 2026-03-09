@@ -1435,19 +1435,12 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	                         .collect(Collectors.toList());
 
 	         // 5️⃣ Calculate total job posts
-	         int totalJobPosts = projects.stream()
-	                 .filter(p -> p.getTeamNeeds() != null)
-	                 .flatMap(p -> p.getTeamNeeds().stream())
-	                 .mapToInt(tn -> 1)
-	                 .sum();
-
+	         int totalJobPosts = (int) projects.stream()
+	        	        .count();
 	         // 6️⃣ Calculate active posts
-	         int activePosts = projects.stream()
-	                 .filter(p -> p.getTeamNeeds() != null)
-	                 .flatMap(p -> p.getTeamNeeds().stream())
-	                 .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
-	                 .mapToInt(tn -> 1)
-	                 .sum();
+	         int activePosts = (int) projects.stream()
+	        	        .filter(p -> Boolean.TRUE.equals(p.getStatus()))
+	        	        .count();
 
 	         return AuditionCompaniesWithProjectsDTO.builder()
 	                 .companyId(company.getId())
@@ -1518,12 +1511,112 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 		}
 	 
 	 @Override
-	 public AuditionNewProject getProjectById(Integer projectId) {
+	 public AuditionNewProjectWebModel getProjectByProjectId(Integer projectId) {
 
-	     return projectRepository.findById(projectId)
-	             .orElseThrow(() -> 
-	                 new RuntimeException("Project not found with id: " + projectId)
-	             );
+	     Integer userId = userDetails.userInfo().getId();
+
+	     User user = userRepository.findById(userId)
+	             .orElseThrow(() -> new RuntimeException("User not found"));
+
+	     AuditionNewProject project = projectRepository.findById(projectId)
+	             .orElseThrow(() -> new RuntimeException("Project not found"));
+
+	     // Convert entity → DTO
+	     AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+	  // Get project owner
+	     Integer createdBy = project.getCreatedBy();
+
+	     User projectOwner = userRepository.findById(createdBy)
+	             .orElseThrow(() -> new RuntimeException("Project owner not found"));
+
+	     dto.setFilmHookCode(projectOwner.getFilmHookCode());
+
+	     // ================================
+	     // Expiry Date
+	     // ================================
+	     DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+	     DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
+
+	     Optional<AuditionPayment> paymentOpt =
+	             paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(projectId);
+
+	     paymentOpt.ifPresent(payment -> {
+	         LocalDateTime expiry = payment.getExpiryDateTime();
+	         if (expiry != null) {
+	             dto.setExpiryDate(expiry.format(dateFormatter));
+	             dto.setExpiryTime(expiry.format(timeFormatter));
+	         }
+	     });
+
+	     // ================================
+	     // Project Profile Pictures
+	     // ================================
+	     List<FileOutputWebModel> profilePictures =
+	             mediaFilesService.getMediaFilesByCategoryAndRefId(
+	                     MediaFileCategory.AuditionProfilePicture,
+	                     project.getId());
+
+	     dto.setProfilePictureFilesOutput(profilePictures);
+
+	     // ================================
+	     // Company Logo
+	     // ================================
+	     if (project.getCompany() != null) {
+
+	         List<FileOutputWebModel> companyLogos =
+	                 mediaFilesService.getMediaFilesByCategoryAndRefId(
+	                         MediaFileCategory.Audition,
+	                         project.getCompany().getId());
+
+	         dto.setLogoFiles(companyLogos);
+	     }
+
+	     // ================================
+	     // Team Needs
+	     // ================================
+	     List<AuditionNewTeamNeedWebModel> teamNeeds =
+	             project.getTeamNeeds().stream()
+
+	             // only active
+	             .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+
+	             .map(tn -> {
+
+	                 AuditionNewTeamNeedWebModel tnDto =
+	                         AuditionCompanyConverter.toDto(tn);
+
+	                 // liked by user
+	                 boolean liked = likesRepository
+	                         .findByCategoryAndAuditionIdAndLikedBy(
+	                                 "TEAM_NEED",
+	                                 tn.getId(),
+	                                 user.getUserId())
+	                         .map(Likes::getStatus)
+	                         .orElse(false);
+
+	                 tnDto.setLiked(liked);
+
+	                 // like count
+	                 int totalLikes =
+	                         likesRepository.countByCategoryAndAuditionIdAndStatus(
+	                                 "TEAM_NEED",
+	                                 tn.getId(),
+	                                 true);
+
+	                 tnDto.setLikeCount(totalLikes);
+
+	                 // view count
+	                 int totalViews = getViewCount(tn.getId());
+	                 tnDto.setTotalViews(totalViews);
+
+	                 return tnDto;
+	             })
+
+	             .collect(Collectors.toList());
+
+	     dto.setTeamNeeds(teamNeeds);
+
+	     return dto;
 	 }
 }
 

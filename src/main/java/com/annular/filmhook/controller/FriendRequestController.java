@@ -42,8 +42,8 @@ public class FriendRequestController {
     }
 
     @GetMapping("/getFriendRequest")
-    public ResponseEntity<?> getFriendRequest() {
-    	Integer userId = userDetails.userInfo().getId();
+    public ResponseEntity<?> getFriendRequest(@RequestParam Integer userId ) {
+    	
         try {
             return friendRequestService.getFriendRequest(userId);
         } catch (Exception e) {
