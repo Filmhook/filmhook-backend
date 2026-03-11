@@ -15,5 +15,6 @@ public class AuditionRowDTO {
 
     private String companyName;
     private String companyType;
-    private VerificationStatus verificationStatus;  // ENUM, NOT STRING
+    private Boolean govtVerified;
+    private VerificationStatus verificationStatus; 
 }

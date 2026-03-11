@@ -57,107 +57,123 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 	private UserDetails userDetails;
 	@Autowired
 	UserVerificationAttemptRepository attemptRepository;
+	
 	@Override
-	public List<UserSecurityAnswerDTO> saveSecurityQuestions( List<UserSecurityAnswerDTO> dtoList, Integer loggedInUserId) {
+	public List<UserSecurityAnswerDTO> saveSecurityQuestions(List<UserSecurityAnswerDTO> dtoList, Integer loggedInUserId) {
+	if (dtoList == null || dtoList.isEmpty()) {
+	    throw new RuntimeException("No questions provided");
+	}
 
-		if (dtoList == null || dtoList.size() != 3) {
-			throw new RuntimeException("Exactly 3 questions must be selected");
-		}
+	User user = userRepository.findById(loggedInUserId)
+	        .orElseThrow(() -> new RuntimeException("User not found"));
 
-		Set<Integer> uniqueQuestions = dtoList.stream()
-				.map(dto -> {
-					if (dto.getQuestion() == null || dto.getQuestion().getId() == null) {
-						throw new RuntimeException("Question ID cannot be null");
-					}
-					return dto.getQuestion().getId();
-				})
-				.collect(Collectors.toSet());
+	List<UserSecurityAnswer> existingAnswers =
+	        repository.findByUser_UserId(loggedInUserId);
 
-		if (uniqueQuestions.size() != 3) {
-			throw new RuntimeException("Duplicate questions not allowed");
-		}
+	// First time configuration → must provide exactly 3 questions
+	if (existingAnswers.isEmpty() && dtoList.size() != 3) {
+	    throw new RuntimeException("Exactly 3 questions must be selected");
+	}
 
-		User user = userRepository.findById(loggedInUserId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+	// Prevent duplicate questions
+	Set<Integer> uniqueQuestions = dtoList.stream()
+	        .map(dto -> {
+	            if (dto.getQuestion() == null || dto.getQuestion().getId() == null) {
+	                throw new RuntimeException("Question ID cannot be null");
+	            }
+	            return dto.getQuestion().getId();
+	        })
+	        .collect(Collectors.toSet());
 
-		List<UserSecurityAnswer> existingAnswers =
-				repository.findByUser_UserId(loggedInUserId);
+	if (uniqueQuestions.size() != dtoList.size()) {
+	    throw new RuntimeException("Duplicate questions not allowed");
+	}
 
-		// 🔐 If already configured → require OTP verification
-		if (!existingAnswers.isEmpty()) {
+	// OTP validation if editing existing questions
+	if (!existingAnswers.isEmpty()) {
 
-			if (!Boolean.TRUE.equals(user.getSecurityOtpVerified())) {
-				throw new RuntimeException(
-						"Please verify OTP before editing security questions");
-			}
+	    if (!Boolean.TRUE.equals(user.getSecurityOtpVerified())) {
+	        throw new RuntimeException("Please verify OTP before editing security questions");
+	    }
 
-			if (user.getSecurityEmailOtpCreatedOn() == null) {
-				throw new RuntimeException("OTP session expired. Please request new OTP.");
-			}
+	    if (user.getSecurityEmailOtpCreatedOn() == null) {
+	        throw new RuntimeException("OTP session expired. Please request new OTP.");
+	    }
 
-			long minutes = Duration.between(
-					user.getSecurityEmailOtpCreatedOn(),
-					LocalDateTime.now()
-					).toMinutes();
+	    long minutes = Duration.between(
+	            user.getSecurityEmailOtpCreatedOn(),
+	            LocalDateTime.now()
+	    ).toMinutes();
 
-			if (minutes > 60) {
-				throw new RuntimeException(
-						"OTP session expired. Please request new OTP.");
-			}
-		}
+	    if (minutes > 60) {
+	        throw new RuntimeException("OTP session expired. Please request new OTP.");
+	    }
+	}
 
-		List<UserSecurityAnswerDTO> responseList = new ArrayList<>();
+	List<UserSecurityAnswerDTO> responseList = new ArrayList<>();
 
-		for (UserSecurityAnswerDTO dto : dtoList) {
+	for (UserSecurityAnswerDTO dto : dtoList) {
 
-			UserSecurityQuestion question = questionRepository
-					.findById(dto.getQuestion().getId())
-					.orElseThrow(() -> new RuntimeException("Invalid question"));
+	    UserSecurityQuestion question = questionRepository
+	            .findById(dto.getQuestion().getId())
+	            .orElseThrow(() -> new RuntimeException("Invalid question"));
 
-			if (dto.getAnswer() == null || dto.getAnswer().isBlank()) {
-				throw new RuntimeException("Answer cannot be empty");
-			}
+	    if (dto.getAnswer() == null || dto.getAnswer().isBlank()) {
+	        throw new RuntimeException("Answer cannot be empty");
+	    }
 
-			String normalized = dto.getAnswer().trim().toLowerCase();
+	    String normalized = dto.getAnswer().trim().toLowerCase();
 
-			Optional<UserSecurityAnswer> existing =
-					existingAnswers.stream()
-					.filter(a -> a.getQuestion().getId()
-							.equals(question.getId()))
-					.findFirst();
+	    Optional<UserSecurityAnswer> existing =
+	            existingAnswers.stream()
+	                    .filter(a -> a.getQuestion().getId().equals(question.getId()))
+	                    .findFirst();
 
-			UserSecurityAnswer entity;
+	    UserSecurityAnswer entity;
 
-			if (existing.isPresent()) {
-				entity = existing.get();
-				entity.setAnswerHash(passwordEncoder.encode(normalized));
-				entity.setUpdatedBy(loggedInUserId);
-				entity.setUpdatedOn(LocalDateTime.now());
-			} else {
-				entity = new UserSecurityAnswer();
-				entity.setUser(user);
-				entity.setQuestion(question);
-				entity.setAnswerHash(passwordEncoder.encode(normalized));
-				entity.setCreatedBy(loggedInUserId);
-				entity.setUpdatedBy(loggedInUserId);
-				entity.setCreatedOn(LocalDateTime.now());
-				entity.setUpdatedOn(LocalDateTime.now());
-				entity.setStatus(true);
-			}
+	    if (existing.isPresent()) {
 
-			UserSecurityAnswer saved = repository.save(entity);
+	        entity = existing.get();
 
-			responseList.add(
-					UserSecurityAnswerConverter.convertToDTO(saved)
-					);
-		}
+	        // Update only if answer changed
+	        if (!passwordEncoder.matches(normalized, entity.getAnswerHash())) {
 
-		// ✅ After successful edit → clear OTP fields
-		user.setSecurityEmailOtp(null);
-		user.setSecurityEmailOtpCreatedOn(null);
-		user.setSecurityOtpVerified(false);
-		userRepository.save(user);
-		return responseList;
+	            entity.setAnswerHash(passwordEncoder.encode(normalized));
+	            entity.setUpdatedBy(loggedInUserId);
+	            entity.setUpdatedOn(LocalDateTime.now());
+
+	            repository.save(entity);
+	        }
+
+	    } else {
+
+	        // Create new answer (for first time setup)
+	        entity = new UserSecurityAnswer();
+	        entity.setUser(user);
+	        entity.setQuestion(question);
+	        entity.setAnswerHash(passwordEncoder.encode(normalized));
+	        entity.setCreatedBy(loggedInUserId);
+	        entity.setUpdatedBy(loggedInUserId);
+	        entity.setCreatedOn(LocalDateTime.now());
+	        entity.setUpdatedOn(LocalDateTime.now());
+	        entity.setStatus(true);
+
+	        repository.save(entity);
+	    }
+
+	    responseList.add(
+	            UserSecurityAnswerConverter.convertToDTO(entity)
+	    );
+	}
+
+	// Clear OTP after successful edit
+	user.setSecurityEmailOtp(null);
+	user.setSecurityEmailOtpCreatedOn(null);
+	user.setSecurityOtpVerified(false);
+	userRepository.save(user);
+
+	return responseList;
+
 	}
 
 	@Override
