@@ -79,7 +79,13 @@ public class CallServiceImpl implements CallService {
 
     Integer callerId = req.getCallerId();
     Integer receiverId = req.getReceiverId();
+    User caller = userRepository.findById(callerId).orElse(null);
+    User receiver = userRepository.findById(receiverId).orElse(null);
 
+    String callerName = caller != null ? caller.getName() : "";
+    String receiverName = receiver != null ? receiver.getName() : "";
+    String callerPic = userService.getProfilePicUrl(callerId);
+    String receiverPic = userService.getProfilePicUrl(receiverId);
     boolean isReceiverBusy = callRepo.existsByReceiverIdAndStatusIn(
             receiverId,
             List.of("incoming")
@@ -130,11 +136,6 @@ if (isReceiverBusy) {
      * LOAD USER DETAILS
      * --------------------------------------------------------- */
 
-    User caller = userRepository.findById(callerId).orElse(null);
-
-    String callerName = caller != null ? caller.getName() : "";
-    String callerPic = userService.getProfilePicUrl(callerId);
-
     /* ---------------------------------------------------------
      * SEND MISSED CALL PUSH NOTIFICATION
      * --------------------------------------------------------- */
@@ -155,8 +156,20 @@ if (isReceiverBusy) {
             );
         }
     }
+  
+    
+    Map<String, Object> result = new HashMap<>();
+    result.put("channelName", channelName);
+    result.put("rtcToken", rtcToken);
+    result.put("callType", req.getCallType());
+    result.put("callerName", callerName);
+    result.put("receiverName", receiverName);
+    result.put("callerPic", callerPic);
+    result.put("receiverPic", receiverPic);
+    result.put("status", receiverName + "is busy");
+    
 
-    return new Response(1, "User is busy", null);
+    return new Response(1, "User is busy", result);
 }
 
     /* ---------------------------------------------------------
@@ -165,14 +178,6 @@ if (isReceiverBusy) {
 
     log.setStatus("incoming");
     callRepo.save(log);
-
-    User caller = userRepository.findById(callerId).orElse(null);
-    User receiver = userRepository.findById(receiverId).orElse(null);
-
-    String callerName = caller != null ? caller.getName() : "";
-    String receiverName = receiver != null ? receiver.getName() : "";
-    String callerPic = userService.getProfilePicUrl(callerId);
-    String receiverPic = userService.getProfilePicUrl(receiverId);
 
     /* ---------------------------------------------------------
      * 4. Send Push Notification
