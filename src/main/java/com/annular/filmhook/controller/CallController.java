@@ -35,6 +35,11 @@ public class CallController {
     public Response start(@RequestBody StartCallRequest request) {
         return callService.startCall(request);
     }
+    
+    @PostMapping("/accept/OneToOne")
+    public Response acceptOneToOne(@RequestBody StartCallRequest request) {
+        return callService.acceptOneToOne(request);
+    }
 
     @PostMapping("/end")
     public Response end(@RequestBody EndCallRequest request) {

@@ -257,6 +257,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.map(category -> ShootingLocationCategoryDTO.builder()
 							.id(category.getId())
 							.name(category.getName())
+							.image(category.getImageUrl())
 							.build())
 					.collect(Collectors.toList());
 
@@ -280,8 +281,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.map(subcategory -> ShootingLocationSubcategoryDTO.builder()
 							.id(subcategory.getId())
 							.name(subcategory.getName())
-							.description(subcategory.getDescription())
-							.imageUrl(subcategory.getImageUrl())
 							.build())
 					.collect(Collectors.toList());
 
@@ -1988,15 +1987,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					? ShootingLocationCategoryDTO.builder()
 							.id(property.getCategory().getId())
 							.name(categoryMap.get(property.getCategory().getId()).getName())
+							.image(property.getCategory().getImageUrl())
 							.build()
 							: null;
 
 			ShootingLocationSubcategoryDTO subcategoryDTO = (property.getSubCategory() != null && subcategoryMap.containsKey(property.getSubCategory().getId()))
 					? ShootingLocationSubcategoryDTO.builder()
 							.id(property.getSubCategory().getId())
-							.name(subcategoryMap.get(property.getSubCategory().getId()).getName())
-							.description(subcategoryMap.get(property.getSubCategory().getId()).getDescription())
-							.imageUrl(subcategoryMap.get(property.getSubCategory().getId()).getImageUrl())
+							.name(subcategoryMap.get(property.getSubCategory().getId()).getName())						
 							.build()
 							: null;
 

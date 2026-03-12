@@ -31,5 +31,7 @@ public interface CallService {
 	
 	Response getCallHistory(Integer userId);
 
+	Response acceptOneToOne(StartCallRequest request);
+
 
 }

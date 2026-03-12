@@ -75,100 +75,157 @@ public class CallServiceImpl implements CallService {
      * START CALL
      * --------------------------------------------------------- */
     @Override
-    public Response startCall(StartCallRequest req) {
+   public Response startCall(StartCallRequest req) {
 
-        Integer callerId = req.getCallerId();
-        Integer receiverId = req.getReceiverId();
+    Integer callerId = req.getCallerId();
+    Integer receiverId = req.getReceiverId();
 
-        /* ---------------------------------------------------------
-         * 1. Generate Unique Channel
-         * --------------------------------------------------------- */
-        String channelName = "call_" + callerId + "_" + receiverId + "_" + System.currentTimeMillis();
+    boolean isReceiverBusy = callRepo.existsByReceiverIdAndStatusIn(
+            receiverId,
+            List.of("incoming")
+    );
 
-        AgoraWebModel model = new AgoraWebModel();
-        model.setChannelName(channelName);
-        model.setUserId(callerId);
-        model.setExpirationTimeInSeconds(6000);
+    /* ---------------------------------------------------------
+     * 1. Generate Channel
+     * --------------------------------------------------------- */
+    String channelName = "call_" + callerId + "_" + receiverId + "_" + System.currentTimeMillis();
 
-        String rtcToken = agoraTokenService.getRTCToken(model);
+    AgoraWebModel model = new AgoraWebModel();
+    model.setChannelName(channelName);
+    model.setUserId(callerId);
+    model.setExpirationTimeInSeconds(6000);
 
-        /* ---------------------------------------------------------
-         * 2. Save CallLog (ALWAYS save, even if receiver is busy)
-         * --------------------------------------------------------- */
-        CallLog log = new CallLog();
-        log.setCallerId(req.getCallerId());
-        log.setReceiverId(req.getReceiverId());
-        log.setChannelName(channelName);
-        log.setCallType(req.getCallType());
-        log.setStatus("incoming");    
-        log.setRtcToken(rtcToken);
-        log.setStartTime(LocalDateTime.now());
-        callRepo.save(log);
+    String rtcToken = agoraTokenService.getRTCToken(model);
 
-        /* ---------------------------------------------------------
-         * 3. Load Caller / Receiver Details
-         * --------------------------------------------------------- */
-        User caller = userRepository.findById(callerId).orElse(null);
-        User receiver = userRepository.findById(receiverId).orElse(null);
+    /* ---------------------------------------------------------
+     * 2. Save CallLog
+     * --------------------------------------------------------- */
+    CallLog log = new CallLog();
+    log.setCallerId(callerId);
+    log.setReceiverId(receiverId);
+    log.setChannelName(channelName);
+    log.setCallType(req.getCallType());
+    log.setRtcToken(rtcToken);
+    log.setStartTime(LocalDateTime.now());
 
-        String callerName = caller != null ? caller.getName() : "";
-        String receiverName = receiver != null ? receiver.getName() : "";
-        String callerPic = userService.getProfilePicUrl(callerId);
-        String receiverPic = userService.getProfilePicUrl(receiverId);
+if (isReceiverBusy) {
 
-        /* ---------------------------------------------------------
-         * 4. Send Push Notification to Receiver (ALL DEVICES)
-         * --------------------------------------------------------- */
-        List<UserSession> activeSessions =
-                userSessionRepository.findByUserIdAndIsActive(receiverId, true);
+    log.setStatus("missed");
+    log.setEndTime(LocalDateTime.now());
 
-        for (UserSession s : activeSessions) {
+    callRepo.save(log);
 
-            if (s.getFirebaseToken() != null && !s.getFirebaseToken().trim().isEmpty()) {
+    /* ---------------------------------------------------------
+     * SEND WEBSOCKET TO CALLER
+     * --------------------------------------------------------- */
 
-                fcm.sendIncomingCallNotification(
-                        callerId,
-                        receiverId,
-                        req.getCallType(),
-                        channelName,
-                        s.getFirebaseToken(),
-                        callerName,
-                        callerPic
-                );
-            }
+    ws.notifyUser(callerId, "USER_BUSY",
+            Map.of(
+                    "receiverId", receiverId,
+                    "message", "User is currently on another call"
+            )
+    );
+
+    /* ---------------------------------------------------------
+     * LOAD USER DETAILS
+     * --------------------------------------------------------- */
+
+    User caller = userRepository.findById(callerId).orElse(null);
+
+    String callerName = caller != null ? caller.getName() : "";
+    String callerPic = userService.getProfilePicUrl(callerId);
+
+    /* ---------------------------------------------------------
+     * SEND MISSED CALL PUSH NOTIFICATION
+     * --------------------------------------------------------- */
+
+    List<UserSession> sessions =
+            userSessionRepository.findByUserIdAndIsActive(receiverId, true);
+
+    for (UserSession s : sessions) {
+
+        if (s.getFirebaseToken() != null && !s.getFirebaseToken().trim().isEmpty()) {
+
+            fcm.sendMissedCallNotification(
+                    callerId,
+                    receiverId,
+                    callerName,
+                    callerPic,
+                    s.getFirebaseToken()
+            );
         }
-
-        /* ---------------------------------------------------------
-         * 5. WebSocket event -> NEW CALL
-         * --------------------------------------------------------- */
-        ws.notifyUser(receiverId, "NEW_CALL_INCOMING",
-                Map.of(
-                        "fromUserId", callerId,
-                        "channelName", channelName,
-                        "callType", req.getCallType(),
-                        "callerName", callerName,
-                        "callerPic", callerPic
-                )
-        );
-
-        /* ---------------------------------------------------------
-         * 6. Response to Caller
-         * --------------------------------------------------------- */
-        Map<String, Object> result = new HashMap<>();
-        result.put("channelName", channelName);
-        result.put("rtcToken", rtcToken);
-        result.put("callType", req.getCallType());
-        result.put("callerName", callerName);
-        result.put("receiverName", receiverName);
-        result.put("callerPic", callerPic);
-        result.put("receiverPic", receiverPic);
-
-        /* ----------- IMPORTANT: DO NOT BLOCK CALL IF BUSY ----------- */
-        // Caller should always be allowed to call
-        // Receiver will handle busy situation only when ACCEPT new call
-
-        return new Response(1, "Call Started", result);
     }
+
+    return new Response(1, "User is busy", null);
+}
+
+    /* ---------------------------------------------------------
+     * 3. Normal Call Flow
+     * --------------------------------------------------------- */
+
+    log.setStatus("incoming");
+    callRepo.save(log);
+
+    User caller = userRepository.findById(callerId).orElse(null);
+    User receiver = userRepository.findById(receiverId).orElse(null);
+
+    String callerName = caller != null ? caller.getName() : "";
+    String receiverName = receiver != null ? receiver.getName() : "";
+    String callerPic = userService.getProfilePicUrl(callerId);
+    String receiverPic = userService.getProfilePicUrl(receiverId);
+
+    /* ---------------------------------------------------------
+     * 4. Send Push Notification
+     * --------------------------------------------------------- */
+
+    List<UserSession> activeSessions =
+            userSessionRepository.findByUserIdAndIsActive(receiverId, true);
+
+    for (UserSession s : activeSessions) {
+
+        if (s.getFirebaseToken() != null && !s.getFirebaseToken().trim().isEmpty()) {
+
+            fcm.sendIncomingCallNotification(
+                    callerId,
+                    receiverId,
+                    req.getCallType(),
+                    channelName,
+                    s.getFirebaseToken(),
+                    callerName,
+                    callerPic
+            );
+        }
+    }
+
+    /* ---------------------------------------------------------
+     * 5. WebSocket Event
+     * --------------------------------------------------------- */
+
+    ws.notifyUser(receiverId, "NEW_CALL_INCOMING",
+            Map.of(
+                    "fromUserId", callerId,
+                    "channelName", channelName,
+                    "callType", req.getCallType(),
+                    "callerName", callerName,
+                    "callerPic", callerPic
+            )
+    );
+
+    /* ---------------------------------------------------------
+     * 6. Response
+     * --------------------------------------------------------- */
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("channelName", channelName);
+    result.put("rtcToken", rtcToken);
+    result.put("callType", req.getCallType());
+    result.put("callerName", callerName);
+    result.put("receiverName", receiverName);
+    result.put("callerPic", callerPic);
+    result.put("receiverPic", receiverPic);
+
+    return new Response(1, "Call Started", result);
+}
     /* ---------------------------------------------------------
      * END / REJECT / MISSED
      * --------------------------------------------------------- */
@@ -211,13 +268,6 @@ public class CallServiceImpl implements CallService {
                 System.out.println("🚫 CALL_CANCELLED event sent to user " + otherUser);
 
                 ws.notifyUser(otherUser, "CALL_CANCELLED",
-                        Map.of("channelName", req.getChannelName(),"userName", req.getUserName()));
-                break;
-
-            case "accepted":
-                System.out.println("📞 CALL_ACCEPTED event sent to user " + otherUser);
-
-                ws.notifyUser(otherUser, "CALL_ACCEPTED",
                         Map.of("channelName", req.getChannelName(),"userName", req.getUserName()));
                 break;
 
@@ -296,29 +346,6 @@ public class CallServiceImpl implements CallService {
         groupRepo.save(gc);
 
         List<Map<String, Object>> tokenList = new ArrayList<>();
-
-        /* ---------------------------------------------------------
-         * 3. Create Agora tokens for all members
-         * --------------------------------------------------------- */
-        for (Integer uid : members) {
-
-            AgoraWebModel model = new AgoraWebModel();
-            model.setChannelName(channelName);
-            model.setUserId(uid);
-            model.setExpirationTimeInSeconds(7200);
-
-            String token = agoraTokenService.getRTCToken(model);
-
-            GroupCallMember m = new GroupCallMember();
-            m.setGroupCallId(gc.getId());
-            m.setUserId(uid);
-            m.setRtcToken(token);
-            m.setJoined(false);
-            groupMemberRepo.save(m);
-
-            tokenList.add(Map.of("userId", uid, "rtcToken", token));
-        }
-        
         
         List<String> memberNames = new ArrayList<>();
 
@@ -332,47 +359,142 @@ public class CallServiceImpl implements CallService {
         }
         String groupNames = buildGroupUserNames(memberNames);
         System.out.println("Check group names for group call " + groupNames);
+
         /* ---------------------------------------------------------
-         * 4. Notify all invited users (WebSocket + FCM)
+         * 3. Create Agora tokens for all members
          * --------------------------------------------------------- */
+
         for (Integer uid : members) {
 
-            if (!uid.equals(hostId)) {
+            AgoraWebModel model = new AgoraWebModel();
+            model.setChannelName(channelName);
+            model.setUserId(uid);
+            model.setExpirationTimeInSeconds(7200);
 
-                // WebSocket
-                ws.notifyUser(
-                        uid,
-                        "NEW_GROUP_CALL",
-                        Map.of(
-                            "channelName", channelName,
-                            "fromUserId", hostId,
-                            "fromUserName", req.getHostName(),
-                            "profilePicture", req.getHostPic(),
-                            "callType", req.getCallType(),
-                            "groupCallId", gc.getId(),
-                            "groupNames", groupNames
-                        )
-                );
+            String token = agoraTokenService.getRTCToken(model);
 
-                // FCM
+            // ALWAYS create new entity
+            GroupCallMember m = new GroupCallMember();
+            m.setGroupCallId(gc.getId());
+            m.setUserId(uid);
+            m.setRtcToken(token);
+
+            if (uid.equals(hostId)) {
+            	 System.out.println("Host is saved ");
+                // Host automatically joins
+                m.setJoined(true);
+                groupMemberRepo.save(m);
+
+            } else {
+
+                GroupCallMember lastCall =
+                        groupMemberRepo.findTopByUserIdAndLeaveTimeIsNullOrderByIdDesc(uid);
+                System.out.println("lastcall response     " + lastCall);
+
+                boolean missed = false;
+
+                if (lastCall != null &&
+                    Boolean.FALSE.equals(lastCall.getJoined())) {
+                    missed = true;
+                }
+                m.setJoined(false);            
+                groupMemberRepo.save(m);
+                tokenList.add(Map.of("userId", uid, "rtcToken", token));
+
+                /* ---------------------------------------------------------
+                 * GET USER DEVICES
+                 * --------------------------------------------------------- */
+
                 List<UserSession> sessions =
                         userSessionRepository.findByUserIdAndIsActive(uid, true);
 
-                for (UserSession s : sessions) {
-                    if (s.getFirebaseToken() != null) {
+                if (missed) {
+                	 GroupCallMember missedGroupCallMember = groupMemberRepo
+                             .findByGroupCallIdAndUserId(gc.getId(), uid);
+                	 missedGroupCallMember.setLeaveTime(LocalDateTime.now());
+                	 groupMemberRepo.save(missedGroupCallMember);
+                    /* ---------------------------------------------------------
+                     * MISSED GROUP CALL
+                     * --------------------------------------------------------- */
+                    ws.notifyUser(
+                            uid,
+                            "MISSED_GROUP_CALL",
+                            Map.of(
+                                    "groupCallId", gc.getId(),
+                                    "hostId", hostId,
+                                    "hostName", req.getHostName()
+                            )
+                    );
+                    for (UserSession s : sessions) {
+                        if (s.getFirebaseToken() != null) {
+                       fcm.sendMissedGroupCallNotification(
+                                    hostId,
+                                    uid,
+                                    req.getCallType(),
+                                    channelName,
+                                    s.getFirebaseToken(),
+                                    req.getHostName(),
+                                    req.getHostPic(),
+                                    groupNames,
+                                    gc.getId()
+                            );
+                        }
+                    }
 
-                        fcm.sendGroupCallNotification(
-                              hostId, uid,
-                              req.getCallType(),
-                              channelName,
-                              s.getFirebaseToken(),
-                              req.getHostName(),
-                              req.getHostPic(), groupNames, gc.getId()
-                        );
+                } else {
+
+                    /* ---------------------------------------------------------
+                     * NORMAL GROUP CALL
+                     * --------------------------------------------------------- */
+
+                    ws.notifyUser(
+                            uid,
+                            "NEW_GROUP_CALL",
+                            Map.of(
+                                    "channelName", channelName,
+                                    "fromUserId", hostId,
+                                    "fromUserName", req.getHostName(),
+                                    "profilePicture", req.getHostPic(),
+                                    "callType", req.getCallType(),
+                                    "groupCallId", gc.getId(),
+                                    "groupNames", groupNames
+                            )
+                    );
+
+                    for (UserSession s : sessions) {
+
+                        if (s.getFirebaseToken() != null) {                      	
+                            fcm.sendGroupCallNotification(
+                                    hostId,
+                                    uid,
+                                    req.getCallType(),
+                                    channelName,
+                                    s.getFirebaseToken(),
+                                    req.getHostName(),
+                                    req.getHostPic(),
+                                    groupNames,
+                                    gc.getId()
+                            );
+                        }
                     }
                 }
             }
         }
+        
+        
+        /* ---------------------------------------------------------
+         * 4. Notify all invited users (WebSocket + FCM)
+         * --------------------------------------------------------- */
+ 
+        /* ---------------------------------------------------------
+         * MISSED GROUP CALL
+         * --------------------------------------------------------- */
+
+
+        /* ---------------------------------------------------------
+         * NORMAL GROUP CALL
+         * --------------------------------------------------------- */
+  
 
         /* ---------------------------------------------------------
          * 5. Return response
@@ -683,4 +805,17 @@ public class CallServiceImpl implements CallService {
             e.printStackTrace();
         }
     }
+	@Override
+	public Response acceptOneToOne(StartCallRequest request) {
+		System.out.println("Channel name "+ request.getChannelName());
+		 CallLog log = callRepo.findByChannelName(request.getChannelName());
+	        if (log == null) {
+	            System.out.println("Invalid channel: " + request.getChannelName());
+	            return new Response(-1, "Invalid channel", null);
+	        }
+	        
+	    log.setStatus("accepted");
+	    callRepo.save(log);
+	    return new Response(1,"Accept the call", null);
+	}
 }
