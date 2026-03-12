@@ -635,7 +635,20 @@ public AuditionCompanyDetails updateVerificationStatus(
 				+ "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>Access Key:</b> " + accessKey + "</p>"
 				+ "<p>Use this key to log in and manage your assigned company roles.</p>";
-		mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
+		String assignEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(assignedUser.getSecondaryMailPermission()) 
+		        && assignedUser.getSecondaryEmail() != null 
+		        && !assignedUser.getSecondaryEmail().isEmpty()) {
+
+			assignEmailToSend = assignedUser.getSecondaryEmail(); 
+
+		} else {
+			assignEmailToSend = assignedUser.getEmail(); 
+		}
+
+		mailNotification.sendEmail(assignedUser.getName(), assignEmailToSend, assignedSubject, assignedContent);
 
 		// Email to Owner
 		String ownerSubject = "Access Assigned Successfully";
@@ -643,7 +656,20 @@ public AuditionCompanyDetails updateVerificationStatus(
 				+ "for your company <b>" + company.getCompanyName() + "</b>.</p>"
 				+ "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>Access Key:</b> " + accessKey + "</p>";
-		mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
+		
+		String ownerEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(owner.getSecondaryMailPermission()) 
+		        && owner.getSecondaryEmail() != null 
+		        && !owner.getSecondaryEmail().isEmpty()) {
+
+			ownerEmailToSend = owner.getSecondaryEmail(); 
+
+		} else {
+			ownerEmailToSend = owner.getEmail(); 
+		}
+		mailNotification.sendEmail(owner.getName(), ownerEmailToSend, ownerSubject, ownerContent);
 	}
 
 	public AuditionUserCompanyRoleDTO validateCompanyAccessByFilmHookId(
@@ -912,7 +938,20 @@ public AuditionCompanyDetails updateVerificationStatus(
 		String assignedContent = "<p>Your access details for company <b>" + company.getCompanyName() + "</b> have been updated.</p>"
 				+ "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>New Access Key:</b> " + accessKey + "</p>";
-		mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
+		String assignEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(assignedUser.getSecondaryMailPermission()) 
+		        && assignedUser.getSecondaryEmail() != null 
+		        && !assignedUser.getSecondaryEmail().isEmpty()) {
+
+			assignEmailToSend = assignedUser.getSecondaryEmail(); 
+
+		} else {
+			assignEmailToSend = assignedUser.getEmail(); 
+		}
+
+		mailNotification.sendEmail(assignedUser.getName(), assignEmailToSend, assignedSubject, assignedContent);
 
 		// Email to Owner
 		String ownerSubject = "Access Updated Successfully";
@@ -920,7 +959,20 @@ public AuditionCompanyDetails updateVerificationStatus(
 				+ "in your company <b>" + company.getCompanyName() + "</b>.</p>"
 				+ "<p><b>Updated Designation:</b> " + designation + "</p>"
 				+ "<p><b>Updated Access Key:</b> " + accessKey + "</p>";
-		mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
+		
+		String ownerEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(owner.getSecondaryMailPermission()) 
+		        && owner.getSecondaryEmail() != null 
+		        && !owner.getSecondaryEmail().isEmpty()) {
+
+			ownerEmailToSend = owner.getSecondaryEmail(); 
+
+		} else {
+			ownerEmailToSend = owner.getEmail(); 
+		}
+		mailNotification.sendEmail(owner.getName(), ownerEmailToSend, ownerSubject, ownerContent);
 	}
 	
 	

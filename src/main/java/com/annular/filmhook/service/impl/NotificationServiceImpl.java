@@ -83,7 +83,18 @@ public class NotificationServiceImpl implements NotificationService {
 				String subject = "FilmHook - Booking Request";
 				String mailContent = "<p><b>" + bookedBy.getName() + "</b> requested your dates from <b>" + savedBookingRequest.getFromDate() + "</b> to <b>" + savedBookingRequest.getToDate() + "</b>."
 						+ "<br>Please check the FilmHook app notifications to confirm or reject the request.</p>";
-				mailNotification.sendEmailAsync(bookedUser.getName(), bookedUser.getEmail(), subject, mailContent);
+				String EmailToSend;
+				// check permission
+				if (Boolean.TRUE.equals(bookedUser.getSecondaryMailPermission()) 
+				        && bookedUser.getSecondaryEmail() != null 
+				        && !bookedUser.getSecondaryEmail().isEmpty()) {
+
+					EmailToSend = bookedUser.getSecondaryEmail(); 
+
+				} else {
+					EmailToSend =bookedUser.getEmail(); 
+				}
+				mailNotification.sendEmailAsync(bookedUser.getName(), EmailToSend, subject, mailContent);
 
 				// Saving App Notifications
 				NotificationWebModel notificationWebModel = NotificationWebModel.builder()

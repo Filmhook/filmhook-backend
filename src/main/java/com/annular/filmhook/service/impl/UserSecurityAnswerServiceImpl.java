@@ -410,14 +410,25 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 				+ "<p>This verification code is valid for <b>2 minutes</b>.</p>"
 				+ "<p>If this wasn’t you, please secure your account immediately.</p>";
 
+		String emailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(user.getSecondaryMailPermission()) 
+		        && user.getSecondaryEmail() != null 
+		        && !user.getSecondaryEmail().isEmpty()) {
+
+		    emailToSend = user.getSecondaryEmail(); 
+
+		} else {
+		    emailToSend = user.getEmail(); 
+		}
 
 		mailNotification.sendEmailSync(
-				user.getName(),
-				user.getEmail(),
-				subject,
-				content
-				);
-
+		        user.getName(),
+		        emailToSend,
+		        subject,
+		        content
+		);
 		return new Response(1, "OTP sent successfully", null);
 	}
 
@@ -492,9 +503,22 @@ public class UserSecurityAnswerServiceImpl implements UserSecurityAnswerService{
 					"<p>Your password was changed successfully.</p>"
 							+ "<p><b>Time:</b> " + LocalDateTime.now() + "</p>"
 							+ "<p>If this was not you, secure your account immediately.</p>";
+			
+			String emailToSend;
+
+			// check permission
+			if (Boolean.TRUE.equals(user.getSecondaryMailPermission()) 
+			        && user.getSecondaryEmail() != null 
+			        && !user.getSecondaryEmail().isEmpty()) {
+
+			    emailToSend = user.getSecondaryEmail(); 
+
+			} else {
+			    emailToSend = user.getEmail(); 
+			}
 			mailNotification.sendEmailAsync(
 					user.getName(),
-					user.getEmail(),
+					emailToSend,
 					subject,
 					content
 					);

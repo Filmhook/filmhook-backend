@@ -98,4 +98,7 @@ public interface UserService {
 	Optional<Location> saveUserLocation(LocationWebModel locationWebModel);
 	
 	List<Map<String, Object>> findNearUsers(Integer userId,int pageNo, int pageSize, Double range );
+	
+	String updateSecondaryMailPermission(Integer userId, UserWebModel dto);
+	
 }

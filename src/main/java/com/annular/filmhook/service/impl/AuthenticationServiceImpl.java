@@ -558,6 +558,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			}
 
 			String newEmail = userWebModel.getSecondaryEmail();
+	        boolean emailExists = userRepository.existsByEmailOrSecondaryEmail(newEmail, newEmail);
+
+	        if (emailExists) {
+	            return ResponseEntity.ok(new Response(-1, "This email is already in use. Please use another email.", null));
+	        }
+			
 			user.setSecondaryEmail(newEmail);
 			userRepository.save(user);
 

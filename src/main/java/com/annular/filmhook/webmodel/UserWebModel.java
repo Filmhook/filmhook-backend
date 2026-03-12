@@ -151,5 +151,6 @@ public class UserWebModel {
     
     private String deviceName;
     private String ipAddress;
+    private Boolean secondaryMailPermission;
 
 }

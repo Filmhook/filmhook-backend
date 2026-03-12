@@ -761,10 +761,22 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					+ "</table>"
 					+ "<p>Please keep this information for your records.</p>"
 					+ "</body></html>";
+			
+			String EmailToSend;
+			// check permission
+			if (Boolean.TRUE.equals(payment.getUser().getSecondaryMailPermission()) 
+			        && payment.getUser().getSecondaryEmail() != null 
+			        && !payment.getUser().getSecondaryEmail().isEmpty()) {
 
+				EmailToSend = payment.getUser().getSecondaryEmail(); 
+
+			} else {
+				EmailToSend =payment.getUser().getEmail(); 
+			}
+			
 			mailNotification.sendEmailWithAttachment(
 					payment.getUser().getName(),
-					payment.getUser().getEmail(),
+					EmailToSend,
 					subject,
 					content,
 					invoicePdf,
@@ -942,10 +954,21 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					+ "border-radius:4px;'>🔄 Retry Payment</a></p>"
 					+ "<p>If the amount was deducted, it will be refunded by your bank.</p>"
 					+ "</body></html>";
+			String EmailToSend;
+			// check permission
+			if (Boolean.TRUE.equals(payment.getUser().getSecondaryMailPermission()) 
+			        && payment.getUser().getSecondaryEmail() != null 
+			        && !payment.getUser().getSecondaryEmail().isEmpty()) {
 
+				EmailToSend = payment.getUser().getSecondaryEmail(); 
+
+			} else {
+				EmailToSend =payment.getUser().getEmail(); 
+			}
+			
 			mailNotification.sendEmail(
 					payment.getUser().getName(),
-					payment.getUser().getEmail(),
+					EmailToSend,
 					subject,
 					content
 					);
@@ -1156,11 +1179,24 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				+ "<p>If you have any questions or need assistance, feel free to contact our support team.</p>"
 
             + "</body></html>";
+	
 
 		try {
+			
+			String EmailToSend;
+			// check permission
+			if (Boolean.TRUE.equals(payment.getUser().getSecondaryMailPermission()) 
+			        && payment.getUser().getSecondaryEmail() != null 
+			        && !payment.getUser().getSecondaryEmail().isEmpty()) {
+
+				EmailToSend = payment.getUser().getSecondaryEmail(); 
+
+			} else {
+				EmailToSend =payment.getUser().getEmail(); 
+			}
 			mailNotification.sendEmail(
 					payment.getUser().getName(),
-					payment.getUser().getEmail(),
+					EmailToSend,
 					subject,
 					content
 					);
