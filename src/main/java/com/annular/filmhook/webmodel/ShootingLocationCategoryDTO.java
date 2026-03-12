@@ -10,5 +10,6 @@ import lombok.Data;
 public class ShootingLocationCategoryDTO {
 	   private Integer id;
 	    private String name;
+	    private String image;
 //	    private List <ShootingLocationSubcategoryDTO> subcategories;
 }

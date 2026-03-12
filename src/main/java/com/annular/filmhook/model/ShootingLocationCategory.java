@@ -46,6 +46,9 @@ public class ShootingLocationCategory {
 	@JsonIgnore
 	private ShootingLocationTypes type;
 	
+	@Column(name="imageUrl")
+	private String imageUrl;
+	
 	   @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	   @JsonManagedReference
 	    private List<ShootingLocationSubcategory> subcategories;

@@ -7,4 +7,6 @@ public class StartCallRequest {
     private Integer callerId;
     private Integer receiverId;
     private String callType;   // audio | video
+    private String channelName;
+     
 }
