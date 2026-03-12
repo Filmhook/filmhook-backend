@@ -257,7 +257,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.map(category -> ShootingLocationCategoryDTO.builder()
 							.id(category.getId())
 							.name(category.getName())
-							.image(category.getImageUrl())
+							.imageUrl(category.getImageUrl())
 							.build())
 					.collect(Collectors.toList());
 
@@ -1987,7 +1987,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					? ShootingLocationCategoryDTO.builder()
 							.id(property.getCategory().getId())
 							.name(categoryMap.get(property.getCategory().getId()).getName())
-							.image(property.getCategory().getImageUrl())
+							.imageUrl(property.getCategory().getImageUrl())
 							.build()
 							: null;
 

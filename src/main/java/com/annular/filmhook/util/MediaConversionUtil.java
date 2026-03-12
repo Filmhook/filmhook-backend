@@ -150,7 +150,6 @@ public class MediaConversionUtil {
 
 	        MultimediaObject multimediaObject = new MultimediaObject(file);
 	        long durationMillis = multimediaObject.getInfo().getDuration();
-
 	        return durationMillis / 1000; 
 	    } catch (Exception e) {
 	        e.printStackTrace();

@@ -105,7 +105,7 @@ public class ShootingLocationConverter {
 	        dto.setCategory(ShootingLocationCategoryDTO.builder()
 	                .id(e.getCategory().getId())
 	                .name(e.getCategory().getName())
-	                .image(e.getCategory().getImageUrl())
+	                .imageUrl(e.getCategory().getImageUrl())
 	                .build());
 	        dto.setCategoryId(e.getCategory().getId());
 	    }
