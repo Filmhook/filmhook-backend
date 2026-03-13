@@ -17,21 +17,8 @@ import ws.schild.jave.info.VideoSize;
 
 public class MediaConversionUtil {
 
-	
-	private static final String CWEBP_PATH;
-
-	static {
-	    String os = System.getProperty("os.name").toLowerCase();
-	    if (os.contains("win")) {
-	        CWEBP_PATH = "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe";
-	    } else if (os.contains("mac")) {
-	        CWEBP_PATH = "/usr/local/bin/cwebp";
-	    } else {
-	        CWEBP_PATH = "/usr/bin/cwebp";
-	    }
-	}
-
-	
+	//private static final String CWEBP_PATH = "/usr/bin/cwebp";
+		  private static final String CWEBP_PATH = "C:\\Program Files\\webpUtil\\libwebp-1.5.0-windows-x64\\bin\\cwebp.exe";
 	private static final String MAGICK_PATH = "/usr/bin/convert"; 
 	private static final List<String> HEIC_FORMATS =
 			Arrays.asList("heic", "heif", "avif");
@@ -102,18 +89,10 @@ public class MediaConversionUtil {
 	//vedio Conversion
 
 	public static void convertToWebM(String inputPath, String outputPath) throws IOException, InterruptedException {
-		
-		String ffmpegPath;
-		
-		String os = System.getProperty("os.name").toLowerCase();
+		 String ffmpegPath = "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 
-	    if (os.contains("win")) {
-	    	ffmpegPath= "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
-	    } else if (os.contains("mac")) {
-	    	ffmpegPath= "/usr/local/bin/ffmpeg";
-	    } else {
-	    	ffmpegPath= "/usr/bin/ffmpeg";
-	    }
+		//String ffmpegPath= "/usr/bin/ffmpeg";
+
 
 		ProcessBuilder builder = new ProcessBuilder(
 				ffmpegPath,

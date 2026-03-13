@@ -346,4 +346,7 @@ public class User {
 
 	@Column(name = "security_otp_verified")
 	private Boolean securityOtpVerified;
+	
+	@Column(name = "secondary_mail_permission")
+	private Boolean secondaryMailPermission;
 }

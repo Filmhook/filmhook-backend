@@ -271,6 +271,7 @@ public class UserServiceImpl implements UserService {
 		userWebModel.setWorkCategory(user.getWorkCategory());
 		userWebModel.setVerified(user.getVerified());
 		userWebModel.setSecondaryEmail(user.getSecondaryEmail());
+		userWebModel.setSecondaryMailPermission(user.getSecondaryMailPermission());
 		userWebModel.setStatus(user.getStatus());
 
 		userWebModel.setCreatedBy(user.getCreatedBy());
@@ -2025,4 +2026,22 @@ public class UserServiceImpl implements UserService {
 			return false;
 		}
 	}
+		
+	@Override
+	 public String updateSecondaryMailPermission(Integer userId, UserWebModel dto) {
+
+	        User user = userRepository.findById(userId)
+	                .orElseThrow(() -> new RuntimeException("User not found"));
+
+	        // Check verified condition
+	        if (user.getVerified() == null || !user.getVerified()|| user.getSecondaryEmail() == null || user.getSecondaryEmail().isEmpty()) {
+	            throw new RuntimeException("Please add and verify secondary email before updating permission.");
+	        }
+
+	        user.setSecondaryMailPermission(dto.getSecondaryMailPermission());
+
+	        userRepository.save(user);
+
+	        return "Secondary mail permission updated successfully";
+	    }
 }

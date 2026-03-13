@@ -257,6 +257,7 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.map(category -> ShootingLocationCategoryDTO.builder()
 							.id(category.getId())
 							.name(category.getName())
+							.image(category.getImageUrl())
 							.build())
 					.collect(Collectors.toList());
 
@@ -280,8 +281,6 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					.map(subcategory -> ShootingLocationSubcategoryDTO.builder()
 							.id(subcategory.getId())
 							.name(subcategory.getName())
-							.description(subcategory.getDescription())
-							.imageUrl(subcategory.getImageUrl())
 							.build())
 					.collect(Collectors.toList());
 
@@ -1988,15 +1987,14 @@ public class ShootingLocationServiceImpl implements ShootingLocationService {
 					? ShootingLocationCategoryDTO.builder()
 							.id(property.getCategory().getId())
 							.name(categoryMap.get(property.getCategory().getId()).getName())
+							.image(property.getCategory().getImageUrl())
 							.build()
 							: null;
 
 			ShootingLocationSubcategoryDTO subcategoryDTO = (property.getSubCategory() != null && subcategoryMap.containsKey(property.getSubCategory().getId()))
 					? ShootingLocationSubcategoryDTO.builder()
 							.id(property.getSubCategory().getId())
-							.name(subcategoryMap.get(property.getSubCategory().getId()).getName())
-							.description(subcategoryMap.get(property.getSubCategory().getId()).getDescription())
-							.imageUrl(subcategoryMap.get(property.getSubCategory().getId()).getImageUrl())
+							.name(subcategoryMap.get(property.getSubCategory().getId()).getName())						
 							.build()
 							: null;
 
@@ -2830,15 +2828,26 @@ public ResponseEntity<Response> handleShootingLocationPaymentSuccess(String txni
 	    String mail = buildClientBookingMail(payment, booking, dto);
 
 	    byte[] pdf = generateInvoicePdf(payment, booking);
+		String EmailToSend;
+		// check permission
+		if (Boolean.TRUE.equals(booking.getClient().getSecondaryMailPermission()) 
+		        && 	booking.getClient().getSecondaryEmail() != null 
+		        && !	booking.getClient().getSecondaryEmail().isEmpty()) {
 
+			EmailToSend = booking.getClient().getSecondaryEmail(); 
+
+		} else {
+			EmailToSend =booking.getClient().getEmail(); 
+		}
 	    mailNotification.sendEmailWithAttachment(
 	            payment.getFullName(),
-	            payment.getEmail(),
+	            EmailToSend,
 	            "Shooting Location Booking Confirmed",
 	            mail,
 	            pdf,
 	            "Invoice_" + payment.getTxnid() + ".pdf");
 	}
+	
 	private void sendOwnerBookingEmail(
 	        Payments payment,
 	        ShootingLocationBooking booking) {
@@ -2848,10 +2857,20 @@ public ResponseEntity<Response> handleShootingLocationPaymentSuccess(String txni
 	    if (owner == null || owner.getEmail() == null) return;
 
 	    String mail = buildOwnerBookingMail(payment, booking);
+		String EmailToSend;
+		// check permission
+		if (Boolean.TRUE.equals(owner.getSecondaryMailPermission()) 
+		        && owner.getSecondaryEmail() != null 
+		        && !owner.getSecondaryEmail().isEmpty()) {
 
+			EmailToSend = owner.getSecondaryEmail(); 
+
+		} else {
+			EmailToSend =owner.getEmail(); 
+		}
 	    mailNotification.sendEmail(
 	            owner.getFirstName(),
-	            owner.getEmail(),
+	            EmailToSend,
 	            "New Booking for Your Property",
 	            mail);
 	}
@@ -3068,11 +3087,21 @@ private String buildOwnerBookingMail(Payments payment, ShootingLocationBooking b
 							+ "<p style='margin-top:12px;color:#556'>If you need help, contact <a href='mailto:support@film-hookapps.com'>support@film-hookapps.com</a>.</p>"
 							+ "</div></body></html>";
 
+			String EmailToSend;
+			// check permission
+			if (Boolean.TRUE.equals(booking.getClient().getSecondaryMailPermission()) 
+			        && 	booking.getClient().getSecondaryEmail() != null 
+			        && !	booking.getClient().getSecondaryEmail().isEmpty()) {
 
+				EmailToSend = booking.getClient().getSecondaryEmail(); 
+
+			} else {
+				EmailToSend =booking.getClient().getEmail(); 
+			}
 			// 5️⃣ Send failure email
 			mailNotification.sendEmail(
 					payment.getFullName(),
-					payment.getEmail(),
+					EmailToSend,
 					"Shooting Location Payment Failed ❌",
 					mailContent
 					);
@@ -3786,10 +3815,20 @@ private String buildOwnerBookingMail(Payments payment, ShootingLocationBooking b
 	                            + "<p>Your earnings will be credited to your <b>FilmHook Wallet within 2–7 business days</b>.</p>"
 	                            + "<p>Thank you for hosting on <b>FilmHook</b>.</p>"
 	                            + "</div>";
+	    		String EmailToSend;
+				// check permission
+				if (Boolean.TRUE.equals(owner.getSecondaryMailPermission()) 
+				        && owner.getSecondaryEmail() != null 
+				        && !owner.getSecondaryEmail().isEmpty()) {
 
+					EmailToSend = owner.getSecondaryEmail(); 
+
+				} else {
+					EmailToSend =owner.getEmail(); 
+				}
 	            mailNotification.sendEmailAsync(
 	                    owner.getName(),
-	                    owner.getEmail(),
+	                    EmailToSend,
 	                    subject,
 	                    mailContent
 	            );
@@ -4990,10 +5029,20 @@ private String buildOwnerBookingMail(Payments payment, ShootingLocationBooking b
 						"<p>Your One-Time Password (OTP) to start the shoot is:</p>" +
 						"<h2 style='color:#2c7be5;'>" + otp + "</h2>" +
 						"<p>Please share this OTP with the property owner for verification.</p>";
+		String EmailToSend;
+		// check permission
+		if (Boolean.TRUE.equals(booking.getClient().getSecondaryMailPermission()) 
+		        && 	booking.getClient().getSecondaryEmail() != null 
+		        && !	booking.getClient().getSecondaryEmail().isEmpty()) {
 
+			EmailToSend = booking.getClient().getSecondaryEmail(); 
+
+		} else {
+			EmailToSend =booking.getClient().getEmail(); 
+		}
 		mailNotification.sendEmailSync(
 				booking.getClient().getName(),
-				booking.getClient().getEmail(),
+				EmailToSend,
 				subject,
 				content
 				);
@@ -5044,10 +5093,20 @@ private String buildOwnerBookingMail(Payments payment, ShootingLocationBooking b
 				"<p>Your shooting session has been successfully verified by the property owner.</p>" +
 						"<p><b>Booking Code:</b> " + booking.getBookingCode() + "</p>" +
 						"<p>The shoot has now officially started.</p>";
+		String EmailToSend;
+		// check permission
+		if (Boolean.TRUE.equals(booking.getClient().getSecondaryMailPermission()) 
+		        && 	booking.getClient().getSecondaryEmail() != null 
+		        && !	booking.getClient().getSecondaryEmail().isEmpty()) {
 
+			EmailToSend = booking.getClient().getSecondaryEmail(); 
+
+		} else {
+			EmailToSend =booking.getClient().getEmail(); 
+		}
 		mailNotification.sendEmailSync(
 				booking.getClient().getName(),
-				booking.getClient().getEmail(),
+				EmailToSend,
 				subject,
 				content
 				);
@@ -5098,10 +5157,20 @@ private String buildOwnerBookingMail(Payments payment, ShootingLocationBooking b
 						"<p>Your OTP to complete the shoot is:</p>" +
 						"<h2 style='color:#2c7be5'>" + otp + "</h2>" +
 						"<p>Please share this OTP with the property owner.</p>";
+		String EmailToSend;
+		// check permission
+		if (Boolean.TRUE.equals(booking.getClient().getSecondaryMailPermission()) 
+		        && 	booking.getClient().getSecondaryEmail() != null 
+		        && !	booking.getClient().getSecondaryEmail().isEmpty()) {
 
+			EmailToSend = booking.getClient().getSecondaryEmail(); 
+
+		} else {
+			EmailToSend =booking.getClient().getEmail(); 
+		}
 		mailNotification.sendEmailSync(
 				booking.getClient().getName(),
-				booking.getClient().getEmail(),
+				EmailToSend,
 				subject,
 				content
 				);
@@ -5143,10 +5212,20 @@ private String buildOwnerBookingMail(Payments payment, ShootingLocationBooking b
 						"<p><b>Booking Code:</b> " + booking.getBookingCode() + "</p>" +
 						"<p>Please rate the property:</p>" +
 						"<a href='" + ratingLink + "' style='padding:10px 15px;background:#2c7be5;color:white;text-decoration:none;border-radius:5px;'>Rate Property</a>";
+		String EmailToSend;
+		// check permission
+		if (Boolean.TRUE.equals(booking.getClient().getSecondaryMailPermission()) 
+		        && 	booking.getClient().getSecondaryEmail() != null 
+		        && !	booking.getClient().getSecondaryEmail().isEmpty()) {
 
+			EmailToSend = booking.getClient().getSecondaryEmail(); 
+
+		} else {
+			EmailToSend =booking.getClient().getEmail(); 
+		}
 		mailNotification.sendEmailSync(
 				booking.getClient().getName(),
-				booking.getClient().getEmail(),
+				EmailToSend,
 				subject,
 				content
 				);

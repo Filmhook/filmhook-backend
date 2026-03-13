@@ -17,4 +17,10 @@ public interface FcmService {
 	void sendGroupCallNotification(Integer hostId, Integer uid, String callType, String channel, String firebaseToken,
 			String hostName, String hostPic, String groupNames, Integer groupId);
 
+	void sendMissedCallNotification(Integer callerId, Integer receiverId, String callerName, String callerPic,
+			String token);
+
+	void sendMissedGroupCallNotification(Integer hostId, Integer receiverId, String callType, String channelName,
+			String deviceToken, String hostName, String hostPic, String groupNames, Integer groupId);
+
 }

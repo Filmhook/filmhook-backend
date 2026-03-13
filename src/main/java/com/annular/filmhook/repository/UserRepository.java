@@ -266,4 +266,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 	
 	 Optional<User> findByEmailAndStatusTrueAndPermanentDeleteFalse(String email);
 
+	 boolean existsByEmailOrSecondaryEmail(String email, String secondaryEmail);
+	 
+	 
 }

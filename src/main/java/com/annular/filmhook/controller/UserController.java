@@ -575,4 +575,15 @@ public class UserController {
     }
  
     
+    
+    @PutMapping("/secondary-mail-permission")
+    public Response updateSecondaryMailPermission(
+            @RequestBody UserWebModel dto) {
+
+        return new Response(-1,
+                userService.updateSecondaryMailPermission(dto.getUserId(), dto),
+                null);
+    }
+
+    
 }

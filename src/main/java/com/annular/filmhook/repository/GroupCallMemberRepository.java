@@ -26,5 +26,10 @@ public interface GroupCallMemberRepository extends JpaRepository<GroupCallMember
 	GroupCallMember findByGroupCallIdAndUserId(@Param("groupCallId") Integer groupCallId,
 	                                           @Param("userId") Integer userId);
 
+	GroupCallMember findTopByUserIdOrderByIdDesc(Integer uid);
+	
+	GroupCallMember findTopByUserIdAndLeaveTimeIsNullOrderByIdDesc(Integer userId);
+
+
 
 }

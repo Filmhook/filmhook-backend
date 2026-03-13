@@ -19,4 +19,8 @@ public interface CallLogRepository extends JpaRepository<CallLog, Integer> {
     List<CallLog> findCallHistory(@Param("userId") Integer userId);
 
     CallLog findByChannelName(String channelName);
+    
+    boolean existsByReceiverIdAndStatusIn(Integer receiverId, List<String> status);
+    
+    
 }

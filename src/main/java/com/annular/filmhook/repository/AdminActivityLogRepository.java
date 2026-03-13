@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import com.annular.filmhook.model.AdminActivityLog;
 import com.annular.filmhook.webmodel.AdminUserRowDTO;
 import com.annular.filmhook.webmodel.AuditionRowDTO;
+import com.annular.filmhook.webmodel.ShootingLocationRowDTO;
 
 @Repository
 public interface AdminActivityLogRepository extends JpaRepository<AdminActivityLog, Integer> {
@@ -47,14 +48,14 @@ public interface AdminActivityLogRepository extends JpaRepository<AdminActivityL
 
     
     @Query("SELECT new com.annular.filmhook.webmodel.AuditionRowDTO(" +
-            "a.targetId, " +  // <-- FIX: return AdminActivityLog.targetId
+            "ac.id, " +
             "u.name, " +
             "FUNCTION('DATE_FORMAT', a.createdOn, '%d/%m/%Y'), " +
             "a.actionType, " +
-            "ac.companyName, ac.companyType, ac.verificationStatus) " +
+            "ac.companyName, ac.companyType, ac.govtVerified, ac.verificationStatus) " +
             "FROM AdminActivityLog a " +
-            "JOIN AuditionCompanyDetails ac ON ac.user.id = a.targetId " +
-            "JOIN User u ON u.id = a.targetId " +
+            "JOIN AuditionCompanyDetails ac ON ac.id = a.targetId " +
+            "JOIN User u ON u.id = ac.user.id " +
             "WHERE a.adminId = :adminId " +
             "AND a.targetType = 'AUDITION' " +
             "ORDER BY a.createdOn DESC")
@@ -65,5 +66,27 @@ public interface AdminActivityLogRepository extends JpaRepository<AdminActivityL
             String targetType,
             Integer targetId
     );
-
+    @Query("SELECT new com.annular.filmhook.webmodel.ShootingLocationRowDTO(" +
+            "p.id, " +
+            "u.name, " +
+            "p.propertyName, " +
+            "c.name, " +
+            "CASE " +
+            " WHEN COALESCE(s.entireProperty,false) = true AND COALESCE(s.singleProperty,false) = true THEN 'Entire & Single Property' " +
+            " WHEN COALESCE(s.entireProperty,false) = true THEN 'Entire Property' " +
+            " WHEN COALESCE(s.singleProperty,false) = true THEN 'Single Property' " +
+            " ELSE 'N/A' END, " +
+            "u.userType, " +
+            "p.location, " +
+            "FUNCTION('DATE_FORMAT', a.createdOn,'%d/%m/%Y'), " +
+            "a.actionType) " +  
+            "FROM AdminActivityLog a " +
+            "JOIN ShootingLocationPropertyDetails p ON p.id = a.targetId " +
+            "JOIN p.user u " +
+            "LEFT JOIN p.category c " +
+            "LEFT JOIN p.subcategorySelection s " +
+            "WHERE a.adminId = :adminId " +
+            "AND a.targetType = 'SHOOTING_LOCATION' " +
+            "ORDER BY a.createdOn DESC")
+    List<ShootingLocationRowDTO> getShootingLocationRows(@Param("adminId") Integer adminId);
 }
