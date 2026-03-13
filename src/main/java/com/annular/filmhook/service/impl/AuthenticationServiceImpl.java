@@ -646,6 +646,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				attempt.setAttemptDate(LocalDateTime.now());
 				attemptRepository.save(attempt);
 				// OTP matches
+				user.setVerified(true);
 				user.setEmailOtp(null);
 				user.setSecondaryemailOtp(null);
 				userRepository.save(user);
@@ -728,7 +729,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				attempt.setAttemptDate(LocalDateTime.now());
 				attemptRepository.save(attempt);
 
-				user.setVerified(true);
+//				user.setVerified(true);
 				user.setSecondaryemailOtpCreatedOn(null);
 				userRepository.save(user);
 

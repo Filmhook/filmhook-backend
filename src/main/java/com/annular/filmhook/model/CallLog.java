@@ -28,4 +28,11 @@ public class CallLog {
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    
+    @Column(name = "deleted_for_caller")
+    private Boolean deletedForCaller = false;
+
+    @Column(name = "deleted_for_receiver")
+    private Boolean deletedForReceiver = false;
+    
 }

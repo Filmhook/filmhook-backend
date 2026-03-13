@@ -2,6 +2,7 @@ package com.annular.filmhook.service;
 
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.webmodel.CallHistoryDTO;
 import com.annular.filmhook.webmodel.EndCallRequest;
 import com.annular.filmhook.webmodel.GroupCallEndRequest;
 import com.annular.filmhook.webmodel.GroupCallInviteRequest;
@@ -32,6 +33,8 @@ public interface CallService {
 	Response getCallHistory(Integer userId);
 
 	Response acceptOneToOne(StartCallRequest request);
+	
+	Response clearCallHistory(CallHistoryDTO req);
 
 
 }

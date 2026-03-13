@@ -25,4 +25,6 @@ public class GroupCallMember {
 
     private LocalDateTime joinTime;
     private LocalDateTime leaveTime;
+    @Column(name = "deleted")
+    private Boolean deleted = false;
 }

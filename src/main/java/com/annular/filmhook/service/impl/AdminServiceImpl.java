@@ -635,6 +635,7 @@ public class AdminServiceImpl implements AdminService {
 	//	    }
 	//	}
 	@Override
+	@Transactional
 	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
 		// Check if userId is not null
 		if (Utility.isNullOrZero(userWebModel.getUserId())) return new Response(-1, "User ID must not be null", null);
