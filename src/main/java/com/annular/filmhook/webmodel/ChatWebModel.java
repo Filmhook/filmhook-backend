@@ -63,7 +63,7 @@ public class ChatWebModel {
 	private Double longitude;
 	private String locationAddress;
 	private ChatType chatType;
-
+private String messageStatus;
 
 	@Data
 	@AllArgsConstructor

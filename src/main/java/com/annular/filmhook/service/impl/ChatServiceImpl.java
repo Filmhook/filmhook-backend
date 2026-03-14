@@ -167,260 +167,491 @@ public class ChatServiceImpl implements ChatService {
 	//            return ResponseEntity.internalServerError().build();
 	//        }
 	//    }
-	@Override
-	public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
-		try {
-			logger.info("Save Message Method Start");
-
-			Integer userId = userDetails.userInfo().getId();
-			Optional<User> userOptional = userRepository.findById(userId);
-
-			if (userOptional.isPresent()) {    
-				User user = userOptional.get();
-
-				Chat.ChatBuilder chatBuilder = Chat.builder()
-						
-						.chatReceiverId(chatWebModel.getChatReceiverId())
-						.userAccountName(user.getName())
-						.chatSenderId(userId)
-						.userType(user.getUserType())
-						.timeStamp(new Date())
-						.senderChatIsActive(true)
-						.receiverChatIsActive(true)
-						.chatCreatedBy(userId)
-						.senderRead(true)
-						.receiverRead(false)
-						.chatCreatedOn(new Date())
-						.storyId(chatWebModel.getStoryId())
-						.replyType(chatWebModel.getStoryId() != null ? "story" : "normal")
-						.replyToMessageId(chatWebModel.getReplyToMessageId());
-
-				if (chatWebModel.getChatType() == ChatType.LOCATION) {
-
-				    chatBuilder
-				        .chatType(ChatType.LOCATION)
-				        .latitude(chatWebModel.getLatitude())
-				        .longitude(chatWebModel.getLongitude())
-				        .locationAddress(chatWebModel.getLocationAddress())
-				        .message(null); 
-
-				} else {
-
-				    chatBuilder
-				        .message(chatWebModel.getMessage());
-				}
-				
-				Chat chat = chatBuilder.build();
-				chatRepository.save(chat);
-
-				//optional
-				Chat replyMessage = null;
-				if (chatWebModel.getReplyToMessageId() != null) {
-					replyMessage = chatRepository.findById(chatWebModel.getReplyToMessageId())
-							.orElse(null);
-				}
-				// Save media files if present
-				if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
-					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-							.userId(chatWebModel.getUserId())
-							.category(MediaFileCategory.Chat)
-							.categoryRefId(chat.getChatId())
-							.files(chatWebModel.getFiles())
-							.build();
-
-					mediaFilesService.saveMediaFiles(fileInputWebModel, user);
-				}
-
-				Map<String, Object> wsPayload = new HashMap<>();
-				wsPayload.put("chatId", chat.getChatId());
-				wsPayload.put("chatSenderId", chat.getChatSenderId());
-				wsPayload.put("chatReceiverId", chat.getChatReceiverId());
-				wsPayload.put("message", chatWebModel.getMessage());
-				wsPayload.put("chatType", chatWebModel.getChatType());
-				wsPayload.put("latitude", chat.getLatitude());
-				wsPayload.put("longitude", chat.getLongitude());
-				wsPayload.put("locationAddress", chat.getLocationAddress());
-				wsPayload.put("timeStamp", chat.getTimeStamp());
-
-				// 🔥 Add media files
-				List<MediaFiles> chatFiles =
-				    mediaFileRepository.findByCategoryAndCategoryRefId(
-				        MediaFileCategory.Chat, chat.getChatId()
-				    );
-
-				if (!chatFiles.isEmpty()) {
-				    MediaFiles file = chatFiles.get(0);
-
-				    wsPayload.put("mediaUrl", s3Util.generateS3FilePath(file.getFilePath() + file.getFileType()));
-				    wsPayload.put("mediaType", file.getFileType()); // ".webp", ".webm"
-
-				    // Detect type (image/video)
-				    String fileType = file.getFileType().toLowerCase();
-				    if (fileType.contains("jpg") || fileType.contains("jpeg") || fileType.contains("png") || fileType.contains("webp")) {
-				        wsPayload.put("mediaCategory", "image");
-				    } else if (fileType.contains("mp4") || fileType.contains("mov") || fileType.contains("avi") || fileType.contains("webm")) {
-				        wsPayload.put("mediaCategory", "video");
-				    }
-
-				    // Optional thumbnail
-				    wsPayload.put("thumbnail", file.getThumbnailPath());
-				}
-				
-				  // Notify sender
-	            webSocketService.notifyChatUser(
-	                    chat.getChatReceiverId(),
-	                    "NEW_MESSAGE",
-	                    wsPayload
-	            );
-	            
-	         // 🔥 Notify chat list update for receiver
-	            webSocketService.notifyChatUser(
-	                chat.getChatReceiverId(),
-	                "CHAT_LIST_UPDATE",
-	                buildChatListUpdate(chat)
-	            );
-
-	            // 🔥 Also notify sender (to update own list)
+//	@Override
+//	public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
+//		try {
+//			logger.info("Save Message Method Start");
+//
+//			Integer userId = userDetails.userInfo().getId();
+//			Optional<User> userOptional = userRepository.findById(userId);
+//
+//			if (userOptional.isPresent()) {    
+//				User user = userOptional.get();
+//
+//				Chat.ChatBuilder chatBuilder = Chat.builder()
+//						
+//						.chatReceiverId(chatWebModel.getChatReceiverId())
+//						.userAccountName(user.getName())
+//						.chatSenderId(userId)
+//						.userType(user.getUserType())
+//						.timeStamp(new Date())
+//						.senderChatIsActive(true)
+//						.receiverChatIsActive(true)
+//						.chatCreatedBy(userId)
+//						.senderRead(true)
+//						.receiverRead(false)
+//					    .messageStatus("PENDING") 
+//						.chatCreatedOn(new Date())
+//						.storyId(chatWebModel.getStoryId())
+//						.replyType(chatWebModel.getStoryId() != null ? "story" : "normal")
+//						.replyToMessageId(chatWebModel.getReplyToMessageId());
+//
+//				if (chatWebModel.getChatType() == ChatType.LOCATION) {
+//
+//				    chatBuilder
+//				        .chatType(ChatType.LOCATION)
+//				        .latitude(chatWebModel.getLatitude())
+//				        .longitude(chatWebModel.getLongitude())
+//				        .locationAddress(chatWebModel.getLocationAddress())
+//				        .message(null); 
+//
+//				} else {
+//
+//				    chatBuilder
+//				        .message(chatWebModel.getMessage());
+//				}
+//				
+//				Chat chat = chatBuilder.build();
+//				chatRepository.save(chat);
+//				chat.setMessageStatus("SENT");
+//				chatRepository.save(chat);
+//				//optional
+//				Chat replyMessage = null;
+//				if (chatWebModel.getReplyToMessageId() != null) {
+//					replyMessage = chatRepository.findById(chatWebModel.getReplyToMessageId())
+//							.orElse(null);
+//				}
+//				// Save media files if present
+//				if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
+//					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+//							.userId(chatWebModel.getUserId())
+//							.category(MediaFileCategory.Chat)
+//							.categoryRefId(chat.getChatId())
+//							.files(chatWebModel.getFiles())
+//							.build();
+//
+//					mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+//				}
+//
+//				Map<String, Object> wsPayload = new HashMap<>();
+//				wsPayload.put("chatId", chat.getChatId());
+//				wsPayload.put("chatSenderId", chat.getChatSenderId());
+//				wsPayload.put("chatReceiverId", chat.getChatReceiverId());
+//				wsPayload.put("message", chatWebModel.getMessage());
+//				wsPayload.put("chatType", chatWebModel.getChatType());
+//				wsPayload.put("latitude", chat.getLatitude());
+//				wsPayload.put("longitude", chat.getLongitude());
+//				wsPayload.put("locationAddress", chat.getLocationAddress());
+//				wsPayload.put("timeStamp", chat.getTimeStamp());
+//
+//				// 🔥 Add media files
+//				List<MediaFiles> chatFiles =
+//				    mediaFileRepository.findByCategoryAndCategoryRefId(
+//				        MediaFileCategory.Chat, chat.getChatId()
+//				    );
+//
+//				if (!chatFiles.isEmpty()) {
+//				    MediaFiles file = chatFiles.get(0);
+//
+//				    wsPayload.put("mediaUrl", s3Util.generateS3FilePath(file.getFilePath() + file.getFileType()));
+//				    wsPayload.put("mediaType", file.getFileType()); // ".webp", ".webm"
+//
+//				    // Detect type (image/video)
+//				    String fileType = file.getFileType().toLowerCase();
+//				    if (fileType.contains("jpg") || fileType.contains("jpeg") || fileType.contains("png") || fileType.contains("webp")) {
+//				        wsPayload.put("mediaCategory", "image");
+//				    } else if (fileType.contains("mp4") || fileType.contains("mov") || fileType.contains("avi") || fileType.contains("webm")) {
+//				        wsPayload.put("mediaCategory", "video");
+//				    }
+//
+//				    // Optional thumbnail
+//				    wsPayload.put("thumbnail", file.getThumbnailPath());
+//				}
+//				
+//				  // Notify sender
 //	            webSocketService.notifyChatUser(
-//	                chat.getChatSenderId(),
+//	                    chat.getChatReceiverId(),
+//	                    "NEW_MESSAGE",
+//	                    wsPayload
+//	            );
+//	            
+//	            chat.setMessageStatus("DELIVERED");
+//	            chatRepository.save(chat);
+//	         // 🔥 Notify chat list update for receiver
+//	            webSocketService.notifyChatUser(
+//	                chat.getChatReceiverId(),
 //	                "CHAT_LIST_UPDATE",
 //	                buildChatListUpdate(chat)
 //	            );
+//
+//	            // 🔥 Also notify sender (to update own list)
+////	            webSocketService.notifyChatUser(
+////	                chat.getChatSenderId(),
+////	                "CHAT_LIST_UPDATE",
+////	                buildChatListUpdate(chat)
+////	            );
+//
+//				// ✅ Firebase Push Notification
+//				Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
+//				if (receiverOptional.isPresent()) {
+//					User receiver = receiverOptional.get();
+//					String deviceToken = receiver.getFirebaseDeviceToken();
+//
+//					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+//						String senderName = user.getName();
+//
+//						// 1️⃣ Get unread messages from this sender to this receiver
+//						List<String> unreadMessages = chatRepository
+//								.findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
+//
+//						String latestMessage;
+//						String imageUrl = null;
+//						String mediaType = "TEXT";
+//
+//						// After saving chat + media files
+//						List<MediaFiles> savedFiles = mediaFileRepository.findByCategoryAndCategoryRefId(
+//								MediaFileCategory.Chat, chat.getChatId());
+//
+//						if (!savedFiles.isEmpty()) {
+//							MediaFiles firstFile = savedFiles.get(0);
+//							imageUrl = firstFile.getFilePath();
+//							mediaType = firstFile.getFileType();
+//
+//							String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
+//
+//							if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg") 
+//									|| fileType.endsWith(".png") || fileType.endsWith(".webp")) {
+//
+//								latestMessage = "📷 Photo";
+//
+//							} else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov") 
+//									|| fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
+//
+//								latestMessage = "🎥 Video";
+//
+//							} else if (fileType.contains("post")) {
+//
+//								latestMessage = "📌 Shared Post";
+//
+//							} else {
+//
+//								latestMessage = "📎 Attachment";  
+//							}
+//
+//						} else {
+//						    if (chatWebModel.getChatType() == ChatType.LOCATION) {
+//						        latestMessage = "📍 Location";
+//						    } else {
+//						        latestMessage = chatWebModel.getMessage();
+//						    }
+//						}
+//
+//						// Add current latestMessage if not already present
+//						if (!unreadMessages.contains(latestMessage)) {
+//							unreadMessages.add(latestMessage);
+//						}
+//
+//						// 3️⃣ Combine all unread messages into a single string for payload
+//						String allUnread = String.join("||", unreadMessages);
+//
+//						try {
+//							// Build FCM Notification
+//							Notification.Builder notificationBuilder = Notification.builder()
+//									.setTitle(senderName)
+//									.setBody(latestMessage);
+//
+//							// If photo exists, add image URL to FCM notification
+//							if (imageUrl != null) {
+//								notificationBuilder.setImage(imageUrl);
+//							}
+//
+//							Notification notificationData = notificationBuilder.build();
+//
+//							// Android-specific notification settings
+//							AndroidNotification androidNotification = AndroidNotification.builder()
+//									.setIcon("ic_notification")
+//									.setColor("#00A2E8")
+//									.build();
+//
+//							AndroidConfig androidConfig = AndroidConfig.builder()
+//									.setNotification(androidNotification)
+//									.build();
+//
+//							// Build and send FCM message
+//							Message message = Message.builder()
+//									.setNotification(notificationData)
+//									.setAndroidConfig(androidConfig)
+//									.putData("chatId", String.valueOf(chat.getChatId()))
+//									.putData("type", "chat")
+//									.putData("profilePic", userService.getProfilePicUrl(userId))
+//									.putData("senderId", String.valueOf(user.getUserId()))
+//									.putData("senderName", senderName) 
+//									.putData("allUnread", allUnread)   
+//									.putData("userType", user.getUserType())
+//									.putData("adminReview", String.valueOf(user.getAdminReview()))
+//									.putData("groupKey", "filmhook_chat") 
+//									.putData("mediaType", mediaType)  
+//									.putData("mediaUrl", imageUrl != null ? imageUrl : "")
+//									.putData("chatType",
+//										    chat.getChatType() != null
+//										        ? chat.getChatType().name()
+//										        : "")
+//									.putData("latitude", chat.getLatitude() != null ? chat.getLatitude().toString() : "")
+//									.putData("longitude", chat.getLongitude() != null ? chat.getLongitude().toString() : "")
+//									.setToken(deviceToken)
+//									.build();
+//
+//							String response = FirebaseMessaging.getInstance().send(message);
+//							logger.info("Successfully sent push notification: " + response);
+//
+//						} catch (FirebaseMessagingException e) {
+//							logger.error("Failed to send push notification", e);
+//						}
+//
+//					} else {
+//						logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
+//					}
+//				}
+//				
+//
+//				Map<String, Object> response = new HashMap<>();
+//				response.put("chatId", chat.getChatId());
+//				return ResponseEntity.ok(new Response(1, "Success", response));
+//			} else {
+//				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Failed", "Sender user not found"));
+//			}
+//		} catch (Exception e) {
+//			logger.error("Error occurred while saving message", e);
+//			return ResponseEntity.internalServerError().body(new Response(0, "Failed", "An error occurred while saving message"));
+//		}	
+//	}
+	
+	@Override
+	public ResponseEntity<?> saveMessage(ChatWebModel chatWebModel) {
 
-				// ✅ Firebase Push Notification
-				Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
-				if (receiverOptional.isPresent()) {
-					User receiver = receiverOptional.get();
-					String deviceToken = receiver.getFirebaseDeviceToken();
+	    Chat chat = null;
 
-					if (deviceToken != null && !deviceToken.trim().isEmpty()) {
-						String senderName = user.getName();
+	    try {
 
-						// 1️⃣ Get unread messages from this sender to this receiver
-						List<String> unreadMessages = chatRepository
-								.findUnreadMessagesFromSender(userId, chatWebModel.getChatReceiverId());
+	        logger.info("Save Message Method Start");
 
-						String latestMessage;
-						String imageUrl = null;
-						String mediaType = "TEXT";
+	        Integer userId = userDetails.userInfo().getId();
+	        Optional<User> userOptional = userRepository.findById(userId);
 
-						// After saving chat + media files
-						List<MediaFiles> savedFiles = mediaFileRepository.findByCategoryAndCategoryRefId(
-								MediaFileCategory.Chat, chat.getChatId());
+	        if (!userOptional.isPresent()) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                    .body(new Response(0, "Failed", "Sender user not found"));
+	        }
 
-						if (!savedFiles.isEmpty()) {
-							MediaFiles firstFile = savedFiles.get(0);
-							imageUrl = firstFile.getFilePath();
-							mediaType = firstFile.getFileType();
+	        User user = userOptional.get();
 
-							String fileType = firstFile.getFileType() != null ? firstFile.getFileType().toLowerCase() : "";
+	        // 🔹 Fetch receiver early
+	        Optional<User> receiverOptional = userRepository.findById(chatWebModel.getChatReceiverId());
+	        User receiver = receiverOptional.orElse(null);
 
-							if (fileType.contains("image") || fileType.endsWith(".jpg") || fileType.endsWith(".jpeg") 
-									|| fileType.endsWith(".png") || fileType.endsWith(".webp")) {
+	        Chat.ChatBuilder chatBuilder = Chat.builder()
+	                .chatReceiverId(chatWebModel.getChatReceiverId())
+	                .userAccountName(user.getName())
+	                .chatSenderId(userId)
+	                .userType(user.getUserType())
+	                .timeStamp(new Date())
+	                .senderChatIsActive(true)
+	                .receiverChatIsActive(true)
+	                .chatCreatedBy(userId)
+	                .senderRead(true)
+	                .receiverRead(false)
+	                .messageStatus("PENDING")
+	                .chatCreatedOn(new Date())
+	                .storyId(chatWebModel.getStoryId())
+	                .replyType(chatWebModel.getStoryId() != null ? "story" : "normal")
+	                .replyToMessageId(chatWebModel.getReplyToMessageId());
 
-								latestMessage = "📷 Photo";
+	        if (chatWebModel.getChatType() == ChatType.LOCATION) {
 
-							} else if (fileType.contains("video") || fileType.endsWith(".mp4") || fileType.endsWith(".mov") 
-									|| fileType.endsWith(".avi") || fileType.endsWith(".webm")) {
+	            chatBuilder
+	                    .chatType(ChatType.LOCATION)
+	                    .latitude(chatWebModel.getLatitude())
+	                    .longitude(chatWebModel.getLongitude())
+	                    .locationAddress(chatWebModel.getLocationAddress())
+	                    .message(null);
 
-								latestMessage = "🎥 Video";
+	        } else {
 
-							} else if (fileType.contains("post")) {
+	            chatBuilder.message(chatWebModel.getMessage());
+	        }
 
-								latestMessage = "📌 Shared Post";
+	        chat = chatBuilder.build();
 
-							} else {
+	        // 🔹 Save chat initially
+	        chatRepository.save(chat);
 
-								latestMessage = "📎 Attachment";  
-							}
+	        chat.setMessageStatus("SENT");
+	        chatRepository.save(chat);
 
-						} else {
-						    if (chatWebModel.getChatType() == ChatType.LOCATION) {
-						        latestMessage = "📍 Location";
-						    } else {
-						        latestMessage = chatWebModel.getMessage();
-						    }
-						}
+	        /* ---------------------------------------------------------
+	           MEDIA FILE SAVE
+	        --------------------------------------------------------- */
 
-						// Add current latestMessage if not already present
-						if (!unreadMessages.contains(latestMessage)) {
-							unreadMessages.add(latestMessage);
-						}
+	        if (!Utility.isNullOrEmptyList(chatWebModel.getFiles())) {
 
-						// 3️⃣ Combine all unread messages into a single string for payload
-						String allUnread = String.join("||", unreadMessages);
+	            FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
+	                    .userId(chatWebModel.getUserId())
+	                    .category(MediaFileCategory.Chat)
+	                    .categoryRefId(chat.getChatId())
+	                    .files(chatWebModel.getFiles())
+	                    .build();
 
-						try {
-							// Build FCM Notification
-							Notification.Builder notificationBuilder = Notification.builder()
-									.setTitle(senderName)
-									.setBody(latestMessage);
+	            mediaFilesService.saveMediaFiles(fileInputWebModel, user);
+	        }
 
-							// If photo exists, add image URL to FCM notification
-							if (imageUrl != null) {
-								notificationBuilder.setImage(imageUrl);
-							}
+	        /* ---------------------------------------------------------
+	           WEBSOCKET PAYLOAD
+	        --------------------------------------------------------- */
 
-							Notification notificationData = notificationBuilder.build();
+	        Map<String, Object> wsPayload = new HashMap<>();
 
-							// Android-specific notification settings
-							AndroidNotification androidNotification = AndroidNotification.builder()
-									.setIcon("ic_notification")
-									.setColor("#00A2E8")
-									.build();
+	        wsPayload.put("chatId", chat.getChatId());
+	        wsPayload.put("chatSenderId", chat.getChatSenderId());
+	        wsPayload.put("chatReceiverId", chat.getChatReceiverId());
+	        wsPayload.put("message", chatWebModel.getMessage());
+	        wsPayload.put("chatType", chatWebModel.getChatType());
+	        wsPayload.put("latitude", chat.getLatitude());
+	        wsPayload.put("longitude", chat.getLongitude());
+	        wsPayload.put("locationAddress", chat.getLocationAddress());
+	        wsPayload.put("timeStamp", chat.getTimeStamp());
 
-							AndroidConfig androidConfig = AndroidConfig.builder()
-									.setNotification(androidNotification)
-									.build();
+	        /* ---------------------------------------------------------
+	           MEDIA FILES IN PAYLOAD
+	        --------------------------------------------------------- */
 
-							// Build and send FCM message
-							Message message = Message.builder()
-									.setNotification(notificationData)
-									.setAndroidConfig(androidConfig)
-									.putData("chatId", String.valueOf(chat.getChatId()))
-									.putData("type", "chat")
-									.putData("profilePic", userService.getProfilePicUrl(userId))
-									.putData("senderId", String.valueOf(user.getUserId()))
-									.putData("senderName", senderName) 
-									.putData("allUnread", allUnread)   
-									.putData("userType", user.getUserType())
-									.putData("adminReview", String.valueOf(user.getAdminReview()))
-									.putData("groupKey", "filmhook_chat") 
-									.putData("mediaType", mediaType)  
-									.putData("mediaUrl", imageUrl != null ? imageUrl : "")
-									.putData("chatType",
-										    chat.getChatType() != null
-										        ? chat.getChatType().name()
-										        : "")
-									.putData("latitude", chat.getLatitude() != null ? chat.getLatitude().toString() : "")
-									.putData("longitude", chat.getLongitude() != null ? chat.getLongitude().toString() : "")
-									.setToken(deviceToken)
-									.build();
+	        List<MediaFiles> chatFiles =
+	                mediaFileRepository.findByCategoryAndCategoryRefId(
+	                        MediaFileCategory.Chat, chat.getChatId());
 
-							String response = FirebaseMessaging.getInstance().send(message);
-							logger.info("Successfully sent push notification: " + response);
+	        if (!chatFiles.isEmpty()) {
 
-						} catch (FirebaseMessagingException e) {
-							logger.error("Failed to send push notification", e);
-						}
+	            MediaFiles file = chatFiles.get(0);
 
-					} else {
-						logger.warn("Device token is null or empty for user ID: " + receiver.getUserId());
-					}
-				}
-				
+	            wsPayload.put("mediaUrl",
+	                    s3Util.generateS3FilePath(file.getFilePath() + file.getFileType()));
 
-				Map<String, Object> response = new HashMap<>();
-				response.put("chatId", chat.getChatId());
-				return ResponseEntity.ok(new Response(1, "Success", response));
-			} else {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response(0, "Failed", "Sender user not found"));
-			}
-		} catch (Exception e) {
-			logger.error("Error occurred while saving message", e);
-			return ResponseEntity.internalServerError().body(new Response(0, "Failed", "An error occurred while saving message"));
-		}	
+	            wsPayload.put("mediaType", file.getFileType());
+
+	            String fileType = file.getFileType().toLowerCase();
+
+	            if (fileType.contains("jpg") || fileType.contains("jpeg")
+	                    || fileType.contains("png") || fileType.contains("webp")) {
+
+	                wsPayload.put("mediaCategory", "image");
+
+	            } else if (fileType.contains("mp4") || fileType.contains("mov")
+	                    || fileType.contains("avi") || fileType.contains("webm")) {
+
+	                wsPayload.put("mediaCategory", "video");
+	            }
+
+	            wsPayload.put("thumbnail", file.getThumbnailPath());
+	        }
+
+	        /* ---------------------------------------------------------
+	           SEND WEBSOCKET MESSAGE
+	        --------------------------------------------------------- */
+
+	        webSocketService.notifyChatUser(
+	                chat.getChatReceiverId(),
+	                "NEW_MESSAGE",
+	                wsPayload
+	        );
+
+	        /* ---------------------------------------------------------
+	           MESSAGE DELIVERED STATUS
+	        --------------------------------------------------------- */
+
+	        if (receiver != null && Boolean.TRUE.equals(receiver.getOnlineStatus())) {
+
+	            chat.setMessageStatus("DELIVERED");
+	            chatRepository.save(chat);
+	        }
+
+	        /* ---------------------------------------------------------
+	           UPDATE CHAT LIST
+	        --------------------------------------------------------- */
+
+	        webSocketService.notifyChatUser(
+	                chat.getChatReceiverId(),
+	                "CHAT_LIST_UPDATE",
+	                buildChatListUpdate(chat)
+	        );
+
+	        /* ---------------------------------------------------------
+	           FIREBASE PUSH NOTIFICATION
+	        --------------------------------------------------------- */
+
+	        if (receiver != null) {
+
+	            String deviceToken = receiver.getFirebaseDeviceToken();
+
+	            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
+
+	                String senderName = user.getName();
+
+	                Notification notificationData = Notification.builder()
+	                        .setTitle(senderName)
+	                        .setBody(chatWebModel.getMessage())
+	                        .build();
+
+	                AndroidNotification androidNotification = AndroidNotification.builder()
+	                        .setIcon("ic_notification")
+	                        .setColor("#00A2E8")
+	                        .build();
+
+	                AndroidConfig androidConfig = AndroidConfig.builder()
+	                        .setNotification(androidNotification)
+	                        .build();
+
+	                Message message = Message.builder()
+	                        .setNotification(notificationData)
+	                        .setAndroidConfig(androidConfig)
+	                        .putData("chatId", String.valueOf(chat.getChatId()))
+	                        .putData("type", "chat")
+	                        .putData("senderId", String.valueOf(user.getUserId()))
+	                        .putData("senderName", senderName)
+	                        .setToken(deviceToken)
+	                        .build();
+
+	                try {
+
+	                    String response = FirebaseMessaging.getInstance().send(message);
+	                    logger.info("Push notification sent: " + response);
+
+	                } catch (FirebaseMessagingException e) {
+
+	                    logger.error("Push notification failed", e);
+	                }
+	            }
+	        }
+
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("chatId", chat.getChatId());
+
+	        return ResponseEntity.ok(new Response(1, "Success", response));
+
+	    } catch (Exception e) {
+
+	        logger.error("Error occurred while saving message", e);
+
+	        if (chat != null) {
+
+	            chat.setMessageStatus("FAILED");
+	            chatRepository.save(chat);
+	        }
+
+	        return ResponseEntity.internalServerError()
+	                .body(new Response(0, "Failed",
+	                        "An error occurred while saving message"));
+	    }
 	}
+	  
 	
 	
 	// Full Java code for getAllUser in ChatServiceImpl
@@ -809,6 +1040,7 @@ public class ChatServiceImpl implements ChatService {
 							.chatUpdatedBy(chat.getChatUpdatedBy()).chatUpdatedOn(chat.getChatUpdatedOn())
 							.receiverRead(chat.getReceiverRead()).senderRead(chat.getSenderRead())
 							.chatFiles(mediaFiles).message(finalMessage)
+							  .messageStatus(chat.getMessageStatus())
 							.userType(userData.get().getUserType()).userAccountName(userData.get().getName())
 							.receiverAccountName(userDatas.get().getName()).userId(userData.get().getUserId())
 							.storyId(chat.getStoryId())     
@@ -852,6 +1084,7 @@ public class ChatServiceImpl implements ChatService {
 					if (chat.getChatReceiverId().equals(senderId) && !chat.getReceiverRead()) {
 						receiverUnreadCount++;
 						chat.setReceiverRead(true);
+						  chat.setMessageStatus("READ");
 						chatRepository.save(chat);
 					}
 					if (!chat.getSenderRead()) {
@@ -886,6 +1119,7 @@ public class ChatServiceImpl implements ChatService {
 	            }
 
 	            chat.setReceiverRead(true);
+	            chat.setMessageStatus("READ");
 	            chatRepository.save(chat);
 
 	            // Prepare data for WebSocket
@@ -1465,16 +1699,46 @@ public class ChatServiceImpl implements ChatService {
 	}
 	@Override
 	public Response updateOnlineStatus(UserWebModel userWebModel) {
-		Optional<User> userData = userRepository.findById(userWebModel.getUserId());
 
-		if (userData.isPresent()) {
-			User user = userData.get();
-			user.setOnlineStatus(userWebModel.getOnlineStatus());
-			userRepository.save(user);
-			return new Response(1,"Success", "Online status updated successfully"); // Success response
-		} else {
-			return new Response(0,"fail", "User not found"); // Failure response
-		}
+	    Optional<User> userData = userRepository.findById(userWebModel.getUserId());
+
+	    if (userData.isPresent()) {
+
+	        User user = userData.get();
+
+	        user.setOnlineStatus(userWebModel.getOnlineStatus());
+	        userRepository.save(user);
+
+	        // 🔥 If user came ONLINE → update undelivered messages
+	        if (Boolean.TRUE.equals(userWebModel.getOnlineStatus())) {
+
+	            List<Chat> undeliveredMessages =
+	                    chatRepository.findUndeliveredMessages(user.getUserId());
+
+	            for (Chat chat : undeliveredMessages) {
+
+	                chat.setMessageStatus("DELIVERED");
+	                chatRepository.save(chat);
+
+	                // notify sender realtime
+//	                Map<String, Object> payload = new HashMap<>();
+//	                payload.put("chatId", chat.getChatId());
+//	                payload.put("status", "DELIVERED");
+//
+//	                webSocketService.notifyChatUser(
+//	                        chat.getChatSenderId(),
+//	                        "MESSAGE_DELIVERED",
+//	                        payload
+//	                );
+	            }
+	        }
+
+	        return new Response(1, "Success", "Online status updated successfully");
+
+	    } else {
+
+	        return new Response(0, "fail", "User not found");
+	    }
 	}
 
 
