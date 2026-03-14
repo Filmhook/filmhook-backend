@@ -38,5 +38,7 @@ public interface ChatService {
 	ResponseEntity<?> markRead(Integer chatId);
 	
 	  ResponseEntity<?> markAllRead(Integer senderId, Integer receiverId);
+	  
+	  ResponseEntity<?> markVoiceChatPlayed(Integer chatId);
 
 }

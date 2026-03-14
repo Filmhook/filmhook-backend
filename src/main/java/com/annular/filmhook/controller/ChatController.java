@@ -235,4 +235,10 @@ public class ChatController {
         webSocketService.notifyChatUser(toUserId, "TYPING", payload);
     }
 
+    @PostMapping("voiceChatPlayed/{chatId}") 
+    public ResponseEntity<?> markVoicePlayed(@PathVariable Integer chatId) {
+        return chatService.markVoiceChatPlayed(chatId);
+    }
+    
+    
 }

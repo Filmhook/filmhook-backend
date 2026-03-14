@@ -569,7 +569,11 @@ public class ChatServiceImpl implements ChatService {
 	                "NEW_MESSAGE",
 	                wsPayload
 	        );
-
+	        webSocketService.notifyChatUser(
+	                chat.getChatReceiverId(),
+	                "CHAT_LIST_UPDATE",
+	                buildChatListUpdate(chat)
+	        );
 	        /* ---------------------------------------------------------
 	           MESSAGE DELIVERED STATUS
 	        --------------------------------------------------------- */
@@ -578,17 +582,25 @@ public class ChatServiceImpl implements ChatService {
 
 	            chat.setMessageStatus("DELIVERED");
 	            chatRepository.save(chat);
+
+	            Map<String, Object> deliveredPayload = new HashMap<>();
+	            deliveredPayload.put("chatId", chat.getChatId());
+	            deliveredPayload.put("messageStatus", "DELIVERED");
+
+	            // Notify sender
+	            webSocketService.notifyChatUser(
+	                    chat.getChatSenderId(),
+	                    "MESSAGE_DELIVERED",
+	                    deliveredPayload
+	            );
+
+	            // Update chat list for sender
+	            webSocketService.notifyChatUser(
+	                    chat.getChatSenderId(),
+	                    "CHAT_LIST_UPDATE",
+	                    buildChatListUpdate(chat)
+	            );
 	        }
-
-	        /* ---------------------------------------------------------
-	           UPDATE CHAT LIST
-	        --------------------------------------------------------- */
-
-	        webSocketService.notifyChatUser(
-	                chat.getChatReceiverId(),
-	                "CHAT_LIST_UPDATE",
-	                buildChatListUpdate(chat)
-	        );
 
 	        /* ---------------------------------------------------------
 	           FIREBASE PUSH NOTIFICATION
@@ -793,7 +805,7 @@ public class ChatServiceImpl implements ChatService {
 
 	    map.put("latestMessage", chat.getMessage());
 	    map.put("latestMsgTime", chat.getTimeStamp());
-
+	    map.put("messageStatus", chat.getMessageStatus());
 	    // unread count
 	    int unreadCount = chatRepository.countUnreadMessages(
 	    		chat.getChatReceiverId(), chat.getChatSenderId());
@@ -830,7 +842,7 @@ public class ChatServiceImpl implements ChatService {
 
 			Chat chat = lastChatOpt.get();
 
-
+			chatUserWebModel.setMessageStatus(chat.getMessageStatus());
 			// ✅ Deleted message placeholder
 			if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
 				latestMsg = "🚫 This message was deleted";
@@ -888,6 +900,7 @@ public class ChatServiceImpl implements ChatService {
 		chatUserWebModel.setLatestMessage(latestMsg);
 		chatUserWebModel.setLatestMsgTime(latestMsgTime);
 		chatUserWebModel.setIsLatestStory(isLatestStory);
+		
 	}
 	private Optional<Chat> getLatestChatBetweenUsers(Integer loggedInUserId, Integer targetUserId) {
 		try {
@@ -1105,6 +1118,15 @@ public class ChatServiceImpl implements ChatService {
 						chat.setReceiverRead(true);
 						  chat.setMessageStatus("READ");
 						chatRepository.save(chat);
+						Map<String, Object> payload = new HashMap<>();
+						payload.put("chatId", chat.getChatId());
+						payload.put("messageStatus", "READ");
+
+						webSocketService.notifyChatUser(
+						        chat.getChatSenderId(),
+						        "MESSAGE_READ",
+						        payload
+						);
 					}
 					if (!chat.getSenderRead()) {
 						senderUnreadCount++;
@@ -1152,7 +1174,11 @@ public class ChatServiceImpl implements ChatService {
 	                    "MESSAGE_READ",
 	                    payload
 	            );
-
+	            webSocketService.notifyChatUser(
+	                    chat.getChatSenderId(),
+	                    "CHAT_LIST_UPDATE",
+	                    buildChatListUpdate(chat)
+	            );
 	            return ResponseEntity.ok("OK");
 
 	        } catch (Exception e) {
@@ -1738,17 +1764,22 @@ public class ChatServiceImpl implements ChatService {
 
 	                chat.setMessageStatus("DELIVERED");
 	                chatRepository.save(chat);
-
+	                
+	                webSocketService.notifyChatUser(
+	                        chat.getChatSenderId(),
+	                        "CHAT_LIST_UPDATE",
+	                        buildChatListUpdate(chat)
+	                );
 	                // notify sender realtime
-//	                Map<String, Object> payload = new HashMap<>();
-//	                payload.put("chatId", chat.getChatId());
-//	                payload.put("status", "DELIVERED");
-//
-//	                webSocketService.notifyChatUser(
-//	                        chat.getChatSenderId(),
-//	                        "MESSAGE_DELIVERED",
-//	                        payload
-//	                );
+	                Map<String, Object> payload = new HashMap<>();
+	                payload.put("chatId", chat.getChatId());
+	                payload.put("status", "DELIVERED");
+
+	                webSocketService.notifyChatUser(
+	                        chat.getChatSenderId(),
+	                        "MESSAGE_DELIVERED",
+	                        payload
+	                );
 	            }
 	        }
 
@@ -1869,7 +1900,56 @@ public class ChatServiceImpl implements ChatService {
 		}
 	}
 
+	
+	
+	public ResponseEntity<?> markVoiceChatPlayed(Integer chatId) {
 
+	    try {
 
+	        Integer userId = userDetails.userInfo().getId();
+
+	        Chat chat = chatRepository.findById(chatId).orElse(null);
+
+	        if (chat == null) {
+	            return ResponseEntity.badRequest().body("Invalid chatId");
+	        }
+
+	        // Only voice messages
+	        if (chat.getChatType() != ChatType.VOICECHAT) {
+	            return ResponseEntity.badRequest().body("Not a voice message");
+	        }
+
+	        // 🔒 Only receiver can mark as PLAYED
+	        if (!chat.getChatReceiverId().equals(userId)) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+	                    .body("Only receiver can mark voice message as played");
+	        }
+
+	        // Avoid duplicate updates
+	        if ("PLAYED".equals(chat.getMessageStatus())) {
+	            return ResponseEntity.ok("Already marked as played");
+	        }
+
+	        chat.setMessageStatus("PLAYED");
+	        chatRepository.save(chat);
+
+	        // WebSocket notify sender
+	        Map<String, Object> payload = new HashMap<>();
+	        payload.put("chatId", chatId);
+	        payload.put("messageStatus", "PLAYED");
+
+	        webSocketService.notifyChatUser(
+	                chat.getChatSenderId(),
+	                "VOICECHAT_PLAYED",
+	                payload
+	        );
+
+	        return ResponseEntity.ok("Voice message played");
+
+	    } catch (Exception e) {
+	        return ResponseEntity.internalServerError()
+	                .body("Error updating voice played status");
+	    }
+	}
 
 }
