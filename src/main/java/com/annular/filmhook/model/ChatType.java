@@ -5,5 +5,6 @@ public enum ChatType {
     IMAGE,
     VIDEO,
     LOCATION,
-    VOICE
+    VOICECHAT,
+    FILE,
 }
