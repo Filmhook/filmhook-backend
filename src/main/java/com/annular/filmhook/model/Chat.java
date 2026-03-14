@@ -114,6 +114,8 @@ public class Chat {
     @Column(name = "message_type")
     private ChatType chatType;
 
+    @Column(name = "message_status")
+    private String messageStatus = "PENDING"; 
 
 
 }

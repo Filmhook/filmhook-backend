@@ -4,5 +4,6 @@ public enum ChatType {
     TEXT,
     IMAGE,
     VIDEO,
-    LOCATION
+    LOCATION,
+    VOICE
 }

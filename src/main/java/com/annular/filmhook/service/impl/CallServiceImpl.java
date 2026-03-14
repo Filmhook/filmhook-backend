@@ -326,7 +326,7 @@ public class CallServiceImpl implements CallService {
 	@Override
 	public Response startGroupCall(GroupCallStartRequest req) {
 		Integer hostId = req.getHostUserId();
-		List<Integer> members = new ArrayList<>(req.getMemberIds());
+		Set<Integer> members = new HashSet<>(req.getMemberIds());
 		members.add(hostId);
 
 		/* ---------------------------------------------------------
