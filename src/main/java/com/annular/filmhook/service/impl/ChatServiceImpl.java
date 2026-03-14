@@ -469,17 +469,18 @@ public class ChatServiceImpl implements ChatService {
 	        if (chatWebModel.getChatType() == ChatType.LOCATION) {
 
 	            chatBuilder
-	                    .chatType(ChatType.LOCATION)
-	                    .latitude(chatWebModel.getLatitude())
-	                    .longitude(chatWebModel.getLongitude())
-	                    .locationAddress(chatWebModel.getLocationAddress())
-	                    .message(null);
+	                .chatType(ChatType.LOCATION)
+	                .latitude(chatWebModel.getLatitude())
+	                .longitude(chatWebModel.getLongitude())
+	                .locationAddress(chatWebModel.getLocationAddress())
+	                .message(null);
 
 	        } else {
 
-	            chatBuilder.message(chatWebModel.getMessage());
+	            chatBuilder
+	                .chatType(chatWebModel.getChatType()) 
+	                .message(chatWebModel.getMessage());
 	        }
-
 	        chat = chatBuilder.build();
 
 	        // 🔹 Save chat initially
@@ -549,6 +550,12 @@ public class ChatServiceImpl implements ChatService {
 
 	                wsPayload.put("mediaCategory", "video");
 	            }
+	            else if (fileType.contains("mp3") || fileType.contains("wav")
+	                    || fileType.contains("aac") || fileType.contains("m4a")
+	                    || fileType.contains("ogg") || fileType.contains("opus")) {
+
+	                wsPayload.put("mediaCategory", "audio");
+	            }
 
 	            wsPayload.put("thumbnail", file.getThumbnailPath());
 	        }
@@ -594,10 +601,27 @@ public class ChatServiceImpl implements ChatService {
 	            if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 
 	                String senderName = user.getName();
+	                String body = chatWebModel.getMessage();
+
+	                if (chatWebModel.getChatType() == ChatType.VOICECHAT) {
+	                    body = "🎤 Voice message";
+	                }
+	                else if (chatWebModel.getChatType() == ChatType.LOCATION) {
+	                    body = "📍 Location";
+	                }
+//	                else if (chatWebModel.getChatType() == ChatType.IMAGE) {
+//	                    body = "📷 Photo";
+//	                }
+//	                else if (chatWebModel.getChatType() == ChatType.VIDEO) {
+//	                    body = "🎥 Video";
+//	                }
+//	                else if (chatWebModel.getChatType() == ChatType.FILE) {
+//	                    body = "📎 Attachment";
+//	                }
 
 	                Notification notificationData = Notification.builder()
 	                        .setTitle(senderName)
-	                        .setBody(chatWebModel.getMessage())
+	                        .setBody(body)
 	                        .build();
 
 	                AndroidNotification androidNotification = AndroidNotification.builder()
@@ -806,22 +830,17 @@ public class ChatServiceImpl implements ChatService {
 
 			Chat chat = lastChatOpt.get();
 
-			//	        // ✅ Skip if inactive for either side
-			//	        if (Boolean.FALSE.equals(chat.getSenderChatIsActive()) || Boolean.FALSE.equals(chat.getReceiverChatIsActive())) {
-			//	            chatUserWebModel.setLatestMessage("");
-			//	            chatUserWebModel.setLatestMsgTime(null);
-			//	            chatUserWebModel.setIsLatestStory(false);
-			//	            return;
-			//	        }
 
 			// ✅ Deleted message placeholder
 			if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
 				latestMsg = "🚫 This message was deleted";
 			} else if (ChatType.LOCATION.equals(chat.getChatType())) {
-
 			    latestMsg = "📍Location";
-				// ✅ Story reply
-			} else if ("story".equalsIgnoreCase(chat.getReplyType())) {
+			} 
+			else if (ChatType.VOICECHAT.equals(chat.getChatType())) {
+				latestMsg = "🎤 Voice message";
+			}
+			else if ("story".equalsIgnoreCase(chat.getReplyType())) {
 				isLatestStory = true;
 				latestMsg = chat.getMessage();
 
