@@ -37,6 +37,13 @@ public class WebSocketService {
             new WebSocketMessage(eventType, payload)
         );
     }
+//    public void notifyChatGlobal(Integer userId, String eventType, Object payload) {
+//        messagingTemplate.convertAndSendToUser(
+//            String.valueOf(userId),
+//            "/queue/chatGlobal",
+//            new WebSocketMessage(eventType, payload)
+//        );
+//    }
     
     /* ---------------------------------------------------------
      * Send WebSocket event to ALL members in a group call

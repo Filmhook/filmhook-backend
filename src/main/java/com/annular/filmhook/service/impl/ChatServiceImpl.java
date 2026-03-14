@@ -520,6 +520,7 @@ public class ChatServiceImpl implements ChatService {
 	        wsPayload.put("longitude", chat.getLongitude());
 	        wsPayload.put("locationAddress", chat.getLocationAddress());
 	        wsPayload.put("timeStamp", chat.getTimeStamp());
+	        wsPayload.put("messageStatus", chat.getMessageStatus());
 
 	        /* ---------------------------------------------------------
 	           MEDIA FILES IN PAYLOAD
@@ -569,7 +570,16 @@ public class ChatServiceImpl implements ChatService {
 	                "NEW_MESSAGE",
 	                wsPayload
 	        );
+	        
+	        Map<String, Object> statusPayload = new HashMap<>();
+	        statusPayload.put("chatId", chat.getChatId());
+	        statusPayload.put("messageStatus", "SENT");
 
+	        webSocketService.notifyChatUser(
+	        chat.getChatSenderId(),
+	        "MESSAGE_STATUS",
+	        statusPayload
+	        );
 	        /* ---------------------------------------------------------
 	           MESSAGE DELIVERED STATUS
 	        --------------------------------------------------------- */
@@ -578,6 +588,15 @@ public class ChatServiceImpl implements ChatService {
 
 	            chat.setMessageStatus("DELIVERED");
 	            chatRepository.save(chat);
+	            Map<String, Object> deliveredPayload = new HashMap<>();
+	            deliveredPayload.put("chatId", chat.getChatId());
+	            deliveredPayload.put("messageStatus", "DELIVERED");
+	             
+	            webSocketService.notifyChatUser(
+	                    chat.getChatSenderId(),
+	                    "MESSAGE_DELIVERED",
+	                    deliveredPayload
+	            );
 	        }
 
 	        /* ---------------------------------------------------------
@@ -790,10 +809,10 @@ public class ChatServiceImpl implements ChatService {
 	    map.put("profilePicUrl", userService.getProfilePicUrl(sender.getUserId()));
 	    map.put("userType", sender.getUserType());
 	    map.put("adminReview", sender.getAdminReview());
-
+map.put("testing", "===========================");
 	    map.put("latestMessage", chat.getMessage());
 	    map.put("latestMsgTime", chat.getTimeStamp());
-
+//         map.put("MessageStatus", "DELIVERED");
 	    // unread count
 	    int unreadCount = chatRepository.countUnreadMessages(
 	    		chat.getChatReceiverId(), chat.getChatSenderId());
@@ -1145,6 +1164,7 @@ public class ChatServiceImpl implements ChatService {
 	            Map<String, Object> payload = new HashMap<>();
 	            payload.put("chatId", chatId);
 	            payload.put("receiverRead", true);
+	            payload.put ("messageStatus", "READ");
 
 	            // Notify sender
 	            webSocketService.notifyChatUser(
@@ -1173,6 +1193,7 @@ public class ChatServiceImpl implements ChatService {
 
 	      for (Chat c : unread) {
 	          c.setReceiverRead(true);
+	          c.setMessageStatus("READ");
 	          chatRepository.save(c);
 	          readIds.add(c.getChatId());
 	      }
@@ -1740,15 +1761,15 @@ public class ChatServiceImpl implements ChatService {
 	                chatRepository.save(chat);
 
 	                // notify sender realtime
-//	                Map<String, Object> payload = new HashMap<>();
-//	                payload.put("chatId", chat.getChatId());
-//	                payload.put("status", "DELIVERED");
-//
-//	                webSocketService.notifyChatUser(
-//	                        chat.getChatSenderId(),
-//	                        "MESSAGE_DELIVERED",
-//	                        payload
-//	                );
+	                Map<String, Object> payload = new HashMap<>();
+	                payload.put("chatId", chat.getChatId());
+	                payload.put("status", "DELIVERED");
+
+	                webSocketService.notifyUser(
+	                        chat.getChatSenderId(),
+	                        "MESSAGE_DELIVERED",
+	                        payload
+	                );
 	            }
 	        }
 
