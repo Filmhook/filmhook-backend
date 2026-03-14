@@ -15,6 +15,7 @@ import com.annular.filmhook.model.UserSession;
 import com.annular.filmhook.repository.UserSessionRepository;
 import com.annular.filmhook.service.CallService;
 import com.annular.filmhook.webmodel.AgoraWebModel;
+import com.annular.filmhook.webmodel.CallHistoryDTO;
 import com.annular.filmhook.webmodel.EndCallRequest;
 import com.annular.filmhook.webmodel.GroupCallEndRequest;
 import com.annular.filmhook.webmodel.GroupCallInviteRequest;
@@ -25,12 +26,12 @@ import com.annular.filmhook.webmodel.StartCallRequest;
 @RestController
 @RequestMapping("/api/call")
 public class CallController {
-
-    @Autowired
+   @Autowired
     private CallService callService;
     @Autowired
     private UserSessionRepository userSessionRepository;
 
+ 
     @PostMapping("/start")
     public Response start(@RequestBody StartCallRequest request) {
         return callService.startCall(request);
@@ -117,6 +118,12 @@ public class CallController {
         return ResponseEntity.ok(
                 new Response(1, "Notification sent to " + sentCount + " device(s)", null)
         );
+    }
+    
+    @PostMapping("/clear-history")
+    public Response clearCallHistory(@RequestBody CallHistoryDTO dto) {
+
+        return callService.clearCallHistory(dto);
     }
 
 }

@@ -3,6 +3,8 @@ package com.annular.filmhook.model;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import javax.persistence.*;
 
 import java.math.BigDecimal;
@@ -44,6 +46,7 @@ public class PromoteAd {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "adv_object", referencedColumnName = "category_id")
+    @JsonBackReference
     private VisitePageCategory advObject;
 
     @Column(name = "adv_object_value")
@@ -60,9 +63,8 @@ public class PromoteAd {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_type_id", referencedColumnName = "detail_id")
+    @JsonBackReference
     private VisitPageDetails visitType;
-    
-    
 
     @Column(name = "budget")
     private Double budget;

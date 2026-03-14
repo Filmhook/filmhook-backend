@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.model.AdminUserView;
 @Repository
@@ -16,7 +16,7 @@ public interface AdminUserViewRepository extends JpaRepository<AdminUserView, Lo
 	
 	Optional<AdminUserView> findByUserIdAndCategory(Integer userId, String category);
 
-
+	@Transactional
 	@Modifying
 	@Query(
 	    "UPDATE AdminUserView v " +
