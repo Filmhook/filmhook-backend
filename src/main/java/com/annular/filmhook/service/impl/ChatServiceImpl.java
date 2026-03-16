@@ -813,7 +813,6 @@ public class ChatServiceImpl implements ChatService {
 	    map.put("profilePicUrl", userService.getProfilePicUrl(sender.getUserId()));
 	    map.put("userType", sender.getUserType());
 	    map.put("adminReview", sender.getAdminReview());
-map.put("testing", "===========================");
 	    map.put("latestMessage", chat.getMessage());
 	    map.put("latestMsgTime", chat.getTimeStamp());
 	    map.put("messageStatus", chat.getMessageStatus());
@@ -1222,7 +1221,7 @@ map.put("testing", "===========================");
 	      
 	      Map<String, Object> msgStatus = new HashMap<>();
 	      msgStatus.put("messageStatus", "READ");
-	      msgStatus.put("userId", senderId);
+	      msgStatus.put("userId", receiverId);
 	      
 
 	      webSocketService.notifyChatUser(
@@ -1776,6 +1775,22 @@ map.put("testing", "===========================");
 
 	        user.setOnlineStatus(userWebModel.getOnlineStatus());
 	        userRepository.save(user);
+
+	        // 🔥 Get only active chat users
+	        List<Integer> activeChatUsers =
+	                chatRepository.findActiveChatUserIds(user.getUserId());
+
+	        for (Integer chatUserId : activeChatUsers) {
+
+	            Map<String, Object> payload = new HashMap<>();
+	            payload.put("userId", user.getUserId());
+	            payload.put("onlineStatus", user.getOnlineStatus());
+	            webSocketService.notifyChatUser(
+	                    chatUserId,
+	                    "USER_ONLINE_STATUS",
+	                    payload
+	            );
+	        }
 
 	        // 🔥 If user came ONLINE → update undelivered messages
 	        if (Boolean.TRUE.equals(userWebModel.getOnlineStatus())) {
