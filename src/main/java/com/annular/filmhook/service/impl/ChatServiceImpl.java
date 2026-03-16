@@ -1219,12 +1219,22 @@ map.put("testing", "===========================");
 	      // 🔥 SEND BULK READ EVENT ONLY ONCE
 	      Map<String, Object> payload = new HashMap<>();
 	      payload.put("chatIds", readIds);
+	      
+	      Map<String, Object> msgStatus = new HashMap<>();
+	      msgStatus.put("messageStatus", "READ");
+	      msgStatus.put("userId", senderId);
+	      
 
 	      webSocketService.notifyChatUser(
 	              senderId,           // notify the SENDER!!
 	              "MESSAGE_READ_BULK",
 	              payload
 	      );
+	      webSocketService.notifyChatUser(
+                  senderId,
+                  "CHAT_LIST_MSG_STATUS",
+                 msgStatus
+          );
 
 	      return ResponseEntity.ok("OK");
 	  }
