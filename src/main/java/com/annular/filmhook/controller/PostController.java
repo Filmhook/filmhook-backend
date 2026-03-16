@@ -104,9 +104,9 @@ public class PostController {
 
     @GetMapping("/getPostsByUserId")
     public Response getPostsByUserId(@RequestParam("pageNo") Integer pageNo,
-                                     @RequestParam("pageSize") Integer pageSize,  @RequestParam(required = false) Integer postId)
+                                     @RequestParam("pageSize") Integer pageSize,  @RequestParam(required = false) Integer postId, @RequestParam("userId") Integer userId)
 {
-    	Integer userId = userDetails.userInfo().getId();
+    	//Integer userId = userDetails.userInfo().getId();
         try {
             List<PostWebModel> outputList = postService.getPostsByUserId(userId,pageNo,pageSize, postId);
             if (!Utility.isNullOrEmptyList(outputList)) return new Response(1, "Post(s) found successfully...", outputList);
