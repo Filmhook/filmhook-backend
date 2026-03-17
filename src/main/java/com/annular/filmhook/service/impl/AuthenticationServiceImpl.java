@@ -563,8 +563,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	        if (emailExists) {
 	            return ResponseEntity.ok(new Response(-1, "This email is already in use. Please use another email.", null));
 	        }
+			user.setSecondoryMailTemp(newEmail);
+			//user.setSecondaryEmail(newEmail);
 			
-			user.setSecondaryEmail(newEmail);
 			userRepository.save(user);
 
 			// Generate OTP
@@ -582,7 +583,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			// Prepare response
 			Map<String, Object> response = new HashMap<>();
 
-			response.put("message", "OTP has been sent to " + user.getSecondaryEmail());
+			response.put("message", "OTP has been sent to " + user.getSecondoryMailTemp());
 
 			return ResponseEntity.ok(response);
 
@@ -596,7 +597,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (Utility.isNullOrZero(user.getSecondaryemailOtp())) throw new IllegalArgumentException("OTP is null");
 			String subject = "Email Id Verification";
 			String mailContent = "<p>Please use the following OTP to verify your email on FilmHook:<b>" + user.getSecondaryemailOtp() + "</b></p>";
-			return mailNotification.sendEmailSync(user.getName(), user.getSecondaryEmail(), subject, mailContent);
+			return mailNotification.sendEmailSync(user.getName(), user.getSecondoryMailTemp(), subject, mailContent);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -647,6 +648,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				attemptRepository.save(attempt);
 				// OTP matches
 				user.setVerified(true);
+				user.setSecondaryEmail(user.getSecondoryMailTemp());
 				user.setEmailOtp(null);
 				user.setSecondaryemailOtp(null);
 				userRepository.save(user);
@@ -731,6 +733,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 //				user.setVerified(true);
 				user.setSecondaryemailOtpCreatedOn(null);
+			//	user.setSecondaryEmail(user.getSecondoryMailTemp());
 				userRepository.save(user);
 
 				return ResponseEntity.ok(new Response(1,

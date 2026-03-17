@@ -102,6 +102,12 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
     @Query("SELECT c FROM Chat c WHERE c.chatReceiverId = :userId AND c.messageStatus = 'SENT'")
     List<Chat> findUndeliveredMessages(@Param("userId") Integer userId);
     
+    @Query("SELECT DISTINCT " +
+    	       "CASE WHEN c.chatSenderId = :userId THEN c.chatReceiverId ELSE c.chatSenderId END " +
+    	       "FROM Chat c " +
+    	       "WHERE (c.chatSenderId = :userId AND c.senderChatIsActive = true AND c.deletedBySender = false) " +
+    	       "OR (c.chatReceiverId = :userId AND c.receiverChatIsActive = true AND c.deletedByReceiver = false)")
+    	List<Integer> findActiveChatUserIds(@Param("userId") Integer userId);
     
    }
 

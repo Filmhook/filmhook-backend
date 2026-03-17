@@ -23,6 +23,7 @@ public class WebSocketService {
        
 
     public void notifyUser(Integer userId, String eventType, Object payload) {
+    	
     	messagingTemplate.convertAndSendToUser(
     	        String.valueOf(userId),
     	        "/queue/call",
@@ -31,7 +32,7 @@ public class WebSocketService {
     }
     
     public void notifyChatUser(Integer userId, String eventType, Object payload) {
-        messagingTemplate.convertAndSendToUser(
+            messagingTemplate.convertAndSendToUser(
             String.valueOf(userId),
             "/queue/chat",
             new WebSocketMessage(eventType, payload)
