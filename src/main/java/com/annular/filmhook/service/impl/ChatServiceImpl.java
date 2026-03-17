@@ -792,6 +792,8 @@ public class ChatServiceImpl implements ChatService {
 			chatUserWebModel.setAdminReview(user.getAdminReview());
 			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
 			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
+			
+
 
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
 			int unreadCount = chatRepository.countUnreadMessages(loggedInUserId, user.getUserId());
@@ -853,6 +855,8 @@ public class ChatServiceImpl implements ChatService {
 			Chat chat = lastChatOpt.get();
 
 			chatUserWebModel.setMessageStatus(chat.getMessageStatus());
+			chatUserWebModel.setSenderId(chat.getChatSenderId());
+			
 			// ✅ Deleted message placeholder
 			if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
 				latestMsg = "🚫 This message was deleted";

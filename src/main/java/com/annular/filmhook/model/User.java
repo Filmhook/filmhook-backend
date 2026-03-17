@@ -349,4 +349,7 @@ public class User {
 	
 	@Column(name = "secondary_mail_permission")
 	private Boolean secondaryMailPermission;
+	
+	@Column(name = "secondary_mail_temp", columnDefinition = "VARCHAR(40)")
+	private String secondoryMailTemp;
 }
