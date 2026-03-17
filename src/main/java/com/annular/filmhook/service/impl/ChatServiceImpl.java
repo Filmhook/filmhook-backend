@@ -856,6 +856,7 @@ public class ChatServiceImpl implements ChatService {
 
 			chatUserWebModel.setMessageStatus(chat.getMessageStatus());
 			chatUserWebModel.setSenderId(chat.getChatSenderId());
+			chatUserWebModel.setReceiverId(chat.getChatReceiverId());
 			
 			// ✅ Deleted message placeholder
 			if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
