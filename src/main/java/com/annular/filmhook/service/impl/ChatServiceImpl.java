@@ -823,6 +823,7 @@ public class ChatServiceImpl implements ChatService {
 	    		chat.getChatReceiverId(), chat.getChatSenderId());
 	    
 	    map.put("receiverUnreadCount", unreadCount);
+	    map.put("senderId", chat.getChatSenderId());
 
 	    return map;
 	}
