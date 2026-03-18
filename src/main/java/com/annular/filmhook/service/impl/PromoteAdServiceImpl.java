@@ -80,6 +80,11 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 
 			promoteId = promoteAdRepository.findById(model.getPromoteId())
 					.orElseThrow(() -> new RuntimeException("Promote record not found"));
+			
+			 // 🚨 CHECK IF ALREADY RUNNING
+		    if (promoteId.getStatus() == PromoteStatus.Running) {
+		        return new Response(0, "Promote is already running. You cannot edit it.", null);
+		    }
 
 			// ---------------------------------
 			// UPDATE ONLY NON-NULL FIELDS
