@@ -8,6 +8,7 @@ import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.PromoteAd;
 import com.annular.filmhook.model.PromoteMediaFiles;
+import com.annular.filmhook.model.ReactionType;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Audition;
@@ -145,7 +146,6 @@ public class PostServiceImpl implements PostService {
 	@Autowired
 	PromoteAdRepository promoteAdRepository;
 
-
 	@Autowired
 	FilmProfessionPermanentDetailRepository filmProfessionPermanentDetailRepository;
 
@@ -163,7 +163,6 @@ public class PostServiceImpl implements PostService {
 
 	@Autowired
 	ShootingLocationPropertyReviewRepository reviewRepository;
-
 
 	@Autowired
 	ShareRepository shareRepository;
@@ -189,8 +188,6 @@ public class PostServiceImpl implements PostService {
 	@Autowired
 	MediaFilesRepository mediaFilesRepository;
 
-
-
 	private static final String POST = "Post";
 	private static final String COMMENT = "Comment";
 	public static final String AUDITION = "Audition";
@@ -205,108 +202,73 @@ public class PostServiceImpl implements PostService {
 				// Saving Tagged Users' IDs as a comma-separated string
 				String taggedUserIds = !Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())
 						? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
-								: null;
+						: null;
 
-				Posts posts = Posts.builder()
-						.postId(UUID.randomUUID().toString())
-						.description(postWebModel.getDescription())
-						.user(userFromDB)
-						.postLinkUrls(postWebModel.getPostLinkUrl())
-						.latitude(postWebModel.getLatitude())
-						.longitude(postWebModel.getLongitude())
-						.address(postWebModel.getAddress())
-						.status(true)
-						.privateOrPublic(postWebModel.getPrivateOrPublic())
-						.promoteFlag(false)
-						.promoteStatus(true)
-						.locationName(postWebModel.getLocationName())
-						.likesCount(0)
-						.commentsCount(0)
-						.sharesCount(0)
-						.createdBy(postWebModel.getUserId())
-						.createdOn(new Date())
-						.tagUsers(taggedUserIds)
-						.build();
+				Posts posts = Posts.builder().postId(UUID.randomUUID().toString())
+						.description(postWebModel.getDescription()).user(userFromDB)
+						.postLinkUrls(postWebModel.getPostLinkUrl()).latitude(postWebModel.getLatitude())
+						.longitude(postWebModel.getLongitude()).address(postWebModel.getAddress()).status(true)
+						.privateOrPublic(postWebModel.getPrivateOrPublic()).promoteFlag(false).promoteStatus(true)
+						.locationName(postWebModel.getLocationName()).likesCount(0).commentsCount(0).sharesCount(0)
+						.createdBy(postWebModel.getUserId()).createdOn(new Date()).tagUsers(taggedUserIds).build();
 				Posts savedPost = postsRepository.saveAndFlush(posts);
 
 				if (!Utility.isNullOrEmptyList(postWebModel.getFiles())) {
 					// Saving the Post files in the media_files table
-					FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-							.userId(postWebModel.getUserId())
-							.category(MediaFileCategory.Post)
-							.categoryRefId(savedPost.getId())
-							.files(postWebModel.getFiles())
-							.build();
+					FileInputWebModel fileInputWebModel = FileInputWebModel.builder().userId(postWebModel.getUserId())
+							.category(MediaFileCategory.Post).categoryRefId(savedPost.getId())
+							.files(postWebModel.getFiles()).build();
 					mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
 				}
 
 				// Saving Tagged users
 				if (!Utility.isNullOrEmptyList(postWebModel.getTaggedUsers())) {
 					List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
-							.map(taggedUserId -> PostTags.builder()
-									.postId(savedPost.getId())
-									.taggedUser(User.builder().userId(taggedUserId).build())
-									.status(true)
-									.createdBy(postWebModel.getUserId())
-									.createdOn(new Date())
-									.build())
+							.map(taggedUserId -> PostTags.builder().postId(savedPost.getId())
+									.taggedUser(User.builder().userId(taggedUserId).build()).status(true)
+									.createdBy(postWebModel.getUserId()).createdOn(new Date()).build())
 							.collect(Collectors.toList());
 					postTagsRepository.saveAllAndFlush(tagsList);
 
 					for (PostTags tag : tagsList) {
 						Integer taggedUserId = tag.getTaggedUser().getUserId();
 
-						InAppNotification notification = InAppNotification.builder()
-								.senderId(postWebModel.getUserId())
-								.receiverId(taggedUserId)
-								.title("You've been tagged in a post")
-								.message( " tagged you in a post.")
-								.createdOn(new Date())
-								.isRead(false)
-								.adminReview(userFromDB.getAdminReview())
-								.Profession(userFromDB.getUserType())
-								.isDeleted(false)
-								.createdBy(postWebModel.getUserId())
-								.id(tag.getId()) 
-								.userType("Tagged")
-								.postId(savedPost.getPostId())
-								.build();
+						InAppNotification notification = InAppNotification.builder().senderId(postWebModel.getUserId())
+								.receiverId(taggedUserId).title("You've been tagged in a post")
+								.message(" tagged you in a post.").createdOn(new Date()).isRead(false)
+								.adminReview(userFromDB.getAdminReview()).Profession(userFromDB.getUserType())
+								.isDeleted(false).createdBy(postWebModel.getUserId()).id(tag.getId()).userType("Tagged")
+								.postId(savedPost.getPostId()).build();
 
 						inAppNotificationRepository.save(notification);
 
 						// Send Firebase push notification
 						User receiver = userService.getUser(taggedUserId).orElse(null);
-						if (receiver != null && receiver.getFirebaseDeviceToken() != null && !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
+						if (receiver != null && receiver.getFirebaseDeviceToken() != null
+								&& !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
 							try {
 								String deviceToken = receiver.getFirebaseDeviceToken();
 								String title = "You've been tagged!";
 								String messageBody = userFromDB.getName() + " tagged you in a post.";
 
 								Notification firebaseNotification = Notification.builder()
-										//		                                .setTitle(title)
+										// .setTitle(title)
 										.setTitle(messageBody)
-										//		                                .setBody(messageBody)
+										// .setBody(messageBody)
 										.build();
 
 								AndroidNotification androidNotification = AndroidNotification.builder()
-										.setIcon("ic_notification")
-										.setColor("#00A2E8")
-										.build();
+										.setIcon("ic_notification").setColor("#00A2E8").build();
 
 								AndroidConfig androidConfig = AndroidConfig.builder()
-										.setNotification(androidNotification)
-										.build();
+										.setNotification(androidNotification).build();
 
-								Message firebaseMessage = Message.builder()
-										.setNotification(firebaseNotification)
-										.putData("type", "Tagged")
-										.putData("refId", String.valueOf(savedPost.getId()))
+								Message firebaseMessage = Message.builder().setNotification(firebaseNotification)
+										.putData("type", "Tagged").putData("refId", String.valueOf(savedPost.getId()))
 										.putData("postId", savedPost.getPostId())
 										.putData("senderId", String.valueOf(postWebModel.getUserId()))
 										.putData("receiverId", String.valueOf(taggedUserId))
-										.setAndroidConfig(androidConfig)
-										.setToken(deviceToken)
-										.build();
+										.setAndroidConfig(androidConfig).setToken(deviceToken).build();
 
 								String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
 								logger.info("Push notification sent successfully: {}", firebaseResponse);
@@ -318,7 +280,6 @@ public class PostServiceImpl implements PostService {
 					}
 				}
 
-
 				List<PostWebModel> responseList = this.transformPostsDataToPostWebModel(List.of(savedPost));
 				return responseList.isEmpty() ? null : responseList.get(0);
 			}
@@ -328,6 +289,7 @@ public class PostServiceImpl implements PostService {
 		}
 		return null;
 	}
+
 	@Override
 	@Transactional
 	public PostWebModel updatePostWithFiles(PostWebModel postWebModel) {
@@ -361,7 +323,7 @@ public class PostServiceImpl implements PostService {
 			// 🔹 Handle tagged users (store comma-separated IDs)
 			String taggedUserIds = (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty())
 					? postWebModel.getTaggedUsers().stream().map(String::valueOf).collect(Collectors.joining(","))
-							: null;
+					: null;
 			existingPost.setTagUsers(taggedUserIds);
 
 			// 🔹 Save updated post
@@ -370,17 +332,15 @@ public class PostServiceImpl implements PostService {
 			// 🔹 1️⃣ Delete specific old files if user removed any
 			if (postWebModel.getDeletedFileIds() != null && !postWebModel.getDeletedFileIds().isEmpty()) {
 				logger.info("Deleting files for post {}: {}", updatedPost.getId(), postWebModel.getDeletedFileIds());
-				mediaFilesService.deleteMediaFilesByCategoryAndIds(MediaFileCategory.Post, postWebModel.getDeletedFileIds());
+				mediaFilesService.deleteMediaFilesByCategoryAndIds(MediaFileCategory.Post,
+						postWebModel.getDeletedFileIds());
 			}
 
 			// 🔹 2️⃣ Upload new files if provided
 			if (postWebModel.getFiles() != null && !postWebModel.getFiles().isEmpty()) {
-				FileInputWebModel fileInputWebModel = FileInputWebModel.builder()
-						.userId(postWebModel.getUserId())
-						.category(MediaFileCategory.Post)
-						.categoryRefId(updatedPost.getId())
-						.files(postWebModel.getFiles())
-						.build();
+				FileInputWebModel fileInputWebModel = FileInputWebModel.builder().userId(postWebModel.getUserId())
+						.category(MediaFileCategory.Post).categoryRefId(updatedPost.getId())
+						.files(postWebModel.getFiles()).build();
 
 				mediaFilesService.saveMediaFiles(fileInputWebModel, userFromDB);
 				logger.info("Uploaded {} new files for post {}", postWebModel.getFiles().size(), updatedPost.getId());
@@ -388,20 +348,18 @@ public class PostServiceImpl implements PostService {
 
 			// 🔹 3️⃣ Handle tagged users (delete specific + add new)
 			if (postWebModel.getDeletedTaggedUserIds() != null && !postWebModel.getDeletedTaggedUserIds().isEmpty()) {
-				logger.info("Deleting tagged users for post {}: {}", updatedPost.getId(), postWebModel.getDeletedTaggedUserIds());
-				postTagsRepository.deleteByPostIdAndTaggedUserIds(updatedPost.getId(), postWebModel.getDeletedTaggedUserIds());
+				logger.info("Deleting tagged users for post {}: {}", updatedPost.getId(),
+						postWebModel.getDeletedTaggedUserIds());
+				postTagsRepository.deleteByPostIdAndTaggedUserIds(updatedPost.getId(),
+						postWebModel.getDeletedTaggedUserIds());
 			}
 
 			// 🔹 Add new tagged users if provided
 			if (postWebModel.getTaggedUsers() != null && !postWebModel.getTaggedUsers().isEmpty()) {
 				List<PostTags> tagsList = postWebModel.getTaggedUsers().stream()
-						.map(taggedUserId -> PostTags.builder()
-								.postId(updatedPost.getId())
-								.taggedUser(User.builder().userId(taggedUserId).build())
-								.status(true)
-								.createdBy(postWebModel.getUserId())
-								.createdOn(new Date())
-								.build())
+						.map(taggedUserId -> PostTags.builder().postId(updatedPost.getId())
+								.taggedUser(User.builder().userId(taggedUserId).build()).status(true)
+								.createdBy(postWebModel.getUserId()).createdOn(new Date()).build())
 						.collect(Collectors.toList());
 
 				postTagsRepository.saveAllAndFlush(tagsList);
@@ -410,55 +368,38 @@ public class PostServiceImpl implements PostService {
 				for (PostTags tag : tagsList) {
 					Integer taggedUserId = tag.getTaggedUser().getUserId();
 
-					InAppNotification notification = InAppNotification.builder()
-							.senderId(postWebModel.getUserId())
-							.receiverId(taggedUserId)
-							.title("You've been tagged! ")
-							.message(userFromDB.getName() + " tagged you in a post update.")
-							.createdOn(new Date())
-							.isRead(false)
-							.adminReview(userFromDB.getAdminReview())
-							.Profession(userFromDB.getUserType())
-							.isDeleted(false)
-							.createdBy(postWebModel.getUserId())
-							.userType("Tagged")
-							.postId(updatedPost.getPostId())
-							.build();
+					InAppNotification notification = InAppNotification.builder().senderId(postWebModel.getUserId())
+							.receiverId(taggedUserId).title("You've been tagged! ")
+							.message(userFromDB.getName() + " tagged you in a post update.").createdOn(new Date())
+							.isRead(false).adminReview(userFromDB.getAdminReview()).Profession(userFromDB.getUserType())
+							.isDeleted(false).createdBy(postWebModel.getUserId()).userType("Tagged")
+							.postId(updatedPost.getPostId()).build();
 
 					inAppNotificationRepository.save(notification);
 
 					// 🔹 Push notification (same logic you use in savePost)
 					User receiver = userService.getUser(taggedUserId).orElse(null);
-					if (receiver != null && receiver.getFirebaseDeviceToken() != null 
+					if (receiver != null && receiver.getFirebaseDeviceToken() != null
 							&& !receiver.getFirebaseDeviceToken().trim().isEmpty()) {
 						try {
 							String deviceToken = receiver.getFirebaseDeviceToken();
 							String title = "You've been tagged!";
 							String messageBody = userFromDB.getName() + " tagged you in an updated post.";
 
-							Notification firebaseNotification = Notification.builder()
-									.setTitle(messageBody)
-									.build();
+							Notification firebaseNotification = Notification.builder().setTitle(messageBody).build();
 
 							AndroidNotification androidNotification = AndroidNotification.builder()
-									.setIcon("ic_notification")
-									.setColor("#00A2E8")
+									.setIcon("ic_notification").setColor("#00A2E8").build();
+
+							AndroidConfig androidConfig = AndroidConfig.builder().setNotification(androidNotification)
 									.build();
 
-							AndroidConfig androidConfig = AndroidConfig.builder()
-									.setNotification(androidNotification)
-									.build();
-
-							Message firebaseMessage = Message.builder()
-									.setNotification(firebaseNotification)
-									.putData("type", "Tagged")
-									.putData("refId", String.valueOf(updatedPost.getId()))
+							Message firebaseMessage = Message.builder().setNotification(firebaseNotification)
+									.putData("type", "Tagged").putData("refId", String.valueOf(updatedPost.getId()))
 									.putData("postId", updatedPost.getPostId())
 									.putData("senderId", String.valueOf(postWebModel.getUserId()))
-									.putData("receiverId", String.valueOf(taggedUserId))
-									.setAndroidConfig(androidConfig)
-									.setToken(deviceToken)
-									.build();
+									.putData("receiverId", String.valueOf(taggedUserId)).setAndroidConfig(androidConfig)
+									.setToken(deviceToken).build();
 
 							String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
 							logger.info("Push notification sent successfully: {}", firebaseResponse);
@@ -496,7 +437,8 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
-	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize, Integer highlightPostId) {
+	public List<PostWebModel> getPostsByUserId(Integer userId, Integer pageNo, Integer pageSize,
+			Integer highlightPostId) {
 		try {
 			// Fetch posts created by the user
 			List<Posts> userPosts = postsRepository.getUserPosts(User.builder().userId(userId).build());
@@ -506,12 +448,11 @@ public class PostServiceImpl implements PostService {
 			List<Posts> taggedPosts = postsRepository.getPostsByTaggedUserId(userIdString);
 			// Fetch promoted posts
 			List<Promote> promotedEntities = promoteRepository.findByUserIdAndStatus(userId, true);
-			List<Posts> promotedPosts = promotedEntities.stream()
-					.map(Promote::getPostId)                  // get postId from promote
-					.filter(Objects::nonNull)
-					.map(postId -> postsRepository.findById(postId).orElse(null)) // fetch Posts by id
-					.filter(Objects::nonNull)
-					.collect(Collectors.toList());
+			List<Posts> promotedPosts = promotedEntities.stream().map(Promote::getPostId) // get postId from promote
+					.filter(Objects::nonNull).map(postId -> postsRepository.findById(postId).orElse(null)) // fetch
+																											// Posts by
+																											// id
+					.filter(Objects::nonNull).collect(Collectors.toList());
 
 			// Combine all posts and remove duplicates
 			Set<Posts> combinedPostsSet = new HashSet<>(userPosts);
@@ -521,16 +462,14 @@ public class PostServiceImpl implements PostService {
 			List<Posts> combinedPostsList = new ArrayList<>(combinedPostsSet);
 
 			// Sorting: promoted first, then newest createdOn
-			combinedPostsList.sort(Comparator
-					.comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.reverseOrder()))
-					.thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
+			combinedPostsList
+					.sort(Comparator.comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.reverseOrder()))
+							.thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder())));
 
 			// If highlightPostId is passed → move it to the top
 			if (highlightPostId != null) {
-				Posts highlighted = combinedPostsList.stream()
-						.filter(post -> post.getPostId().equals(highlightPostId))
-						.findFirst()
-						.orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
+				Posts highlighted = combinedPostsList.stream().filter(post -> post.getPostId().equals(highlightPostId))
+						.findFirst().orElseGet(() -> postsRepository.findById(highlightPostId).orElse(null));
 
 				if (highlighted != null) {
 					combinedPostsList.remove(highlighted);
@@ -553,7 +492,6 @@ public class PostServiceImpl implements PostService {
 		}
 	}
 
-
 	@Override
 	public PostWebModel getPostByPostId(String postId) {
 		Posts post = postsRepository.findByPostId(postId);
@@ -571,9 +509,6 @@ public class PostServiceImpl implements PostService {
 		return responseList.isEmpty() ? null : responseList.get(0);
 	}
 
-
-
-
 	public List<PostWebModel> transformPostsDataToPostWebModel(List<Posts> postList) {
 
 		List<PostWebModel> responseList = new ArrayList<>();
@@ -587,23 +522,24 @@ public class PostServiceImpl implements PostService {
 			}
 			final Integer finalLoggedInUser = loggedInUserTemp;
 
-			if (postList == null || postList.isEmpty()) return responseList;
+			if (postList == null || postList.isEmpty())
+				return responseList;
 
 			for (Posts post : postList) {
 
-				if (post == null) continue;
+				if (post == null)
+					continue;
 
 				// ============================================================
 				// PROMOTION LOGIC (latest Running + Success)
 				// ============================================================
 				PromoteAd promoteAd = null;
 
-				List<PromoteAd> promoteList =
-						promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
+				List<PromoteAd> promoteList = promoteAdRepository.findAllByPostIdOrderByCreatedOnDesc(post.getId());
 
 				for (PromoteAd p : promoteList) {
-					if (p.getStatus() == PromoteAd.PromoteStatus.Running &&
-							"SUCCESS".equalsIgnoreCase(p.getPaymentStatus())) {
+					if (p.getStatus() == PromoteAd.PromoteStatus.Running
+							&& "SUCCESS".equalsIgnoreCase(p.getPaymentStatus())) {
 						promoteAd = p;
 						break;
 					}
@@ -619,8 +555,7 @@ public class PostServiceImpl implements PostService {
 				// -------------------------------------------------------------
 				if (promoteAd != null && promoteAd.getStatus() == PromoteAd.PromoteStatus.Running) {
 
-					List<PromoteMediaFiles> selectedMedia =
-							promoteMediaFilesRepository
+					List<PromoteMediaFiles> selectedMedia = promoteMediaFilesRepository
 							.findByPromote_PromoteIdAndSelected(promoteAd.getPromoteId(), true);
 
 					if (selectedMedia != null && !selectedMedia.isEmpty()) {
@@ -628,28 +563,21 @@ public class PostServiceImpl implements PostService {
 						for (PromoteMediaFiles pm : selectedMedia) {
 							MediaFiles mf = pm.getMediaFile();
 							if (mf != null) {
-								postFiles.add(FileOutputWebModel.builder()
-										.id(mf.getId())
-										.fileId(mf.getFileId())
-										.fileName(mf.getFileName())
-										.filePath(mf.getFilePath())
-										.thumbnailPath(mf.getThumbnailPath())
-										.fileSize(mf.getFileSize())
-										.fileType(mf.getFileType())
-										.build());
+								postFiles.add(FileOutputWebModel.builder().id(mf.getId()).fileId(mf.getFileId())
+										.fileName(mf.getFileName()).filePath(mf.getFilePath())
+										.thumbnailPath(mf.getThumbnailPath()).fileSize(mf.getFileSize())
+										.fileType(mf.getFileType()).build());
 							}
 						}
 					}
 
-					// If promote is running and selected list empty → 
+					// If promote is running and selected list empty →
 					// you want to show NOTHING or NORMAL ??
-							// If NORMAL → enable below:
-								if (postFiles.isEmpty()) {
-									postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-											MediaFileCategory.Post,
-											post.getId()
-											);
-								}
+					// If NORMAL → enable below:
+					if (postFiles.isEmpty()) {
+						postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post,
+								post.getId());
+					}
 
 				}
 				// -------------------------------------------------------------
@@ -657,10 +585,7 @@ public class PostServiceImpl implements PostService {
 				// -------------------------------------------------------------
 				else {
 
-					postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-							MediaFileCategory.Post,
-							post.getId()
-							);
+					postFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Post, post.getId());
 				}
 
 				// ============================================================
@@ -668,16 +593,13 @@ public class PostServiceImpl implements PostService {
 				// ============================================================
 				Set<String> professionNames = new HashSet<>();
 				String userType = post.getUser().getUserType();
-				professionNames.add(
-						(userType != null && !userType.isEmpty()) ? userType : "Public User"
-						);
+				professionNames.add((userType != null && !userType.isEmpty()) ? userType : "Public User");
 
 				// ============================================================
 				// FOLLOWERS
 				// ============================================================
-				List<FollowersRequest> followersList =
-						friendRequestRepository.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(
-								post.getUser().getUserId(), true);
+				List<FollowersRequest> followersList = friendRequestRepository
+						.findByFollowersRequestReceiverIdAndFollowersRequestIsActive(post.getUser().getUserId(), true);
 
 				// ============================================================
 				// LIKE / UNLIKE
@@ -687,12 +609,9 @@ public class PostServiceImpl implements PostService {
 				Integer latestLikeId = null;
 
 				if (finalLoggedInUser != null) {
-					List<Likes> userLikes =
-							likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
+					List<Likes> userLikes = likeRepository.findAllByUserIdForPosts(finalLoggedInUser);
 
-					Likes entry = userLikes.stream()
-							.filter(l -> l.getPostId().equals(post.getId()))
-							.findFirst()
+					Likes entry = userLikes.stream().filter(l -> l.getPostId().equals(post.getId())).findFirst()
 							.orElse(null);
 
 					if (entry != null) {
@@ -706,20 +625,21 @@ public class PostServiceImpl implements PostService {
 					}
 				}
 
-				Long totalLikesCount =
-						likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "LIKE", "Post");
+				Long totalLikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "LIKE",
+						"Post");
 
-				Long totalUnlikesCount =
-						likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "UNLIKE", "Post");
+				Long totalUnlikesCount = likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "UNLIKE",
+						"Post");
+
+				Long totalReactionsCount = likeRepository.countByPostIdAndStatusTrue(post.getId());
 
 				// ============================================================
 				// WATCH LATER CHECK
 				// ============================================================
 				Boolean watchLater = false;
 				if (finalLoggedInUser != null) {
-					watchLater =
-							watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(
-									finalLoggedInUser, post.getId(), true);
+					watchLater = watchLaterRepository.existsByUser_UserIdAndPost_IdAndStatus(finalLoggedInUser,
+							post.getId(), true);
 				}
 
 				// ============================================================
@@ -727,16 +647,14 @@ public class PostServiceImpl implements PostService {
 				// ============================================================
 				Boolean pinStatus = false;
 				if (finalLoggedInUser != null) {
-					Optional<UserProfilePin> p =
-							pinProfileRepository.findByPinProfileIdAndUserId(
-									finalLoggedInUser, post.getUser().getUserId());
+					Optional<UserProfilePin> p = pinProfileRepository.findByPinProfileIdAndUserId(finalLoggedInUser,
+							post.getUser().getUserId());
 					pinStatus = p.map(UserProfilePin::isStatus).orElse(false);
 				}
 
 				Boolean pinMediaStatus = false;
 				if (finalLoggedInUser != null) {
-					pinMediaStatus =
-							pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId())
+					pinMediaStatus = pinMediaRepository.findByUserIdAndPinMediaId(finalLoggedInUser, post.getId())
 							.isPresent();
 				}
 
@@ -755,7 +673,6 @@ public class PostServiceImpl implements PostService {
 				String objValue = null;
 				String selectOption = null;
 
-
 				List<FileOutputWebModel> logoFiles = new ArrayList<>();
 
 				if (promoteAd != null) {
@@ -764,101 +681,84 @@ public class PostServiceImpl implements PostService {
 					amount = promoteAd.getAmount();
 					companyName = promoteAd.getBusinessName();
 					brandName = promoteAd.getBusinessType();
-					visitType = promoteAd.getVisitType() != null
-							? promoteAd.getVisitType().getTitle()
-									: null;
+					visitType = promoteAd.getVisitType() != null ? promoteAd.getVisitType().getTitle() : null;
 					adType = promoteAd.getAdType();
 					objValue = promoteAd.getAdvObjectValue();
 					selectOption = promoteAd.getAdvObject().getVisitType();
-					logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(
-							MediaFileCategory.Promote,
-							post.getId()
-							);
+					logoFiles = mediaFilesService.getMediaFilesByCategoryAndRefId(MediaFileCategory.Promote,
+							post.getId());
 				}
 
 				// ============================================================
-						// TAGGED USERS
-						// ============================================================
-						List<Map<String, Object>> taggedUsers = null;
+				// TAGGED USERS
+				// ============================================================
+				List<Map<String, Object>> taggedUsers = null;
 
-						if (post.getPostTagsCollection() != null) {
-							taggedUsers = post.getPostTagsCollection().stream()
-									.filter(t -> Boolean.TRUE.equals(t.getStatus()))
-									.map(tag -> {
-										Map<String, Object> map = new HashMap<>();
-										Integer tuId = tag.getTaggedUser().getUserId();
-										map.put("userId", tuId);
-										userService.getUser(tuId).ifPresent(u -> {
-											map.put("username", u.getName());
-											map.put("userProfilePic", userService.getProfilePicUrl(tuId));
-										});
-										return map;
-									})
-									.collect(Collectors.toList());
+				if (post.getPostTagsCollection() != null) {
+					taggedUsers = post.getPostTagsCollection().stream().filter(t -> Boolean.TRUE.equals(t.getStatus()))
+							.map(tag -> {
+								Map<String, Object> map = new HashMap<>();
+								Integer tuId = tag.getTaggedUser().getUserId();
+								map.put("userId", tuId);
+								userService.getUser(tuId).ifPresent(u -> {
+									map.put("username", u.getName());
+									map.put("userProfilePic", userService.getProfilePicUrl(tuId));
+								});
+								return map;
+							}).collect(Collectors.toList());
+				}
+
+				String userReaction = null;
+				Integer latestLikedId = null;
+
+				if (finalLoggedInUser != null) {
+
+					Optional<Likes> entryOpt = likeRepository.findByPostIdAndLikedByAndStatusTrue(post.getId(),
+							finalLoggedInUser);
+
+					if (entryOpt.isPresent()) {
+						Likes entry = entryOpt.get();
+
+						if (entry.getReaction() != null) {
+							userReaction = entry.getReaction().name(); // ✅ IMPORTANT
+							latestLikedId = entry.getLikeId();
 						}
+					}
+				}
+				// ============================================================
+				// ELAPSED TIME
+				// ============================================================
+				LocalDateTime createdOn = LocalDateTime.ofInstant(post.getCreatedOn().toInstant(),
+						ZoneId.systemDefault());
+				String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
 
-						// ============================================================
-						// ELAPSED TIME
-						// ============================================================
-						LocalDateTime createdOn =
-								LocalDateTime.ofInstant(post.getCreatedOn().toInstant(), ZoneId.systemDefault());
-						String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
+				// ============================================================
+				// BUILD RESPONSE
+				// ============================================================
+				PostWebModel model = PostWebModel.builder().id(post.getId()).userId(post.getUser().getUserId())
+						.userName(post.getUser().getName()).postId(post.getPostId())
+						.adminReview(post.getUser().getAdminReview())
+						.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
 
-						// ============================================================
-						// BUILD RESPONSE
-						// ============================================================
-						PostWebModel model = PostWebModel.builder()
-								.id(post.getId())
-								.userId(post.getUser().getUserId())
-								.userName(post.getUser().getName())
-								.postId(post.getPostId())
-								.adminReview(post.getUser().getAdminReview())
-								.userProfilePic(userService.getProfilePicUrl(post.getUser().getUserId()))
+						.description(post.getDescription()).postFiles(postFiles)
 
-								.description(post.getDescription())
-								.postFiles(postFiles)
+						.pinMediaStatus(pinMediaStatus).pinProfileStatus(pinStatus)
+						.userType(post.getUser().getUserType()).likeCount(totalLikesCount.intValue())
+						.UnlikesCount(totalUnlikesCount.intValue()).UnlikeStatus(unlikeStatus)
+						.shareCount(post.getSharesCount()).commentCount(post.getCommentsCount()).promoteFlag(isPromoted)
+						.promoteId(promoteId).numberOfDays(numberOfDays).amount(amount).companyName(companyName)
+						.brandName(brandName).companyLogoFiles(logoFiles).visitPageData(visitType).adType(adType)
+						.selectOption(selectOption).objValue(objValue).postLinkUrl(post.getPostLinkUrls())
+						.latitude(post.getLatitude()).longitude(post.getLongitude()).address(post.getAddress())
+						.totalReactions(totalReactionsCount.intValue()).userReaction(userReaction)
+						.likedId(latestLikedId).likeId(latestLikeId).likeStatus(likeStatus).likeId(latestLikeId)
+						.elapsedTime(elapsedTime).privateOrPublic(post.getPrivateOrPublic())
+						.locationName(post.getLocationName()).professionNames(professionNames)
+						.followersCount(followersList.size()).createdOn(post.getCreatedOn())
+						.createdBy(post.getCreatedBy()).taggedUserss(taggedUsers).viewsCount(post.getViewsCount())
+						.watchLater(watchLater).build();
 
-								.pinMediaStatus(pinMediaStatus)
-								.pinProfileStatus(pinStatus)
-								.userType(post.getUser().getUserType())
-								.likeCount(totalLikesCount.intValue())
-								.UnlikesCount(totalUnlikesCount.intValue())
-								.UnlikeStatus(unlikeStatus)
-								.shareCount(post.getSharesCount())
-								.commentCount(post.getCommentsCount())
-
-								.promoteFlag(isPromoted)
-								.promoteId(promoteId)
-								.numberOfDays(numberOfDays)
-								.amount(amount)
-								.companyName(companyName)
-								.brandName(brandName)
-								.companyLogoFiles(logoFiles)
-								.visitPageData(visitType)
-								.adType(adType)
-								.selectOption(selectOption)
-								.objValue(objValue)
-
-
-								.postLinkUrl(post.getPostLinkUrls())
-								.latitude(post.getLatitude())
-								.longitude(post.getLongitude())
-								.address(post.getAddress())
-								.likeStatus(likeStatus)
-								.likeId(latestLikeId)
-								.elapsedTime(elapsedTime)
-								.privateOrPublic(post.getPrivateOrPublic())
-								.locationName(post.getLocationName())
-								.professionNames(professionNames)
-								.followersCount(followersList.size())
-								.createdOn(post.getCreatedOn())
-								.createdBy(post.getCreatedBy())
-								.taggedUserss(taggedUsers)
-								.viewsCount(post.getViewsCount())
-								.watchLater(watchLater)
-								.build();
-
-						responseList.add(model);
+				responseList.add(model);
 			}
 
 		} catch (Exception e) {
@@ -867,9 +767,6 @@ public class PostServiceImpl implements PostService {
 
 		return responseList;
 	}
-
-
-
 
 	private String fetchVisitPageData(Promote promoteDetails) {
 		if (promoteDetails != null && promoteDetails.getSelectOption() != null) {
@@ -880,9 +777,10 @@ public class PostServiceImpl implements PostService {
 		return null; // Return null if no data is available
 	}
 
-
 	private String generatePostUrl(String postId) {
-		return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId) ? appUrl + "/user/post/view/" + postId : "";
+		return !Utility.isNullOrBlankWithTrim(appUrl) && !Utility.isNullOrBlankWithTrim(postId)
+				? appUrl + "/user/post/view/" + postId
+				: "";
 	}
 
 	@Override
@@ -891,7 +789,8 @@ public class PostServiceImpl implements PostService {
 			Optional<User> userFromDB = userService.getUser(userId);
 			if (userFromDB.isPresent()) {
 				String destinationPath = FileUtil.generateDestinationPath(userFromDB.get(), category);
-				List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
+				List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket",
+						destinationPath);
 				return new ByteArrayResource(fileUtil.downloadFile(s3data));
 			}
 		} catch (Exception e) {
@@ -905,7 +804,8 @@ public class PostServiceImpl implements PostService {
 	public Resource getAllPostFilesByCategory(String category) {
 		try {
 			String destinationPath = FileUtil.generateDestinationPath(category);
-			List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket", destinationPath);
+			List<S3Object> s3data = awsService.getAllObjectsByBucketAndDestination("filmhook-dev-bucket",
+					destinationPath);
 			return new ByteArrayResource(fileUtil.downloadFile(s3data));
 		} catch (Exception e) {
 			logger.error("Error at getAllPostFilesByCategory() -> {}", e.getMessage());
@@ -914,194 +814,173 @@ public class PostServiceImpl implements PostService {
 		return null;
 	}
 
-	//    @Override
-	//    public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize) {
-	//        try {
-	//            Pageable paging = PageRequest.of(pageNo - 1, pageSize);
+	// @Override
+	// public List<PostWebModel> getAllUsersPosts(Integer pageNo, Integer pageSize)
+	// {
+	// try {
+	// Pageable paging = PageRequest.of(pageNo - 1, pageSize);
 	//
-	//            // Fetch all active posts with pagination
-	//            List<Posts> postList = postsRepository.getAllActivePosts(paging);
+	// // Fetch all active posts with pagination
+	// List<Posts> postList = postsRepository.getAllActivePosts(paging);
 	//
-	//            // Sort the posts: false (or null) promoteFlag first, true last, then by creation date (newest first)
-	//            postList.sort(Comparator
-	//                    .comparing(Posts::getPromoteFlag, Comparator.nullsFirst(Comparator.naturalOrder())) // false/null first, true last
-	//                    .thenComparing(Posts::getCreatedOn, Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date, newest first
+	// // Sort the posts: false (or null) promoteFlag first, true last, then by
+	// creation date (newest first)
+	// postList.sort(Comparator
+	// .comparing(Posts::getPromoteFlag,
+	// Comparator.nullsFirst(Comparator.naturalOrder())) // false/null first, true
+	// last
+	// .thenComparing(Posts::getCreatedOn,
+	// Comparator.nullsLast(Comparator.reverseOrder()))); // Sort by creation date,
+	// newest first
 	//
-	//            // Transform the sorted posts into PostWebModel and return the result
-	//            return this.transformPostsDataToPostWebModel(postList);
-	//        } catch (Exception e) {
-	//            logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
-	//            e.printStackTrace();
-	//            return null;
-	//        }
-	//    }
-@Override
-public List<PostWebModel> getAllUsersPosts(
-        Integer userId,
-        Integer pageNo,
-        Integer pageSize,
-        String userCountry
-) {
-    try {
+	// // Transform the sorted posts into PostWebModel and return the result
+	// return this.transformPostsDataToPostWebModel(postList);
+	// } catch (Exception e) {
+	// logger.error("Error at getAllUsersPosts() -> {}", e.getMessage());
+	// e.printStackTrace();
+	// return null;
+	// }
+	// }
+	@Override
+	public List<PostWebModel> getAllUsersPosts(Integer userId, Integer pageNo, Integer pageSize, String userCountry) {
+		try {
 
-        final String userCountryFinal =
-                (userCountry == null ? "" : userCountry.trim().toLowerCase());
+			final String userCountryFinal = (userCountry == null ? "" : userCountry.trim().toLowerCase());
 
-        List<Posts> allPosts = postsRepository.getAllActivePosts();
+			List<Posts> allPosts = postsRepository.getAllActivePosts();
 
-        if (allPosts == null || allPosts.isEmpty()) {
-            return Collections.emptyList();
-        }
+			if (allPosts == null || allPosts.isEmpty()) {
+				return Collections.emptyList();
+			}
 
-        // ========================================================
-        // 1. FILTER BASED ON PRIVACY RULES
-        // ========================================================
-        List<Posts> visiblePosts = allPosts.stream()
-                .filter(Objects::nonNull)
-                .filter(post -> {
+			// ========================================================
+			// 1. FILTER BASED ON PRIVACY RULES
+			// ========================================================
+			List<Posts> visiblePosts = allPosts.stream().filter(Objects::nonNull).filter(post -> {
 
-                    Integer ownerId = post.getUser().getUserId();
+				Integer ownerId = post.getUser().getUserId();
 
-                    if (ownerId.equals(userId)) return true;
+				if (ownerId.equals(userId))
+					return true;
 
-                    if (!Boolean.TRUE.equals(post.getPrivateOrPublic())) return true;
+				if (!Boolean.TRUE.equals(post.getPrivateOrPublic()))
+					return true;
 
-                    return followersRequestRepository
-                            .existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
-                                    ownerId, userId, true
-                            );
-                })
-                .collect(Collectors.toList());
+				return followersRequestRepository
+						.existsByFollowersRequestSenderIdAndFollowersRequestReceiverIdAndFollowersRequestIsActive(
+								ownerId, userId, true);
+			}).collect(Collectors.toList());
 
+			// ========================================================
+			// 2. COUNTRY FILTER FOR RUNNING PROMOTIONS
+			// ========================================================
+			Map<Integer, Date> promotionStartDateMap = new HashMap<>();
 
-        // ========================================================
-        // 2. COUNTRY FILTER FOR RUNNING PROMOTIONS
-        // ========================================================
-        Map<Integer, Date> promotionStartDateMap = new HashMap<>();
+			List<Posts> filteredByCountry = visiblePosts.stream().filter(post -> {
 
-        List<Posts> filteredByCountry = visiblePosts.stream()
-                .filter(post -> {
+				if (!Boolean.TRUE.equals(post.getPromoteFlag())) {
+					return true;
+				}
 
-                    if (!Boolean.TRUE.equals(post.getPromoteFlag())) {
-                        return true;
-                    }
+				List<PromoteAd> promoteList = promoteAdRepository.findAllByPostIdOrderByStartDateDesc(post.getId());
 
-                    List<PromoteAd> promoteList =
-                            promoteAdRepository.findAllByPostIdOrderByStartDateDesc(post.getId());
+				if (promoteList == null || promoteList.isEmpty()) {
+					return true;
+				}
 
-                    if (promoteList == null || promoteList.isEmpty()) {
-                        return true;
-                    }
+				List<PromoteAd> runningPromotions = promoteList.stream()
+						.filter(p -> p.getStatus() == PromoteAd.PromoteStatus.Running).collect(Collectors.toList());
 
-                    List<PromoteAd> runningPromotions = promoteList.stream()
-                            .filter(p -> p.getStatus() == PromoteAd.PromoteStatus.Running)
-                            .collect(Collectors.toList());
+				if (runningPromotions.isEmpty()) {
+					return true;
+				}
 
-                    if (runningPromotions.isEmpty()) {
-                        return true;
-                    }
+				// store latest startDate for sorting later
+				promotionStartDateMap.put(post.getId(), runningPromotions.get(0).getStartDate());
 
-                    // store latest startDate for sorting later
-                    promotionStartDateMap.put(
-                            post.getId(),
-                            runningPromotions.get(0).getStartDate()
-                    );
+				boolean allContainUserCountry = runningPromotions.stream().allMatch(p -> {
+					String countries = (p.getTargetCountries() == null) ? "" : p.getTargetCountries().toLowerCase();
+					return countries.contains(userCountryFinal);
+				});
 
-                    boolean allContainUserCountry = runningPromotions.stream()
-                            .allMatch(p -> {
-                                String countries = (p.getTargetCountries() == null)
-                                        ? ""
-                                        : p.getTargetCountries().toLowerCase();
-                                return countries.contains(userCountryFinal);
-                            });
+				return !allContainUserCountry;
 
-                    return !allContainUserCountry;
+			}).collect(Collectors.toList());
 
-                })
-                .collect(Collectors.toList());
+			// ========================================================
+			// 3. SORT POSTS BY CREATED DATE
+			// ========================================================
+			filteredByCountry.sort(Comparator.comparing(Posts::getCreatedOn).reversed());
 
+			// ========================================================
+			// 4. SPLIT PROMOTED VS NORMAL POSTS
+			// ========================================================
+			List<Posts> promotedPosts = new ArrayList<>();
+			List<Posts> normalPosts = new ArrayList<>();
 
-        // ========================================================
-        // 3. SORT POSTS BY CREATED DATE
-        // ========================================================
-        filteredByCountry.sort(
-                Comparator.comparing(Posts::getCreatedOn).reversed()
-        );
+			for (Posts post : filteredByCountry) {
 
+				if (Boolean.TRUE.equals(post.getPromoteFlag())) {
+					promotedPosts.add(post);
+				} else {
+					normalPosts.add(post);
+				}
 
-        // ========================================================
-        // 4. SPLIT PROMOTED VS NORMAL POSTS
-        // ========================================================
-        List<Posts> promotedPosts = new ArrayList<>();
-        List<Posts> normalPosts = new ArrayList<>();
+			}
 
-        for (Posts post : filteredByCountry) {
+			// ========================================================
+			// 5. SORT PROMOTED POSTS BY LATEST START DATE
+			// ========================================================
+			promotedPosts.sort((p1, p2) -> {
 
-            if (Boolean.TRUE.equals(post.getPromoteFlag())) {
-                promotedPosts.add(post);
-            } else {
-                normalPosts.add(post);
-            }
+				Date d1 = promotionStartDateMap.getOrDefault(p1.getId(), new Date(0));
+				Date d2 = promotionStartDateMap.getOrDefault(p2.getId(), new Date(0));
 
-        }
+				return d2.compareTo(d1); // latest promoted first
+			});
 
+			// ========================================================
+			// 6. INTERLEAVE: 1 promoted + 5 normal
+			// ========================================================
+			List<Posts> orderedPosts = new ArrayList<>();
 
-        // ========================================================
-        // 5. SORT PROMOTED POSTS BY LATEST START DATE
-        // ========================================================
-        promotedPosts.sort((p1, p2) -> {
+			int promoIdx = 0;
+			int normalIdx = 0;
 
-            Date d1 = promotionStartDateMap.getOrDefault(p1.getId(), new Date(0));
-            Date d2 = promotionStartDateMap.getOrDefault(p2.getId(), new Date(0));
+			while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
 
-            return d2.compareTo(d1); // latest promoted first
-        });
+				if (promoIdx < promotedPosts.size()) {
+					orderedPosts.add(promotedPosts.get(promoIdx++));
+				}
 
+				for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
+					orderedPosts.add(normalPosts.get(normalIdx++));
+				}
 
-        // ========================================================
-        // 6. INTERLEAVE: 1 promoted + 5 normal
-        // ========================================================
-        List<Posts> orderedPosts = new ArrayList<>();
+			}
 
-        int promoIdx = 0;
-        int normalIdx = 0;
+			// ========================================================
+			// 7. PAGINATION
+			// ========================================================
+			int start = (pageNo - 1) * pageSize;
+			int end = Math.min(start + pageSize, orderedPosts.size());
 
-        while (promoIdx < promotedPosts.size() || normalIdx < normalPosts.size()) {
+			if (start >= orderedPosts.size()) {
+				return Collections.emptyList();
+			}
 
-            if (promoIdx < promotedPosts.size()) {
-                orderedPosts.add(promotedPosts.get(promoIdx++));
-            }
+			List<Posts> paginatedPosts = orderedPosts.subList(start, end);
 
-            for (int i = 0; i < 5 && normalIdx < normalPosts.size(); i++) {
-                orderedPosts.add(normalPosts.get(normalIdx++));
-            }
+			// ========================================================
+			// 8. TRANSFORM TO WEB MODEL
+			// ========================================================
+			return transformPostsDataToPostWebModel(paginatedPosts);
 
-        }
-
-
-        // ========================================================
-        // 7. PAGINATION
-        // ========================================================
-        int start = (pageNo - 1) * pageSize;
-        int end = Math.min(start + pageSize, orderedPosts.size());
-
-        if (start >= orderedPosts.size()) {
-            return Collections.emptyList();
-        }
-
-        List<Posts> paginatedPosts = orderedPosts.subList(start, end);
-
-
-        // ========================================================
-        // 8. TRANSFORM TO WEB MODEL
-        // ========================================================
-        return transformPostsDataToPostWebModel(paginatedPosts);
-
-    } catch (Exception e) {
-        logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
-        return Collections.emptyList();
-    }
-}
+		} catch (Exception e) {
+			logger.error("Error in getAllUsersPosts(): {}", e.getMessage(), e);
+			return Collections.emptyList();
+		}
+	}
 
 	@Override
 	public LikeWebModel addOrUpdateLike(LikeWebModel likeWebModel) {
@@ -1115,19 +994,23 @@ public List<PostWebModel> getAllUsersPosts(
 			// --- Validate category targets ---
 			if (POST.equalsIgnoreCase(likeWebModel.getCategory())) {
 				post = postsRepository.findById(likeWebModel.getPostId()).orElse(null);
-				if (post == null) return null;
+				if (post == null)
+					return null;
 
 			} else if (AUDITION.equalsIgnoreCase(likeWebModel.getCategory())) {
 				audition = auditionRepository.findById(likeWebModel.getAuditionId()).orElse(null);
-				if (audition == null) return null;
+				if (audition == null)
+					return null;
 
 			} else if (COMMENT.equalsIgnoreCase(likeWebModel.getCategory())) {
 				existingComment = commentRepository.findById(likeWebModel.getCommentId()).orElse(null);
-				if (existingComment == null) return null;
+				if (existingComment == null)
+					return null;
 
 			} else if (REVIEW.equalsIgnoreCase(likeWebModel.getCategory())) {
 				review = reviewRepository.findById(likeWebModel.getReviewId()).orElse(null);
-				if (review == null) return null;
+				if (review == null)
+					return null;
 			}
 			// --- Find existing like/unlike record ---
 			Likes existingLike;
@@ -1136,63 +1019,43 @@ public List<PostWebModel> getAllUsersPosts(
 			} else {
 				existingLike = likeRepository
 						.findByCategoryAndLikedByAndPostIdAndCommentIdAndAuditionIdAndReviewId(
-								likeWebModel.getCategory(),
-								likeWebModel.getUserId(),
-								likeWebModel.getPostId(),
-								likeWebModel.getCommentId(),
-								likeWebModel.getAuditionId(),
-								likeWebModel.getReviewId()
-								)
+								likeWebModel.getCategory(), likeWebModel.getUserId(), likeWebModel.getPostId(),
+								likeWebModel.getCommentId(), likeWebModel.getAuditionId(), likeWebModel.getReviewId())
 						.orElse(null);
 			}
 
 			if (existingLike != null) {
 				// Update reaction type directly (LIKE or UNLIKE)
 				existingLike.setReactionType(likeWebModel.getReactionType());
-				existingLike.setStatus("LIKE".equalsIgnoreCase(likeWebModel.getReactionType())); // status = true for like, false for unlike
+				existingLike.setStatus("LIKE".equalsIgnoreCase(likeWebModel.getReactionType())); // status = true for
+																									// like, false for
+																									// unlike
 				existingLike.setUpdatedBy(likeWebModel.getUserId());
 				existingLike.setUpdatedOn(new Date());
 				likeRowToSaveOrUpdate = existingLike;
 			} else {
 				// Insert new record
-				likeRowToSaveOrUpdate = Likes.builder()
-						.category(likeWebModel.getCategory())
-						.postId(likeWebModel.getPostId())
-						.commentId(likeWebModel.getCommentId())
-						.auditionId(likeWebModel.getAuditionId())
-						.reviewId(likeWebModel.getReviewId()) 
-						.likedBy(likeWebModel.getUserId())
-						.reactionType(likeWebModel.getReactionType())
-						.status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType()))
-						.notified(false)
-						.createdBy(likeWebModel.getUserId())
-						.createdOn(new Date())
-						.build();
+				likeRowToSaveOrUpdate = Likes.builder().category(likeWebModel.getCategory())
+						.postId(likeWebModel.getPostId()).commentId(likeWebModel.getCommentId())
+						.auditionId(likeWebModel.getAuditionId()).reviewId(likeWebModel.getReviewId())
+						.likedBy(likeWebModel.getUserId()).reactionType(likeWebModel.getReactionType())
+						.status("LIKE".equalsIgnoreCase(likeWebModel.getReactionType())).notified(false)
+						.createdBy(likeWebModel.getUserId()).createdOn(new Date()).build();
 			}
 
 			Likes savedLike = likeRepository.saveAndFlush(likeRowToSaveOrUpdate);
 
 			// --- Count likes & unlikes ---
-			Integer totalLikes = likeRepository.countByReactionType(
-					likeWebModel.getCategory(),
-					likeWebModel.getPostId(),
-					likeWebModel.getCommentId(),
-					likeWebModel.getAuditionId(),
-					likeWebModel.getReviewId(),
-					"LIKE"
-					);
+			Integer totalLikes = likeRepository.countByReactionType(likeWebModel.getCategory(),
+					likeWebModel.getPostId(), likeWebModel.getCommentId(), likeWebModel.getAuditionId(),
+					likeWebModel.getReviewId(), "LIKE");
 
-			Integer totalUnlikes = likeRepository.countByReactionType(
-					likeWebModel.getCategory(),
-					likeWebModel.getPostId(),
-					likeWebModel.getCommentId(),
-					likeWebModel.getAuditionId(),
-					likeWebModel.getReviewId(),
-					"UNLIKE"
-					);
+			Integer totalUnlikes = likeRepository.countByReactionType(likeWebModel.getCategory(),
+					likeWebModel.getPostId(), likeWebModel.getCommentId(), likeWebModel.getAuditionId(),
+					likeWebModel.getReviewId(), "UNLIKE");
 
-			logger.info("Like count [{}], Unlike count [{}] for category [{}]",
-					totalLikes, totalUnlikes, likeWebModel.getCategory());
+			logger.info("Like count [{}], Unlike count [{}] for category [{}]", totalLikes, totalUnlikes,
+					likeWebModel.getCategory());
 
 			return this.transformLikeData(savedLike, totalLikes, totalUnlikes, likeWebModel.getUserId());
 
@@ -1202,27 +1065,130 @@ public List<PostWebModel> getAllUsersPosts(
 		}
 	}
 
+	@Override
+	public LikeWebModel addOrUpdateReaction(LikeWebModel model) {
 
+		Optional<Likes> existingOpt = likeRepository.findByPostIdAndLikedBy(model.getPostId(), model.getUserId());
 
-	private LikeWebModel transformLikeData(Likes likes, Integer totalLikes, Integer totalUnlikes, Integer loggedInUserId) {
-		return LikeWebModel.builder()
-				.likeId(likes.getLikeId())
-				.category(likes.getCategory())
-				.postId(likes.getPostId())
-				.commentId(likes.getCommentId())
-				.userId(likes.getLikedBy())
-				.totalLikesCount(totalLikes)
-				.totalUnlikesCount(totalUnlikes)
-				.status(likes.getStatus())
-				.isLiked(likes.getStatus() != null && likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
-				.isUnliked(likes.getStatus() != null && !likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
-				.createdBy(likes.getCreatedBy())
-				.createdOn(likes.getCreatedOn())
-				.updatedBy(likes.getUpdatedBy())
-				.updatedOn(likes.getUpdatedOn())
-				.build();
+		Likes like;
+
+		ReactionType newReaction = ReactionType.valueOf(model.getReaction());
+
+		if (existingOpt.isPresent()) {
+
+			like = existingOpt.get();
+
+			// ✅ Same reaction → toggle OFF
+			if (like.getReaction() != null && like.getReaction().equals(newReaction)) {
+
+				if (Boolean.TRUE.equals(like.getStatus())) {
+					// already liked → UNLIKE
+					like.setStatus(false);
+					model.setStatus(false);
+				} else {
+					// was unliked → LIKE again
+					like.setStatus(true);
+					model.setStatus(true);
+				}
+
+				like.setUpdatedBy(model.getUserId());
+
+			} else {
+				// Change reaction
+				like.setReaction(newReaction);
+				like.setStatus(true);
+				model.setStatus(true);
+				like.setUpdatedBy(model.getUserId());
+			}
+
+		} else {
+
+			// New reaction
+			like = new Likes();
+			like.setPostId(model.getPostId());
+			like.setLikedBy(model.getUserId());
+			like.setCategory("Post");
+			like.setCreatedOn(new Date());
+			like.setCreatedBy(model.getUserId());
+			like.setReaction(newReaction);
+			like.setStatus(true);
+			model.setStatus(true);
+		}
+
+		likeRepository.save(like);
+
+		return model;
 	}
 
+	@Override
+	public Map<String, Object> getPostReactions(Integer postId, Integer userId) {
+
+		Map<String, Object> response = new HashMap<>();
+
+		// ✅ 1. TOTAL COUNT
+		long totalReactions = likeRepository.countByPostIdAndStatusTrue(postId);
+
+		// ✅ 2. COUNT PER REACTION
+		Map<String, Long> reactionCounts = new HashMap<>();
+
+		List<Object[]> counts = likeRepository.countReactionsByPostId(postId);
+
+		for (Object[] obj : counts) {
+			reactionCounts.put(obj[0].toString(), (Long) obj[1]);
+		}
+
+		// ✅ 3. USERS WHO REACTED
+		List<Map<String, Object>> reactedUsers = new ArrayList<>();
+
+		List<Likes> likesList = likeRepository.findAllByPostIdAndStatusTrue(postId);
+
+		for (Likes like : likesList) {
+
+			Map<String, Object> userMap = new HashMap<>();
+
+			Integer uId = like.getLikedBy();
+
+			userMap.put("userId", uId);
+			userMap.put("reaction", like.getReaction().name());
+
+			userService.getUser(uId).ifPresent(u -> {
+				userMap.put("name", u.getName());
+				userMap.put("profilePic", userService.getProfilePicUrl(uId));
+			});
+
+			reactedUsers.add(userMap);
+		}
+
+		// ✅ 4. LOGGED USER REACTION
+		String userReaction = null;
+
+		if (userId != null) {
+			Optional<Likes> userLike = likeRepository.findByPostIdAndLikedByAndStatusTrue(postId, userId);
+
+			if (userLike.isPresent()) {
+				userReaction = userLike.get().getReaction().name();
+			}
+		}
+
+		// ✅ FINAL RESPONSE
+		response.put("totalReactions", totalReactions);
+		response.put("reactionCounts", reactionCounts);
+		response.put("reactedUsers", reactedUsers);
+		response.put("userReaction", userReaction);
+
+		return response;
+	}
+
+	private LikeWebModel transformLikeData(Likes likes, Integer totalLikes, Integer totalUnlikes,
+			Integer loggedInUserId) {
+		return LikeWebModel.builder().likeId(likes.getLikeId()).category(likes.getCategory()).postId(likes.getPostId())
+				.commentId(likes.getCommentId()).userId(likes.getLikedBy()).totalLikesCount(totalLikes)
+				.totalUnlikesCount(totalUnlikes).status(likes.getStatus())
+				.isLiked(likes.getStatus() != null && likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
+				.isUnliked(likes.getStatus() != null && !likes.getStatus() && likes.getLikedBy().equals(loggedInUserId))
+				.createdBy(likes.getCreatedBy()).createdOn(likes.getCreatedOn()).updatedBy(likes.getUpdatedBy())
+				.updatedOn(likes.getUpdatedOn()).build();
+	}
 
 	@Scheduled(fixedRate = 1 * 60 * 1000) // every 1 minute
 	public void sendBatchLikeNotifications() {
@@ -1232,8 +1198,9 @@ public List<PostWebModel> getAllUsersPosts(
 				.filter(like -> like.getPostId() != null && like.getCommentId() == null) // Only post likes
 				.collect(Collectors.groupingBy(Likes::getPostId));
 
-		Map<Integer, List<Likes>> likesByComment = unnotifiedLikes.stream()
-				.filter(like -> like.getCommentId() != null) // All comment likes
+		Map<Integer, List<Likes>> likesByComment = unnotifiedLikes.stream().filter(like -> like.getCommentId() != null) // All
+																														// comment
+																														// likes
 				.collect(Collectors.groupingBy(Likes::getCommentId));
 
 		processPostLikeNotifications(likesByPost);
@@ -1246,14 +1213,15 @@ public List<PostWebModel> getAllUsersPosts(
 			List<Likes> likes = entry.getValue();
 
 			Posts post = postsRepository.findById(postId).orElse(null);
-			if (post == null) continue;
+			if (post == null)
+				continue;
 
 			Integer postOwnerId = post.getUser().getUserId();
-			List<Likes> validLikes = likes.stream()
-					.filter(like -> !like.getLikedBy().equals(postOwnerId))
+			List<Likes> validLikes = likes.stream().filter(like -> !like.getLikedBy().equals(postOwnerId))
 					.collect(Collectors.toList());
 
-			if (validLikes.isEmpty()) continue;
+			if (validLikes.isEmpty())
+				continue;
 
 			sendBatchNotification(validLikes, postOwnerId, "Someone Liked Your Post", "Like", postId, post.getPostId());
 		}
@@ -1265,42 +1233,46 @@ public List<PostWebModel> getAllUsersPosts(
 			List<Likes> likes = entry.getValue();
 
 			Comment comment = commentRepository.findById(commentId).orElse(null);
-			if (comment == null) continue;
+			if (comment == null)
+				continue;
 
 			Integer commentOwnerId = comment.getCommentedBy();
-			List<Likes> validLikes = likes.stream()
-					.filter(like -> !like.getLikedBy().equals(commentOwnerId))
+			List<Likes> validLikes = likes.stream().filter(like -> !like.getLikedBy().equals(commentOwnerId))
 					.collect(Collectors.toList());
 
-			if (validLikes.isEmpty()) continue;
+			if (validLikes.isEmpty())
+				continue;
 
-			sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "Comment", commentId, comment.getPost().getPostId());
+			sendBatchNotification(validLikes, commentOwnerId, "Someone Liked Your Comment", "Comment", commentId,
+					comment.getPost().getPostId());
 		}
 	}
 
-	private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type, Integer refId, String postId) {
-		List<User> likers = userRepository.findAllById(
-				validLikes.stream().map(Likes::getLikedBy).distinct().collect(Collectors.toList())
-				);
+	private void sendBatchNotification(List<Likes> validLikes, Integer receiverId, String title, String type,
+			Integer refId, String postId) {
+		List<User> likers = userRepository
+				.findAllById(validLikes.stream().map(Likes::getLikedBy).distinct().collect(Collectors.toList()));
 
-		if (likers.isEmpty()) return;
+		if (likers.isEmpty())
+			return;
 
 		String message;
 		Integer senderId = likers.get(0).getUserId();
 		Integer senderId2 = null;
 
 		if (likers.size() == 1) {
-			message =  " liked your " + (type.equals("Like") ? "post" : "comment");
+			message = " liked your " + (type.equals("Like") ? "post" : "comment");
 		} else if (likers.size() == 2) {
 			senderId2 = likers.get(1).getUserId();
 			message = " liked your " + (type.equals("Like") ? "post" : "comment");
 		} else {
-			message = " and " + (likers.size() - 2) + " others liked your " + (type.equals("Like") ? "post" : "comment");
+			message = " and " + (likers.size() - 2) + " others liked your "
+					+ (type.equals("Like") ? "post" : "comment");
 			senderId2 = likers.get(1).getUserId();
 		}
 
-		sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId, postId);
-
+		sendLikeNotificationWithOptionalSecondSender(receiverId, senderId, senderId2, title, message, type, refId,
+				postId);
 
 		validLikes.forEach(like -> {
 			like.setNotified(true);
@@ -1311,15 +1283,8 @@ public List<PostWebModel> getAllUsersPosts(
 		likeRepository.saveAll(validLikes);
 	}
 
-	private void sendLikeNotificationWithOptionalSecondSender(
-			Integer receiverId,
-			Integer senderId,
-			Integer senderId2,
-			String title,
-			String messageBody,
-			String userType,
-			Integer refId, String postId
-			) {
+	private void sendLikeNotificationWithOptionalSecondSender(Integer receiverId, Integer senderId, Integer senderId2,
+			String title, String messageBody, String userType, Integer refId, String postId) {
 		try {
 			Optional<User> senderOpt = userRepository.findById(senderId);
 			Optional<User> receiverOpt = userRepository.findById(receiverId);
@@ -1332,22 +1297,10 @@ public List<PostWebModel> getAllUsersPosts(
 			User sender = senderOpt.get();
 			User receiver = receiverOpt.get();
 
-			InAppNotification inAppNotification = InAppNotification.builder()
-					.senderId(senderId)
-					.senderId2(senderId2)
-					.receiverId(receiverId)
-					.title(title)
-					.message(messageBody)
-					.userType(userType)
-					.id(refId)
-					.postId(postId)
-					.adminReview(sender.getAdminReview())
-					.Profession(sender.getUserType())
-					.isRead(false)
-					.isDeleted(false)
-					.createdBy(senderId)
-					.createdOn(new Date())
-					.build();
+			InAppNotification inAppNotification = InAppNotification.builder().senderId(senderId).senderId2(senderId2)
+					.receiverId(receiverId).title(title).message(messageBody).userType(userType).id(refId)
+					.postId(postId).adminReview(sender.getAdminReview()).Profession(sender.getUserType()).isRead(false)
+					.isDeleted(false).createdBy(senderId).createdOn(new Date()).build();
 
 			inAppNotificationRepository.save(inAppNotification);
 			logger.info(" In-app notification saved for receiver ID: {}", receiverId);
@@ -1356,7 +1309,6 @@ public List<PostWebModel> getAllUsersPosts(
 
 			if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 				try {
-
 
 					String bodyText;
 					if (senderId2 != null) {
@@ -1369,30 +1321,20 @@ public List<PostWebModel> getAllUsersPosts(
 
 					// FCM Notification
 					Notification notificationData = Notification.builder()
-							//	.setTitle(title)
-							.setBody(bodyText)
-							.build();
+							// .setTitle(title)
+							.setBody(bodyText).build();
 
 					// Android Config
-					AndroidNotification androidNotification = AndroidNotification.builder()
-							.setIcon("ic_notification")
-							.setColor("#00A2E8")
-							.build();
+					AndroidNotification androidNotification = AndroidNotification.builder().setIcon("ic_notification")
+							.setColor("#00A2E8").build();
 
-					AndroidConfig androidConfig = AndroidConfig.builder()
-							.setNotification(androidNotification)
-							.build();
+					AndroidConfig androidConfig = AndroidConfig.builder().setNotification(androidNotification).build();
 
-					Message firebaseMessage = Message.builder()
-							.setNotification(notificationData)
-							.setAndroidConfig(androidConfig)
-							.putData("type", userType)
-							.putData("refId", String.valueOf(refId))
-							.putData("senderId", String.valueOf(senderId))
-							.putData("postId", postId)        
-							.putData("receiverId", String.valueOf(receiverId))
-							.setToken(deviceToken)
-							.build();
+					Message firebaseMessage = Message.builder().setNotification(notificationData)
+							.setAndroidConfig(androidConfig).putData("type", userType)
+							.putData("refId", String.valueOf(refId)).putData("senderId", String.valueOf(senderId))
+							.putData("postId", postId).putData("receiverId", String.valueOf(receiverId))
+							.setToken(deviceToken).build();
 
 					String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
 					logger.info("Push notification sent successfully: {}", firebaseResponse);
@@ -1409,31 +1351,23 @@ public List<PostWebModel> getAllUsersPosts(
 		}
 	}
 
-
 	@Override
 	public CommentOutputWebModel addComment(CommentInputWebModel commentInputWebModel) {
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
 				// Create and save new comment or reply
-				Comment comment = Comment.builder()
-						.category(commentInputWebModel.getCategory())
-						.postId(post.getId())
+				Comment comment = Comment.builder().category(commentInputWebModel.getCategory()).postId(post.getId())
 						.parentCommentId(commentInputWebModel.getParentCommentId())
-						.content(commentInputWebModel.getContent())
-						.commentedBy(commentInputWebModel.getUserId())
-						.status(true)
-						.likesCount(0)
-						.commentedBy(commentInputWebModel.getUserId())
-						.createdOn(new Date())
+						.content(commentInputWebModel.getContent()).commentedBy(commentInputWebModel.getUserId())
+						.status(true).likesCount(0).commentedBy(commentInputWebModel.getUserId()).createdOn(new Date())
 						.build();
 
 				Comment savedComment = commentRepository.save(comment);
 
 				// Always update post comment count (for both direct comments and replies)
-				int newPostCommentCount = !Utility.isNullOrZero(post.getCommentsCount())
-						? post.getCommentsCount() + 1
-								: 1;
+				int newPostCommentCount = !Utility.isNullOrZero(post.getCommentsCount()) ? post.getCommentsCount() + 1
+						: 1;
 				post.setCommentsCount(newPostCommentCount);
 				postsRepository.saveAndFlush(post);
 
@@ -1450,15 +1384,10 @@ public List<PostWebModel> getAllUsersPosts(
 						if (!parent.getCommentedBy().equals(commentInputWebModel.getUserId())) {
 							User sender = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
 							String senderName = sender != null ? sender.getName() : "Someone";
-							sendNotification(
-									parent.getCommentedBy(),            
-									commentInputWebModel.getUserId(),                
-									"Reply to Your Comment",
-									" replied to your comment.",
-									"COMMENT_REPLY",
-									comment.getCommentId(), 
-									post.getPostId()// Use commentId for context
-									);
+							sendNotification(parent.getCommentedBy(), commentInputWebModel.getUserId(),
+									"Reply to Your Comment", " replied to your comment.", "COMMENT_REPLY",
+									comment.getCommentId(), post.getPostId()// Use commentId for context
+							);
 						}
 					}
 				}
@@ -1467,37 +1396,28 @@ public List<PostWebModel> getAllUsersPosts(
 				if (!post.getCreatedBy().equals(commentInputWebModel.getUserId())) {
 					User commenter = userRepository.findById(commentInputWebModel.getUserId()).orElse(null);
 					String commenterName = commenter != null ? commenter.getName() : "Someone";
-					sendNotification(
-							post.getCreatedBy(),                        
-							commentInputWebModel.getUserId(),                        
-							"New Comment on Your Post",
-							" commented on your post.",
-							"POST_COMMENT",
-							comment.getCommentId(),
-							post.getPostId()
-							);
+					sendNotification(post.getCreatedBy(), commentInputWebModel.getUserId(), "New Comment on Your Post",
+							" commented on your post.", "POST_COMMENT", comment.getCommentId(), post.getPostId());
 				}
 
 				logger.info("Post owner: {}, Commented by: {}", post.getCreatedBy(), commentInputWebModel.getUserId());
 				logger.info("Comment added to post [{}]", post.getId());
 				return this.transformCommentData(List.of(savedComment), post.getCommentsCount()).get(0);
 
-			}} catch (Exception e) {
-				logger.error("Error at addComment() -> {}", e.getMessage(), e);
 			}
+		} catch (Exception e) {
+			logger.error("Error at addComment() -> {}", e.getMessage(), e);
+		}
 
 		return null;
 	}
 
-
-
-
-	public void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody, String userType, Integer refId, String postId) {
+	public void sendNotification(Integer receiverId, Integer senderId, String title, String messageBody,
+			String userType, Integer refId, String postId) {
 		try {
 			// Step 1: Validate users
 			Optional<User> senderOpt = userRepository.findById(senderId);
 			Optional<User> receiverOpt = userRepository.findById(receiverId);
-
 
 			if (senderOpt.isEmpty() || receiverOpt.isEmpty()) {
 				logger.warn("❗ Sender or Receiver not found. Notification not sent.");
@@ -1508,21 +1428,10 @@ public List<PostWebModel> getAllUsersPosts(
 			User receiver = receiverOpt.get();
 
 			// Step 2: Save In-App Notification
-			InAppNotification inAppNotification = InAppNotification.builder()
-					.senderId(senderId)
-					.receiverId(receiverId)
-					.title(title)
-					.message(messageBody)
-					.userType(userType)               
-					.id(refId)   
-					.postId(postId)
-					.adminReview(sender.getAdminReview())
-					.Profession(sender.getUserType()) 
-					.isRead(false)
-					.isDeleted(false)
-					.createdBy(senderId)
-					.createdOn(new Date())
-					.build();
+			InAppNotification inAppNotification = InAppNotification.builder().senderId(senderId).receiverId(receiverId)
+					.title(title).message(messageBody).userType(userType).id(refId).postId(postId)
+					.adminReview(sender.getAdminReview()).Profession(sender.getUserType()).isRead(false)
+					.isDeleted(false).createdBy(senderId).createdOn(new Date()).build();
 
 			inAppNotificationRepository.save(inAppNotification);
 			logger.info("In-app notification saved for receiver ID: {}", receiverId);
@@ -1530,36 +1439,27 @@ public List<PostWebModel> getAllUsersPosts(
 			// Step 3: Send Push Notification via Firebase
 			String deviceToken = receiver.getFirebaseDeviceToken();
 
-
-
 			if (deviceToken != null && !deviceToken.trim().isEmpty()) {
 				try {
 					String bodyText = sender.getName() + " " + messageBody;
 					// Create the notification payload
-					Notification notification = Notification.builder()
-							.setTitle(bodyText)
-							//	                        .setBody(bodyText)
+					Notification notification = Notification.builder().setTitle(bodyText)
+							// .setBody(bodyText)
 							.build();
 
 					// Android-specific settings
-					AndroidNotification androidNotification = AndroidNotification.builder()
-							.setIcon("ic_notification") // matches Android app drawable
+					AndroidNotification androidNotification = AndroidNotification.builder().setIcon("ic_notification") // matches
+																														// Android
+																														// app
+																														// drawable
 							.setColor("#00A2E8") // optional tint
 							.build();
 
-					AndroidConfig androidConfig = AndroidConfig.builder()
-							.setNotification(androidNotification)
-							.build();
-					Message firebaseMessage = Message.builder()
-							.setNotification(notification)
-							.putData("type", userType)
-							.putData("postId", postId)
-							.putData("senderId", String.valueOf(senderId))
-							.putData("receiverId", String.valueOf(receiverId))
-							.putData("postId", postId)
-							.setAndroidConfig(androidConfig)
-							.setToken(deviceToken)
-							.build();
+					AndroidConfig androidConfig = AndroidConfig.builder().setNotification(androidNotification).build();
+					Message firebaseMessage = Message.builder().setNotification(notification).putData("type", userType)
+							.putData("postId", postId).putData("senderId", String.valueOf(senderId))
+							.putData("receiverId", String.valueOf(receiverId)).putData("postId", postId)
+							.setAndroidConfig(androidConfig).setToken(deviceToken).build();
 
 					String firebaseResponse = FirebaseMessaging.getInstance().send(firebaseMessage);
 					logger.info("Push notification sent successfully: {}", firebaseResponse);
@@ -1585,9 +1485,7 @@ public List<PostWebModel> getAllUsersPosts(
 
 			Posts post = postsRepository.findById(comment.getPostId()).orElse(null);
 
-			int commentCount = (post != null && post.getCommentsCount() != null)
-					? post.getCommentsCount()
-							: 0;
+			int commentCount = (post != null && post.getCommentsCount() != null) ? post.getCommentsCount() : 0;
 
 			CommentOutputWebModel output = this.transformCommentData(List.of(comment), commentCount).get(0);
 
@@ -1608,7 +1506,7 @@ public List<PostWebModel> getAllUsersPosts(
 	}
 
 	@Override
-	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {		
+	public CommentOutputWebModel deleteComment(CommentInputWebModel commentInputWebModel) {
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
@@ -1622,8 +1520,8 @@ public List<PostWebModel> getAllUsersPosts(
 					commentRepository.save(comment);
 
 					// Handle child comments (soft delete them too)
-					List<Comment> childComments = commentRepository.getChildComments(
-							comment.getPost().getId(), comment.getCommentId());
+					List<Comment> childComments = commentRepository.getChildComments(comment.getPost().getId(),
+							comment.getCommentId());
 
 					int childDeletedCount = 0;
 
@@ -1681,48 +1579,37 @@ public List<PostWebModel> getAllUsersPosts(
 				LocalDateTime createdOn = LocalDateTime.ofInstant(createdDate.toInstant(), ZoneId.systemDefault());
 				String elapsedTime = CalendarUtil.calculateElapsedTime(createdOn);
 
-				List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(), comment.getCommentId());
+				List<Comment> dbChildComments = commentRepository.getChildComments(comment.getPostId(),
+						comment.getCommentId());
 				List<CommentOutputWebModel> childComments = !Utility.isNullOrEmptyList(dbChildComments)
 						? this.transformCommentData(dbChildComments, 0)
-								: null;
+						: null;
 
 				// ⚡ Fetch Like record for this comment and logged-in user
 				Likes userLike = null;
 				if (finalLoggedInUser != null) {
-					userLike = likeRepository
-							.findFirstByCommentIdAndLikedByAndCategory(comment.getCommentId(), finalLoggedInUser, "Comment")
-							.orElse(null);
+					userLike = likeRepository.findFirstByCommentIdAndLikedByAndCategory(comment.getCommentId(),
+							finalLoggedInUser, "Comment").orElse(null);
 				}
 
 				// ⚡ Fetch Like count for this comment (based on reactionType)
-				Integer totalLikesCount = likeRepository.countByCommentIdAndReactionTypeAndStatus(
-						comment.getCommentId(), "LIKE", true
-						);
+				Integer totalLikesCount = likeRepository
+						.countByCommentIdAndReactionTypeAndStatus(comment.getCommentId(), "LIKE", true);
 
 				CommentOutputWebModel commentOutputWebModel = CommentOutputWebModel.builder()
-						.commentId(comment.getCommentId())
-						.category(comment.getCategory())
-						.postId(comment.getPostId())
-						.userId(comment.getCommentedBy())
-						.parentCommentId(comment.getParentCommentId())
-						.content(comment.getContent())
-						.totalLikesCount(totalLikesCount)
-						.totalCommentCount(totalCommentCount)
-						.status(comment.getStatus())
+						.commentId(comment.getCommentId()).category(comment.getCategory()).postId(comment.getPostId())
+						.userId(comment.getCommentedBy()).parentCommentId(comment.getParentCommentId())
+						.content(comment.getContent()).totalLikesCount(totalLikesCount)
+						.totalCommentCount(totalCommentCount).status(comment.getStatus())
 						.userProfilePic(userService.getProfilePicUrl(comment.getCommentedBy()))
-						.userName(user != null ? user.getName() : "")
-						.time(elapsedTime)
-						.postUserId(post != null ? post.getUser().getUserId() : null)
-						.childComments(childComments)
-						.createdBy(comment.getCreatedBy())
-						.createdOn(comment.getCreatedOn())
-						.updatedBy(comment.getUpdatedBy())
-						.updatedOn(comment.getUpdatedOn())
+						.userName(user != null ? user.getName() : "").time(elapsedTime)
+						.postUserId(post != null ? post.getUser().getUserId() : null).childComments(childComments)
+						.createdBy(comment.getCreatedBy()).createdOn(comment.getCreatedOn())
+						.updatedBy(comment.getUpdatedBy()).updatedOn(comment.getUpdatedOn())
 
 						// ⚡ Add these two new fields
 						.likeId(userLike != null ? userLike.getLikeId() : null)
-						.likeStatus(userLike != null ? userLike.getStatus():false)
-						.build();
+						.likeStatus(userLike != null ? userLike.getStatus() : false).build();
 
 				commentOutWebModelList.add(commentOutputWebModel);
 			});
@@ -1730,16 +1617,19 @@ public List<PostWebModel> getAllUsersPosts(
 		return commentOutWebModelList;
 	}
 
-
 	@Override
 	public List<CommentOutputWebModel> getComment(CommentInputWebModel commentInputWebModel) {
 		try {
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 
-			if (post != null) {	
+			if (post != null) {
 				List<Comment> commentData = (List<Comment>) post.getCommentCollection();
 				// Filter comments with status true
-				List<Comment> filteredComments = commentData.stream().filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true) && !Utility.isNullOrBlankWithTrim(comment.getCategory()) && comment.getCategory().equalsIgnoreCase(POST)).collect(Collectors.toList());
+				List<Comment> filteredComments = commentData.stream()
+						.filter(comment -> comment.getStatus() != null && comment.getStatus().equals(true)
+								&& !Utility.isNullOrBlankWithTrim(comment.getCategory())
+								&& comment.getCategory().equalsIgnoreCase(POST))
+						.collect(Collectors.toList());
 				return this.transformCommentData(filteredComments, post.getCommentsCount());
 			}
 		} catch (Exception e) {
@@ -1750,19 +1640,21 @@ public List<PostWebModel> getAllUsersPosts(
 	}
 
 	@Override
-	public ShareWebModel addShare(ShareWebModel shareWebModel) {		
+	public ShareWebModel addShare(ShareWebModel shareWebModel) {
 		try {
 			Posts post = postsRepository.findById(shareWebModel.getPostId()).orElse(null);
 			if (post != null) {
-				Share share = Share.builder()
-						.sharedBy(shareWebModel.getUserId())
-						.postId(post.getId())
-						.status(true)
-						.createdBy(shareWebModel.getUserId())
-						.createdOn(new Date()).build();
+				Share share = Share.builder().sharedBy(shareWebModel.getUserId()).postId(post.getId()).status(true)
+						.createdBy(shareWebModel.getUserId()).createdOn(new Date()).build();
 				Share savedShare = shareRepository.saveAndFlush(share); // Save the updated like
 
-				post.setSharesCount(!Utility.isNullOrZero(post.getSharesCount()) ? post.getSharesCount() + 1 : 1); // Increasing the share count in post's table
+				post.setSharesCount(!Utility.isNullOrZero(post.getSharesCount()) ? post.getSharesCount() + 1 : 1); // Increasing
+																													// the
+																													// share
+																													// count
+																													// in
+																													// post's
+																													// table
 				postsRepository.saveAndFlush(post);
 
 				logger.info("Shares count for post id [{}] is :- [{}]", post.getId(), post.getSharesCount());
@@ -1776,28 +1668,16 @@ public List<PostWebModel> getAllUsersPosts(
 	}
 
 	private ShareWebModel transformShareData(Share share, Integer currentTotalShareCount) {
-		return ShareWebModel.builder()
-				.shareId(share.getShareId())
-				.userId(share.getSharedBy())
-				.postId(share.getPostId())
-				.totalSharesCount(currentTotalShareCount)
-				.status(share.getStatus())
-				.createdBy(share.getCreatedBy())
-				.createdOn(share.getCreatedOn())
-				.updatedBy(share.getUpdatedBy())
-				.updatedOn(share.getUpdatedOn())
+		return ShareWebModel.builder().shareId(share.getShareId()).userId(share.getSharedBy()).postId(share.getPostId())
+				.totalSharesCount(currentTotalShareCount).status(share.getStatus()).createdBy(share.getCreatedBy())
+				.createdOn(share.getCreatedOn()).updatedBy(share.getUpdatedBy()).updatedOn(share.getUpdatedOn())
 				.build();
 	}
 
 	@Override
 	public LinkWebModel addLink(LinkWebModel linkWebModel) {
-		Link link = Link.builder()
-				.links(linkWebModel.getLinks())
-				.status(true)
-				.createdBy(linkWebModel.getUserId())
-				.createdOn(new Date())
-				.userId(linkWebModel.getUserId())
-				.build();
+		Link link = Link.builder().links(linkWebModel.getLinks()).status(true).createdBy(linkWebModel.getUserId())
+				.createdOn(new Date()).userId(linkWebModel.getUserId()).build();
 
 		Link savedLink = linkRepository.save(link);
 
@@ -1827,7 +1707,8 @@ public List<PostWebModel> getAllUsersPosts(
 			Posts post = postsRepository.findById(commentInputWebModel.getPostId()).orElse(null);
 			if (post != null) {
 				// Fetch the existing comment by ID
-				Optional<Comment> existingCommentOptional = commentRepository.findById(commentInputWebModel.getCommentId());
+				Optional<Comment> existingCommentOptional = commentRepository
+						.findById(commentInputWebModel.getCommentId());
 
 				if (existingCommentOptional.isPresent()) {
 					Comment existingComment = existingCommentOptional.get();
@@ -1841,7 +1722,8 @@ public List<PostWebModel> getAllUsersPosts(
 					Comment updatedComment = commentRepository.saveAndFlush(existingComment);
 					return this.transformCommentData(List.of(updatedComment), post.getCommentsCount()).get(0);
 				} else {
-					// If the comment with the given ID is not found, log an error and return null or throw an exception
+					// If the comment with the given ID is not found, log an error and return null
+					// or throw an exception
 					logger.error("Comment with ID [{}] not found", commentInputWebModel.getCommentId());
 					return null;
 				}
@@ -1856,19 +1738,11 @@ public List<PostWebModel> getAllUsersPosts(
 
 	// Helper method to transform Comment to CommentWebModel
 	private CommentOutputWebModel transformToCommentWebModel(Comment comment) {
-		return CommentOutputWebModel.builder()
-				.commentId(comment.getCommentId())
-				.category(comment.getCategory())
-				.postId(comment.getPostId())
-				.parentCommentId(comment.getParentCommentId())
-				.userId(comment.getCommentedBy())
-				.content(comment.getContent())
-				.createdOn(comment.getCreatedOn())
-				.updatedOn(comment.getUpdatedOn())
-				.status(comment.getStatus())
-				.build();
+		return CommentOutputWebModel.builder().commentId(comment.getCommentId()).category(comment.getCategory())
+				.postId(comment.getPostId()).parentCommentId(comment.getParentCommentId())
+				.userId(comment.getCommentedBy()).content(comment.getContent()).createdOn(comment.getCreatedOn())
+				.updatedOn(comment.getUpdatedOn()).status(comment.getStatus()).build();
 	}
-
 
 	@Override
 	public boolean deletePostByUserId(PostWebModel postWebModel) {
@@ -1892,20 +1766,16 @@ public List<PostWebModel> getAllUsersPosts(
 				}
 				Integer postOwnerId = post.getUser().getUserId();
 
-				//  Logged-in user is the post owner → soft delete
+				// Logged-in user is the post owner → soft delete
 				if (loggedInUserId.equals(postOwnerId)) {
 
 					// Convert post IDs to Integer list for media deletion
-					List<Integer> mediaFileIds = postWebModel.getMediaFilesIds().stream()
-							.map(Integer::valueOf)
+					List<Integer> mediaFileIds = postWebModel.getMediaFilesIds().stream().map(Integer::valueOf)
 							.collect(Collectors.toList());
 
 					// Delete associated media files
-					mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(
-							postOwnerId,
-							MediaFileCategory.Post,
-							mediaFileIds
-							);
+					mediaFilesService.deleteMediaFilesByUserIdAndCategoryAndRefIds(postOwnerId, MediaFileCategory.Post,
+							mediaFileIds);
 
 					// Soft delete post
 					post.setStatus(false);
@@ -1926,10 +1796,10 @@ public List<PostWebModel> getAllUsersPosts(
 					}
 				}
 
-				//  Unauthorized user → do nothing
+				// Unauthorized user → do nothing
 				else {
-					System.out.println("Unauthorized delete attempt by userId: " + loggedInUserId +
-							" for postId: " + post.getPostId());
+					System.out.println("Unauthorized delete attempt by userId: " + loggedInUserId + " for postId: "
+							+ post.getPostId());
 				}
 			}
 
@@ -1943,22 +1813,15 @@ public List<PostWebModel> getAllUsersPosts(
 	}
 
 	public PostView trackPostView(Integer postId, Integer userId) {
-		Posts post = postsRepository.findById(postId)
-				.orElseThrow(() -> new RuntimeException("Post not found"));
+		Posts post = postsRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post not found"));
 
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
 		// ✅ Skip counting if the user is the owner of the post
 		if (post.getUser().getUserId().equals(userId)) {
 			// Optional: still save view timestamp for analytics
 			Optional<PostView> selfView = postViewRepository.findByPostAndUser(post, user);
-			PostView view = selfView.orElseGet(() ->
-			PostView.builder()
-			.post(post)
-			.user(user)
-			.build()
-					);
+			PostView view = selfView.orElseGet(() -> PostView.builder().post(post).user(user).build());
 			view.setLastViewedOn(LocalDateTime.now());
 			return postViewRepository.save(view);
 		}
@@ -1967,17 +1830,11 @@ public List<PostWebModel> getAllUsersPosts(
 
 		Optional<PostView> existing = postViewRepository.findByPostAndUser(post, user);
 
-		boolean shouldIncrement = existing
-				.map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 24)
+		boolean shouldIncrement = existing.map(view -> Duration.between(view.getLastViewedOn(), now).toHours() >= 24)
 				.orElse(true);
 
 		if (shouldIncrement) {
-			PostView view = existing.orElseGet(() ->
-			PostView.builder()
-			.post(post)
-			.user(user)
-			.build()
-					);
+			PostView view = existing.orElseGet(() -> PostView.builder().post(post).user(user).build());
 			view.setLastViewedOn(now);
 			postViewRepository.save(view);
 

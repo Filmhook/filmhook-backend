@@ -605,7 +605,7 @@ public class ChatServiceImpl implements ChatService {
 	                    deliveredPayload
 	            );
 
-	            // Update chat list for sender
+	            // Update chat list for sender 
 	            webSocketService.notifyChatUser(
 	                    chat.getChatSenderId(),
 	                    "CHAT_LIST_UPDATE",
@@ -792,9 +792,6 @@ public class ChatServiceImpl implements ChatService {
 			chatUserWebModel.setAdminReview(user.getAdminReview());
 			chatUserWebModel.setProfilePicUrl(userService.getProfilePicUrl(user.getUserId()));
 			chatUserWebModel.setOnlineStatus(user.getOnlineStatus());
-			
-
-
 			getLatestChatMessage(user, chatUserWebModel, loggedInUserId);
 			int unreadCount = chatRepository.countUnreadMessages(loggedInUserId, user.getUserId());
 		
@@ -815,6 +812,7 @@ public class ChatServiceImpl implements ChatService {
 	    map.put("profilePicUrl", userService.getProfilePicUrl(sender.getUserId()));
 	    map.put("userType", sender.getUserType());
 	    map.put("adminReview", sender.getAdminReview());
+map.put("testing", "===========================");
 	    map.put("latestMessage", chat.getMessage());
 	    map.put("latestMsgTime", chat.getTimeStamp());
 	    map.put("messageStatus", chat.getMessageStatus());
@@ -856,9 +854,9 @@ public class ChatServiceImpl implements ChatService {
 			Chat chat = lastChatOpt.get();
 
 			chatUserWebModel.setMessageStatus(chat.getMessageStatus());
+
 			chatUserWebModel.setSenderId(chat.getChatSenderId());
 			chatUserWebModel.setReceiverId(chat.getChatReceiverId());
-			
 			// ✅ Deleted message placeholder
 			if (Boolean.TRUE.equals(chat.getIsDeletedForEveryone())) {
 				latestMsg = "🚫 This message was deleted";
@@ -1229,18 +1227,12 @@ public class ChatServiceImpl implements ChatService {
 	      msgStatus.put("messageStatus", "READ");
 	      msgStatus.put("userId", receiverId);
 	      msgStatus.put("senderId", senderId);
-	      
 
 	      webSocketService.notifyChatUser(
 	              senderId,           // notify the SENDER!!
 	              "MESSAGE_READ_BULK",
 	              payload
 	      );
-	      webSocketService.notifyChatUser(
-                  senderId,
-                  "CHAT_LIST_MSG_STATUS",
-                 msgStatus
-          );
 
 	      return ResponseEntity.ok("OK");
 	  }
@@ -1782,22 +1774,6 @@ public class ChatServiceImpl implements ChatService {
 
 	        user.setOnlineStatus(userWebModel.getOnlineStatus());
 	        userRepository.save(user);
-
-	        // 🔥 Get only active chat users
-	        List<Integer> activeChatUsers =
-	                chatRepository.findActiveChatUserIds(user.getUserId());
-
-	        for (Integer chatUserId : activeChatUsers) {
-
-	            Map<String, Object> payload = new HashMap<>();
-	            payload.put("userId", user.getUserId());
-	            payload.put("onlineStatus", user.getOnlineStatus());
-	            webSocketService.notifyChatUser(
-	                    chatUserId,
-	                    "USER_ONLINE_STATUS",
-	                    payload
-	            );
-	        }
 
 	        // 🔥 If user came ONLINE → update undelivered messages
 	        if (Boolean.TRUE.equals(userWebModel.getOnlineStatus())) {

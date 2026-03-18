@@ -79,6 +79,9 @@ public class PostWebModel {
     private List<Integer> deletedTaggedUserIds;
     private String adType;
     private String objValue;
-
+    
+    private Integer totalReactions;
+    private String userReaction;
+    private Integer likedId;
 
 }
