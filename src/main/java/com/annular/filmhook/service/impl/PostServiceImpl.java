@@ -8,6 +8,7 @@ import com.annular.filmhook.model.Posts;
 import com.annular.filmhook.model.Promote;
 import com.annular.filmhook.model.PromoteAd;
 import com.annular.filmhook.model.PromoteMediaFiles;
+import com.annular.filmhook.model.ReactionType;
 import com.annular.filmhook.model.Likes;
 import com.annular.filmhook.model.Link;
 import com.annular.filmhook.model.Audition;
@@ -711,7 +712,10 @@ public class PostServiceImpl implements PostService {
 
 				Long totalUnlikesCount =
 						likeRepository.countByPostIdAndReactionTypeAndCategory(post.getId(), "UNLIKE", "Post");
-
+				
+				Long totalReactionsCount =
+				        likeRepository.countByPostIdAndStatusTrue(post.getId());
+				
 				// ============================================================
 				// WATCH LATER CHECK
 				// ============================================================
@@ -796,7 +800,25 @@ public class PostServiceImpl implements PostService {
 									})
 									.collect(Collectors.toList());
 						}
+						
+						String userReaction = null;
+						Integer latestLikedId = null;
 
+						if (finalLoggedInUser != null) {
+
+						    Optional<Likes> entryOpt =
+						            likeRepository.findByPostIdAndLikedByAndStatusTrue(
+						                    post.getId(), finalLoggedInUser);
+
+						    if (entryOpt.isPresent()) {
+						        Likes entry = entryOpt.get();
+
+						        if (entry.getReaction() != null) {
+						            userReaction = entry.getReaction().name(); // ✅ IMPORTANT
+						            latestLikedId = entry.getLikeId();
+						        }
+						    }
+						}
 						// ============================================================
 						// ELAPSED TIME
 						// ============================================================
@@ -826,7 +848,6 @@ public class PostServiceImpl implements PostService {
 								.UnlikeStatus(unlikeStatus)
 								.shareCount(post.getSharesCount())
 								.commentCount(post.getCommentsCount())
-
 								.promoteFlag(isPromoted)
 								.promoteId(promoteId)
 								.numberOfDays(numberOfDays)
@@ -838,12 +859,14 @@ public class PostServiceImpl implements PostService {
 								.adType(adType)
 								.selectOption(selectOption)
 								.objValue(objValue)
-
-
 								.postLinkUrl(post.getPostLinkUrls())
 								.latitude(post.getLatitude())
 								.longitude(post.getLongitude())
 								.address(post.getAddress())
+								.totalReactions(totalReactionsCount.intValue())
+								.userReaction(userReaction)
+								.likedId(latestLikedId)
+								.likeId(latestLikeId)
 								.likeStatus(likeStatus)
 								.likeId(latestLikeId)
 								.elapsedTime(elapsedTime)
@@ -1202,7 +1225,122 @@ public List<PostWebModel> getAllUsersPosts(
 		}
 	}
 
+@Override
+public LikeWebModel addOrUpdateReaction(LikeWebModel model) {
 
+    Optional<Likes> existingOpt =
+    		likeRepository.findByPostIdAndLikedBy(model.getPostId(), model.getUserId());
+
+    Likes like;
+
+    ReactionType newReaction = ReactionType.valueOf(model.getReaction());
+
+    if (existingOpt.isPresent()) {
+
+        like = existingOpt.get();
+
+        // ✅ Same reaction → toggle OFF
+        if (like.getReaction() != null && like.getReaction().equals(newReaction)) {
+
+            if (Boolean.TRUE.equals(like.getStatus())) {
+                // 👉 already liked → UNLIKE
+                like.setStatus(false);
+                model.setStatus(false);
+            } else {
+                // 👉 was unliked → LIKE again
+                like.setStatus(true);
+                model.setStatus(true);
+            }
+
+            like.setUpdatedBy(model.getUserId());
+
+      
+        } else {
+            // 🔥 Change reaction
+            like.setReaction(newReaction);
+            like.setStatus(true);
+            model.setStatus(true);
+            like.setUpdatedBy(model.getUserId());
+        }
+
+    } else {
+ 
+        // ✅ New reaction
+        like = new Likes();
+        like.setPostId(model.getPostId());
+        like.setLikedBy(model.getUserId());
+        like.setCategory("Post");
+        like.setCreatedOn(new Date());
+        like.setCreatedBy(model.getUserId());
+        like.setReaction(newReaction);
+        like.setStatus(true);
+        model.setStatus(true);
+    }
+
+    likeRepository.save(like);
+
+    return model;
+}
+
+@Override
+public Map<String, Object> getPostReactions(Integer postId, Integer userId) {
+
+    Map<String, Object> response = new HashMap<>();
+
+    // ✅ 1. TOTAL COUNT
+    long totalReactions = likeRepository.countByPostIdAndStatusTrue(postId);
+
+    // ✅ 2. COUNT PER REACTION
+    Map<String, Long> reactionCounts = new HashMap<>();
+
+    List<Object[]> counts = likeRepository.countReactionsByPostId(postId);
+
+    for (Object[] obj : counts) {
+        reactionCounts.put(obj[0].toString(), (Long) obj[1]);
+    }
+
+    // ✅ 3. USERS WHO REACTED
+    List<Map<String, Object>> reactedUsers = new ArrayList<>();
+
+    List<Likes> likesList = likeRepository.findAllByPostIdAndStatusTrue(postId);
+
+    for (Likes like : likesList) {
+
+        Map<String, Object> userMap = new HashMap<>();
+
+        Integer uId = like.getLikedBy();
+
+        userMap.put("userId", uId);
+        userMap.put("reaction", like.getReaction().name());
+
+        userService.getUser(uId).ifPresent(u -> {
+            userMap.put("name", u.getName());
+            userMap.put("profilePic", userService.getProfilePicUrl(uId));
+        });
+
+        reactedUsers.add(userMap);
+    }
+
+    // ✅ 4. LOGGED USER REACTION
+    String userReaction = null;
+
+    if (userId != null) {
+        Optional<Likes> userLike =
+                likeRepository.findByPostIdAndLikedByAndStatusTrue(postId, userId);
+
+        if (userLike.isPresent()) {
+            userReaction = userLike.get().getReaction().name();
+        }
+    }
+
+    // ✅ FINAL RESPONSE
+    response.put("totalReactions", totalReactions);
+    response.put("reactionCounts", reactionCounts);
+    response.put("reactedUsers", reactedUsers);
+    response.put("userReaction", userReaction);
+
+    return response;
+}
 
 	private LikeWebModel transformLikeData(Likes likes, Integer totalLikes, Integer totalUnlikes, Integer loggedInUserId) {
 		return LikeWebModel.builder()

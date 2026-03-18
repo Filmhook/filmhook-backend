@@ -4,12 +4,15 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -64,7 +67,7 @@ public class Likes {
     private Integer updatedBy;
 
     @Column(name = "updated_on")
-    @CreationTimestamp
+    @UpdateTimestamp
     private Date updatedOn;
 
     @Column(name = "liveDate")
@@ -75,5 +78,11 @@ public class Likes {
     
     @Column(name = "reaction_type")
     private String reactionType; // "LIKE" or "UNLIKE"
+    
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reaction")
+    private ReactionType reaction;
+
 
 }

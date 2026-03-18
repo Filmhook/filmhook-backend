@@ -224,7 +224,31 @@ public class PostController {
         }
         return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
     }
+    
+    @PostMapping("/addReaction")
+    public ResponseEntity<?> addOrUpdateReaction(@RequestBody LikeWebModel likeWebModel) {
+        try {
+            LikeWebModel likeWebModelOutput = postService.addOrUpdateReaction(likeWebModel);
+            if (likeWebModelOutput != null) return ResponseEntity.ok(new Response(1, "Reaction updated successfully", likeWebModelOutput));
+        } catch (Exception e) {
+            logger.error("addOrUpdateLike Method Exception -> {}", e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new Response(-1, "Fail", e.getMessage()));
+        }
+        return ResponseEntity.badRequest().body(new Response(-1, "Fail", ""));
+    }
 
+    
+    @GetMapping("/GetPostReaction")
+    public ResponseEntity<?> getReactions(
+    		@RequestParam Integer postId,
+            @RequestParam Integer userId) {
+
+        return ResponseEntity.ok(
+                new Response(1, "Success",
+                        postService.getPostReactions(postId, userId))
+        );
+    }
     @PostMapping("/addComment")
     public ResponseEntity<?> addComment(@RequestBody CommentInputWebModel commentInputWebModel) {
         try {

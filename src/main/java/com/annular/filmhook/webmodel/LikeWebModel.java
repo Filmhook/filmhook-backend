@@ -2,6 +2,8 @@ package com.annular.filmhook.webmodel;
 
 import java.util.Date;
 
+import com.annular.filmhook.model.ReactionType;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -30,4 +32,5 @@ public class LikeWebModel {
     private Date updatedOn;
     private Integer likedBy; // who liked/unliked
     private String reactionType; 
+    private String reaction;
 }
