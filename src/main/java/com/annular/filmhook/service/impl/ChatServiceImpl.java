@@ -1228,6 +1228,7 @@ public class ChatServiceImpl implements ChatService {
 	      Map<String, Object> msgStatus = new HashMap<>();
 	      msgStatus.put("messageStatus", "READ");
 	      msgStatus.put("userId", receiverId);
+	      msgStatus.put("senderId", senderId);
 	      
 
 	      webSocketService.notifyChatUser(
