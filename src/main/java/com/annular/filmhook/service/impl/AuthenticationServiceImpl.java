@@ -42,7 +42,7 @@ import com.annular.filmhook.repository.RefreshTokenRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.util.MailNotification;
-
+import com.annular.filmhook.configuration.TwilioConfig;
 import com.annular.filmhook.exception.UserVerificationAttemptRepository;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
@@ -67,7 +67,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	private static final int OTP_EXPIRY_MINUTES = 3;
 
-	
+	@Autowired
+	TwilioConfig twilioConfig;
 
 	@Autowired
 	UserDetails userDetails;
@@ -436,7 +437,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			user.setOtp(otp);
 			CompletableFuture.runAsync(() -> {
 				String message = "Your OTP is " + otp + " for verification";
-				//twilioConfig.smsNotification(user.getPhoneNumber(), message);
+				twilioConfig.smsNotification(user.getPhoneNumber(), message);
 			});
 			// Prepare response
 			Map<String, Object> response = new HashMap<>();
