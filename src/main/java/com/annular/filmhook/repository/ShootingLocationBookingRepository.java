@@ -48,10 +48,7 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
                                                                         @Param("user2") Integer user2,
                                                                         @Param("propertyId") Integer propertyId);
     
-
     List<ShootingLocationBooking> findByStatus(BookingStatus status);
-
-
     Optional<ShootingLocationBooking> findById(Integer bookingId);
 
     
@@ -63,11 +60,40 @@ public interface ShootingLocationBookingRepository extends JpaRepository<Shootin
              @Param("propertyId") Integer propertyId,
              @Param("since") LocalDateTime since
      );
-
     
     List<ShootingLocationBooking> findByClient_UserIdOrderByUpdatedAtDesc(Integer clientId);
     boolean existsByProperty_IdAndStatusIn(
             Integer propertyId,
             List<BookingStatus> statuses
     );
+    
+    @Query("SELECT b FROM ShootingLocationBooking b " +
+    	       "WHERE b.property.user.userId = :ownerId " +
+    	       "AND b.deletedByOwner = false " +
+    	       "AND (:status IS NULL OR b.status = :status)" +
+    	       "ORDER BY b.modificationRequested DESC, " +
+    	       "COALESCE(b.updatedAt, b.createdAt) DESC")
+    	List<ShootingLocationBooking> findBookingsForOwner(
+    	        @Param("ownerId") Integer ownerId,
+    	        @Param("status") BookingStatus status);
+    
+    Optional<ShootingLocationBooking>
+    findByClient_UserIdAndProperty_IdAndStatus(Integer userId,Integer propertyId,  BookingStatus status);
+    
+    List<ShootingLocationBooking> findByClient_UserIdAndStatusAndDeletedByClientFalseOrderByUpdatedAtDesc(Integer userId,  BookingStatus status);
+    
+    Optional<ShootingLocationBooking> findTopByClient_UserIdAndProperty_IdOrderByCreatedAtDesc(
+            Integer clientId,
+            Integer propertyId
+    );
+    
+    Optional<ShootingLocationBooking> findByBookingCode(String bookingCode);
+    
+    @Query("SELECT b FROM ShootingLocationBooking b " +
+    	       "WHERE b.property.user.userId = :ownerId " +
+    	       "AND b.deletedByOwner = false " +
+    	       "AND b.status IN :statuses")
+    	List<ShootingLocationBooking> findByOwnerAndStatuses(
+    	        @Param("ownerId") Integer ownerId,
+    	        @Param("statuses") List<BookingStatus> statuses);
 }

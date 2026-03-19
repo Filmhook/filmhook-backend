@@ -100,6 +100,7 @@ public class UserWebModel {
     private Boolean adminPageStatus;
     private String countryCode;
     private String refCode;
+    private List<Integer> id;
     
 
     // Profile & Cover Photo
@@ -147,5 +148,9 @@ public class UserWebModel {
     private String organizationUnit;
     private String jobTitle;
     private Boolean isEditRequest;
+    
+    private String deviceName;
+    private String ipAddress;
+    private Boolean secondaryMailPermission;
 
 }

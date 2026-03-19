@@ -55,6 +55,8 @@ public class ShootingLocationConverter {
 	            .changingRooms(e.getChangingRooms())
 	            .kitchen(e.getKitchen())
 	           
+	            .approved(e.getApprovedBy())
+	            .approvedOn(e.getApprovedOn())
 	            .neutralLightingConditions(e.getNeutralLightingConditions())
 	            .artificialLightingAvailability(e.getArtificialLightingAvailability())
 	            .parkingCapacity(e.getParkingCapacity())
@@ -71,7 +73,6 @@ public class ShootingLocationConverter {
 	            // ----- Misc -----
 	            .description(e.getDescription())
 	            .businessOwner(e.isBusinessOwner())
-//	            .govtLicenseAndPermissions(e.getGovtLicenseAndPermissions())
 	            .createdBy(e.getCreatedBy())
 	            .createdOn(e.getCreatedOn())
 	            .status(e.getStatus())
@@ -90,6 +91,7 @@ public class ShootingLocationConverter {
 	            .crewAccidentDocument(e.getCrewAccidentDocument())
 	            .localAuthorities(e.getLocalAuthorities())
 	            .governmentPermission(e.getGovernmentPermission())
+	            .publicPermission(e.getPublicPermission())
 	            .additionalChargesForOverTime(e.getAdditionalChargesForOverTime())
 	            .adminRatedBy(e.getAdminRatedBy())
 	            .adminRatedOn(e.getAdminRatedOn())
@@ -103,6 +105,7 @@ public class ShootingLocationConverter {
 	        dto.setCategory(ShootingLocationCategoryDTO.builder()
 	                .id(e.getCategory().getId())
 	                .name(e.getCategory().getName())
+	                .imageUrl(e.getCategory().getImageUrl())
 	                .build());
 	        dto.setCategoryId(e.getCategory().getId());
 	    }
@@ -112,8 +115,6 @@ public class ShootingLocationConverter {
 	        dto.setSubCategory(ShootingLocationSubcategoryDTO.builder()
 	                .id(e.getSubCategory().getId())
 	                .name(e.getSubCategory().getName())
-	                .description(e.getSubCategory().getDescription())
-	                .imageUrl(e.getSubCategory().getImageUrl())
 	                .build());
 	        dto.setSubCategoryId(e.getSubCategory().getId());
 	    }
@@ -259,7 +260,7 @@ public class ShootingLocationConverter {
 	            .crewAccidentLiabilityDescription(dto.getCrewAccidentLiabilityDescription())
 	            .additionalChargesForOverTime(dto.getAdditionalChargesForOverTime())
 	            .shootingHeldDescription(dto.getShootingHeldDescription())
-	            .status(ShootingPropertyStatus.PENDING)
+//	            .status(ShootingPropertyStatus.PENDING)
 	            .build();
 
 	    return e;

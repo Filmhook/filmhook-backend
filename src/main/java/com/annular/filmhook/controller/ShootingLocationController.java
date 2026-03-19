@@ -32,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.ShootingLocationPropertyReview;
@@ -521,7 +522,7 @@ public class ShootingLocationController {
 	@PostMapping("/createBooking")
 	public ResponseEntity<ShootingLocationBookingDTO> createBooking(@RequestBody ShootingLocationBookingDTO dto) {
 
-		ShootingLocationBookingDTO response = service.createBooking(dto);
+		ShootingLocationBookingDTO response = service.createOrUpdateBooking(dto);
 		return ResponseEntity.ok(response);
 	}
 
@@ -658,41 +659,140 @@ public class ShootingLocationController {
 		Response response = service.rejectProperty(propertyId, reason);
 		return ResponseEntity.ok(response);
 	}
-	
-	
+
+
 	@GetMapping("/pendingProperties")
 	public ResponseEntity<Response> getPendingProperties(@RequestParam(required = false) PropertyBookingType propertyType) {
 
-	    Response response = service.getPendingProperties(propertyType);
-	    return ResponseEntity.ok(response);
+		Response response = service.getPendingProperties(propertyType);
+		return ResponseEntity.ok(response);
 	}
-	
+
 	@GetMapping("/admin/summary")
 	public ResponseEntity<?> getPropertySummaryFiltered(
-	        @RequestParam(required = false) Integer typesId,
-	        @RequestParam(required = false) ShootingPropertyStatus status,
-	        @RequestParam(required = false) String userType) {
+			@RequestParam(required = false) Integer typesId,
+			@RequestParam(required = false) ShootingPropertyStatus status,
+			@RequestParam(required = false) String userType) {
 
-	    try {
-	        List<ShootingLocationPropertySummaryDTO> list =
-	                service.getPropertySummaryByTypesStatusAndUserType(typesId, status, userType);
+		try {
+			List<ShootingLocationPropertySummaryDTO> list =
+					service.getPropertySummaryByTypesStatusAndUserType(typesId, status, userType);
 
-	        return ResponseEntity.ok(new Response(1, "Success", list));
+			return ResponseEntity.ok(new Response(1, "Success", list));
 
-	    } catch (Exception e) {
-	        return ResponseEntity.internalServerError()
-	                .body(new Response(-1, "Error", e.getMessage()));
-	    }
+		} catch (Exception e) {
+			return ResponseEntity.internalServerError()
+					.body(new Response(-1, "Error", e.getMessage()));
+		}
 	}
-	
-	@GetMapping("/property/{propertyId}")
+
+	@GetMapping("/admin/property/{propertyId}")
 	public ResponseEntity<?> getPropertyById(@PathVariable Integer propertyId) {
-	    ShootingLocationPropertyDetailsDTO dto = service.getPropertyById(propertyId);
+		ShootingLocationPropertyDetailsDTO dto = service.getPropertyById(propertyId);
 
-	    if (dto == null)
-	        return ResponseEntity.ok(new Response(-1, "Property not found", ""));
+		if (dto == null)
+			return ResponseEntity.ok(new Response(-1, "Property not found", ""));
 
-	    return ResponseEntity.ok(new Response(1, "Success", dto));
+		return ResponseEntity.ok(new Response(1, "Success", dto));
+	}
+
+
+	@GetMapping("/getBookingsByOwner")
+	public Response getOwnerBookings(
+			@RequestParam Integer ownerId,
+			@RequestParam(required = false) BookingStatus status) {
+
+		try {
+			List<ShootingLocationBookingDTO> bookings =
+					service.getOwnerBookings(ownerId, status);
+
+			return new Response(1, "Success", bookings);
+
+		} catch (Exception e) {
+			return new Response(-1, "Error", e.getMessage());
+		}
+	} 
+
+
+	@PutMapping("/updateBookingStatus")
+	public ResponseEntity<?> updateBookingStatus(
+			@RequestParam Integer bookingId,
+			@RequestParam Integer ownerId,
+			@RequestParam BookingStatus status) {
+
+		return ResponseEntity.ok(
+				service.updateBookingStatus(bookingId, ownerId, status)
+				);
+	}
+
+
+	@GetMapping("/getClientBookings")
+	public Response getClientBookings(@RequestParam Integer clientId, @RequestParam (required = false) BookingStatus status) {
+		return service.getClientBookingsByStatus(clientId, status);
+	}
+
+	@PutMapping("/cancelBooking")
+	public ResponseEntity<Response> cancelBooking(
+			@RequestParam Integer bookingId,
+			@RequestParam String reason,
+			@RequestParam Integer clientId) {
+
+		ShootingLocationBookingDTO response =
+				service.cancelBooking(bookingId, clientId, reason);
+
+		return ResponseEntity.ok(new Response(1, "Cancelled Successfully", response));
+	}
+
+
+	@DeleteMapping("/deleteBookings")
+	public ResponseEntity<?> deleteBooking(
+			@RequestParam Integer bookingId,
+			@RequestParam Integer userId) {
+
+		service.deleteBooking(bookingId, userId);
+
+		return ResponseEntity.ok("Booking removed successfully");
+	}
+
+
+	@PostMapping("/generateStartOtp")
+	public ResponseEntity<?> generateShootOtp(
+			@RequestParam String bookingcode,
+			@RequestParam Integer ownerId) {
+
+		service.generateShootOtp(bookingcode, ownerId);
+
+		return ResponseEntity.ok(new Response(1, "OTP sent to client email", null));
+	}
+
+	@PostMapping("/verifyStartOtp")
+	public ResponseEntity<?> verifyShootOtp(
+			@RequestParam String bookingcode,
+			@RequestParam String otp) {
+
+		service.verifyShootOtp(bookingcode, otp);
+
+		return ResponseEntity.ok(  new Response(1, "Shoot verification successful", null));
+	}
+
+	@PostMapping("/generateCompletedOtp")
+	public ResponseEntity<?> generateCompletionOtp(
+			@RequestParam String bookingCode,
+			@RequestParam Integer ownerId) {
+
+		service.generateCompletionOtp(bookingCode, ownerId);
+
+		return ResponseEntity.ok(new Response(1, "OTP sent to client email", null));
+	}
+
+	@PostMapping("/verifyCompletedOtp")
+	public ResponseEntity<?> verifyCompletionOtp(
+			@RequestParam String bookingCode,
+			@RequestParam String otp) {
+
+		service.verifyCompletionOtp(bookingCode, otp);
+
+		return ResponseEntity.ok( new Response(1, "Booking completed successful", null));
 	}
 
 }

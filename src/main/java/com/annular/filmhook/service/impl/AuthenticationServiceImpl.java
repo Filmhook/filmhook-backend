@@ -1,7 +1,10 @@
 package com.annular.filmhook.service.impl;
 
 import java.text.SimpleDateFormat;
-
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -32,12 +35,15 @@ import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.HelpAndSupport;
 import com.annular.filmhook.model.RefreshToken;
 import com.annular.filmhook.model.User;
+import com.annular.filmhook.model.UserVerificationAttempt;
+import com.annular.filmhook.enums.VerificationType;
 import com.annular.filmhook.repository.HelpAndSupportRepository;
 import com.annular.filmhook.repository.RefreshTokenRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuthenticationService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.configuration.TwilioConfig;
+import com.annular.filmhook.exception.UserVerificationAttemptRepository;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.HelpAndSupportWebModel;
 import com.annular.filmhook.webmodel.UserWebModel;
@@ -58,9 +64,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 	@Autowired
 	RefreshTokenRepository refreshTokenRepository;
-	
-	 private static final int OTP_EXPIRY_MINUTES = 3;
-	 
+
+	private static final int OTP_EXPIRY_MINUTES = 3;
+
 	@Autowired
 	TwilioConfig twilioConfig;
 
@@ -70,8 +76,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	@Autowired
 	HelpAndSupportRepository helpAndSupportRepository;
 
+	@Autowired
+	UserVerificationAttemptRepository attemptRepository;
+
+	@Autowired
+	private UserSecurityAnswerServiceImpl userSecurityAnswerServiceImpl;
+
 	@Value("${annular.app.url}")
 	private String url;
+
 
 
 
@@ -232,7 +245,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				user.setOtp(otpNumber);
 				user = userRepository.save(user);
 				//                CompletableFuture.runAsync(() -> {
-					//                    String message = "Your OTP is " + otpNumber + " for verification";
+				//                    String message = "Your OTP is " + otpNumber + " for verification";
 				//                    twilioConfig.smsNotification(userWebModel.getName(), message);
 				//                });
 			} else {
@@ -537,24 +550,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		try {
 			Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
 			if (userOptional.isEmpty()) return ResponseEntity.ok().body("User not found");
-
 			User user = userOptional.get();
+			UserVerificationAttempt attempt =
+					userSecurityAnswerServiceImpl.getOrCreateAttempt(user, VerificationType.OTP_LOGIN);
+			if(attempt.getLocked()== true){
+				return ResponseEntity.ok(new Response(-1, "Maximum attempts reached. Try again after 24 hours.", null));
+			}
+
 			String newEmail = userWebModel.getSecondaryEmail();
-			user.setSecondaryEmail(newEmail);
+	        boolean emailExists = userRepository.existsByEmailOrSecondaryEmail(newEmail, newEmail);
+
+	        if (emailExists) {
+	            return ResponseEntity.ok(new Response(-1, "This email is already in use. Please use another email.", null));
+	        }
+			user.setSecondoryMailTemp(newEmail);
+			//user.setSecondaryEmail(newEmail);
+			
 			userRepository.save(user);
 
 			// Generate OTP
-			int primaryMailOtp = Integer.parseInt(Utility.generateOtp(4));
-			user.setEmailOtp(primaryMailOtp);
-			userRepository.save(user);
-
-			// Send verification email
-			boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
-			if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
-
-			// Generate OTP
-			int secondaryMailOtp = Integer.parseInt(Utility.generateOtp(4));
+			int secondaryMailOtp = Integer.parseInt(Utility.generateOtp(6));
 			user.setSecondaryemailOtp(secondaryMailOtp);
+			user.setSecondaryemailOtpCreatedOn(LocalDateTime.now());
 			userRepository.save(user);
 
 
@@ -565,9 +582,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			}
 			// Prepare response
 			Map<String, Object> response = new HashMap<>();
-			response.put("message", "OTP sent to primary and secondary email addresses.");
-			response.put("newEmail", newEmail);
-			response.put("oldEmailMessage", "OTP has been sent to " + user.getEmail());
+
+			response.put("message", "OTP has been sent to " + user.getSecondoryMailTemp());
 
 			return ResponseEntity.ok(response);
 
@@ -581,7 +597,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			if (Utility.isNullOrZero(user.getSecondaryemailOtp())) throw new IllegalArgumentException("OTP is null");
 			String subject = "Email Id Verification";
 			String mailContent = "<p>Please use the following OTP to verify your email on FilmHook:<b>" + user.getSecondaryemailOtp() + "</b></p>";
-			return mailNotification.sendEmailSync(user.getName(), user.getSecondaryEmail(), subject, mailContent);
+			return mailNotification.sendEmailSync(user.getName(), user.getSecondoryMailTemp(), subject, mailContent);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -599,26 +615,80 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			User user = userOptional.get();
 			int providedOtp = userWebModel.getEmailOtp();
 
+			// ----------- GET OR CREATE ATTEMPT (BACKUP_EMAIL) --------------
+			UserVerificationAttempt attempt =
+					userSecurityAnswerServiceImpl.getOrCreateAttempt(user, VerificationType.OTP_LOGIN);
+
+			// If locked → stop verification
+			if (attempt.getLocked()) {
+				return ResponseEntity.ok().body(
+						new Response(-1, "Account locked due to too many failed attempts", null));
+			}
+
+			if (user.getEmailOtpCreatedOn() == null) {
+				return ResponseEntity.ok(new Response(-1, "OTP not requested or already verified", null));
+			}
+
+			long diffMinutes =
+					(new Date().getTime() - user.getEmailOtpCreatedOn().getTime())
+					/ (60 * 1000);
+
+			if (diffMinutes > 1) {
+				return ResponseEntity.badRequest()
+						.body(new Response(-1, "OTP expired. Please resend OTP.", ""));
+			}
+
 			// Verify the OTP
 			if (user.getEmailOtp() == providedOtp) {
+				// Successful verification → reset attempts
+				attempt.setAttemptCount(0);
+				attempt.setFailedDays(0);
+				attempt.setLocked(false);
+				attempt.setAttemptDate(LocalDateTime.now());
+				attemptRepository.save(attempt);
 				// OTP matches
-				return ResponseEntity.ok(new Response(1, "Email verified successfully", "success"));
-			} else {
-				// OTP does not match, clear secondary email and OTP fields
-				user.setSecondaryEmail(null);
-				user.setSecondaryemailOtp(0);
+				user.setVerified(true);
+				user.setSecondaryEmail(user.getSecondoryMailTemp());
+				user.setEmailOtp(null);
+				user.setSecondaryemailOtp(null);
 				userRepository.save(user);
+				return ResponseEntity.ok(new Response(1, "Added Backup mail", "success"));
+			} 		
 
-				return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
+			// ----------- OTP FAILED — INCREASE ATTEMPT COUNT --------------
+			attempt.setAttemptCount(attempt.getAttemptCount() + 1);
+			// Increase failedDays only once per day
+			LocalDate lastFailDate = attempt.getAttemptDate() != null
+					? attempt.getAttemptDate().toLocalDate()
+							: null;
+
+			LocalDate today = LocalDate.now();
+
+			// If first time or new day → increase failedDays
+			if (lastFailDate == null || !lastFailDate.equals(today)) {
+				attempt.setFailedDays(attempt.getFailedDays() + 1);
 			}
+			attempt.setAttemptDate(LocalDateTime.now());
+
+			// Optional: lock after 5 attempts
+			if (attempt.getAttemptCount() >= 3) {
+				attempt.setLocked(true);
+			}
+
+			attemptRepository.save(attempt);
+
+			return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP. Secondary email reset", "error"));
+
 		} catch (Exception e) {
 			return ResponseEntity.internalServerError().body("Error verifying email OTP: " + e.getMessage());
 		}
 	}
 
+
 	@Override
 	public ResponseEntity<?> verifynewEmailOtps(UserWebModel userWebModel) {
 		try {
+
 			Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
 			if (!userOptional.isPresent()) {
 				return ResponseEntity.ok().body("User not found");
@@ -627,19 +697,77 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			User user = userOptional.get();
 			int providedOtp = userWebModel.getSecondaryemailOtp();
 
-			// Verify the OTP
+			// ----------- GET OR CREATE ATTEMPT (BACKUP_EMAIL) --------------
+			UserVerificationAttempt attempt =
+					userSecurityAnswerServiceImpl.getOrCreateAttempt(user, VerificationType.OTP_LOGIN);
+
+			// If locked → stop verification
+			if (attempt.getLocked()) {
+				return ResponseEntity.ok().body(
+						new Response(-1, "Account locked due to too many failed attempts", null));
+			}
+
+			if (user.getSecondaryemailOtpCreatedOn() == null) {
+				return ResponseEntity.ok(new Response(-1, "OTP not requested or already verified", null));
+			}
+			//   
+
+			long minutes = Duration.between(
+					user.getSecondaryemailOtpCreatedOn(),
+					LocalDateTime.now()
+					).toMinutes();
+
+			if (minutes > 2) {
+				return ResponseEntity.ok(new Response(-1, "OTP expired. Please resend OTP.", null));
+			}
+
+			// ----------- VERIFY OTP ----------------
 			if (user.getSecondaryemailOtp() == providedOtp) {
-				// OTP matches, mark the secondary email as verified
-				user.setVerified(true);
+
+				// Successful verification → reset attempts
+				attempt.setAttemptCount(0);
+				attempt.setFailedDays(0);
+				attempt.setLocked(false);
+				attempt.setAttemptDate(LocalDateTime.now());
+				attemptRepository.save(attempt);
+
+//				user.setVerified(true);
+				user.setSecondaryemailOtpCreatedOn(null);
+			//	user.setSecondaryEmail(user.getSecondoryMailTemp());
 				userRepository.save(user);
 
-				return ResponseEntity.ok(new Response(1, "Secondary email verified successfully", "success"));
-			} else {
-				// OTP does not match
-				return ResponseEntity.badRequest().body(new Response(-1, "Invalid OTP", "error"));
+				return ResponseEntity.ok(new Response(1,
+						"Backup email verified successfully", "success"));
 			}
+
+			// ----------- OTP FAILED — INCREASE ATTEMPT COUNT --------------
+			attempt.setAttemptCount(attempt.getAttemptCount() + 1);
+			// Increase failedDays only once per day
+			LocalDate lastFailDate = attempt.getAttemptDate() != null
+					? attempt.getAttemptDate().toLocalDate()
+							: null;
+
+			LocalDate today = LocalDate.now();
+
+			// If first time or new day → increase failedDays
+			if (lastFailDate == null || !lastFailDate.equals(today)) {
+				attempt.setFailedDays(attempt.getFailedDays() + 1);
+			}
+			attempt.setAttemptDate(LocalDateTime.now());
+
+			// Optional: lock after 5 attempts
+			if (attempt.getAttemptCount() >= 3) {
+				attempt.setLocked(true);
+			}
+
+			attemptRepository.save(attempt);
+
+			return ResponseEntity.ok(new Response(-1,
+					"Invalid OTP. Attempts: " + attempt.getAttemptCount(), "error"));
+
 		} catch (Exception e) {
-			return ResponseEntity.internalServerError().body("Error verifying secondary email OTP: " + e.getMessage());
+			return ResponseEntity.internalServerError()
+					.body("Error verifying secondary email OTP: " + e.getMessage());
 		}
 	}
 
@@ -779,25 +907,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		String email = model.getEmail();
 
 		// 1️⃣ ACTIVE USER EXISTS → LOGIN
-		 Optional<User> activeUser =
-		            userRepository.findByEmailAndStatusTrue(email);
+		Optional<User> activeUser =
+				userRepository.findByEmailAndStatusTrue(email);
 
-		    if (activeUser.isPresent()) {
+		if (activeUser.isPresent()) {
 
-		        User existingUser = activeUser.get();
-		        		       
-		        String message;
-		        if ("Public User".equalsIgnoreCase(existingUser.getUserType())) {
-		            message = "This email is already registered as a Public User. Please login.";
-		        } else if ("Industry User".equalsIgnoreCase(existingUser.getUserType())) {
-		            message = "This email is already registered as an Industry User. Please login.";
-		        } else {
-		            message = "This email already exists. Please login.";
-		        }
+			User existingUser = activeUser.get();
 
-		        return ResponseEntity.unprocessableEntity()
-		                .body(new Response(0, message, null));
-		    }
+			String message;
+			if ("Public User".equalsIgnoreCase(existingUser.getUserType())) {
+				message = "This email is already registered as a Public User. Please login.";
+			} else if ("Industry User".equalsIgnoreCase(existingUser.getUserType())) {
+				message = "This email is already registered as an Industry User. Please login.";
+			} else {
+				message = "This email already exists. Please login.";
+			}
+
+			return ResponseEntity.unprocessableEntity()
+					.body(new Response(0, message, null));
+		}
 
 		// 2️⃣ INACTIVE + NOT PERMANENTLY DELETED → UPDATE SAME ROW
 		Optional<User> inactiveUser =
@@ -831,7 +959,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		// 5️⃣ GENERATE 4-DIGIT OTP
 		int otp = 1000 + new Random().nextInt(9000);
 		user.setEmailOtp(otp);
-		  user.setEmailOtpCreatedOn(new Date());
+		user.setEmailOtpCreatedOn(new Date());
 		// 6️⃣ SAVE (INSERT or UPDATE handled by JPA)
 		user = userRepository.save(user);
 
@@ -840,7 +968,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
 		Map<String, Object> responseData = new HashMap<>();
 		responseData.put("userId", user.getUserId());
-
+		responseData.put("emailOtp", user.getEmailOtp());
 		return ResponseEntity.ok(
 				new Response(1, "OTP sent successfully", responseData)
 				);
@@ -869,27 +997,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				return ResponseEntity.badRequest()
 						.body(new Response(-1, "Invalid Email OTP", ""));
 			}
-			
-			 if (user.getEmailOtpCreatedOn() == null) {
-		            return ResponseEntity.badRequest()
-		                    .body(new Response(-1, "OTP expired. Please resend OTP.", ""));
-		        }
 
-		        long diffMinutes =
-		                (new Date().getTime() - user.getEmailOtpCreatedOn().getTime())
-		                        / (60 * 1000);
-		        
-		        if (diffMinutes > OTP_EXPIRY_MINUTES) {
-		            return ResponseEntity.badRequest()
-		                    .body(new Response(-1, "OTP expired. Please resend OTP.", ""));
-		        }
-		        user.setEmailOtp(null);
-		        user.setEmailOtpCreatedOn(null);
+			if (user.getEmailOtpCreatedOn() == null) {
+				return ResponseEntity.badRequest()
+						.body(new Response(-1, "OTP expired. Please resend OTP.", ""));
+			}
+
+			long diffMinutes =
+					(new Date().getTime() - user.getEmailOtpCreatedOn().getTime())
+					/ (60 * 1000);
+
+			if (diffMinutes > OTP_EXPIRY_MINUTES) {
+				return ResponseEntity.badRequest()
+						.body(new Response(-1, "OTP expired. Please resend OTP.", ""));
+			}
+			user.setEmailOtp(null);
+			user.setEmailOtpCreatedOn(null);
 			userRepository.save(user);
 
 			// Prepare response with userId
 			Map<String, Object> responseData = new HashMap<>();
-			responseData.put("userId", user.getUserId());
+
+			responseData.put("userId", user.getUserId());			
 
 			return ResponseEntity.ok(
 					new Response(1, "Email OTP verified successfully", responseData)
@@ -978,6 +1107,65 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 					.body(new Response(-1, "Failed to register the user. Try Again...", e.getMessage()));
 		}
 	}
+
+	@Override
+	public Response forgotPasswordSecondaryMail(String email, String secondaryMail) {
+
+		User user = userRepository.findByEmailOrSecondaryEmail(email, email)
+				.orElseThrow(() -> new RuntimeException("No active account found for this email"));
+
+		if(user.getSecondaryemailOtp() != null) {
+			return new Response(1, "Secondary Mail not verified", false);
+		}
+
+		else {
+			String forgotOtp = Utility.generateOtp(6);
+
+			user.setForgotOtp(forgotOtp);
+			userRepository.save(user);
+
+			String subject = "FilmHook – Password Reset OTP";
+			String mailContent =
+					"<p>Your password reset OTP is: <b style='font-size:16px;'>" + forgotOtp + "</b></p>"
+							+ "<p>Use this OTP to reset your password.</p>";
+
+			mailNotification.sendOTPEmail(user.getName(), secondaryMail, subject, mailContent);
+
+			return new Response(1, "Password reset OTP sent", true);
+		}
+	}
+
+	@Override
+	public ResponseEntity<?> sendPrimaryEmailOtp(UserWebModel model) {
+
+		Optional<User> userOptional = userRepository.findById(model.getUserId());
+		if (userOptional.isEmpty()) return ResponseEntity.ok().body("User not found");
+
+		User user = userOptional.get();
+
+		UserVerificationAttempt attempt =
+				userSecurityAnswerServiceImpl.getOrCreateAttempt(user, VerificationType.OTP_LOGIN);
+		if(attempt.getLocked()== true){
+			return ResponseEntity.ok(new Response(-1, "Maximum attempts reached. Try again after 24 hours.", null));
+		}
+
+		// Generate OTP
+		int primaryMailOtp = Integer.parseInt(Utility.generateOtp(6));
+		user.setEmailOtp(primaryMailOtp);
+		user.setEmailOtpCreatedOn(new Date());
+		userRepository.save(user);
+
+		// Send verification email
+		boolean sendVerificationRes = mailNotification.sendVerificationEmail(user);
+		if (!sendVerificationRes) return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new Response(-1, "Mail not sent", "error"));
+		Map<String, Object> response = new HashMap<>();
+
+		response.put("message", "OTP has been sent to " + user.getEmail());
+
+		return ResponseEntity.ok(response);
+
+	}
+
 
 
 

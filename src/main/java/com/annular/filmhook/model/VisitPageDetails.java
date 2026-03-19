@@ -3,6 +3,9 @@ package com.annular.filmhook.model;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import javax.persistence.*;
 import java.util.Date;
 
@@ -13,6 +16,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class VisitPageDetails {
 
     @Id
@@ -39,5 +43,6 @@ public class VisitPageDetails {
     // MANY DETAILS → ONE VisitPage
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "visit_page_id", referencedColumnName = "visitPageId", nullable = false)
+    @JsonIgnore
     private VisitPage visitPage;
 }

@@ -1,5 +1,6 @@
 package com.annular.filmhook.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.service.ChatService;
 import com.annular.filmhook.service.FcmService;
+import com.annular.filmhook.util.WebSocketService;
 import com.annular.filmhook.webmodel.ChatWebModel;
 import com.annular.filmhook.webmodel.FCMRequestWebModel;
 import com.annular.filmhook.webmodel.InAppNotificationWebModel;
@@ -38,6 +41,9 @@ public class ChatController {
 
 	@Autowired
 	FcmService fcmService;
+	
+	@Autowired
+	WebSocketService webSocketService;
 
 	@RequestMapping(path = "/saveMessage", method = RequestMethod.POST, consumes = {
 			MediaType.MULTIPART_FORM_DATA_VALUE })
@@ -76,6 +82,18 @@ public class ChatController {
 		}
 		return ResponseEntity.ok(new Response(-1, "Fail", ""));
 	}
+	
+	@PostMapping("/chat/markRead")
+	public ResponseEntity<?> markRead(@RequestBody Map<String, Integer> body) {
+	    return chatService.markRead(body.get("chatId"));
+	}
+	
+	  @PostMapping("/markAllRead")
+	    public ResponseEntity<?> markAllRead(@RequestBody Map<String, Integer> body) {
+	        Integer senderId = body.get("senderId");
+	        Integer receiverId = body.get("receiverId");
+	        return chatService.markAllRead(senderId, receiverId);
+	    }
 
 	@PostMapping("/send-fcm-message")
 	public ResponseEntity<?> sendFCMMessage(@RequestBody FCMRequestWebModel request) {
@@ -201,4 +219,26 @@ public class ChatController {
         }
         return chatService.editMessage(chatId, newMessage);
     }
+    
+    @MessageMapping("/typing")
+    public void typing(Map<String, Object> map) {
+        Integer fromUserId = (Integer) map.get("fromUserId");
+        Integer toUserId = (Integer) map.get("toUserId");
+        Boolean isTyping = (Boolean) map.get("isTyping");
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("fromUserId", fromUserId);
+        payload.put("toUserId", toUserId);
+        payload.put("isTyping", isTyping);
+
+        // send to receiver only
+        webSocketService.notifyChatUser(toUserId, "TYPING", payload);
+    }
+
+    @PostMapping("voiceChatPlayed/{chatId}") 
+    public ResponseEntity<?> markVoicePlayed(@PathVariable Integer chatId) {
+        return chatService.markVoiceChatPlayed(chatId);
+    }
+    
+    
 }

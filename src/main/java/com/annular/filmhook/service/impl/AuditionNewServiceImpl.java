@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.time.LocalDateTime;
+
 import java.time.format.DateTimeFormatter;
 
 
@@ -84,11 +84,14 @@ import com.annular.filmhook.util.HashGenerator;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.util.S3Util;
 import com.annular.filmhook.util.Utility;
+import com.annular.filmhook.webmodel.AuditionCompaniesWithProjectsDTO;
 import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
 import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionNewTeamNeedWebModel;
 import com.annular.filmhook.webmodel.AuditionPaymentDTO;
 import com.annular.filmhook.webmodel.AuditionPaymentWebModel;
+import com.annular.filmhook.webmodel.AuditionProjectSummaryDTO;
+
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.FilmProfessionResponseDTO;
 import com.annular.filmhook.webmodel.FilmSubProfessionResponseDTO;
@@ -758,10 +761,22 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					+ "</table>"
 					+ "<p>Please keep this information for your records.</p>"
 					+ "</body></html>";
+			
+			String EmailToSend;
+			// check permission
+			if (Boolean.TRUE.equals(payment.getUser().getSecondaryMailPermission()) 
+			        && payment.getUser().getSecondaryEmail() != null 
+			        && !payment.getUser().getSecondaryEmail().isEmpty()) {
 
+				EmailToSend = payment.getUser().getSecondaryEmail(); 
+
+			} else {
+				EmailToSend =payment.getUser().getEmail(); 
+			}
+			
 			mailNotification.sendEmailWithAttachment(
 					payment.getUser().getName(),
-					payment.getUser().getEmail(),
+					EmailToSend,
 					subject,
 					content,
 					invoicePdf,
@@ -939,10 +954,21 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 					+ "border-radius:4px;'>🔄 Retry Payment</a></p>"
 					+ "<p>If the amount was deducted, it will be refunded by your bank.</p>"
 					+ "</body></html>";
+			String EmailToSend;
+			// check permission
+			if (Boolean.TRUE.equals(payment.getUser().getSecondaryMailPermission()) 
+			        && payment.getUser().getSecondaryEmail() != null 
+			        && !payment.getUser().getSecondaryEmail().isEmpty()) {
 
+				EmailToSend = payment.getUser().getSecondaryEmail(); 
+
+			} else {
+				EmailToSend =payment.getUser().getEmail(); 
+			}
+			
 			mailNotification.sendEmail(
 					payment.getUser().getName(),
-					payment.getUser().getEmail(),
+					EmailToSend,
 					subject,
 					content
 					);
@@ -1153,11 +1179,24 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 				+ "<p>If you have any questions or need assistance, feel free to contact our support team.</p>"
 
             + "</body></html>";
+	
 
 		try {
+			
+			String EmailToSend;
+			// check permission
+			if (Boolean.TRUE.equals(payment.getUser().getSecondaryMailPermission()) 
+			        && payment.getUser().getSecondaryEmail() != null 
+			        && !payment.getUser().getSecondaryEmail().isEmpty()) {
+
+				EmailToSend = payment.getUser().getSecondaryEmail(); 
+
+			} else {
+				EmailToSend =payment.getUser().getEmail(); 
+			}
 			mailNotification.sendEmail(
 					payment.getUser().getName(),
-					payment.getUser().getEmail(),
+					EmailToSend,
 					subject,
 					content
 					);
@@ -1382,6 +1421,239 @@ public class AuditionNewServiceImpl implements AuditionNewService {
 	        }
 	        return userOfferRepository.save(userOffer);
 	    }
+	 
+	 
+	 @Override
+	 public List<AuditionCompaniesWithProjectsDTO> getAllCompaniesWithAllProjects() {
+
+	     List<AuditionCompanyDetails> companies =
+	             companyRepository
+	                     .findAllByDeletedFalseAndStatusTrueAndVerificationStatusOrderByIdDesc(
+	                             AuditionCompanyDetails.VerificationStatus.SUCCESS
+	                     );
+
+	     return companies.stream().map(company -> {
+
+	         // 1️⃣ Fetch projects for company
+	         List<AuditionNewProject> projects =
+	                 projectRepository.findAllByCompanyIdAndIsDeletedFalseOrderByIdDesc(
+	                         company.getId()
+	                 );
+
+	         // 2️⃣ Fetch all SUCCESS payments for those projects (single query)
+	         List<AuditionPayment> payments =
+	        		    projects.isEmpty()
+	        		        ? List.of()
+	        		        : paymentRepository.findByProjectIn(projects);
+
+	         // 3️⃣ Create Map<projectId, LatestPayment>
+	         Map<Integer, AuditionPayment> paymentMap =
+	                 payments.stream()
+	                         .collect(Collectors.toMap(
+	                                 p -> p.getProject().getId(),
+	                                 p -> p,
+	                                 (existing, replacement) ->
+	                                         existing.getExpiryDateTime().isAfter(
+	                                                 replacement.getExpiryDateTime()
+	                                         )
+	                                                 ? existing
+	                                                 : replacement
+	                         ));
+
+	         // 4️⃣ Convert projects to DTO
+	         List<AuditionProjectSummaryDTO> projectDtos =
+	                 projects.stream()
+	                         .map(project ->AuditionProjectSummaryDTO(
+	                                         project,
+	                                         paymentMap.get(project.getId())
+	                                 )
+	                         )
+	                         .collect(Collectors.toList());
+
+	         // 5️⃣ Calculate total job posts
+	         int totalJobPosts = (int) projects.stream()
+	        	        .count();
+	         // 6️⃣ Calculate active posts
+	         int activePosts = (int) projects.stream()
+	        	        .filter(p -> Boolean.TRUE.equals(p.getStatus()))
+	        	        .count();
+
+	         return AuditionCompaniesWithProjectsDTO.builder()
+	                 .companyId(company.getId())
+	                 .companyName(company.getCompanyName())
+	                 .ownerName(company.getUser() != null
+	                         ? company.getUser().getName()
+	                         : null)
+	                 .gstNumber(company.getGstNumber())
+	                 .totalJobPosts(totalJobPosts)
+	                 .activePosts(activePosts)
+	                 .projects(projectDtos)
+	                 .build();
+
+	     }).collect(Collectors.toList());
+	 }
+	 
+	 
+	 public static AuditionProjectSummaryDTO AuditionProjectSummaryDTO(
+		        AuditionNewProject project,
+		        AuditionPayment payment
+		) {
+
+		    // 🔹 Calculate validTill
+		    LocalDateTime validTill = null;
+		    String paymentStatus = null;
+		    Boolean activeStatus = false;
+
+		    if (payment != null) {
+
+		        paymentStatus = payment.getPaymentStatus();
+
+		        if (payment.getSelectedDays() != null &&
+		                project.getCreatedOn() != null) {
+
+		            validTill = project.getCreatedOn()
+		                    .plusDays(payment.getSelectedDays());
+
+		            // 🔥 Auto active/inactive based on expiry
+		            activeStatus = validTill.isAfter(LocalDateTime.now());
+		        }
+		    }
+
+		    return AuditionProjectSummaryDTO.builder()
+		            .id(project.getId())
+		            .projectTitle(project.getProjectTitle())
+
+		            .industry(
+		                    project.getIndustries() != null &&
+		                            !project.getIndustries().isEmpty()
+		                            ? project.getIndustries().get(0)
+		                            : null
+		            )
+
+		            .category(
+		                    project.getMovieTypes() != null &&
+		                            !project.getMovieTypes().isEmpty()
+		                            ? project.getMovieTypes().get(0)
+		                            : null
+		            )
+
+		            .postedOn(project.getCreatedOn())
+		            .validTill(validTill)
+
+		        
+		            .status(paymentStatus) 
+
+		            .build();
+		}
+	 
+	 @Override
+	 public AuditionNewProjectWebModel getProjectByProjectId(Integer projectId) {
+
+	     Integer userId = userDetails.userInfo().getId();
+
+	     User user = userRepository.findById(userId)
+	             .orElseThrow(() -> new RuntimeException("User not found"));
+
+	     AuditionNewProject project = projectRepository.findById(projectId)
+	             .orElseThrow(() -> new RuntimeException("Project not found"));
+
+	     // Convert entity → DTO
+	     AuditionNewProjectWebModel dto = AuditionCompanyConverter.toDto(project);
+	  // Get project owner
+	     Integer createdBy = project.getCreatedBy();
+
+	     User projectOwner = userRepository.findById(createdBy)
+	             .orElseThrow(() -> new RuntimeException("Project owner not found"));
+
+	     dto.setFilmHookCode(projectOwner.getFilmHookCode());
+
+	     // ================================
+	     // Expiry Date
+	     // ================================
+	     DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+	     DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
+
+	     Optional<AuditionPayment> paymentOpt =
+	             paymentRepository.findTopByProjectIdOrderByExpiryDateTimeDesc(projectId);
+
+	     paymentOpt.ifPresent(payment -> {
+	         LocalDateTime expiry = payment.getExpiryDateTime();
+	         if (expiry != null) {
+	             dto.setExpiryDate(expiry.format(dateFormatter));
+	             dto.setExpiryTime(expiry.format(timeFormatter));
+	         }
+	     });
+
+	     // ================================
+	     // Project Profile Pictures
+	     // ================================
+	     List<FileOutputWebModel> profilePictures =
+	             mediaFilesService.getMediaFilesByCategoryAndRefId(
+	                     MediaFileCategory.AuditionProfilePicture,
+	                     project.getId());
+
+	     dto.setProfilePictureFilesOutput(profilePictures);
+
+	     // ================================
+	     // Company Logo
+	     // ================================
+	     if (project.getCompany() != null) {
+
+	         List<FileOutputWebModel> companyLogos =
+	                 mediaFilesService.getMediaFilesByCategoryAndRefId(
+	                         MediaFileCategory.Audition,
+	                         project.getCompany().getId());
+
+	         dto.setLogoFiles(companyLogos);
+	     }
+
+	     // ================================
+	     // Team Needs
+	     // ================================
+	     List<AuditionNewTeamNeedWebModel> teamNeeds =
+	             project.getTeamNeeds().stream()
+
+	             // only active
+	             .filter(tn -> Boolean.TRUE.equals(tn.getStatus()))
+
+	             .map(tn -> {
+
+	                 AuditionNewTeamNeedWebModel tnDto =
+	                         AuditionCompanyConverter.toDto(tn);
+
+	                 // liked by user
+	                 boolean liked = likesRepository
+	                         .findByCategoryAndAuditionIdAndLikedBy(
+	                                 "TEAM_NEED",
+	                                 tn.getId(),
+	                                 user.getUserId())
+	                         .map(Likes::getStatus)
+	                         .orElse(false);
+
+	                 tnDto.setLiked(liked);
+
+	                 // like count
+	                 int totalLikes =
+	                         likesRepository.countByCategoryAndAuditionIdAndStatus(
+	                                 "TEAM_NEED",
+	                                 tn.getId(),
+	                                 true);
+
+	                 tnDto.setLikeCount(totalLikes);
+
+	                 // view count
+	                 int totalViews = getViewCount(tn.getId());
+	                 tnDto.setTotalViews(totalViews);
+
+	                 return tnDto;
+	             })
+
+	             .collect(Collectors.toList());
+
+	     dto.setTeamNeeds(teamNeeds);
+
+	     return dto;
+	 }
 }
 
 

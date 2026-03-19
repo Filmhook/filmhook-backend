@@ -36,6 +36,8 @@ public interface PromoteAdRepository extends JpaRepository<PromoteAd, Integer> {
     
     @Query("SELECT p FROM PromoteAd p JOIN FETCH p.post WHERE p.status = :status")
     List<PromoteAd> findRunningPromotesWithPost(@Param("status") PromoteStatus status);
+    
+    List<PromoteAd> findAllByPostIdOrderByStartDateDesc(Integer postId);
 
 
 

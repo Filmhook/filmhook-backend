@@ -37,9 +37,11 @@ public interface AuditionCompanyRepository extends JpaRepository<AuditionCompany
     @Query(value = "UPDATE auditions_companies SET deleted = true, status = false WHERE user_id = :userId", nativeQuery = true)
     void softDeleteByUserId(@Param("userId") Integer userId);
 
+    List<AuditionCompanyDetails> findByDeletedFalse();
 
-
-
+    List<AuditionCompanyDetails>
+    findAllByDeletedFalseAndStatusTrueAndVerificationStatusOrderByIdDesc(
+            AuditionCompanyDetails.VerificationStatus verificationStatus);
 
 
 }

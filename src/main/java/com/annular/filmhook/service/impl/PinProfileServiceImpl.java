@@ -405,7 +405,7 @@ private PostWebModel transformPostDataToPostWebModel(Posts post) {
                 .promoteStatus(promoteDetails != null)
                 .promoteId(promoteDetails != null ? promoteDetails.getPromoteId() : null)
                 .numberOfDays(promoteDetails != null ? promoteDetails.getNumberOfDays() : null)
-                .amount(promoteDetails != null ? promoteDetails.getAmount() : null)                                       
+               // .amount(promoteDetails != null ? promoteDetails.getAmount() : null)                                       
                 .viewsCount(post.getViewsCount())
                 .build();
 

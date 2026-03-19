@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.model.BookingStatus;
 import com.annular.filmhook.model.Payments;
 import com.annular.filmhook.model.PropertyBookingType;
 import com.annular.filmhook.model.ShootingPropertyStatus;
@@ -25,6 +26,7 @@ import com.annular.filmhook.webmodel.ShootingLocationPropertySummaryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationSubcategoryDTO;
 import com.annular.filmhook.webmodel.ShootingLocationTypeDTO;
 import com.annular.filmhook.webmodel.ShootingPaymentModel;
+import com.annular.filmhook.webmodel.ShootingPropertyMediaRequest;
 
 
 public interface ShootingLocationService {
@@ -59,8 +61,8 @@ public interface ShootingLocationService {
 	ShootingLocationPropertyReviewDTO updateReview(Integer reviewId, Integer propertyId, Integer userId, int rating,
 			String reviewText, List<MultipartFile> files, List<Integer> deletedFileIds);
 	List<LocalDate> getAvailableDatesForProperty( Integer propertyId, SlotType requestedSlot) ;
-	ShootingLocationBookingDTO createBooking(ShootingLocationBookingDTO dto);
 	
+	ShootingLocationBookingDTO createOrUpdateBooking(ShootingLocationBookingDTO dto);
 	
 	Payments createShootingPayment(ShootingPaymentModel model);
 	public ResponseEntity<Response> handleShootingLocationPaymentSuccess(String txnid);
@@ -88,5 +90,21 @@ public interface ShootingLocationService {
 	        String userType);
 	ShootingLocationPropertyDetailsDTO getPropertyById(Integer propertyId);
 
-
+	Response reviewShootingLocationMedia(
+	        ShootingPropertyMediaRequest request
+	);
+	Response updatePermission(ShootingLocationPropertyDetailsDTO dto);
+	List<ShootingLocationPropertyReviewDTO> getReviewsByPropertyId(Integer propertyId);
+	
+	ShootingLocationPropertyReviewResponseDTO getAllReviewsByPropertyId(Integer propertyId);
+	
+	List<ShootingLocationBookingDTO> getOwnerBookings(Integer ownerId, BookingStatus status);
+	Response updateBookingStatus(Integer bookingId, Integer ownerId, BookingStatus newStatus);
+	Response getClientBookingsByStatus(Integer clientId, BookingStatus status);
+	ShootingLocationBookingDTO cancelBooking(  Integer bookingId, Integer clientId, String reason);
+	void deleteBooking(Integer bookingId, Integer userId);
+	void generateShootOtp(String bookingCode, Integer ownerId) ;
+	void verifyShootOtp(String bookingCode, String otp);
+	void generateCompletionOtp(String bookingCode, Integer ownerId);
+	void verifyCompletionOtp(String bookingCode, String otp);
 }

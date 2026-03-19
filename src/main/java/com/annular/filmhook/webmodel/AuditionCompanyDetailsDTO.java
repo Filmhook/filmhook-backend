@@ -4,8 +4,9 @@
 	import java.util.List;
 	
 	import org.springframework.web.multipart.MultipartFile;
-	
-	import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
+
+import com.annular.filmhook.model.AdminActivityLog;
+import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
 	
 	import lombok.*;
 	
@@ -45,5 +46,8 @@
 	    private List<FileOutputWebModel> companyCertificateFilesOutput;
 	    private List<FileOutputWebModel> businessCertificateFilesOutput;
 	    private List<FileOutputWebModel> gstCertificateFilesOutput;
+	   private String fhCode;
+	   private List<AdminActivityLog> adminHistory;
+	   private String rejectReason;
 	}
 	

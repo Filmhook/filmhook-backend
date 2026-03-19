@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "MediaFiles", uniqueConstraints = @UniqueConstraint(name = "UNIQUE_FILE_ID_CATEGORY_REF_ID_STATUS",
-        columnNames = {"file_id", "category", "category_ref_id", "status"})
+        columnNames = {"file_id", "category", "category_ref_id","status"})
 )
 @Builder
 @Getter

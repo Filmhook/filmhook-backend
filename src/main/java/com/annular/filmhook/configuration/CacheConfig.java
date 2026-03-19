@@ -34,7 +34,8 @@ public class CacheConfig {
                 java.util.List.of(
                         "propertyCache",      // For Shooting Location Property
                         "userCache",          // Example: user profile
-                        "categoryCache"       // Example: categories
+                        "categoryCache",
+                        "securityQuestionsCache"
                 )
         );
 

@@ -80,5 +80,35 @@ public interface ChatRepository extends JpaRepository<Chat, Integer> {
             "ORDER BY c.time_stamp DESC LIMIT 1",
             nativeQuery = true)
     Optional<Chat> findPreviousVisibleMessage(Integer senderId, Integer receiverId, Date lastMessageTime);
+    
+    @Query(
+    	    "SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END " +
+    	    "FROM Chat c " +
+    	    "WHERE c.chatSenderId = :senderId " +
+    	    "AND c.chatReceiverId = :receiverId " +
+    	    "AND c.senderChatIsActive = true " +
+    	    "AND (c.deletedBySender = false OR c.deletedBySender IS NULL) " +
+    	    "AND (c.isDeletedForEveryone = false OR c.isDeletedForEveryone IS NULL)"
+    	)
+    	boolean existsActiveChatFromSender(
+    	        @Param("senderId") Integer senderId,
+    	        @Param("receiverId") Integer receiverId
+    	);
+    
+    @Query("SELECT c FROM Chat c WHERE c.chatSenderId = :senderId AND c.chatReceiverId = :receiverId AND c.receiverRead = false")
+    List<Chat> findUnreadMessages(@Param("senderId") Integer senderId,
+                                  @Param("receiverId") Integer receiverId);
 
+    @Query("SELECT c FROM Chat c WHERE c.chatReceiverId = :userId AND c.messageStatus = 'SENT'")
+    List<Chat> findUndeliveredMessages(@Param("userId") Integer userId);
+    
+    @Query("SELECT DISTINCT " +
+    	       "CASE WHEN c.chatSenderId = :userId THEN c.chatReceiverId ELSE c.chatSenderId END " +
+    	       "FROM Chat c " +
+    	       "WHERE (c.chatSenderId = :userId AND c.senderChatIsActive = true AND c.deletedBySender = false) " +
+    	       "OR (c.chatReceiverId = :userId AND c.receiverChatIsActive = true AND c.deletedByReceiver = false)")
+    	List<Integer> findActiveChatUserIds(@Param("userId") Integer userId);
+    
    }
+
+

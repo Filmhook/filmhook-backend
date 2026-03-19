@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.annular.filmhook.model.ChatType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Data;
@@ -21,54 +22,58 @@ import lombok.Data;
 @NoArgsConstructor
 public class ChatWebModel {
 
-    private Integer chatId;
-    private Integer chatSenderId;
-    private Integer chatReceiverId;
-    private String message;
-    private Boolean senderchatIsActive;
-    private Boolean reciverchatIsActive;
-    private Integer chatCreatedBy;
-    private Integer chatUpdatedBy;
-    private Date chatCreatedOn;
-    private Date chatUpdatedOn;
-    private String userType;
-    private Date timeStamp;
-    private String userAccountName;
-    private Integer userId;
-    private String senderProfilePic;
-    private String receiverProfilePic;
-    private String receiverAccountName;
-    private Boolean senderRead;
-    private Boolean receiverRead;
+	private Integer chatId;
+	private Integer chatSenderId;
+	private Integer chatReceiverId;
+	private String message;
+	private Boolean senderchatIsActive;
+	private Boolean reciverchatIsActive;
+	private Integer chatCreatedBy;
+	private Integer chatUpdatedBy;
+	private Date chatCreatedOn;
+	private Date chatUpdatedOn;
+	private String userType;
+	private Date timeStamp;
+	private String userAccountName;
+	private Integer userId;
+	private String senderProfilePic;
+	private String receiverProfilePic;
+	private String receiverAccountName;
+	private Boolean senderRead;
+	private Boolean receiverRead;
 
-    List<MultipartFile> files;
-    List<FileOutputWebModel> chatFiles;
-    
-    //Pagination details
-    private Integer pageNo;
-    private Integer pageSize;
-    private String storyId;
-    private String storyMediaUrl;
-    private String replyType;
-    private String storyMediaType;
-    private String deleteType;
-    private Boolean isDeletedForEveryone;
-    private Boolean edited;
-    private Date editedOn;
-       private Integer replyToMessageId;
-       
-       private ReplyMessageDTO replyToMessage;  // ✅ nested reply DTO
+	List<MultipartFile> files;
+	List<FileOutputWebModel> chatFiles;
 
-   
-       @Data
-       @AllArgsConstructor
-       @NoArgsConstructor
-       public static class ReplyMessageDTO {
-           private Integer chatId;
-           private Integer chatSenderId;
-           private String message;
-           private String userAccountName;
-           private String mediaUrl;   
-           private String mediaType; 
-       }
-   }
+	//Pagination details
+	private Integer pageNo;
+	private Integer pageSize;
+	private String storyId;
+	private String storyMediaUrl;
+	private String replyType;
+	private String storyMediaType;
+	private String deleteType;
+	private Boolean isDeletedForEveryone;
+	private Boolean edited;
+	private Date editedOn;
+	private Integer replyToMessageId;
+
+	private ReplyMessageDTO replyToMessage;  
+	private Double latitude;
+	private Double longitude;
+	private String locationAddress;
+	private ChatType chatType;
+private String messageStatus;
+
+	@Data
+	@AllArgsConstructor
+	@NoArgsConstructor
+	public static class ReplyMessageDTO {
+		private Integer chatId;
+		private Integer chatSenderId;
+		private String message;
+		private String userAccountName;
+		private String mediaUrl;   
+		private String mediaType; 
+	}
+}

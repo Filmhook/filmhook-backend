@@ -36,18 +36,10 @@ public class AuditionCompanyDetailsValidator implements Validator {
 		String loggedUser = userDetails.userInfo().getUsername(); // ✅ get current username
 		LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Kolkata"));
 
-		if (CustomValidator.isEmpty(dto.getCompanyName()))
-			errors.rejectValue("companyName", BAD_REQUEST_ERROR_CD, "Company Name is empty or invalid");
 		if (CustomValidator.isEmpty(dto.getLocation()))
 			errors.rejectValue("location", BAD_REQUEST_ERROR_CD, "Location is empty or invalid");
 		if (CustomValidator.isEmpty(dto.getCompanyType()))
 			errors.rejectValue("companyType", BAD_REQUEST_ERROR_CD, "Company Type is empty or invalid");
-		 if (dto.getCompanyCertificateFiles() == null || dto.getCompanyCertificateFiles().isEmpty()) {
-	            errors.rejectValue(
-	                    "companyCertificateFiles",
-	                    BAD_REQUEST_ERROR_CD,
-	                    "Company Certificate file is required");
-	        }
 	       // =========================
 	        // GST (ONLY WHEN REGISTERED)
 	        // =========================

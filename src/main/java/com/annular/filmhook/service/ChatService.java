@@ -35,4 +35,10 @@ public interface ChatService {
 	
 	ResponseEntity<?> editMessage(Integer chatId, String newMessage) ;
 
+	ResponseEntity<?> markRead(Integer chatId);
+	
+	  ResponseEntity<?> markAllRead(Integer senderId, Integer receiverId);
+	  
+	  ResponseEntity<?> markVoiceChatPlayed(Integer chatId);
+
 }

@@ -16,39 +16,28 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/agora")
 public class AgoraTokenController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AgoraTokenController.class);
+	  @Autowired
+	    private AgoraTokenService service;
 
-    @Autowired
-    AgoraTokenService agoraTokenService;
+	    @PostMapping("/rtc-token")
+	    public Response getRTCToken(@RequestBody AgoraWebModel model) {
+	        String token = service.getRTCToken(model);
+	        return token == null ? new Response(-1, "Error", null)
+	                             : new Response(1, "Success", token);
+	    }
 
-    // For RTC - Real-time Communication : Voice and Video Call
-    @PostMapping("/getRTCToken")
-    public Response getRTCToken(@RequestBody AgoraWebModel agoraWebModel) {
-        String token = agoraTokenService.getAgoraRTCToken(agoraWebModel);
-        if (Utility.isNullOrBlankWithTrim(token) || token.contains("blank"))
-            return new Response(-1, "Error", null);
-        else
-            return new Response(1, "Success", token);
-    }
+	    @PostMapping("/rtm-token")
+	    public Response getRTMToken(@RequestBody AgoraWebModel model) {
+	        String token = service.getRTMToken(model);
+	        return token == null ? new Response(-1, "Error", null)
+	                             : new Response(1, "Success", token);
+	    }
 
-    // For RTM - Real-time Messaging
-    @PostMapping("/getRTMToken")
-    public Response getRTMToken(@RequestBody AgoraWebModel agoraWebModel) {
-        String token = agoraTokenService.getAgoraRTMToken(agoraWebModel);
-        if (Utility.isNullOrBlankWithTrim(token) || token.contains("blank"))
-            return new Response(-1, "Error", null);
-        else
-            return new Response(1, "Success", token);
-    }
-
-    // For Chat
-    @PostMapping("/getChatToken")
-    public Response getChatToken(@RequestBody AgoraWebModel agoraWebModel) {
-        String token = agoraTokenService.getAgoraChatToken(agoraWebModel);
-        if (Utility.isNullOrBlankWithTrim(token) || token.contains("blank"))
-            return new Response(-1, "Error", null);
-        else
-            return new Response(1, "Success", token);
-    }
+	    @PostMapping("/chat-token")
+	    public Response getChatToken(@RequestBody AgoraWebModel model) {
+	        String token = service.getChatToken(model);
+	        return token == null ? new Response(-1, "Error", null)
+	                             : new Response(1, "Success", token);
+	    }
 
 }

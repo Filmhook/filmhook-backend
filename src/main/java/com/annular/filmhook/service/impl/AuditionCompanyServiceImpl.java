@@ -15,13 +15,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
+import com.annular.filmhook.model.AdminActivityLog;
 import com.annular.filmhook.model.AuditionCompanyDetails;
 import com.annular.filmhook.model.AuditionCompanyDetails.VerificationStatus;
+import com.annular.filmhook.model.AuditionNewProject;
 import com.annular.filmhook.model.AuditionUserCompanyRole;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.User;
-
+import com.annular.filmhook.repository.AdminActivityLogRepository;
 import com.annular.filmhook.repository.AuditionCompanyRepository;
+import com.annular.filmhook.repository.AuditionProjectRepository;
 import com.annular.filmhook.repository.AuditionUserCompanyRoleRepository;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AdminService;
@@ -30,9 +33,11 @@ import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.util.MailNotification;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
+import com.annular.filmhook.webmodel.AuditionNewProjectWebModel;
 import com.annular.filmhook.webmodel.AuditionUserAccessDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
+
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 
 @Service
@@ -55,7 +60,11 @@ public class AuditionCompanyServiceImpl implements AuditionCompanyService {
 	private UserService userService;
 	@Autowired
 	private AdminService adminService;
-
+	@Autowired
+	private AdminActivityLogRepository repo;
+	@Autowired
+	private AuditionProjectRepository projectRepository;
+	
 	@Transactional
 @Override
 public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
@@ -141,7 +150,7 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
     // 📁 CERTIFICATE UPLOADS
     // =========================
 
-    // Company Certificate (ALWAYS)
+    // Company Certificate 
     mediaFilesService.deleteMediaFilesByCategoryAndRefIds(
             MediaFileCategory.AuditionCompanyCertificate,
             List.of(entity.getId())
@@ -231,108 +240,157 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 		}).toList();
 	} 
 
-	@Override
-	public List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
-			AuditionCompanyDetails.VerificationStatus verificationStatus) {
+@Override
+public List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
+        AuditionCompanyDetails.VerificationStatus verificationStatus) {
 
-		List<AuditionCompanyDetails> companies;
+    List<AuditionCompanyDetails> companies;
 
-		if (verificationStatus == AuditionCompanyDetails.VerificationStatus.SUCCESS) {
-			// Success → status = true
-			companies = companyRepository.findByVerificationStatusAndStatusAndDeletedFalse(
-					AuditionCompanyDetails.VerificationStatus.SUCCESS, true);
-		} else if (verificationStatus == AuditionCompanyDetails.VerificationStatus.PENDING ||
-				verificationStatus == AuditionCompanyDetails.VerificationStatus.FAILED) {
-			// Pending/Failed → status = false
-			companies = companyRepository.findByVerificationStatusAndStatusAndDeletedFalse(
-					verificationStatus, false);
-		} else {
-			companies = new ArrayList<>();
-		}
+    // ✅ CASE 1: GET ALL COMPANIES
+    if (verificationStatus == null) {
 
-		return companies.stream().map(company -> {
-			AuditionCompanyDetailsDTO dto = AuditionCompanyConverter.toCompanyDTO(company);
+        companies = companyRepository.findByDeletedFalse();
 
-			List<FileOutputWebModel> logoFiles = mediaFilesService
-					.getMediaFilesByCategoryAndRefId(MediaFileCategory.Audition, company.getId());
+    }
+    // ✅ CASE 2: SUCCESS (Approved)
+    else if (verificationStatus == AuditionCompanyDetails.VerificationStatus.SUCCESS) {
 
-			if (!logoFiles.isEmpty()) {
-				dto.setLogoFilesOutput(logoFiles);
-			}
-			
-			 List<FileOutputWebModel> companyCertFiles =
-		                mediaFilesService.getMediaFilesByCategoryAndRefId(
-		                        MediaFileCategory.AuditionCompanyCertificate,
-		                        company.getId());
+        companies = companyRepository
+                .findByVerificationStatusAndStatusAndDeletedFalse(
+                        AuditionCompanyDetails.VerificationStatus.SUCCESS,
+                        true);
 
-		        if (!companyCertFiles.isEmpty()) {
-		            dto.setCompanyCertificateFilesOutput(companyCertFiles);
-		        }
+    }
+    // ✅ CASE 3: PENDING or FAILED
+    else {
 
-		        // =====================
-		        // BUSINESS CERTIFICATE
-		        // =====================
-		        List<FileOutputWebModel> businessCertFiles =
-		                mediaFilesService.getMediaFilesByCategoryAndRefId(
-		                        MediaFileCategory.AuditionBusinessCertificate,
-		                        company.getId());
+        companies = companyRepository
+                .findByVerificationStatusAndStatusAndDeletedFalse(
+                        verificationStatus,
+                        false);
+    }
 
-		        if (!businessCertFiles.isEmpty()) {
-		            dto.setBusinessCertificateFilesOutput(businessCertFiles);
-		        }
+    // ✅ Convert to DTO
+    return companies.stream().map(company -> {
 
-		        // =====================
-		        // GST CERTIFICATE
-		        // =====================
-		        List<FileOutputWebModel> gstCertFiles =
-		                mediaFilesService.getMediaFilesByCategoryAndRefId(
-		                        MediaFileCategory.AuditionGSTDocuments,
-		                        company.getId());
+        AuditionCompanyDetailsDTO dto =
+                AuditionCompanyConverter.toCompanyDTO(company);
 
-		        if (!gstCertFiles.isEmpty()) {
-		            dto.setGstCertificateFilesOutput(gstCertFiles);
-		        }
+        Integer companyId = company.getId();
+        List<AdminActivityLog> logs =
+                repo.findByTargetTypeAndTargetId(
+                                "AUDITION",
+                                companyId 
+                        );
 
-			return dto;
-		}).toList();
-	}
+        if (!logs.isEmpty()) {
 
-	@Override
-	public AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved) {
-		try {
-			AuditionCompanyDetails company = companyRepository.findById(companyId)
-					.orElseThrow(() -> new RuntimeException("Company not found with id: " + companyId));
+            List<AdminActivityLog> logDTOs =
+                    logs.stream()
+                        .map(log -> AdminActivityLog.builder()
+                                .adminId(log.getAdminId())
+                                .actionType(log.getActionType())
+                                .createdOn(log.getCreatedOn())
+                                .build())
+                        .toList();
 
-			company.setVerificationStatus(
-					approved ? AuditionCompanyDetails.VerificationStatus.SUCCESS 
-							: AuditionCompanyDetails.VerificationStatus.FAILED
-					);
-			Integer adminId = userDetails.userInfo().getId();
-			if(approved) {
-				adminService.log(
-						adminId,
-						"APPROVED",
-						"AUDITION",
-						company.getCreatedBy()
-						);
-			}
-			else {
-				adminService.log(
-						adminId,
-						"REJECTED",
-						"AUDITION",
-						company.getCreatedBy()
-						);
-			}
-		
+            dto.setAdminHistory(logDTOs);
+        }
+        // =====================
+        // LOGO FILES
+        // =====================
+        List<FileOutputWebModel> logoFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.Audition,
+                        companyId);
 
-			return companyRepository.save(company);
-		} catch (Exception e) {
-			e.printStackTrace(); 
-			throw e; 
-		}
-	}
+        if (!logoFiles.isEmpty()) {
+            dto.setLogoFilesOutput(logoFiles);
+        }
 
+        // =====================
+        // COMPANY CERTIFICATE
+        // =====================
+        List<FileOutputWebModel> companyCertFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.AuditionCompanyCertificate,
+                        companyId);
+
+        if (!companyCertFiles.isEmpty()) {
+            dto.setCompanyCertificateFilesOutput(companyCertFiles);
+        }
+
+        // =====================
+        // BUSINESS CERTIFICATE
+        // =====================
+        List<FileOutputWebModel> businessCertFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.AuditionBusinessCertificate,
+                        companyId);
+
+        if (!businessCertFiles.isEmpty()) {
+            dto.setBusinessCertificateFilesOutput(businessCertFiles);
+        }
+
+        // =====================
+        // GST CERTIFICATE
+        // =====================
+        List<FileOutputWebModel> gstCertFiles =
+                mediaFilesService.getMediaFilesByCategoryAndRefId(
+                        MediaFileCategory.AuditionGSTDocuments,
+                        companyId);
+
+        if (!gstCertFiles.isEmpty()) {
+            dto.setGstCertificateFilesOutput(gstCertFiles);
+        }
+
+        return dto;
+
+    }).toList();
+}
+
+public AuditionCompanyDetails updateVerificationStatus(
+        Integer companyId,
+        boolean approved,
+        String reason
+) {
+
+    AuditionCompanyDetails company = companyRepository.findById(companyId)
+            .orElseThrow(() -> new RuntimeException("Company not found with id: " + companyId));
+
+    Integer adminId = userDetails.userInfo().getId();
+
+    if (approved) {
+
+        company.setVerificationStatus(AuditionCompanyDetails.VerificationStatus.SUCCESS);
+        company.setRejectionReason(null); // clear old reason if any
+
+        adminService.log(
+                adminId,
+                "APPROVED",
+                "AUDITION",
+                companyId
+        );
+
+    } else {
+
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new RuntimeException("Rejection reason must be provided");
+        }
+
+        company.setVerificationStatus(AuditionCompanyDetails.VerificationStatus.FAILED);
+        company.setRejectionReason(reason);
+
+        adminService.log(
+                adminId,
+                "REJECTED : " + reason,  
+                "AUDITION",
+                companyId
+        );
+    }
+
+    return companyRepository.save(company);
+}
 	@Override
 	public AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId) {
 		AuditionCompanyDetails company = companyRepository.findById(companyId)
@@ -577,7 +635,20 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 				+ "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>Access Key:</b> " + accessKey + "</p>"
 				+ "<p>Use this key to log in and manage your assigned company roles.</p>";
-		mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
+		String assignEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(assignedUser.getSecondaryMailPermission()) 
+		        && assignedUser.getSecondaryEmail() != null 
+		        && !assignedUser.getSecondaryEmail().isEmpty()) {
+
+			assignEmailToSend = assignedUser.getSecondaryEmail(); 
+
+		} else {
+			assignEmailToSend = assignedUser.getEmail(); 
+		}
+
+		mailNotification.sendEmail(assignedUser.getName(), assignEmailToSend, assignedSubject, assignedContent);
 
 		// Email to Owner
 		String ownerSubject = "Access Assigned Successfully";
@@ -585,7 +656,20 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 				+ "for your company <b>" + company.getCompanyName() + "</b>.</p>"
 				+ "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>Access Key:</b> " + accessKey + "</p>";
-		mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
+		
+		String ownerEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(owner.getSecondaryMailPermission()) 
+		        && owner.getSecondaryEmail() != null 
+		        && !owner.getSecondaryEmail().isEmpty()) {
+
+			ownerEmailToSend = owner.getSecondaryEmail(); 
+
+		} else {
+			ownerEmailToSend = owner.getEmail(); 
+		}
+		mailNotification.sendEmail(owner.getName(), ownerEmailToSend, ownerSubject, ownerContent);
 	}
 
 	public AuditionUserCompanyRoleDTO validateCompanyAccessByFilmHookId(
@@ -854,7 +938,20 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 		String assignedContent = "<p>Your access details for company <b>" + company.getCompanyName() + "</b> have been updated.</p>"
 				+ "<p><b>Designation:</b> " + designation + "</p>"
 				+ "<p><b>New Access Key:</b> " + accessKey + "</p>";
-		mailNotification.sendEmail(assignedUser.getName(), assignedUser.getEmail(), assignedSubject, assignedContent);
+		String assignEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(assignedUser.getSecondaryMailPermission()) 
+		        && assignedUser.getSecondaryEmail() != null 
+		        && !assignedUser.getSecondaryEmail().isEmpty()) {
+
+			assignEmailToSend = assignedUser.getSecondaryEmail(); 
+
+		} else {
+			assignEmailToSend = assignedUser.getEmail(); 
+		}
+
+		mailNotification.sendEmail(assignedUser.getName(), assignEmailToSend, assignedSubject, assignedContent);
 
 		// Email to Owner
 		String ownerSubject = "Access Updated Successfully";
@@ -862,7 +959,22 @@ public AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto) {
 				+ "in your company <b>" + company.getCompanyName() + "</b>.</p>"
 				+ "<p><b>Updated Designation:</b> " + designation + "</p>"
 				+ "<p><b>Updated Access Key:</b> " + accessKey + "</p>";
-		mailNotification.sendEmail(owner.getName(), owner.getEmail(), ownerSubject, ownerContent);
+		
+		String ownerEmailToSend;
+
+		// check permission
+		if (Boolean.TRUE.equals(owner.getSecondaryMailPermission()) 
+		        && owner.getSecondaryEmail() != null 
+		        && !owner.getSecondaryEmail().isEmpty()) {
+
+			ownerEmailToSend = owner.getSecondaryEmail(); 
+
+		} else {
+			ownerEmailToSend = owner.getEmail(); 
+		}
+		mailNotification.sendEmail(owner.getName(), ownerEmailToSend, ownerSubject, ownerContent);
 	}
+	
+	
 } 
 

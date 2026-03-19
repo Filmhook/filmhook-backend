@@ -3,7 +3,6 @@ package com.annular.filmhook.controller;
 import com.annular.filmhook.Response;
 import com.annular.filmhook.model.MovieCategory;
 import com.annular.filmhook.model.MovieSubCategory;
-import com.annular.filmhook.model.User;
 import com.annular.filmhook.model.UserOffer;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.service.AuditionNewService;
@@ -34,7 +33,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.annular.filmhook.converter.AuditionCompanyConverter;
 import com.annular.filmhook.exception.ResourceNotFoundException;
-import com.annular.filmhook.model.AuditionNewProject;
 import com.annular.filmhook.model.AuditionPayment;
 import com.annular.filmhook.validator.AuditionProjectValidator;
 import com.annular.filmhook.webmodel.AuditionJobPostCountDTO;
@@ -52,9 +50,6 @@ public class AuditionNewController {
 	AuditionProjectValidator projectValidator;
     @Autowired
     private AuditionNewService projectService;
-    @Autowired
-    private UserRepository userRepository;
-
     
 //    @PostMapping(value = "/saveAuditions", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
 //    public ResponseEntity<?> createProject(
@@ -409,12 +404,9 @@ public class AuditionNewController {
                             .status(0)
                             .message("Failed to save/update project: " + ex.getMessage())
                             .build()
-                    );
-        }
-        
-        
+                 );
+        }   
     }
-    
     @GetMapping("/ByCompanyWithStatus")
     public ResponseEntity<?> getProjectsByCompanyId(
     		@RequestParam Integer companyId,
@@ -443,9 +435,7 @@ public class AuditionNewController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Response(0, "Something went wrong while fetching projects.", null));
         }
-    }
-    
-    
+    }  
     @DeleteMapping("/deleteProject")
     public ResponseEntity<Response> deleteProject(
     		@RequestParam Integer projectId,

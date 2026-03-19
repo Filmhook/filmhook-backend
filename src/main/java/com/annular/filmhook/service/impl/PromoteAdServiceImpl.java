@@ -1,5 +1,6 @@
 package com.annular.filmhook.service.impl;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
@@ -7,8 +8,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.annular.filmhook.Response;
+import com.annular.filmhook.UserDetails;
 import com.annular.filmhook.model.MediaFileCategory;
 import com.annular.filmhook.model.MediaFiles;
 import com.annular.filmhook.model.Posts;
@@ -30,6 +33,7 @@ import com.annular.filmhook.repository.VisitPageRepository;
 import com.annular.filmhook.service.MediaFilesService;
 import com.annular.filmhook.service.PostService;
 import com.annular.filmhook.service.PromoteAdService;
+import com.annular.filmhook.service.UserService;
 import com.annular.filmhook.webmodel.FileInputWebModel;
 import com.annular.filmhook.webmodel.FileOutputWebModel;
 import com.annular.filmhook.webmodel.PostWebModel;
@@ -58,8 +62,13 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	@Autowired
 	VisitPageDetailsRepository visitPageDetailsRepository;
 
+	@Autowired
+	UserDetails userDetails;
+
 	@Override
-	public Response savePromote(PromoteWebModel model, Integer userId) {
+	public Response savePromote(PromoteWebModel model) {
+
+		Integer userId = userDetails.userInfo().getId();
 
 		User user = userRepository.findByUserId(userId)
 				.orElseThrow(() -> new RuntimeException("User not found"));
@@ -71,6 +80,11 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 
 			promoteId = promoteAdRepository.findById(model.getPromoteId())
 					.orElseThrow(() -> new RuntimeException("Promote record not found"));
+			
+			 // 🚨 CHECK IF ALREADY RUNNING
+		    if (promoteId.getStatus() == PromoteStatus.Running) {
+		        return new Response(0, "Promote is already running. You cannot edit it.", null);
+		    }
 
 			// ---------------------------------
 			// UPDATE ONLY NON-NULL FIELDS
@@ -93,6 +107,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			if (model.getCgst() != null) promoteId.setCgst(model.getCgst());
 			if (model.getSgst() != null) promoteId.setSgst(model.getSgst());
 			if (model.getPrice() != null) promoteId.setPrice(model.getPrice());
+			if (model.getAdType() != null) promoteId.setAdType(model.getAdType());
 
 			// ---------------------------------
 			// Update logo
@@ -155,7 +170,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			// CASE 2: No post → create a fresh post
 			// ==================================================
 			PostWebModel postModel = new PostWebModel();
-			postModel.setUserId(model.getUserId());
+			postModel.setUserId(userId);
 			postModel.setFiles(model.getFiles());
 			postModel.setDescription(model.getDescription());
 			postModel.setPostLinkUrl(model.getPostLinkUrl());
@@ -163,9 +178,9 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 			postModel.setLongitude(model.getLongitude());
 			postModel.setAddress(model.getAddress());
 			postModel.setPrivateOrPublic(model.getPrivateOrPublic());
-
 			PostWebModel savedPost = postService.savePostsWithFiles(postModel);
 			postId = savedPost.getId();
+			model.setFiles(null);
 		}
 
 		Posts post = postsRepository.findById(postId)
@@ -205,7 +220,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 		// SET VISIT TYPE
 		// ==================================================
 		if (model.getVisitTypeId() != null) {
-			VisitPage visitPage = visitPageRepository.findById(model.getVisitTypeId())
+			VisitPageDetails visitPage = visitPageDetailsRepository.findById(model.getVisitTypeId())
 					.orElseThrow(() -> new RuntimeException("Visit Type not found"));
 			promote.setVisitType(visitPage);
 		}
@@ -261,8 +276,6 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 					.categoryRefId(postId)
 					.files(model.getFiles())
 					.build();
-
-			// saveMediaFilesAndReturn → return list<MediaFiles>
 			mediaFilesService.saveMediaFiles(uploadInput, user);
 
 
@@ -301,53 +314,70 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 		return promoteAdRepository.findByPost_Id(postId);
 	}
 
+	
 	@Override
-	public Response updatePaymentSuccess(PromoteWebModel model) {
+	@Transactional
+	public void activatePromote(Integer promoteId, String txnId) {
 
-		PromoteAd promote = promoteAdRepository.findById(model.getPromoteId())
-				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+	    PromoteAd promote = promoteAdRepository.findById(promoteId)
+	            .orElseThrow(() -> new RuntimeException("Promote not found"));
 
-		promote.setPaymentStatus("SUCCESS");
-		promote.setStatus(PromoteStatus.Running);
-		promote.setTransactionId(model.getTransactionId());
+	    promote.setPaymentStatus("SUCCESS");
+	    promote.setStatus(PromoteStatus.Running);
+	    promote.setTransactionId(txnId);
 
-		Date start = new Date();
-		promote.setStartDate(start);
+	    Date start = new Date();
+	    promote.setStartDate(start);
 
-		// calculate end date
-		Date endDate = Date.from(
-				start.toInstant().plus(Duration.ofDays(promote.getDays()))
-				);
-		promote.setEndDate(endDate);
+	    Date endDate = Date.from(
+	            start.toInstant().plus(Duration.ofDays(promote.getDays()))
+	    );
+	    promote.setEndDate(endDate);
 
-		// update post flag
-		Posts post = promote.getPost();
-		post.setPromoteFlag(true);
-		postsRepository.save(post);
+	    Posts post = promote.getPost();
+	    post.setPromoteFlag(true);
+	    postsRepository.save(post);
 
-		promoteAdRepository.save(promote);
-
-		return new Response(1, "Payment Success", null);
+	    promoteAdRepository.save(promote);
 	}
 
 
+//	@Override
+//	public Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount) {
+//
+//		PromoteAd promote = promoteAdRepository.findById(Integer.parseInt(promoteId))
+//				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+//
+//		promote.setPaymentStatus("FAILED");
+//		promote.setTransactionId(txnid);
+//		promote.setStatus(PromoteStatus.NotStarted); // reset status if needed
+//		
+//
+//		Posts post = promote.getPost();
+//		post.setPromoteFlag(false);
+//		postsRepository.save(post);
+//
+//		PromoteAd updated = promoteAdRepository.save(promote);
+//
+//		return new Response(-1, "Payment Failed", null);
+//	}
+
 	@Override
-	public Response updatePaymentFailed(PromoteWebModel model) {
+	@Transactional
+	public void markPromotePaymentFailed(Integer promoteId, String txnId) {
 
-		PromoteAd promote = promoteAdRepository.findById(model.getPromoteId())
-				.orElseThrow(() -> new RuntimeException("Promote record not found"));
+	    PromoteAd promote = promoteAdRepository.findById(promoteId)
+	            .orElseThrow(() -> new RuntimeException("Promote not found"));
 
-		promote.setPaymentStatus("FAILED");
-		promote.setTransactionId(model.getTransactionId());
-		promote.setStatus(PromoteStatus.NotStarted); // reset status if needed
+	    promote.setPaymentStatus("FAILED");
+	    promote.setTransactionId(txnId);
+	    promote.setStatus(PromoteStatus.NotStarted);
 
-		Posts post = promote.getPost();
-		post.setPromoteFlag(false);
-		postsRepository.save(post);
+	    Posts post = promote.getPost();
+	    post.setPromoteFlag(false);
+	    postsRepository.save(post);
 
-		PromoteAd updated = promoteAdRepository.save(promote);
-
-		return new Response(-1, "Payment Failed", null);
+	    promoteAdRepository.save(promote);
 	}
 
 
@@ -356,7 +386,7 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 
 		List<PromoteAd> list = promoteAdRepository.findRecentRunningOrCompletedByUserId(userId);
 
-		List<PromoteWebModel> response = list.stream().map(promote -> {
+		List<PromoteWebModel> response = list.stream().filter(postFilter->postFilter.getPost().getStatus()).map(promote -> {
 
 			List<FileOutputWebModel> postFiles =
 					mediaFilesService.getMediaFilesByCategoryAndRefId(
@@ -389,51 +419,50 @@ public class PromoteAdServiceImpl implements PromoteAdService {
 	@Override
 	public List<VisitPageWebModel> getAllObjectives() {
 
-	    List<VisitePageCategory> list = categoryRepository.findAll();
+		List<VisitePageCategory> list = categoryRepository.findAll();
 
-	    return list.stream().map(cat ->
-	            VisitPageWebModel.builder()
-	                    .categoryId(cat.getCategoryId())
-	                    .categoryName(cat.getCategoryName())
-	                    .description(cat.getDescription())
-	                    .build()
-	    ).toList();
+		return list.stream().map(cat ->
+		VisitPageWebModel.builder()
+		.categoryId(cat.getCategoryId())
+		.categoryName(cat.getCategoryName())
+		.description(cat.getDescription())
+		.build()
+				).toList();
 	}
-	
+
 	@Override
 	public List<VisitPageWebModel> getPagesByCategoryId(Integer categoryId) {
 
-	    List<VisitPage> pages = visitPageRepository.findByCategory_CategoryId(categoryId);
+		List<VisitPage> pages = visitPageRepository.findByCategory_CategoryId(categoryId);
 
-	    return pages.stream().map(p ->
-	            VisitPageWebModel.builder()
-	                    .categoryId(p.getCategory().getCategoryId())
-	                    .categoryName(p.getCategory().getCategoryName())
-	                    .pageId(p.getVisitPageId())
-	                    .pageData(p.getData())
-	                   
-	                    .build()
-	    ).toList();
+		return pages.stream().map(p ->
+		VisitPageWebModel.builder()
+		.categoryId(p.getCategory().getCategoryId())
+		.categoryName(p.getCategory().getCategoryName())
+		.pageId(p.getVisitPageId())
+		.pageData(p.getData())
+
+		.build()
+				).toList();
 	}
-	
+
 	@Override
 	public List<VisitPageWebModel> getDetailsByVisitPageId(Integer visitPageId) {
 
-	    List<VisitPageDetails> list = visitPageDetailsRepository.findByVisitPage_VisitPageId(visitPageId);
+		List<VisitPageDetails> list = visitPageDetailsRepository.findByVisitPage_VisitPageId(visitPageId);
 
-	    return list.stream().map(d ->
-	            VisitPageWebModel.builder()
-	                    .categoryId(d.getVisitPage().getCategory().getCategoryId())
-	                    .categoryName(d.getVisitPage().getCategory().getCategoryName())
-	                    .pageId(d.getVisitPage().getVisitPageId())
-	                    .pageData(d.getVisitPage().getData())	                  
-	                    .detailId(d.getDetailId())
-	                    .detailTitle(d.getTitle())	                   
-	                    .build()
-	    ).toList();
+		return list.stream().map(d ->
+		VisitPageWebModel.builder()
+		.categoryId(d.getVisitPage().getCategory().getCategoryId())
+		.categoryName(d.getVisitPage().getCategory().getCategoryName())
+		.pageId(d.getVisitPage().getVisitPageId())
+		.pageData(d.getVisitPage().getData())	                  
+		.detailId(d.getDetailId())
+		.detailTitle(d.getTitle())	                   
+		.build()
+				).toList();
 	}
 
 
 
 }
-

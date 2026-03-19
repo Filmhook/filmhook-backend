@@ -3,7 +3,11 @@ package com.annular.filmhook.model;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import javax.persistence.*;
+
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
@@ -40,8 +44,10 @@ public class PromoteAd {
     @Column(name = "business_type")
     private String businessType;
 
-    @Column(name = "adv_object")
-    private String advObject;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "adv_object", referencedColumnName = "category_id")
+    @JsonBackReference
+    private VisitePageCategory advObject;
 
     @Column(name = "adv_object_value")
     private String advObjectValue;
@@ -56,8 +62,9 @@ public class PromoteAd {
     private String businessAddress; // Document S3 URL
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "visit_type_id", referencedColumnName = "visitPageId")
-    private VisitPage visitType;
+    @JoinColumn(name = "visit_type_id", referencedColumnName = "detail_id")
+    @JsonBackReference
+    private VisitPageDetails visitType;
 
     @Column(name = "budget")
     private Double budget;
@@ -86,11 +93,11 @@ public class PromoteAd {
     private PromoteStatus status = PromoteStatus.NotStarted;
 
     // NEW PAYMENT FIELDS
-    @Column(name = "amount")
-    private Integer amount;
+    @Column(name = "amount", precision = 10, scale = 2)
+    private BigDecimal amount;
 
-    @Column(name = "total_cost")
-    private Integer totalCost;
+    @Column(name = "total_cost", precision = 10, scale = 2)
+    private BigDecimal totalCost;
 
     @Column(name = "tax_fee")
     private Integer taxFee;

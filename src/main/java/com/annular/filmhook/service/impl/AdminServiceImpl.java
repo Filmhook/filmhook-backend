@@ -79,10 +79,10 @@ public class AdminServiceImpl implements AdminService {
 
 	@Autowired
 	UserRepository userRepository;
-	
+
 	@Autowired
 	UserServiceImpl userServiceImpl;
-	
+
 	@Autowired
 	IndustryMediaFileRepository industryMediaFileRepository;
 
@@ -124,10 +124,10 @@ public class AdminServiceImpl implements AdminService {
 	@Autowired
 	private AdminOnlineSessionRepository sessionRepo;
 	@Autowired
-    private AdminUserViewRepository viewRepo;
+	private AdminUserViewRepository viewRepo;
 	@Autowired
-    private  AdminUserViewLogRepository logRepo;
-	
+	private  AdminUserViewLogRepository logRepo;
+
 	public static final Logger logger = LoggerFactory.getLogger(AdminServiceImpl.class);
 
 	private String getJobTitleCode(String jobTitle) {
@@ -369,10 +369,10 @@ public class AdminServiceImpl implements AdminService {
 		for (User user : users) {
 			UserWebModel userModel = new UserWebModel();
 			userModel.setUserId(user.getUserId());
-			 boolean isViewed =
-			            !logRepo
-			                .findByUserIdAndCategory(user.getUserId(), "unverified")
-			                .isEmpty();
+			boolean isViewed =
+					!logRepo
+					.findByUserIdAndCategory(user.getUserId(), "unverified")
+					.isEmpty();
 
 			Map<String, Object> userMap = new HashMap<>();
 			userMap.put("userId", user.getUserId());
@@ -389,8 +389,8 @@ public class AdminServiceImpl implements AdminService {
 			userMap.put("birthPlace",user.getBirthPlace());
 			userMap.put("livingPlace",user.getLivingPlace());
 			userMap.put("onlineStatus",user.getOnlineStatus());
-			  userMap.put("isViewed", isViewed);
-			
+			userMap.put("isViewed", isViewed);
+
 			responseList.add(userMap);
 		}
 
@@ -635,44 +635,45 @@ public class AdminServiceImpl implements AdminService {
 	//	    }
 	//	}
 	@Override
+	@Transactional
 	public Response changeStatusUnverifiedIndustrialUsers(UserWebModel userWebModel) {
 		// Check if userId is not null
 		if (Utility.isNullOrZero(userWebModel.getUserId())) return new Response(-1, "User ID must not be null", null);
- 
+
 		try {
 			Integer userId = userWebModel.getUserId();
 			Boolean status = userWebModel.isStatus();
 			Integer adminId = userDetails.userInfo().getId();
 			List<IndustryMediaFiles> industryDbData = industryMediaFileRepository.findByUserId(userWebModel.getUserId());
 			logger.info(">>>>>>>>>>>>{}", userWebModel.isStatus());
- 
+
 			// Iterate over the list and set status to false
 			for (IndustryMediaFiles industryMediaFile : industryDbData) {
 				industryMediaFile.setStatus(true);
 				industryMediaFile.setUnverifiedList(status);
- 
- 
+
+
 				// You may perform additional operations if needed
 			}
- 
+
 			// Save the updated records back to the database
 			industryMediaFileRepository.saveAll(industryDbData);
- 
+
 			Optional<IndustrySignupDetails> signupOpt =
 					industrySignupDetailsRepository.findByUser_UserId(userWebModel.getUserId());
- 
+
 			if (signupOpt.isPresent()) {
 				IndustrySignupDetails signupDetails = signupOpt.get();
 				signupDetails.setVerified(status); 
 				industrySignupDetailsRepository.save(signupDetails);
 			}
- 
- 
+
+
 			// Update the userType in the User table
 			Optional<User> userOptional = userRepository.findById(userWebModel.getUserId());
 			logger.info(">>>>>>>>>>>{}", userWebModel.getUserId());
 			if (userOptional.isEmpty()) return new Response(-1, "User not found", null); // Return an error response if user is not found
-			
+
 			User user = userOptional.get();
 			if (status) {
 				logger.info("User id -> {}", userWebModel.getUserId());
@@ -681,14 +682,14 @@ public class AdminServiceImpl implements AdminService {
 				user.setIndustryUserVerified(true);
 				user.setUnVerifiedList(true);
 				userRepository.save(user);
- 
+
 				adminService.log(
 						adminId,
 						"APPROVED",
 						"INDUSTRY_USER",
 						userWebModel.getUserId()
 						);
- 
+
 				// Send verification email
 				boolean emailSent = sendVerificationEmail(user, status);
 				if (!emailSent) {
@@ -702,14 +703,14 @@ public class AdminServiceImpl implements AdminService {
 				user.setUnVerifiedList(true);
 				user.setRejectReason(userWebModel.getRejectReason());
 				userRepository.save(user);
- 
+
 				adminService.log(
 						adminId,
 						"REJECTED",
 						"INDUSTRY_USER",
 						userWebModel.getUserId()
 						);
- 
+
 				// Send notification email
 				boolean emailSent = sendVerificationEmail(user, status);
 				if (!emailSent) {
@@ -717,7 +718,7 @@ public class AdminServiceImpl implements AdminService {
 					return new Response(-1, "Failed to send notification email", null);
 				}
 			}
-			
+
 			clearView(userId, "unverified");
 			// Return a success response
 			return new Response(1, "Success", "Status updated successfully");
@@ -1138,35 +1139,35 @@ public class AdminServiceImpl implements AdminService {
 
 
 			List<Map<String, Object>> userList = new ArrayList<>();
-			
-			 String category = status ? "approved" : "rejected";
+
+			String category = status ? "approved" : "rejected";
 			for (User user : usersPage.getContent()) {
 				UserWebModel userWebModel = new UserWebModel();
 				userWebModel.setUserId(user.getUserId());
-				 boolean isViewed =
-				            !logRepo
-				                .findByUserIdAndCategory(user.getUserId(), category)
-				                .isEmpty();
+				boolean isViewed =
+						!logRepo
+						.findByUserIdAndCategory(user.getUserId(), category)
+						.isEmpty();
 				Map<String, Object> userMap = new HashMap<>();
 				userMap.put("userId", user.getUserId());
-					userMap.put("name", user.getName());
-					userMap.put("email", user.getEmail());
-					userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
-				
+				userMap.put("name", user.getName());
+				userMap.put("email", user.getEmail());
+				userMap.put("userProfilePic", userService.getProfilePicUrl(user.getUserId()));
 
-					userMap.put("userCoverPic", userService.getCoverPic(userWebModel));
-					userMap.put("rejectReason", user.getRejectReason());
-					userMap.put("industryUserVerified", user.getIndustryUserVerified());
-					userMap.put("status", user.getStatus());
-					userMap.put("userType", user.getUserType());
-					userMap.put("phoneNumber", user.getPhoneNumber());
-					userMap.put("gender", user.getGender());
-					userMap.put("dob", user.getDob());
-					userMap.put("country", user.getCountry());
-					userMap.put("state", user.getState());
-					userMap.put("verified", user.getVerified());
-					userMap.put("onlineStatus", user.getOnlineStatus());
-					 userMap.put("isViewed", isViewed);
+
+				userMap.put("userCoverPic", userService.getCoverPic(userWebModel));
+				userMap.put("rejectReason", user.getRejectReason());
+				userMap.put("industryUserVerified", user.getIndustryUserVerified());
+				userMap.put("status", user.getStatus());
+				userMap.put("userType", user.getUserType());
+				userMap.put("phoneNumber", user.getPhoneNumber());
+				userMap.put("gender", user.getGender());
+				userMap.put("dob", user.getDob());
+				userMap.put("country", user.getCountry());
+				userMap.put("state", user.getState());
+				userMap.put("verified", user.getVerified());
+				userMap.put("onlineStatus", user.getOnlineStatus());
+				userMap.put("isViewed", isViewed);
 				userList.add(userMap);
 			}
 
@@ -1183,7 +1184,7 @@ public class AdminServiceImpl implements AdminService {
 			return new Response(-1, "Failed to fetch unverified/rejected users", e.getMessage());
 		}
 	}
-	
+
 
 	@Override
 	public Response changeNotificationStatus() {
@@ -1292,24 +1293,24 @@ public class AdminServiceImpl implements AdminService {
 	@Transactional
 	public void updateAdminOnlineStatus(String email, String userType) {
 
-	    User user = userRepository.findByEmailAndUserType(email, userType)
-	            .orElse(null);
+		User user = userRepository.findByEmailAndUserType(email, userType)
+				.orElse(null);
 
-	    if (user == null) return;
+		if (user == null) return;
 
-	    LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now();
 
-	    // If admin was offline previously → create new session
-	    if (Boolean.FALSE.equals(user.getAdminOnlineStatus())) {
+		// If admin was offline previously → create new session
+		if (Boolean.FALSE.equals(user.getAdminOnlineStatus())) {
 
-	        AdminOnlineSession session = new AdminOnlineSession();
-	        session.setAdminId(user.getUserId());
-	        session.setLoginTime(now);
-	        sessionRepo.save(session);
-	    }
+			AdminOnlineSession session = new AdminOnlineSession();
+			session.setAdminId(user.getUserId());
+			session.setLoginTime(now);
+			sessionRepo.save(session);
+		}
 
-	    // Always update last seen
-	    userRepository.updateAdminLastSeen(email, userType, now);
+		// Always update last seen
+		userRepository.updateAdminLastSeen(email, userType, now);
 	}
 
 
@@ -1326,46 +1327,46 @@ public class AdminServiceImpl implements AdminService {
 
 		repo.save(log);
 	}
-	
+
 	public String formatDailyHours(Integer adminId) {
 
-	    double hours = getDailyHours(adminId);   
-	    long totalMinutes = Math.round(hours * 60);
+		double hours = getDailyHours(adminId);   
+		long totalMinutes = Math.round(hours * 60);
 
-	    long hr = totalMinutes / 60;
-	    long min = totalMinutes % 60;
+		long hr = totalMinutes / 60;
+		long min = totalMinutes % 60;
 
-	    if (hr > 0 && min > 0) {
-	        return hr + " : " + min + " min";
-	    } else if (hr > 0) {
-	        return hr + " hr";
-	    } else {
-	        return min + " min";
-	    }
+		if (hr > 0 && min > 0) {
+			return hr + " : " + min + " min";
+		} else if (hr > 0) {
+			return hr + " hr";
+		} else {
+			return min + " min";
+		}
 	}
 
 
 	@Override
 	public double getDailyHours(Integer adminId) {
 
-	    LocalDate today = LocalDate.now();
-	    LocalDateTime start = today.atStartOfDay();
-	    LocalDateTime end = today.atTime(23, 59, 59);
+		LocalDate today = LocalDate.now();
+		LocalDateTime start = today.atStartOfDay();
+		LocalDateTime end = today.atTime(23, 59, 59);
 
-	    List<AdminOnlineSession> sessions =
-	        sessionRepo.findTodaySessions(adminId, start, end);
+		List<AdminOnlineSession> sessions =
+				sessionRepo.findTodaySessions(adminId, start, end);
 
-	    long totalMinutes = 0;
+		long totalMinutes = 0;
 
-	    for (AdminOnlineSession s : sessions) {
-	        LocalDateTime logout = (s.getLogoutTime() != null)
-	                ? s.getLogoutTime()
-	                : LocalDateTime.now();
+		for (AdminOnlineSession s : sessions) {
+			LocalDateTime logout = (s.getLogoutTime() != null)
+					? s.getLogoutTime()
+							: LocalDateTime.now();
 
-	        totalMinutes += Duration.between(s.getLoginTime(), logout).toMinutes();
-	    }
+			totalMinutes += Duration.between(s.getLoginTime(), logout).toMinutes();
+		}
 
-	    return totalMinutes / 60.0;
+		return totalMinutes / 60.0;
 	}
 
 
@@ -1396,221 +1397,222 @@ public class AdminServiceImpl implements AdminService {
 				.collect(Collectors.toList());
 	}
 
-	  public Object getReviewedUsers(Integer adminId, String targetType) {
+	public Object getReviewedUsers(Integer adminId, String targetType) {
+		switch (targetType.toUpperCase()) {
+		
+		case "SHOOTING_LOCATION":
+			return repo.getShootingLocationRows(adminId);
+			
+		case "INDUSTRY_USER":
+			return repo.getIndustryUserRows(adminId);
 
-	        switch (targetType.toUpperCase()) {
+		case "AUDITION":
+			return repo.getAuditionRows(adminId);
 
-	            case "INDUSTRY_USER":
-	                return repo.getIndustryUserRows(adminId);
 
-	            case "AUDITION":
-	                return repo.getAuditionRows(adminId);
+			// case "PUBLIC_USER":
 
-	            // FUTURE:
-	            // case "SHOOTING_LOCATION":
-	            // case "PUBLIC_USER":
-
-	            default:
-	                throw new RuntimeException("Invalid target type: " + targetType);
-	        }
-	    }
-
- @Transactional
- @Override
-public void DeleteUser(Integer userId) {
-	  Integer loggedInUserId = userDetails.userInfo().getId();
-	  User user = userRepository.findById(userId)
-	  .orElseThrow(() -> new RuntimeException("User not found"));
-	  
-	  user.setStatus(false);
-	  user.setPermanentDelete(true);
-	  user.setIndustryUserVerified(false);
-	  user.setUnVerifiedList(false);
-	  user.setUpdatedBy(loggedInUserId);
-	  user.setUpdatedOn(new Date());
-	  userRepository.save(user);
-	  adminService.log(
-				loggedInUserId,
-				"DELETED",
-				"USER",
-				userId
-				);
-	  userServiceImpl. softDeleteUserData(userId);	
-clearView(userId, "unverified");
-	clearView(userId, "approved");
-	 clearView(userId, "rejected");
-	clearView(userId, "deleted");
+		default:
+			throw new RuntimeException("Invalid target type: " + targetType);
+		}
 	}
 
- 
- @Override
- public Response getAllDeletedUsers(Integer pageNo, Integer pageSize) {
-     try {
-         Pageable paging = PageRequest.of(
-                 pageNo - 1,
-                 pageSize,
-                 Sort.by(Sort.Direction.DESC, "userId")
-         );
+	@Transactional
+	@Override
+	public void DeleteUser(Integer userId) {
+		Integer loggedInUserId = userDetails.userInfo().getId();
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RuntimeException("User not found"));
 
-         Page<User> usersPage = userRepository.findDeletedUsers(paging);
-
-         List<Map<String, Object>> userList = new ArrayList<>();
-
-         for (User user : usersPage.getContent()) {
-             UserWebModel userWebModel = new UserWebModel();
-             userWebModel.setUserId(user.getUserId());
-             boolean isViewed =
-			            !logRepo
-			                .findByUserIdAndCategory(user.getUserId(), "deleted")
-			                .isEmpty();
-             Map<String, Object> userMap = new HashMap<>();
-             userMap.put("userId", user.getUserId());
-             userMap.put("name", user.getName());
-             userMap.put("email", user.getEmail());
-             userMap.put("phoneNumber", user.getPhoneNumber());
-             userMap.put("gender", user.getGender());
-             userMap.put("dob", user.getDob());
-             userMap.put("country", user.getCountry());
-             userMap.put("state", user.getState());
-
-             userMap.put("userProfilePic",
-                     userService.getProfilePicUrl(user.getUserId()));
-             userMap.put("userCoverPic",
-                     userService.getCoverPic(userWebModel));
-
-             userMap.put("userType", user.getUserType());
-             userMap.put("industryUserVerified", user.getIndustryUserVerified());
-             userMap.put("rejectReason", user.getRejectReason());
-
-             userMap.put("status", user.getStatus());
-             userMap.put("permanentDelete", user.getPermanentDelete());
-
-             userMap.put("verified", user.getVerified());
-             userMap.put("onlineStatus", user.getOnlineStatus());
-             userMap.put("isViewed", isViewed);
-             userList.add(userMap);
-         }
-
-         Map<String, Object> result = new HashMap<>();
-         result.put("Data", userList);
-         result.put("PageInfo", Map.of(
-                 "totalPages", usersPage.getTotalPages(),
-                 "totalRecords", usersPage.getTotalElements()
-         ));
-
-         return new Response(
-                 1,
-                 "Deleted users fetched successfully",
-                 result
-         );
-
-     } catch (Exception e) {
-         e.printStackTrace();
-         return new Response(
-                 -1,
-                 "Failed to fetch deleted users",
-                 e.getMessage()
-         );
-     }
- }
- 
- 
- @Override
- public Response getIndustryUserSidebarCounts() {
-     try {
-         Map<String, Long> counts = new HashMap<>();
-
-         counts.put("unverified",
-             industryMediaFileRepository.countUnverifiedIndustryUsers());
-
-         counts.put("approved",
-             userRepository.countApprovedIndustryUsers());
-
-         counts.put("rejected",
-             userRepository.countRejectedIndustryUsers());
-
-         counts.put("deleted",
-             userRepository.countDeletedUsers());
-
-         return new Response(1, "Success", counts);
-     } catch (Exception e) {
-         e.printStackTrace();
-         return new Response(-1, "Failed to fetch counts", null);
-     }
- }
- 
-@Override
-@Transactional
-public Response markViewed(Integer adminId, Integer userId, String category) {
-
-    try {
-        // 1️⃣ User-level view (once)
-        if (!viewRepo.existsByUserIdAndCategory(userId, category)) {
-            viewRepo.save(
-                AdminUserView.builder()
-                    .userId(userId)
-                    .category(category)
-                    .active(true)
-                    .build()
-            );
-        }
-
-        // 2️⃣ Admin-level log (once per admin)
-        try {
-            if (!logRepo.existsByAdminIdAndUserIdAndCategory(
-                    adminId, userId, category)) {
-
-                logRepo.save(
-                    AdminUserViewLog.builder()
-                        .adminId(adminId)
-                        .userId(userId)
-                        .category(category)
-                        .build()
-                );
-            }
-        } catch (DataIntegrityViolationException ignored) {}
-
-        return new Response(1, "View marked successfully", null);
-
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        return new Response(-1, "Failed to mark view", null);
-    }
-}
+		user.setStatus(false);
+		user.setPermanentDelete(true);
+		user.setIndustryUserVerified(false);
+		user.setUnVerifiedList(false);
+		user.setUpdatedBy(loggedInUserId);
+		user.setUpdatedOn(new Date());
+		userRepository.save(user);
+		adminService.log(
+				loggedInUserId,
+				"DELETED",
+				"INDUSTRY_USER",
+				userId
+				);
+		userServiceImpl. softDeleteUserData(userId);	
+		clearView(userId, "unverified");
+		clearView(userId, "approved");
+		clearView(userId, "rejected");
+		clearView(userId, "deleted");
+	}
 
 
+	@Override
+	public Response getAllDeletedUsers(Integer pageNo, Integer pageSize) {
+		try {
+			Pageable paging = PageRequest.of(
+					pageNo - 1,
+					pageSize,
+					Sort.by(Sort.Direction.DESC, "userId")
+					);
 
-     @Transactional
-     @Override	
-     public void clearView(Integer userId, String category) {
-         viewRepo.clearView(userId, category);
-     }
+			Page<User> usersPage = userRepository.findDeletedUsers(paging);
 
-     @Override
-     public List<Map<String, Object>> getViewers(Integer userId, String category) {
+			List<Map<String, Object>> userList = new ArrayList<>();
 
-         List<AdminUserViewLog> logs =
-                 logRepo.findByUserIdAndCategory(userId, category);
+			for (User user : usersPage.getContent()) {
+				UserWebModel userWebModel = new UserWebModel();
+				userWebModel.setUserId(user.getUserId());
+				boolean isViewed =
+						!logRepo
+						.findByUserIdAndCategory(user.getUserId(), "deleted")
+						.isEmpty();
+				Map<String, Object> userMap = new HashMap<>();
+				userMap.put("userId", user.getUserId());
+				userMap.put("name", user.getName());
+				userMap.put("email", user.getEmail());
+				userMap.put("phoneNumber", user.getPhoneNumber());
+				userMap.put("gender", user.getGender());
+				userMap.put("dob", user.getDob());
+				userMap.put("country", user.getCountry());
+				userMap.put("state", user.getState());
 
-         List<Map<String, Object>> response = new ArrayList<>();
+				userMap.put("userProfilePic",
+						userService.getProfilePicUrl(user.getUserId()));
+				userMap.put("userCoverPic",
+						userService.getCoverPic(userWebModel));
 
-         for (AdminUserViewLog log : logs) {
+				userMap.put("userType", user.getUserType());
+				userMap.put("industryUserVerified", user.getIndustryUserVerified());
+				userMap.put("rejectReason", user.getRejectReason());
 
-             Map<String, Object> map = new HashMap<>();
+				userMap.put("status", user.getStatus());
+				userMap.put("permanentDelete", user.getPermanentDelete());
 
-             map.put("id", log.getId());
-             map.put("adminId", log.getAdminId());
-             map.put("viewedAt", log.getViewedAt());
+				userMap.put("verified", user.getVerified());
+				userMap.put("onlineStatus", user.getOnlineStatus());
+				userMap.put("isViewed", isViewed);
+				userList.add(userMap);
+			}
 
-             // 🔹 fetch only admin name
-             String adminName = userRepository.findNameById(log.getAdminId());
-             map.put("adminName", adminName);
+			Map<String, Object> result = new HashMap<>();
+			result.put("Data", userList);
+			result.put("PageInfo", Map.of(
+					"totalPages", usersPage.getTotalPages(),
+					"totalRecords", usersPage.getTotalElements()
+					));
 
-             response.add(map);
-         }
+			return new Response(
+					1,
+					"Deleted users fetched successfully",
+					result
+					);
 
-         return response;
-     }
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new Response(
+					-1,
+					"Failed to fetch deleted users",
+					e.getMessage()
+					);
+		}
+	}
 
- 
+
+	@Override
+	public Response getIndustryUserSidebarCounts() {
+		try {
+			Map<String, Long> counts = new HashMap<>();
+
+			counts.put("unverified",
+					industryMediaFileRepository.countUnverifiedIndustryUsers());
+
+			counts.put("approved",
+					userRepository.countApprovedIndustryUsers());
+
+			counts.put("rejected",
+					userRepository.countRejectedIndustryUsers());
+
+			counts.put("deleted",
+					userRepository.countDeletedUsers());
+
+			return new Response(1, "Success", counts);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new Response(-1, "Failed to fetch counts", null);
+		}
+	}
+
+	@Override
+	@Transactional
+	public Response markViewed(Integer adminId, Integer userId, String category) {
+
+		try {
+			// 1️⃣ User-level view (once)
+			if (!viewRepo.existsByUserIdAndCategory(userId, category)) {
+				viewRepo.save(
+						AdminUserView.builder()
+						.userId(userId)
+						.category(category)
+						.active(true)
+						.build()
+						);
+			}
+
+			// 2️⃣ Admin-level log (once per admin)
+			try {
+				if (!logRepo.existsByAdminIdAndUserIdAndCategory(
+						adminId, userId, category)) {
+
+					logRepo.save(
+							AdminUserViewLog.builder()
+							.adminId(adminId)
+							.userId(userId)
+							.category(category)
+							.build()
+							);
+				}
+			} catch (DataIntegrityViolationException ignored) {}
+
+			return new Response(1, "View marked successfully", null);
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return new Response(-1, "Failed to mark view", null);
+		}
+	}
+
+
+
+	@Transactional
+	@Override	
+	public void clearView(Integer userId, String category) {
+		viewRepo.clearView(userId, category);
+	}
+
+	@Override
+	public List<Map<String, Object>> getViewers(Integer userId, String category) {
+
+		List<AdminUserViewLog> logs =
+				logRepo.findByUserIdAndCategory(userId, category);
+
+		List<Map<String, Object>> response = new ArrayList<>();
+
+		for (AdminUserViewLog log : logs) {
+
+			Map<String, Object> map = new HashMap<>();
+
+			map.put("id", log.getId());
+			map.put("adminId", log.getAdminId());
+			map.put("viewedAt", log.getViewedAt());
+
+			// 🔹 fetch only admin name
+			String adminName = userRepository.findNameById(log.getAdminId());
+			map.put("adminName", adminName);
+
+			response.add(map);
+		}
+
+		return response;
+	}
+
+
 }

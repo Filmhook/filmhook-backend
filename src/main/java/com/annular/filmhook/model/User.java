@@ -1,5 +1,6 @@
 package com.annular.filmhook.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -36,296 +37,319 @@ import lombok.ToString;
 @NoArgsConstructor
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Integer userId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Integer userId;
 
-    @Column(name = "email")
-    private String email;
+	@Column(name = "email")
+	private String email;
 
-    @JsonIgnore
-    @Column(name = "password")
-    private String password;
+	@JsonIgnore
+	@Column(name = "password")
+	private String password;
 
-    @Column(name = "user_type")
-    private String userType;
+	@Column(name = "user_type")
+	private String userType;
 
-    @Column(name = "tempToken")
-    private String tempToken;
+	@Column(name = "tempToken")
+	private String tempToken;
 
-    @Column(name = "name")
-    private String name;
+	@Column(name = "name")
+	private String name;
 
-    @Column(name = "first_name")
-    private String firstName;
+	@Column(name = "first_name")
+	private String firstName;
 
-    @Column(name = "last_Name")
-    private String lastName;
+	@Column(name = "last_Name")
+	private String lastName;
 
-    @Column(name = "middle_Name")
-    private String middleName;
+	@Column(name = "middle_Name")
+	private String middleName;
 
-    @JsonIgnore
-    @Column(name = "verification_code")
-    private String verificationCode;
+	@JsonIgnore
+	@Column(name = "verification_code")
+	private String verificationCode;
 
-    @Column(name = "dob")
-    private String dob;
+	@Column(name = "dob")
+	private String dob;
 
-    @Column(name = "gender")
-    private String gender;
+	@Column(name = "gender")
+	private String gender;
 
-    @Column(name = "country")
-    private String country;
+	@Column(name = "country")
+	private String country;
 
-    @Column(name = "state")
-    private String state;
+	@Column(name = "state")
+	private String state;
 
-    @Column(name = "filmHookOtp")
-    private Integer filmHookOtp;
+	@Column(name = "filmHookOtp")
+	private Integer filmHookOtp;
 
-    @Column(name = "district")
-    private String district;
+	@Column(name = "district")
+	private String district;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
+	@Column(name = "phone_number")
+	private String phoneNumber;
 
-    @Column(name = "status")
-    private Boolean status;
+	@Column(name = "status")
+	private Boolean status;
 
-    @Column(name = "current_address")
-    private String currentAddress;
+	@Column(name = "current_address")
+	private String currentAddress;
 
-    @Column(name = "home_address")
-    private String homeAddress;
+	@Column(name = "home_address")
+	private String homeAddress;
 
-    @Column(name = "height")
-    private String height;
+	@Column(name = "height")
+	private String height;
 
-    @Column(name = "weight")
-    private String weight;
+	@Column(name = "weight")
+	private String weight;
 
-    @Column(name = "skin_tone")
-    private String skinTone;
+	@Column(name = "skin_tone")
+	private String skinTone;
 
-    @Column(name = "hair_color")
-    private String hairColor;
+	@Column(name = "hair_color")
+	private String hairColor;
 
-    @Column(name = "bmi")
-    private String bmi;
+	@Column(name = "bmi", columnDefinition = "TEXT")
+	private String bmi;
 
-    @Column(name = "chest_size")
-    private String chestSize;
+	@Column(name = "chest_size")
+	private String chestSize;
 
-    @Column(name = "waist_size")
-    private String waistSize;
+	@Column(name = "waist_size")
+	private String waistSize;
 
-    @Column(name = "biceps")
-    private String biceps;
+	@Column(name = "biceps", columnDefinition = "TEXT")
+	private String biceps;
 
-    @Column(name = "religion")
-    private String religion;
+	@Column(name = "religion")
+	private String religion;
 
-    @Column(name = "caste")
-    private String caste;
+	@Column(name = "caste")
+	private String caste;
 
-    @Column(name = "marital_status")
-    private String maritalStatus;
+	@Column(name = "marital_status")
+	private String maritalStatus;
 
-    @Column(name = "spouse_name")
-    private String spouseName;
+	@Column(name = "spouse_name")
+	private String spouseName;
 
-    @Column(name = "children_names")
-    private String childrenNames;
+	@Column(name = "children_names")
+	private String childrenNames;
 
-    @Column(name = "mother_name")
-    private String motherName;
+	@Column(name = "mother_name")
+	private String motherName;
 
-    @Column(name = "fatherName")
-    private String fatherName;
+	@Column(name = "fatherName")
+	private String fatherName;
 
-    @Column(name = "brother_names")
-    private String brotherNames;
+	@Column(name = "brother_names", columnDefinition = "TEXT")
+	private String brotherNames;
 
-    @Column(name = "sister_names")
-    private String sisterNames;
+	@Column(name = "sister_names")
+	private String sisterNames;
 
-    @Column(name = "school_name")
-    private String schoolName;
+	@Column(name = "school_name")
+	private String schoolName;
 
-    @Column(name = "college_name")
-    private String collegeName;
+	@Column(name = "college_name")
+	private String collegeName;
 
-    @Column(name = "qualification")
-    private String qualification;
+	@Column(name = "qualification")
+	private String qualification;
 
-    @Column(name = "work_category")
-    private String workCategory;
+	@Column(name = "work_category")
+	private String workCategory;
 
-    @Column(name = "created_by")
-    private Integer createdBy;
+	@Column(name = "created_by")
+	private Integer createdBy;
 
-    @CreationTimestamp
-    @Column(name = "created_on")
-    private Date createdOn;
+	@CreationTimestamp
+	@Column(name = "created_on")
+	private Date createdOn;
 
-    @Column(name = "updated_by")
-    private Integer updatedBy;
+	@Column(name = "updated_by")
+	private Integer updatedBy;
 
-    @Column(name = "updated_on")
-    @CreationTimestamp
-    private Date updatedOn;
+	@Column(name = "updated_on")
+	@CreationTimestamp
+	private Date updatedOn;
 
-    @Column(name = "reset_password")
-    private String resetPassword;
+	@Column(name = "reset_password")
+	private String resetPassword;
 
-    @Column(name = "otp")
-    private Integer otp;
+	@Column(name = "otp")
+	private Integer otp;
 
-    @Column(name = "emailOtp")
-    private Integer emailOtp;
-    
-    @Column(name = "email_otp_created_on")
-    private Date emailOtpCreatedOn;
+	@Column(name = "emailOtp")
+	private Integer emailOtp;
+
+	@Column(name = "email_otp_created_on")
+	private Date emailOtpCreatedOn;
 
 
-    @Column(name = "film_hook_code")
-    private String filmHookCode;
+	@Column(name = "film_hook_code")
+	private String filmHookCode;
 
-    @Column(name = "mobile_Number_status")
-    private Boolean mobileNumberStatus;
+	@Column(name = "mobile_Number_status")
+	private Boolean mobileNumberStatus;
 
     @Column(name = "forgotOtp")
     private String forgotOtp;
+    
+    @Column(name = "forgot_otp_created_on")
+    private LocalDateTime forgotOtpCreatedOn;
 
-    @Column(name = "admin_Page_Status")
-    private Boolean adminPageStatus;
+	@Column(name = "admin_Page_Status")
+	private Boolean adminPageStatus;
 
-    @Column(name = "firebase_device_token")
-    private String firebaseDeviceToken;
+	@Column(name = "firebase_device_token")
+	private String firebaseDeviceToken;
 
-    @Column(name = "admin_review")
-    private Float adminReview;
+	@Column(name = "admin_review")
+	private Float adminReview;
 
-    @Column(name = "living_place")
-    private String livingPlace;
+	@Column(name = "living_place")
+	private String livingPlace;
 
-    @Column(name = "birth_place")
-    private String birthPlace;
+	@Column(name = "birth_place", columnDefinition = "TEXT")
+	private String birthPlace;
 
-    @Column(name = "experience")
-    private Integer experience;
+	@Column(name = "experience")
+	private Integer experience;
 
-    @Column(name = "schedule")
-    private String schedule;
+	@Column(name = "schedule")
+	private String schedule;
 
-    @Column(name = "secondary_email")
-    private String secondaryEmail;
+	@Column(name = "secondary_email")
+	private String secondaryEmail;
 
     @Column(name = "secondaryemail_otp")
     private Integer secondaryemailOtp;
+    
+    @Column(name = "secondaryemail_otp_created_on")
+    private LocalDateTime secondaryemailOtpCreatedOn;
 
-    @Column(name = "verified")
-    private Boolean verified;
+	@Column(name = "verified")
+	@Builder.Default
+	private Boolean verified= false;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    @ToString.Exclude
-    @JsonIgnore
-    private Location location;
+	@OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+	@ToString.Exclude
+	@JsonIgnore
+	private Location location;
 
-    @Column(name = "changeEmailId")
-    private String changeEmailId;
-    
-    @Column(name = "bust")
-    private String bust;
-    
-    @Column(name = "hip")
-    private String hip;
-    
-    @Column(name = "heightUnit")
-    private String heightUnit;
-    
-    @Column(name = "weightUnit")
-    private String weightUnit;
-    
-    @Column(name = "onlineStatus")
-    private Boolean onlineStatus;
-    
-    @Column(name = "adminOnlineStatus")
-    private Boolean adminOnlineStatus;
-    
-    @Column(name = "last_seen_at")
-    private LocalDateTime lastSeenAt;
-    
-    @Column(name = "userFlag")
-    private Boolean userFlag;
-    
-    @Column(name = "industryUserVerified")
-    private Boolean industryUserVerified;
-    
-    @Column(name = "rejectReason")
-    private String rejectReason;
-    
-    @Column(name = "country_code")
-    private String countryCode;
-    
-    @Column(name = "deleteReason")
-    private String deleteReason;
-    
-    @Column(name = "deactivateAccessOrdeny")
-    private Boolean deactivateAccessOrdeny;
-    
-    @Column(name = "deniedAccessRead")
-    private Boolean deniedAccessRead;
-    
-    @Column(name = "referralCode")
-    private String referralCode;
-    
-    @Column(name = "empId")
-    private String empId;
-    
-    @Column(name = "unVerifiedList")
-    private Boolean unVerifiedList;
-    
-    @Column(name = "notificationCount")
-    private Boolean notificationCount;
-    
-    @Column(name = "refCode")
-    private String refCode;
-    
-    @Column(name = "locationName")
+	@Column(name = "changeEmailId")
+	private String changeEmailId;
+
+	@Column(name = "bust", columnDefinition = "TEXT")
+	private String bust;
+
+	@Column(name = "hip")
+	private String hip;
+
+	@Column(name = "heightUnit")
+	private String heightUnit;
+
+	@Column(name = "weightUnit")
+	private String weightUnit;
+
+	@Column(name = "onlineStatus")
+	private Boolean onlineStatus;
+
+	@Column(name = "adminOnlineStatus")
+	private Boolean adminOnlineStatus;
+
+	@Column(name = "last_seen_at")
+	private LocalDateTime lastSeenAt;
+
+	@Column(name = "userFlag")
+	private Boolean userFlag;
+
+	@Column(name = "industryUserVerified")
+	private Boolean industryUserVerified;
+
+	@Column(name = "rejectReason")
+	private String rejectReason;
+
+	@Column(name = "country_code")
+	private String countryCode;
+
+	@Column(name = "deleteReason")
+	private String deleteReason;
+
+	@Column(name = "deactivateAccessOrdeny")
+	private Boolean deactivateAccessOrdeny;
+
+	@Column(name = "deniedAccessRead")
+	private Boolean deniedAccessRead;
+
+	@Column(name = "referralCode")
+	private String referralCode;
+
+	@Column(name = "empId")
+	private String empId;
+
+	@Column(name = "unVerifiedList")
+	private Boolean unVerifiedList;
+
+	@Column(name = "notificationCount")
+	private Boolean notificationCount;
+
+	@Column(name = "refCode")
+	private String refCode;
+
+	@Column(name = "locationName")
 	private String locationName;
-    
+
 	@Column(name = "locationAddress")
 	private String locationAddress;
-	
+
 	@Column(name = "locationLandMark")
 	private String locationLandMark;
-	
+
 	@Column(name = "locationLatitude")
 	private String locationLatitude;
-	
+
 	@Column(name = "locationLongitude")
 	private String locationLongitude;
-	
+
 	@OneToMany(mappedBy = "user")
 	@JsonIgnore
-	 @ToString.Exclude 
+	@ToString.Exclude 
 	private List<ShootingLocationPropertyDetails> properties;
 
 	@Column(name = "last_notification_open_time")
 	private Date lastNotificationOpenTime;
-	
+
 	@Builder.Default
 	@Column(name = "permanent_delete", columnDefinition = "BOOLEAN DEFAULT 0")
 	private Boolean permanentDelete = false;
-	
+
 	@Column(name = "job_title", columnDefinition = "TEXT")
 	private String jobTitle;
 
 	@Column(name = "organization_unit", columnDefinition = "TEXT")
 	private String organizationUnit;
 
+	@Column(name = "security_verified")
+	private Boolean securityQuestionsVerified;
+
+	@Column(name = "security_otp", columnDefinition = "VARCHAR(10)")
+	private String securityEmailOtp;
+
+	@Column(name = "security_otp_created_on")
+	private LocalDateTime securityEmailOtpCreatedOn;
+
+	@Column(name = "security_otp_verified")
+	private Boolean securityOtpVerified;
 	
+	@Column(name = "secondary_mail_permission")
+	private Boolean secondaryMailPermission;
+	
+	@Column(name = "secondary_mail_temp", columnDefinition = "VARCHAR(40)")
+	private String secondoryMailTemp;
 }

@@ -1,6 +1,7 @@
 package com.annular.filmhook.webmodel;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.annular.filmhook.model.BookingStatus;
@@ -16,28 +17,40 @@ import lombok.Setter;
 @Setter
 @Builder
 public class ShootingLocationBookingDTO {
-    private Integer propertyId;
-    private Integer clientId;
-    private PropertyBookingType bookingType;
-    private SlotType slotType;
-    private String slotTimings;
-//    private LocalDate shootStartDate;
-//    private LocalDate shootEndDate;
-    private List<LocalDate> bookingDates; 
-    private String bookingMessage;
-    private Integer bookingId;
-    private Integer createdBy;
-    private Integer totalDays;
-    private Double pricePerDay;
-    private Double subtotal;            
-    private Double discountPercent;
-    private Double discountAmount;
-    private Double amountAfterDiscount;
-    private Double gstPercent;	
-    private Double gstAmount;
-    private Double netAmount;
-    private String bookingStatus;
-
+	private Integer propertyId;
+	private Integer clientId;
+	private PropertyBookingType bookingType;
+	private SlotType slotType;
+	private String slotTimings;
+	private List<LocalDate> bookingDates; 
+	private List<LocalDate> confirmedBookingDates;
+	private Boolean modificationRequested;
+	private String bookingMessage;
+	private Integer bookingId;
+	private Integer createdBy;
+	private Integer totalDays;
+	private Double pricePerDay;
+	private Double subtotal;            
+	private Double discountPercent;
+	private Double discountAmount;
+	private Double amountAfterDiscount;
+	private Double gstPercent;	
+	private Double gstAmount;
+	private Double netAmount;
+	private String bookingStatus;
+	private List<FileOutputWebModel> imageUrls;
+	private String propertyName; 
+	private String PropertyCode;
+	private String bookingCode;
+	private Double refundPercent;
+	private Double refundAmount;
+	private LocalDateTime cancelledAt;
+	private Boolean shootVerified;
+	private String clientName;
+	private String ownerName;
+	private String subCategoryName;
+	private String locationLink;
+	private String location;
 
 }
 

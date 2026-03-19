@@ -80,6 +80,9 @@
 	    private Integer updatedBy;
 	    private LocalDateTime createdDate;
 	    private LocalDateTime updatedDate;
+	    @Column(name = "rejection_reason")
+	    private String rejectionReason;
+	    
 	    
 	    public enum VerificationStatus {
 	        PENDING, SUCCESS, FAILED

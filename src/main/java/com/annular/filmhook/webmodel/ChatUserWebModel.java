@@ -25,6 +25,9 @@ public class ChatUserWebModel {
     private Boolean isLatestStory;
     private String matchedPart;          // "firstName" or "lastName"
     private Integer matchLength;  
+    private String MessageStatus;
+    private Integer senderId;
+    private Integer receiverId;
     
 
 }

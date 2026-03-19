@@ -1,5 +1,6 @@
 package com.annular.filmhook.webmodel;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import javax.persistence.Column;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.annular.filmhook.model.PromoteAd.PromoteStatus;
+import com.annular.filmhook.model.VisitePageCategory;
 
 import lombok.Builder;
 import lombok.Data;
@@ -63,7 +65,7 @@ public class PromoteWebModel {
     private String businessLocation;
     private String businessType;
 
-    private String advObject;
+    private VisitePageCategory advObject;
     private String advObjectValue;
 
     private MultipartFile companyLogo;
@@ -87,8 +89,8 @@ public class PromoteWebModel {
     private String postDescription;
 
     // Payment
-    private Integer amount;
-    private Integer totalCost;
+    private BigDecimal amount;
+    private BigDecimal totalCost;
     private Integer taxFee;
     private Integer cgst;
     private Integer sgst;

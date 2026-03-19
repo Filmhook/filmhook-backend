@@ -1,14 +1,12 @@
 package com.annular.filmhook.controller;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -24,7 +22,6 @@ import com.annular.filmhook.model.User;
 import com.annular.filmhook.repository.UserRepository;
 import com.annular.filmhook.security.UserDetailsImpl;
 import com.annular.filmhook.service.AuditionCompanyService;
-import com.annular.filmhook.service.impl.UserDetailsServiceImpl;
 import com.annular.filmhook.validator.AuditionCompanyDetailsValidator;
 import com.annular.filmhook.webmodel.AuditionCompanyDetailsDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
@@ -60,7 +57,7 @@ public class AuditionCompanyController {
             @RequestPart(value = "logoFiles", required = false)
             MultipartFile[] logoFiles,
 
-            @RequestPart(value = "companyCertificateFiles", required = true)
+            @RequestPart(value = "companyCertificateFiles", required = false)
             MultipartFile[] companyCertificateFiles,
 
             @RequestPart(value = "businessCertificateFiles", required = false)
@@ -74,7 +71,8 @@ public class AuditionCompanyController {
         if (logoFiles != null)
             dto.setLogoFiles(Arrays.asList(logoFiles));
 
-        dto.setCompanyCertificateFiles(Arrays.asList(companyCertificateFiles));
+        if (companyCertificateFiles != null)
+            dto.setCompanyCertificateFiles(Arrays.asList(companyCertificateFiles));
 
         if (businessCertificateFiles != null)
             dto.setBusinessCertificateFiles(Arrays.asList(businessCertificateFiles));
@@ -121,13 +119,16 @@ public class AuditionCompanyController {
   
     @GetMapping("/getByVerificationStatus")
     public ResponseEntity<List<AuditionCompanyDetailsDTO>> getCompaniesByVerificationStatus(
-            @RequestParam(name = "verificationStatus", defaultValue = "PENDING") String verificationStatus) {
+    		@RequestParam(name = "verificationStatus", required = false) String verificationStatus) {
 
-        AuditionCompanyDetails.VerificationStatus statusEnum;
-        try {
-            statusEnum = AuditionCompanyDetails.VerificationStatus.valueOf(verificationStatus.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+    	AuditionCompanyDetails.VerificationStatus statusEnum = null;
+        if (verificationStatus != null && !verificationStatus.isBlank()) {
+            try {
+                statusEnum = AuditionCompanyDetails.VerificationStatus
+                        .valueOf(verificationStatus.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().build();
+            }
         }
 
         List<AuditionCompanyDetailsDTO> companies = companyService.getCompaniesByVerificationStatus(statusEnum);
@@ -135,9 +136,9 @@ public class AuditionCompanyController {
     }
 
     
-    @PutMapping("/{companyId}/verify")
-    public ResponseEntity<?> verifyCompany(@PathVariable Integer companyId, @RequestParam boolean approved) {
-        AuditionCompanyDetails updatedCompany = companyService.updateVerificationStatus(companyId, approved);
+    @PutMapping("verifyAuditionCompany")
+    public ResponseEntity<?> verifyCompany(@RequestParam Integer companyId, @RequestParam boolean approved , @RequestParam (required = false) String rejectReason) {
+        AuditionCompanyDetails updatedCompany = companyService.updateVerificationStatus(companyId, approved, rejectReason);
 
         Map<String, Object> response = new HashMap<>();
         response.put("companyId", updatedCompany.getId());

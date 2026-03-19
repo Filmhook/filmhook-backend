@@ -1,5 +1,6 @@
 package com.annular.filmhook.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.annular.filmhook.Response;
@@ -12,13 +13,14 @@ import com.annular.filmhook.webmodel.VisitPageWebModel;
 
 public interface PromoteAdService {
 
-    Response savePromote(PromoteWebModel promoteWebModel, Integer userId);
+    Response savePromote(PromoteWebModel promoteWebModel);
 
     PromoteAd getPromoteByPostId(Integer postId);
     
-    Response updatePaymentSuccess(PromoteWebModel model);
+//    Response updatePaymentSuccess(String txnid, String promoteId, BigDecimal amount );
+//
+//    Response updatePaymentFailed(String txnid, String promoteId, BigDecimal amount );
 
-    Response updatePaymentFailed(PromoteWebModel model);
 
     Response getRecentPromotions(Integer userId);
 
@@ -29,5 +31,9 @@ public interface PromoteAdService {
 	List<VisitPageWebModel> getPagesByCategoryId(Integer categoryId);
 
 	List<VisitPageWebModel> getDetailsByVisitPageId(Integer visitPageId);
+	
+	void activatePromote(Integer promoteId, String txnId);
+
+	void markPromotePaymentFailed(Integer promoteId, String txnId);
 
 }

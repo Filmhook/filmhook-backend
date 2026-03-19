@@ -92,4 +92,11 @@ public interface LikeRepository extends JpaRepository<Likes, Integer> {
     	    String category
     	);
 
+    Optional<Likes> findByPostIdAndLikedBy(Integer postId, Integer likedBy);    
+    long countByPostIdAndStatusTrue(Integer postId);
+    
+    Optional<Likes> findByPostIdAndLikedByAndStatusTrue(Integer postId, Integer likedBy);
+    @Query("SELECT l.reaction, COUNT(l) FROM Likes l WHERE l.postId = :postId AND l.status = true GROUP BY l.reaction")
+    List<Object[]> countReactionsByPostId(Integer postId);
+    List<Likes> findAllByPostIdAndStatusTrue(Integer postId);
 }

@@ -11,9 +11,9 @@ public class VideoThumbnail {
     	String playIconPath = "https://filmhook-dev-bucket.s3.ap-southeast-2.amazonaws.com/MailLogo/play-icon.png";
 		String ffmpegPath = "/usr/bin/ffmpeg";
       
-//        String playIconPath = "C:\\filmhook-assets\\play-icon.png";
+     // String playIconPath = "C:\\filmhook-assets\\play-icon.png";
 
-//        String ffmpegPath =  "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
+       // String ffmpegPath =  "C:\\Program Files\\webmUtil\\ffmpeg-7.1.1-essentials_build\\bin\\ffmpeg.exe";
 
         List<String> command = Arrays.asList(
                 ffmpegPath,

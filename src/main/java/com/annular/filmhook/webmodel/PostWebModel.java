@@ -9,6 +9,7 @@ import com.annular.filmhook.model.MediaFileCategory;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -66,8 +67,8 @@ public class PostWebModel {
     private Boolean promoteStatus;
     private Integer promoteId;
     private Integer numberOfDays;
-    private Integer amount;
-    private Integer selectOption;
+    private BigDecimal amount;
+    private String selectOption;
     private String visitPageData;
     private Integer viewsCount;
     private String companyName;
@@ -77,6 +78,10 @@ public class PostWebModel {
     private Boolean watchLater;
     private List<Integer> deletedTaggedUserIds;
     private String adType;
-
+    private String objValue;
+    
+    private Integer totalReactions;
+    private String userReaction;
+    private Integer likedId;
 
 }

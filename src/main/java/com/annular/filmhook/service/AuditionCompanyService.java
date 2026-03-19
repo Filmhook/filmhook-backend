@@ -12,13 +12,14 @@ import com.annular.filmhook.webmodel.AuditionUserCompanyAccessRequestDTO;
 import com.annular.filmhook.webmodel.AuditionUserCompanyRoleDTO;
 
 
+
 public interface AuditionCompanyService {
 	 AuditionCompanyDetailsDTO saveCompany(AuditionCompanyDetailsDTO dto);
 	 List<AuditionCompanyDetailsDTO> getCompaniesByUserId(Integer userId);
 	 List<AuditionCompanyDetailsDTO> getAllCompanies();
 	 List<AuditionCompanyDetailsDTO> getCompaniesByVerificationStatus(
-		        AuditionCompanyDetails.VerificationStatus verificationStatus);
-	 AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved);
+    AuditionCompanyDetails.VerificationStatus verificationStatus);
+	 AuditionCompanyDetails updateVerificationStatus(Integer companyId, boolean approved, String reason );
 	 AuditionCompanyDetailsDTO markCompanyAsContinued(Integer companyId, Integer userId);
 	 AuditionUserCompanyRoleDTO assignAccess(AuditionUserCompanyRoleDTO request);
 	 Object handleAuditionAccess(User loggedUser, String filmHookCode, String designation, String accessCode);	 
@@ -30,5 +31,7 @@ public interface AuditionCompanyService {
 	 List<AuditionCompanyDetailsDTO> getCompaniesForLoggedInUser(Integer userId);
 	 AuditionUserCompanyRoleDTO editAccess(Integer roleId, AuditionUserCompanyRoleDTO request);
 	 List<AuditionUserCompanyRoleDTO> assignAccess(AuditionUserCompanyAccessRequestDTO request);
+	 
+
 
 }

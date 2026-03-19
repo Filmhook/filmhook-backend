@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface PostService {
 
@@ -66,5 +67,6 @@ public interface PostService {
 
 	List<PostWebModel> getAllUsersPosts(Integer userId, Integer pageNo, Integer pageSize, String userCountry);
 	
-
+	LikeWebModel addOrUpdateReaction(LikeWebModel model);
+	Map<String, Object> getPostReactions(Integer postId, Integer userId);
 }
