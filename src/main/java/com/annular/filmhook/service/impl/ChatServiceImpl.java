@@ -1233,6 +1233,11 @@ map.put("testing", "===========================");
 	              "MESSAGE_READ_BULK",
 	              payload
 	      );
+	      webSocketService.notifyChatUser(
+                  senderId,
+                  "CHAT_LIST_MSG_STATUS",
+                 msgStatus
+          );
 
 	      return ResponseEntity.ok("OK");
 	  }
@@ -1774,6 +1779,22 @@ map.put("testing", "===========================");
 
 	        user.setOnlineStatus(userWebModel.getOnlineStatus());
 	        userRepository.save(user);
+	        
+	        // 🔥 Get only active chat users
+	        List<Integer> activeChatUsers =
+	                chatRepository.findActiveChatUserIds(user.getUserId());
+
+	        for (Integer chatUserId : activeChatUsers) {
+
+	            Map<String, Object> payload = new HashMap<>();
+	            payload.put("userId", user.getUserId());
+	            payload.put("onlineStatus", user.getOnlineStatus());
+	            webSocketService.notifyChatUser(
+	                    chatUserId,
+	                    "USER_ONLINE_STATUS",
+	                    payload
+	            );
+	        }
 
 	        // 🔥 If user came ONLINE → update undelivered messages
 	        if (Boolean.TRUE.equals(userWebModel.getOnlineStatus())) {
