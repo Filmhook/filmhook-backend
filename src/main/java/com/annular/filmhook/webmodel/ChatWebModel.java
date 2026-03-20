@@ -65,6 +65,9 @@ public class ChatWebModel {
 	private ChatType chatType;
 private String messageStatus;
 
+private String nonce;
+private Boolean isEncrypted;
+
 	@Data
 	@AllArgsConstructor
 	@NoArgsConstructor
@@ -75,5 +78,9 @@ private String messageStatus;
 		private String userAccountName;
 		private String mediaUrl;   
 		private String mediaType; 
+
+private String nonce;
+private Boolean isEncrypted;
+		
 	}
 }

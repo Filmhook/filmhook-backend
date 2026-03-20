@@ -117,5 +117,12 @@ public class Chat {
     @Column(name = "message_status")
     private String messageStatus = "PENDING"; 
 
+    //E2EE 
+    
+    @Column(name = "nonce")
+    private String nonce;
+    @Builder.Default
+    @Column(name = "is_encrypted")
+    private Boolean isEncrypted = true;
 
 }
