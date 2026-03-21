@@ -805,6 +805,9 @@ public class CallServiceImpl implements CallService {
 
 	        if ("rejected".equalsIgnoreCase(c.getStatus())) {
 	            status = outgoing ? "rejected" : "missed";
+	            }
+	            else if ("cancelled".equalsIgnoreCase(c.getStatus())) {   
+	            status = outgoing? "cancelled": "missed";
 	        } else if (c.getEndTime() == null) {
 	            status = "missed";
 	        } else {
