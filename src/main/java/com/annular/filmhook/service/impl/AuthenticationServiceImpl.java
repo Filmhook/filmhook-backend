@@ -437,7 +437,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			user.setOtp(otp);
 			CompletableFuture.runAsync(() -> {
 				String message = "Your OTP is " + otp + " for verification";
-				twilioConfig.smsNotification(user.getPhoneNumber(), message);
+				//twilioConfig.smsNotification(user.getPhoneNumber(), message);
 			});
 			// Prepare response
 			Map<String, Object> response = new HashMap<>();
