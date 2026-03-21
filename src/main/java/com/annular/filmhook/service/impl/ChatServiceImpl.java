@@ -478,8 +478,9 @@ public class ChatServiceImpl implements ChatService {
 	        } else {
 
 	            chatBuilder
-	                .chatType(chatWebModel.getChatType()) 
-	                .message(chatWebModel.getMessage());
+	            .message(chatWebModel.getMessage())
+                .nonce(chatWebModel.getNonce())
+                .isEncrypted(true);
 	        }
 	        chat = chatBuilder.build();
 
